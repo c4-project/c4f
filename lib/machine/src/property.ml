@@ -30,8 +30,8 @@ let eval_b spec expr = Blang.eval expr (eval spec)
 let tree_docs : Ac.Property.Tree_doc.t =
   [ ("id", {args= ["PROPERTY"]; details= {| See 'identifier predicates'. |}})
   ; ( "is_remote"
-    , { args= []
-      ; details= {| Selects machines that are known to be remote. |} } )
+    , {args= []; details= {| Selects machines that are known to be remote. |}}
+    )
   ; ( "is_local"
     , {args= []; details= {| Selects machines that are known to be local. |}}
     ) ]

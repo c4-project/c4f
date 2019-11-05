@@ -11,13 +11,12 @@
 
 (** Compiler filters.
 
-    These functors and functions lift compilers into the
-    {{!Utils.Filter} filter} system, so that they can be composed with other
-    similar passes. *)
+    These functors and functions lift compilers into the {{!Utils.Filter}
+    filter} system, so that they can be composed with other similar passes. *)
 
 (** Type of compiler filters. *)
 module type S =
   Plumbing.Filter_types.S with type aux_i = Mode.t and type aux_o = unit
 
-module Make (S : Instance_types.S) : S
 (** Lifts an [S] to a filter. *)
+module Make (S : Instance_types.S) : S

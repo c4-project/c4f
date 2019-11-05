@@ -46,8 +46,8 @@ let resolve_step ({name; payload= payload_sexp} : elt)
     Action.run ~payload)
 
 let run_step (trace : t)
-    ~(resolve : Act_common.Id.t -> (module Action_types.S) Or_error.t) :
-    step =
+    ~(resolve : Act_common.Id.t -> (module Action_types.S) Or_error.t) : step
+    =
   match Fqueue.dequeue trace with
   | None ->
       Stop

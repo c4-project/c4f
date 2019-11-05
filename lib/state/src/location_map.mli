@@ -26,5 +26,4 @@ val reflexive : Set.M(Act_common.Litmus_id).t -> t
 
 val output : t -> onto:Plumbing.Output.t -> unit Or_error.t
 (** [output vars ~onto] serialises [vars] to JSON and outputs it as
-    instructed by [onto]. It fails if [onto] doesn't point to a valid
-    output. *)
+    instructed by [onto]. It fails if [onto] doesn't point to a valid output. *)

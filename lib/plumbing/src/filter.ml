@@ -42,8 +42,8 @@ let route_input_to_file (src : Input.t) : Fpath.t Or_error.t =
     file)
 
 (** [ensure_input_file src] returns [src] if it points to a file; otherwise,
-    it creates a temporary file, copies [src]'s contents into it, and
-    returns that if no errors occur. *)
+    it creates a temporary file, copies [src]'s contents into it, and returns
+    that if no errors occur. *)
 let ensure_input_file (src : Input.t) : Fpath.t Or_error.t =
   match Input.to_fpath_opt src with
   | Some f ->
@@ -54,8 +54,8 @@ let ensure_input_file (src : Input.t) : Fpath.t Or_error.t =
 (** [route_output_from_file sink ~f] creates a temporary file, passes it to
     [f], and copies the file's contents back to [sink] on successful
     completion. *)
-let route_input_from_file (sink : Output.t) ~(f : Fpath.t -> 'a Or_error.t)
-    : 'a Or_error.t =
+let route_input_from_file (sink : Output.t) ~(f : Fpath.t -> 'a Or_error.t) :
+    'a Or_error.t =
   let temp_out = Output.temp ~prefix:"filter" ~ext:"tmp" in
   Or_error.Let_syntax.(
     let%bind file = Output.to_fpath_err temp_out in

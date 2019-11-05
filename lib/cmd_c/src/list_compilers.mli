@@ -9,5 +9,5 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Command for listing the compilers available to an ACT run. *)
 val command : Core_kernel.Command.t
+(** Command for listing the compilers available to an ACT run. *)

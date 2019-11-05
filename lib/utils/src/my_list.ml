@@ -53,24 +53,22 @@ module Random = struct
   let guard_if_empty (xs : 'a list) ~(f : 'a list -> 'b) : 'b option =
     if List.is_empty xs then None else Some (f xs)
 
-  let index (xs : 'a list) ~(random : Splittable_random.State.t) :
-      int option =
+  let index (xs : 'a list) ~(random : Splittable_random.State.t) : int option
+      =
     guard_if_empty xs ~f:(index_raw ~random)
 
   let stride (xs : 'a list) ~(random : Splittable_random.State.t) :
       (int * int) option =
     guard_if_empty xs ~f:(stride_raw ~random)
 
-  let item (xs : 'a list) ~(random : Splittable_random.State.t) : 'a option
-      =
+  let item (xs : 'a list) ~(random : Splittable_random.State.t) : 'a option =
     Option.(index ~random xs >>= List.nth xs)
 end
 
 let split_or_error (xs : 'a list) (n : int) : ('a list * 'a list) Or_error.t
     =
   let len = List.length xs in
-  if n < 0 then
-    Or_error.errorf "Can't split a list at a negative point %d" n
+  if n < 0 then Or_error.errorf "Can't split a list at a negative point %d" n
   else if len < n then
     Or_error.errorf "Can't split a list of length %d at point %d" len n
   else Or_error.return (List.split_n xs n)

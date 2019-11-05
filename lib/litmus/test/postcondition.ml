@@ -19,8 +19,7 @@ let print_pred (p : int Src.Postcondition.t) : unit =
 let%expect_test "quickcheck generator sample" =
   Act_utils.My_quickcheck.print_sample ~printer:print_pred
     ( module struct
-      type t = int Src.Postcondition.t
-      [@@deriving compare, sexp, quickcheck]
+      type t = int Src.Postcondition.t [@@deriving compare, sexp, quickcheck]
     end ) ;
   [%expect
     {|

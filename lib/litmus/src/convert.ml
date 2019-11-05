@@ -46,9 +46,7 @@ struct
       B.To.Lang.Constant.t Postcondition.t Or_error.t =
     let open Or_error.Let_syntax in
     let%map predicate = convert_pred (Postcondition.predicate post) in
-    Postcondition.make
-      ~quantifier:(Postcondition.quantifier post)
-      ~predicate
+    Postcondition.make ~quantifier:(Postcondition.quantifier post) ~predicate
 
   let convert_post_opt :
          B.From.Lang.Constant.t Postcondition.t option

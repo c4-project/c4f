@@ -12,6 +12,6 @@
 val command : Core_kernel.Command.t
 (** A command that prints license information.
 
-    This command exists in an attempt to adhere to clause 5.4 of the
-    CeCILL-B license, the licence used by the bits of Herdtools7 code from
-    which some parts of the ACT code derive. *)
+    This command exists in an attempt to adhere to clause 5.4 of the CeCILL-B
+    license, the licence used by the bits of Herdtools7 code from which some
+    parts of the ACT code derive. *)

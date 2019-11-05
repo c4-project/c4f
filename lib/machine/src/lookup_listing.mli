@@ -43,8 +43,8 @@ module Disable : sig
   (** {2 Constructors} *)
 
   val make : location:Location.t -> reason:Reason.t -> t
-  (** [make ~location ~reason] makes a disable record noting disable
-      location [location] and reason [reason]. *)
+  (** [make ~location ~reason] makes a disable record noting disable location
+      [location] and reason [reason]. *)
 
   val make_failed : location:Location.t -> error:Error.t -> t
   (** [make_failed ~location ~error] makes a disable record noting disable
@@ -70,8 +70,8 @@ val make :
 
 val enabled : 'spec t -> 'spec Act_common.Spec.Set.t
 (** [enabled listing] gets every enabled spec in [listing], as a spec table.
-    Generally, the IDs of each spec in the table will be fully qualified
-    IDs, and the specs themselves will be machine-qualified. *)
+    Generally, the IDs of each spec in the table will be fully qualified IDs,
+    and the specs themselves will be machine-qualified. *)
 
 val disabled :
   'spec t -> ('spec Act_common.Spec.With_id.t, Disable.t) List.Assoc.t
@@ -90,14 +90,14 @@ val get_with_fqid :
 (** {2 Pretty-printing} *)
 
 val pp_qualified_summary : 'spec Fmt.t -> 'spec Qualified.t t Fmt.t
-(** [pp_qualified_summary pp_spec] is a helper for implementing a form
-   of pretty-printing on lookup listings where:
+(** [pp_qualified_summary pp_spec] is a helper for implementing a form of
+    pretty-printing on lookup listings where:
 
     - each spec is a single line;
     - each line begins with the machine ID, then the spec ID;
     - fields are space-delimited and terse.
 
-    This sort of summary is (mostly) human-readable,
-    but easily scraped by Unix-style scripts.
+    This sort of summary is (mostly) human-readable, but easily scraped by
+    Unix-style scripts.
 
     The caller should supply their own [box]. *)

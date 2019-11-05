@@ -14,9 +14,9 @@ module Tx = Travesty_base_exts
 module Ac = Act_common
 module State_list = Tx.List.On_monad (State.Monad)
 
-(** [make_rng seed] creates a splittable RNG; if [seed] is [Some s], [s]
-    will be used as the RNG's seed, otherwise a low-entropy system-derived
-    seed is used. *)
+(** [make_rng seed] creates a splittable RNG; if [seed] is [Some s], [s] will
+    be used as the RNG's seed, otherwise a low-entropy system-derived seed is
+    used. *)
 let make_rng : int option -> Splittable_random.State.t = function
   | Some seed ->
       Splittable_random.State.of_int seed

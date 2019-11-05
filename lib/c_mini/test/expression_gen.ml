@@ -209,8 +209,8 @@ let%test_module "Bool_values" =
       test_all_expressions_have_type test_fun Src.Type.(bool ())
 
     (* TODO(@MattWindsor91): we can't currently check that all expressions
-       evaluate safely to Booleans, as the evaluator and known values
-       tracker don't understand atomic loads. *)
+       evaluate safely to Booleans, as the evaluator and known values tracker
+       don't understand atomic loads. *)
 
     let%test_unit "all referenced variables in environment" =
       test_all_expressions_in_env (fun e ->

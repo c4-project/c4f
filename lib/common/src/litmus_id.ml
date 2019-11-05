@@ -14,9 +14,8 @@ module Au = Act_utils
 module Tx = Travesty_base_exts
 
 (* Comparable.Make_plain depends on Sexpable, and Sexpable.Of_stringable
-   depends on Stringable. As a result, we have to implement Id by
-   snowballing together increasingly elaborate modules, adding Base
-   extensions as we go. *)
+   depends on Stringable. As a result, we have to implement Id by snowballing
+   together increasingly elaborate modules, adding Base extensions as we go. *)
 
 module M_str = struct
   type t =
@@ -89,8 +88,7 @@ end)
 let global_of_string (str : string) : t Or_error.t =
   Or_error.(str |> C_id.create >>| global)
 
-let global_of_string_exn (str : string) : t =
-  str |> C_id.of_string |> global
+let global_of_string_exn (str : string) : t = str |> C_id.of_string |> global
 
 let variable_name : t -> C_id.t = function Local (_, v) | Global v -> v
 

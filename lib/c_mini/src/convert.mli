@@ -27,8 +27,7 @@ val constant : Act_c_lang.Ast_basic.Constant.t -> Constant.t Or_error.t
     constant. *)
 
 val stm : Act_c_lang.Ast.Stm.t -> unit Statement.t Or_error.t
-(** [stm ast] tries to interpret a C statement AST as a mini-model
-    statement. *)
+(** [stm ast] tries to interpret a C statement AST as a mini-model statement. *)
 
 val expr : Act_c_lang.Ast.Expr.t -> Expression.t Or_error.t
 (** [expr ast] tries to interpret a C expression AST as a mini-model
@@ -36,8 +35,8 @@ val expr : Act_c_lang.Ast.Expr.t -> Expression.t Or_error.t
 
 val func :
   Act_c_lang.Ast.Function_def.t -> unit Function.t Named.t Or_error.t
-(** [func ast] tries to interpret a C function definition AST as a
-    mini-model function. *)
+(** [func ast] tries to interpret a C function definition AST as a mini-model
+    function. *)
 
 val translation_unit :
   Act_c_lang.Ast.Translation_unit.t -> unit Program.t Or_error.t
@@ -51,8 +50,8 @@ val litmus_post :
     full C AST as one over the mini-model. *)
 
 val litmus : Act_c_lang.Ast.Litmus.t -> Litmus.Test.t Or_error.t
-(** [litmus test] tries to interpret a Litmus test over the full C AST as
-    one over the mini-model. *)
+(** [litmus test] tries to interpret a Litmus test over the full C AST as one
+    over the mini-model. *)
 
 val litmus_of_raw_ast :
   Act_litmus.Ast.M(Act_c_lang.Ast.Litmus_lang).t -> Litmus.Test.t Or_error.t

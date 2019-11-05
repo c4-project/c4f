@@ -11,8 +11,8 @@
 
 (** Unvalidated and validated Litmus tests.
 
-    Not to be confused with the {{!Ast} Ast}, which contains a more
-    low-level syntactic form of Litmus tests. *)
+    Not to be confused with the {{!Ast} Ast}, which contains a more low-level
+    syntactic form of Litmus tests. *)
 
 open Base
 
@@ -101,15 +101,15 @@ module Raw : sig
 
   val remove_thread :
     ('const, 'prog) t -> index:int -> ('const, 'prog) t Or_error.t
-  (** [remove_thread test ~index] removes the thread in test [test]
-      described by [index], adjusting any litmus IDs accordingly. It fails
-      if [index] is out of bounds. *)
+  (** [remove_thread test ~index] removes the thread in test [test] described
+      by [index], adjusting any litmus IDs accordingly. It fails if [index]
+      is out of bounds. *)
 end
 
 (** {2 Validated tests} *)
 
-(** [Make] is a functor that, given a language described by [Basic],
-    produces a module type for validated Litmus tests, well as operations
-    for pretty-printing them. *)
+(** [Make] is a functor that, given a language described by [Basic], produces
+    a module type for validated Litmus tests, well as operations for
+    pretty-printing them. *)
 module Make (Lang : Test_types.Basic) :
   Test_types.S with module Lang = Lang and type raw = Raw.M(Lang).t

@@ -34,8 +34,8 @@ module Make (B : sig
   (** [gen_non_initial_char] should generate valid non-initial characters. *)
 
   val badwords : Set.M(String).t Lazy.t
-  (** [badwords] should evaluate to a set of identifiers that are not
-      allowed (for example, because they shadow existing identifiers). *)
+  (** [badwords] should evaluate to a set of identifiers that are not allowed
+      (for example, because they shadow existing identifiers). *)
 
   val validate_general : string Validate.check
   (** [validate_general candidate] should perform final validation on
@@ -92,8 +92,8 @@ struct
   module Q : Quickcheck.S with type t := t = struct
     let quickcheck_generator : t Qc.Generator.t =
       (* Make a best first attempt to generate valid Herd-safe identifiers,
-         and then throw away any that violate more esoteric requirements
-         such as no-program-ids. *)
+         and then throw away any that violate more esoteric requirements such
+         as no-program-ids. *)
       Qc.Generator.filter_map
         ~f:(Fn.compose Result.ok create)
         (My_quickcheck.gen_string_initial ~initial:B.gen_initial_char

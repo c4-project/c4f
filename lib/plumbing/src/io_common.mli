@@ -14,6 +14,7 @@
 
     Client code shouldn't usually use this. *)
 
+(** [Make] makes the IO code common to {!Input} and {!Output}. *)
 module Make (B : sig
   type t
 
@@ -25,4 +26,3 @@ module Make (B : sig
 
   val std_name : string
 end) : Io_types.Common with type t := B.t
-(** [Make] makes the IO code common to {!Input} and {!Output}. *)

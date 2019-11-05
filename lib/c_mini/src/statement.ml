@@ -106,8 +106,8 @@ module Main :
       module IB = Ifs_base_map (M)
       module Bk = Block.On_monad (M)
 
-      (* We have to unroll the map over if statements here, because
-         otherwise we end up with unsafe module recursion. *)
+      (* We have to unroll the map over if statements here, because otherwise
+         we end up with unsafe module recursion. *)
 
       let rec map_m (x : 'm1 t) ~(f : 'm1 -> 'm2 M.t) : 'm2 t M.t =
         B.bmap x ~assign:M.return ~atomic_cmpxchg:M.return
@@ -129,9 +129,8 @@ module Main :
     module Block_stms = Block.On_statements (Meta)
 
     module On_lvalues :
-      Travesty.Traversable_types.S0
-        with type t = t
-         and type Elt.t = Lvalue.t = Travesty.Traversable.Make0 (struct
+      Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
+    Travesty.Traversable.Make0 (struct
       type nonrec t = t
 
       module Elt = Lvalue
@@ -226,8 +225,8 @@ module If :
       module Mn = Main.On_meta.On_monad (M)
       module Bk = Block.On_monad (M)
 
-      (* We have to unroll the map over if statements here, because
-         otherwise we end up with unsafe module recursion. *)
+      (* We have to unroll the map over if statements here, because otherwise
+         we end up with unsafe module recursion. *)
 
       let map_m (x : 'm1 t) ~(f : 'm1 -> 'm2 M.t) : 'm2 t M.t =
         B.bmap x ~cond:M.return

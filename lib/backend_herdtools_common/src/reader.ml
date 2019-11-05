@@ -121,8 +121,8 @@ module Automaton = struct
     | (Empty | State _ | Preamble | Summary | Postamble) as st ->
         state_change_error st "entering a preamble"
 
-  (** [try_leave_state a] tries to update [a] after having processed a
-      single state line. *)
+  (** [try_leave_state a] tries to update [a] after having processed a single
+      state line. *)
   let try_leave_state : t -> t Or_error.t = function
     | State {left= 0; _} ->
         Or_error.error_string "State underflow."
@@ -131,8 +131,7 @@ module Automaton = struct
     | (Pre_test | Preamble | Summary | Postamble | Empty) as st ->
         state_change_error st "leaving a state line"
 
-  let try_enter_state_block (num_states : int) : t -> t Or_error.t =
-    function
+  let try_enter_state_block (num_states : int) : t -> t Or_error.t = function
     | Preamble ->
         of_state_count num_states
     | (Pre_test | State _ | Summary | Postamble | Empty) as st ->
@@ -207,8 +206,8 @@ module Ctx = struct
 
   let peek_obs () : Act_state.Observation.t t = peek Body.obs
 
-  (** [fail_if_bad_state ()] produces an error if the reader ended in a
-      state other than Postamble. *)
+  (** [fail_if_bad_state ()] produces an error if the reader ended in a state
+      other than Postamble. *)
   let fail_if_bad_state () : unit t =
     peek_automaton () >>| Automaton.validate_final_state >>| Validate.result
     >>= Monadic.return
@@ -244,14 +243,13 @@ module Ic = struct
   module On_monad (M : Monad.S) = struct
     let fold_m (ic : Stdio.In_channel.t) ~(f : 'a -> string -> 'a M.t)
         ~(init : 'a) : 'a M.t =
-      Stdio.In_channel.fold_lines ic ~init:(M.return init)
-        ~f:(fun xm line ->
+      Stdio.In_channel.fold_lines ic ~init:(M.return init) ~f:(fun xm line ->
           M.Let_syntax.(
             let%bind x = xm in
             f x line))
 
-    let iter_m (ic : Stdio.In_channel.t) ~(f : string -> unit M.t) :
-        unit M.t =
+    let iter_m (ic : Stdio.In_channel.t) ~(f : string -> unit M.t) : unit M.t
+        =
       fold_m ic ~f:(Fn.const f) ~init:()
   end
 end
@@ -291,8 +289,7 @@ module Make_main (B : Basic) = struct
   end
 
   module State = struct
-    let proc_binding (binding : string) : (Litmus_id.t * string) Or_error.t
-        =
+    let proc_binding (binding : string) : (Litmus_id.t * string) Or_error.t =
       match String.split ~on:'=' (String.strip binding) with
       | [l; r] ->
           let open Or_error.Let_syntax in
@@ -303,8 +300,8 @@ module Make_main (B : Basic) = struct
             [%message "Expected a binding of the form X=Y" ~got:binding]
 
     let split_state_bindings (line : string) : string list =
-      (* The RHS of state lines are always 'binding; binding; binding;',
-         with a trailing ;. *)
+      (* The RHS of state lines are always 'binding; binding; binding;', with
+         a trailing ;. *)
       line |> String.split ~on:';' |> Tx.List.exclude ~f:String.is_empty
 
     (* Drop trailing ; *)
@@ -328,8 +325,7 @@ module Make_main (B : Basic) = struct
           let%bind tt =
             Monadic.return
               (Result.of_option tt_opt
-                 ~error:
-                   (Error.of_string "Internal error: Missing test type"))
+                 ~error:(Error.of_string "Internal error: Missing test type"))
           in
           let%bind state = Monadic.return (try_parse_state_line tt line) in
           leave_state state))

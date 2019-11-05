@@ -213,8 +213,7 @@ and Statement_list :
 end
 
 and If_statement :
-  (Path_types.S_if_statement with type target = Metadata.t Stm.If.t) =
-struct
+  (Path_types.S_if_statement with type target = Metadata.t Stm.If.t) = struct
   type target = Metadata.t Stm.If.t
 
   type stm = Metadata.t Stm.t
@@ -296,8 +295,7 @@ module Function :
     match path with
     | In_stms rest ->
         Or_error.(
-          f rest ~target:(Fun.body_stms target)
-          >>| Fun.with_body_stms target)
+          f rest ~target:(Fun.body_stms target) >>| Fun.with_body_stms target)
 
   let insert_stm (path : Path_shapes.func) ~(to_insert : stm)
       ~(target : target) : target Or_error.t =
@@ -325,8 +323,8 @@ module Function :
       ~f:Path_shapes.in_stms
 end
 
-module Program :
-  Path_types.S_program with type target := Metadata.t Prog.t = struct
+module Program : Path_types.S_program with type target := Metadata.t Prog.t =
+struct
   type target = Metadata.t Prog.t
 
   type stm = Metadata.t Stm.t
@@ -353,8 +351,8 @@ module Program :
       ~(target : target) : target Or_error.t =
     handle_stm path ~target ~f:(Function.insert_stm ~to_insert)
 
-  let transform_stm (path : Path_shapes.program)
-      ~(f : stm -> stm Or_error.t) ~(target : target) : target Or_error.t =
+  let transform_stm (path : Path_shapes.program) ~(f : stm -> stm Or_error.t)
+      ~(target : target) : target Or_error.t =
     handle_stm path ~target ~f:(Function.transform_stm ~f)
 
   let transform_stm_list (path : Path_shapes.program)
@@ -452,8 +450,7 @@ module Subject = struct
       handle_stm path ~target ~f:(Program.insert_stm ~to_insert)
 
     let transform_stm (path : Path_shapes.program)
-        ~(f : stm -> stm Or_error.t) ~(target : target) : target Or_error.t
-        =
+        ~(f : stm -> stm Or_error.t) ~(target : target) : target Or_error.t =
       handle_stm path ~target ~f:(Program.transform_stm ~f)
 
     let transform_stm_list (path : Path_shapes.program)

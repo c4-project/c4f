@@ -74,8 +74,8 @@ module Single_passes = struct
     ; ( "remove-useless"
       , { args= []
         ; details=
-            {| Remove elements with no (direct) effect in the assembly. |}
-        } )
+            {| Remove elements with no (direct) effect in the assembly. |} }
+      )
     ; ( "simplify-deref-chains"
       , { args= []
         ; details=
@@ -135,9 +135,7 @@ module Selector = struct
       type t = [`Standard | `Light | `Explain] [@@deriving enum, enumerate]
 
       let table =
-        [ (`Standard, "%standard")
-        ; (`Light, "%light")
-        ; (`Explain, "%explain") ]
+        [(`Standard, "%standard"); (`Light, "%light"); (`Explain, "%explain")]
 
       let tree_docs : Property.Tree_doc.t =
         [ ( "%standard"
@@ -192,8 +190,8 @@ module Selector = struct
 
   let __t_of_sexp__ = t_of_sexp (* ?! *)
 
-  let eval (default : Set.M(Single_passes).t) : t -> Set.M(Single_passes).t
-      = function
+  let eval (default : Set.M(Single_passes).t) : t -> Set.M(Single_passes).t =
+    function
     | #elt as pass ->
         Set.singleton (module Single_passes) pass
     | `Standard ->

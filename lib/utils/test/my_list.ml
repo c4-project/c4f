@@ -66,8 +66,7 @@ let%test_module "Random" =
         (module Int_list)
         ~f:
           ([%test_pred: int list] ~here:[[%here]]
-             (check_random ~f:(Random.stride ~random)
-                ~pred:(fun xs (i, n) ->
+             (check_random ~f:(Random.stride ~random) ~pred:(fun xs (i, n) ->
                   in_bounds xs i && n <= List.length (List.drop xs (i - 1)))))
 
     let%test_module "item" =
@@ -143,8 +142,7 @@ let%test_module "splice" =
           test_fib ~pos:2 ~len:0 ~replace_f:List.rev ;
           [%expect {| 1, 1, 2, 3, 5, 8, 13, 21 |}]
 
-        let%test_unit "splice on a full list behaves as operating directly"
-            =
+        let%test_unit "splice on a full list behaves as operating directly" =
           Test.run_exn
             ( module struct
               type t = int list * (int list -> int list)
@@ -175,8 +173,7 @@ let%test_module "try_splice" =
           [%expect {| 1, 1, 2, 3, 5, 8, 13, 21 |}]
 
         let%expect_test "in-bounds, fail" =
-          test_in_bounds
-            ~replace_f:(Fn.const (Or_error.error_string "oops")) ;
+          test_in_bounds ~replace_f:(Fn.const (Or_error.error_string "oops")) ;
           [%expect {| oops |}]
       end )
   end )
@@ -227,8 +224,7 @@ let%test_module "try_map_sub" =
 
         let%expect_test "in-bounds, partial" =
           test_in_bounds ~f:(fun x ->
-              if x % 2 = 0 then Or_error.return x
-              else Or_error.errorf "%d" x) ;
+              if x % 2 = 0 then Or_error.return x else Or_error.errorf "%d" x) ;
           [%expect {| (3 5) |}]
 
         let%expect_test "in-bounds, fail" =

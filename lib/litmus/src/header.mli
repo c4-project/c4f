@@ -12,8 +12,8 @@
 (** Records of auxiliary Litmus information.
 
     This module describes a container for the parts of a Litmus test that
-    aren't the program itself: the name, locations stanza, initial value
-    map, and postcondition. *)
+    aren't the program itself: the name, locations stanza, initial value map,
+    and postcondition. *)
 
 open Base
 
@@ -41,8 +41,7 @@ val name : _ t -> string
 (** [name header] gets the test name of [header], if any. *)
 
 val locations : _ t -> Act_common.C_id.t list option
-(** [locations header] gets the computed location stanza of [header], if
-    any. *)
+(** [locations header] gets the computed location stanza of [header], if any. *)
 
 val init : 'const t -> (Act_common.C_id.t, 'const) List.Assoc.t
 (** [init header] gets the computed init block of [header]. *)
@@ -108,8 +107,8 @@ module Change_set : sig
          [`Keep | `Clear | `Replace_with of 'const Postcondition.t]
     -> unit
     -> 'const t
-  (** [make ?name ?postcondition ()] makes a change set from the given
-      [name] and [postcondition] directives (which default to [`Keep].) *)
+  (** [make ?name ?postcondition ()] makes a change set from the given [name]
+      and [postcondition] directives (which default to [`Keep].) *)
 
   val apply : 'const t -> header:'const hdr -> 'const hdr
   (** [apply change ~header] applies [change] to [header]. *)

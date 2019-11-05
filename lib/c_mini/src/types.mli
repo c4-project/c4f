@@ -32,8 +32,8 @@ module type S_has_underlying_variable = sig
   (** [variable_of x] is the underlying variable of [x]. *)
 
   val variable_in_env : t -> env:_ Map.M(Act_common.C_id).t -> bool
-  (** [variable_in_env x ~env] gets whether [x]'s underlying variable name
-      is a key in an environment [env]. *)
+  (** [variable_in_env x ~env] gets whether [x]'s underlying variable name is
+      a key in an environment [env]. *)
 end
 
 (** Signature of parts of the mini-model that implement type checking. *)
@@ -94,8 +94,7 @@ module type S_with_meta = sig
 
   type identifier
 
-  module On_meta :
-    Travesty.Traversable_types.S1 with type 'meta t := 'meta t
+  module On_meta : Travesty.Traversable_types.S1 with type 'meta t := 'meta t
   (** We can traverse over the metadata. *)
 
   val erase_meta : 'meta t -> unit t
@@ -123,8 +122,8 @@ end
     These two signatures exist because their implementing modules are
     mutually recursive.
 
-    The implementations of these generally fix the type parameters at the
-    top of the signature. *)
+    The implementations of these generally fix the type parameters at the top
+    of the signature. *)
 
 (** {2 Statements}
 
@@ -150,8 +149,7 @@ module type S_statement = sig
   (** [assign a] lifts an assignment [a] to a statement. *)
 
   val atomic_cmpxchg : 'meta atomic_cmpxchg -> 'meta t
-  (** [atomic_cmpxchg a] lifts an atomic compare-exchange [a] to a
-      statement. *)
+  (** [atomic_cmpxchg a] lifts an atomic compare-exchange [a] to a statement. *)
 
   val atomic_store : 'meta atomic_store -> 'meta t
   (** [atomic_store a] lifts an atomic store [a] to a statement. *)
@@ -171,9 +169,9 @@ module type S_statement = sig
     -> if_stm:('meta if_stm -> 'result)
     -> nop:(unit -> 'result)
     -> 'result
-  (** [reduce stm ~assign ~atomic_cmpxchg ~atomic_store ~if_stm ~nop]
-      applies the appropriate function of those given to [stm]. It does
-      _not_ recursively reduce statements inside blocks. *)
+  (** [reduce stm ~assign ~atomic_cmpxchg ~atomic_store ~if_stm ~nop] applies
+      the appropriate function of those given to [stm]. It does _not_
+      recursively reduce statements inside blocks. *)
 
   (** {3 Traversing} *)
 

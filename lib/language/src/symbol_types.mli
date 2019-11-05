@@ -3,23 +3,22 @@
    Copyright (c) 2018 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE. *)
 
 (** Language interface: Symbols
 
@@ -50,8 +49,8 @@ module type Basic = sig
 
   val abstract_demangle : t -> Act_abstract.Symbol.t list
   (** [abstract_demangle sym] tries to reverse any compiler mangling of
-      [sym], returning a list of abstract symbols that correspond to
-      possible original values for [sym].
+      [sym], returning a list of abstract symbols that correspond to possible
+      original values for [sym].
 
       The list should be in decreasing order of likelihood, and other
       heuristics can depend on this order. *)
@@ -61,9 +60,9 @@ module type Basic = sig
       assembly-level representation of [t]. *)
 
   val require_of_string : string -> t Or_error.t
-  (** [require_of_string t] tries to interpret [s] as a symbol. This
-      function can return an error if the string doesn't represent a legal
-      symbol in this language. *)
+  (** [require_of_string t] tries to interpret [s] as a symbol. This function
+      can return an error if the string doesn't represent a legal symbol in
+      this language. *)
 end
 
 (** [S] is an expanded interface onto an act language's symbol analysis. *)
@@ -79,13 +78,13 @@ module type S = sig
        and type Sym.comparator_witness = comparator_witness
 
   val of_string_opt : string -> t option
-  (** [of_string_opt t] tries to interpret [s] as a symbol. This function
-      can return [None] if the string doesn't represent a legal symbol in
-      this language. *)
+  (** [of_string_opt t] tries to interpret [s] as a symbol. This function can
+      return [None] if the string doesn't represent a legal symbol in this
+      language. *)
 
   val program_id_of : t -> int option
-  (** [program_id_of sym] tries to interpret [sym] as a program label; if
-      so, it returns [Some n] where [n] is the underlying program ID.
+  (** [program_id_of sym] tries to interpret [sym] as a program label; if so,
+      it returns [Some n] where [n] is the underlying program ID.
 
       Program labels, conventionally, take the form [Pn] where [n] is a
       non-negative integer. Since the compiler may have mangled the label,
@@ -103,6 +102,6 @@ module type S = sig
       for use in C as-is. *)
 
   val is_herd_safe : t -> bool
-  (** [is_herd_safe sym] checks whether [sym]'s string representation is
-      safe for use in Herd as-is. *)
+  (** [is_herd_safe sym] checks whether [sym]'s string representation is safe
+      for use in Herd as-is. *)
 end

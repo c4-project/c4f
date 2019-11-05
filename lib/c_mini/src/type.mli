@@ -37,8 +37,8 @@ module Basic : sig
   (** [is_atomic btype] is true if the basic type [btype] is atomic. *)
 
   val to_non_atomic : t -> t Or_error.t
-  (** [to_non_atomic btype] tries to get the non-atomic type corresponding
-      to the atomic type [btype]. It fails if [btype] isn't atomic. *)
+  (** [to_non_atomic btype] tries to get the non-atomic type corresponding to
+      the atomic type [btype]. It fails if [btype] isn't atomic. *)
 
   val strip_atomic : t -> t
   (** [strip_atomic btype] behaves as [to_non_atomic btype] if [btype] is
@@ -71,8 +71,8 @@ val of_basic : ?pointer:bool -> Basic.t -> t
     [is_pointer] is true, and a normal one otherwise (and by default). *)
 
 val bool : ?atomic:bool -> ?pointer:bool -> unit -> t
-(** [bool ?atomic ?pointer ()] constructs the right Boolean type according
-    to the flags [atomic] and [pointer], both of which default to [false]. *)
+(** [bool ?atomic ?pointer ()] constructs the right Boolean type according to
+    the flags [atomic] and [pointer], both of which default to [false]. *)
 
 val int : ?atomic:bool -> ?pointer:bool -> unit -> t
 (** [int ?atomic ?pointer ()] constructs the right integer type according to

@@ -120,9 +120,7 @@ Travesty.Traversable.Make0 (struct
 end)
 
 module On_identifiers :
-  Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Identifier.t =
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Identifier.t =
   Travesty.Traversable.Chain0 (On_lvalues) (Lvalue.On_identifiers)
 
 module Type_check (E : Env_types.S) = struct
@@ -198,8 +196,7 @@ module Eval = struct
     Or_error.Let_syntax.(
       let%bind l_const = mu l in
       let%bind r_const = mu r in
-      if
-        Comparable.lift [%equal: Type.t] ~f:Constant.type_of l_const r_const
+      if Comparable.lift [%equal: Type.t] ~f:Constant.type_of l_const r_const
       then
         Or_error.return
           (Constant.bool ([%equal: Constant.t] l_const r_const))

@@ -12,9 +12,9 @@
 (** Comparing two simulation outputs.
 
     This module contains a function, {{!run} run}, for running
-    'diff'-comparisons between two simulation outputs: an 'oracle'
-    (generally from a C litmus test) and a 'subject' (generally from its
-    compiled assembly).
+    'diff'-comparisons between two simulation outputs: an 'oracle' (generally
+    from a C litmus test) and a 'subject' (generally from its compiled
+    assembly).
 
     Each run takes, as additional parameters, partial mappings between the
     (litmus-style) state variable identifiers, and (uninterpreted string)

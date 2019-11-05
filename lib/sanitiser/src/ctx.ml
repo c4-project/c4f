@@ -3,23 +3,22 @@
    Copyright (c) 2018 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE. *)
 
 open Base
 module Asym = Act_abstract.Symbol
@@ -172,8 +171,8 @@ module Make (Lang : Act_language.Definition_types.S) :
     let%map rds = peek State.redirects in
     Lang.Symbol.R_map.sources_of_sym rds sym
 
-  let get_redirect_alist syms :
-      (Lang.Symbol.t, Lang.Symbol.t) List.Assoc.t t =
+  let get_redirect_alist syms : (Lang.Symbol.t, Lang.Symbol.t) List.Assoc.t t
+      =
     let open Let_syntax in
     let%map rds = peek State.redirects in
     List.map syms ~f:(fun sym ->
@@ -186,12 +185,11 @@ module Make (Lang : Act_language.Definition_types.S) :
     Lang.Symbol.R_map.dest_syms rds ~sources
 
   let modify_rmap
-      ~(f : Lang.Symbol.R_map.t -> Lang.Symbol.R_map.t Or_error.t) : unit t
-      =
+      ~(f : Lang.Symbol.R_map.t -> Lang.Symbol.R_map.t Or_error.t) : unit t =
     let open Let_syntax in
     let%bind rds = peek State.redirects in
-    (* Redirection can fail, which _should_ be an internal bug, so we make
-       it a fatal error in the sanitiser. *)
+    (* Redirection can fail, which _should_ be an internal bug, so we make it
+       a fatal error in the sanitiser. *)
     Monadic.modify (fun ctx ->
         let open Or_error.Let_syntax in
         let%map rds' = f rds in
@@ -206,9 +204,7 @@ module Make (Lang : Act_language.Definition_types.S) :
   let add_symbol (sym_name : Asym.t) (sort : Asym.Sort.t) : Asym.t t =
     let open Let_syntax in
     let%bind () = add_symbol_to_table sym_name sort in
-    let%bind sym =
-      Monadic.return (Lang.Symbol.require_of_string sym_name)
-    in
+    let%bind sym = Monadic.return (Lang.Symbol.require_of_string sym_name) in
     let%map () = redirect ~src:sym ~dst:sym in
     sym_name
 

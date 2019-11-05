@@ -51,8 +51,8 @@ module Program : sig
       intermediate form used for fuzzing. *)
 
   val has_statements : t -> bool
-  (** [has_statements prog] is true if, and only if, [prog] contains at
-      least one statement. *)
+  (** [has_statements prog] is true if, and only if, [prog] contains at least
+      one statement. *)
 
   val to_function :
        t

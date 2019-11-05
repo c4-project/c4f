@@ -12,8 +12,8 @@
 open Base
 open Sexplib
 
-module Make (B : Loadable_types.Basic) :
-  Loadable_types.S with type t = B.t = struct
+module Make (B : Loadable_types.Basic) : Loadable_types.S with type t = B.t =
+struct
   include B
 
   let load (is : Input.t) : t Or_error.t =
@@ -43,8 +43,8 @@ Make (struct
   let load_from_string (s : string) : t Or_error.t =
     wrap "string" (fun () -> Sexp.of_string_conv_exn s B.t_of_sexp)
 
-  let load_from_ic ?(path = "stdin") (ic : Stdio.In_channel.t) :
-      t Or_error.t =
+  let load_from_ic ?(path = "stdin") (ic : Stdio.In_channel.t) : t Or_error.t
+      =
     wrap path (fun () -> B.t_of_sexp (Sexp.input_sexp ic))
 end)
 
@@ -55,8 +55,8 @@ module Of_jsonable (B : Jsonable_types.Of) :
   let load_from_string (s : string) : t Or_error.t =
     wrap "string" (fun () -> B.t_of_yojson (Yojson.Safe.from_string s))
 
-  let load_from_ic ?(path = "stdin") (ic : Stdio.In_channel.t) :
-      t Or_error.t =
+  let load_from_ic ?(path = "stdin") (ic : Stdio.In_channel.t) : t Or_error.t
+      =
     wrap path (fun () ->
         B.t_of_yojson (Yojson.Safe.from_channel ~fname:path ic))
 end)

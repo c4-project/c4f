@@ -30,12 +30,12 @@ module Int_values (E : Env_types.S) :
   (** Generates the terminal integer expressions. *)
   let base_generators : t Q.Generator.t list =
     (* Use thunks here to prevent accidentally evaluating a generator that
-       can't possibly work---eg, an atomic load when we don't have any
-       atomic variables. *)
+       can't possibly work---eg, an atomic load when we don't have any atomic
+       variables. *)
     eval_guards
       [ ( true
-        , fun () ->
-            Q.Generator.map ~f:Expression.constant Constant.gen_int32 )
+        , fun () -> Q.Generator.map ~f:Expression.constant Constant.gen_int32
+        )
       ; ( E.has_variables_of_basic_type Type.Basic.(int ~atomic:true ())
         , gen_atomic_int_load )
       ; (E.has_variables_of_basic_type Type.Basic.(int ()), gen_int_lvalue)
@@ -80,8 +80,8 @@ end = struct
   (** Generates the terminal Boolean expressions. *)
   let base_generators : t Q.Generator.t list =
     (* Use thunks here to prevent accidentally evaluating a generator that
-       can't possibly work---eg, an atomic load when we don't have any
-       atomic variables. *)
+       can't possibly work---eg, an atomic load when we don't have any atomic
+       variables. *)
     eval_guards
       [ (true, fun () -> gen_const)
       ; (true, fun () -> gen_int_relational)
@@ -103,8 +103,7 @@ module Known_value_comparisons (Env : Env_types.S_with_known_values) : sig
 end = struct
   type t = Expression.t [@@deriving sexp_of]
 
-  let generate_int (var_ref : Expression.t) (value : int) : t Q.Generator.t
-      =
+  let generate_int (var_ref : Expression.t) (value : int) : t Q.Generator.t =
     (* TODO(@MattWindsor91): do more here? *)
     Q.Generator.Let_syntax.(
       let%map op =
@@ -113,8 +112,8 @@ end = struct
       in
       Expression.(bop op var_ref (int_lit value)))
 
-  let generate_bool (var_ref : Expression.t) (value : bool) :
-      t Q.Generator.t =
+  let generate_bool (var_ref : Expression.t) (value : bool) : t Q.Generator.t
+      =
     (* TODO(@MattWindsor91): do more here? *)
     let basic_eq = Expression.(eq var_ref (bool_lit value)) in
     let candidates =
@@ -162,8 +161,8 @@ end = struct
 
   let base_generators : t Q.Generator.t list =
     (* Use thunks here to prevent accidentally evaluating a generator that
-       can't possibly work---eg, an atomic load when we don't have any
-       atomic variables. *)
+       can't possibly work---eg, an atomic load when we don't have any atomic
+       variables. *)
     eval_guards
       [ (true, fun () -> Q.Generator.return (Expression.bool_lit true))
       ; ( Lazy.force is_var_eq_tenable

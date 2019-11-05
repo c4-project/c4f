@@ -91,9 +91,7 @@ end
 module Quickcheck_ints (Src : Env_types.S) (Dst : Env_types.S) :
   Act_utils.My_quickcheck.S_with_sexp with type t = t =
   Quickcheck_generic
-    (Expression_gen.Int_values
-       (Src))
-       (Address_gen.Atomic_int_pointers (Dst))
+    (Expression_gen.Int_values (Src)) (Address_gen.Atomic_int_pointers (Dst))
 
 module Quickcheck_bools (Src : Env_types.S) (Dst : Env_types.S) :
   Act_utils.My_quickcheck.S_with_sexp with type t = t =

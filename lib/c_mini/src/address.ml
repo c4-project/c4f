@@ -3,23 +3,22 @@
    Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE. *)
 
 open Base
 module Ac = Act_common
@@ -40,8 +39,7 @@ let ref_lvalue (l : Lvalue.t) : t =
 
 let ref_normal : t -> t = function Lvalue k -> ref_lvalue k | x -> ref x
 
-let rec reduce (addr : t) ~(lvalue : Lvalue.t -> 'a) ~(ref : 'a -> 'a) : 'a
-    =
+let rec reduce (addr : t) ~(lvalue : Lvalue.t -> 'a) ~(ref : 'a -> 'a) : 'a =
   match addr with
   | Lvalue lv ->
       lvalue lv
@@ -69,8 +67,7 @@ let as_lvalue (addr : t) : Lvalue.t Or_error.t =
   | Ref _ ->
       Or_error.error_s
         [%message
-          "Can't safely convert this address to an lvalue"
-            ~address:(addr : t)]
+          "Can't safely convert this address to an lvalue" ~address:(addr : t)]
 
 let as_variable (addr : t) : Ac.C_id.t Or_error.t =
   Or_error.(addr |> as_lvalue >>= Lvalue.as_variable)
@@ -149,12 +146,12 @@ let variable_of (addr : t) : Ac.C_id.t = Lvalue.variable_of (lvalue_of addr)
 let variable_in_env (addr : t) ~(env : _ Map.M(Ac.C_id).t) : bool =
   Lvalue.variable_in_env (lvalue_of addr) ~env
 
-let check_address_var (module Env : Env_types.S_with_known_values)
-    (addr : t) : Act_common.C_id.t Or_error.t =
+let check_address_var (module Env : Env_types.S_with_known_values) (addr : t)
+    : Act_common.C_id.t Or_error.t =
   let module A_check = Type_check (Env) in
   Or_error.Let_syntax.(
-    (* Addresses must have the same type as the entry for the variable in
-       the environment. *)
+    (* Addresses must have the same type as the entry for the variable in the
+       environment. *)
     let v = variable_of addr in
     let%bind v_type = Env.type_of_known_value v in
     let%bind a_type = A_check.type_of addr in

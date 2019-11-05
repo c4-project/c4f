@@ -31,8 +31,7 @@ let%test_module "of_fpath_opt" =
       [%expect {| (stdin) |}]
 
     let%expect_test "paths map to files" =
-      test
-        (Input.of_fpath_opt (Some Fpath.(v "Foo" / "bar" / "baz.barbaz"))) ;
+      test (Input.of_fpath_opt (Some Fpath.(v "Foo" / "bar" / "baz.barbaz"))) ;
       [%expect {| Foo/bar/baz.barbaz |}]
   end )
 

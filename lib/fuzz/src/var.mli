@@ -3,23 +3,22 @@
    Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE. *)
 
 (** Fuzzer: variable records and maps
 
@@ -54,8 +53,8 @@ module Record : sig
 
   val make_generated_global :
     ?initial_value:Act_c_mini.Constant.t -> Act_c_mini.Type.t -> t
-  (** [make_generated_global ?initial_value ty] makes a variable record for
-      a fuzzer-generated global variable of type [ty] and with initial value
+  (** [make_generated_global ?initial_value ty] makes a variable record for a
+      fuzzer-generated global variable of type [ty] and with initial value
       [value]. *)
 
   (** {3 Predicates} *)
@@ -91,24 +90,24 @@ module Record : sig
   (** {3 Actions} *)
 
   val add_dependency : t -> t
-  (** [add_dependency record] adds a dependency flag to the known-value
-      field of [record].
+  (** [add_dependency record] adds a dependency flag to the known-value field
+      of [record].
 
-      This should be done after involving [record] in any atomic actions
-      that depend on its known value. *)
+      This should be done after involving [record] in any atomic actions that
+      depend on its known value. *)
 
   val add_write : t -> t
   (** [add_write record] adds a write flag to the known-value field of
       [record].
 
-      This should be done after involving [record] in any atomic actions
-      that write to it, even if they don't change its known value. *)
+      This should be done after involving [record] in any atomic actions that
+      write to it, even if they don't change its known value. *)
 
   val erase_value : t -> t
   (** [erase_value record] erases the known-value field of [record].
 
-      This should be done after involving [record] in any atomic actions
-      that modify it. *)
+      This should be done after involving [record] in any atomic actions that
+      modify it. *)
 end
 
 (** {2 Variable maps} *)
@@ -119,9 +118,9 @@ module Map : sig
   (** {3 Constructors} *)
 
   val make_existing_var_map : Act_c_mini.Litmus.Test.t -> t Or_error.t
-  (** [make_existing_var_map test] tries to generate a var-record map for
-      the Litmus-style functions in [test], where each name is registered as
-      an existing variable. *)
+  (** [make_existing_var_map test] tries to generate a var-record map for the
+      Litmus-style functions in [test], where each name is registered as an
+      existing variable. *)
 
   (** {3 Queries} *)
 
@@ -132,8 +131,8 @@ module Map : sig
     -> Act_c_mini.Type.t Map.M(Act_common.C_id).t
   (** [env_satisfying_all map ~scope ~predicates] returns a typing
       environment for all variables in [map] in scope with regards to
-      [scope], with known types, and for which all predicates in
-      [predicates] are true. *)
+      [scope], with known types, and for which all predicates in [predicates]
+      are true. *)
 
   val env_module_satisfying_all :
        t

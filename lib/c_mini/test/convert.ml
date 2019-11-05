@@ -28,8 +28,7 @@ let%test_module "sift_decls" =
                     | `Ndecl x ->
                         x)))
       in
-      Stdio.print_s
-        [%sexp (result : (string list * string list) Or_error.t)] ;
+      Stdio.print_s [%sexp (result : (string list * string list) Or_error.t)] ;
       [%expect {| (Ok ((foo bar) (baz barbaz))) |}]
   end )
 
@@ -51,8 +50,8 @@ let%test_module "stm" =
                                 (`Ref, Identifier (Ac.C_id.of_string "x"))
                             ; Constant (Integer 42)
                             ; Identifier
-                                (Ac.C_id.of_string "memory_order_relaxed")
-                            ] })))
+                                (Ac.C_id.of_string "memory_order_relaxed") ]
+                        })))
             : unit Src.Statement.t Or_error.t )] ;
       [%expect
         {|
@@ -82,8 +81,8 @@ let%test_module "stm" =
                             ; Identifier
                                 (Ac.C_id.of_string "memory_order_relaxed")
                             ; Identifier
-                                (Ac.C_id.of_string "memory_order_relaxed")
-                            ] })))
+                                (Ac.C_id.of_string "memory_order_relaxed") ]
+                        })))
             : unit Src.Statement.t Or_error.t )] ;
       [%expect
         {|
@@ -106,8 +105,8 @@ let%test_module "expr" =
                       Identifier (Ac.C_id.of_string "atomic_load_explicit")
                   ; arguments=
                       [ Prefix (`Ref, Identifier (Ac.C_id.of_string "x"))
-                      ; Identifier
-                          (Ac.C_id.of_string "memory_order_seq_cst") ] })
+                      ; Identifier (Ac.C_id.of_string "memory_order_seq_cst")
+                      ] })
             : Src.Expression.t Or_error.t )] ;
       [%expect
         {|

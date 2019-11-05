@@ -25,8 +25,7 @@ module type S = sig
   (** {3 Accessors} *)
 
   val m_spec : t -> Spec.With_id.t
-  (** [m_spec spec] accesses the bundled machine specification inside
-      [spec]. *)
+  (** [m_spec spec] accesses the bundled machine specification inside [spec]. *)
 end
 
 (** {2 Types for lookups} *)
@@ -45,8 +44,8 @@ module type S_lookup = sig
       fully qualified ID [fqid] in [machines].
 
       The lookup first tries [fqid] itself; if this fails, and [defaults] is
-      present and non-empty, then it tries again with the result of
-      prefixing each ID in [defaults] to [fqid] in turn. *)
+      present and non-empty, then it tries again with the result of prefixing
+      each ID in [defaults] to [fqid] in turn. *)
 
   val all : Spec.Set.t -> t list
   (** [all machines] returns a list of qualified forms of all specifications

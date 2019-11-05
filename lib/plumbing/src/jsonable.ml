@@ -150,8 +150,7 @@ module Of_stringable (E : Stringable.S) :
     protect ~f:(fun () -> t_of_yojson j)
 end
 
-module String : Jsonable_types.S with type t = string =
-  Of_stringable (String)
+module String : Jsonable_types.S with type t = string = Of_stringable (String)
 
 module Option (B : Jsonable_types.S) :
   Jsonable_types.S with type t = B.t option = struct

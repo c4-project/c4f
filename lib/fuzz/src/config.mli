@@ -35,8 +35,8 @@ val make : ?weights:(Act_common.Id.t, int) List.Assoc.t -> unit -> t
 
 val make_pool : t -> Action.Pool.t Or_error.t
 (** [make_pool config] tries to create the weighted action pool given the
-    weights in [config]. This pool can then be queried for weight
-    information or used to drive a random fuzzer session. *)
+    weights in [config]. This pool can then be queried for weight information
+    or used to drive a random fuzzer session. *)
 
 val summarise : t -> Action.Summary.t Map.M(Act_common.Id).t Or_error.t
 (** [summarise config] tries to get the effective fuzzer weights setup using

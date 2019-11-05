@@ -20,14 +20,12 @@ let empty : t =
   ; in_right_only= Set.empty (module Entry) }
 
 (** [drop_left x p] updates partial order [p] with the information that an
-    element [x] exists in the left hand set that isn't in the right hand
-    set. *)
+    element [x] exists in the left hand set that isn't in the right hand set. *)
 let drop_left (x : Entry.t) (p : t) : t =
   {p with in_left_only= Set.add p.in_left_only x}
 
 (** [drop_right x p] updates partial order [p] with the information that an
-    element [x] exists in the right hand set that isn't in the left hand
-    set. *)
+    element [x] exists in the right hand set that isn't in the left hand set. *)
 let drop_right (x : Entry.t) (p : t) : t =
   {p with in_right_only= Set.add p.in_right_only x}
 

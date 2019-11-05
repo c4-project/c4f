@@ -22,14 +22,11 @@ end
 
 include M
 
-let m_spec_id (q : _ t) : Ac.Id.t =
-  Ac.Spec.With_id.id (M.m_spec q)
+let m_spec_id (q : _ t) : Ac.Id.t = Ac.Spec.With_id.id (M.m_spec q)
 
-let spec_id (q : _ t) : Ac.Id.t =
-  Ac.Spec.With_id.id (M.spec q)
+let spec_id (q : _ t) : Ac.Id.t = Ac.Spec.With_id.id (M.spec q)
 
-let fqid (q : _ t) : Ac.Id.t =
-  Ac.Id.(m_spec_id q @. spec_id q)
+let fqid (q : _ t) : Ac.Id.t = Ac.Id.(m_spec_id q @. spec_id q)
 
 let spec_without_id (q : 'qual t) : 'qual =
   q |> spec |> Act_common.Spec.With_id.spec

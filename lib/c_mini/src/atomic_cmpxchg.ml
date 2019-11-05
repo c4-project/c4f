@@ -24,9 +24,8 @@ module Base_map (M : Monad.S) = struct
 
   let bmap (cmpxchg : t) ~(obj : Address.t F.traversal)
       ~(expected : Address.t F.traversal)
-      ~(desired : Expression.t F.traversal)
-      ~(succ : Mem_order.t F.traversal) ~(fail : Mem_order.t F.traversal) :
-      t M.t =
+      ~(desired : Expression.t F.traversal) ~(succ : Mem_order.t F.traversal)
+      ~(fail : Mem_order.t F.traversal) : t M.t =
     Fields.fold ~init:(M.return cmpxchg) ~obj:(F.proc_field obj)
       ~expected:(F.proc_field expected) ~desired:(F.proc_field desired)
       ~succ:(F.proc_field succ) ~fail:(F.proc_field fail)
@@ -45,8 +44,8 @@ Travesty.Traversable.Make0 (struct
     module A = Address.On_lvalues.On_monad (M)
 
     let map_m x ~f =
-      B.bmap x ~obj:(A.map_m ~f) ~expected:(A.map_m ~f)
-        ~desired:(E.map_m ~f) ~succ:M.return ~fail:M.return
+      B.bmap x ~obj:(A.map_m ~f) ~expected:(A.map_m ~f) ~desired:(E.map_m ~f)
+        ~succ:M.return ~fail:M.return
   end
 end)
 

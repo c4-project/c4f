@@ -3,23 +3,22 @@
    Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE. *)
 
 (** [Abstract_operands] contains types and utilities for abstracted operands
     and operand bundles. *)
@@ -67,26 +66,26 @@ module type S_predicates = sig
   val is_immediate_heap_symbol : t -> symbol_table:Symbol.Table.t -> bool
   (** [is_immediate_heap_symbol operand ~symbol_table] returns [true] if any
       [operand] is a symbol in immediate position that, according to [syms],
-      is a heap location. This can mean that the operand's parent
-      instruction is manipulating a heap address, for instance. *)
+      is a heap location. This can mean that the operand's parent instruction
+      is manipulating a heap address, for instance. *)
 
   val is_jump_symbol : t -> bool
-  (** [is_jump_symbol operand] tests whether [operand] is a possible
-      symbolic jump target (an immediate symbol or heap location). *)
+  (** [is_jump_symbol operand] tests whether [operand] is a possible symbolic
+      jump target (an immediate symbol or heap location). *)
 
   val is_jump_symbol_where : t -> f:(Symbol.t -> bool) -> bool
-  (** [is_jump_symbol_where operand ~f] tests whether [operand] is a
-      possible symbolic jump target (an immediate symbol or heap location),
-      and, if so, whether it matches predicate [f]. *)
+  (** [is_jump_symbol_where operand ~f] tests whether [operand] is a possible
+      symbolic jump target (an immediate symbol or heap location), and, if
+      so, whether it matches predicate [f]. *)
 end
 
+(** [Inherit_predicates] generates a [S_predicates] by inheriting it from an
+    optional component. Each predicate returns false when the component
+    doesn't exist. *)
 module Inherit_predicates
     (P : S_predicates)
     (I : Act_utils.Inherit_types.S_partial with type c := P.t) :
   S_predicates with type t := I.t
-(** [Inherit_predicates] generates a [S_predicates] by inheriting it from an
-    optional component. Each predicate returns false when the component
-    doesn't exist. *)
 
 (** [Flag] is an enumeration of various single-operand observations. *)
 module Flag : sig
@@ -111,12 +110,12 @@ module type S_properties = sig
       table [symbol_table]. *)
 end
 
+(** [Inherit_properties] generates a [S_properties] by inheriting it from a
+    component. *)
 module Inherit_properties
     (P : S_properties)
     (I : Act_utils.Inherit_types.S with type c := P.t) :
   S_properties with type t := I.t
-(** [Inherit_properties] generates a [S_properties] by inheriting it from a
-    component. *)
 
 include
   S_properties with type t := t
@@ -169,12 +168,12 @@ module Bundle : sig
         a bundle of source operand [src] and destination operand [dst]. *)
 
     val is_src_dst : t -> bool
-    (** [is_src_dst bundle] returns [true] if [bundle] represents a bundle
-        of source and destination operand. *)
+    (** [is_src_dst bundle] returns [true] if [bundle] represents a bundle of
+        source and destination operand. *)
 
     val is_part_unknown : t -> bool
-    (** [is_part_unknown bundle] returns true when any operand in [bundle]
-        is unknown, or the whole bundle's layout is unknown. *)
+    (** [is_part_unknown bundle] returns true when any operand in [bundle] is
+        unknown, or the whole bundle's layout is unknown. *)
 
     val has_stack_pointer : t -> bool
     (** [has_stack_pointer_src bundle] tests whether [bundle] contains a
@@ -197,13 +196,13 @@ module Bundle : sig
         contains a single operand that matches [is_jump_symbol_where ~f]. *)
   end
 
+  (** [Inherit_predicates] generates a [S_predicates] by inheriting it from
+      an optional component. Each predicate returns false when the component
+      doesn't exist. *)
   module Inherit_predicates
       (P : S_predicates)
       (I : Act_utils.Inherit_types.S_partial with type c := P.t) :
     S_predicates with type t := I.t
-  (** [Inherit_predicates] generates a [S_predicates] by inheriting it from
-      an optional component. Each predicate returns false when the component
-      doesn't exist. *)
 
   (** [Flag] is an enumeration of various operand-bundle observations. *)
   module Flag : sig
@@ -237,12 +236,12 @@ module Bundle : sig
         table [symbol_table]. *)
   end
 
+  (** [Inherit_properties] generates a [S_properties] by inheriting it from a
+      component. *)
   module Inherit_properties
       (P : S_properties)
       (I : Act_utils.Inherit_types.S with type c := P.t) :
     S_properties with type t := I.t
-  (** [Inherit_properties] generates a [S_properties] by inheriting it from
-      a component. *)
 
   include
     S_properties with type t := t

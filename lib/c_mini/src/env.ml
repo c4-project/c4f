@@ -43,8 +43,8 @@ struct
     (* It's not clear whether we need a different observer here? *)
     let quickcheck_observer = Ac.C_id.quickcheck_observer
 
-    (* Don't reduce identifiers, as this might make them no longer members
-       of the environment. *)
+    (* Don't reduce identifiers, as this might make them no longer members of
+       the environment. *)
     let quickcheck_shrinker = Shrinker.atomic
   end
 

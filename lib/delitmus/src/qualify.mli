@@ -36,8 +36,8 @@ val postcondition :
 (** {2 Qualifying identifiers in C constructs}
 
     These functions involve thread-qualifying C IDs in thread bodies.
-    Generally, these do _not_ contain self-starting thread context, and so
-    we need to carry around increasing amounts of auxiliary information. *)
+    Generally, these do _not_ contain self-starting thread context, and so we
+    need to carry around increasing amounts of auxiliary information. *)
 
 val local : int -> Act_common.C_id.t -> Act_common.C_id.t
 (** [local tid id] qualifies a local variable [id] using the thread

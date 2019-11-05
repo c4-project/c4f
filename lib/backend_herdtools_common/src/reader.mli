@@ -38,8 +38,8 @@ module State_line : sig
     ?occurrences:int -> ?tag:Act_state.Observation.Entry_tag.t -> 'a -> 'a t
   (** [make ?occurrences ?tag rest] makes a state line with the optional
       already-parsed occurrence number [occurrences], entry tag [tag], and
-      the string containing the part of the state line that is common to
-      both Herd and Litmus. *)
+      the string containing the part of the state line that is common to both
+      Herd and Litmus. *)
 end
 
 (** Synonym for {!Reader_types.Basic} with [state_line] and [test_type]
@@ -49,5 +49,5 @@ module type Basic =
     with type state_line := string State_line.t
      and type test_type := Test_type.t
 
-module Make (B : Basic) : Act_backend.Reader_types.S
 (** Makes an output scraper for the Herdtools7 simulator described in [B]. *)
+module Make (B : Basic) : Act_backend.Reader_types.S

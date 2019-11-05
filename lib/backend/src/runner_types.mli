@@ -13,8 +13,8 @@
 
     This module provides a standard interface for interacting with C and
     assembly backends, such as Herd and Litmus, as well as a functor for
-    implementing that interface using a filter wrapper over the simulator
-    and a simulator output parser. *)
+    implementing that interface using a filter wrapper over the simulator and
+    a simulator output parser. *)
 
 open Base
 

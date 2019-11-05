@@ -16,8 +16,7 @@
 
 (** The mini-model, packaged up as a Litmus language.
 
-    This language uses {{!Reify} Reify} for all of its pretty-printing
-    needs. *)
+    This language uses {{!Reify} Reify} for all of its pretty-printing needs. *)
 module Lang :
   Act_litmus.Test_types.Basic
     with type Statement.t =

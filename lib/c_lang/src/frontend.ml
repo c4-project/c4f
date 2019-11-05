@@ -35,8 +35,7 @@ module Litmus = Act_utils.Frontend.Make (struct
 
   module I = Parser.MenhirInterpreter
 
-  let lex : Sedlexing.lexbuf -> I.token =
-    Lexer.token litmus_predefined_types
+  let lex : Sedlexing.lexbuf -> I.token = Lexer.token litmus_predefined_types
 
   let parse = Parser.Incremental.litmus
 
@@ -48,8 +47,7 @@ module Litmus_post = Act_utils.Frontend.Make (struct
 
   module I = Parser.MenhirInterpreter
 
-  let lex : Sedlexing.lexbuf -> I.token =
-    Lexer.token litmus_predefined_types
+  let lex : Sedlexing.lexbuf -> I.token = Lexer.token litmus_predefined_types
 
   let parse = Parser.Incremental.litmus_postcondition
 

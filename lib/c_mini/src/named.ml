@@ -63,8 +63,7 @@ module Alist = struct
   module As_named (A : Equal.S) :
     Travesty.Traversable_types.S0
       with type t = A.t t
-       and type Elt.t = A.t Parametric.t =
-  Travesty.Traversable.Make0 (struct
+       and type Elt.t = A.t Parametric.t = Travesty.Traversable.Make0 (struct
     type nonrec t = A.t t
 
     module Elt = struct

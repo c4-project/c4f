@@ -11,8 +11,8 @@
 
 (** The litmusifier.
 
-    The `act` litmusifier takes the result of a sanitiser run and converts
-    it into a Litmus test.
+    The `act` litmusifier takes the result of a sanitiser run and converts it
+    into a Litmus test.
 
     Because the output of a sanitiser run, and the format of the resulting
     litmus test, depends heavily on the assembly language being sanitised,
@@ -50,8 +50,7 @@ module Config : sig
 
   val aux : t -> Act_delitmus.Aux.t
   (** [aux config] gets the auxiliary information, passed into [config],
-      about the original C test whose assembly derivative is being
-      processed. *)
+      about the original C test whose assembly derivative is being processed. *)
 
   val format : t -> Format.t
   (** [format config] gets the format stored in [config]. *)

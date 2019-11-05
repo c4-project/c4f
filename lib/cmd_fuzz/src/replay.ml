@@ -38,8 +38,7 @@ let command : Command.t =
       and trace_input =
         flag "trace"
           (required Filename.arg_type)
-          ~doc:
-            "FILE read a trace of completed fuzz actions to this filename"
+          ~doc:"FILE read a trace of completed fuzz actions to this filename"
       in
       fun () ->
         Common_cmd.Common.lift_command

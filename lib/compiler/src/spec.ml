@@ -90,7 +90,6 @@ end
 
 module Spec = Ac.Spec.Make (Spec_basic)
 
-include (
-  Spec : module type of Spec with module With_id := Spec_basic.With_id )
+include (Spec : module type of Spec with module With_id := Spec_basic.With_id)
 
 include (M : module type of M with type t := M.t)

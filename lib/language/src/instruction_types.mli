@@ -3,30 +3,29 @@
    Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE. *)
 
 (** Language abstraction layer: Instructions
 
     This module contains the interface act languages must implement for
     instruction analysis, [Basic] and [Basic_with_modules]; the expanded
-    interface the rest of act gets, [S]; and a functor from one to the
-    other, [Make]. *)
+    interface the rest of act gets, [S]; and a functor from one to the other,
+    [Make]. *)
 
 open Base
 
@@ -85,8 +84,8 @@ module type Basic = sig
 
   val as_move_symbol : t -> [< `Src | `Dst] -> Sym.t option
   (** [as_move_symbol ins] tries to interpret [ins] as a move instruction
-      with an immediate symbol in position [pos], and, if it is, returns
-      that symbol. *)
+      with an immediate symbol in position [pos], and, if it is, returns that
+      symbol. *)
 
   val as_move_location : t -> [< `Src | `Dst] -> Loc.t option
   (** [as_move_location ins] tries to interpret [ins] as a move instruction
@@ -113,8 +112,7 @@ module type Basic_with_modules = sig
        and module Sym := Symbol
 end
 
-(** [S] is an expanded interface onto an act language's instruction
-    analysis. *)
+(** [S] is an expanded interface onto an act language's instruction analysis. *)
 module type S = sig
   include Basic_with_modules
 

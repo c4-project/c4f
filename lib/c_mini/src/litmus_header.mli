@@ -11,8 +11,8 @@
 
 open Base
 
-(** A specialisation of {!Act_litmus.Header} that includes JSON
-    serialisation and deserialisation. *)
+(** A specialisation of {!Act_litmus.Header} that includes JSON serialisation
+    and deserialisation. *)
 
 type t = Constant.t Act_litmus.Header.t [@@deriving equal, yojson]
 

@@ -76,6 +76,6 @@ module type S = sig
   end
 
   val pp_verbose : bool -> t Fmt.t
-  (** [pp_verbose verbose f spec] prints a [spec] with the level of
-      verbosity implied by [verbose]. *)
+  (** [pp_verbose verbose f spec] prints a [spec] with the level of verbosity
+      implied by [verbose]. *)
 end

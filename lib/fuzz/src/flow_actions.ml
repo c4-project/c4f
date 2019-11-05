@@ -65,8 +65,8 @@ module If = struct
           let%bind gen = Basic.cond_gen path in
           Action.lift_quickcheck gen ~random)
 
-      let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
-          : Payload.t State.Monad.t =
+      let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t) :
+          Payload.t State.Monad.t =
         State.Monad.Let_syntax.(
           let%bind path = gen_path test ~random in
           let%map cond = gen_cond path ~random in
@@ -79,8 +79,8 @@ module If = struct
       |> State.Monad.return
 
     let wrap_in_if_raw (statements : Metadata.t Act_c_mini.Statement.t list)
-        ~(cond : Act_c_mini.Expression.t) :
-        Metadata.t Act_c_mini.Statement.t =
+        ~(cond : Act_c_mini.Expression.t) : Metadata.t Act_c_mini.Statement.t
+        =
       Act_c_mini.Statement.if_stm
         (Act_c_mini.Statement.If.make ~cond
            ~t_branch:(Basic.t_branch_of_statements statements)

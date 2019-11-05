@@ -29,5 +29,5 @@ module Vars_as_globals : S
 
 module Vars_as_parameters : S
 (** Driver for the 'vars as parameters' flavour of delitmus. It moves all
-    variables into the function parameter list, changing all local
-    references from values to pointers. *)
+    variables into the function parameter list, changing all local references
+    from values to pointers. *)

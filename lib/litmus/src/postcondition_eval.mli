@@ -12,8 +12,8 @@
 (** Support for evaluating {{!Postcondition.t} postconditions}.
 
     To be able to check whether a state set obeys a Litmus postcondition, we
-    need to be able to evaluate the postcondition in the context of the
-    state set. This module provides support for doing so. *)
+    need to be able to evaluate the postcondition in the context of the state
+    set. This module provides support for doing so. *)
 
 (** {1 Abstract data type of postcondition results} *)
 

@@ -30,9 +30,8 @@ module With_default_weight : sig
   (** Opaque type of actions-with-default-weight. *)
 
   val make : action:(module Action_types.S) -> default_weight:int -> t
-  (** [make ~action ~default_weight] constructs an
-      action-with-default-weight from its action module [action] and default
-      weight [default_weight]. *)
+  (** [make ~action ~default_weight] constructs an action-with-default-weight
+      from its action module [action] and default weight [default_weight]. *)
 
   (** {3 Accessors} *)
 
@@ -72,8 +71,8 @@ module Summary : sig
   (** [make ~weight ~summary] makes a fuzzer action summary. *)
 
   val of_action : ?user_weight:int -> With_default_weight.t -> t
-  (** [of_action ?user_weight ~action] makes a fuzzer action summary using
-      an action [action] and the given user weighting [user_weight]. *)
+  (** [of_action ?user_weight ~action] makes a fuzzer action summary using an
+      action [action] and the given user weighting [user_weight]. *)
 
   val weight : t -> Adjusted_weight.t
   (** [weight summary] gets the final 'adjusted' weight of the action
@@ -87,8 +86,7 @@ module Summary : sig
   (** Summaries may be pretty-printed. *)
 
   val pp_map : t Map.M(Act_common.Id).t Fmt.t
-  (** [pp_map f map] pretty-prints a map of summaries [map] on formatter
-      [f]. *)
+  (** [pp_map f map] pretty-prints a map of summaries [map] on formatter [f]. *)
 end
 
 (** A weighted pool of fuzzer actions. *)
@@ -98,8 +96,8 @@ module Pool : sig
 
   val of_weighted_actions :
     (With_default_weight.t, int option) List.Assoc.t -> t Or_error.t
-  (** [of_weighted_actions actions] tries to make a weighted action pool
-      from the action-to-weight association given in [actions]. *)
+  (** [of_weighted_actions actions] tries to make a weighted action pool from
+      the action-to-weight association given in [actions]. *)
 
   val summarise : t -> Summary.t Id.Map.t
   (** [summarise pool] generates a mapping from action names to summaries of
@@ -131,12 +129,12 @@ val lift_quickcheck :
     into a state-monad action taking a random number generator [random] and
     outputting the randomly generated value. *)
 
+(** Adapts payload generators that don't depend on the state of the program. *)
 module Pure_payload (S : sig
   type t [@@deriving sexp]
 
   val quickcheck_generator : t Base_quickcheck.Generator.t
 end) : Action_types.S_payload with type t = S.t
-(** Adapts payload generators that don't depend on the state of the program. *)
 
 module No_payload : Action_types.S_payload with type t = unit
 (** Dummy payload module for actions that take no payload. *)

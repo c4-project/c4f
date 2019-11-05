@@ -15,28 +15,28 @@ open Base
 
 (** {1 Functors} *)
 
-module Make (B : Loadable_types.Basic) : Loadable_types.S with type t = B.t
 (** [Make] extends a [Basic] into an [S]. *)
+module Make (B : Loadable_types.Basic) : Loadable_types.S with type t = B.t
 
 (** {2 Loading from standard formats} *)
 
-module Of_sexpable (B : Sexpable.S) : Loadable_types.S with type t = B.t
 (** [Of_sexpable] extends a [Sexpable.S] into an [S]; the added methods load
     S-expressions. *)
+module Of_sexpable (B : Sexpable.S) : Loadable_types.S with type t = B.t
 
-module Of_jsonable (B : Jsonable_types.Of) :
-  Loadable_types.S with type t = B.t
 (** [Of_jsonable] extends a {!Jsonable_types.Of} into an [S]; the added
     methods load JSON. *)
+module Of_jsonable (B : Jsonable_types.Of) :
+  Loadable_types.S with type t = B.t
 
 (** {2 Chaining} *)
 
+(** Makes a new {{!S} S} from chaining a basic loadable [B] to a
+    transformation function described in [C]. *)
 module Make_chain
     (B : Loadable_types.Basic)
     (C : Convert_types.S_with_failure with type src := B.t) :
   Loadable_types.S with type t = C.dst
-(** Makes a new {{!S} S} from chaining a basic loadable [B] to a
-    transformation function described in [C]. *)
 
 (** {2 Interoperability with filters} *)
 

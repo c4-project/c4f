@@ -3,23 +3,22 @@
    Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE. *)
 
 open Base
 open Stdio
@@ -27,12 +26,12 @@ open Stdio
 (** Signature that runner modules must implement to use {{!Run.Make} Make}. *)
 module type Basic = sig
   val pre : Fpath.t Copy_spec.Pair.t -> string Copy_spec.Pair.t Or_error.t
-  (** [pre p] does any preparation needed by the runner before it can run
-      the main job. It takes a manifest [p.input] of the files that need
+  (** [pre p] does any preparation needed by the runner before it can run the
+      main job. It takes a manifest [p.input] of the files that need
       transferring to the runner target, a manifest [p.output] of the files
-      that are expected to need copying from the runner target, and returns
-      a pair of altered input and output manifests specifying where the
-      files are relative to the target. *)
+      that are expected to need copying from the runner target, and returns a
+      pair of altered input and output manifests specifying where the files
+      are relative to the target. *)
 
   val post : Fpath.t Copy_spec.t -> unit Or_error.t
   (** [post in_manifest] does any cleanup required by the runner after it
@@ -62,8 +61,8 @@ module type S = sig
     -> (string Copy_spec.t, string list list) argv_fun
     -> prog:string
     -> unit Or_error.t
-  (** [run_batch_with_copy] behaves as [run_batch], but also takes copy
-      specs of files that should be transferred to and from the target, and
+  (** [run_batch_with_copy] behaves as [run_batch], but also takes copy specs
+      of files that should be transferred to and from the target, and
       parametrises the argument vectors on the output copy spec. *)
 
   val run :
@@ -81,6 +80,6 @@ module type S = sig
     -> prog:string
     -> unit Or_error.t
   (** [run_with_copy] behaves as [run], but also takes copy specs of files
-      that should be transferred to and from the target, and parametrises
-      the argument vector on the output copy spec. *)
+      that should be transferred to and from the target, and parametrises the
+      argument vector on the output copy spec. *)
 end

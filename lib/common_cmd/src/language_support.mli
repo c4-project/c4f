@@ -13,9 +13,9 @@
 
     The various top-level act commands need to invoke the
     language-independent bits of act (in the [Lib] module) using the
-    appropriate language-dependent bits. This module works out which
-    language is needed by looking at the 'emits' clause of a compiler spec,
-    and hooks up the correct language-dependent modules. *)
+    appropriate language-dependent bits. This module works out which language
+    is needed by looking at the 'emits' clause of a compiler spec, and hooks
+    up the correct language-dependent modules. *)
 
 open Core_kernel
 open Act_common

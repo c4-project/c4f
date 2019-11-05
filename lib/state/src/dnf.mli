@@ -21,8 +21,7 @@ open Base
 (** {1 Conversion functions} *)
 
 val predicate_of_state : Entry.t -> string Act_litmus.Predicate.t
-(** [predicate_of_state entry] converts [entry] into a conjunction
-    predicate. *)
+(** [predicate_of_state entry] converts [entry] into a conjunction predicate. *)
 
 val predicate_of_states : Set.M(Entry).t -> string Act_litmus.Predicate.t
 (** [predicate_of_states entries] converts the set [entries] into a sum of

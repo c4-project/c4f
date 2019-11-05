@@ -16,8 +16,7 @@ open Base
 (** {1 Helpers for sets} *)
 
 module Set : sig
-  val yojson_of_set :
-    ('x -> Yojson.Safe.t) -> ('x, _) Set.t -> Yojson.Safe.t
+  val yojson_of_set : ('x -> Yojson.Safe.t) -> ('x, _) Set.t -> Yojson.Safe.t
   (** [yojson_of_set yojson_of_x xs] converts a set [xs] into a JSON list
       using [yojson_of_x] to convert values into JSON. *)
 
@@ -26,9 +25,9 @@ module Set : sig
     -> (Yojson.Safe.t -> 'x)
     -> Yojson.Safe.t
     -> ('x, 'c) Set.t
-  (** [set_of_yojson x_of_yojson j] converts a JSON list [j] into a set
-      using [x_of_yojson] to convert value JSON into values. It raises
-      exceptions on failure. *)
+  (** [set_of_yojson x_of_yojson j] converts a JSON list [j] into a set using
+      [x_of_yojson] to convert value JSON into values. It raises exceptions
+      on failure. *)
 
   val set_of_yojson' :
        (module Comparator.S with type t = 'x and type comparator_witness = 'c)
@@ -38,13 +37,13 @@ module Set : sig
   (** [set_of_yojson' x_of_yojson' j] behaves as {!set_of_yojson}, but both
       [x_of_yojson'] and itself return string-error results. *)
 
+  (** [Make] makes a standard JSON conversion module from a set, given fixed
+      bi-directional value-to-JSON conversions. *)
   module Make (V : sig
     include Jsonable_types.S
 
     include Comparable.S with type t := t
   end) : Jsonable_types.S with type t = Set.M(V).t
-  (** [Make] makes a standard JSON conversion module from a set, given fixed
-      bi-directional value-to-JSON conversions. *)
 end
 
 (** {1 Helpers for associative lists} *)
@@ -78,11 +77,11 @@ module Alist : sig
       {!alist_of_yojson}, but both [v_of_yojson'] and itself return
       string-error results. *)
 
-  module Make (K : Stringable.S) (V : Jsonable_types.S) :
-    Jsonable_types.S with type t = (K.t, V.t) List.Assoc.t
   (** [Make] makes a standard JSON conversion module from an associative
       list, given fixed bi-directional key-to-string and value-to-JSON
       conversions. *)
+  module Make (K : Stringable.S) (V : Jsonable_types.S) :
+    Jsonable_types.S with type t = (K.t, V.t) List.Assoc.t
 end
 
 module Make_map (K : sig
@@ -94,13 +93,13 @@ module Make_map (K : sig
 end)
 (V : Jsonable_types.S) : Jsonable_types.S with type t = V.t Map.M(K).t
 
-module Of_stringable (E : Stringable.S) : Jsonable_types.S with type t = E.t
 (** Lifts stringable types to json-able types, where conversion is to/from
     strings. *)
+module Of_stringable (E : Stringable.S) : Jsonable_types.S with type t = E.t
 
 module String : Jsonable_types.S with type t = string
 (** Strings packaged up as a json-able type. *)
 
+(** Lifts a json-able type over options. *)
 module Option (B : Jsonable_types.S) :
   Jsonable_types.S with type t = B.t option
-(** Lifts a json-able type over options. *)

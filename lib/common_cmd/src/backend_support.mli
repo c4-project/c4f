@@ -33,8 +33,8 @@ end
 val resolve :
      Act_machine.Qualified.Backend.t
   -> (module Act_backend.Runner_types.S) Or_error.t
-(** [resolve spec] resolves [spec] using this module's built-in backend
-    table to look up backends. *)
+(** [resolve spec] resolves [spec] using this module's built-in backend table
+    to look up backends. *)
 
 val lookup_and_resolve_in_cfg :
      Act_common.Id.t

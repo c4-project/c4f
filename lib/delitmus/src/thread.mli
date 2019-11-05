@@ -35,9 +35,9 @@ module type S = sig
       otherwise. *)
 end
 
+(** Makes a thread context module from a thread ID and local environment. *)
 module Make (B : sig
   val tid : int
 
   val locals : Set.M(Act_common.C_id).t
 end) : S
-(** Makes a thread context module from a thread ID and local environment. *)

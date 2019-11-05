@@ -50,8 +50,7 @@ let ensure_statements :
         Or_error.return f
     | d ->
         Or_error.error_s
-          [%message
-            "Expected a statement" ~got:(d : Ast.Compound_stm.Elt.t)])
+          [%message "Expected a statement" ~got:(d : Ast.Compound_stm.Elt.t)])
 
 let defined_types : (Ac.C_id.t, Type.Basic.t) List.Assoc.t Lazy.t =
   lazy
@@ -174,8 +173,8 @@ let param_type_list :
         >>| Named.alist_of_list)
 
 let func_signature :
-       Ast.Declarator.t
-    -> (Act_common.C_id.t * Type.t Named.Alist.t) Or_error.t = function
+    Ast.Declarator.t -> (Act_common.C_id.t * Type.t Named.Alist.t) Or_error.t
+    = function
   | {pointer= Some _; _} ->
       Or_error.error_string "Pointers not supported yet"
   | {pointer= None; direct= Fun_decl (Id name, param_list)} ->
@@ -249,8 +248,8 @@ let call
   in
   call_handler arguments
 
-let model_atomic_load_explicit : Ast.Expr.t list -> Expression.t Or_error.t
-    = function
+let model_atomic_load_explicit : Ast.Expr.t list -> Expression.t Or_error.t =
+  function
   | [raw_src; raw_mo] ->
       let open Or_error.Let_syntax in
       let%map src = expr_to_address raw_src

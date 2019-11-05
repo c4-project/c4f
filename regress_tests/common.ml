@@ -23,8 +23,8 @@ module Spec = struct
   include Load
 end
 
-let find_aux (spec : Spec.t) (path : Fpath.t) :
-    Act_delitmus.Aux.t Or_error.t =
+let find_aux (spec : Spec.t) (path : Fpath.t) : Act_delitmus.Aux.t Or_error.t
+    =
   let file = Fpath.to_string path in
   file
   |> List.Assoc.find spec ~equal:String.Caseless.equal

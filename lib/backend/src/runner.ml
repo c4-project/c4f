@@ -55,8 +55,7 @@ end) : Reader_types.S = Plumbing.Loadable.Make (struct
       Act_state.Observation.t Or_error.t =
     ignore path ; Result.Error B.error
 
-  let load_from_string (_str : string) : Act_state.Observation.t Or_error.t
-      =
+  let load_from_string (_str : string) : Act_state.Observation.t Or_error.t =
     Result.Error B.error
 end)
 

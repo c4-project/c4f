@@ -12,5 +12,5 @@
 open Base
 
 val token : Set.M(String).t -> Sedlexing.lexbuf -> Parser.token
-(** [token typedefs lexbuf] lexes the next token in [lexbuf]. It supports
-    the C 'lexer hack' by taking in a set of known typedefs [typedefs]. *)
+(** [token typedefs lexbuf] lexes the next token in [lexbuf]. It supports the
+    C 'lexer hack' by taking in a set of known typedefs [typedefs]. *)

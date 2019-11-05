@@ -73,9 +73,9 @@ end)
 
 include BT
 
-(* We can't easily derive yojson for the whole thing, since the
-   postcondition serialisation depends on being able to pretty-print and
-   parse the postcondition rather than recursively serialising it. *)
+(* We can't easily derive yojson for the whole thing, since the postcondition
+   serialisation depends on being able to pretty-print and parse the
+   postcondition rather than recursively serialising it. *)
 
 module Json (Const : sig
   type t
@@ -158,8 +158,8 @@ module Change_set = struct
 
   let apply_keep_clear_replace (type a const)
       (field : ([> `Set_and_create], const hdr, a option) Field.t_with_perm)
-      (change : [`Keep | `Clear | `Replace_with of a]) (header : const hdr)
-      : const hdr =
+      (change : [`Keep | `Clear | `Replace_with of a]) (header : const hdr) :
+      const hdr =
     match change with
     | `Clear ->
         apply_keep_replace field (`Replace_with None) header

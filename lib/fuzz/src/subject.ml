@@ -36,8 +36,7 @@ module Program = struct
     func |> Act_c_mini.Function.body_stms
     |> List.map
          ~f:
-           (Act_c_mini.Statement.On_meta.map ~f:(fun () ->
-                Metadata.existing))
+           (Act_c_mini.Statement.On_meta.map ~f:(fun () -> Metadata.existing))
 
   let of_function (func : unit Act_c_mini.Function.t) : t =
     { decls= Act_c_mini.Function.body_decls func
@@ -80,8 +79,7 @@ module Test = struct
   let add_new_program : t -> t =
     Act_litmus.Test.Raw.add_thread_at_end ~thread:Program.empty
 
-  let programs_of_litmus (test : Act_c_mini.Litmus.Test.t) : Program.t list
-      =
+  let programs_of_litmus (test : Act_c_mini.Litmus.Test.t) : Program.t list =
     test |> Act_c_mini.Litmus.Test.threads
     |> List.map ~f:(Fn.compose Program.of_function Act_c_mini.Named.value)
 

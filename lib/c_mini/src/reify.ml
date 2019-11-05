@@ -32,8 +32,7 @@ let type_to_pointer (ty : Type.t) : Act_c_lang.Ast_basic.Pointer.t option =
   (* We translate the actual underlying type separately, in [type_to_spec]. *)
   Option.some_if (Type.is_pointer ty) [[]]
 
-let id_declarator (ty : Type.t) (id : Act_common.C_id.t) : Ast.Declarator.t
-    =
+let id_declarator (ty : Type.t) (id : Act_common.C_id.t) : Ast.Declarator.t =
   {pointer= type_to_pointer ty; direct= Id id}
 
 let decl (id : Act_common.C_id.t) (elt : Initialiser.t) : Ast.Decl.t =
@@ -49,8 +48,7 @@ let decls : Initialiser.t Named.Alist.t -> [> `Decl of Ast.Decl.t] list =
 
 let func_parameter (id : Act_common.C_id.t) (ty : Type.t) : Ast.Param_decl.t
     =
-  { qualifiers= [type_to_spec ty]
-  ; declarator= `Concrete (id_declarator ty id) }
+  {qualifiers= [type_to_spec ty]; declarator= `Concrete (id_declarator ty id)}
 
 let func_parameters (parameters : Type.t Named.Alist.t) :
     Ast.Param_type_list.t =
@@ -80,8 +78,7 @@ let atomic_load_to_expr (ld : Atomic_load.t) : Ast.Expr.t =
     [ address_to_expr (Atomic_load.src ld)
     ; mem_order_to_expr (Atomic_load.mo ld) ]
 
-let bop : Expression.Bop.t -> Act_c_lang.Ast_basic.Operators.Bin.t =
-  function
+let bop : Expression.Bop.t -> Act_c_lang.Ast_basic.Operators.Bin.t = function
   | Expression.Bop.Eq ->
       `Eq
   | L_and ->
@@ -91,8 +88,7 @@ let bop : Expression.Bop.t -> Act_c_lang.Ast_basic.Operators.Bin.t =
 
 let expr : Expression.t -> Ast.Expr.t =
   Expression.reduce ~constant:constant_to_expr ~lvalue:lvalue_to_expr
-    ~atomic_load:atomic_load_to_expr ~bop:(fun b l r ->
-      Binary (l, bop b, r))
+    ~atomic_load:atomic_load_to_expr ~bop:(fun b l r -> Binary (l, bop b, r))
 
 let known_call_stm (name : string) (args : Ast.Expr.t list) : Ast.Stm.t =
   Expr (Some (known_call name args))

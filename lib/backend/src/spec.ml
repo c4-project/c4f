@@ -30,8 +30,8 @@ module M = struct
   let t_of_sexp = t_of_sexp
 end
 
-(* There is a _lot_ of module acrobatics here to make sure we only define
-   't' once.
+(* There is a _lot_ of module acrobatics here to make sure we only define 't'
+   once.
 
    TODO(@MattWindsor91): when 4.08 arrives, check to see if this is really
    necessary. *)

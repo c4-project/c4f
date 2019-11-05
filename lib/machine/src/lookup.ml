@@ -35,8 +35,8 @@ module Machine = struct
         else
           `Snd
             ( m_spec
-            , Lookup_listing.Disable.make ~location:Machine
-                ~reason:In_config ))
+            , Lookup_listing.Disable.make ~location:Machine ~reason:In_config
+            ))
 
   let filtered_list ?(predicate : Property.t Blang.t = Blang.true_)
       (specs : Spec.Set.t) : Spec.t Lookup_listing.t =
@@ -44,8 +44,8 @@ module Machine = struct
     let enabled_machines, disabled_in_config =
       partition_by_enabled pass_filter
     in
-    (* [of_list] errors only if there are duplicate IDs; as we're reducing
-       an existing table, it should be safe to assume there are no errors. *)
+    (* [of_list] errors only if there are duplicate IDs; as we're reducing an
+       existing table, it should be safe to assume there are no errors. *)
     let enabled_table =
       Or_error.ok_exn (Ac.Spec.Set.of_list enabled_machines)
     in
@@ -71,12 +71,11 @@ let partition_by_enabled_gen (type spec) (specs : spec list)
       if is_enabled spec then `Fst spec
       else
         `Snd
-          ( spec
-          , Lookup_listing.Disable.make ~location:Spec ~reason:In_config ))
+          (spec, Lookup_listing.Disable.make ~location:Spec ~reason:In_config))
 
-(** The flow for both compiler and backend lookup is basically the same,
-    with some different types and intermediate functions. As such, we build
-    it with a functor. *)
+(** The flow for both compiler and backend lookup is basically the same, with
+    some different types and intermediate functions. As such, we build it
+    with a functor. *)
 module Make (B : sig
   type spec
 
@@ -143,8 +142,7 @@ struct
             `Fst spec
         | Error error ->
             `Snd
-              ( spec
-              , Lookup_listing.Disable.make_failed ~location:Spec ~error ))
+              (spec, Lookup_listing.Disable.make_failed ~location:Spec ~error))
 
   let maybe_test_specs ?(test_specs : bool = false)
       (specs : B.spec Qualified.t list) :
@@ -167,8 +165,7 @@ struct
 
   let filtered_list ?(machine_predicate : Property.t Blang.t option)
       ?(predicate : B.pred option) ?(test_specs : bool option)
-      (specs : Spec.Set.t) : B.spec Qualified.t Lookup_listing.t Or_error.t
-      =
+      (specs : Spec.Set.t) : B.spec Qualified.t Lookup_listing.t Or_error.t =
     let machine_listing =
       Machine.filtered_list ?predicate:machine_predicate specs
     in
@@ -203,8 +200,8 @@ struct
       let%bind listing =
         filtered_list ?machine_predicate ?predicate ?test_specs specs
       in
-      Lookup_listing.get_with_fqid ?default_machines ~id_type:B.id_type
-        ~fqid listing)
+      Lookup_listing.get_with_fqid ?default_machines ~id_type:B.id_type ~fqid
+        listing)
 end
 
 module Compiler (Basic : sig

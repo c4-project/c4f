@@ -12,12 +12,12 @@
 (** Mini-model: lvalues.
 
     Lvalues, informally, represent a location to which we can store a value.
-    In the mini-model, they are always either variable names, or
-    dereferences of other lvalues.
+    In the mini-model, they are always either variable names, or dereferences
+    of other lvalues.
 
     Not to be confused with the more general idea of 'addresses', which can
-    either be lvalues or address-of modifications of other addresses, and
-    are used where things expect pointers. *)
+    either be lvalues or address-of modifications of other addresses, and are
+    used where things expect pointers. *)
 
 open Base
 
@@ -34,8 +34,8 @@ val variable : Act_common.C_id.t -> t
     do any validation. *)
 
 val deref : t -> t
-(** [deref lvalue] constructs a dereference ([*]) of another lvalue
-    [lvalue]. It doesn't do any validation. *)
+(** [deref lvalue] constructs a dereference ([*]) of another lvalue [lvalue].
+    It doesn't do any validation. *)
 
 val un_deref : t -> t Or_error.t
 (** [un_deref lvalue] tries to remove one layer of dereferencing from

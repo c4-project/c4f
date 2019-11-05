@@ -19,16 +19,16 @@ type t
 (** {2 Constructing an initial fuzzer state} *)
 
 val make : ?o:Act_common.Output.t -> vars:Var.Map.t -> unit -> t
-(** [make ?o ~vars ()] creates an initial state with the variable map
-    [vars]. If an output context [o] is provided, it can be used for logging
+(** [make ?o ~vars ()] creates an initial state with the variable map [vars].
+    If an output context [o] is provided, it can be used for logging
     verbose/debug information during the fuzzing process. *)
 
 val of_litmus :
   ?o:Act_common.Output.t -> Act_c_mini.Litmus.Test.t -> t Or_error.t
 (** [of_litmus ?o lt] tries to create an initial state by extracting
     information from [lt]'s auxiliary data. If an output context [o] is
-    provided, it can be used for logging verbose/debug information during
-    the fuzzing process. *)
+    provided, it can be used for logging verbose/debug information during the
+    fuzzing process. *)
 
 (** {2 Directly accessing a fuzzer state} *)
 
@@ -54,8 +54,8 @@ module Monad : sig
   (** {2 Liftings} *)
 
   val with_vars_m : (Var.Map.t -> 'a t) -> 'a t
-  (** [with_vars_m f] is a stateful action that binds the stateful action
-      [f] over the current variable map. *)
+  (** [with_vars_m f] is a stateful action that binds the stateful action [f]
+      over the current variable map. *)
 
   val with_vars : (Var.Map.t -> 'a) -> 'a t
   (** [with_vars f] is a variant of {{!with_vars_m} with_vars_m} which maps
@@ -64,9 +64,7 @@ module Monad : sig
   (** {2 Queries} *)
 
   val resolve :
-       Act_common.C_id.t
-    -> scope:Act_common.Scope.t
-    -> Act_common.Litmus_id.t t
+    Act_common.C_id.t -> scope:Act_common.Scope.t -> Act_common.Litmus_id.t t
   (** [resolve id ~scope] tries to get the Litmus-style ID corresponding to
       the resolution of [id] in scope [scope]. *)
 
@@ -93,8 +91,8 @@ module Monad : sig
       depend on it having a particular known-value. *)
 
   val add_write : Act_common.Litmus_id.t -> unit t
-  (** [add_write var] is a stateful action that adds a write flag to
-      variable [var].
+  (** [add_write var] is a stateful action that adds a write flag to variable
+      [var].
 
       This should be done after involving [var] in any atomic actions that
       write to it, even if they don't modify it. *)

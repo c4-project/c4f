@@ -23,8 +23,8 @@ val skip_line : lexbuf -> unit
 (** [skip_c_line_comment lexbuf] lexes and discards a line. *)
 
 val skip_string : lexbuf -> unit
-(** [skip_string lexbuf] lexes the body of a double-quoted string,
-    discarding it. *)
+(** [skip_string lexbuf] lexes the body of a double-quoted string, discarding
+    it. *)
 
 val read_char : (string -> 'a) -> lexbuf -> 'a
 (** [read_char token lexbuf] lexes the body of a single-quoted C char

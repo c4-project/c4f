@@ -29,20 +29,19 @@ val of_litmus_id_map : 'a Map.M(Litmus_id).t -> 'a t
 
 val find_by_litmus_id : 'a t -> id:Litmus_id.t -> 'a Or_error.t
 (** [find_by_litmus_id map ~id] directly looks up a litmus ID in [map]
-    without any scope resolution. It returns an error if [id] isn't in
-    [map]. *)
+    without any scope resolution. It returns an error if [id] isn't in [map]. *)
 
 val resolve : _ t -> id:C_id.t -> scope:Scope.t -> Litmus_id.t
-(** [resolve map ~id ~scope] returns the thread-local version of [id]
-    against [scope] if such a version exists in the variable map, or the
-    global version of [id] otherwise. It doesn't always check whether [id]
-    is in the variable map. *)
+(** [resolve map ~id ~scope] returns the thread-local version of [id] against
+    [scope] if such a version exists in the variable map, or the global
+    version of [id] otherwise. It doesn't always check whether [id] is in the
+    variable map. *)
 
 (** {2 Transforming scoped maps} *)
 
 val set : 'a t -> id:Litmus_id.t -> record:'a -> 'a t
-(** [set map ~id ~record] returns a new map produced by setting [id]'s
-    record to [record]. *)
+(** [set map ~id ~record] returns a new map produced by setting [id]'s record
+    to [record]. *)
 
 val map_record : 'a t -> f:('a -> 'a) -> id:Litmus_id.t -> 'a t
 (** [map_record map ~f ~id] returns a new map produced by mapping [f] over
@@ -64,8 +63,8 @@ val build_set :
 (** {3 Projections to maps} *)
 
 val to_litmus_id_map : 'a t -> 'a Map.M(Litmus_id).t
-(** [to_litmus_id_map map] converts [map] to a flat map from Litmus-style
-    IDs to records. *)
+(** [to_litmus_id_map map] converts [map] to a flat map from Litmus-style IDs
+    to records. *)
 
 val to_c_id_map : 'a t -> scope:Scope.t -> 'a Map.M(C_id).t
 (** [to_c_id_map map ~scope] projects [map] down to the map of variables
@@ -78,7 +77,7 @@ val c_id_mem : _ t -> id:C_id.t -> bool
 
 (** {2 Serialising scoped maps} *)
 
+(** [Make_json] makes a Yojson serialiser-deserialiser pair for a scoped map,
+    using the given module for serialising records *)
 module Make_json (Record : Plumbing.Jsonable_types.S) :
   Plumbing.Jsonable_types.S with type t = Record.t t
-(** [Make_json] makes a Yojson serialiser-deserialiser pair for a scoped
-    map, using the given module for serialising records *)

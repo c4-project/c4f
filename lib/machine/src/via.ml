@@ -33,7 +33,7 @@ let to_runner = function
 let remoteness = function
   | Local ->
       `Local
-  (* Technically, if we're SSHing to loopback, this isn't true, but I
-     suspect it doesn't matter. *)
+  (* Technically, if we're SSHing to loopback, this isn't true, but I suspect
+     it doesn't matter. *)
   | Ssh _ ->
       `Remote

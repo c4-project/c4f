@@ -16,8 +16,7 @@
 module Random_state : sig
   type t
 
-  val make :
-    store:Act_c_mini.Atomic_store.t -> path:Path_shapes.program -> t
+  val make : store:Act_c_mini.Atomic_store.t -> path:Path_shapes.program -> t
 
   val store : t -> Act_c_mini.Atomic_store.t
 
@@ -26,6 +25,7 @@ end
 
 (** {2 Functors} *)
 
+(** [Make (B)] makes a store action given the basic configuration in [B]. *)
 module Make (B : sig
   val name : Act_common.Id.t
   (** The name of this store action. *)
@@ -41,14 +41,13 @@ module Make (B : sig
   (** The expected basic type of destination variables. This must line up
       with the generator. *)
 
+  (** The generator this store action uses to create stores. *)
   module Quickcheck
       (Src : Act_c_mini.Env_types.S)
       (Dst : Act_c_mini.Env_types.S) :
     Act_utils.My_quickcheck.S_with_sexp
       with type t := Act_c_mini.Atomic_store.t
-  (** The generator this store action uses to create stores. *)
 end) : Action_types.S with type Payload.t = Random_state.t
-(** [Make (B)] makes a store action given the basic configuration in [B]. *)
 
 (** {2 Pre-made modules} *)
 

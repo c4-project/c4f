@@ -11,8 +11,8 @@
 
 (** A single state in a simulator run output.
 
-    The only thing stopping this module from being called [State] is the
-    fact that [State] is already the name of the {i library}. *)
+    The only thing stopping this module from being called [State] is the fact
+    that [State] is already the name of the {i library}. *)
 
 open Base
 open Act_common

@@ -3,23 +3,22 @@
    Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
 module Tx = Travesty_base_exts
@@ -67,8 +66,7 @@ module Row = struct
     val lift : 'a Or_error.t -> 'a t
   end) =
   struct
-    let adjust_weight_m (row : 'a t) ~(f : 'a -> int -> int M.t) : 'a t M.t
-        =
+    let adjust_weight_m (row : 'a t) ~(f : 'a -> int -> int M.t) : 'a t M.t =
       let open M.Let_syntax in
       let%bind raw_weight' = f row.item (Weight.raw row.weight) in
       let%map weight' = M.lift (Weight.create raw_weight') in
@@ -199,8 +197,8 @@ module Qc : Quickcheckable.S1 with type 'a t := 'a t = struct
   let quickcheck_observer (o : 'a O.t) : 'a t O.t =
     List.quickcheck_observer (Row.quickcheck_observer o)
 
-  (* TODO(@MattWindsor91): add a shrinker here, but make sure it can't
-     shrink to empty lists. *)
+  (* TODO(@MattWindsor91): add a shrinker here, but make sure it can't shrink
+     to empty lists. *)
   let quickcheck_shrinker (_ : 'a S.t) : 'a t S.t = S.empty ()
 end
 

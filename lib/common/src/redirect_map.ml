@@ -3,23 +3,22 @@
    Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE. *)
 
 open Base
 open Redirect_map_intf
@@ -40,8 +39,8 @@ module Make (B : Basic_symbol) : S with module Sym = B = struct
     B.to_c_identifier redirected_sym
 
   let dest_syms (map : t) ~(sources : Set.M(B).t) : Set.M(B).t =
-    (* We can't just take the image of 'sources' in 'map', as this would
-       miss out identity mappings. *)
+    (* We can't just take the image of 'sources' in 'map', as this would miss
+       out identity mappings. *)
     sources |> Set.to_list
     |> List.map ~f:(dest_of_sym map)
     |> Set.of_list (module B)
@@ -114,13 +113,7 @@ let%test_module "string redirect maps" =
     let%expect_test "dest_syms example run" =
       let sources =
         Core_kernel.String.Set.of_list
-          [ "alpha"
-          ; "bravo"
-          ; "charlie"
-          ; "%delta"
-          ; "_echo"
-          ; "hotel"
-          ; "whiskey" ]
+          ["alpha"; "bravo"; "charlie"; "%delta"; "_echo"; "hotel"; "whiskey"]
       in
       let r = M.dest_syms test_map ~sources in
       Stdio.print_s [%sexp (r : Core_kernel.String.Set.t)] ;

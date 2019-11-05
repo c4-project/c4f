@@ -14,8 +14,8 @@
 open Core
 module Ac = Act_common
 
-let dump_header_of_file ~(file : Fpath.t) ~(path : Fpath.t) :
-    unit Or_error.t =
+let dump_header_of_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t
+    =
   ignore file ;
   Act_c_mini.Litmus_header.Filters.Dump.run ()
     (Plumbing.Input.of_fpath path)

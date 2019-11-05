@@ -31,8 +31,7 @@ module If_statement :
     with type target = Metadata.t Act_c_mini.Statement.If.t
 
 module Statement :
-  Path_types.S_statement
-    with type target = Metadata.t Act_c_mini.Statement.t
+  Path_types.S_statement with type target = Metadata.t Act_c_mini.Statement.t
 
 module Function :
   Path_types.S_function with type target := Metadata.t Act_c_mini.Function.t

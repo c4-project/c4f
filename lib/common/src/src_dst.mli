@@ -16,8 +16,8 @@
     syntaxes---AT&T used in GNU as, Intel used nearly everywhere else---that
     have opposite conventions!
 
-    This module contains various types and module plumbing for handling
-    these cases in a fairly unambiguous way. *)
+    This module contains various types and module plumbing for handling these
+    cases in a fairly unambiguous way. *)
 
 open Base
 
@@ -56,8 +56,8 @@ module type S = sig
 
   val of_src_dst : ('o, 'o) t -> 'o list
   (** [of_src_dst {src; dst}] converts [src] and [dst] into an operand list,
-      with the arguments in the correct order for this dialect. Both
-      operands must have the same type. *)
+      with the arguments in the correct order for this dialect. Both operands
+      must have the same type. *)
 
   val to_src_dst_or_error : 'o list -> ('o, 'o) t Or_error.t
   (** [to_src_dst_or_error ops] tries to interpret [ops] as a pair of source
@@ -66,19 +66,18 @@ module type S = sig
 
   val to_src_dst : 'o list -> ('o, 'o) t option
   (** [to_src_dst ops] tries to interpret [ops] as a pair of source and
-      destination operand. It differs from [to_src_dst_or_error] by
-      returning [None] rather than a full error on failure. *)
+      destination operand. It differs from [to_src_dst_or_error] by returning
+      [None] rather than a full error on failure. *)
 
   val bind_src_dst :
     f:(('o, 'o) t -> ('o, 'o) t option) -> 'o list -> 'o list option
   (** [bind_src_dst ~f ops] tries to interpret [ops] as a pair of source and
       destination operand, and binds [f] over them if successful. *)
 
-  val map_src_dst :
-    f:(('o, 'o) t -> ('o, 'o) t) -> 'o list -> 'o list option
+  val map_src_dst : f:(('o, 'o) t -> ('o, 'o) t) -> 'o list -> 'o list option
   (** [maps_src_dst ~f ops] tries to interpret [ops] as a pair of source and
       destination operand, and maps [f] over them if successful. *)
 end
 
-module Make (H : Has_order) : S
 (** [Make] takes a [Has_order] and generates the appropriate utility module. *)
+module Make (H : Has_order) : S

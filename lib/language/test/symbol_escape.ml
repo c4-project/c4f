@@ -50,7 +50,6 @@ let%test_module "escaping on a toy symbol module" =
        >>= M.escape_rmap) in Stdio.print_s [%sexp (result :
        Language_symbol.String_direct.R_map.t Or_error.t)]; [%expect {| (Ok
        (($kilo (MapsTo ZPdelta)) (%delta (MapsTo ZPdelta)) (.foxtrot (MapsTo
-       ZFfoxtrot)) (_echo (MapsTo ZFfoxtrot)) (alpha Identity) (bravo
-       (MapsTo ZFfoxtrot)) (charlie (MapsTo ZFfoxtrot)) (whiskey Identity)))
-       |}] ;; *)
+       ZFfoxtrot)) (_echo (MapsTo ZFfoxtrot)) (alpha Identity) (bravo (MapsTo
+       ZFfoxtrot)) (charlie (MapsTo ZFfoxtrot)) (whiskey Identity))) |}] ;; *)
   end )

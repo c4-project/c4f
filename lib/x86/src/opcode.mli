@@ -6,23 +6,22 @@
    Automatique, Jade Alglave, and Luc Maranget)
 
    Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE.
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
 
    This file derives in part from the Herd7 project
    (https://github.com/herd/herdtools7); its original attribution and
@@ -74,13 +73,12 @@ module Operand_spec : sig
         (** This instruction takes one operand, which may satisfy any of the
             following specifications. *)
     | Symmetric of (single * single) list
-        (** This instruction takes two operands, which may satisfy any of
-            the following pairwise specifications in either order. *)
+        (** This instruction takes two operands, which may satisfy any of the
+            following pairwise specifications in either order. *)
     | Src_dst of (single, single) Src_dst.t list
-        (** This instruction takes two operands, which may satisfy any of
-            the following pairwise specifications so long as the source
-            matches the [src] side and the destination matches the [dst]
-            side. *)
+        (** This instruction takes two operands, which may satisfy any of the
+            following pairwise specifications so long as the source matches
+            the [src] side and the destination matches the [dst] side. *)
     | Or of t * t
         (** This instruction can match either of these descriptions. *)
 end
@@ -115,8 +113,8 @@ module Sizable : sig
        and module Abs := Act_abstract.Instruction.Opcode
 
   val get_operand_spec : t -> Operand_spec.t option
-  (** [get_operand_spec opcode] tries to get an operand spec for [opcode].
-      It returns [None] if the opcode doesn't yet have operand analysis. *)
+  (** [get_operand_spec opcode] tries to get an operand spec for [opcode]. It
+      returns [None] if the opcode doesn't yet have operand analysis. *)
 end
 
 (** [Size] contains an enumeration of operand sizes. *)
@@ -162,8 +160,8 @@ module Basic : sig
        and module Abs := Act_abstract.Instruction.Opcode
 
   val get_operand_spec : t -> Operand_spec.t option
-  (** [get_operand_spec opcode] tries to get an operand spec for [opcode].
-      It returns [None] if the opcode doesn't yet have operand analysis. *)
+  (** [get_operand_spec opcode] tries to get an operand spec for [opcode]. It
+      returns [None] if the opcode doesn't yet have operand analysis. *)
 end
 
 (** [Condition] describes jump conditions. *)
@@ -185,8 +183,7 @@ module Condition : sig
     | `Zero ]
   [@@deriving sexp, equal]
   (** [invertible] enumerates all of the x86 conditions that can be inverted
-      with a 'not' prefix (for example, 'above' (A) becomes 'not above'
-      (NA). *)
+      with a 'not' prefix (for example, 'above' (A) becomes 'not above' (NA). *)
 
   type t =
     [ invertible
@@ -258,6 +255,5 @@ val call : t
 (** [call] is CALL. *)
 
 val jmp : t
-(** [jmp] is JMP (unconditional jump); not to be confused with
-    {{!jump} jump (with a U)}, which builds jump instructions given an
-    explicit jump style. *)
+(** [jmp] is JMP (unconditional jump); not to be confused with {{!jump} jump
+    (with a U)}, which builds jump instructions given an explicit jump style. *)

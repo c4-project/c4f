@@ -19,7 +19,7 @@ val run :
   -> config:Config.t
   -> Trace.t Output.t State.Monad.t
 (** [run ?seed test ~config] mutates [test] using a random number generator
-    seeded by [seed], and the fuzzer config given by [config]. It returns
-    the output of the fuzzing operation (including the final test, a trace
-    of all actions applied, and the final variable map) inside the main
-    fuzzer state monad. *)
+    seeded by [seed], and the fuzzer config given by [config]. It returns the
+    output of the fuzzing operation (including the final test, a trace of all
+    actions applied, and the final variable map) inside the main fuzzer state
+    monad. *)

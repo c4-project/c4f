@@ -85,9 +85,8 @@ module Filters = struct
 
     type aux_o = unit
 
-    let run (ctx : aux_i Plumbing.Filter_context.t)
-        (ic : Stdio.In_channel.t) (oc : Stdio.Out_channel.t) :
-        aux_o Or_error.t =
+    let run (ctx : aux_i Plumbing.Filter_context.t) (ic : Stdio.In_channel.t)
+        (oc : Stdio.Out_channel.t) : aux_o Or_error.t =
       Or_error.Let_syntax.(
         let%bind test =
           Frontend.load_from_ic ic

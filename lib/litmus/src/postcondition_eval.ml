@@ -39,8 +39,8 @@ let eval_quantifier (quant : Postcondition.Quantifier.t) ~(f : 'a -> bool)
   Result.Fields.create ~truth ~witnesses ~counter_examples
 
 let eval (pc : 'const Postcondition.t)
-    ~(elt : 'a -> 'const Predicate.Element.t -> bool) ~(subjects : 'a list)
-    : 'a Result.t =
+    ~(elt : 'a -> 'const Predicate.Element.t -> bool) ~(subjects : 'a list) :
+    'a Result.t =
   let predicate = Postcondition.predicate pc in
   let quantifier = Postcondition.quantifier pc in
   eval_quantifier quantifier ~subjects ~f:(fun a ->

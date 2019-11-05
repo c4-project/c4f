@@ -11,17 +11,17 @@
 
 (** Specialised Quickcheck generators for addresses *)
 
-module On_env (E : Env_types.S) :
-  Act_utils.My_quickcheck.S_with_sexp with type t = Address.t
 (** Generates random addresses, constrained over the variables in the given
     environment. *)
-
-module Atomic_int_pointers (E : Env_types.S) :
+module On_env (E : Env_types.S) :
   Act_utils.My_quickcheck.S_with_sexp with type t = Address.t
+
 (** Generates addresses over the given typing environment that have the type
     'atomic_int*'. *)
-
-module Atomic_bool_pointers (E : Env_types.S) :
+module Atomic_int_pointers (E : Env_types.S) :
   Act_utils.My_quickcheck.S_with_sexp with type t = Address.t
+
 (** Generates addresses over the given typing environment that have the type
     'atomic_bool*'. *)
+module Atomic_bool_pointers (E : Env_types.S) :
+  Act_utils.My_quickcheck.S_with_sexp with type t = Address.t

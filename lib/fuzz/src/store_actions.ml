@@ -12,9 +12,7 @@
 open Base
 module Ac = Act_common
 
-let tid_of_path : Path_shapes.program -> int = function
-  | In_func (t, _) ->
-      t
+let tid_of_path : Path_shapes.program -> int = function In_func (t, _) -> t
 
 module Random_state = struct
   (* We don't give [gen] here, because it depends quite a lot on the functor
@@ -41,8 +39,8 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
 
   include Action.Make_log (B)
 
-  (** [readme_chunks ()] generates fragments of unformatted README text
-      based on the configuration of this store module. *)
+  (** [readme_chunks ()] generates fragments of unformatted README text based
+      on the configuration of this store module. *)
   let readme_chunks () : (bool * string) list =
     [ ( true
       , {|
@@ -87,8 +85,7 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
              semantics of the program over its original variables. *)
         ; Fn.non has_dependencies
           (* This action changes the value, so we can't do it to variables
-             with depended-upon values. *)
-         ]
+             with depended-upon values. *) ]
         @ if B.forbid_already_written then [Fn.non has_writes] else [])
 
   module Payload = struct
@@ -177,8 +174,8 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
 
   (* This action writes to the destination, so we no longer have a known
      value for it. *)
-  let mark_store_dst (store : Act_c_mini.Atomic_store.t) :
-      unit State.Monad.t =
+  let mark_store_dst (store : Act_c_mini.Atomic_store.t) : unit State.Monad.t
+      =
     let open State.Monad.Let_syntax in
     let dst = Act_c_mini.Atomic_store.dst store in
     let dst_var =

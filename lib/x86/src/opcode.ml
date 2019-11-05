@@ -41,8 +41,8 @@ end
 (* To add a new opcode:
 
    1. Add an entry for it into either 'Sizable.t' or 'Basic.t', in both here
-   and the MLI file. It goes into 'Sizable.t' if, in AT&T syntax, it can
-   have a size prefix.
+   and the MLI file. It goes into 'Sizable.t' if, in AT&T syntax, it can have
+   a size prefix.
 
    2. Add the string representation into the table below the enumerator.
 

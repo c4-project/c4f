@@ -28,8 +28,7 @@ let run ?(fqid : Id.t = Id.of_string "herd")
              (Act_state.Observation.yojson_of_t obs))))
 
 let command : Command.t =
-  Command.basic
-    ~summary:"parse native output from a configured test backend"
+  Command.basic ~summary:"parse native output from a configured test backend"
     Command.Let_syntax.(
       let%map standard_args = Common_cmd.Args.(With_files.get Standard.get)
       and sim = Common_cmd.Args.simulator () in

@@ -113,9 +113,9 @@ struct
 
     let populate_parameters () :
         (Act_common.C_id.t, C.Type.t) List.Assoc.t Or_error.t =
-      (* We assume that all variables that aren't mapped to global
-         variables, and relevant to this thread, are supposed to be passed
-         in as parameters. *)
+      (* We assume that all variables that aren't mapped to global variables,
+         and relevant to this thread, are supposed to be passed in as
+         parameters. *)
       let var_map = Context.var_map Ctx.context in
       let all_unmapped = Var_map.globally_unmapped_vars var_map in
       let relevant_unmapped =
@@ -137,8 +137,8 @@ struct
         ~body_stms:rewrite_statements
   end
 
-  let rewrite (tid : int) (func : unit C.Function.t) ~(context : Context.t)
-      : unit C.Function.t Or_error.t =
+  let rewrite (tid : int) (func : unit C.Function.t) ~(context : Context.t) :
+      unit C.Function.t Or_error.t =
     let module T = Thread.Make (struct
       let tid = tid
 

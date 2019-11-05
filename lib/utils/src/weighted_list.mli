@@ -3,30 +3,29 @@
    Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE. *)
 
 (** Weighted lists
 
     Weighted lists are lists in which each item has an attached non-negative
-    integer weight. This weight is then used when selecting random items
-    from the list: an item of weight [2*n] is twice as likely to be selected
-    over an item of weight [n].
+    integer weight. This weight is then used when selecting random items from
+    the list: an item of weight [2*n] is twice as likely to be selected over
+    an item of weight [n].
 
     This is similar in spirit to Core_extended's [Sampler], but slightly
     different in execution. *)
@@ -44,24 +43,23 @@ val from_alist : ('a, int) List.Assoc.t -> 'a t Or_error.t
     empty, or if any weight is negative (note that weights may be zero). *)
 
 val from_alist_exn : ('a, int) List.Assoc.t -> 'a t
-(** [from_alist_exn alist] does the same thing as
-    {{!from_alist} from_alist}, but raises an exception if the table is
-    ill-formed. *)
+(** [from_alist_exn alist] does the same thing as {{!from_alist} from_alist},
+    but raises an exception if the table is ill-formed. *)
 
 (** {2 Modifications} *)
 
 val adjust_weights : 'a t -> f:('a -> int -> int) -> 'a t Or_error.t
 (** [adjust_weights wl ~f] maps [f] over every weight in [table], providing
-    the weighted item for context. It fails if any invocation of [f] tries
-    to return a negative weight (note that weights may be zero). *)
+    the weighted item for context. It fails if any invocation of [f] tries to
+    return a negative weight (note that weights may be zero). *)
 
 val adjust_weights_exn : 'a t -> f:('a -> int -> int) -> 'a t
-(** [adjust_weights_exn wl ~f] does the same thing as
-    {{!adjust_weights} adjust_weights}, but raises an exception if [f]
-    returns a negative weight. *)
+(** [adjust_weights_exn wl ~f] does the same thing as {{!adjust_weights}
+    adjust_weights}, but raises an exception if [f] returns a negative
+    weight. *)
 
-(** [On_monad] generalises [adjust_weights] to concern any monad [M] which
-    is a monad transformer over errors. *)
+(** [On_monad] generalises [adjust_weights] to concern any monad [M] which is
+    a monad transformer over errors. *)
 module On_monad (M : sig
   (* TODO(@MattWindsor91): this should really be in Travesty *)
   include Monad.S

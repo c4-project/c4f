@@ -35,8 +35,8 @@ module type S_path = sig
           -> Metadata.t Act_c_mini.Statement.t Or_error.t)
     -> target:target
     -> target Or_error.t
-  (** [transform_stm path ~f ~target] tries to modify the statement at
-      [path] relative to [target] using [f]. *)
+  (** [transform_stm path ~f ~target] tries to modify the statement at [path]
+      relative to [target] using [f]. *)
 
   val transform_stm_list :
        t
@@ -69,8 +69,8 @@ module type S_statement = sig
   (** [try_gen_transform_stm dest] tries to create a Quickcheck-style
       generator for statement list transformation paths targeting [dest].
 
-      It can return [None] if [dest] has no position at which statement
-      lists can be transformed. *)
+      It can return [None] if [dest] has no position at which statement lists
+      can be transformed. *)
 end
 
 module type S_stm_container = sig

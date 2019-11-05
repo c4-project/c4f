@@ -20,8 +20,7 @@ module Element = struct
 
   let ( ==? ) = eq
 
-  let pp (f : Formatter.t) (e : 'const t) ~(pp_const : 'const Fmt.t) : unit
-      =
+  let pp (f : Formatter.t) (e : 'const t) ~(pp_const : 'const Fmt.t) : unit =
     match e with
     | Bool true ->
         Fmt.pf f "true"
@@ -77,8 +76,7 @@ module Element = struct
 end
 
 module Bop = struct
-  type t = Or | And
-  [@@deriving sexp, compare, equal, variants, quickcheck]
+  type t = Or | And [@@deriving sexp, compare, equal, variants, quickcheck]
 
   let to_string : t -> string = function Or -> "\\/" | And -> "/\\"
 

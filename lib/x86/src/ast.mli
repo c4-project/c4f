@@ -35,8 +35,8 @@ open Act_utils
 
 (** A syntactic memory location.
 
-    These are usually indirect seg/disp/base/index stanzas (see
-    {{!Indirect} Indirect}), or registers (see {{!Reg} Reg}).
+    These are usually indirect seg/disp/base/index stanzas (see {{!Indirect}
+    Indirect}), or registers (see {{!Reg} Reg}).
 
     These can also be template interpolation tokens. This is to support
     assembly syntaxes that represent the template string of a GCC-style
@@ -48,8 +48,8 @@ module Location : sig
     | Indirect of Indirect.t  (** An indirect location. *)
     | Reg of Reg.t  (** A direct register location. *)
     | Template_token of string
-        (** An interpolation from some form of assembly template, for
-            example GCC's C {i asm} extension. *)
+        (** An interpolation from some form of assembly template, for example
+            GCC's C {i asm} extension. *)
   [@@deriving sexp, compare, equal, quickcheck]
 
   (** [On_registers] permits enumerating and folding over registers inside a
@@ -93,12 +93,10 @@ module Operand : sig
 
   val bop : t -> Bop.t -> t -> t
 
-  (** [On_locations] permits enumerating and folding over locations inside
-      an operand. *)
+  (** [On_locations] permits enumerating and folding over locations inside an
+      operand. *)
   module On_locations :
-    Travesty.Traversable_types.S0
-      with type t = t
-       and type Elt.t = Location.t
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Location.t
 
   (** [On_symbols] permits enumerating and folding over symbols inside an
       operand. *)
@@ -110,26 +108,23 @@ type prefix = PreLock [@@deriving sexp]
 
 (** [Instruction] contains the instruction type and related operations. *)
 module Instruction : sig
-  type t =
-    {prefix: prefix option; opcode: Opcode.t; operands: Operand.t list}
+  type t = {prefix: prefix option; opcode: Opcode.t; operands: Operand.t list}
   [@@deriving sexp, equal, make]
   (** [t] is the type of instructions (and instruction-like things, such as
       directives). *)
 
-  (** [On_locations] permits enumerating and folding over locations inside
-      an instruction. *)
+  (** [On_locations] permits enumerating and folding over locations inside an
+      instruction. *)
   module On_locations :
-    Travesty.Traversable_types.S0
-      with type t = t
-       and type Elt.t = Location.t
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Location.t
 
   (** [On_symbols] permits enumerating and folding over symbols inside an
       instruction. *)
   module On_symbols :
     Travesty.Traversable_types.S0 with type t = t and type Elt.t = string
 
-  (** [On_registers] permits enumerating and folding over registers inside
-      an instruction. *)
+  (** [On_registers] permits enumerating and folding over registers inside an
+      instruction. *)
   module On_registers :
     Travesty.Traversable_types.S0 with type t = t and type Elt.t = Reg.t
 
@@ -177,8 +172,8 @@ type t [@@deriving sexp, equal]
 (** Opaque type of dialect-tagged abstract syntax trees. *)
 
 val make : ?program:Statement.t list -> dialect:Id.t -> unit -> t
-(** [make ?program ~dialect ()] makes an AST with program [program]
-    (default: empty), tagged with dialect [dialect]. *)
+(** [make ?program ~dialect ()] makes an AST with program [program] (default:
+    empty), tagged with dialect [dialect]. *)
 
 val dialect : t -> Id.t
 (** [dialect ast] gets the dialect with which [ast] is tagged. *)

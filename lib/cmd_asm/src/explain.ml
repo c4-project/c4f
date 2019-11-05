@@ -71,8 +71,7 @@ let command =
             ; map
                 ~f:(fun flag -> Option.some_if flag (Some Assembly))
                 (flag "as-assembly" no_arg
-                   ~doc:"Print explanation as lightly annotated assembly")
-            ]
+                   ~doc:"Print explanation as lightly annotated assembly") ]
             ~if_nothing_chosen:(`Default_to None))
       in
       fun () ->

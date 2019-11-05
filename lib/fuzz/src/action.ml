@@ -83,11 +83,10 @@ module Pool = struct
   type t = With_default_weight.t Weighted_list.t
 
   let of_weighted_actions
-      (weighted_actions : (With_default_weight.t, int option) List.Assoc.t)
-      : t Or_error.t =
-    (* TODO(@MattWindsor91): ideally we shouldn't lose whether the weight
-       was overridden or not, even if the final weight equals the default
-       one. *)
+      (weighted_actions : (With_default_weight.t, int option) List.Assoc.t) :
+      t Or_error.t =
+    (* TODO(@MattWindsor91): ideally we shouldn't lose whether the weight was
+       overridden or not, even if the final weight equals the default one. *)
     weighted_actions
     |> List.map ~f:(fun (act, override) ->
            ( act
@@ -114,8 +113,8 @@ module Pool = struct
     let lift = State.Monad.Monadic.return
   end)
 
-  (** [to_available_only wl ~subject] is a stateful action that modifies
-      [wl] to pull any actions not available on [subject] to weight 0. *)
+  (** [to_available_only wl ~subject] is a stateful action that modifies [wl]
+      to pull any actions not available on [subject] to weight 0. *)
   let to_available_only (wl : t) ~(subject : Subject.Test.t) :
       t State.Monad.t =
     W.adjust_weights_m wl
@@ -143,8 +142,8 @@ module Pure_payload (S : sig
 end) : Action_types.S_payload with type t = S.t = struct
   include S
 
-  let gen (_subject : Subject.Test.t) ~(random : Splittable_random.State.t)
-      : t State.Monad.t =
+  let gen (_subject : Subject.Test.t) ~(random : Splittable_random.State.t) :
+      t State.Monad.t =
     lift_quickcheck S.quickcheck_generator ~random
 end
 

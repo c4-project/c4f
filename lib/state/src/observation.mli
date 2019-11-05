@@ -35,9 +35,9 @@ module Entry_tag : sig
 end
 
 val add : ?tag:Entry_tag.t -> t -> entry:Entry.t -> t Or_error.t
-(** [add ?tag out ~entry] adds [entry] onto the state sets of [out]. It
-    fails if [out] is marked as having undefined behaviour. If [tag] is
-    given, [entry] may also propagate to the observation's witness or
+(** [add ?tag out ~entry] adds [entry] onto the state sets of [out]. It fails
+    if [out] is marked as having undefined behaviour. If [tag] is given,
+    [entry] may also propagate to the observation's witness or
     counter-example set accordingly. *)
 
 val add_many :
@@ -52,9 +52,9 @@ val set_undefined : t -> t Or_error.t
     states attached. *)
 
 val set_unsat : t -> t Or_error.t
-(** [set_unsat out] marks [out] with a flag claiming that it does not
-    satisfy its original postcondition. It fails if [out] is already marked
-    as being either sat or unsat. *)
+(** [set_unsat out] marks [out] with a flag claiming that it does not satisfy
+    its original postcondition. It fails if [out] is already marked as being
+    either sat or unsat. *)
 
 val set_sat : t -> t Or_error.t
 (** [set_sat out] marks [out] with a flag claiming that it satisfies its
@@ -78,9 +78,9 @@ val counter_examples : t -> Set.M(Entry).t
     simply not mark states as such. *)
 
 val witnesses : t -> Set.M(Entry).t
-(** [witnesses out] gets the state entries of a single observation [out]
-    that were marked as passing the postcondition. This set isn't guaranteed
-    to contain all witnesses: for example, a backend might simply not mark
+(** [witnesses out] gets the state entries of a single observation [out] that
+    were marked as passing the postcondition. This set isn't guaranteed to
+    contain all witnesses: for example, a backend might simply not mark
     states as such. *)
 
 (** {2 Flags}

@@ -84,8 +84,8 @@ module Raw = struct
       in
       {test with threads= threads'})
 
-  let remove_thread (type const prog) (test : (const, prog) t)
-      ~(index : int) : (const, prog) t Or_error.t =
+  let remove_thread (type const prog) (test : (const, prog) t) ~(index : int)
+      : (const, prog) t Or_error.t =
     let threads = threads test in
     Or_error.Let_syntax.(
       let%map threads' = Tx.List.replace threads index ~f:(Fn.const None) in
@@ -138,11 +138,10 @@ module Make (Lang : Test_types.Basic) :
       let module V = Validate in
       V.all
         [ V.booltest (Fn.non List.is_empty) ~if_false:"threads are empty"
-          (* TODO(@MattWindsor91): duplicate name checking *)
-         ]
+          (* TODO(@MattWindsor91): duplicate name checking *) ]
 
-    let validate_post :
-        Lang.Constant.t Postcondition.t option Validate.check =
+    let validate_post : Lang.Constant.t Postcondition.t option Validate.check
+        =
       (* TODO(@MattWindsor91): actual validation here? *)
       Fn.const Validate.pass
 
@@ -168,8 +167,7 @@ module Make (Lang : Test_types.Basic) :
         ~if_false:"Test must have a postcondition or location stanza."
 
     let variables_in_init (header : _ Header.t) : Set.M(Ac.C_id).t =
-      header |> Header.init |> List.map ~f:fst
-      |> Set.of_list (module Ac.C_id)
+      header |> Header.init |> List.map ~f:fst |> Set.of_list (module Ac.C_id)
 
     let variables_in_locations (header : _ Header.t) : Set.M(Ac.C_id).t =
       header |> Header.locations
@@ -177,8 +175,8 @@ module Make (Lang : Test_types.Basic) :
            ~f:(Set.of_list (module Ac.C_id))
            ~default:(Set.empty (module Ac.C_id))
 
-    let validate_location_variables :
-        Lang.Constant.t Header.t Validate.check =
+    let validate_location_variables : Lang.Constant.t Header.t Validate.check
+        =
      fun header ->
       let in_locations = variables_in_locations header in
       let in_init = variables_in_init header in
@@ -208,8 +206,8 @@ module Make (Lang : Test_types.Basic) :
            ~threads:(w validate_threads))
 
     let get_uniform_globals :
-           Lang.Program.t list
-        -> Lang.Type.t Map.M(Ac.C_id).t option Or_error.t = function
+        Lang.Program.t list -> Lang.Type.t Map.M(Ac.C_id).t option Or_error.t
+        = function
       | [] ->
           Or_error.error_string "empty threads"
       | x :: xs ->
@@ -273,8 +271,8 @@ module Make (Lang : Test_types.Basic) :
     Validate.valid_or_error language validate_language
 
   let of_ast
-      ({Ast.language; name; decls} :
-        (Lang.Constant.t, Lang.Program.t) Ast.t) : t Or_error.t =
+      ({Ast.language; name; decls} : (Lang.Constant.t, Lang.Program.t) Ast.t)
+      : t Or_error.t =
     let threads = Ast.get_programs decls in
     Or_error.Let_syntax.(
       let%bind _ = check_language language in

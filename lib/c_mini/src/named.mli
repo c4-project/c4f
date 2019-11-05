@@ -22,8 +22,8 @@ val make : 'a -> name:Act_common.C_id.t -> 'a t
 (** [make value ~name] tags [value] with identifier [name]. *)
 
 val seq_of_alist : (Act_common.C_id.t, 'a) List.Assoc.t -> 'a t Sequence.t
-(** [seq_of_alist xs] converts an identifier-keyed association list [xs] to
-    a sequence of named values. *)
+(** [seq_of_alist xs] converts an identifier-keyed association list [xs] to a
+    sequence of named values. *)
 
 val list_of_alist : (Act_common.C_id.t, 'a) List.Assoc.t -> 'a t list
 (** [list_of_alist xs] converts an identifier-keyed association list [xs] to

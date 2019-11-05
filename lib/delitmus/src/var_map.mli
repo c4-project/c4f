@@ -56,8 +56,8 @@ val global_c_variables : t -> Set.M(Act_common.C_id).t
 val lookup_and_require_global :
   t -> id:Act_common.Litmus_id.t -> Act_common.C_id.t Or_error.t
 (** [lookup_and_require_global map ~id] looks up the Litmus ID [id] in the
-    var map. It returns [x] if [id] was mapped to a global C variable [id]
-    in [map], or an error otherwise (ie, [id] was not mapped to a global C
+    var map. It returns [x] if [id] was mapped to a global C variable [id] in
+    [map], or an error otherwise (ie, [id] was not mapped to a global C
     variable, or not seen at all). *)
 
 (** {2 Interface implementations} *)

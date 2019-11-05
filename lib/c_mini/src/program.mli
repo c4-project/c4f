@@ -30,8 +30,7 @@ val globals : _ t -> (Act_common.C_id.t, Initialiser.t) List.Assoc.t
 (** [globals program] gets an associative list of each global initialiser in
     [program]. *)
 
-val functions :
-  'meta t -> (Act_common.C_id.t, 'meta Function.t) List.Assoc.t
+val functions : 'meta t -> (Act_common.C_id.t, 'meta Function.t) List.Assoc.t
 (** [functions program] gets an associative list of each function in
     [program]. *)
 
@@ -39,8 +38,8 @@ val functions :
 
 val with_functions :
   _ t -> (Act_common.C_id.t, 'meta Function.t) List.Assoc.t -> 'meta t
-(** [with_functions prog new_functions] creates a new program by
-    substituting [new_functions] for [prog]'s functions. *)
+(** [with_functions prog new_functions] creates a new program by substituting
+    [new_functions] for [prog]'s functions. *)
 
 (** {2 Traversals} *)
 

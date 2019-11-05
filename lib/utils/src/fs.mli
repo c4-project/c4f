@@ -10,8 +10,8 @@
    project root for more information. *)
 
 val filter_files : ?ext:string -> Fpath.t list -> Fpath.t list
-(** [filter_files ?ext flist] is [flist] if [ext] is absent, or the result
-    of restricting [flist] to files syntactically having the extension [ext]
+(** [filter_files ?ext flist] is [flist] if [ext] is absent, or the result of
+    restricting [flist] to files syntactically having the extension [ext]
     otherwise. *)
 
 val subpaths : Fpath.t -> Fpath.t list

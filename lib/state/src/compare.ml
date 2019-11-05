@@ -84,8 +84,8 @@ module Result = struct
     Fmt.pf f "@[<h>Oracle@ %a@ Subject@]" pp_operator o
 
   let pp : t Fmt.t =
-    (* Some of these fields are optional, so we can't easily just
-       concatenate them all with spaces. *)
+    (* Some of these fields are optional, so we can't easily just concatenate
+       them all with spaces. *)
     Fmt.(
       vbox
         (concat ~sep:nop

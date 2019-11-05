@@ -42,8 +42,8 @@ module Decl : sig
       [None] otherwise. *)
 
   val as_locations : (_, _) t -> Act_common.C_id.t list option
-  (** [as_post decl] returns [Some ls] if [decl] is a location list [ls],
-      and [None] otherwise. *)
+  (** [as_post decl] returns [Some ls] if [decl] is a location list [ls], and
+      [None] otherwise. *)
 end
 
 (** {2 Top-level AST} *)
@@ -81,8 +81,8 @@ val get_locations :
 
 val get_header :
   string -> ('const, _) Decl.t list -> 'const Header.t Or_error.t
-(** [get_header name decls] scrapes [decls] for all of the various parts of
-    a Litmus test that make up a header, then builds a {!Header} with them
-    and the test name [name]. *)
+(** [get_header name decls] scrapes [decls] for all of the various parts of a
+    Litmus test that make up a header, then builds a {!Header} with them and
+    the test name [name]. *)
 
 (* TODO(@MattWindsor91): expose constructors *)

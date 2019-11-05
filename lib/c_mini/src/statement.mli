@@ -13,8 +13,8 @@
 
 (** A statement.
 
-    We treat some things that are technically expressions in C as
-    statements, for simplicity. *)
+    We treat some things that are technically expressions in C as statements,
+    for simplicity. *)
 module rec Main :
   (Types.S_statement
     with type address := Address.t

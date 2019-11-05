@@ -21,8 +21,7 @@ let test_in_env (module E : Src.Env_types.S)
     (module Qc : Qx.S_with_sexp with type t = Src.Address.t) : unit =
   Q.Test.run_exn
     (module Qc)
-    ~f:
-      ([%test_pred: Src.Address.t] ~here:[[%here]] (variable_in (module E)))
+    ~f:([%test_pred: Src.Address.t] ~here:[[%here]] (variable_in (module E)))
 
 let test_type (module E : Src.Env_types.S)
     (module Qc : Qx.S_with_sexp with type t = Src.Address.t)

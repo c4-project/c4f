@@ -20,8 +20,7 @@ type ('meta, 'stm) t [@@deriving sexp, equal]
 
 (** {2 Constructors} *)
 
-val make :
-  ?statements:'stm list -> metadata:'meta -> unit -> ('meta, 'stm) t
+val make : ?statements:'stm list -> metadata:'meta -> unit -> ('meta, 'stm) t
 (** [make ~metadata ?statements] makes a block given an optional metadata
     list and statement list (both default to the empty list). *)
 
@@ -38,8 +37,8 @@ val statements : (_, 'stm) t -> 'stm list
 (** [statements block] gets [block]'s statement list. *)
 
 val is_empty : (_, _) t -> bool
-(** [is_empty block] is true if, and only if, [statements block] is the
-    empty list. *)
+(** [is_empty block] is true if, and only if, [statements block] is the empty
+    list. *)
 
 (** {1 Traversability} *)
 
@@ -49,10 +48,10 @@ include
 (** We can traverse directly over the metadata and statement types of a
     block. *)
 
-module On_statements (Meta : T) :
-  Travesty.Traversable_types.S1 with type 'stm t := (Meta.t, 'stm) t
 (** [On_statements] fixes the type of metadata and permits direct traversal
     over the statements of a block. *)
+module On_statements (Meta : T) :
+  Travesty.Traversable_types.S1 with type 'stm t := (Meta.t, 'stm) t
 
 (** A pseudo-traversal over the statement lists of a block. *)
 module On_meta_statement_list (Stm : T1) : sig

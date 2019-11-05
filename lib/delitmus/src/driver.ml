@@ -78,8 +78,8 @@ struct
       let%map var_map = make_var_map input in
       Aux.make ~litmus_header ~var_map ~num_threads ())
 
-  let make_program (input : Act_c_mini.Litmus.Test.t) (context : Context.t)
-      : unit Act_c_mini.Program.t Or_error.t =
+  let make_program (input : Act_c_mini.Litmus.Test.t) (context : Context.t) :
+      unit Act_c_mini.Program.t Or_error.t =
     let raw_functions = Act_c_mini.Litmus.Test.threads input in
     let globals = make_globals context in
     Or_error.Let_syntax.(
@@ -93,8 +93,7 @@ struct
       (Act_common.C_id.t, Act_c_mini.Constant.t) List.Assoc.t =
     fn |> Act_c_mini.Function.body_decls
     |> List.filter_map ~f:(fun (id, init) ->
-           Option.(
-             init |> Act_c_mini.Initialiser.value >>| fun v -> (id, v)))
+           Option.(init |> Act_c_mini.Initialiser.value >>| fun v -> (id, v)))
 
   let make_local_inits :
          unit Act_c_mini.Function.t list

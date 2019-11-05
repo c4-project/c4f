@@ -52,8 +52,7 @@ module Record = struct
       =
     {record with known_value= Option.map ~f record.known_value}
 
-  let add_dependency : t -> t =
-    map_known_value ~f:Known_value.add_dependency
+  let add_dependency : t -> t = map_known_value ~f:Known_value.add_dependency
 
   let add_write (record : t) : t = {record with has_writes= true}
 

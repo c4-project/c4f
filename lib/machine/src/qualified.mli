@@ -17,15 +17,13 @@ open Base
 (** {1 Basic shape of qualified specifications} *)
 
 type 'qual t [@@deriving equal]
-(** Opaque type of qualified specifications, parametrised over the
-    type of the inner (non-machine) specification. *)
+(** Opaque type of qualified specifications, parametrised over the type of
+    the inner (non-machine) specification. *)
 
 (** {2 Constructing a qualified specification} *)
 
-val make
-  :  spec:'qual Act_common.Spec.With_id.t
-  -> m_spec: Spec.With_id.t
-  -> 'qual t
+val make :
+  spec:'qual Act_common.Spec.With_id.t -> m_spec:Spec.With_id.t -> 'qual t
 (** [make ~spec ~m_spec] wraps [spec] in a qualified specification over
     machine specification [m_spec]. *)
 
@@ -34,12 +32,11 @@ val make
     These can, of course, be used with {!Compiler.t} and {!Backend.t} *)
 
 val spec : 'qual t -> 'qual Act_common.Spec.With_id.t
-(** [spec q] unwraps [q], returning the original specification wrapped
-    with its identifier. *)
+(** [spec q] unwraps [q], returning the original specification wrapped with
+    its identifier. *)
 
 val spec_without_id : 'qual t -> 'qual
-(** [spec_without_id q] applies {!Act_common.Spec.With_id.spec} to
-    [spec q]. *)
+(** [spec_without_id q] applies {!Act_common.Spec.With_id.spec} to [spec q]. *)
 
 val m_spec : _ t -> Spec.t Act_common.Spec.With_id.t
 (** [m_spec q] gets the machine spec within [q]. *)
@@ -68,9 +65,9 @@ module Compiler : sig
          (   Act_compiler.Spec.With_id.t
           -> (module Act_compiler.Instance_types.Basic) Or_error.t)
     -> (module Act_compiler.Instance_types.S) Or_error.t
-  (** [lift_resolver spec ~f] lifts the basic compiler resolving function
-      [f] such that it accepts a qualified compiler spec [spec] and returns,
-      on success, a {!Act_compiler.Instance_types.S} instance. *)
+  (** [lift_resolver spec ~f] lifts the basic compiler resolving function [f]
+      such that it accepts a qualified compiler spec [spec] and returns, on
+      success, a {!Act_compiler.Instance_types.S} instance. *)
 end
 
 (** {1 Qualified backend specifications} *)

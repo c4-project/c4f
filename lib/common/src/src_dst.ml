@@ -33,8 +33,7 @@ module type S = sig
   val bind_src_dst :
     f:(('o, 'o) t -> ('o, 'o) t option) -> 'o list -> 'o list option
 
-  val map_src_dst :
-    f:(('o, 'o) t -> ('o, 'o) t) -> 'o list -> 'o list option
+  val map_src_dst : f:(('o, 'o) t -> ('o, 'o) t) -> 'o list -> 'o list option
 end
 
 (** [Make] takes a [Has_order] and generates the appropriate utility module. *)

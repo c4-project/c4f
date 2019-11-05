@@ -29,6 +29,6 @@ module type Basic = sig
   val try_split_state_line : test_type -> string -> state_line Or_error.t
   (** [try_split_state_line test_type line] should try to split [line] into
       the state tag (taking into account [test_type], the (optional) number
-      of occurrences of that state, and an otherwise unparsed line
-      containing the state data. *)
+      of occurrences of that state, and an otherwise unparsed line containing
+      the state data. *)
 end

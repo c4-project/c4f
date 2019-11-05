@@ -62,8 +62,7 @@ let make_global_var_alist (type a) (progs : Litmus.Test.Lang.Program.t list)
       Or_error.(
         xs
         |> List.map
-             ~f:
-               (Fn.compose (check_parameters_consistent params) Named.value)
+             ~f:(Fn.compose (check_parameters_consistent params) Named.value)
         |> Or_error.combine_errors_unit
         >>= fun () -> lift_global_var_alist ~f params)
 

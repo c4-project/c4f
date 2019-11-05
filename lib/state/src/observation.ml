@@ -40,9 +40,8 @@ module Flag = struct
 end
 
 (* This weird module is necessary to set up the deriving magic for sexp_of
-   and quickcheck later on, because if we use Set.M(Flag).t directly we
-   can't derive quickcheck, and if we use Set.t directly we can't derive
-   sexp_of. *)
+   and quickcheck later on, because if we use Set.M(Flag).t directly we can't
+   derive quickcheck, and if we use Set.t directly we can't derive sexp_of. *)
 module Flag_set = struct
   type t = Set.M(Flag).t [@@deriving sexp_of]
 

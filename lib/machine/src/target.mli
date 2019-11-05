@@ -20,8 +20,8 @@ type 'compiler t =
       (** [t] is either a machine-qualified compiler specification, or a raw
           architecture. *)
 
-(** We can traverse over the compilers (on the left) and architecture IDs
-    (on the right) in a specification. *)
+(** We can traverse over the compilers (on the left) and architecture IDs (on
+    the right) in a specification. *)
 include
   Travesty.Bi_traversable_types.S1_left
     with type 'compiler t := 'compiler t

@@ -45,8 +45,8 @@ let parse_int (s : string) : int Or_error.t =
 let parse_int_opt : string option -> int option Or_error.t =
   Tx.Option.With_errors.map_m ~f:parse_int
 
-let parse_tag (tt : Shc.Reader.Test_type.t) (tag : string) :
-    Tag.t Or_error.t =
+let parse_tag (tt : Shc.Reader.Test_type.t) (tag : string) : Tag.t Or_error.t
+    =
   match (tt, tag) with
   | Allowed, "*" | Required, ":" ->
       Or_error.return Tag.Witness

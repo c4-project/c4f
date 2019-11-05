@@ -69,8 +69,7 @@ let det_known_values : Src.Constant.t Map.M(Ac.C_id).t Lazy.t =
          ; (Ac.C_id.of_string "z", bool false)
          ; (Ac.C_id.of_string "blep", int 99) ])
 
-let det_known_value_mod : (module Src.Env_types.S_with_known_values) Lazy.t
-    =
+let det_known_value_mod : (module Src.Env_types.S_with_known_values) Lazy.t =
   Lazy.Let_syntax.(
     let%bind (module Env) = test_env_mod in
     let%map known_values = det_known_values in

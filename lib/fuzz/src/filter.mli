@@ -12,8 +12,8 @@
 (** The fuzzer, packaged up as filters.
 
     The fuzzer takes various pieces of configuration (see {{!Aux} Aux}) as
-    auxiliary input, and emits a trace of actions performed (see
-    {{!Trace} Trace}) as auxiliary output. *)
+    auxiliary input, and emits a trace of actions performed (see {{!Trace}
+    Trace}) as auxiliary output. *)
 
 (** {1 Fuzzer config as an auxiliary input} *)
 
@@ -39,8 +39,7 @@ module Random :
 
 (** {1 Replaying a trace with the fuzzer}
 
-    Here, the 'rest' parameter to the auxiliary input is the trace to
-    replay. *)
+    Here, the 'rest' parameter to the auxiliary input is the trace to replay. *)
 module Replay :
   Plumbing.Filter_types.S
     with type aux_i = Trace.t Aux.t

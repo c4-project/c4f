@@ -30,8 +30,7 @@ let modules : Action.With_default_weight.t list Lazy.t =
           ~default_weight:1
       ; make ~action:(module Flow_actions.If.Duplicate) ~default_weight:1 ]
 
-let module_map : Action.With_default_weight.t Map.M(Act_common.Id).t Lazy.t
-    =
+let module_map : Action.With_default_weight.t Map.M(Act_common.Id).t Lazy.t =
   Lazy.(
     modules
     >>| List.map ~f:(fun a -> (Action.With_default_weight.name a, a))

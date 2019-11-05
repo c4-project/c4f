@@ -23,9 +23,9 @@ module type Basic = sig
   (** [load_from_string s] loads a [t] directly from a string [s]. *)
 
   val load_from_ic : ?path:string -> In_channel.t -> t Or_error.t
-  (** [load_from_ic ?path ic] loads a [t] from an input channel [ic]. If
-      [ic] comes from a file with a given path, [path] should be set to
-      [Some x] where [x] is that path. *)
+  (** [load_from_ic ?path ic] loads a [t] from an input channel [ic]. If [ic]
+      comes from a file with a given path, [path] should be set to [Some x]
+      where [x] is that path. *)
 end
 
 (** [S] is an interface for modules whose main type can be loaded from a

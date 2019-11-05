@@ -3,23 +3,22 @@
    Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE. *)
 
 (** [Id] is a module for compiler and machine identifiers.
 
@@ -76,9 +75,8 @@ val try_find_assoc_with_suggestions :
 val try_find_assoc_with_suggestions_prefix :
   (t, 'a) List.Assoc.t -> t -> id_type:string -> (t * 'a) Or_error.t
 (** [try_find_assoc_with_suggestions_prefix assoc id ~id_type] behaves as
-    [try_find_assoc_with_suggestions], but finds the first element of
-    [assoc] whose ID is a prefix of [id], and returns that ID alongside the
-    result. *)
+    [try_find_assoc_with_suggestions], but finds the first element of [assoc]
+    whose ID is a prefix of [id], and returns that ID alongside the result. *)
 
 include
   Identifiable.S with type t := t
@@ -104,8 +102,8 @@ val pp_map : 'e Fmt.t -> 'e Map.t Fmt.t
 
 (** {2 Property language} *)
 
-(** [Property] contains a mini-language for querying IDs, suitable for use
-    in [Blang]. *)
+(** [Property] contains a mini-language for querying IDs, suitable for use in
+    [Blang]. *)
 module Property : sig
   type id = t
   (** [id] is a synonym for the identifier type. *)

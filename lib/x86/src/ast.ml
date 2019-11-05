@@ -22,9 +22,9 @@
    en Automatique and the authors. All rights reserved.
 
    This software is governed by the CeCILL-B license under French law and
-   abiding by the rules of distribution of free software. You can use,
-   modify and/ or redistribute the software under the terms of the CeCILL-B
-   license as circulated by CEA, CNRS and INRIA at the following URL
+   abiding by the rules of distribution of free software. You can use, modify
+   and/ or redistribute the software under the terms of the CeCILL-B license
+   as circulated by CEA, CNRS and INRIA at the following URL
    "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
 
 open Base
@@ -34,10 +34,7 @@ module Tx = Travesty_base_exts
 module Au = Act_utils
 
 module Location = struct
-  type t =
-    | Indirect of Indirect.t
-    | Reg of Reg.t
-    | Template_token of string
+  type t = Indirect of Indirect.t | Reg of Reg.t | Template_token of string
   [@@deriving sexp, variants, compare, equal, quickcheck]
 
   (** Base mapper for locations *)
@@ -128,17 +125,14 @@ module Operand = struct
                  map_m ~location ~immediate ~string ~typ ~bop l
                in
                let%bind b' = bop b in
-               let%map r' =
-                 map_m ~location ~immediate ~string ~typ ~bop r
-               in
+               let%map r' = map_m ~location ~immediate ~string ~typ ~bop r in
                (l', b', r')))
   end
 
   (** Recursive mapper for locations in operands *)
   module On_locations :
-    Travesty.Traversable_types.S0
-      with type t = t
-       and type Elt.t = Location.t = Travesty.Traversable.Make0 (struct
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Location.t =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Location
@@ -217,8 +211,7 @@ module Operand = struct
         ~f:(fun mu ->
           [ G.map
               ~f:(fun (l, b, r) -> Bop (l, b, r))
-              [%quickcheck.generator: [%custom mu] * Bop.t * [%custom mu]]
-          ])
+              [%quickcheck.generator: [%custom mu] * Bop.t * [%custom mu]] ])
 
     let quickcheck_observer : t O.t =
       O.fixed_point (fun mu ->
@@ -290,9 +283,8 @@ module Instruction = struct
   end)
 
   module On_locations :
-    Travesty.Traversable_types.S0
-      with type t = t
-       and type Elt.t = Location.t = Travesty.Traversable.Make0 (struct
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Location.t =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Location

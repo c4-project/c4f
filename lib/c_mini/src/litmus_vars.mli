@@ -26,12 +26,11 @@ val make_scoped_map :
   -> make_local:(int -> Act_common.C_id.t -> Type.t -> 'a Or_error.t)
   -> 'a Act_common.Scoped_map.t Or_error.t
 (** [make_scoped_map vast ~make_global ~make_local] tries to make a scoped
-    map by inspecting all local variable declarations and
-    global-representing parameters in the functions in [vast]. It uses
-    [make_global] and [make_local] to construct the values stored in the
-    scoped map. *)
+    map by inspecting all local variable declarations and global-representing
+    parameters in the functions in [vast]. It uses [make_global] and
+    [make_local] to construct the values stored in the scoped map. *)
 
 val make_set : Litmus.Test.t -> Set.M(Act_common.Litmus_id).t Or_error.t
 (** [make_set vast] tries to make a Litmus ID set by inspecting all local
-    variable declarations and global-representing parameters in the
-    functions in [fns]. *)
+    variable declarations and global-representing parameters in the functions
+    in [fns]. *)

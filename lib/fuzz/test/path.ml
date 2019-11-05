@@ -71,13 +71,12 @@ let%test_module "Statement_list" =
           ( module struct
             let test_insert (path : F.Path_shapes.stm_list) : unit =
               test
-                (F.Path.Statement_list.insert_stm path
-                   ~to_insert:example_stm ~target:(Lazy.force body_stms))
+                (F.Path.Statement_list.insert_stm path ~to_insert:example_stm
+                   ~target:(Lazy.force body_stms))
 
             let%expect_test "insert onto statement (invalid)" =
               test_insert in_stm_path ;
-              [%expect
-                {| ("Can't insert statement here" (path This_stm)) |}]
+              [%expect {| ("Can't insert statement here" (path This_stm)) |}]
 
             let%expect_test "insert onto range (invalid)" =
               test_insert on_stm_range_path ;

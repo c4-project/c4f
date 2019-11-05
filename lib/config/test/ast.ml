@@ -14,8 +14,7 @@ module Ast = Act_config.Ast
 
 let%test_module "pretty-printing" =
   ( module struct
-    let test (pp : 'a Fmt.t) (value : 'a) : unit =
-      Fmt.pr "@[%a@]@." pp value
+    let test (pp : 'a Fmt.t) (value : 'a) : unit = Fmt.pr "@[%a@]@." pp value
 
     let%expect_test "example compiler" =
       test Ast.Machine.pp

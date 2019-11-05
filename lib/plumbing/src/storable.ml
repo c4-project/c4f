@@ -12,8 +12,8 @@
 open Base
 open Sexplib
 
-module Make (B : Storable_types.Basic) :
-  Storable_types.S with type t = B.t = struct
+module Make (B : Storable_types.Basic) : Storable_types.S with type t = B.t =
+struct
   include B
 
   let store (x : t) ~(dest : Output.t) : unit Or_error.t =

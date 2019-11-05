@@ -32,12 +32,12 @@ val global : C_id.t -> t
 (** [global id] creates a global identifier. *)
 
 val global_of_string : string -> t Or_error.t
-(** [global_of_string str] tries to create a global identifier from [str].
-    It fails if [str] isn't a valid C identifier. *)
+(** [global_of_string str] tries to create a global identifier from [str]. It
+    fails if [str] isn't a valid C identifier. *)
 
 val global_of_string_exn : string -> t
-(** [global_of_string_exn str] is [global_of_string], but throws an
-    exception on failure. *)
+(** [global_of_string_exn str] is [global_of_string], but throws an exception
+    on failure. *)
 
 (** {3 Local identifiers} *)
 
@@ -52,8 +52,8 @@ val map_tid : t -> f:(int -> int) -> t
 (** {2 Accessors} *)
 
 val as_global : t -> C_id.t option
-(** [as_global id] gets [Some cid] if [id] is the global identifier [cid],
-    or [None] otherwise. *)
+(** [as_global id] gets [Some cid] if [id] is the global identifier [cid], or
+    [None] otherwise. *)
 
 val as_local : t -> (int * C_id.t) option
 (** [as_local id] gets [Some (tid, cid)] if [id] is the local identifier
@@ -69,8 +69,7 @@ val to_memalloy_id : t -> C_id.t
 (** [to_memalloy_id id] converts [id] to the corresponding memalloy
     executable-C global variable name.
 
-    This is [x] where [id = Global x], and ["tXY"] where
-    [id = Local (X, Y)]. *)
+    This is [x] where [id = Global x], and ["tXY"] where [id = Local (X, Y)]. *)
 
 (** {3 Predicates} *)
 

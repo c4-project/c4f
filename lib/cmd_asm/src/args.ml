@@ -16,8 +16,7 @@ module Standard_asm = struct
     { rest: Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t
     ; aux_file: string option
     ; target: Common_cmd.Asm_target.t
-    ; sanitiser_passes: Act_sanitiser.Pass_group.Selector.t Blang.t option
-    }
+    ; sanitiser_passes: Act_sanitiser.Pass_group.Selector.t Blang.t option }
   [@@deriving fields]
 
   let get =

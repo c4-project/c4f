@@ -33,8 +33,8 @@ module Input = struct
     Act_asm.Job.make ~config ~passes:(sanitiser_passes i) ()
 end
 
-let resolve_target (args : Args.Standard_asm.t) (cfg : Act_config.Global.t)
-    : Act_machine.Qualified.Compiler.t Act_machine.Target.t Or_error.t =
+let resolve_target (args : Args.Standard_asm.t) (cfg : Act_config.Global.t) :
+    Act_machine.Qualified.Compiler.t Act_machine.Target.t Or_error.t =
   let raw_target = Args.Standard_asm.target args in
   Common_cmd.Asm_target.resolve ~cfg raw_target
 
@@ -71,8 +71,7 @@ let resolve_sanitiser_passes (args : Args.Standard_asm.t)
 
 let with_input (args : Args.Standard_asm.t) (output : Ac.Output.t)
     (global_config : Act_config.Global.t) ~(f : Input.t -> unit Or_error.t)
-    ~(default_passes : Set.M(Act_sanitiser.Pass_group).t) : unit Or_error.t
-    =
+    ~(default_passes : Set.M(Act_sanitiser.Pass_group).t) : unit Or_error.t =
   let sanitiser_passes = resolve_sanitiser_passes args ~default_passes in
   let f_args = Args.Standard_asm.rest args in
   Or_error.Let_syntax.(

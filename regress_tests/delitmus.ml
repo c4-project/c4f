@@ -20,8 +20,8 @@ let pp_aux : Act_delitmus.Aux.t Fmt.t =
 
 let print_aux : Act_delitmus.Aux.t -> unit =
   Fmt.pr
-    "@[<v>@ /* --Begin auxiliary output--@ @ %a@ @ --End auxiliary \
-     output-- */@]@."
+    "@[<v>@ /* --Begin auxiliary output--@ @ %a@ @ --End auxiliary output-- \
+     */@]@."
     pp_aux
 
 let delitmus_file_with_style (style : Act_delitmus.Runner.Style.t)

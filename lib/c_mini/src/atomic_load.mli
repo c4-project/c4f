@@ -16,8 +16,8 @@ type t [@@deriving sexp, quickcheck, compare, equal]
 (** {2 Constructors} *)
 
 val make : src:Address.t -> mo:Mem_order.t -> t
-(** [atomic_load ~src ~dst ~mo] constructs an explicit atomic load
-    expression with source [src] and memory order [mo]. *)
+(** [atomic_load ~src ~dst ~mo] constructs an explicit atomic load expression
+    with source [src] and memory order [mo]. *)
 
 (** {2 Accessors} *)
 
@@ -47,10 +47,10 @@ module On_lvalues :
     The main quickcheck instance for atomic loads generates any such loads,
     without regard to type safety over a particular typing environment. *)
 
-module Quickcheck_atomic_ints (E : Env_types.S) :
-  Act_utils.My_quickcheck.S_with_sexp with type t = t
 (** Generates random, type-safe atomic loads over the given variable typing
     environment, restricted to atomic ints. *)
+module Quickcheck_atomic_ints (E : Env_types.S) :
+  Act_utils.My_quickcheck.S_with_sexp with type t = t
 
 (** {2 Type checking} *)
 

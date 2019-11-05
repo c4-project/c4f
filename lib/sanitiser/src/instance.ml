@@ -3,23 +3,22 @@
    Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
 open Travesty_containers
@@ -149,8 +148,8 @@ module Make (H : Hook_intf.S) : S with module Lang := H.Lang = struct
            ( "Operands contain a heap symbol in immediate position. "
            ^ "This may cause problems for Herd." )))
 
-  (** [warn_untranslated_operands stm] emits warnings for each instruction
-      in [stm] whose operands should have been lowered to a Herd-compatible
+  (** [warn_untranslated_operands stm] emits warnings for each instruction in
+      [stm] whose operands should have been lowered to a Herd-compatible
       form, but haven't been. *)
   let warn_untranslated_operands ins =
     let open Ctx.Let_syntax in
@@ -284,8 +283,7 @@ module Make (H : Hook_intf.S) : S with module Lang := H.Lang = struct
     Ctx_Zip.fold_m_until (Zip.of_list lst) ~f:process_possible_useless_jump
       ~init:() ~finish:(fun () zipper -> Ctx.return (Zip.to_list zipper))
 
-  let remove_useless_jumps =
-    Ctx_Lst.map_m ~f:remove_useless_jumps_in_listing
+  let remove_useless_jumps = Ctx_Lst.map_m ~f:remove_useless_jumps_in_listing
 
   module Deref = Deref.Make (H)
   module Symbols = Symbols.Make (H)
@@ -390,8 +388,7 @@ module Make (H : Hook_intf.S) : S with module Lang := H.Lang = struct
       version of each symbol in [symbols]. In each case, it sets up a
       redirect in the redirects table.
 
-      If it fails to find at least one of the symbols, it'll raise a
-      warning. *)
+      If it fails to find at least one of the symbols, it'll raise a warning. *)
   let find_initial_redirects (progs : Lang.Program.t list) =
     let open Ctx.Let_syntax in
     let%bind symbols = Ctx.get_variables in
@@ -431,8 +428,8 @@ module Make (H : Hook_intf.S) : S with module Lang := H.Lang = struct
       >>= fun () ->
       Ctx_List.mapi_m ~f:sanitise_program progs
       (* We do this last, for two reasons: first, in case the instruction
-         sanitisers have introduced invalid variables; and second, so that
-         we know that the symbol changes agree across program boundaries.*)
+         sanitisers have introduced invalid variables; and second, so that we
+         know that the symbol changes agree across program boundaries.*)
       >>= Symbols.run
       >>= build_output)
 

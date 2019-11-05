@@ -20,8 +20,7 @@ module Au = Act_utils
 module Tx = Travesty_base_exts
 open Ast_basic
 
-let pp_assign_rhs (type a) (pp : a Fmt.t) : a Fmt.t =
-  Fmt.(any "@ =@ " ++ pp)
+let pp_assign_rhs (type a) (pp : a Fmt.t) : a Fmt.t = Fmt.(any "@ =@ " ++ pp)
 
 let pp_opt_assign (type l r) (ppl : l Fmt.t) (ppr : r Fmt.t) :
     (l * r option) Fmt.t =
@@ -337,8 +336,7 @@ module Parametric = struct
         | Cast (ty, t) ->
             Fmt.(pf f "%a%a" (parens T.pp) ty pp t)
         | Call {func; arguments} ->
-            Fmt.(
-              pf f "%a%a" pp func (parens (list ~sep:comma pp)) arguments)
+            Fmt.(pf f "%a%a" pp func (parens (list ~sep:comma pp)) arguments)
         | Subscript a ->
             Array.pp pp pp f a
         | Field {value; field; access= `Direct} ->
@@ -588,8 +586,7 @@ end)
 and Struct_or_union_spec :
   (Ast_types.S_composite_spec
     with type kind := [`Struct | `Union]
-     and type decl := Struct_decl.t) =
-Parametric.Composite_spec.Make (struct
+     and type decl := Struct_decl.t) = Parametric.Composite_spec.Make (struct
   module Kind = struct
     type t = [`Struct | `Union] [@@deriving sexp, equal, compare]
 
@@ -656,8 +653,7 @@ and Direct_abs_declarator :
   (Ast_types.S_direct_abs_declarator
     with type dec := Abs_declarator.t
      and type par := Param_type_list.t
-     and type expr := Expr.t) =
-Parametric.Direct_abs_declarator.Make (struct
+     and type expr := Expr.t) = Parametric.Direct_abs_declarator.Make (struct
   module Dec = Abs_declarator
   module Par = Param_type_list
   module Expr = Expr
@@ -727,8 +723,7 @@ module Function_def = struct
         (function [] -> None | x -> Some x)
         (option (any "@ " ++ list ~sep:sp Decl.pp)))
 
-  let pp (f : Base.Formatter.t) {decl_specs; signature; decls; body} : unit
-      =
+  let pp (f : Base.Formatter.t) {decl_specs; signature; decls; body} : unit =
     Fmt.(
       pf f "%a@ %a%a@ %a"
         (box (list ~sep:sp Decl_spec.pp))
@@ -775,8 +770,7 @@ module Litmus_lang :
   module Program = struct
     include Function_def
 
-    let name x =
-      Some (Ac.C_id.to_string (Declarator.identifier x.signature))
+    let name x = Some (Ac.C_id.to_string (Declarator.identifier x.signature))
 
     (* TODO(@MattWindsor91): consider implementing this. The main reason why
        I haven't is because, usually, we'll be converting the litmus test to

@@ -18,8 +18,7 @@ module M_spec = Act_machine.Spec
 
 type t =
   { defaults: Default.t [@default Default.make ()] [@sexp.drop_if_default]
-  ; fuzz: Act_fuzz.Config.t
-        [@sexp.option] [@default Act_fuzz.Config.make ()]
+  ; fuzz: Act_fuzz.Config.t [@sexp.option] [@default Act_fuzz.Config.make ()]
   ; machines: M_spec.Set.t }
 [@@deriving make, fields]
 
@@ -127,8 +126,8 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
           Or_error.return None
 
     let try_get_named_specs (items : Ast.Machine.t list)
-        ~(f : Ast.Machine.t -> (Act_common.Id.t * 'body) option Or_error.t)
-        : 'body Ac.Spec.Set.t Or_error.t =
+        ~(f : Ast.Machine.t -> (Act_common.Id.t * 'body) option Or_error.t) :
+        'body Ac.Spec.Set.t Or_error.t =
       Or_error.(
         items
         |> Tx.Or_error.combine_map ~f

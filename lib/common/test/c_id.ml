@@ -72,15 +72,14 @@ let%test_module "is_string_safe (Herd-safe)" =
 
     let%expect_test "positive example" = test "t0r0" ; [%expect {| true |}]
 
-    let%expect_test "negative example" =
-      test "_t0r0" ; [%expect {| false |}]
+    let%expect_test "negative example" = test "_t0r0" ; [%expect {| false |}]
 
     let%expect_test "program ID (negative)" =
       test "P45" ; [%expect {| false |}]
 
-    (* This particular candidate Herd identifier has been the bane of the
-       ACT fuzzer for a little while. It clashes with an innocuous macro of
-       the same name in Litmus-generated harness C files. *)
+    (* This particular candidate Herd identifier has been the bane of the ACT
+       fuzzer for a little while. It clashes with an innocuous macro of the
+       same name in Litmus-generated harness C files. *)
     let%expect_test "clashing 'N' (negative)" =
       test "N" ; [%expect {| false |}]
   end )

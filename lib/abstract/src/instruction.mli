@@ -3,23 +3,22 @@
    Copyright (c) 2018 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE. *)
 
 (** [Abstract_instruction] contains types and utilities for abstracted
     instructions. *)
@@ -49,8 +48,8 @@ module Opcode : sig
 
      - It has semantics roughly in between both;
 
-     - It makes it easier for us to translate returns to end-of-program
-     jumps in sanitisation. *)
+     - It makes it easier for us to translate returns to end-of-program jumps
+     in sanitisation. *)
 
   (** [Opcode] is an abstraction that is currently its own kind enumeration. *)
   include
@@ -60,8 +59,8 @@ end
 type t [@@deriving sexp]
 (** Type of an abstracted instruction, including operands. *)
 
-(** When using this module as an abstraction, the kind of each instruction
-    is exactly the kind of its opcode. *)
+(** When using this module as an abstraction, the kind of each instruction is
+    exactly the kind of its opcode. *)
 include
   Node.S with type t := t and module Kind = Opcode.Kind
 
@@ -101,13 +100,13 @@ module type S_predicates = sig
       stack pointer. *)
 end
 
+(** [Inherit_predicates] generates a [S_properties] by inheriting it from an
+    optional component. Each predicate returns false when the component
+    doesn't exist. *)
 module Inherit_predicates
     (P : S_predicates)
     (I : Act_utils.Inherit_types.S_partial with type c := P.t) :
   S_predicates with type t := I.t
-(** [Inherit_predicates] generates a [S_properties] by inheriting it from an
-    optional component. Each predicate returns false when the component
-    doesn't exist. *)
 
 (** [S_properties] is the signature of any module that can access properties
     (including predicates) of an abstract instruction. *)
@@ -126,15 +125,15 @@ module type S_properties = sig
   (** [operands x] gets the operands of [x]. *)
 end
 
+(** [Inherit_properties] generates a [S_properties] by inheriting it from a
+    component. *)
 module Inherit_properties
     (P : S_properties)
     (I : Act_utils.Inherit_types.S with type c := P.t) :
   S_properties with type t := I.t
-(** [Inherit_properties] generates a [S_properties] by inheriting it from a
-    component. *)
 
 include
   S_properties with type t := t
-(** We include the functions provided in [S_properties], but define them
-    over [with_operands] rather than [t]. This is because some of the
-    operations require operand analysis. *)
+(** We include the functions provided in [S_properties], but define them over
+    [with_operands] rather than [t]. This is because some of the operations
+    require operand analysis. *)

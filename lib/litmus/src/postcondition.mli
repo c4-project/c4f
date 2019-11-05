@@ -11,8 +11,8 @@
 
 (** Minimalistic AST for litmus test postconditions.
 
-    This AST only tries to cover the parts of the litmus-test format that
-    ACT actually needs for input.
+    This AST only tries to cover the parts of the litmus-test format that ACT
+    actually needs for input.
 
     These parts of the litmus AST have no module-level dependency on the
     underlying language of the litmus tests. *)

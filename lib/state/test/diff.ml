@@ -38,8 +38,8 @@ module Test_cases = struct
       : unit =
     lift f [1; 2; 3; 4; 5; 6] [6; 5; 4; 3; 2; 1]
 
-  let with_subset_sets
-      (f : Set.M(Src.Entry).t -> Set.M(Src.Entry).t -> unit) : unit =
+  let with_subset_sets (f : Set.M(Src.Entry).t -> Set.M(Src.Entry).t -> unit)
+      : unit =
     lift f [1; 2; 3] [1; 2; 3; 4; 5; 6]
 
   let with_superset_sets
@@ -97,8 +97,7 @@ let%test_module "to ordering" =
     let%expect_test "empty sets" =
       with_empty_sets test ; [%expect {| (Equal) |}]
 
-    let%expect_test "subset" =
-      with_subset_sets test ; [%expect {| (Less) |}]
+    let%expect_test "subset" = with_subset_sets test ; [%expect {| (Less) |}]
 
     let%expect_test "superset" =
       with_superset_sets test ; [%expect {| (Greater) |}]
