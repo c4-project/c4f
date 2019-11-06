@@ -32,9 +32,7 @@ let%test_module "Pretty-printing without ID" =
     let%expect_test "enabled compiler: not verbose" =
       test ~is_verbose:false enabled_example ;
       [%expect {|
-        gcc
-        x86.att
-        enabled |}]
+        gcc x86.att enabled |}]
 
     let%expect_test "disabled compiler: verbose" =
       test ~is_verbose:true disabled_example ;
@@ -48,7 +46,5 @@ let%test_module "Pretty-printing without ID" =
     let%expect_test "disabled compiler: not verbose" =
       test ~is_verbose:false disabled_example ;
       [%expect {|
-        gcc
-        x86.att
-        disabled |}]
+        gcc x86.att disabled |}]
   end )
