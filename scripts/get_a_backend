@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# Gets the FQID of the first backend with the given parameters.
+#
+# For usage information, scroll down to the `usage` function.
+
+# TODO(@MattWindsor91): select local backends only?
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+SCRIPTDIR="${SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"}"
+readonly SCRIPTDIR
+
+# shellcheck source=scripts/act_bash/args.sh
+source "${SCRIPTDIR}/act_bash/args.sh"
+# shellcheck source=scripts/act_bash/exec.sh
+source "${SCRIPTDIR}/act_bash/exec.sh"
+# shellcheck source=scripts/act_bash/log.sh
+source "${SCRIPTDIR}/act_bash/log.sh"
+
+
+## Constants and arguments ##
+
+
+# The style to require, if any.
+STYLE=""
+
+# Whether to require local backends.
+REQUIRE_LOCAL="false"
+
+# Whether or not we're running ACT programs through `dune exec`.
+DUNE_EXEC="false"
+
+# Whether or not verbose logging is enabled.
+VERBOSE="false"
+
+
+## Functions ##
+
+
+# Prints usage information and exits.
+usage() {
+  echo "Usage: $0 [-s STYLE] [-qvxh?]"
+  echo
+  echo "-s: If given, require backend to have the given 'style' ID"
+  echo "-l: Require backend to be local"
+  echo "-v/-q: verbose/quiet"
+  echo "-x: run ACT binaries with \`dune exec\`"
+  echo "-h/-?: usage"
+  exit
+}
+
+main() {
+  while getopts "s:lqvx?h" a; do
+    case ${a} in
+    s) STYLE="${OPTARG}" ;;
+    l) REQUIRE_LOCAL="true" ;;
+    q) VERBOSE="false" ;;
+    v) VERBOSE="true" ;;
+    x) DUNE_EXEC="true" ;;
+    h|?) usage ;;
+    esac
+  done
+
+  readonly REQUIRE_LOCAL STYLE DUNE_EXEC VERBOSE
+  shift $((OPTIND-1))
+
+  list_backends | head -n 1 | cut -f1-2 -d' ' | xargs printf "%s.%s"
+}
+
+list_backends() {
+	act::backend list \
+	-filter-backends "$(make_backend_predicate)" \
+	-filter-machines "$(make_machine_predicate)"
+}
+
+make_backend_predicate() {
+	local predicate="true"
+	if [[ -n "${STYLE}" ]]; then predicate="(style (is ${STYLE}))"; fi
+
+	act::log "Backend predicate: %s\n" "${predicate}"
+	echo "${predicate}"
+}
+
+make_machine_predicate() {
+	local predicate="true"
+	if [[ "${REQUIRE_LOCAL}" = "true" ]]; then predicate="is_local"; fi
+
+	act::log "Machine predicate: %s\n" "${predicate}"
+	echo "${predicate}"
+}
+
+
+## Entry point ##
+main "$@"
+

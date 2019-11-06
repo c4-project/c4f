@@ -23,7 +23,8 @@ source "${SCRIPTDIR}/act_bash/log.sh"
 
 
 # The backend ID to use to get state sets.
-BACKEND="herd"
+# Can be zero, in which case the `c_states` script gets to choose a default.
+BACKEND=""
 
 # The name of the compiler to compile through (using obj_splitmus).
 # If empty, we don't compile, we just run straight through the backend.
@@ -55,7 +56,7 @@ usage() {
 main() {
   while getopts "b:c:qvx?h" a; do
     case ${a} in
-    b) act::set_nz "b" "BACKEND" "${OPTARG}" ;;
+    b) COMPILER="${OPTARG}" ;;
     c) COMPILER="${OPTARG}" ;;
     q) VERBOSE="false" ;;
     v) VERBOSE="true" ;;
