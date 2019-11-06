@@ -84,6 +84,11 @@ module Other = struct
          (sexp_conv [%of_sexp: Act_sanitiser.Pass_group.Selector.t Blang.t]))
       ~doc:"PREDICATE select which sanitiser passes to use"
 
+  let backend_predicate =
+    flag "filter-backends"
+      (optional (sexp_conv [%of_sexp: Act_backend.Property.t Blang.t]))
+      ~doc:"PREDICATE filter backends using this predicate"
+
   let compiler_predicate =
     flag "filter-compilers"
       (optional (sexp_conv [%of_sexp: Act_compiler.Property.t Blang.t]))

@@ -10,22 +10,47 @@
    project root for more information. *)
 
 open Core_kernel
+module Ac = Act_common
 
-let run
-    (* ?(compiler_predicate : Act_compiler.Property.t Blang.t option) *)
-      (_o : Act_common.Output.t) (_global_cfg : Act_config.Global.t) :
+let run ?(backend_predicate : Act_backend.Property.t Blang.t option)
+    ?(machine_predicate : Act_machine.Property.t Blang.t option)
+    (standard_args : Common_cmd.Args.Standard.t) (_o : Ac.Output.t)
+    (global_cfg : Act_config.Global.t) ~(with_backend_tests : bool) :
     unit Or_error.t =
-  (* ~(with_compiler_tests : bool) *) Or_error.unimplemented "TODO"
-
-(* let%map cfg = Common_cmd.Language_support.make_filtered_machine_config
-   ?compiler_predicate ?machine_predicate ~with_compiler_tests global_cfg in
-   let compilers = Act_config.Act.all_compilers cfg in let verbose =
-   Common_cmd.Args.Standard.is_verbose standard_args in Fmt.(pr "@[<v>%a@]@."
-   (list (pp_compiler verbose)) compilers)) *)
+  (* TODO(@MattWindsor91): print out information about failed backends too. *)
+  Or_error.Let_syntax.(
+    let%map backend_listing =
+      Common_cmd.Backend_support.Lookup.filtered_list
+        ?predicate:backend_predicate ?machine_predicate
+        ~test_specs:with_backend_tests
+        (Act_config.Global.machines global_cfg)
+    in
+    let verbose = Common_cmd.Args.Standard.is_verbose standard_args in
+    let pp =
+      if verbose then
+        Act_machine.Lookup_listing.pp_qualified_verbose ~type_str:"backends"
+          Act_backend.Spec.pp
+      else
+        Act_machine.Lookup_listing.pp_qualified_summary
+          Act_backend.Spec.pp_summary
+    in
+    Fmt.(pr "@[<v>%a@]@." pp backend_listing))
 
 let command : Command.t =
-  Command.(
-    basic ~summary:"outputs a filtered list of backends"
-      Let_syntax.(
-        let%map standard_args = Common_cmd.Args.Standard.get in
-        fun () -> Common_cmd.Common.lift_command standard_args ~f:run))
+  Command.basic
+    ~summary:"outputs information about the current backend specs"
+    Command.Let_syntax.(
+      let%map_open standard_args = Common_cmd.Args.Standard.get
+      and backend_predicate = Common_cmd.Args.backend_predicate
+      and machine_predicate = Common_cmd.Args.machine_predicate
+      and with_backend_tests =
+        flag "test-backends" no_arg
+          ~doc:
+            "If true, test each backend's presence and only print the \
+             backends that pass"
+      in
+      fun () ->
+        Common_cmd.Common.lift_command standard_args
+          ~f:
+            (run standard_args ?backend_predicate ?machine_predicate
+               ~with_backend_tests))

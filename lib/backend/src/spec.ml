@@ -44,9 +44,20 @@ module Spec_common = struct
 
   let type_name = "sim"
 
-  let pp_summary : t Fmt.t = Fmt.always "TODO"
+  let cmd_line (s : t) : string list = s.cmd :: s.argv
 
-  let pp : t Fmt.t = Fmt.always "TODO"
+  let pp =
+    Fmt.(
+      vbox
+        (record
+           [ field "Enabled" is_enabled bool
+           ; field "Style" style Ac.Id.pp
+           ; field "Command" cmd_line (hbox (list ~sep:sp string)) ]))
+
+  let pp_summary =
+    Fmt.(
+      concat ~sep:sp
+        [using style Ac.Id.pp; using is_enabled Ac.Spec.pp_enabled_summary])
 end
 
 module Spec = Ac.Spec.Make (struct

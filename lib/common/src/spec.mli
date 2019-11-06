@@ -38,7 +38,7 @@ end
     See the [Set] module constructed on specification types for more useful
     functionality. *)
 module Set : sig
-  type 'spec t
+  type 'spec t [@@deriving equal, sexp]
   (** Opaque type of specification sets. *)
 
   val empty : 'spec t
@@ -47,6 +47,9 @@ module Set : sig
   val of_list : 'spec With_id.t list -> 'spec t Or_error.t
   (** [of_list xs] tries to make a set from [xs]. It raises an error if [xs]
       contains duplicate IDs. *)
+
+  val to_list : 'spec t -> 'spec With_id.t list
+  (** [to_list xs] is the inverse of {!of_list}. *)
 
   val of_map : 'spec Map.M(Id).t -> 'spec t
 
@@ -102,3 +105,10 @@ module Make_with_id (C : Spec_types.Common) :
 (** [Make] makes an [S] from a [Basic]. *)
 module Make (B : Spec_types.Basic) :
   S with type t = B.t and module With_id = B.With_id
+
+(** {1 Helpers for specification modules} *)
+
+val pp_enabled_summary : bool Fmt.t
+(** [pp_enabled_summary] pretty-prints a Boolean representing an
+    enabled/disabled flag on a spec. It emits "enabled" if true, and
+    "disabled" otherwise, potentially with styling. *)

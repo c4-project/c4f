@@ -24,24 +24,31 @@ let%test_module "Pretty-printing without ID" =
       test ~is_verbose:true enabled_example ;
       [%expect
         {|
+      Enabled: true
       Style: gcc
-      Emits: x86.att
+      Architecture: x86.att
       Command: gcc |}]
 
     let%expect_test "enabled compiler: not verbose" =
       test ~is_verbose:false enabled_example ;
-      [%expect {| |}]
+      [%expect {|
+        gcc
+        x86.att
+        enabled |}]
 
     let%expect_test "disabled compiler: verbose" =
       test ~is_verbose:true disabled_example ;
       [%expect
         {|
-      -- DISABLED --
+      Enabled: false
       Style: gcc
-      Emits: x86.att
+      Architecture: x86.att
       Command: gcc |}]
 
     let%expect_test "disabled compiler: not verbose" =
       test ~is_verbose:false disabled_example ;
-      [%expect {| (DISABLED) |}]
+      [%expect {|
+        gcc
+        x86.att
+        disabled |}]
   end )

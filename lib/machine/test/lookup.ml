@@ -39,8 +39,9 @@ let%test_module "Compilers" =
           test (Act_common.Id.of_string "localhost.gcc.x86.normal") ;
           [%expect
             {|
+        Enabled: true
         Style: gcc
-        Emits: x86.att
+        Architecture: x86.att
         Command: gcc |}]
 
         let%expect_test "positive example: defaults resolution" =
@@ -51,8 +52,9 @@ let%test_module "Compilers" =
                 [of_string "foo"; of_string "bar"; of_string "localhost"] ;
           [%expect
             {|
+        Enabled: true
         Style: gcc
-        Emits: x86.att
+        Architecture: x86.att
         Command: gcc |}]
 
         let%expect_test "negative example: wrong compiler" =
@@ -109,7 +111,11 @@ let%test_module "Backend" =
 
         let%expect_test "positive example" =
           test (Act_common.Id.of_string "localhost.herd") ;
-          [%expect {| TODO |}]
+          [%expect
+            {|
+            Enabled: true
+            Style: herd
+            Command: herd7 |}]
 
         let%expect_test "negative example" =
           test (Act_common.Id.of_string "localhost.litmus") ;

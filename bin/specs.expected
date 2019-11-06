@@ -1,4 +1,13 @@
-this/gcc.x86
+Matching compilers:
+ this/gcc.x86
+  Enabled: true
   Style: gcc
-  Emits: x86.att
+  Architecture: x86.att
+  Command: gcc -m32 -DNO_PTHREADS
+These compilers didn't match:
+ example/gcc.x86
+  Disabled at machine level: explicitly disabled in config
+  Enabled: true
+  Style: gcc
+  Architecture: x86.att
   Command: gcc -m32 -DNO_PTHREADS

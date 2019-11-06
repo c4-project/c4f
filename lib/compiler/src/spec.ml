@@ -52,22 +52,22 @@ module M = struct
      infers. *)
   let is_enabled = enabled
 
+  let cmd_line (s : t) : string list = s.cmd :: s.argv
+
   let pp =
-    Fmt.vbox (fun f spec ->
-        if not spec.enabled then Fmt.pf f "-- DISABLED --@," ;
-        Au.My_format.pp_kv f "Style" Ac.Id.pp spec.style ;
-        Fmt.cut f () ;
-        Au.My_format.pp_kv f "Emits" Ac.Id.pp spec.emits ;
-        Fmt.cut f () ;
-        Au.My_format.pp_kv f "Command"
-          (Fmt.list ~sep:Fmt.sp String.pp)
-          (spec.cmd :: spec.argv))
+    Fmt.(
+      record
+        [ field "Enabled" is_enabled bool
+        ; field "Style" style Ac.Id.pp
+        ; field "Architecture" emits Ac.Id.pp
+        ; field "Command" cmd_line (hbox (list ~sep:sp string)) ])
 
   let pp_summary =
-    let facts spec =
-      List.filter_opt [Option.some_if (not (enabled spec)) "(DISABLED)"]
-    in
-    Fmt.(using facts (hbox (list ~sep:sp string)))
+    Fmt.(
+      concat ~sep:sp
+        [ using style Ac.Id.pp
+        ; using emits Ac.Id.pp
+        ; using is_enabled Ac.Spec.pp_enabled_summary ])
 end
 
 module With_id = struct

@@ -15,8 +15,7 @@ module C_spec = Act_compiler.Spec
 module Cq_spec = Act_machine.Qualified.Compiler
 
 let predicate_lists : (string, (module Property_types.S)) List.Assoc.t =
-  [ ( "Backend predicates (-filter-backends)"
-    , (module Act_compiler.Property) )
+  [ ("Backend predicates (-filter-backends)", (module Act_compiler.Property))
   ; ( "Compiler predicates (-filter-compilers)"
     , (module Act_compiler.Property) )
   ; ("Machine predicates (-filter-machines)", (module Act_machine.Property))

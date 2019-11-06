@@ -19,7 +19,7 @@ module With_id = struct
 end
 
 module Set = struct
-  type 'spec t = (Id.t * 'spec) list [@@deriving equal]
+  type 'spec t = (Id.t * 'spec) list [@@deriving equal, sexp]
 
   let empty (type a) : a t = []
 
@@ -43,6 +43,9 @@ module Set = struct
       |> Or_error.combine_errors_unit
     in
     List.map ~f:(fun x -> (With_id.id x, With_id.spec x)) xs
+
+  let to_list (type a) (xs : a t) : a With_id.t list =
+    List.map ~f:(fun (id, spec) -> With_id.make ~id ~spec) xs
 
   let get (type spec) ?(id_type : string = "unknown") (specs : spec t)
       ~(id : Id.t) : spec Or_error.t =
@@ -121,16 +124,13 @@ module Make (B : Basic) :
       |> List.map ~f:(fun (id, spec) ->
              (f (With_id.make ~id ~spec), (id, spec)))
       |> Id.Map.of_alist_multi
-
-    let pp_id_spec f ~pp id spec =
-      Au.My_format.pp_kv f (Id.to_string id) pp spec
-
-    let pp_verbose verbose : t Fmt.t =
-      Fmt.(
-        vbox
-          (list ~sep:cut (fun f (i, s) ->
-               (pp_id_spec ~pp:(pp_verbose verbose) f) i s)))
-
-    let pp : t Fmt.t = pp_verbose true
   end
 end
+
+let pp_enabled_summary (f : Formatter.t) : bool -> unit =
+  Fmt.(
+    function
+    | true ->
+        styled (`Fg `Green) (any "enabled") f ()
+    | false ->
+        styled (`Fg `Red) (any "disabled") f ())

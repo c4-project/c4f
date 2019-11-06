@@ -62,12 +62,6 @@ module type S = sig
     (** Opaque (here, at least) type of compiler spec sets. This gets fixed
         through a type alias in {{!Spec} Spec}. *)
 
-    include Pretty_printer.S with type t := t
-
-    val pp_verbose : bool -> t Fmt.t
-    (** [pp_verbose verbose f specs] prints a [specs] with the level of
-        verbosity implied by [verbose]. *)
-
     val group : t -> f:(With_id.t -> Id.t) -> t Id.Map.t
     (** [group specs ~f] groups [specs] into buckets according to some
         grouping function [f]. [f] returns specification IDs; the idea is

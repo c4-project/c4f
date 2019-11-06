@@ -101,3 +101,10 @@ val pp_qualified_summary : 'spec Fmt.t -> 'spec Qualified.t t Fmt.t
     Unix-style scripts.
 
     The caller should supply their own [box]. *)
+
+val pp_qualified_verbose :
+  ?type_str:string -> 'spec Fmt.t -> 'spec Qualified.t t Fmt.t
+(** [pp_qualified_verbose ?type_str pp_spec] is a helper for implementing a
+    more verbose form of lookup listing pretty-printing.
+
+    [type_str], if given, is used to replace "results" in the headings. *)

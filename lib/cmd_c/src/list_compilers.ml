@@ -12,16 +12,6 @@
 open Core_kernel
 module Ac = Act_common
 
-let pp_compiler_verbose (f : Formatter.t)
-    (spec : Act_machine.Qualified.Compiler.t) : unit =
-  let compiler = Act_machine.Qualified.spec spec in
-  Fmt.pf f "@[<v 2>@[<h>%a/%a@]@ %a@]" Ac.Id.pp
-    (Act_machine.Spec.With_id.id (Act_machine.Qualified.m_spec spec))
-    Ac.Id.pp
-    (Ac.Spec.With_id.id compiler)
-    Act_compiler.Spec.pp
-    (Ac.Spec.With_id.spec compiler)
-
 let run ?(compiler_predicate : Act_compiler.Property.t Blang.t option)
     ?(machine_predicate : Act_machine.Property.t Blang.t option)
     (standard_args : Common_cmd.Args.Standard.t) (_o : Ac.Output.t)
@@ -35,13 +25,11 @@ let run ?(compiler_predicate : Act_compiler.Property.t Blang.t option)
         ~test_specs:with_compiler_tests
         (Act_config.Global.machines global_cfg)
     in
-    let to_enabled_list =
-      Fn.compose Act_common.Spec.Set.On_specs.to_list
-        Act_machine.Lookup_listing.enabled
-    in
     let verbose = Common_cmd.Args.Standard.is_verbose standard_args in
     let pp =
-      if verbose then Fmt.(using to_enabled_list (list pp_compiler_verbose))
+      if verbose then
+        Act_machine.Lookup_listing.pp_qualified_verbose ~type_str:"compilers"
+          Act_compiler.Spec.pp
       else
         Act_machine.Lookup_listing.pp_qualified_summary
           Act_compiler.Spec.pp_summary

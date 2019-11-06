@@ -227,13 +227,13 @@ module Backend (Basic : sig
 end) : Lookup_types.S_backend = Make (struct
   type spec = Act_backend.Spec.t
 
-  type pred = unit Blang.t
+  type pred = Act_backend.Property.t Blang.t
 
   let id_type = "backend"
 
   let is_enabled = Act_backend.Spec.is_enabled
 
-  let eval_pred _pred _spec = false (* for now *)
+  let eval_pred = Act_backend.Property.eval_b
 
   let specs_of_machine = Spec.With_id.backends
 
