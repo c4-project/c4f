@@ -11,10 +11,15 @@
 """Utilities for scraping machine information from ACT."""
 
 import collections
+import os
 import subprocess
 import typing
 
 from act_py import act_id
+
+
+# TODO(@MattWindsor91): this is horrific and needs to be done better.
+SCRIPT_DIR: os.PathLike = os.path.join(os.path.dirname(__file__), os.path.pardir)
 
 
 def get_machines(
@@ -57,20 +62,6 @@ def run_list_compilers(predicate_args):
         raise ActMachineInspectError(proc.stderr) from e
     stdout: str = proc.stdout
     return stdout
-
-
-class ActMachineInspectError(Exception):
-    """Error raised when a call to `get_machines` receives a bad response from
-    another ACT program.
-    """
-
-    act_message: str
-
-    def __init__(self, act_message: str):
-        self.act_message = act_message
-        super().__init__(
-            f"Error asking ACT for machine information: {self.act_message}"
-        )
 
 
 def make_predicate_args(
@@ -120,3 +111,60 @@ def parse_compiler_list(
         [machine, compiler, *_] = line.split()
         machines[act_id.Id(machine)].add(act_id.Id(compiler))
     return machines
+
+
+class ActInspectError(Exception):
+    """Error raised when a call into `ACT` gets a bad response."""
+
+    act_message: str
+
+    def __init__(self, type_of_information: str, act_message: str):
+        self.act_message = act_message
+        super().__init__(
+            f"Error asking ACT for {type_of_information} information: {self.act_message}"
+        )
+
+
+def get_backend_for(machine_id: typing.Optional[act_id.Id], style_id: typing.Optional[act_id.Id]):
+    """Runs the 'get_a_backend' script with the given arguments.
+
+    :param machine_id: The (optional) machine ID to request.
+    :param style_id: The (optional) style ID to request.
+    :return:
+        The standard output of the process if the lister completed
+        successfully.
+    :raise: `ActMachineInspectError` if the lister failed.
+    """
+    cmd = str(os.path.join(SCRIPT_DIR, "get_a_backend"))
+
+    machine_args = [] if machine_id is None else ["-m", str(machine_id)]
+    style_args = [] if style_id is None else ["-s", str(style_id)]
+    args = [cmd, *machine_args, *style_args]
+
+    proc: subprocess.CompletedProcess = subprocess.run(
+        args, capture_output=True, text=True
+    )
+    try:
+        proc.check_returncode()
+    except subprocess.CalledProcessError as e:
+        raise ActBackendInspectError(proc.stderr) from e
+    stdout: str = proc.stdout
+    return stdout
+
+
+class ActMachineInspectError(ActInspectError):
+    """Error raised when a call to `get_machines` receives a bad response from
+    another ACT program.
+    """
+
+    def __init__(self, act_message: str):
+        super().__init__("machine", act_message)
+
+
+class ActBackendInspectError(ActInspectError):
+    """Error raised when a call to `get_backend_for_machine` receives a bad response from
+    another ACT program.
+    """
+
+    def __init__(self, act_message: str):
+        super().__init__("machine backend", act_message)

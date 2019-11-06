@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Programmatically builds a backend predicate from a conjunction of various
+# command line arguments.
+#
+# For more complex predicates, you'll need to build the Blang expression
+# yourself.
+#
+# For usage information, scroll down to the `usage` function.
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+
+## Constants and arguments ##
+
+
+# The ID to require, if any.
+ID=""
+
+
+# The style to require, if any.
+STYLE=""
+
+
+## Functions ##
+
+
+# Prints usage information and exits.
+usage() {
+  echo "Usage: $0 [-i ID] [-s STYLE] [-h?]"
+  echo
+  echo "-i: If given, require backend to have the given ID"
+  echo "-s: If given, require backend to have the given 'style' ID"
+  echo "-h/-?: usage"
+  exit
+}
+
+main() {
+  while getopts "i:s:?h" a; do
+    case ${a} in
+    i) ID="${OPTARG}" ;;
+    s) STYLE="${OPTARG}" ;;
+    h|?) usage ;;
+    esac
+  done
+  readonly ID STYLE
+
+  local predicate=""
+  if [[ -n "${ID}" ]]; then predicate="${predicate} (id (is ${ID}))"; fi
+  if [[ -n "${STYLE}" ]]; then predicate="${predicate} (style (is ${STYLE}))"; fi
+  if [[ -z predicate ]]; then echo "true"; else echo "(and${predicate})"; fi
+}
+
+
+## Entry point ##
+main "$@"
+

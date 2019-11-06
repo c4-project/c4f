@@ -28,8 +28,8 @@ source "${SCRIPTDIR}/act_bash/naming.sh"
 SED=${SED="sed"}
 
 # The backend ID to use to get state sets.
-# Must not be empty at the end of argument parsing.
-BACKEND="litmus7"
+# If empty, a default
+BACKEND=""
 
 # The name of the compiler to compile through (using obj_splitmus).
 # Must not be empty at the end of argument parsing.
@@ -180,7 +180,6 @@ run() {
 }
 
 
-
 # Prints the script's usage and exits.
 usage() {
   echo "usage: $0 -b BACKEND_ID -c COMPILER_ID [-d DIR] [-n NAME] [-qvxh?] FILE" >&2
@@ -200,7 +199,7 @@ usage() {
 main() {
   while getopts "b:c:d:n:qvx?h" a; do
     case ${a} in
-    b) act::set_nz "b" "BACKEND" "${OPTARG}" ;;
+    b) BACKEND=${OPTARG} ;;
     c) COMPILER=${OPTARG} ;;
     d) OUTPUT_DIR=${OPTARG} ;;
     n) TEST_NAME=${OPTARG} ;;
@@ -220,13 +219,11 @@ main() {
     usage
   fi
   if [[ -z ${COMPILER} ]]; then
-    act::error "expected a nonempty compiler (-c)"
-    usage
+    act::arg_error "expected a nonempty compiler (-c)"
   fi
 
   if [[ $# -ne 1 ]]; then
-    act::error "expected precisely one anonymous argument"
-    usage
+    act::arg_error "expected precisely one anonymous argument"
   fi
   INPUT_FILE="$1"
   if [[ -z ${TEST_NAME} ]]; then
@@ -234,7 +231,7 @@ main() {
     act::log "auto-naming test: '%s'.\n" "${TEST_NAME}"
   fi
   readonly INPUT_FILE TEST_NAME
-  
+
   if [[ -z ${OUTPUT_DIR} ]]; then act::setup_temp_output_dir; fi
   readonly OUTPUT_DIR
 

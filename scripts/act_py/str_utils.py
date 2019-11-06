@@ -11,6 +11,9 @@
 """Utilities for string manipulation."""
 
 
+import typing
+
+
 def is_blank(s: str) -> bool:
     """Returns true provided that the input string is empty after stripping whitespace.
 
@@ -34,11 +37,15 @@ def is_blank(s: str) -> bool:
     return s.strip() == ""
 
 
-def with_default_if_blank(s: str, *, default: str) -> str:
+def with_default_if_blank(s: typing.Optional[str], *, default: str) -> str:
     """Substitutes a default for a string if that string is blank.
 
     :param s: The string to use if non-blank.
     :param default: The string to use if `s` is blank.
     :return: `default` if `is_blank(s)` is true; `s` otherwise.
     """
-    return default if is_blank(s) else s
+    if s is None:
+        return default
+    if is_blank(s):
+        return default
+    return s

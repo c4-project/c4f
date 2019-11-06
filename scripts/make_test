@@ -26,7 +26,7 @@ from act_py import act_id, machine_info, str_utils, test, test_common
 obj_splitmus_name: str = os.path.join(os.path.dirname(__file__), "obj_splitmus")
 
 
-obj_splitmus_driver: str = obj_splitmus_name + " -b {backend} -c {compiler} -n {subject_name} -d {dir} {subject_path}"
+obj_splitmus_driver: str = obj_splitmus_name + " -b \"{backend}\" -c {compiler} -n {subject_name} -d {dir} {subject_path}"
 
 
 def make_test(
@@ -109,10 +109,8 @@ def expand_machine(
     :param compilers: The machine to expand.
     :return: The result of expanding `raw_machine`.
     """
-    # TODO(@MattWindsor91): actually search for the correct backend.
-    return test.MachineTest(
-        list(compilers), act_id.qualify(machine_id, act_id.Id("litmus"))
-    )
+    backend = machine_info.get_backend_for(machine_id, style_id="litmus")
+    return test.MachineTest(list(compilers), backend)
 
 
 def sanitise_predicate(pred: str) -> str:
