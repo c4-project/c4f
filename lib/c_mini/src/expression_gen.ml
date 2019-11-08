@@ -90,8 +90,7 @@ end = struct
 
   let recursive_generators (mu : t Q.Generator.t) : t Q.Generator.t list =
     [ Q.Generator.map2 mu mu ~f:Expression.l_and
-    ; Q.Generator.map2 mu mu ~f:Expression.l_or
-    ]
+    ; Q.Generator.map2 mu mu ~f:Expression.l_or ]
 
   let quickcheck_generator : t Q.Generator.t =
     Q.Generator.recursive_union base_generators ~f:recursive_generators

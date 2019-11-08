@@ -95,33 +95,35 @@ let%test_module "stm" =
 
 let%test_module "expr" =
   ( module struct
-
     let test (expr : Act_c_lang.Ast.Expr.t) : unit =
-      Stdio.print_s [%sexp (Src.Convert.expr expr : Src.Expression.t Or_error.t)]
+      Stdio.print_s
+        [%sexp (Src.Convert.expr expr : Src.Expression.t Or_error.t)]
 
     let%expect_test "model basic logical expression" =
       test
         Act_c_lang.Ast.(
-          Expr.(Binary (Identifier (Ac.C_id.of_string "true"), `Land,
-            Binary (Identifier (Ac.C_id.of_string "false"), `Lor,
-            Identifier (Ac.C_id.of_string "foo"))
-          )
-          )
-        ); [%expect {|
+          Expr.(
+            Binary
+              ( Identifier (Ac.C_id.of_string "true")
+              , `Land
+              , Binary
+                  ( Identifier (Ac.C_id.of_string "false")
+                  , `Lor
+                  , Identifier (Ac.C_id.of_string "foo") ) ))) ;
+      [%expect
+        {|
           (Ok
            (Bop L_and (Constant (Bool true))
             (Bop L_or (Constant (Bool false)) (Lvalue (Variable foo))))) |}]
 
     let%expect_test "model atomic_load_explicit" =
       test
-              Act_c_lang.Ast.(
-                Expr.Call
-                  { func=
-                      Identifier (Ac.C_id.of_string "atomic_load_explicit")
-                  ; arguments=
-                      [ Prefix (`Ref, Identifier (Ac.C_id.of_string "x"))
-                      ; Identifier (Ac.C_id.of_string "memory_order_seq_cst")
-                      ] }) ;
+        Act_c_lang.Ast.(
+          Expr.Call
+            { func= Identifier (Ac.C_id.of_string "atomic_load_explicit")
+            ; arguments=
+                [ Prefix (`Ref, Identifier (Ac.C_id.of_string "x"))
+                ; Identifier (Ac.C_id.of_string "memory_order_seq_cst") ] }) ;
       [%expect
         {|
       (Ok

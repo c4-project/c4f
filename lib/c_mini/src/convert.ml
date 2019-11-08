@@ -275,51 +275,52 @@ let identifier_to_expr (id : Ac.C_id.t) : Expression.t =
   | _ ->
       Expression.lvalue (Lvalue.variable id)
 
-let bop : Act_c_lang.Ast_basic.Operators.Bin.t -> Expression.Bop.t Or_error.t =
+let bop : Act_c_lang.Ast_basic.Operators.Bin.t -> Expression.Bop.t Or_error.t
+    =
   Or_error.(
-  function
-  | `Eq ->
-    return Expression.Bop.eq
-  | `Land ->
-    return Expression.Bop.l_and
-  | `Lor ->
-    return Expression.Bop.l_or
-  | op ->
-    error_s
-      [%message "Unsupported binary operator"
-        ~got:(op : Act_c_lang.Ast_basic.Operators.Bin.t)])
+    function
+    | `Eq ->
+        return Expression.Bop.eq
+    | `Land ->
+        return Expression.Bop.l_and
+    | `Lor ->
+        return Expression.Bop.l_or
+    | op ->
+        error_s
+          [%message
+            "Unsupported binary operator"
+              ~got:(op : Act_c_lang.Ast_basic.Operators.Bin.t)])
 
 let rec expr : Ast.Expr.t -> Expression.t Or_error.t =
   Or_error.Let_syntax.(
-  let model_binary l op r =
-    let%map l' = expr l and r' = expr r and op' = bop op in
-    Expression.bop op' l' r'
-  in
-  function
-  | Brackets e ->
-      expr e
-  | Binary (l, op, r) ->
-      model_binary l op r
-  | Constant k ->
-      Or_error.map ~f:Expression.constant (constant k)
-  | Identifier id ->
-      Or_error.return (identifier_to_expr id)
-  | Prefix (`Deref, expr) ->
-      Or_error.(
-        expr |> expr_to_lvalue >>| Lvalue.deref >>| Expression.lvalue)
-  | Call {func; arguments} ->
-      call expr_call_table func arguments
-  | ( Prefix _
-    | Postfix _
-    | Ternary _
-    | Cast _
-    | Subscript _
-    | Field _
-    | Sizeof_type _
-    | String _ ) as e ->
-      Or_error.error_s
-        [%message "Unsupported expression" ~got:(e : Ast.Expr.t)]
-      )
+    let model_binary l op r =
+      let%map l' = expr l and r' = expr r and op' = bop op in
+      Expression.bop op' l' r'
+    in
+    function
+    | Brackets e ->
+        expr e
+    | Binary (l, op, r) ->
+        model_binary l op r
+    | Constant k ->
+        Or_error.map ~f:Expression.constant (constant k)
+    | Identifier id ->
+        Or_error.return (identifier_to_expr id)
+    | Prefix (`Deref, expr) ->
+        Or_error.(
+          expr |> expr_to_lvalue >>| Lvalue.deref >>| Expression.lvalue)
+    | Call {func; arguments} ->
+        call expr_call_table func arguments
+    | ( Prefix _
+      | Postfix _
+      | Ternary _
+      | Cast _
+      | Subscript _
+      | Field _
+      | Sizeof_type _
+      | String _ ) as e ->
+        Or_error.error_s
+          [%message "Unsupported expression" ~got:(e : Ast.Expr.t)])
 
 let model_atomic_store : Ast.Expr.t list -> unit Statement.t Or_error.t =
   function
