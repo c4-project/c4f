@@ -86,9 +86,26 @@ let bop : Expression.Bop.t -> Act_c_lang.Ast_basic.Operators.Bin.t = function
   | L_or ->
       `Lor
 
+(* NB: This works because all of the bops are left-associative, and will need
+   refining if any right-associative Bops appear. *)
+let needs_brackets (o : Act_c_lang.Ast_basic.Operators.Bin.t) (expr : Ast.Expr.t) ~(is_left: bool) : bool =
+  match expr with
+  | Binary (Brackets _, _, _) when is_left -> true
+  | Binary (_, _, Brackets _) when not is_left -> true
+  | Binary (_, o', _) ->
+      is_left && not (Act_c_lang.Ast_basic.Operators.Bin.equal o o')
+  | _ ->
+      false
+
+let bop_expr (op : Expression.Bop.t) (l : Ast.Expr.t) (r : Ast.Expr.t) : Ast.Expr.t =
+  let op' = bop op in
+  let l' = if needs_brackets op' l ~is_left:true then Ast.Expr.Brackets l else l in
+  let r' = if needs_brackets op' r ~is_left:false then Ast.Expr.Brackets r else r in
+  Ast.Expr.Binary (l', op', r')
+
 let expr : Expression.t -> Ast.Expr.t =
   Expression.reduce ~constant:constant_to_expr ~lvalue:lvalue_to_expr
-    ~atomic_load:atomic_load_to_expr ~bop:(fun b l r -> Binary (l, bop b, r))
+    ~atomic_load:atomic_load_to_expr ~bop:bop_expr
 
 let known_call_stm (name : string) (args : Ast.Expr.t list) : Ast.Stm.t =
   Expr (Some (known_call name args))

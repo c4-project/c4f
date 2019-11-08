@@ -152,7 +152,7 @@ module Parametric = struct
         | Id i ->
             Ac.C_id.pp f i
         | Bracket t ->
-            Fmt.brackets B.Dec.pp f t
+            Fmt.parens B.Dec.pp f t
         | Array a ->
             Array.pp pp (Fmt.option B.Expr.pp) f a
         | Fun_decl (t, ps) ->
@@ -224,7 +224,7 @@ module Parametric = struct
 
       let rec pp f : t -> unit = function
         | Bracket t ->
-            Fmt.brackets B.Dec.pp f t
+            Fmt.parens B.Dec.pp f t
         | Array a ->
             Fmt.(Array.pp (option pp) (option B.Expr.pp) f a)
         | Fun_decl (t, ps) ->
@@ -353,7 +353,7 @@ module Parametric = struct
         | Constant k ->
             Constant.pp f k
         | Brackets t ->
-            Fmt.brackets pp f t
+            Fmt.parens pp f t
     end
   end
 

@@ -88,8 +88,13 @@ end = struct
       ; (E.has_variables_of_basic_type Type.Basic.(bool ()), gen_bool_lvalue)
       ]
 
+  let recursive_generators (mu : t Q.Generator.t) : t Q.Generator.t list =
+    [ Q.Generator.map2 mu mu ~f:Expression.l_and
+    ; Q.Generator.map2 mu mu ~f:Expression.l_or
+    ]
+
   let quickcheck_generator : t Q.Generator.t =
-    Q.Generator.union base_generators
+    Q.Generator.recursive_union base_generators ~f:recursive_generators
 
   let quickcheck_observer : t Q.Observer.t =
     [%quickcheck.observer: Expression.t]
