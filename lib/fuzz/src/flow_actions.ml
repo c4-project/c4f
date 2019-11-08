@@ -21,26 +21,40 @@ module If = struct
 
   module Make (Basic : sig
     val name_suffix : string
+    (** [name_suffix] should be a tag to add to the end of the action ID. *)
 
     val readme_suffix : string
+    (** [readme_suffix] should be a string to add to the end of the action
+        README. *)
 
     val t_branch_of_statements : Subject.Statement.t list -> Subject.Block.t
+    (** [t_branch_of_statements stms] should construct the true-branch block
+        given the original statement span [stms]. *)
 
     val f_branch_of_statements : Subject.Statement.t list -> Subject.Block.t
+    (** [f_branch_of_statements stms] should construct the false-branch block
+        given the original statement span [stms]. *)
 
     val cond_gen :
-         Path_shapes.program
-      -> Act_c_mini.Expression.t Base_quickcheck.Generator.t State.Monad.t
+         (module Act_c_mini.Env_types.S_with_known_values)
+      -> Act_c_mini.Expression.t Base_quickcheck.Generator.t
+    (** [cond_gen env] should, given a first-class environment module [env]
+        capturing the variables in scope at the point where the if statement
+        is appearing, return a Quickcheck generator generating expressions
+        over those variables. *)
   end) : S = struct
     include Basic
 
     let name = Act_common.Id.of_string_list ["flow"; "if"; name_suffix]
 
     let readme () =
-      {| Removes a sublist of statements from the program, replacing them
+      let raw =
+        {| Removes a sublist of statements from the program, replacing them
         with an `if` statement containing some transformation of the
         removed statements. |}
-      ^ "\n\n" ^ readme_suffix
+        ^ "\n\n" ^ readme_suffix
+      in
+      Act_utils.My_string.format_for_readme raw
 
     module Payload = struct
       include Payload
@@ -58,11 +72,24 @@ module If = struct
           Path_shapes.program State.Monad.t =
         Action.lift_quickcheck (quickcheck_path test) ~random
 
+      let cond_env (vars : Var.Map.t) ~(tid : int) :
+          (module Act_c_mini.Env_types.S_with_known_values) =
+        Var.Map.env_module_with_known_values ~scope:(Local tid)
+          ~predicates:[] vars
+
+      let quickcheck_cond (path : Path_shapes.program) :
+          Act_c_mini.Expression.t Base_quickcheck.Generator.t State.Monad.t =
+        State.Monad.Let_syntax.(
+          let%map vars = State.Monad.peek State.vars in
+          let tid = Path.tid path in
+          let env = cond_env vars ~tid in
+          Basic.cond_gen env)
+
       let gen_cond (path : Path_shapes.program)
           ~(random : Splittable_random.State.t) :
           Act_c_mini.Expression.t State.Monad.t =
         State.Monad.Let_syntax.(
-          let%bind gen = Basic.cond_gen path in
+          let%bind gen = quickcheck_cond path in
           Action.lift_quickcheck gen ~random)
 
       let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t) :
@@ -101,31 +128,46 @@ module If = struct
   end
 
   module Duplicate : S = Make (struct
-    let name_suffix = "duplicate"
+    let name_suffix : string = "duplicate"
 
-    let readme_suffix =
+    let readme_suffix : string =
       {| This version of the action generates an arbitrary condition,
           and initialises both branches of the `if` statement with the
           original statements. |}
 
-    let cond_env (vars : Var.Map.t) ~(tid : int) :
-        (module Act_c_mini.Env_types.S) =
-      Var.Map.env_module_satisfying_all ~scope:(Local tid) ~predicates:[]
-        vars
-
-    let cond_gen (path : Path_shapes.program) :
-        Act_c_mini.Expression.t Base_quickcheck.Generator.t State.Monad.t =
-      State.Monad.Let_syntax.(
-        let%map vars = State.Monad.peek State.vars in
-        let tid = Path.tid path in
-        let (module Env) = cond_env vars ~tid in
-        let module Bools = Act_c_mini.Expression_gen.Bool_values (Env) in
-        Bools.quickcheck_generator)
+    let cond_gen (module Env : Act_c_mini.Env_types.S_with_known_values) :
+        Act_c_mini.Expression.t Base_quickcheck.Generator.t =
+      let module B = Act_c_mini.Expression_gen.Bool_values (Env) in
+      B.quickcheck_generator
 
     let t_branch_of_statements (statements : Subject.Statement.t list) :
         Subject.Block.t =
       Act_c_mini.Block.make ~statements ~metadata:Metadata.generated ()
 
-    let f_branch_of_statements = t_branch_of_statements
+    let f_branch_of_statements : Subject.Statement.t list -> Subject.Block.t
+        =
+      t_branch_of_statements
+  end)
+
+  module Tautology : S = Make (struct
+    let name_suffix : string = "tautology"
+
+    let readme_suffix : string =
+      {| This version of the action generates an always-true condition,
+         puts the original statements in the true block, and marks the false
+         block as dead-code. |}
+
+    let cond_gen (module Env : Act_c_mini.Env_types.S_with_known_values) :
+        Act_c_mini.Expression.t Base_quickcheck.Generator.t =
+      let module B = Act_c_mini.Expression_gen.Bool_tautologies (Env) in
+      B.quickcheck_generator
+
+    let t_branch_of_statements (statements : Subject.Statement.t list) :
+        Subject.Block.t =
+      Act_c_mini.Block.make ~statements ~metadata:Metadata.generated ()
+
+    let f_branch_of_statements (_statements : Subject.Statement.t list) :
+        Subject.Block.t =
+      Act_c_mini.Block.make ~metadata:Metadata.dead_code ()
   end)
 end

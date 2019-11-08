@@ -44,4 +44,9 @@ module If : sig
   module Duplicate : S
   (** Generates if statements where the expression is arbitrary and both
       blocks contain the original statement span. *)
+
+  module Tautology : S
+  (** Generates if statements where the expression is a tautology, the first
+      block contains the original statement span, and the second block is an
+      empty dead-code block. *)
 end

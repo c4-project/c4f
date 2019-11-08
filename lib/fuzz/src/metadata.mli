@@ -29,3 +29,15 @@ val existing : t
 
 val generated : t
 (** [generated] is the base metadata for a generated item. *)
+
+val dead_code : t
+(** [dead_code] is the base metadata for an item that has been both
+    generated, and is dead-code by construction. *)
+
+(** {2 Properties} *)
+
+val is_dead_code : t -> bool
+(** [is_dead_code md] gets whether the item to which [md] is attached is
+    marked as dead code. Typically, only blocks that were generated as
+    dead-by-construction will have this marker, and their contents will not
+    (unless they were also generated in such a way). *)

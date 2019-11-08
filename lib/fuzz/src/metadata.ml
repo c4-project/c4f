@@ -11,8 +11,17 @@
 
 open Base
 
-type t = {source: [`Existing | `Generated]} [@@deriving sexp, equal]
+type t = {source: [`Existing | `Generated]; liveness: [`Normal | `Dead]}
+[@@deriving sexp, equal]
 
-let existing : t = {source= `Existing}
+let existing : t = {source= `Existing; liveness= `Normal}
 
-let generated : t = {source= `Generated}
+let generated : t = {source= `Generated; liveness= `Normal}
+
+let dead_code : t = {source= `Generated; liveness= `Dead}
+
+let is_dead_code : t -> bool = function
+  | {liveness= `Dead; _} ->
+      true
+  | _ ->
+      false

@@ -97,13 +97,18 @@ fuzz_file_once() {
   local in_file="${2}"
   local k="${3}"
 
-   local out_name
-   out_name="$(act::fuzz_name "${in_file}" "${k}")"
-   local out_file
-   out_file="${dir_name}/${out_name}.litmus"
+  local out_name
+  out_name="$(act::fuzz_name "${in_file}" "${k}")"
+  local out_file
+  out_file="${dir_name}/${out_name}.litmus"
 
-   act::fuzz run "${in_file}" |
-   act::c modify-header -name "${out_name}" -o "${out_file}"
+  # We create a temp file instead of piping directly into `modify-header` so
+  # that we can investigate any syntax errors in the fuzzer's output;
+  # otherwise, the invalid input would be swallowed by `modify-header` and lost.
+  local tmp_file="${out_file}.pre_header"
+  act::fuzz run "${in_file}" > "${tmp_file}"
+  act::c modify-header -name "${out_name}" -o "${out_file}" "${tmp_file}"
+  rm "${tmp_file}"
 }
 
 

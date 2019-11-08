@@ -117,32 +117,45 @@ module Map = struct
       in
       erase_value_inner map ~id)
 
-  let type_submap_satisfying_all (vars : Record.t Map.M(Ac.C_id).t)
-      ~(predicates : (Record.t -> bool) list) :
-      Act_c_mini.Type.t Map.M(Ac.C_id).t =
-    Map.filter_map vars ~f:(fun data ->
-        data |> Record.ty |> Option.some_if (Tx.List.all ~predicates data))
-
-  let env_satisfying_all (vars : t) ~(scope : Ac.Scope.t)
-      ~(predicates : (Record.t -> bool) list) :
-      Act_c_mini.Type.t Map.M(Ac.C_id).t =
+  let records_satisfying_all (vars : t) ~(scope : Ac.Scope.t)
+      ~(predicates : (Record.t -> bool) list) : Record.t Map.M(Ac.C_id).t =
     vars
     |> Ac.Scoped_map.to_c_id_map ~scope
-    |> type_submap_satisfying_all ~predicates
+    |> Map.filter ~f:(Tx.List.all ~predicates)
+
+  let env_satisfying_all (vars : t) ~(scope : Ac.Scope.t)
+      ~(predicates : (Record.t -> bool) list) =
+    vars |> records_satisfying_all ~scope ~predicates |> Map.map ~f:Record.ty
 
   let env_module_satisfying_all (vars : t) ~(scope : Ac.Scope.t)
-      ~(predicates : (Record.t -> bool) list) =
+      ~(predicates : (Record.t -> bool) list) :
+      (module Act_c_mini.Env_types.S) =
     ( module Act_c_mini.Env.Make (struct
-      let env = env_satisfying_all ~scope ~predicates vars
-    end) : Act_c_mini.Env_types.S )
+      let env = env_satisfying_all vars ~scope ~predicates
+    end) )
+
+  let kv (r : Record.t) : Act_c_mini.Constant.t option =
+    Option.(r |> Record.known_value >>| Known_value.value)
+
+  let env_module_with_known_values
+      ?(predicates : (Record.t -> bool) list = []) (vars : t)
+      ~(scope : Ac.Scope.t) :
+      (module Act_c_mini.Env_types.S_with_known_values) =
+    ( module Act_c_mini.Env.Make_with_known_values (struct
+      let records = records_satisfying_all vars ~scope ~predicates
+
+      let env = Map.map ~f:Record.ty records
+
+      let known_values = Map.filter_map ~f:kv records
+    end) )
 
   let satisfying_all (vars : t) ~(scope : Ac.Scope.t)
       ~(predicates : (Record.t -> bool) list) : Ac.C_id.t list =
-    vars |> env_satisfying_all ~scope ~predicates |> Map.keys
+    vars |> records_satisfying_all ~scope ~predicates |> Map.keys
 
   let exists_satisfying_all (vars : t) ~(scope : Ac.Scope.t)
       ~(predicates : (Record.t -> bool) list) : bool =
-    not (Map.is_empty (env_satisfying_all vars ~scope ~predicates))
+    not (Map.is_empty (records_satisfying_all vars ~scope ~predicates))
 
   let gen_fresh_var (map : t) : Ac.C_id.t Base_quickcheck.Generator.t =
     Base_quickcheck.Generator.filter_map
