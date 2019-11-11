@@ -143,6 +143,9 @@ module type S_statement = sig
   type 'meta if_stm
   (** Generally fixed to {!Statement.If.t}. *)
 
+  type 'meta while_loop
+  (** Generally fixed to {!Statement.While.t}. *)
+
   (** {3 Constructors} *)
 
   val assign : 'meta assign -> 'meta t
@@ -155,7 +158,10 @@ module type S_statement = sig
   (** [atomic_store a] lifts an atomic store [a] to a statement. *)
 
   val if_stm : 'meta if_stm -> 'meta t
-  (** [if_statement ifs] lifts an if statement [ifs] to a statement. *)
+  (** [if_stm ifs] lifts an if statement [ifs] to a statement. *)
+
+  val while_loop : 'meta while_loop -> 'meta t
+  (** [while_loop loop] lifts a while or do-while loop [loop] to a statement. *)
 
   val nop : unit -> 'meta t
   (** [nop] is a no-operation statement; it corresponds to C's empty
@@ -167,6 +173,7 @@ module type S_statement = sig
     -> atomic_cmpxchg:('meta atomic_cmpxchg -> 'result)
     -> atomic_store:('meta atomic_store -> 'result)
     -> if_stm:('meta if_stm -> 'result)
+    -> while_loop:('meta while_loop -> 'result)
     -> nop:(unit -> 'result)
     -> 'result
   (** [reduce stm ~assign ~atomic_cmpxchg ~atomic_store ~if_stm ~nop] applies
@@ -182,6 +189,7 @@ module type S_statement = sig
       -> atomic_cmpxchg:('m1 atomic_cmpxchg -> 'm2 atomic_cmpxchg M.t)
       -> atomic_store:('m1 atomic_store -> 'm2 atomic_store M.t)
       -> if_stm:('m1 if_stm -> 'm2 if_stm M.t)
+      -> while_loop:('m1 while_loop -> 'm2 while_loop M.t)
       -> nop:(unit -> unit M.t)
       -> 'm2 t M.t
   end
@@ -194,22 +202,25 @@ end
     Parametrised signature of if-statement implementations. *)
 module type S_if_statement = sig
   type 'meta expr
+  (** Generally fixed to {!Expression.t}. *)
 
   type 'meta stm
+  (** Generally fixed to {!Statement.t}. *)
 
   type 'meta t [@@deriving sexp, equal]
+  (** Opaque type of if statements. *)
 
-  (** {2 Constructors} *)
+  (** {3 Constructors} *)
 
   val make :
        cond:'meta expr
     -> t_branch:('meta, 'meta stm) Block.t
     -> f_branch:('meta, 'meta stm) Block.t
     -> 'meta t
-  (** [make ~cond t_branch f_branch ()] creates an if statement with
-      condition [cond], true branch [t_branch], and false branch [f_branch]. *)
+  (** [make ~cond t_branch f_branch] creates an if statement with condition
+      [cond], true branch [t_branch], and false branch [f_branch]. *)
 
-  (** {2 Accessors} *)
+  (** {3 Accessors} *)
 
   val cond : 'meta t -> 'meta expr
   (** [cond ifs] gets [ifs]'s condition. *)
@@ -228,6 +239,54 @@ module type S_if_statement = sig
       -> cond:('m1 expr -> 'm2 expr M.t)
       -> t_branch:(('m1, 'm1 stm) Block.t -> ('m2, 'm2 stm) Block.t M.t)
       -> f_branch:(('m1, 'm1 stm) Block.t -> ('m2, 'm2 stm) Block.t M.t)
+      -> 'm2 t M.t
+  end
+
+  include S_with_meta with type 'meta t := 'meta t
+end
+
+(** {2 While loops}
+
+    Parametrised signature of while-loop implementations. *)
+module type S_while_loop = sig
+  type 'meta expr
+  (** Generally fixed to {!Expression.t}. *)
+
+  type 'meta stm
+  (** Generally fixed to {!Statement.t}. *)
+
+  type 'meta t [@@deriving sexp, equal]
+  (** Opaque type of while loops. *)
+
+  (** {3 Constructors} *)
+
+  val make :
+       cond:'meta expr
+    -> body:('meta, 'meta stm) Block.t
+    -> kind:[`Do_while | `While]
+    -> 'meta t
+  (** [make ~cond ~body ~kind] creates a while loop (with [~kind=`While]) or
+      a do-while loop (with [~kind=`Do_while]) with condition [cond] and body
+      [body]. *)
+
+  (** {3 Accessors} *)
+
+  val cond : 'meta t -> 'meta expr
+  (** [cond loop] gets [loop]'s condition. *)
+
+  val body : 'meta t -> ('meta, 'meta stm) Block.t
+  (** [body loop] gets [loop]'s body. *)
+
+  val kind : 'meta t -> [`While | `Do_while]
+  (** [kind loop] gets whether [loop] is a while loop or a do-while loop. *)
+
+  (** {3 Traversing} *)
+
+  module Base_map (M : Monad.S) : sig
+    val bmap :
+         'm1 t
+      -> cond:('m1 expr -> 'm2 expr M.t)
+      -> body:(('m1, 'm1 stm) Block.t -> ('m2, 'm2 stm) Block.t M.t)
       -> 'm2 t M.t
   end
 

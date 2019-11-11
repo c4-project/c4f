@@ -49,8 +49,9 @@ module rec Statement :
       Metadata.t Stm.t Or_error.t =
     Stm.reduce dest
       ~if_stm:(fun target -> Or_error.(f ~target >>| Stm.if_stm))
-      ~assign:(in_if_error dest) ~atomic_cmpxchg:(in_if_error dest)
-      ~atomic_store:(in_if_error dest) ~nop:(in_if_error dest)
+      ~while_loop:(in_if_error dest) ~assign:(in_if_error dest)
+      ~atomic_cmpxchg:(in_if_error dest) ~atomic_store:(in_if_error dest)
+      ~nop:(in_if_error dest)
 
   let handle_path (path : Path_shapes.stm)
       ~(if_stm :
@@ -101,7 +102,8 @@ module rec Statement :
       Path_shapes.stm Base_quickcheck.Generator.t option =
     Stm.reduce m
       ~if_stm:(fun x -> map_opt_gen ~f:Path_shapes.in_if (if_stm x))
-      ~assign:nope ~atomic_cmpxchg:nope ~atomic_store:nope ~nop:nope
+      ~while_loop:nope (* for now *) ~assign:nope ~atomic_cmpxchg:nope
+      ~atomic_store:nope ~nop:nope
 
   let try_gen_insert_stm (m : Metadata.t Stm.t) :
       Path_shapes.stm Base_quickcheck.Generator.t option =

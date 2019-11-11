@@ -146,7 +146,7 @@ let block (type meta stm) (stm : stm -> Ast.Stm.t) (b : (meta, stm) Block.t)
   Compound (lift_stms stm (Block.statements b))
 
 let rec stm : _ Statement.t -> Ast.Stm.t =
-  Statement.reduce ~assign ~atomic_cmpxchg ~atomic_store ~if_stm
+  Statement.reduce ~assign ~atomic_cmpxchg ~atomic_store ~if_stm ~while_loop
     ~nop:(fun () -> Expr None)
 
 and if_stm (ifs : _ Statement.If.t) : Ast.Stm.t =
@@ -159,6 +159,15 @@ and if_stm (ifs : _ Statement.If.t) : Ast.Stm.t =
             None
         | x ->
             Some (block stm x) ) }
+
+and while_loop (loop : _ Statement.While.t) : Ast.Stm.t =
+  let cond = expr (Statement.While.cond loop)
+  and body = block stm (Statement.While.body loop) in
+  match Statement.While.kind loop with
+  | `While ->
+      While (cond, body)
+  | `Do_while ->
+      Do_while (body, cond)
 
 let func_body (ds : Initialiser.t Named.Alist.t)
     (statements : _ Statement.t list) : Ast.Compound_stm.t =

@@ -23,10 +23,19 @@ module rec Main :
      and type 'meta assign := Assign.t
      and type 'meta atomic_cmpxchg := Atomic_cmpxchg.t
      and type 'meta atomic_store := Atomic_store.t
-     and type 'meta if_stm := 'meta If.t)
+     and type 'meta if_stm := 'meta If.t
+     and type 'meta while_loop := 'meta While.t)
 
 and If :
   (Types.S_if_statement
+    with type address := Address.t
+     and type identifier := Act_c_lang.Ast_basic.Identifier.t
+     and type lvalue := Lvalue.t
+     and type 'meta expr := Expression.t
+     and type 'meta stm := 'meta Main.t)
+
+and While :
+  (Types.S_while_loop
     with type address := Address.t
      and type identifier := Act_c_lang.Ast_basic.Identifier.t
      and type lvalue := Lvalue.t
