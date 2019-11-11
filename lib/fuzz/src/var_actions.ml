@@ -28,7 +28,7 @@ module Global_payload = struct
 
   let generator (vars : Var.Map.t) : t G.t =
     G.Let_syntax.(
-      let%bind initial_value = Act_c_mini.Constant.gen_int32 in
+      let%bind initial_value = Act_c_mini.Constant.quickcheck_generator in
       let%bind basic_type = gen_type_from_constant initial_value in
       let%map name = Var.Map.gen_fresh_var vars in
       {basic_type; initial_value; name})
