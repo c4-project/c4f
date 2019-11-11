@@ -40,6 +40,10 @@ module Basic : sig
   (** [to_non_atomic btype] tries to get the non-atomic type corresponding to
       the atomic type [btype]. It fails if [btype] isn't atomic. *)
 
+  val as_atomic : t -> t
+  (** [as_atomic btype] returns [btype] if it is atomic, or the atomic
+      equivalent of [btype] if not. *)
+
   val strip_atomic : t -> t
   (** [strip_atomic btype] behaves as [to_non_atomic btype] if [btype] is
       atomic, and returns [btype] if not. *)
@@ -84,6 +88,10 @@ val to_non_atomic : t -> t Or_error.t
 (** [to_non_atomic ty] tries to get the non-atomic type corresponding to the
     atomic type [ty]. It fails if [ty] isn't atomic. *)
 
+val as_atomic : t -> t
+(** [as_atomic ty] returns [ty] if it is atomic, or the atomic equivalent of
+    [ty] if not. *)
+
 val strip_atomic : t -> t
 (** [strip_atomic ty] behaves as [to_non_atomic ty] if [ty] is atomic, and
     returns [ty] if not. *)
@@ -111,5 +119,11 @@ val is_atomic : t -> bool
 val is_pointer : t -> bool
 (** [is_pointer ty] returns whether [ty] is a pointer type. *)
 
-val check : t -> t -> unit Or_error.t
-(** [check t1 t2] raises an error if [t1] is not equal to [t2]. *)
+val check : t -> t -> t Or_error.t
+(** [check t1 t2] raises an error if [t1] is not equal to [t2]. It returns
+    [t1] on success. *)
+
+val check_modulo_atomicity : t -> t -> t Or_error.t
+(** [check_modulo_atomicity t1 t2] raises an error if [t1] is not equal to
+    [t2], modulo [t1] and [t2]'s atomicity. It returns [strip_atomic t1] on
+    success. *)

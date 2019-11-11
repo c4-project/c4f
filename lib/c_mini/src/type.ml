@@ -50,6 +50,8 @@ module Basic = struct
     | {atomic= true; prim= Bool} ->
         `Defined_type (Ac.C_id.of_string "atomic_bool")
 
+  let as_atomic (t : t) : t = {t with atomic= true}
+
   let strip_atomic (t : t) : t = {t with atomic= false}
 
   let to_non_atomic : t -> t Or_error.t = function
@@ -125,6 +127,12 @@ let strip_atomic : t -> t = function
   | Pointer_to k ->
       k |> Basic.strip_atomic |> pointer_to
 
+let as_atomic : t -> t = function
+  | Normal k ->
+      k |> Basic.as_atomic |> normal
+  | Pointer_to k ->
+      k |> Basic.as_atomic |> pointer_to
+
 let to_non_atomic : t -> t Or_error.t = function
   | Normal k ->
       Or_error.(k |> Basic.to_non_atomic >>| normal)
@@ -142,6 +150,9 @@ module Json : Plumbing.Jsonable_types.S with type t := t =
 
 include Json
 
-let check (t1 : t) (t2 : t) : unit Or_error.t =
-  if equal t1 t2 then Result.ok_unit
+let check (t1 : t) (t2 : t) : t Or_error.t =
+  if equal t1 t2 then Result.return t1
   else Or_error.error_s [%message "Type mismatch" ~t1:(t1 : t) ~t2:(t2 : t)]
+
+let check_modulo_atomicity (t1 : t) (t2 : t) : t Or_error.t =
+  check (strip_atomic t1) (strip_atomic t2)

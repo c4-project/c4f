@@ -11,16 +11,31 @@
 
 open Base
 
-module Global_random_state = struct
+module Global_payload = struct
   type t =
     { basic_type: Act_c_mini.Type.Basic.t
     ; initial_value: Act_c_mini.Constant.t
     ; name: Act_common.C_id.t }
   [@@deriving sexp]
+
+  module G = Base_quickcheck.Generator
+
+  let gen_type_from_constant (k : Act_c_mini.Constant.t) :
+      Act_c_mini.Type.Basic.t G.t =
+    let ty = Act_c_mini.Constant.type_of k in
+    let bt = Act_c_mini.Type.basic_type ty in
+    G.of_list [bt; Act_c_mini.Type.Basic.as_atomic bt]
+
+  let generator (vars : Var.Map.t) : t G.t =
+    G.Let_syntax.(
+      let%bind initial_value = Act_c_mini.Constant.gen_int32 in
+      let%bind basic_type = gen_type_from_constant initial_value in
+      let%map name = Var.Map.gen_fresh_var vars in
+      {basic_type; initial_value; name})
 end
 
-module Make_global :
-  Action_types.S with type Payload.t = Global_random_state.t = struct
+module Make_global : Action_types.S with type Payload.t = Global_payload.t =
+struct
   let name = Act_common.Id.of_string "var.make.global"
 
   let readme () =
@@ -31,21 +46,13 @@ module Make_global :
     |}
 
   module Payload = struct
-    include Global_random_state
-    module G = Base_quickcheck.Generator
-
-    let gen' (vars : Var.Map.t) : t G.t =
-      G.Let_syntax.(
-        let%bind basic_type = Act_c_mini.Type.Basic.quickcheck_generator in
-        let%bind initial_value = Act_c_mini.Constant.gen_int32 in
-        let%map name = Var.Map.gen_fresh_var vars in
-        {basic_type; initial_value; name})
+    include Global_payload
 
     let gen (_subject : Subject.Test.t) ~(random : Splittable_random.State.t)
         : t State.Monad.t =
       State.Monad.(
         Let_syntax.(
-          let%map generator = with_vars gen' in
+          let%map generator = with_vars generator in
           Base_quickcheck.Generator.generate generator ~random ~size:10))
   end
 

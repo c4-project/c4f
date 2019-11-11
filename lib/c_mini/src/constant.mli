@@ -75,3 +75,9 @@ val type_of : t -> Type.t
 
 val gen_int32 : t Base_quickcheck.Generator.t
 (** [gen_int32] generates integer constants in the 32-bit range only. *)
+
+val gen_bool : t Base_quickcheck.Generator.t
+(** [gen_bool] generates Boolean constants. *)
+
+val quickcheck_generator : t Base_quickcheck.Generator.t
+(** [quickcheck_generator] generates Boolean and 32-bit integer constants. *)

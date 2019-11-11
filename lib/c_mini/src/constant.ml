@@ -75,3 +75,9 @@ let gen_int32_as_int : int Generator.t =
       Option.value ~default:0 (Int.of_int32 x))
 
 let gen_int32 : t Generator.t = Generator.map ~f:int gen_int32_as_int
+
+let gen_bool : t Generator.t =
+  Generator.map ~f:bool [%quickcheck.generator: bool]
+
+let quickcheck_generator : t Generator.t =
+  Base_quickcheck.Generator.union [gen_int32; gen_bool]

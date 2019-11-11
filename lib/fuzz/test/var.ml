@@ -17,47 +17,52 @@ module Con = Act_c_mini.Constant
 module Ty = Act_c_mini.Type
 module Tx = Travesty_base_exts
 
-let%test_module "environment modules in a test map" =
-  ( module struct
-    let existing_global : Ty.t -> Src.Var.Record.t =
-      Src.Var.Record.make_existing Ac.Scope.Global
+module Test_data = struct
+  let existing_global : Ty.t -> Src.Var.Record.t =
+    Src.Var.Record.make_existing Ac.Scope.Global
 
-    let existing_local (tid : int) : Ty.t -> Src.Var.Record.t =
-      Src.Var.Record.make_existing (Ac.Scope.Local tid)
+  let existing_local (tid : int) : Ty.t -> Src.Var.Record.t =
+    Src.Var.Record.make_existing (Ac.Scope.Local tid)
 
-    let test_map : Src.Var.Map.t =
-      [ ("foo", existing_global (Ty.int ()))
-      ; ("bar", existing_global (Ty.int ~atomic:true ()))
-      ; ("baz", existing_global (Ty.int ~atomic:true ~pointer:true ()))
-      ; ("foobar", existing_global (Ty.bool ~atomic:true ()))
-      ; ("barbaz", existing_global (Ty.bool ()))
-      ; ( "a"
-        , Src.Var.Record.make_generated_global ~initial_value:Con.falsehood
-            (Ty.bool ()) )
-      ; ( "b"
-        , Src.Var.Record.make_generated_global ~initial_value:Con.truth
-            (Ty.bool ~atomic:true ()) )
-      ; ("c", Src.Var.Record.make_generated_global (Ty.bool ()))
-      ; ( "d"
-        , Src.Var.Record.make_generated_global ~initial_value:(Con.int 27)
-            (Ty.int ()) )
-      ; ( "e"
-        , Src.Var.Record.make_generated_global ~initial_value:(Con.int 53)
-            (Ty.int ~atomic:true ()) )
-      ; ("f", Src.Var.Record.make_generated_global (Ty.int ()))
-      ; ("1:x", existing_local 1 (Ty.bool ()))
-      ; ("1:y", existing_local 1 (Ty.int ()))
-      ; ("2:x", existing_local 1 (Ty.int ()))
-      ; ("2:y", existing_local 1 (Ty.bool ()))
-      ; ("3:x", existing_local 1 (Ty.int ~pointer:true ())) ]
+  let test_map : Src.Var.Map.t Lazy.t =
+    lazy
+      ( [ ("foo", existing_global (Ty.int ()))
+        ; ("bar", existing_global (Ty.int ~atomic:true ()))
+        ; ("baz", existing_global (Ty.int ~atomic:true ~pointer:true ()))
+        ; ("foobar", existing_global (Ty.bool ~atomic:true ()))
+        ; ("barbaz", existing_global (Ty.bool ()))
+        ; ( "a"
+          , Src.Var.Record.make_generated_global ~initial_value:Con.falsehood
+              (Ty.bool ()) )
+        ; ( "b"
+          , Src.Var.Record.make_generated_global ~initial_value:Con.truth
+              (Ty.bool ~atomic:true ()) )
+        ; ("c", Src.Var.Record.make_generated_global (Ty.bool ()))
+        ; ( "d"
+          , Src.Var.Record.make_generated_global ~initial_value:(Con.int 27)
+              (Ty.int ()) )
+        ; ( "e"
+          , Src.Var.Record.make_generated_global ~initial_value:(Con.int 53)
+              (Ty.int ~atomic:true ()) )
+        ; ("f", Src.Var.Record.make_generated_global (Ty.int ()))
+        ; ("1:x", existing_local 1 (Ty.bool ()))
+        ; ("1:y", existing_local 1 (Ty.int ()))
+        ; ("2:x", existing_local 1 (Ty.int ()))
+        ; ("2:y", existing_local 1 (Ty.bool ()))
+        ; ("3:x", existing_local 1 (Ty.int ~pointer:true ())) ]
       |> Tx.Alist.map_left ~f:Ac.Litmus_id.of_string
       |> Map.of_alist_exn (module Ac.Litmus_id)
-      |> Ac.Scoped_map.of_litmus_id_map
+      |> Ac.Scoped_map.of_litmus_id_map )
+end
 
+let%test_module "environment modules in a test map" =
+  ( module struct
     let test_variables_of_basic_type (scope : Ac.Scope.t) (ty : Ty.Basic.t) :
         unit =
       let (module Env) =
-        Src.Var.Map.env_module_with_known_values test_map ~scope
+        Src.Var.Map.env_module_with_known_values
+          (Lazy.force Test_data.test_map)
+          ~scope
       in
       let vals = ty |> Env.variables_of_basic_type |> Map.to_alist in
       print_s [%sexp (vals : (Ac.C_id.t, Ty.t) List.Assoc.t)]
@@ -72,7 +77,8 @@ let%test_module "environment modules in a test map" =
 
     let%expect_test "known values in environment form" =
       let (module Env) =
-        Src.Var.Map.env_module_with_known_values test_map
+        Src.Var.Map.env_module_with_known_values
+          (Lazy.force Test_data.test_map)
           ~scope:Ac.Scope.Global
       in
       let vals =
