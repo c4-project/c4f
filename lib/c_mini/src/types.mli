@@ -167,6 +167,8 @@ module type S_statement = sig
   (** [nop] is a no-operation statement; it corresponds to C's empty
       expression statement. *)
 
+  (** {3 Accessors} *)
+
   val reduce :
        'meta t
     -> assign:('meta assign -> 'result)
@@ -179,6 +181,16 @@ module type S_statement = sig
   (** [reduce stm ~assign ~atomic_cmpxchg ~atomic_store ~if_stm ~nop] applies
       the appropriate function of those given to [stm]. It does _not_
       recursively reduce statements inside blocks. *)
+
+  val has_if_statements : 'meta t -> bool
+  (** [has_if_statements stm] is true provided that [stm] is an if statement,
+      or a composite statement for which [has_if_statements] is true for at
+      least one sub-statement. *)
+
+  val has_while_loops : 'meta t -> bool
+  (** [has_while_loops stm] is true provided that [stm] is a while (or
+      do-while) loop, or a composite statement for which [has_while_loops] is
+      true for at least one sub-statement. *)
 
   (** {3 Traversing} *)
 

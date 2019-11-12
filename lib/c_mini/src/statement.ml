@@ -121,6 +121,24 @@ module Main :
     | Nop ->
         nop ()
 
+  let rec has_if_statements : 'meta t -> bool = function
+    | If_stm _ ->
+        true
+    | While_loop {body; _} ->
+        List.exists (Block.statements body) ~f:has_if_statements
+    | Assign _ | Atomic_cmpxchg _ | Atomic_store _ | Nop ->
+        false
+
+  let rec has_while_loops : 'meta t -> bool = function
+    | While_loop _ ->
+        true
+    | If_stm {t_branch; f_branch; _} ->
+        List.exists
+          (Block.statements t_branch @ Block.statements f_branch)
+          ~f:has_while_loops
+    | Assign _ | Atomic_cmpxchg _ | Atomic_store _ | Nop ->
+        false
+
   module Base_map (M : Monad.S) = struct
     module F = Travesty.Traversable.Helpers (M)
 
