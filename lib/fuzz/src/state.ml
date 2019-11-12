@@ -47,11 +47,13 @@ let vars_satisfying_all (s : t) ~(scope : Ac.Scope.t)
   Var.Map.satisfying_all s.vars ~scope ~predicates
 
 module Monad = struct
-  include Travesty.State_transform.Make (struct
+  module M = Travesty.State_transform.Make (struct
     module Inner = Or_error
 
     type nonrec t = t
   end)
+
+  include M
 
   let with_vars_m (f : Var.Map.t -> 'a t) : 'a t = peek vars >>= f
 
@@ -66,6 +68,13 @@ module Monad = struct
 
   let add_dependency (id : Ac.Litmus_id.t) : unit t =
     modify (add_dependency ~id)
+
+  module Exp_idents = Act_c_mini.Expression.On_identifiers.On_monad (M)
+
+  let add_expression_dependencies (expr : Act_c_mini.Expression.t)
+      ~(scope : Ac.Scope.t) : unit t =
+    Exp_idents.iter_m expr ~f:(fun c_id ->
+        c_id |> resolve ~scope >>= add_dependency)
 
   let add_write (id : Ac.Litmus_id.t) : unit t = modify (add_write ~id)
 

@@ -9,7 +9,26 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+open Base
+module Src = Act_fuzz
 open Act_fuzz.Action
+
+module Test_utils = struct
+  let reify_test (test : Src.Subject.Test.t) :
+      Act_c_lang.Ast.Translation_unit.t Src.State.Monad.t =
+    Src.State.Monad.with_vars (fun vars ->
+        List.mapi (Act_litmus.Test.Raw.threads test) ~f:(fun id p ->
+            let fn = Src.Subject.Program.to_function ~vars ~id p in
+            Act_c_mini.(Reify.func (Named.name fn) (Named.value fn))))
+
+  let run_and_dump_test (action : Src.Subject.Test.t Src.State.Monad.t)
+      ~(initial_state : Src.State.t) : unit =
+    let r = Src.State.Monad.(run (action >>= reify_test) initial_state) in
+    Fmt.(
+      pr "%a@."
+        (result ~ok:(list Act_c_lang.Ast.External_decl.pp) ~error:Error.pp))
+      r
+end
 
 let%test_module "Summary" =
   ( module struct

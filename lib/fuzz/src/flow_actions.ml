@@ -118,13 +118,31 @@ module If = struct
         Metadata.t Act_c_mini.Statement.t list Or_error.t =
       Or_error.return [wrap_in_if_raw statements ~cond]
 
+    (** [add_cond_dependencies path cond] marks every variable in [cond] as
+        having a read dependency, using [path] to resolve the scope at which
+        [cond] is being inserted.
+
+        This is a considerable over-approximation of the actual needed
+        dependencies. *)
+    let add_cond_dependencies (path : Path_shapes.program)
+        (cond : Act_c_mini.Expression.t) : unit State.Monad.t =
+      (* TODO(@MattWindsor91): it would be pretty cool for the lvalues to
+         track whether or not they are being used in a tautology, once we add
+         metadata tracking to the expression. In this case, we could skip
+         adding dependencies where not necessary. *)
+      State.Monad.add_expression_dependencies cond
+        ~scope:(Local (Path.tid path))
+
     let run (test : Subject.Test.t) ~(payload : Payload.t) :
         Subject.Test.t State.Monad.t =
       let path = Payload.path payload in
       let cond = Payload.cond payload in
-      State.Monad.Monadic.return
-        (Path.Subject.Test.transform_stm_list path ~target:test
-           ~f:(wrap_in_if ~cond))
+      State.Monad.(
+        Let_syntax.(
+          let%bind () = add_cond_dependencies path cond in
+          Monadic.return
+            (Path.Subject.Test.transform_stm_list path ~target:test
+               ~f:(wrap_in_if ~cond))))
   end
 
   module Duplicate : S = Make (struct

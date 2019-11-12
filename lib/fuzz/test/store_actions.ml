@@ -50,29 +50,20 @@ let%test_module "int tests" =
           (Act_common.C_id.of_string "gen2")
           ~initial_value:(Act_c_mini.Constant.int (-55)))
 
-    let run_test () : (Src.State.t * Src.Subject.Test.t) Or_error.t =
+    let test_action : Src.Subject.Test.t Src.State.Monad.t =
       Src.State.Monad.(
-        run'
-          ( prepare_fuzzer_state ()
-          >>= fun () ->
-          Src.Store_actions.Int.run
-            (Lazy.force Subject.Example.test)
-            ~payload:(Lazy.force random_state) )
-          (Lazy.force Subject.Example.state))
+        prepare_fuzzer_state ()
+        >>= fun () ->
+        Src.Store_actions.Int.run
+          (Lazy.force Subject.Example.test)
+          ~payload:(Lazy.force random_state))
+
+    let run_test () : (Src.State.t * Src.Subject.Test.t) Or_error.t =
+      Src.State.Monad.(run' test_action (Lazy.force Subject.Example.state))
 
     let%expect_test "test int store: programs" =
-      let r =
-        let open Or_error.Let_syntax in
-        let%map state, test = run_test () in
-        let vars = Src.State.vars state in
-        List.mapi (Act_litmus.Test.Raw.threads test) ~f:(fun id p ->
-            let fn = Src.Subject.Program.to_function ~vars ~id p in
-            Act_c_mini.(Reify.func (Named.name fn) (Named.value fn)))
-      in
-      Fmt.(
-        pr "%a@."
-          (result ~ok:(list Act_c_lang.Ast.External_decl.pp) ~error:Error.pp))
-        r ;
+      Action.Test_utils.run_and_dump_test test_action
+        ~initial_state:(Lazy.force Subject.Example.state) ;
       [%expect
         {|
       void P0(atomic_int *gen1, atomic_int *gen2, atomic_int *x, atomic_int *y)

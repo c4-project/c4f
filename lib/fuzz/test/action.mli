@@ -9,4 +9,16 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** This interface intentionally left blank. *)
+(** Tests and test utilities for {!Act_fuzz.Action}. *)
+
+(** {1 Test utilities} *)
+
+module Test_utils : sig
+  val run_and_dump_test :
+       Act_fuzz.Subject.Test.t Act_fuzz.State.Monad.t
+    -> initial_state:Act_fuzz.State.t
+    -> unit
+  (** [run_and_dump_test action ~initial_state] runs the monadic computation
+      [action] (representing a fuzzer action) on [initial_state], then dumps
+      the resulting C to stdout. *)
+end

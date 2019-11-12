@@ -83,13 +83,6 @@ module Monad : sig
       value [value] into the state, overwriting any existing variable of the
       same name. *)
 
-  val add_dependency : Act_common.Litmus_id.t -> unit t
-  (** [add_dependency var] is a stateful action that adds a dependency flag
-      to any known-value record for variable [var].
-
-      This should be done after involving [var] in any atomic actions that
-      depend on it having a particular known-value. *)
-
   val add_write : Act_common.Litmus_id.t -> unit t
   (** [add_write var] is a stateful action that adds a write flag to variable
       [var].
@@ -103,4 +96,20 @@ module Monad : sig
 
       This should be done after involving [var] in any atomic actions that
       modify it. *)
+
+  (** {3 Adding dependency flags} *)
+
+  val add_dependency : Act_common.Litmus_id.t -> unit t
+  (** [add_dependency var] is a stateful action that adds a dependency flag
+      to any known-value record for variable [var].
+
+      This should be done after involving [var] in any atomic actions that
+      depend on it having a particular known-value. *)
+
+  val add_expression_dependencies :
+    Act_c_mini.Expression.t -> scope:Act_common.Scope.t -> unit t
+  (** [add_expression_dependencies expr ~scope] is a stateful action that
+      adds dependency flags for any known-variable records for variables
+      mentioned in [expr], resolving each variable from the perspective of
+      scope [scope]. *)
 end

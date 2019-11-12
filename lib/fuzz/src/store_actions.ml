@@ -184,18 +184,13 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
     let%bind () = State.Monad.erase_var_value dst_var in
     State.Monad.add_write dst_var
 
-  module Exp_idents =
-    Act_c_mini.Expression.On_identifiers.On_monad (State.Monad)
-
   (* This action also introduces dependencies on every variable in the
      source. *)
   let add_dependencies_to_store_src (store : Act_c_mini.Atomic_store.t)
       ~(tid : int) : unit State.Monad.t =
-    Exp_idents.iter_m (Act_c_mini.Atomic_store.src store) ~f:(fun c_id ->
-        State.Monad.(
-          Let_syntax.(
-            let%bind l_id = resolve c_id ~scope:(Local tid) in
-            add_dependency l_id)))
+    State.Monad.add_expression_dependencies
+      (Act_c_mini.Atomic_store.src store)
+      ~scope:(Local tid)
 
   let do_bookkeeping (store : Act_c_mini.Atomic_store.t) ~(tid : int) :
       unit State.Monad.t =
