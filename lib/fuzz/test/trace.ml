@@ -80,8 +80,8 @@ let%test_module "S-expression representation" =
 let%test_module "trace playback" =
   ( module struct
     let%expect_test "empty trace does nothing" =
-      let test = Lazy.force Subject.Example.test in
-      let state = Lazy.force Subject.Example.state in
+      let test = Lazy.force Subject.Test_data.test in
+      let state = Lazy.force Subject.Test_data.state in
       let computation =
         Src.Trace.(
           run empty test ~resolve:(fun _ ->
@@ -104,5 +104,15 @@ let%test_module "trace playback" =
              Nop
              (Atomic_store
               ((src (Lvalue (Variable foo))) (dst (Lvalue (Variable y)))
-               (mo memory_order_relaxed)))))))))) |}]
+               (mo memory_order_relaxed)))
+             (If_stm
+              ((cond (Bop Eq (Lvalue (Variable foo)) (Lvalue (Variable y))))
+               (t_branch
+                ((statements
+                  ((Atomic_store
+                    ((src (Constant (Int 56))) (dst (Lvalue (Variable x)))
+                     (mo memory_order_seq_cst)))))
+                 (metadata ((source Existing) (liveness Normal)))))
+               (f_branch
+                ((statements ()) (metadata ((source Existing) (liveness Normal)))))))))))))) |}]
   end )

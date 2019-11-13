@@ -55,15 +55,15 @@ let%test_module "int tests" =
         prepare_fuzzer_state ()
         >>= fun () ->
         Src.Store_actions.Int.run
-          (Lazy.force Subject.Example.test)
+          (Lazy.force Subject.Test_data.test)
           ~payload:(Lazy.force random_state))
 
     let run_test () : (Src.State.t * Src.Subject.Test.t) Or_error.t =
-      Src.State.Monad.(run' test_action (Lazy.force Subject.Example.state))
+      Src.State.Monad.(run' test_action (Lazy.force Subject.Test_data.state))
 
     let%expect_test "test int store: programs" =
       Action.Test_utils.run_and_dump_test test_action
-        ~initial_state:(Lazy.force Subject.Example.state) ;
+        ~initial_state:(Lazy.force Subject.Test_data.state) ;
       [%expect
         {|
       void P0(atomic_int *gen1, atomic_int *gen2, atomic_int *x, atomic_int *y)
@@ -74,6 +74,7 @@ let%test_module "int tests" =
                                 atomic_load_explicit(gen2, memory_order_seq_cst),
                                 memory_order_seq_cst);
           atomic_store_explicit(y, foo, memory_order_relaxed);
+          if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
       } |}]
 
     let%expect_test "test int store: global variables" =

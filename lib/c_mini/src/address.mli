@@ -20,7 +20,7 @@ type t [@@deriving sexp, compare, equal, quickcheck]
 module On_lvalues :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t
 
-(** {3 Constructors} *)
+(** {1 Constructors} *)
 
 val lvalue : Lvalue.t -> t
 (** [lvalue lv] lifts an lvalue [lv] to an address. *)
@@ -51,6 +51,13 @@ val deref : t -> t
     normalised form of [addr] is an lvalue, it returns the result of directly
     dereferencing from that lvalue instead. *)
 
+val on_address_of_typed_id : id:Act_common.C_id.t -> ty:Type.t -> t
+
+val of_id_in_env :
+  (module Env_types.S) -> id:Act_common.C_id.t -> t Or_error.t
+
+(** {2 Of variables} *)
+
 val of_variable : Act_common.C_id.t -> t
 (** [of_variable v] lifts the variable identifier [v] directly to an address. *)
 
@@ -58,12 +65,13 @@ val of_variable_ref : Act_common.C_id.t -> t
 (** [of_variable_ref v] lifts the address of variable identifier [v] to an
     address (in C syntax, this would be '&v'). *)
 
-val on_address_of_typed_id : id:Act_common.C_id.t -> ty:Type.t -> t
+val of_variable_str_exn : string -> t
+(** [of_variable_str_exn vs] is shorthand for applying {!of_variable} to the
+    result of converting [vs] from a string to a C identifier. It will fail
+    with an exception if [vs] is not a valid C identifier, and so this
+    function should not be used on user-input data. *)
 
-val of_id_in_env :
-  (module Env_types.S) -> id:Act_common.C_id.t -> t Or_error.t
-
-(** {3 Accessors} *)
+(** {1 Accessors} *)
 
 val reduce : t -> lvalue:(Lvalue.t -> 'a) -> ref:('a -> 'a) -> 'a
 (** [reduce addr ~address ~deref] applies [lvalue] on the underlying lvalue
@@ -77,7 +85,7 @@ include
   Types.S_has_underlying_variable with type t := t
 (** We can get to the variable name inside an address. *)
 
-(** {3 Safe accessors}
+(** {1 Safe accessors}
 
     These accessors return an error if the address isn't in the right shape. *)
 
@@ -89,13 +97,13 @@ val as_variable : t -> Act_common.C_id.t Or_error.t
 (** [as_variable addr] normalises [addr], then returns it as a variable ID if
     it is one, or an error otherwise. *)
 
-(** {3 Type-checking} *)
+(** {1 Type-checking} *)
 
 include
   Types.S_type_checkable with type t := t
 (** Type-checking for addresses. *)
 
-(** {3 Generating and quickchecking}
+(** {1 Generating and quickchecking}
 
     The default quickcheck instance random addresses without constraint. We
     also provide several modules with more specific restrictions. Most of

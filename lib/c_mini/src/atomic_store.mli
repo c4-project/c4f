@@ -13,13 +13,13 @@
 
 type t [@@deriving sexp, equal]
 
-(** {2 Constructors} *)
+(** {1 Constructors} *)
 
 val make : src:Expression.t -> dst:Address.t -> mo:Mem_order.t -> t
 (** [atomic_store ~src ~dst ~mo] constructs an explicit atomic store
     expression with source [src], destination [dst], and memory order [mo]. *)
 
-(** {2 Accessors} *)
+(** {1 Accessors} *)
 
 val dst : t -> Address.t
 (** [dst st] gets [st]'s destination address. *)
@@ -30,7 +30,7 @@ val src : t -> Expression.t
 val mo : t -> Mem_order.t
 (** [mo st] gets [st]'s memory order. *)
 
-(** {2 Traversals} *)
+(** {1 Traversals} *)
 
 (** Traversing over atomic-action addresses in atomic stores. *)
 module On_addresses :
@@ -40,7 +40,7 @@ module On_addresses :
 module On_lvalues :
   Travesty.Traversable_types.S0 with type t := t and type Elt.t = Lvalue.t
 
-(** {3 Generating and quickchecking} *)
+(** {1 Generating and quickchecking} *)
 
 (** [Quickcheck_generic (Src) (Dst)] generates random stores, using [Src] to
     generate source expressions and [Dst] to generate destination addresses.

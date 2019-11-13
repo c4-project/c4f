@@ -154,31 +154,32 @@ let%test_module "Bool_values" =
       [%expect
         {|
       (false)
-      (true)
       (barbaz)
-      (-209 == atomic_load_explicit(&x, memory_order_consume))
-      (89301152 == foo)
-      (foo == atomic_load_explicit(&y, memory_order_relaxed))
-      (atomic_load_explicit(bar, memory_order_seq_cst) ==
+      (18 == atomic_load_explicit(bar, memory_order_seq_cst))
+      (*blep == 19482)
+      (atomic_load_explicit(&y, memory_order_acquire) == -1)
+      (true && atomic_load_explicit(bar, memory_order_acquire) == 906)
+      (barbaz && (foo == -452191315) || foo == 7998)
+      (barbaz && !470264907 == -879720314)
+      ((atomic_load_explicit(bar, memory_order_seq_cst) == -1736309620) && foo ==
        atomic_load_explicit(&y, memory_order_relaxed))
-      (false && (true || atomic_load_explicit(&x, memory_order_seq_cst) == foo) &&
-       barbaz || barbaz)
-      (true && barbaz && true)
-      (barbaz && barbaz || foo == atomic_load_explicit(&x, memory_order_seq_cst))
-      (barbaz && foo == 1234853 && barbaz && true && (false || true) && false &&
-       (((-860 == atomic_load_explicit(&y, memory_order_seq_cst)) && 19482 ==
-         atomic_load_explicit(&x, memory_order_consume))
-        || (*blep == *blep) || true)
-       && false)
-      ((barbaz || foo == 7998) && true)
-      (false ||
-       (true && (-5 == *blep) ||
-        (((foo == *blep) && atomic_load_explicit(bar, memory_order_seq_cst) ==
-          atomic_load_explicit(bar, memory_order_consume))
-         && false && (1 == -6530420) || true && false)
-        || barbaz && *blep == 409507680)
-       || -50411168 == atomic_load_explicit(&y, memory_order_relaxed))
-      (barbaz || barbaz) |}]
+      (((barbaz || barbaz && foo ==
+         atomic_load_explicit(bar, memory_order_relaxed))
+        && atomic_load_explicit(&x, memory_order_seq_cst) == foo)
+       && !barbaz)
+      (((barbaz && atomic_load_explicit(bar, memory_order_consume) == 1234853) ||
+        barbaz)
+       && true)
+      ((85943 == atomic_load_explicit(&x, memory_order_relaxed)) || !false)
+      ((*blep == *blep) || -38250 == foo)
+      ((atomic_load_explicit(bar, memory_order_acquire) == *blep) ||
+       ((454 == foo) && (12922 == *blep) || barbaz || barbaz || foo == foo) || !foo
+       == *blep)
+      (((2869 == -3) && !((foo == *blep) || barbaz) || (-1344830 == 0) || false) ||
+       1 == -6530420)
+      (((barbaz && barbaz) || barbaz) || barbaz)
+      (!*blep == foo || false)
+      (!!!barbaz && barbaz) |}]
 
     let%expect_test "sample (environment has only atomic_int*)" =
       print_sample (Lazy.force Env.test_env_atomic_ptrs_only_mod) ;
@@ -186,200 +187,147 @@ let%test_module "Bool_values" =
         {|
       (false)
       (true)
-      (-4 == -2147483648)
-      (1 == 221)
-      (1129 == atomic_load_explicit(bar, memory_order_seq_cst))
-      (atomic_load_explicit(bar, memory_order_seq_cst) ==
+      (-34 == atomic_load_explicit(bar, memory_order_seq_cst))
+      (-7 == 0)
+      (69640 == atomic_load_explicit(bar, memory_order_seq_cst))
+      (85943 == -43945)
+      (atomic_load_explicit(bar, memory_order_acquire) ==
+       atomic_load_explicit(bar, memory_order_acquire))
+      (atomic_load_explicit(bar, memory_order_consume) == 3)
+      (atomic_load_explicit(bar, memory_order_consume) == 488)
+      ((-15623063 == 2147483647) && false || (6126 == -360539) || 10703535 ==
+       -4713)
+      ((-326 == atomic_load_explicit(bar, memory_order_seq_cst)) &&
+       (-149248401 == atomic_load_explicit(bar, memory_order_acquire)) || true)
+      ((atomic_load_explicit(bar, memory_order_seq_cst) == -2147483648) &&
+       atomic_load_explicit(bar, memory_order_seq_cst) ==
        atomic_load_explicit(bar, memory_order_consume))
-      (true && (atomic_load_explicit(bar, memory_order_consume) == -112015996) &&
-       22551631 == 33417)
-      ((-607070849 == atomic_load_explicit(bar, memory_order_acquire)) &&
-       atomic_load_explicit(bar, memory_order_seq_cst) == 0)
-      (((((31453 == -18) || false) &&
-         (57357 == atomic_load_explicit(bar, memory_order_relaxed)) &&
-         atomic_load_explicit(bar, memory_order_seq_cst) == -860)
-        && atomic_load_explicit(bar, memory_order_seq_cst) == 10703535)
-       && true)
-      (((((-1853 == -2147483648) ||
-          ((atomic_load_explicit(bar, memory_order_seq_cst) == 437078) || true &&
-           atomic_load_explicit(bar, memory_order_relaxed) ==
-           atomic_load_explicit(bar, memory_order_consume))
-          || (-2054658 == atomic_load_explicit(bar, memory_order_acquire)) &&
-          (true &&
-           ((atomic_load_explicit(bar, memory_order_consume) ==
-             atomic_load_explicit(bar, memory_order_relaxed))
-            || (148054 == atomic_load_explicit(bar, memory_order_seq_cst)) &&
-            ((-21589512 == atomic_load_explicit(bar, memory_order_acquire)) ||
-             false || false)
-            && false && atomic_load_explicit(bar, memory_order_relaxed) ==
-            atomic_load_explicit(bar, memory_order_acquire) && 4005 ==
-            atomic_load_explicit(bar, memory_order_seq_cst))
-           || false && true && (-22632 == 735443787) ||
-           (atomic_load_explicit(bar, memory_order_seq_cst) ==
-            atomic_load_explicit(bar, memory_order_acquire))
-           &&
-           (atomic_load_explicit(bar, memory_order_seq_cst) ==
-            atomic_load_explicit(bar, memory_order_consume))
-           || (-4 == atomic_load_explicit(bar, memory_order_consume)) &&
-           ((-844745271 == 103) || 141 == -9) && false)
-          || true)
-         && (-1394 == atomic_load_explicit(bar, memory_order_relaxed)) &&
-         (-5175 == -25) || 222 == atomic_load_explicit(bar, memory_order_relaxed))
-        || -2147483648 == atomic_load_explicit(bar, memory_order_relaxed))
-       && false || atomic_load_explicit(bar, memory_order_seq_cst) ==
-       atomic_load_explicit(bar, memory_order_seq_cst))
-      ((((atomic_load_explicit(bar, memory_order_acquire) == 918) || 89301152 ==
-         atomic_load_explicit(bar, memory_order_seq_cst))
-        || (-849891061 == atomic_load_explicit(bar, memory_order_relaxed)) ||
-        atomic_load_explicit(bar, memory_order_relaxed) ==
-        atomic_load_explicit(bar, memory_order_relaxed))
+      (!((-2147483648 == -52859389) && false) && !-9790791 ==
+       atomic_load_explicit(bar, memory_order_consume) &&
+       !(atomic_load_explicit(bar, memory_order_relaxed) ==
+         atomic_load_explicit(bar, memory_order_relaxed))
        && atomic_load_explicit(bar, memory_order_seq_cst) == -1315491)
-      ((-38751544 == atomic_load_explicit(bar, memory_order_acquire)) ||
-       (51 == -152110758) || false)
-      ((false && atomic_load_explicit(bar, memory_order_relaxed) == -106378261) ||
-       false && atomic_load_explicit(bar, memory_order_seq_cst) == 13)
-      ((true && false ||
-        (((151317 == atomic_load_explicit(bar, memory_order_consume)) &&
-          ((atomic_load_explicit(bar, memory_order_seq_cst) ==
-            atomic_load_explicit(bar, memory_order_consume))
-           || false || false || -1 ==
-           atomic_load_explicit(bar, memory_order_consume))
-          || true && false)
-         ||
-         ((906 == atomic_load_explicit(bar, memory_order_seq_cst)) &&
-          (true || 0 == 7633242 || false) && 140766 == -512041820)
-         && false || 74 == atomic_load_explicit(bar, memory_order_seq_cst))
-        || atomic_load_explicit(bar, memory_order_acquire) ==
-        atomic_load_explicit(bar, memory_order_consume))
-       || true || atomic_load_explicit(bar, memory_order_seq_cst) == -18166770)
-      (((false &&
-         ((-653346809 == 3618724) ||
-          ((atomic_load_explicit(bar, memory_order_consume) == 11) || true) &&
-          (((true &&
-             ((((10 == atomic_load_explicit(bar, memory_order_seq_cst)) && 228880
-                == -43)
-               ||
-               (((7301350 == 24) || false) &&
-                (atomic_load_explicit(bar, memory_order_relaxed) == 129587862) &&
-                false)
-               || -1 == 3)
-              && false || true && false)
-             || (-1450 == -2147483648) && false &&
-             (((209198417 == atomic_load_explicit(bar, memory_order_relaxed)) ||
-               -368 == -325112898)
-              && (2147483647 == 2147483647) || true)
-             && (-2 == atomic_load_explicit(bar, memory_order_relaxed)) || false)
-            ||
-            (atomic_load_explicit(bar, memory_order_acquire) ==
-             atomic_load_explicit(bar, memory_order_consume))
-            || true && (-118017 == atomic_load_explicit(bar, memory_order_consume))
-            || false)
-           && (11094005 == atomic_load_explicit(bar, memory_order_consume)) &&
-           false)
-          || true &&
-          ((true && true) ||
-           (4919468 == atomic_load_explicit(bar, memory_order_seq_cst)) && 0 ==
-           atomic_load_explicit(bar, memory_order_relaxed))
-          || -15642 == atomic_load_explicit(bar, memory_order_seq_cst))
-         && false)
-        ||
-        (true || true && (79870065 == 48611) ||
-         ((19182 == -246629305) && false ||
-          (-42 == atomic_load_explicit(bar, memory_order_consume)) || false ||
-          ((true && (true || true) && true) || 10 == 931410594) &&
-          (atomic_load_explicit(bar, memory_order_acquire) == -124515) ||
-          atomic_load_explicit(bar, memory_order_consume) ==
-          atomic_load_explicit(bar, memory_order_acquire))
-         || (-536 == atomic_load_explicit(bar, memory_order_acquire)) || false)
-        && (true || false && true) && 370936670 ==
-        atomic_load_explicit(bar, memory_order_acquire))
-       || true || true && 87005 == atomic_load_explicit(bar, memory_order_relaxed)) |}]
+      (false || !1 == -6530420)
+      (true || -19 == 745)
+      ((atomic_load_explicit(bar, memory_order_acquire) == 57685) ||
+       !((-1 == -1) &&
+         !((!!(atomic_load_explicit(bar, memory_order_acquire) ==
+               atomic_load_explicit(bar, memory_order_consume))
+            || !atomic_load_explicit(bar, memory_order_consume) == 9 && !true &&
+            (atomic_load_explicit(bar, memory_order_acquire) == -15863051) ||
+            atomic_load_explicit(bar, memory_order_relaxed) == 113305704 && 576814
+            == atomic_load_explicit(bar, memory_order_acquire) &&
+            !(28 == atomic_load_explicit(bar, memory_order_relaxed)) || -220 == 13)
+           ||
+           !((-1853 == -2147483648) ||
+             !(atomic_load_explicit(bar, memory_order_seq_cst) == 437078) ||
+             (atomic_load_explicit(bar, memory_order_relaxed) ==
+              atomic_load_explicit(bar, memory_order_consume))
+             || atomic_load_explicit(bar, memory_order_relaxed) == -108572)
+           && !!!(-1 == atomic_load_explicit(bar, memory_order_consume)) || -109 ==
+           -3705786 ||
+           !(-954029 == atomic_load_explicit(bar, memory_order_consume)) ||
+           -1532663 == atomic_load_explicit(bar, memory_order_seq_cst))
+         && (-29835015 == -242387) ||
+         (-28 == atomic_load_explicit(bar, memory_order_seq_cst)) &&
+         (-2556900 == -22632) || !atomic_load_explicit(bar, memory_order_relaxed)
+         == atomic_load_explicit(bar, memory_order_consume))
+       && atomic_load_explicit(bar, memory_order_acquire) ==
+       atomic_load_explicit(bar, memory_order_seq_cst))
+      ((atomic_load_explicit(bar, memory_order_relaxed) == -5) ||
+       (1861 == atomic_load_explicit(bar, memory_order_consume)) ||
+       atomic_load_explicit(bar, memory_order_seq_cst) ==
+       atomic_load_explicit(bar, memory_order_consume))
+      ((atomic_load_explicit(bar, memory_order_consume) == -112015996) || 22551631
+       == 33417)
+      (!atomic_load_explicit(bar, memory_order_consume) ==
+       atomic_load_explicit(bar, memory_order_acquire))
+      (!!!false) |}]
 
     let%expect_test "sample (environment is empty)" =
       print_sample (Lazy.force Env.empty_env_mod) ;
       [%expect
         {|
-      (false)
       (true)
-      (-849891061 == 1308564345)
-      (-393099 == 59642983)
-      (-1386 == 1066463)
-      (false && ((false && false) || -50348097 == 10703535) || true)
-      (true && (-186 == -22537) && true)
-      ((-1394 == 6356718) &&
-       ((2017411910 == 10) || ((4330 == 0) || 302886976 == -1) ||
-        ((((((false &&
-              ((-653346809 == 3618724) ||
-               ((-23 == 5) || (-1461030106 == -2) && -996 == 16) &&
-               ((2 == 14) || false) || (43718117 == 39984) || -2147483648 ==
-               -3339703)
-              && (-1 == 3) && false || true && false)
-             || (-1450 == -2147483648) && false &&
-             ((((-66190 == -64040) || true) || false) && ((792717104 == 2) || true)
-              || -2 == 3127868)
-             && (-22360 == -131107102) || (false || false) && (-165 == -35583) ||
-             true)
-            ||
-            ((false || true && ((true && true) || false && false) || false) &&
-             false)
-            || 111008 == -15798577)
-           && true || -89155514 == -306472)
-          || true && (79870065 == 48611) ||
-          ((19182 == -246629305) && false || (-42 == -949) || false) ||
-          (true && ((-1 == -562451) || false) &&
-           ((false || 235372 == -124515) && -5 == 11269657) && -635845724 ==
-           191399)
-          || 26195 == 5)
-         && (-4 == -21) && (true && -2147483648 == 2) ||
-         ((((-1744268 == -229322793) || false &&
-            (((-1751473 == -2136) || false) || false) || -55399977 == 6839)
-           && (false || true && true && false || false) && (-1 == 444) || 21823898
-           == 993936)
-          || true || true)
-         && false)
-        ||
-        ((false && (-8 == 16) || ((-25993139 == 2502729) || true) ||
-          (true || true || (2028265277 == 2971972) || 58067 == -1910 ||
-           ((12 == -6675252) || -1 == -2147483648) && false && true ||
-           (((657 == -1573123) && true) && true) && -2147483648 == 982)
-          && ((289 == -318149970) && true && true) || -149490 == -15076697)
-         || (114 == 529027985) && ((-12063219 == -92875855) && 0 == 186) ||
-         (false || -480 == 3647 ||
-          (((27 == 69346) || true) && ((1032398 == -749) || false) || 5156 == -29)
-          && ((1859712709 == -1) && -2147483648 == 310601768) || true || false ||
-          false || (-1596 == 14621) && false)
+      (-112015996 == 441)
+      (-14 == 3)
+      (18 == 320421)
+      (28 == 913948776)
+      (4592 == 2017411910)
+      (47969 == -29735)
+      (143532 == 30638885)
+      (576814 == 465)
+      ((-859284515 == 2134798) && -1 == -61683)
+      ((-970 == 1136190) && (-7118 == -6964) || true && false &&
+       (-15076697 == -9533616) && !((-31 == 14200) || -92875855 == 1509925) ||
+       (3518 == -253734) &&
+       ((((true && (65570610 == -38) || false && -2 == -10091 && (62815 == 5156) ||
+           ((6860 == 1859712709) || 602985 == -2147483648) || (-9 == 667549020) &&
+           -2013373 == -1)
+          ||
+          ((1219 == 1662229) || ((5 == 7) || 1496 == 3973) &&
+           (-113196593 == -19589) && 5606361 == -110390)
+          && 1292381 == -2147483648)
          && true)
-        && 8563605 == 0)
-       && ((-96005316 == 811) && 57164 == 801391) ||
-       ((-19589 == -1438744) && false) && true)
-      (((906 == -1) && -50411168 == 1414260) && true || 0 == 988777)
-      ((true || 2147483647 == -18166770) && (-38751544 == 2375369) ||
-       ((((true && ((false && false) || true) || (false && -2147483648 == 28) ||
-           -144 == 143532)
-          || false)
+        || 2147483647 == -1381651)
+       && -2092912 == -825649965 && !true && !!195063585 == -2 && -212770 ==
+       -22180214 && (9799 == 0) && 1414 == 399948372 && -654309041 == 253879135 &&
+       true)
+      (((-1853 == -2147483648) || !(-149 == 3838553) || -3207 == -2147483648) &&
+       ((-2054658 == -17) && true || !-6637079 == -3005 ||
+        ((((80 == 306873) || -2027 == 0) && (-29835015 == -242387) || 4005 ==
+          -19170)
+         && -2556900 == -22632)
+        && !6507 == 1 || !(2147483647 == -1) || 488 == -1960)
+       && 11343 == 2052)
+      ((2 == -11918) || 0 == 104965949)
+      ((202286 == 140766) || (-1 == -1) &&
+       !(((273 == -2009605104) && -2 == 9) || (48510554 == -3) && 51 == -152110758)
+       && false)
+      (((((-1 == 19482) && !1 == 18659626) || 261759771 == -39848) &&
+        ((-674356 == -25128703) && !94641 == 13585) || !(1330530 == 180118134) &&
+        false)
+       || !((-34 == 32212) && -1 == 61684972) && 1917247 == 0 &&
+       ((-33683577 == -16098) || true && -1 == -1) || ((7 == -2147483648) && true)
+       && (-206449 == 409507680) && -50411168 == 1414260)
+      ((!((-2038 == 31) && true) && 359247 == 184 && 115269 == -87439) ||
+       (((!!-46 == 38057 && true && -746 == -13937556) || !(1413267 == -1) || 0 ==
+         370582 || 1425738 == 30159)
+        && 155 == 9542)
+       || 541815 == -1)
+      (!69640 == 516 || !false)
+      (!85086 == 28933)
+      (!(false || !!(-120495 == -12400315) ||
+         (((6191823 == -2147483648) || false) || !true || !(-4884 == -964695275) &&
+          26 == -199706)
+         && !-43 == -41 ||
+         ((((10495822 == 1) && 129587862 == 49) && false) ||
+          ((0 == -2147483648) || 334 == 374) && false && 15 == 209198417)
          ||
-         (((((-1853 == -2147483648) || ((-149 == 3838553) || true) || 5 == 1569342)
-            && true && true)
-           ||
-           (((((-1 == -6637079) && -2147483648 == -3705786) || (39028 == -21589512)
-              || 565 == -766)
-             || false)
-            || (((-242387 == 1676) || -19170 == 2147483647) && false) && -22632 ==
-            735443787)
-           || (1 == -7896625) && true)
-          && -2399 == 74672525)
-         && true)
-        && true)
-       && (-844745271 == 103) || 141 == -9)
-      ((true || (((-2147483648 == -235) || true) && false) || false) && false)
-      (((true && -15464318 == -2147483648) || true && 18140 == -1) && true && 0 ==
-       2134798 && true)
-      ((((45766 == -1) && true) || 10 == -3164) && false ||
-       (((151317 == -7613275) && -16098 == -1533) || false) || false ||
-       (495683107 == -1377240818) && false)
-      ((((48 == 126030) || false) || false) && false || true)
-      (true || -825649965 == 139)
-      (true || -1007 == -3 || -444183101 == 84) |}]
+         !((((-2093708404 == -2495) && true) && 2147483647 == -4) ||
+           !!(209957105 == -4) || -131107102 == 49)
+         && 1826751 == 1772 &&
+         ((-270 == 468) && ((16 == 4919468) || false) || (0 == 2147483647) &&
+          -15642 == 25846698)
+         && ((2147483647 == 2736) || -8917222 == -1556113709) || (-16 == 38197) ||
+         ((true && -344578 == 9) || true || 1232905 == -562451) && 3583 == 2539 ||
+         !-124515 == -214980 &&
+         (((((302430 == 242) && -151920 == 186796963) &&
+            !((-127695368 == -645529) && (-1114576 == 2) && !(16427893 == -3) &&
+              325 == 273 && true && true)
+            || -585 == 538)
+           || 6839 == -825974609)
+          || true ||
+          ((64502772 == -686684577) &&
+           !((-2147483648 == -50788434) ||
+             ((-82561647 == 7630213) && 253918237 == -1) || (-51580 == -313) &&
+             false)
+           && -497 == -442 && !!true || !((-159 == 2) || true) || (-1910 == -22147)
+           && false)
+          && (377824 == -1) && true)
+         || -21669488 == -1305)
+       && false)
+      (!(30682120 == -326) || -3937 == -52910) |}]
 
     let test_fun (module E : Src.Env_types.S_with_known_values) =
       (module Src.Expression_gen.Bool_values (E) : Q.Test.S
@@ -411,79 +359,33 @@ let%test_module "Bool_tautologies" =
       [%expect
         {|
           (true)
-          (foo == 4)
+          (barbaz)
           (*blep == 99)
-          (atomic_load_explicit(&z, memory_order_seq_cst) == false)
-          (true &&
-           (((barbaz &&
-              ((*blep == atomic_load_explicit(&y, memory_order_seq_cst)) || true) ||
-              barbaz || false && 371254 ==
-              atomic_load_explicit(bar, memory_order_relaxed) || (barbaz || barbaz) &&
-              false)
-             || atomic_load_explicit(&z, memory_order_seq_cst) == false)
-            || barbaz)
-           && true && barbaz || atomic_load_explicit(bar, memory_order_seq_cst) == 95
-           || (atomic_load_explicit(bar, memory_order_relaxed) == foo) &&
-           (-149 == atomic_load_explicit(&x, memory_order_relaxed)) || foo ==
-           atomic_load_explicit(&x, memory_order_relaxed) || barbaz || false)
-          ((atomic_load_explicit(&y, memory_order_seq_cst) == 53) &&
-           atomic_load_explicit(&x, memory_order_seq_cst) == 27)
+          (atomic_load_explicit(foobaz, memory_order_seq_cst) == true)
+          (atomic_load_explicit(&y, memory_order_seq_cst) == 53)
+          (true && true)
+          ((barbaz == true) && true)
+          ((foo == 4) && true)
           (true && atomic_load_explicit(foobaz, memory_order_seq_cst) && true)
-          ((barbaz || barbaz || true && true && true) &&
-           atomic_load_explicit(&y, memory_order_seq_cst) == 53)
-          ((barbaz || atomic_load_explicit(foobaz, memory_order_seq_cst) == true ||
-            barbaz)
-           && (atomic_load_explicit(&y, memory_order_seq_cst) == 53) &&
-           atomic_load_explicit(foobaz, memory_order_seq_cst) == true)
-          (false || (-9790791 == foo) || barbaz ||
-           ((atomic_load_explicit(&y, memory_order_seq_cst) == 53) &&
-            atomic_load_explicit(&x, memory_order_seq_cst) == 27)
-           && true || true || atomic_load_explicit(&y, memory_order_acquire) ==
-           atomic_load_explicit(&x, memory_order_relaxed))
+          (false || (-9790791 == foo) || barbaz || ((true || !barbaz) && true) &&
+           (barbaz == true) || barbaz ||
+           !atomic_load_explicit(&x, memory_order_relaxed) == foo)
+          (true || true)
           (true || barbaz)
-          (barbaz || barbaz || (foo == *blep) || barbaz && 9 == foo)
-          ((atomic_load_explicit(foobaz, memory_order_seq_cst) == true) || false)
-          ((atomic_load_explicit(&x, memory_order_relaxed) == foo) ||
-           ((atomic_load_explicit(bar, memory_order_acquire) == *blep) ||
-            (false && barbaz) || true)
-           || foo == atomic_load_explicit(bar, memory_order_consume))
-          ((true && (-5 == *blep) ||
-            (((foo == *blep) && atomic_load_explicit(bar, memory_order_seq_cst) ==
-              atomic_load_explicit(bar, memory_order_consume))
-             && false && (1 == -6530420) || true && false)
-            || barbaz && *blep == 409507680)
-           || atomic_load_explicit(&x, memory_order_seq_cst) == 27)
-          (((barbaz || false) && true &&
-            atomic_load_explicit(bar, memory_order_seq_cst) ==
-            atomic_load_explicit(&x, memory_order_consume))
-           || ((atomic_load_explicit(bar, memory_order_seq_cst) == 95) && true) || foo
-           == atomic_load_explicit(&x, memory_order_seq_cst))
-          (atomic_load_explicit(foobaz, memory_order_seq_cst) || barbaz ||
-           (atomic_load_explicit(&x, memory_order_consume) ==
-            atomic_load_explicit(&x, memory_order_relaxed))
-           && barbaz || false || true || false && (barbaz || barbaz) &&
-           (-50348097 == 10703535) && true)
-          ((((((true && ((foo == foo) || true) || (148054 == foo) && (-954029 == -124)
-                && foo == -2 &&
-                ((foo == atomic_load_explicit(bar, memory_order_relaxed)) && barbaz) &&
-                false)
-               || barbaz)
-              || barbaz)
-             || barbaz)
-            ||
-            (((true || true && barbaz ||
-               (((((atomic_load_explicit(bar, memory_order_relaxed) == -1) || -354132
-                   == atomic_load_explicit(&y, memory_order_seq_cst))
-                  && true)
-                 || true)
-                && barbaz && barbaz && true)
-               || *blep == 11343 || false)
-              && atomic_load_explicit(foobaz, memory_order_seq_cst))
-             && false || barbaz || atomic_load_explicit(bar, memory_order_seq_cst) ==
-             95)
-            && atomic_load_explicit(&x, memory_order_seq_cst) == 27)
-           || false || true || (atomic_load_explicit(bar, memory_order_consume) == foo)
-           && (-3531150 == -64) && barbaz) |}]
+          ((foo == -452191315) || atomic_load_explicit(foobaz, memory_order_seq_cst) ==
+           true)
+          (((2869 == -3) && !((foo == *blep) || barbaz) || (-1344830 == 0) || false) ||
+           atomic_load_explicit(bar, memory_order_seq_cst) == 95)
+          (((barbaz || foo == atomic_load_explicit(bar, memory_order_seq_cst)) &&
+            (atomic_load_explicit(&y, memory_order_relaxed) == *blep) && 470264907 ==
+            -879720314)
+           ||
+           ((atomic_load_explicit(&x, memory_order_seq_cst) == 27) ||
+            atomic_load_explicit(bar, memory_order_consume) == 1234853)
+           || barbaz)
+          ((((*blep == foo) || true) || !barbaz || barbaz || (-50348097 == 10703535) ||
+            atomic_load_explicit(&x, memory_order_consume) == 12062)
+           || barbaz) |}]
 
     let test_fun (module E : Src.Env_types.S_with_known_values) =
       (module Src.Expression_gen.Bool_tautologies (E) : Q.Test.S

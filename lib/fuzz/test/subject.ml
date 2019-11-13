@@ -10,11 +10,10 @@
    project root for more information. *)
 
 open Base
-open Stdio
 open Act_fuzz
 open Subject
 
-module Example = struct
+module Test_data = struct
   let init : Act_c_mini.Constant.t Act_c_mini.Named.Alist.t Lazy.t =
     lazy
       [ (Act_common.C_id.of_string "x", Act_c_mini.Constant.int 27)
@@ -43,20 +42,32 @@ module Example = struct
 
   let body_stms : unit Act_c_mini.Statement.t list Lazy.t =
     lazy
-      Act_c_mini.
-        [ Statement.atomic_store
-            (Atomic_store.make
-               ~src:(Expression.constant (Act_c_mini.Constant.int 42))
-               ~dst:(Address.of_variable (Act_common.C_id.of_string "x"))
-               ~mo:Mem_order.Seq_cst)
-        ; Statement.nop ()
-        ; Statement.atomic_store
-            (Atomic_store.make
-               ~src:
-                 (Expression.lvalue
-                    (Lvalue.variable (Act_common.C_id.of_string "foo")))
-               ~dst:(Address.of_variable (Act_common.C_id.of_string "y"))
-               ~mo:Mem_order.Relaxed) ]
+      Act_c_mini.(
+        Statement.
+          [ atomic_store
+              (Atomic_store.make ~src:(Expression.int_lit 42)
+                 ~dst:(Address.of_variable_str_exn "x")
+                 ~mo:Mem_order.Seq_cst)
+          ; nop ()
+          ; atomic_store
+              (Atomic_store.make
+                 ~src:(Expression.variable (Act_common.C_id.of_string "foo"))
+                 ~dst:(Address.of_variable_str_exn "y")
+                 ~mo:Mem_order.Relaxed)
+          ; if_stm
+              (If.make
+                 ~cond:
+                   Expression.(
+                     Infix.(
+                       Expression.variable (Act_common.C_id.of_string "foo")
+                       == Expression.variable (Act_common.C_id.of_string "y")))
+                 ~t_branch:
+                   (Block.of_statement_list
+                      [ atomic_store
+                          (Atomic_store.make ~src:(Expression.int_lit 56)
+                             ~dst:(Address.of_variable_str_exn "x")
+                             ~mo:Mem_order.Seq_cst) ])
+                 ~f_branch:(Block.of_statement_list [])) ])
 
   let programs : Subject.Program.t list Lazy.t =
     Lazy.Let_syntax.(
@@ -98,56 +109,48 @@ let%test_module "using sample environment" =
              (lit, Var.Record.make_existing Global data))
       |> Or_error.ok_exn |> Act_common.Scoped_map.of_litmus_id_map
 
-    let run programs =
-      let result = Program.list_to_litmus programs ~vars in
-      print_s [%sexp (result : r)]
+    let test programs =
+      let res = Program.list_to_litmus programs ~vars in
+      Fmt.(
+        pr "@[<v>%a@]@." (list ~sep:sp Act_c_mini.Litmus.Lang.Program.pp) res)
 
     let%expect_test "programs_to_litmus: empty test" =
-      run [] ; [%expect {| () |}]
+      test [] ; [%expect {| |}]
 
     let%expect_test "programs_to_litmus: empty programs" =
-      run (List.init 5 ~f:(fun _ -> Program.empty)) ;
-      [%expect {| () |}]
+      test (List.init 5 ~f:(fun _ -> Program.empty)) ;
+      [%expect {| |}]
 
     let%expect_test "programs_to_litmus: sample programs" =
-      run (Lazy.force Example.programs) ;
+      test (Lazy.force Test_data.programs) ;
       [%expect
         {|
-        (((name P0)
-          (value
-           ((parameters
-             ((bar atomic_int*) (barbaz bool) (blep int*) (foo int)
-              (foobaz atomic_bool*) (x atomic_int) (y atomic_int) (z atomic_bool)))
-            (body_decls ())
-            (body_stms
-             ((Atomic_store
-               ((src (Constant (Int 42))) (dst (Lvalue (Variable x)))
-                (mo memory_order_seq_cst)))
-              Nop
-              (Atomic_store
-               ((src (Lvalue (Variable foo))) (dst (Lvalue (Variable y)))
-                (mo memory_order_relaxed))))))))) |}]
+        void
+        P0(atomic_int *bar, bool barbaz, int *blep, int foo, atomic_bool *foobaz,
+           atomic_int x, atomic_int y, atomic_bool z)
+        {
+            atomic_store_explicit(x, 42, memory_order_seq_cst);
+            ;
+            atomic_store_explicit(y, foo, memory_order_relaxed);
+            if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
+        } |}]
 
     let%expect_test "programs_to_litmus: sample programs with interspersed \
                      emptiness" =
       let programs =
-        Example.programs |> Lazy.force |> List.intersperse ~sep:Program.empty
+        Test_data.programs |> Lazy.force
+        |> List.intersperse ~sep:Program.empty
       in
-      run programs ;
+      test programs ;
       [%expect
         {|
-        (((name P0)
-          (value
-           ((parameters
-             ((bar atomic_int*) (barbaz bool) (blep int*) (foo int)
-              (foobaz atomic_bool*) (x atomic_int) (y atomic_int) (z atomic_bool)))
-            (body_decls ())
-            (body_stms
-             ((Atomic_store
-               ((src (Constant (Int 42))) (dst (Lvalue (Variable x)))
-                (mo memory_order_seq_cst)))
-              Nop
-              (Atomic_store
-               ((src (Lvalue (Variable foo))) (dst (Lvalue (Variable y)))
-                (mo memory_order_relaxed))))))))) |}]
+        void
+        P0(atomic_int *bar, bool barbaz, int *blep, int foo, atomic_bool *foobaz,
+           atomic_int x, atomic_int y, atomic_bool z)
+        {
+            atomic_store_explicit(x, 42, memory_order_seq_cst);
+            ;
+            atomic_store_explicit(y, foo, memory_order_relaxed);
+            if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
+        } |}]
   end )

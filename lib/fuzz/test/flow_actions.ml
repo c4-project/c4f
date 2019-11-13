@@ -23,7 +23,7 @@ let%test_module "If" =
     let state : Src.State.t =
       Src.State.make ~vars:(Lazy.force Var.Test_data.test_map) ()
 
-    let test : Src.Subject.Test.t = Lazy.force Subject.Example.test
+    let test : Src.Subject.Test.t = Lazy.force Subject.Test_data.test
 
     let cond : Act_c_mini.Expression.t =
       Act_c_mini.(
@@ -55,6 +55,7 @@ let%test_module "If" =
             if ((d == 27) && a)
             { atomic_store_explicit(x, 42, memory_order_seq_cst); ; }
             atomic_store_explicit(y, foo, memory_order_relaxed);
+            if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
         } |}]
 
         let%expect_test "dependencies after running" =

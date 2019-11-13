@@ -63,7 +63,7 @@ let%test_module "Statement_list" =
 
         let body_stms : F.Metadata.t Stm.t list Lazy.t =
           Lazy.(
-            Subject.Example.body_stms
+            Subject.Test_data.body_stms
             >>| List.map
                   ~f:(Stm.On_meta.map ~f:(Fn.const F.Metadata.existing)))
 
@@ -92,7 +92,8 @@ let%test_module "Statement_list" =
           atomic_store_explicit(x, 42, memory_order_seq_cst);
           ;
           atomic_store_explicit(y, 9001, memory_order_seq_cst);
-          atomic_store_explicit(y, foo, memory_order_relaxed); |}]
+          atomic_store_explicit(y, foo, memory_order_relaxed);
+          if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); } |}]
 
             let%expect_test "insert onto end of list" =
               test_insert insert_at_end_path ;
@@ -101,7 +102,8 @@ let%test_module "Statement_list" =
           atomic_store_explicit(x, 42, memory_order_seq_cst);
           ;
           atomic_store_explicit(y, foo, memory_order_relaxed);
-          atomic_store_explicit(y, 9001, memory_order_seq_cst); |}]
+          atomic_store_explicit(y, 9001, memory_order_seq_cst);
+          if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); } |}]
           end )
 
         let%test_module "transform_stm" =
@@ -118,7 +120,8 @@ let%test_module "Statement_list" =
                 {|
                   atomic_store_explicit(x, 42, memory_order_seq_cst);
                   ;
-                  atomic_store_explicit(y, 9001, memory_order_seq_cst); |}]
+                  atomic_store_explicit(y, 9001, memory_order_seq_cst);
+                  if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); } |}]
 
             let%expect_test "transform a range" =
               test_transform on_stm_range_path ;
@@ -126,7 +129,8 @@ let%test_module "Statement_list" =
                 {|
           atomic_store_explicit(x, 42, memory_order_seq_cst);
           atomic_store_explicit(y, 9001, memory_order_seq_cst);
-          atomic_store_explicit(y, 9001, memory_order_seq_cst); |}]
+          atomic_store_explicit(y, 9001, memory_order_seq_cst);
+          if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); } |}]
 
             let%expect_test "transform an insertion (invalid)" =
               test_transform insert_path ;
@@ -169,7 +173,8 @@ let%test_module "Statement_list" =
               [%expect
                 {|
                   atomic_store_explicit(x, 42, memory_order_seq_cst);
-                  if (true) { ; atomic_store_explicit(y, foo, memory_order_relaxed); } |}]
+                  if (true) { ; atomic_store_explicit(y, foo, memory_order_relaxed); }
+                  if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); } |}]
 
             let%expect_test "list-transform an insertion (invalid)" =
               test_transform_list insert_path ;

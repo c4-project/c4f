@@ -12,7 +12,7 @@
 (** Tests and test data for the fuzzer subject representation. *)
 
 (** An example Litmus test, partitioned into lazily evaluated subcomponents. *)
-module Example : sig
+module Test_data : sig
   val body_stms : unit Act_c_mini.Statement.t list Lazy.t
   (** [body_stms] evaluates to the body statements of the example test. *)
 
