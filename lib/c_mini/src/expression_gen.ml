@@ -78,22 +78,24 @@ end = struct
     Q.Generator.map ~f:Expression.bool_lit Q.([%quickcheck.generator: bool])
 
   (** Generates the terminal Boolean expressions. *)
-  let base_generators : t Q.Generator.t list =
+  let base_generators : (float * t Q.Generator.t) list =
     (* Use thunks here to prevent accidentally evaluating a generator that
        can't possibly work---eg, an atomic load when we don't have any atomic
        variables. *)
-    eval_guards
-      [ (true, fun () -> gen_const)
-      ; (true, fun () -> gen_int_relational)
-      ; (E.has_variables_of_basic_type Type.Basic.(bool ()), gen_bool_lvalue)
-      ]
+    [(1.0, gen_const); (4.0, gen_int_relational)]
+    @ eval_guards
+        [ ( E.has_variables_of_basic_type Type.Basic.(bool ())
+          , fun () -> (4.0, gen_bool_lvalue ()) ) ]
 
-  let recursive_generators (mu : t Q.Generator.t) : t Q.Generator.t list =
-    [ Q.Generator.map2 mu mu ~f:Expression.l_and
-    ; Q.Generator.map2 mu mu ~f:Expression.l_or ]
+  let recursive_generators (mu : t Q.Generator.t) :
+      (float * t Q.Generator.t) list =
+    [ (3.0, Q.Generator.map2 mu mu ~f:Expression.l_and)
+    ; (3.0, Q.Generator.map2 mu mu ~f:Expression.l_or)
+    ; (2.0, Q.Generator.map mu ~f:Expression.l_not) ]
 
   let quickcheck_generator : t Q.Generator.t =
-    Q.Generator.recursive_union base_generators ~f:recursive_generators
+    Q.Generator.weighted_recursive_union base_generators
+      ~f:recursive_generators
 
   let quickcheck_observer : t Q.Observer.t =
     [%quickcheck.observer: Expression.t]
@@ -151,6 +153,8 @@ end = struct
   (* TODO(@MattWindsor91): implement this *)
   let quickcheck_shrinker : t Q.Shrinker.t = Q.Shrinker.atomic
 end
+
+(* TODO(@MattWindsor91): Boolean falsehoods! *)
 
 module Bool_tautologies (Env : Env_types.S_with_known_values) : sig
   type t = Expression.t [@@deriving sexp_of, quickcheck]
