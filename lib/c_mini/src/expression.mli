@@ -16,6 +16,18 @@ open Base
 type t [@@deriving sexp, compare, equal]
 (** Opaque type of expressions. *)
 
+(** {1 Operators} *)
+
+(** {2 Unary operators} *)
+
+module Uop : sig
+  (** Enumeration of unary operators. *)
+  type t = L_not [@@deriving sexp, compare, equal]
+
+  val l_not : t
+  (** [l_not] is the logical negation operator. *)
+end
+
 (** {2 Binary operators} *)
 
 module Bop : sig
@@ -32,7 +44,7 @@ module Bop : sig
   (** [l_or] is the logical OR operator. *)
 end
 
-(** {2 Constructors} *)
+(** {1 Constructors} *)
 
 val atomic_load : Atomic_load.t -> t
 (** [atomic_load a] lifts an atomic load [a] to an expression. *)
@@ -41,10 +53,16 @@ val constant : Constant.t -> t
 (** [constant k] lifts a constant [k] to an expression. *)
 
 val bop : Bop.t -> t -> t -> t
-(** [bop b l r] builds an arbitrary bop expression. *)
+(** [bop operator l_operand r_operand] builds an arbitrary binary operator
+    expression. *)
+
+val uop : Uop.t -> t -> t
+(** [uop operator operand] builds an arbitrary unary operator expression. *)
 
 val eq : t -> t -> t
 (** [eq l r] builds an equality expression. *)
+
+(** {2 Logical connectives} *)
 
 val l_and : t -> t -> t
 (** [l_and l r] builds a logical AND expression. *)
@@ -52,7 +70,10 @@ val l_and : t -> t -> t
 val l_or : t -> t -> t
 (** [l_or l r] builds a logical OR expression. *)
 
-(** {3 Lvalues} *)
+val l_not : t -> t
+(** [l_not x] builds a logical NOT over [x]. *)
+
+(** {2 Lvalues} *)
 
 val lvalue : Lvalue.t -> t
 (** [lvalue lv] lifts a lvalue [lv] to an expression. *)
@@ -60,7 +81,7 @@ val lvalue : Lvalue.t -> t
 val variable : Act_common.C_id.t -> t
 (** [variable v] lifts a variable reference [v] to an expression. *)
 
-(** {3 Literals} *)
+(** {2 Literals} *)
 
 val bool_lit : bool -> t
 (** [bool_lit b] lifts a Boolean literal [b] to an expression. *)
@@ -68,7 +89,23 @@ val bool_lit : bool -> t
 val int_lit : int -> t
 (** [int_lit i] lifts an integer literal [i] to an expression. *)
 
-(** {2 Accessors} *)
+(** {2 Infix constructors} *)
+
+module Infix : sig
+  val ( == ) : t -> t -> t
+  (** [x == y] is [eq x y]. *)
+
+  val ( && ) : t -> t -> t
+  (** [x && y] is [l_and x y]. *)
+
+  val ( || ) : t -> t -> t
+  (** [x || y] is [l_or x y]. *)
+
+  val ( ! ) : t -> t
+  (** [! x] is [l_not x]. *)
+end
+
+(** {1 Accessors} *)
 
 val reduce :
      t
@@ -76,12 +113,13 @@ val reduce :
   -> lvalue:(Lvalue.t -> 'a)
   -> atomic_load:(Atomic_load.t -> 'a)
   -> bop:(Bop.t -> 'a -> 'a -> 'a)
+  -> uop:(Uop.t -> 'a -> 'a)
   -> 'a
-(** [reduce expr ~constant ~lvalue ~atomic_load ~bop] recursively reduces
-    [expr] to a single value, using the given functions at each corresponding
-    stage of the expression tree. *)
+(** [reduce expr ~constant ~lvalue ~atomic_load ~bop ~uop] recursively
+    reduces [expr] to a single value, using the given functions at each
+    corresponding stage of the expression tree. *)
 
-(** {2 Traversals} *)
+(** {1 Traversals} *)
 
 (** Traversing over atomic-action addresses in expressions. *)
 module On_addresses :
@@ -97,20 +135,20 @@ module On_identifiers :
 module On_lvalues :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t
 
-(** {2 Generation and quickchecking}
+(** {1 Generation and quickchecking}
 
     See {{!Expression_gen} Expression_gen}. *)
 
 val quickcheck_observer : t Base_quickcheck.Observer.t
 (** Blanket observer for all expression generators. *)
 
-(** {2 Type checking} *)
+(** {1 Type checking} *)
 
 include
   Types.S_type_checkable with type t := t
 (** Type-checking for expressions. *)
 
-(** {2 Evaluating expressions} *)
+(** {1 Evaluating expressions} *)
 
 module Eval : sig
   val as_constant :

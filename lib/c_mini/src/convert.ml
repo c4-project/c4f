@@ -291,11 +291,27 @@ let bop : Act_c_lang.Ast_basic.Operators.Bin.t -> Expression.Bop.t Or_error.t
             "Unsupported binary operator"
               ~got:(op : Act_c_lang.Ast_basic.Operators.Bin.t)])
 
+let prefix_op :
+    Act_c_lang.Ast_basic.Operators.Pre.t -> Expression.Uop.t Or_error.t =
+  Or_error.(
+    function
+    | `Lnot ->
+        return Expression.Uop.l_not
+    | op ->
+        error_s
+          [%message
+            "Unsupported prefix operator"
+              ~got:(op : Act_c_lang.Ast_basic.Operators.Pre.t)])
+
 let rec expr : Ast.Expr.t -> Expression.t Or_error.t =
   Or_error.Let_syntax.(
     let model_binary l op r =
       let%map l' = expr l and r' = expr r and op' = bop op in
       Expression.bop op' l' r'
+    in
+    let model_prefix op x =
+      let%map x' = expr x and op' = prefix_op op in
+      Expression.uop op' x'
     in
     function
     | Brackets e ->
@@ -309,10 +325,11 @@ let rec expr : Ast.Expr.t -> Expression.t Or_error.t =
     | Prefix (`Deref, expr) ->
         Or_error.(
           expr |> expr_to_lvalue >>| Lvalue.deref >>| Expression.lvalue)
+    | Prefix (op, expr) ->
+        model_prefix op expr
     | Call {func; arguments} ->
         call expr_call_table func arguments
-    | ( Prefix _
-      | Postfix _
+    | ( Postfix _
       | Ternary _
       | Cast _
       | Subscript _

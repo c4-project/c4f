@@ -13,6 +13,10 @@ open Core_kernel
 module Ac = Act_common
 module Identifier = Act_c_lang.Ast_basic.Identifier
 
+module Uop = struct
+  type t = L_not [@@deriving sexp, variants, compare, equal, quickcheck]
+end
+
 module Bop = struct
   type t = Eq | L_and | L_or
   [@@deriving sexp, variants, compare, equal, quickcheck]
@@ -23,6 +27,7 @@ type t =
   | Lvalue of Lvalue.t
   | Atomic_load of Atomic_load.t
   | Bop of Bop.t * t * t
+  | Uop of Uop.t * t
 [@@deriving sexp, variants, compare, equal]
 
 let variable (v : Ac.C_id.t) : t = lvalue (Lvalue.variable v)
@@ -37,9 +42,21 @@ let l_and : t -> t -> t = bop Bop.L_and
 
 let l_or : t -> t -> t = bop Bop.L_or
 
-let map (expr : t) ~(constant : Constant.t -> 'a) ~(lvalue : Lvalue.t -> 'a)
-    ~(atomic_load : Atomic_load.t -> 'a) ~(bop : Bop.t -> t -> t -> 'a) : 'a
-    =
+let l_not : t -> t = uop Uop.L_not
+
+module Infix = struct
+  let ( == ) : t -> t -> t = eq
+
+  let ( && ) : t -> t -> t = l_and
+
+  let ( || ) : t -> t -> t = l_or
+
+  let ( ! ) : t -> t = l_not
+end
+
+let reduce_step (expr : t) ~(constant : Constant.t -> 'a)
+    ~(lvalue : Lvalue.t -> 'a) ~(atomic_load : Atomic_load.t -> 'a)
+    ~(bop : Bop.t -> t -> t -> 'a) ~(uop : Uop.t -> t -> 'a) : 'a =
   match expr with
   | Constant k ->
       constant k
@@ -49,13 +66,16 @@ let map (expr : t) ~(constant : Constant.t -> 'a) ~(lvalue : Lvalue.t -> 'a)
       atomic_load ld
   | Bop (b, x, y) ->
       bop b x y
+  | Uop (u, x) ->
+      uop u x
 
 let reduce (expr : t) ~(constant : Constant.t -> 'a)
     ~(lvalue : Lvalue.t -> 'a) ~(atomic_load : Atomic_load.t -> 'a)
-    ~(bop : Bop.t -> 'a -> 'a -> 'a) : 'a =
+    ~(bop : Bop.t -> 'a -> 'a -> 'a) ~(uop : Uop.t -> 'a -> 'a) : 'a =
   let rec mu (expr : t) =
-    map expr ~constant ~lvalue ~atomic_load ~bop:(fun b l r ->
-        bop b (mu l) (mu r))
+    let bop b l r = bop b (mu l) (mu r) in
+    let uop u x = uop u (mu x) in
+    reduce_step expr ~constant ~lvalue ~atomic_load ~bop ~uop
   in
   mu expr
 
@@ -68,22 +88,43 @@ let anonymise = function
       `C (b, x, y)
   | Atomic_load ld ->
       `D ld
+  | Uop (u, x) ->
+      `E (u, x)
 
-module On_addresses :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t =
+(** Does the legwork of implementing a particular type of traversal over
+    expressions. *)
+module Make_traversal (Basic : sig
+  module Elt : Equal.S
+
+  module A :
+    Travesty.Traversable_types.S0
+      with type t := Atomic_load.t
+       and module Elt = Elt
+
+  module L :
+    Travesty.Traversable_types.S0
+      with type t := Lvalue.t
+       and module Elt = Elt
+end) =
 Travesty.Traversable.Make0 (struct
   type nonrec t = t
 
-  module Elt = Address
+  module Elt = Basic.Elt
 
   module On_monad (M : Monad.S) = struct
     module F = Travesty.Traversable.Helpers (M)
-    module A = Atomic_load.On_addresses.On_monad (M)
+    module A = Basic.A.On_monad (M)
+    module L = Basic.L.On_monad (M)
 
     let rec map_m x ~f =
       Variants.map x
         ~constant:(F.proc_variant1 M.return)
-        ~lvalue:(F.proc_variant1 M.return)
+        ~lvalue:(F.proc_variant1 (L.map_m ~f))
+        ~uop:
+          (F.proc_variant2 (fun (u, x) ->
+               M.Let_syntax.(
+                 let%map x' = map_m x ~f in
+                 (u, x'))))
         ~bop:
           (F.proc_variant3 (fun (b, l, r) ->
                M.Let_syntax.(
@@ -94,29 +135,31 @@ Travesty.Traversable.Make0 (struct
   end
 end)
 
+module On_addresses :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t =
+Make_traversal (struct
+  module Elt = Address
+  module A = Atomic_load.On_addresses
+
+  (* TODO(@MattWindsor91): move this device to Travesty *)
+  module L = Travesty.Traversable.Make0 (struct
+    type t = Lvalue.t
+
+    module Elt = Elt
+
+    module On_monad (M : Monad.S) = struct
+      let map_m m ~f = ignore f ; M.return m
+    end
+  end)
+end)
+
 module On_lvalues :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
-Travesty.Traversable.Make0 (struct
-  type nonrec t = t
-
+Make_traversal (struct
   module Elt = Lvalue
-
-  module On_monad (M : Monad.S) = struct
-    module A = Atomic_load.On_lvalues.On_monad (M)
-    module F = Travesty.Traversable.Helpers (M)
-
-    let rec map_m x ~f =
-      Variants.map x
-        ~constant:(F.proc_variant1 M.return)
-        ~lvalue:(F.proc_variant1 f)
-        ~bop:
-          (F.proc_variant3 (fun (b, l, r) ->
-               M.Let_syntax.(
-                 let%bind l' = map_m l ~f in
-                 let%map r' = map_m r ~f in
-                 (b, l', r'))))
-        ~atomic_load:(F.proc_variant1 (A.map_m ~f))
-  end
+  module A = Atomic_load.On_lvalues
+  module L =
+    Travesty.Traversable.Fix_elt (Travesty_containers.Singleton) (Lvalue)
 end)
 
 module On_identifiers :
@@ -153,6 +196,18 @@ module Type_check (E : Env_types.S) = struct
                   ~left:(l_type : Type.t)
                   ~right:(r_type : Type.t)])
 
+  let type_of_resolved_uop (u : Uop.t) (x_type : Type.t) : Type.t Or_error.t
+      =
+    match u with
+    | L_not ->
+        if Type.equal Type.(bool ()) x_type then Or_error.return x_type
+        else
+          Or_error.error_s
+            [%message
+              "Operand type must be 'bool'"
+                ~operator:(u : Uop.t)
+                ~operand:(x_type : Type.t)]
+
   let rec type_of : t -> Type.t Or_error.t = function
     | Constant k ->
         Or_error.return (Constant.type_of k)
@@ -160,6 +215,8 @@ module Type_check (E : Env_types.S) = struct
         Lv.type_of l
     | Bop (b, l, r) ->
         type_of_bop b l r
+    | Uop (u, x) ->
+        type_of_uop u x
     | Atomic_load ld ->
         Ld.type_of ld
 
@@ -167,6 +224,11 @@ module Type_check (E : Env_types.S) = struct
     Or_error.Let_syntax.(
       let%bind l_type = type_of l and r_type = type_of r in
       type_of_resolved_bop b l_type r_type)
+
+  and type_of_uop (u : Uop.t) (x : t) : Type.t Or_error.t =
+    Or_error.Let_syntax.(
+      let%bind x_type = type_of x in
+      type_of_resolved_uop u x_type)
 end
 
 let quickcheck_observer : t Base_quickcheck.Observer.t =
@@ -177,7 +239,8 @@ let quickcheck_observer : t Base_quickcheck.Observer.t =
             [ `A of Constant.t
             | `B of Lvalue.t
             | `C of Bop.t * [%custom mu] * [%custom mu]
-            | `D of Atomic_load.t ]]))
+            | `D of Atomic_load.t
+            | `E of Uop.t * [%custom mu] ]]))
 
 module Eval = struct
   let eval_logical (l : t) (r : t) ~(short_value : bool)
@@ -207,6 +270,24 @@ module Eval = struct
               ~left:(l_const : Constant.t)
               ~right:(r_const : Constant.t)])
 
+  let eval_bop (mu : t -> Constant.t Or_error.t) :
+      Bop.t -> t -> t -> Constant.t Or_error.t = function
+    | L_and ->
+        eval_land ~mu
+    | L_or ->
+        eval_lor ~mu
+    | Eq ->
+        eval_eq ~mu
+
+  let eval_lnot (x : t) ~(mu : t -> Constant.t Or_error.t) :
+      Constant.t Or_error.t =
+    Or_error.(x |> mu >>= Constant.as_bool >>| not >>| Constant.bool)
+
+  let eval_uop (mu : t -> Constant.t Or_error.t) :
+      Uop.t -> t -> Constant.t Or_error.t = function
+    | L_not ->
+        eval_lnot ~mu
+
   let eval_atomic_load (atomic_load : Atomic_load.t)
       ~(env : Address.t -> Constant.t Or_error.t) : Constant.t Or_error.t =
     (* We don't specifically handle memory order here, since we assume that
@@ -217,15 +298,12 @@ module Eval = struct
   let as_constant (expr : t) ~(env : Address.t -> Constant.t Or_error.t) :
       Constant.t Or_error.t =
     let rec mu : t -> Constant.t Or_error.t =
-      (* We map rather than reduce to support short-circuiting evaluation. *)
-      map ~constant:Or_error.return ~lvalue:(Fn.compose env Address.lvalue)
-        ~atomic_load:(eval_atomic_load ~env) ~bop:(function
-        | L_and ->
-            eval_land ~mu
-        | L_or ->
-            eval_lor ~mu
-        | Eq ->
-            eval_eq ~mu)
+      (* We reduce in single steps to support short-circuiting evaluation. *)
+      reduce_step ~constant:Or_error.return
+        ~lvalue:(Fn.compose env Address.lvalue)
+        ~atomic_load:(eval_atomic_load ~env)
+        ~bop:(fun o -> eval_bop mu o)
+        ~uop:(fun o -> eval_uop mu o)
     in
     mu expr
 

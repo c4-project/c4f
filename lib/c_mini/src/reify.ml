@@ -86,6 +86,11 @@ let bop : Expression.Bop.t -> Act_c_lang.Ast_basic.Operators.Bin.t = function
   | L_or ->
       `Lor
 
+let uop_pre : Expression.Uop.t -> Act_c_lang.Ast_basic.Operators.Pre.t =
+  function
+  | Expression.Uop.L_not ->
+      `Lnot
+
 (* NB: This works because all of the bops are left-associative, and will need
    refining if any right-associative Bops appear. *)
 let needs_brackets (o : Act_c_lang.Ast_basic.Operators.Bin.t)
@@ -111,9 +116,14 @@ let bop_expr (op : Expression.Bop.t) (l : Ast.Expr.t) (r : Ast.Expr.t) :
   in
   Ast.Expr.Binary (l', op', r')
 
+let uop_expr (op : Expression.Uop.t) (x : Ast.Expr.t) : Ast.Expr.t =
+  (* We don't have any postfix operators in mini-C yet. *)
+  let op' = uop_pre op in
+  Ast.Expr.Prefix (op', x)
+
 let expr : Expression.t -> Ast.Expr.t =
   Expression.reduce ~constant:constant_to_expr ~lvalue:lvalue_to_expr
-    ~atomic_load:atomic_load_to_expr ~bop:bop_expr
+    ~atomic_load:atomic_load_to_expr ~bop:bop_expr ~uop:uop_expr
 
 let known_call_stm (name : string) (args : Ast.Expr.t list) : Ast.Stm.t =
   Expr (Some (known_call name args))
