@@ -285,199 +285,100 @@ and If_statement :
       ; try_gen_transform_stm_list_for_branch false (Stm.If.f_branch ifs) ]
 end
 
-module Function :
-  Path_types.S_function with type target := Metadata.t Fun.t = struct
-  type target = Metadata.t Fun.t
-
-  type stm = Metadata.t Stm.t
+module Thread :
+  Path_types.S_function with type target := Subject.Thread.t = struct
+  type target = Subject.Thread.t
 
   let handle_stm (path : Path_shapes.func)
-      ~(f : Path_shapes.stm_list -> target:stm list -> stm list Or_error.t)
-      ~(target : Metadata.t Fun.t) : Metadata.t Fun.t Or_error.t =
+      ~(f :
+            Path_shapes.stm_list
+         -> target:Subject.Statement.t list
+         -> Subject.Statement.t list Or_error.t) ~(target : target) :
+      target Or_error.t =
     match path with
     | In_stms rest ->
         Or_error.(
-          f rest ~target:(Fun.body_stms target) >>| Fun.with_body_stms target)
+          f rest ~target:target.stms
+          >>| fun stms' -> {target with stms= stms'})
 
-  let insert_stm (path : Path_shapes.func) ~(to_insert : stm)
-      ~(target : target) : target Or_error.t =
-    handle_stm path ~target ~f:(Statement_list.insert_stm ~to_insert)
+  let insert_stm (path : Path_shapes.func)
+      ~(to_insert : Subject.Statement.t) ~(target : target) :
+      target Or_error.t =
+    handle_stm path ~target ~f:(fun rest ->
+        Statement_list.insert_stm rest ~to_insert)
 
-  let transform_stm (path : Path_shapes.func) ~(f : stm -> stm Or_error.t)
+  let transform_stm (path : Path_shapes.func)
+      ~(f : Subject.Statement.t -> Subject.Statement.t Or_error.t)
       ~(target : target) : target Or_error.t =
     handle_stm path ~target ~f:(Statement_list.transform_stm ~f)
 
   let transform_stm_list (path : Path_shapes.func)
-      ~(f : stm list -> stm list Or_error.t) ~(target : target) :
-      target Or_error.t =
+      ~(f :
+         Subject.Statement.t list -> Subject.Statement.t list Or_error.t)
+      ~(target : target) : target Or_error.t =
     handle_stm path ~target ~f:(Statement_list.transform_stm_list ~f)
 
-  let gen_insert_stm (func : target) :
-      Path_shapes.func Base_quickcheck.Generator.t =
-    Base_quickcheck.Generator.map
-      (Statement_list.gen_insert_stm (Fun.body_stms func))
+  let gen_insert_stm ({stms; _} : target) : Path_shapes.func Q.Generator.t
+      =
+    Q.Generator.map
+      (Statement_list.gen_insert_stm stms)
       ~f:Path_shapes.in_stms
 
-  let try_gen_transform_stm_list (func : target) :
-      Path_shapes.func Base_quickcheck.Generator.t option =
+  let try_gen_transform_stm_list ({stms; _} : target) :
+      Path_shapes.func Q.Generator.t option =
     map_opt_gen
-      (Statement_list.try_gen_transform_stm_list (Fun.body_stms func))
+      (Statement_list.try_gen_transform_stm_list stms)
       ~f:Path_shapes.in_stms
 end
 
-module Program : Path_types.S_program with type target := Metadata.t Prog.t =
+module Test : Path_types.S_program with type target := Subject.Test.t =
 struct
-  type target = Metadata.t Prog.t
+  type target = Subject.Test.t
 
-  type stm = Metadata.t Stm.t
+  type stm = Subject.Statement.t
 
   let handle_stm (path : Path_shapes.program)
       ~(f :
             Path_shapes.func
-         -> target:Metadata.t Fun.t
-         -> Metadata.t Fun.t Or_error.t) ~(target : target) :
+         -> target:Subject.Thread.t
+         -> Subject.Thread.t Or_error.t) ~(target : target) :
       target Or_error.t =
-    Or_error.Let_syntax.(
-      match path with
-      | In_func (index, rest) ->
-          let functions = Prog.functions target in
-          let%map functions' =
-            Tx.List.With_errors.replace_m functions index
-              ~f:(fun (name, target) ->
-                let%map func' = f rest ~target in
-                Some (name, func'))
-          in
-          Prog.with_functions target functions')
+    match path with
+    | In_func (index, rest) ->
+        Act_litmus.Test.Raw.try_map_thread ~index
+          ~f:(fun target -> f rest ~target)
+          target
 
   let insert_stm (path : Path_shapes.program) ~(to_insert : stm)
       ~(target : target) : target Or_error.t =
-    handle_stm path ~target ~f:(Function.insert_stm ~to_insert)
+    handle_stm path ~target ~f:(Thread.insert_stm ~to_insert)
 
-  let transform_stm (path : Path_shapes.program) ~(f : stm -> stm Or_error.t)
-      ~(target : target) : target Or_error.t =
-    handle_stm path ~target ~f:(Function.transform_stm ~f)
+  let transform_stm (path : Path_shapes.program)
+      ~(f : stm -> stm Or_error.t) ~(target : target) : target Or_error.t =
+    handle_stm path ~target ~f:(Thread.transform_stm ~f)
 
   let transform_stm_list (path : Path_shapes.program)
       ~(f : stm list -> stm list Or_error.t) ~(target : target) :
       target Or_error.t =
-    handle_stm path ~target ~f:(Function.transform_stm_list ~f)
+    handle_stm path ~target ~f:(Thread.transform_stm_list ~f)
 
-  let gen_insert_stm (prog : target) : Path_shapes.program Q.Generator.t =
+  let gen_insert_stm (test : target) :
+      Path_shapes.program Base_quickcheck.Generator.t =
     let prog_gens =
-      List.mapi (Prog.functions prog) ~f:(fun index (_, func) ->
-          Q.Generator.map
-            (Function.gen_insert_stm func)
+      List.mapi (Act_litmus.Test.Raw.threads test) ~f:(fun index prog ->
+          Base_quickcheck.Generator.map
+            (Thread.gen_insert_stm prog)
             ~f:(Path_shapes.in_func index))
     in
-    Q.Generator.union prog_gens
+    Base_quickcheck.Generator.union prog_gens
 
-  let try_gen_transform_stm_list (prog : target) :
-      Path_shapes.program Q.Generator.t option =
+  let try_gen_transform_stm_list (test : target) :
+      Path_shapes.program Base_quickcheck.Generator.t option =
     let prog_gens =
-      List.mapi (Prog.functions prog) ~f:(fun index (_, func) ->
+      List.mapi (Act_litmus.Test.Raw.threads test) ~f:(fun index prog ->
           map_opt_gen
-            (Function.try_gen_transform_stm_list func)
+            (Thread.try_gen_transform_stm_list prog)
             ~f:(Path_shapes.in_func index))
     in
     union_opt prog_gens
-end
-
-module Subject = struct
-  module Thread :
-    Path_types.S_function with type target := Subject.Thread.t = struct
-    type target = Subject.Thread.t
-
-    let handle_stm (path : Path_shapes.func)
-        ~(f :
-              Path_shapes.stm_list
-           -> target:Subject.Statement.t list
-           -> Subject.Statement.t list Or_error.t) ~(target : target) :
-        target Or_error.t =
-      match path with
-      | In_stms rest ->
-          Or_error.(
-            f rest ~target:target.stms
-            >>| fun stms' -> {target with stms= stms'})
-
-    let insert_stm (path : Path_shapes.func)
-        ~(to_insert : Subject.Statement.t) ~(target : target) :
-        target Or_error.t =
-      handle_stm path ~target ~f:(fun rest ->
-          Statement_list.insert_stm rest ~to_insert)
-
-    let transform_stm (path : Path_shapes.func)
-        ~(f : Subject.Statement.t -> Subject.Statement.t Or_error.t)
-        ~(target : target) : target Or_error.t =
-      handle_stm path ~target ~f:(Statement_list.transform_stm ~f)
-
-    let transform_stm_list (path : Path_shapes.func)
-        ~(f :
-           Subject.Statement.t list -> Subject.Statement.t list Or_error.t)
-        ~(target : target) : target Or_error.t =
-      handle_stm path ~target ~f:(Statement_list.transform_stm_list ~f)
-
-    let gen_insert_stm ({stms; _} : target) : Path_shapes.func Q.Generator.t
-        =
-      Q.Generator.map
-        (Statement_list.gen_insert_stm stms)
-        ~f:Path_shapes.in_stms
-
-    let try_gen_transform_stm_list ({stms; _} : target) :
-        Path_shapes.func Q.Generator.t option =
-      map_opt_gen
-        (Statement_list.try_gen_transform_stm_list stms)
-        ~f:Path_shapes.in_stms
-  end
-
-  module Test : Path_types.S_program with type target := Subject.Test.t =
-  struct
-    type target = Subject.Test.t
-
-    type stm = Subject.Statement.t
-
-    let handle_stm (path : Path_shapes.program)
-        ~(f :
-              Path_shapes.func
-           -> target:Subject.Thread.t
-           -> Subject.Thread.t Or_error.t) ~(target : target) :
-        target Or_error.t =
-      match path with
-      | In_func (index, rest) ->
-          Act_litmus.Test.Raw.try_map_thread ~index
-            ~f:(fun target -> f rest ~target)
-            target
-
-    let insert_stm (path : Path_shapes.program) ~(to_insert : stm)
-        ~(target : target) : target Or_error.t =
-      handle_stm path ~target ~f:(Thread.insert_stm ~to_insert)
-
-    let transform_stm (path : Path_shapes.program)
-        ~(f : stm -> stm Or_error.t) ~(target : target) : target Or_error.t =
-      handle_stm path ~target ~f:(Thread.transform_stm ~f)
-
-    let transform_stm_list (path : Path_shapes.program)
-        ~(f : stm list -> stm list Or_error.t) ~(target : target) :
-        target Or_error.t =
-      handle_stm path ~target ~f:(Thread.transform_stm_list ~f)
-
-    let gen_insert_stm (test : target) :
-        Path_shapes.program Base_quickcheck.Generator.t =
-      let prog_gens =
-        List.mapi (Act_litmus.Test.Raw.threads test) ~f:(fun index prog ->
-            Base_quickcheck.Generator.map
-              (Thread.gen_insert_stm prog)
-              ~f:(Path_shapes.in_func index))
-      in
-      Base_quickcheck.Generator.union prog_gens
-
-    let try_gen_transform_stm_list (test : target) :
-        Path_shapes.program Base_quickcheck.Generator.t option =
-      let prog_gens =
-        List.mapi (Act_litmus.Test.Raw.threads test) ~f:(fun index prog ->
-            map_opt_gen
-              (Thread.try_gen_transform_stm_list prog)
-              ~f:(Path_shapes.in_func index))
-      in
-      union_opt prog_gens
-  end
 end

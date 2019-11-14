@@ -24,23 +24,15 @@ val tid : Path_shapes.program -> int
 
 module Statement_list :
   Path_types.S_statement_list
-    with type target = Metadata.t Act_c_mini.Statement.t
+    with type target = Subject.Statement.t
 
 module If_statement :
   Path_types.S_if_statement
     with type target = Metadata.t Act_c_mini.Statement.If.t
 
 module Statement :
-  Path_types.S_statement with type target = Metadata.t Act_c_mini.Statement.t
+  Path_types.S_statement with type target = Subject.Statement.t
 
-module Function :
-  Path_types.S_function with type target := Metadata.t Act_c_mini.Function.t
+module Thread : Path_types.S_function with type target := Subject.Thread.t
 
-module Program :
-  Path_types.S_program with type target := Metadata.t Act_c_mini.Program.t
-
-module Subject : sig
-  module Thread : Path_types.S_function with type target := Subject.Thread.t
-
-  module Test : Path_types.S_program with type target := Subject.Test.t
-end
+module Test : Path_types.S_program with type target := Subject.Test.t

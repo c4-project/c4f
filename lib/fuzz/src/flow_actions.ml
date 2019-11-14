@@ -67,7 +67,7 @@ module If = struct
 
       let quickcheck_path (test : Subject.Test.t) :
           Path_shapes.program Base_quickcheck.Generator.t =
-        Option.value_exn (Path.Subject.Test.try_gen_transform_stm_list test)
+        Option.value_exn (Path.Test.try_gen_transform_stm_list test)
 
       let gen_path (test : Subject.Test.t)
           ~(random : Splittable_random.State.t) :
@@ -143,7 +143,7 @@ module If = struct
         Let_syntax.(
           let%bind () = add_cond_dependencies path cond in
           Monadic.return
-            (Path.Subject.Test.transform_stm_list path ~target:test
+            (Path.Test.transform_stm_list path ~target:test
                ~f:(wrap_in_if ~cond))))
   end
 
