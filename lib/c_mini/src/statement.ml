@@ -89,7 +89,7 @@ module Main :
      and type 'meta while_loop := 'meta while_loop = struct
   type 'meta t = 'meta statement [@@deriving sexp, equal]
 
-  module Accessors = struct
+  module Constructors = struct
     let assign x = Assign x
 
     let atomic_cmpxchg x = Atomic_cmpxchg x
@@ -103,7 +103,7 @@ module Main :
     let nop () = Nop
   end
 
-  include Accessors
+  include Constructors
 
   let reduce (type meta result) (x : meta t) ~assign ~atomic_cmpxchg
       ~atomic_store ~if_stm ~while_loop ~nop : result =
@@ -120,6 +120,12 @@ module Main :
         while_loop x
     | Nop ->
         nop ()
+
+  let is_if_statement : 'meta t -> bool = function
+    | If_stm _ ->
+        true
+    | While_loop _ | Assign _ | Atomic_cmpxchg _ | Atomic_store _ | Nop ->
+        false
 
   let rec has_if_statements : 'meta t -> bool = function
     | If_stm _ ->
@@ -146,12 +152,12 @@ module Main :
         ~if_stm ~while_loop ~nop : m2 t M.t =
       Travesty_base_exts.Fn.Compose_syntax.(
         reduce x
-          ~assign:(assign >> M.map ~f:Accessors.assign)
+          ~assign:(assign >> M.map ~f:Constructors.assign)
           ~atomic_cmpxchg:
-            (atomic_cmpxchg >> M.map ~f:Accessors.atomic_cmpxchg)
-          ~atomic_store:(atomic_store >> M.map ~f:Accessors.atomic_store)
-          ~if_stm:(if_stm >> M.map ~f:Accessors.if_stm)
-          ~while_loop:(while_loop >> M.map ~f:Accessors.while_loop)
+            (atomic_cmpxchg >> M.map ~f:Constructors.atomic_cmpxchg)
+          ~atomic_store:(atomic_store >> M.map ~f:Constructors.atomic_store)
+          ~if_stm:(if_stm >> M.map ~f:Constructors.if_stm)
+          ~while_loop:(while_loop >> M.map ~f:Constructors.while_loop)
           ~nop:(nop >> M.map ~f:(Fn.const Nop)))
   end
 

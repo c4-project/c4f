@@ -182,6 +182,9 @@ module type S_statement = sig
       the appropriate function of those given to [stm]. It does _not_
       recursively reduce statements inside blocks. *)
 
+  val is_if_statement : 'meta t -> bool
+  (** [is_if_statement stm] is true provided that [stm] is an if statement. *)
+
   val has_if_statements : 'meta t -> bool
   (** [has_if_statements stm] is true provided that [stm] is an if statement,
       or a composite statement for which [has_if_statements] is true for at

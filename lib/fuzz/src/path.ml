@@ -113,16 +113,18 @@ module rec Statement :
       Path_shapes.stm Q.Generator.t option =
     try_gen_recursively m ~if_stm:If_statement.try_gen_transform_stm_list
 
-  let gen_transform_stm (stm : Subject.Statement.t) :
-      Path_shapes.stm Q.Generator.t =
-    let gen_base = Q.Generator.return Path_shapes.this_stm in
-    match
-      try_gen_recursively stm ~if_stm:If_statement.try_gen_transform_stm
-    with
-    | Some gen_rec ->
-        Q.Generator.union [gen_base; gen_rec]
-    | None ->
-        gen_base
+  let try_gen_transform_stm
+      ?(predicate : Subject.Statement.t -> bool = Fn.const true)
+      (stm : Subject.Statement.t) : Path_shapes.stm Q.Generator.t option =
+    let gen_base =
+      Option.some_if (predicate stm)
+        (Q.Generator.return Path_shapes.this_stm)
+    in
+    let gen_rec =
+      try_gen_recursively stm
+        ~if_stm:(If_statement.try_gen_transform_stm ~predicate)
+    in
+    union_opt [gen_base; gen_rec]
 end
 
 and Statement_list :
@@ -199,15 +201,18 @@ struct
       ( Q.Generator.return (Path_shapes.insert 0)
       :: List.concat_mapi ~f:gen_insert_stm_on dest )
 
-  let gen_transform_stm_on (index : int) (single_dest : target) :
-      t Q.Generator.t =
-    single_dest |> M.gen_transform_stm
-    |> Q.Generator.map ~f:(Path_shapes.in_stm index)
+  let gen_transform_stm_on
+      ?(predicate : (Subject.Statement.t -> bool) option) (index : int)
+      (single_dest : target) : t Q.Generator.t option =
+    single_dest
+    |> M.try_gen_transform_stm ?predicate
+    |> map_opt_gen ~f:(Path_shapes.in_stm index)
 
-  let try_gen_transform_stm :
+  let try_gen_transform_stm
+      ?(predicate : (Subject.Statement.t -> bool) option) :
       target list -> Path_shapes.stm_list Q.Generator.t option =
-    Act_utils.My_list.guard_if_empty ~f:(fun dest ->
-        Q.Generator.union (List.mapi ~f:gen_transform_stm_on dest))
+    Act_utils.My_list.guard_if_empty_opt ~f:(fun dest ->
+        union_opt (List.mapi ~f:(gen_transform_stm_on ?predicate) dest))
 
   let gen_transform_stm_list_here (dest : target list) : t Q.Generator.t =
     Q.Generator.(
@@ -302,9 +307,10 @@ and If_statement :
       [ gen_opt_over_block ~f true (Stm.If.t_branch ifs)
       ; gen_opt_over_block ~f false (Stm.If.f_branch ifs) ]
 
-  let try_gen_transform_stm :
+  let try_gen_transform_stm
+      ?(predicate : (Subject.Statement.t -> bool) option) :
       Metadata.t Stm.If.t -> Path_shapes.ifs Q.Generator.t option =
-    gen_opt_over_blocks ~f:Statement_list.try_gen_transform_stm
+    gen_opt_over_blocks ~f:(Statement_list.try_gen_transform_stm ?predicate)
 
   let try_gen_transform_stm_list :
       Metadata.t Stm.If.t -> Path_shapes.ifs Q.Generator.t option =
@@ -354,9 +360,10 @@ struct
       Path_shapes.func Q.Generator.t option =
     map_opt_gen (f stms) ~f:Path_shapes.in_stms
 
-  let try_gen_transform_stm : target -> Path_shapes.func Q.Generator.t option
-      =
-    gen_opt_over_stms ~f:Statement_list.try_gen_transform_stm
+  let try_gen_transform_stm
+      ?(predicate : (Subject.Statement.t -> bool) option) :
+      target -> Path_shapes.func Q.Generator.t option =
+    gen_opt_over_stms ~f:(Statement_list.try_gen_transform_stm ?predicate)
 
   let try_gen_transform_stm_list :
       target -> Path_shapes.func Q.Generator.t option =
@@ -414,9 +421,10 @@ struct
            map_opt_gen (f prog) ~f:(Path_shapes.in_func index))
     |> union_opt
 
-  let try_gen_transform_stm :
+  let try_gen_transform_stm
+      ?(predicate : (Subject.Statement.t -> bool) option) :
       target -> Path_shapes.program Q.Generator.t option =
-    gen_opt_over_threads ~f:Thread.try_gen_transform_stm
+    gen_opt_over_threads ~f:(Thread.try_gen_transform_stm ?predicate)
 
   let try_gen_transform_stm_list :
       target -> Path_shapes.program Q.Generator.t option =

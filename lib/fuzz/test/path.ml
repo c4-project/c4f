@@ -77,6 +77,16 @@ let%test_module "Statement_list" =
             (In_stm 3 (In_if (In_block true (In_stm 0 This_stm))))
             (In_stm 3 This_stm) |}]
 
+        let%expect_test "try_gen_transform_stm with filtering to if \
+                         statements" =
+          let gen =
+            Act_fuzz.Path.Statement_list.try_gen_transform_stm
+              (Lazy.force Subject.Test_data.body_stms)
+              ~predicate:Act_c_mini.Statement.is_if_statement
+          in
+          print_sample (Option.value_exn gen) ;
+          [%expect {| (In_stm 3 This_stm) |}]
+
         let%expect_test "gen_transform_stm_list" =
           let gen =
             Act_fuzz.Path.Statement_list.try_gen_transform_stm_list

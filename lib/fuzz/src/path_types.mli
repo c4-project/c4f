@@ -57,6 +57,16 @@ module type S_path = sig
 
       It can return [None] if [dest] has no position at which statement lists
       can be transformed. *)
+
+  val try_gen_transform_stm :
+       ?predicate:(Subject.Statement.t -> bool)
+    -> target
+    -> t Base_quickcheck.Generator.t option
+  (** [try_gen_transform_stm ?predicate dest] tries to create a
+      Quickcheck-style generator for statement transformation paths targeting
+      [dest], and, optionally, reaching statements satisfying the predicate
+      [predicate]. It returns [None] if the container is empty or no such
+      statements were found. *)
 end
 
 (** Signature of paths over statements and statement-like entities. *)
@@ -71,28 +81,19 @@ module type S_statement = sig
 
       It can return [None] if [dest] has no position at which statements can
       be inserted. *)
-
-  val gen_transform_stm : target -> t Base_quickcheck.Generator.t
-  (** [gen_transform_stm dest] creates a Quickcheck-style generator for
-      statement transformation paths targeting [dest]. *)
 end
 
 (** Signature of paths over statement containers (such as lists).
 
     The key difference between this and path modules over statements
     themselves is that generating a statement insertion path is guaranteed to
-    succeed, but generating a statement transformation path is not. *)
+    succeed. *)
 module type S_stm_container = sig
   include S_path
 
   val gen_insert_stm : target -> t Base_quickcheck.Generator.t
   (** [gen_insert_stm dest] creates a Quickcheck-style generator for
       statement insertion paths targeting [dest]. *)
-
-  val try_gen_transform_stm : target -> t Base_quickcheck.Generator.t option
-  (** [try_gen_transform_stm dest] tries to create a Quickcheck-style
-      generator for statement transformation paths targeting [dest]. It
-      returns [None] if the container is empty. *)
 end
 
 (** Signature of paths over conditionals *)
