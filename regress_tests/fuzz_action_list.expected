@@ -18,6 +18,9 @@ flow.if.tautology:
     This version of the action generates an always-true condition, puts the
     original statements in the true block, and marks the false block as
     dead-code.
+flow.invert-if:
+  Weight: 10x
+  Summary: Flips the conditional and branches of an if statement.
 program.make.empty:
   Weight: 10x
   Summary:

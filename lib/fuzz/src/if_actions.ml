@@ -11,7 +11,7 @@
 
 open Base
 
-module If = struct
+module Surround = struct
   module Payload = struct
     (* The generation functions vary according to the specific action, and so
        appear in the functor below. *)
@@ -190,4 +190,62 @@ module If = struct
         Subject.Block.t =
       Act_c_mini.Block.make ~metadata:Metadata.dead_code ()
   end)
+end
+
+module Invert : Action_types.S with type Payload.t = Path_shapes.program =
+struct
+  let name = Act_common.Id.of_string_list ["flow"; "invert-if"]
+
+  let readme () =
+    Act_utils.My_string.format_for_readme
+      {| Flips the conditional and branches of an if statement. |}
+
+  let available (test : Subject.Test.t) : bool State.Monad.t =
+    test |> Act_litmus.Test.Raw.threads
+    |> List.exists ~f:Subject.Thread.has_if_statements
+    |> State.Monad.return
+
+  module Payload = struct
+    type t = Path_shapes.program [@@deriving sexp]
+
+    let quickcheck_path (test : Subject.Test.t) :
+        Path_shapes.program Base_quickcheck.Generator.t =
+      Option.value_exn
+        (Path.Test.try_gen_transform_stm
+           ~predicate:Act_c_mini.Statement.is_if_statement test)
+
+    let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t) :
+        Path_shapes.program State.Monad.t =
+      Action.lift_quickcheck (quickcheck_path test) ~random
+  end
+
+  let invert_if (ifs : Metadata.t Act_c_mini.Statement.If.t) :
+      Metadata.t Act_c_mini.Statement.If.t =
+    Act_c_mini.Statement.If.(
+      make
+        ~cond:(Act_c_mini.Expression.l_not (cond ifs))
+        ~t_branch:(f_branch ifs) (* intentional inversion *)
+        ~f_branch:(t_branch ifs)
+      (* as above *))
+
+  let not_an_if (type leg) (stm : Subject.Statement.t) (_ : leg) :
+      leg Or_error.t =
+    Or_error.error_s
+      [%message
+        "Tried to if-invert an invalid statement"
+          ~stm:(stm : Subject.Statement.t)]
+
+  module Bm = Act_c_mini.Statement.Base_map (Or_error)
+
+  let invert_stm (stm : Subject.Statement.t) : Subject.Statement.t Or_error.t
+      =
+    Bm.bmap stm ~assign:(not_an_if stm) ~atomic_cmpxchg:(not_an_if stm)
+      ~atomic_store:(not_an_if stm) ~while_loop:(not_an_if stm)
+      ~nop:(not_an_if stm)
+      ~if_stm:(Fn.compose Or_error.return invert_if)
+
+  let run (test : Subject.Test.t) ~(payload : Payload.t) :
+      Subject.Test.t State.Monad.t =
+    State.Monad.Monadic.return
+      (Path.Test.transform_stm payload ~target:test ~f:invert_stm)
 end

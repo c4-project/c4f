@@ -13,9 +13,9 @@ open Base
 open Stdio
 module Src = Act_fuzz
 
-let%test_module "If" =
+let%test_module "Surround" =
   ( module struct
-    module If = Src.Flow_actions.If
+    module Surround = Src.If_actions.Surround
 
     (* TODO(@MattWindsor91): sort out the discrepancy between the subject
        example and var map. *)
@@ -35,16 +35,16 @@ let%test_module "If" =
     let path : Src.Path_shapes.program =
       In_func (0, In_stms (On_stm_range (0, 2)))
 
-    let payload : If.Payload.t = If.Payload.make ~cond ~path
+    let payload : Surround.Payload.t = Surround.Payload.make ~cond ~path
 
     let%test_module "Tautology" =
       ( module struct
         let run_test () : (Src.State.t * Src.Subject.Test.t) Or_error.t =
-          Src.State.Monad.run' (If.Tautology.run test ~payload) state
+          Src.State.Monad.run' (Surround.Tautology.run test ~payload) state
 
         let%expect_test "resulting AST" =
           Action.Test_utils.run_and_dump_test
-            (If.Tautology.run test ~payload)
+            (Surround.Tautology.run test ~payload)
             ~initial_state:state ;
           [%expect
             {|

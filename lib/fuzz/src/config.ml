@@ -28,8 +28,13 @@ let modules : Action.With_default_weight.t list Lazy.t =
       ; make
           ~action:(module Program_actions.Make_empty : Action_types.S)
           ~default_weight:10
-      ; make ~action:(module Flow_actions.If.Tautology) ~default_weight:25
-      ; make ~action:(module Flow_actions.If.Duplicate) ~default_weight:15 ]
+      ; make ~action:(module If_actions.Invert) ~default_weight:10
+      ; make
+          ~action:(module If_actions.Surround.Tautology)
+          ~default_weight:25
+      ; make
+          ~action:(module If_actions.Surround.Duplicate)
+          ~default_weight:15 ]
 
 let module_map : Action.With_default_weight.t Map.M(Act_common.Id).t Lazy.t =
   Lazy.(

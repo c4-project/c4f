@@ -37,6 +37,9 @@ module Thread = struct
 
   let has_statements (p : t) : bool = not (List.is_empty p.stms)
 
+  let has_if_statements (p : t) : bool =
+    List.exists p.stms ~f:Act_c_mini.Statement.has_if_statements
+
   let statements_of_function (func : unit Act_c_mini.Function.t) :
       Statement.t list =
     func |> Act_c_mini.Function.body_stms

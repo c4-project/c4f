@@ -77,6 +77,10 @@ module Thread : sig
   (** [has_statements prog] is true if, and only if, [prog] contains at least
       one statement. *)
 
+  val has_if_statements : t -> bool
+  (** [has_statements prog] is true if, and only if, [prog] contains at least
+      one if statement. *)
+
   val to_function :
        t
     -> vars:Var.Map.t

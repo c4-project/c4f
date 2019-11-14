@@ -9,21 +9,20 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Actions that introduce, or rearrange, control flows. *)
+(** Actions that introduce, or rearrange, if statements. *)
 
-(** {1 If statements}
+(** {1 Actions that surround statements in if statements}
 
-    The general idea of an if-statement generator is that it takes:
+    The general idea of such a generator is that it takes:
 
     - a condition expression generator in the form of an action payload;
     - a mapping from an existing statement list to the 'true' block of the
       statement generator;
     - a similar mapping to the 'false' block. *)
-
-module If : sig
+module Surround : sig
   (** {2 Payload}
 
-      The payload for any if-statement action contains two elements:
+      The payload for any if-surround action contains two elements:
 
       - the expression to insert into the condition of the if statement;
       - the path to the statements to remove, pass through the if statement
@@ -50,3 +49,7 @@ module If : sig
       block contains the original statement span, and the second block is an
       empty dead-code block. *)
 end
+
+(** {1 Inverting existing if statements} *)
+
+module Invert : Action_types.S with type Payload.t = Path_shapes.program
