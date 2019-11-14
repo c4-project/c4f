@@ -23,8 +23,7 @@ val tid : Path_shapes.program -> int
 (** {1 Specific types of path} *)
 
 module Statement_list :
-  Path_types.S_statement_list
-    with type target = Subject.Statement.t
+  Path_types.S_statement_list with type target = Subject.Statement.t
 
 module If_statement :
   Path_types.S_if_statement

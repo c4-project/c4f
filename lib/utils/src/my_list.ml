@@ -35,6 +35,13 @@ let find_one (type a b) ?(item_name : string = "item") (items : a list)
   find_at_most_one items ~item_name ~f
     ~on_empty:(Or_error.errorf "Expected at least one %s" item_name)
 
+let guard_if_empty_opt (xs : 'a list) ~(f : 'a list -> 'b option) : 'b option
+    =
+  if List.is_empty xs then None else f xs
+
+let guard_if_empty (xs : 'a list) ~(f : 'a list -> 'b) : 'b option =
+  guard_if_empty_opt xs ~f:(Fn.compose Option.return f)
+
 module Random = struct
   (* These functions probably raise exceptions on empty lists, so we don't
      expose them directly: see `index` and `stride` later on. *)
@@ -49,9 +56,6 @@ module Random = struct
     let ixmin = min ix1 ix2 in
     let ixmax = max ix1 ix2 in
     (ixmin, ixmax - ixmin)
-
-  let guard_if_empty (xs : 'a list) ~(f : 'a list -> 'b) : 'b option =
-    if List.is_empty xs then None else Some (f xs)
 
   let index (xs : 'a list) ~(random : Splittable_random.State.t) : int option
       =

@@ -24,7 +24,7 @@
 
 open Base
 
-(** {2 Finding and transforming specific amounts of items} *)
+(** {1 Finding and transforming specific amounts of items} *)
 
 val find_at_most_one :
      ?item_name:string
@@ -48,7 +48,7 @@ val find_one :
     [f] returns [Some]. It returns the result if precisely one exists, and an
     error otherwise. *)
 
-(** {2 Using a splittable RNG to access elements} *)
+(** {1 Using a splittable RNG to access elements} *)
 
 module Random : sig
   val index : _ list -> random:Splittable_random.State.t -> int option
@@ -65,11 +65,11 @@ module Random : sig
       otherwise. *)
 
   val item : 'a list -> random:Splittable_random.State.t -> 'a option
-  (** [item xs ~random] behaves like {!List.random_element}, but uses a
+  (** [item xs ~random] behaves like Base's [List.random_element], but uses a
       splittable RNG for compatibility with Quickcheck etc. *)
 end
 
-(** {2 Manipulating lists} *)
+(** {1 Manipulating lists} *)
 
 val split_or_error : 'a list -> int -> ('a list * 'a list) Or_error.t
 (** [split_or_error xs n] behaves like [split xs n], but returns an error if
@@ -108,3 +108,16 @@ val try_map_sub :
   -> 'a list Or_error.t
 (** [try_map_sub xs ~pos ~len ~f] maps [f] over the part of [xs] denoted by
     [pos] and [len]. *)
+
+(** {2 Guarding a function based on the emptiness of a list}
+
+    These functions don't distinguish in the type system between a non-empty
+    list and a normal list; this behaviour may change eventually. *)
+
+val guard_if_empty_opt : 'a list -> f:('a list -> 'b option) -> 'b option
+(** [guard_if_empty_opt xs f] evaluates to [f xs] if [xs] is non-empty, and
+    [None] otherwise. *)
+
+val guard_if_empty : 'a list -> f:('a list -> 'b) -> 'b option
+(** [guard_if_empty xs f] evaluates to [Some (f xs)] if [xs] is non-empty,
+    and [None] otherwise. *)

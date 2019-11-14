@@ -63,6 +63,20 @@ let%test_module "Statement_list" =
               (In_stm 3 (In_if (In_block false (Insert 0))))
               (In_stm 3 (In_if (In_block true (Insert 1)))) |}]
 
+        let%expect_test "try_gen_transform_stm with no filtering" =
+          let gen =
+            Act_fuzz.Path.Statement_list.try_gen_transform_stm
+              (Lazy.force Subject.Test_data.body_stms)
+          in
+          print_sample (Option.value_exn gen) ;
+          [%expect
+            {|
+            (In_stm 0 This_stm)
+            (In_stm 1 This_stm)
+            (In_stm 2 This_stm)
+            (In_stm 3 (In_if (In_block true (In_stm 0 This_stm))))
+            (In_stm 3 This_stm) |}]
+
         let%expect_test "gen_transform_stm_list" =
           let gen =
             Act_fuzz.Path.Statement_list.try_gen_transform_stm_list
@@ -132,7 +146,7 @@ let%test_module "Statement_list" =
               test_insert on_stm_range_path ;
               [%expect
                 {|
-          ("Can't use this statement-list path here" (here lib/fuzz/src/path.ml:150:65)
+          ("Can't use this statement-list path here" (here lib/fuzz/src/path.ml:160:65)
            (context insert_stm) (path (On_stm_range 1 2))) |}]
 
             let%expect_test "insert into list" =
@@ -186,7 +200,7 @@ let%test_module "Statement_list" =
               test_transform insert_path ;
               [%expect
                 {|
-          ("Can't use this statement-list path here" (here lib/fuzz/src/path.ml:161:68)
+          ("Can't use this statement-list path here" (here lib/fuzz/src/path.ml:171:68)
            (context transform_stm) (path (Insert 2))) |}]
           end )
 
@@ -224,7 +238,7 @@ let%test_module "Statement_list" =
               test_transform_list insert_path ;
               [%expect
                 {|
-                  ("Can't use this statement-list path here" (here lib/fuzz/src/path.ml:173:16)
+                  ("Can't use this statement-list path here" (here lib/fuzz/src/path.ml:183:16)
                    (context transform_stm_list) (path (Insert 2))) |}]
 
             let%test_unit "generator over stm-list produces valid paths" =

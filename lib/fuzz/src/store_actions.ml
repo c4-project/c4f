@@ -209,8 +209,7 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
     State.Monad.Let_syntax.(
       let%bind () = do_bookkeeping store ~tid in
       State.Monad.Monadic.return
-        (Path.Test.insert_stm path ~to_insert:store_stm
-           ~target:subject))
+        (Path.Test.insert_stm path ~to_insert:store_stm ~target:subject))
 end
 
 module Int : Action_types.S with type Payload.t = Random_state.t =
