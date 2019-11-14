@@ -28,7 +28,13 @@ module Global_payload = struct
 
   let generator (vars : Var.Map.t) : t G.t =
     G.Let_syntax.(
-      let%bind initial_value = Act_c_mini.Constant.quickcheck_generator in
+      (* TODO(@MattWindsor91): ideally, this should be
+         [quickcheck_generator], ie it should generate Booleans as well.
+         However, this would presently result in the fuzzer generating init
+         blocks with `true` and `false` in them, which neither our parser nor
+         Litmus's parser can comprehend. Until this issue is worked around,
+         we only generate integers. *)
+      let%bind initial_value = Act_c_mini.Constant.gen_int32 in
       let%bind basic_type = gen_type_from_constant initial_value in
       let%map name = Var.Map.gen_fresh_var vars in
       {basic_type; initial_value; name})
