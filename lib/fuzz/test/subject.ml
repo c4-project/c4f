@@ -10,8 +10,7 @@
    project root for more information. *)
 
 open Base
-open Act_fuzz
-open Subject
+module Src = Act_fuzz
 
 module Test_data = struct
   let init : Act_c_mini.Constant.t Act_c_mini.Named.Alist.t Lazy.t =
@@ -40,7 +39,7 @@ module Test_data = struct
       in
       Act_fuzz.State.make ~vars ())
 
-  let body_stms : unit Act_c_mini.Statement.t list Lazy.t =
+  let body_stms : Src.Subject.Statement.t list Lazy.t =
     lazy
       Act_c_mini.(
         Statement.
@@ -62,35 +61,35 @@ module Test_data = struct
                        Expression.variable (Act_common.C_id.of_string "foo")
                        == Expression.variable (Act_common.C_id.of_string "y")))
                  ~t_branch:
-                   (Block.of_statement_list
-                      [ atomic_store
-                          (Atomic_store.make ~src:(Expression.int_lit 56)
-                             ~dst:(Address.of_variable_str_exn "x")
-                             ~mo:Mem_order.Seq_cst) ])
-                 ~f_branch:(Block.of_statement_list [])) ])
+                   (Src.Subject.Block.make_generated
+                      ~statements:
+                        [ atomic_store
+                            (Atomic_store.make ~src:(Expression.int_lit 56)
+                               ~dst:(Address.of_variable_str_exn "x")
+                               ~mo:Mem_order.Seq_cst) ]
+                      ())
+                 ~f_branch:(Src.Subject.Block.make_generated ())) ])
 
-  let programs : Subject.Program.t list Lazy.t =
+  let threads : Src.Subject.Thread.t list Lazy.t =
     Lazy.Let_syntax.(
-      let%bind parameters = globals in
-      let%map body_stms = body_stms in
-      Act_c_mini.
-        [ Subject.Program.of_function
-            (Function.make ~parameters ~body_decls:[] ~body_stms ()) ])
+      let%map stms = body_stms in
+      [Src.Subject.Thread.make ~stms ()])
 
-  let test : Subject.Test.t Lazy.t =
+  let test : Src.Subject.Test.t Lazy.t =
     Lazy.Let_syntax.(
       let%bind init = init in
-      let%map threads = programs in
+      let%map threads = threads in
       let header = Act_litmus.Header.make ~name:"example" ~init () in
       Act_litmus.Test.Raw.make ~header ~threads)
 end
 
-let%test_module "program" =
+let%test_module "Thread" =
   ( module struct
-    open Program
-
-    let%expect_test "empty program has no statements" =
-      Fmt.(pr "%a@." (using has_statements bool) empty) ;
+    let%expect_test "empty thread has no statements" =
+      Fmt.(
+        pr "%a@."
+          (using Src.Subject.Thread.has_statements bool)
+          Src.Subject.Thread.empty) ;
       [%expect {| false |}]
   end )
 
@@ -100,29 +99,28 @@ let%test_module "using sample environment" =
 
     let env = Lazy.force Act_c_mini_test.Env.test_env
 
-    let vars : Var.Map.t =
+    let vars : Src.Var.Map.t =
       env
       |> Act_utils.My_map.map_with_keys
            (module Act_common.Litmus_id)
            ~f:(fun ~key ~data ->
              let lit = Act_common.Litmus_id.global key in
-             (lit, Var.Record.make_existing Global data))
+             (lit, Src.Var.Record.make_existing Global data))
       |> Or_error.ok_exn |> Act_common.Scoped_map.of_litmus_id_map
 
     let test programs =
-      let res = Program.list_to_litmus programs ~vars in
+      let res = Src.Subject.Thread.list_to_litmus programs ~vars in
       Fmt.(
         pr "@[<v>%a@]@." (list ~sep:sp Act_c_mini.Litmus.Lang.Program.pp) res)
 
-    let%expect_test "programs_to_litmus: empty test" =
-      test [] ; [%expect {| |}]
+    let%expect_test "list_to_litmus: empty test" = test [] ; [%expect {| |}]
 
-    let%expect_test "programs_to_litmus: empty programs" =
-      test (List.init 5 ~f:(fun _ -> Program.empty)) ;
+    let%expect_test "list_to_litmus: empty threads" =
+      test (List.init 5 ~f:(fun _ -> Src.Subject.Thread.empty)) ;
       [%expect {| |}]
 
-    let%expect_test "programs_to_litmus: sample programs" =
-      test (Lazy.force Test_data.programs) ;
+    let%expect_test "list_to_litmus: sample threads" =
+      test (Lazy.force Test_data.threads) ;
       [%expect
         {|
         void
@@ -135,13 +133,13 @@ let%test_module "using sample environment" =
             if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
         } |}]
 
-    let%expect_test "programs_to_litmus: sample programs with interspersed \
+    let%expect_test "list_to_litmus: sample threads with interspersed \
                      emptiness" =
-      let programs =
-        Test_data.programs |> Lazy.force
-        |> List.intersperse ~sep:Program.empty
+      let threads =
+        Test_data.threads |> Lazy.force
+        |> List.intersperse ~sep:Src.Subject.Thread.empty
       in
-      test programs ;
+      test threads ;
       [%expect
         {|
         void

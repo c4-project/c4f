@@ -13,11 +13,18 @@ open Base
 
 module If = struct
   module Payload = struct
+    (* The generation functions vary according to the specific action, and so
+       appear in the functor below. *)
     type t = {cond: Act_c_mini.Expression.t; path: Path_shapes.program}
     [@@deriving make, sexp, fields]
   end
 
   module type S = Action_types.S with type Payload.t = Payload.t
+
+  let readme_prelude : string =
+    {| Removes a sublist of statements from the program, replacing them
+        with an `if` statement containing some transformation of the
+        removed statements. |}
 
   module Make (Basic : sig
     val name_suffix : string
@@ -48,12 +55,7 @@ module If = struct
     let name = Act_common.Id.of_string_list ["flow"; "if"; name_suffix]
 
     let readme () =
-      let raw =
-        {| Removes a sublist of statements from the program, replacing them
-        with an `if` statement containing some transformation of the
-        removed statements. |}
-        ^ "\n\n" ^ readme_suffix
-      in
+      let raw = readme_prelude ^ "\n\n" ^ readme_suffix in
       Act_utils.My_string.format_for_readme raw
 
     module Payload = struct
@@ -102,7 +104,7 @@ module If = struct
 
     let available (test : Subject.Test.t) : bool State.Monad.t =
       test |> Act_litmus.Test.Raw.threads
-      |> List.exists ~f:Subject.Program.has_statements
+      |> List.exists ~f:Subject.Thread.has_statements
       |> State.Monad.return
 
     let wrap_in_if_raw (statements : Metadata.t Act_c_mini.Statement.t list)
@@ -160,7 +162,7 @@ module If = struct
 
     let t_branch_of_statements (statements : Subject.Statement.t list) :
         Subject.Block.t =
-      Act_c_mini.Block.make ~statements ~metadata:Metadata.generated ()
+      Subject.Block.make_generated ~statements ()
 
     let f_branch_of_statements : Subject.Statement.t list -> Subject.Block.t
         =
@@ -182,7 +184,7 @@ module If = struct
 
     let t_branch_of_statements (statements : Subject.Statement.t list) :
         Subject.Block.t =
-      Act_c_mini.Block.make ~statements ~metadata:Metadata.generated ()
+      Subject.Block.make_generated ~statements ()
 
     let f_branch_of_statements (_statements : Subject.Statement.t list) :
         Subject.Block.t =

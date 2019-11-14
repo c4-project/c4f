@@ -112,7 +112,7 @@ let%test_module "trace playback" =
                   ((Atomic_store
                     ((src (Constant (Int 56))) (dst (Lvalue (Variable x)))
                      (mo memory_order_seq_cst)))))
-                 (metadata ((source Existing) (liveness Normal)))))
+                 (metadata ((source Generated) (liveness Normal)))))
                (f_branch
-                ((statements ()) (metadata ((source Existing) (liveness Normal)))))))))))))) |}]
+                ((statements ()) (metadata ((source Generated) (liveness Normal)))))))))))))) |}]
   end )

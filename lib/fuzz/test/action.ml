@@ -18,7 +18,7 @@ module Test_utils = struct
       Act_c_lang.Ast.Translation_unit.t Src.State.Monad.t =
     Src.State.Monad.with_vars (fun vars ->
         List.mapi (Act_litmus.Test.Raw.threads test) ~f:(fun id p ->
-            let fn = Src.Subject.Program.to_function ~vars ~id p in
+            let fn = Src.Subject.Thread.to_function ~vars ~id p in
             Act_c_mini.(Reify.func (Named.name fn) (Named.value fn))))
 
   let run_and_dump_test (action : Src.Subject.Test.t Src.State.Monad.t)

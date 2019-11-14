@@ -40,8 +40,7 @@ module Program :
   Path_types.S_program with type target := Metadata.t Act_c_mini.Program.t
 
 module Subject : sig
-  module Program :
-    Path_types.S_function with type target := Subject.Program.t
+  module Thread : Path_types.S_function with type target := Subject.Thread.t
 
   module Test : Path_types.S_program with type target := Subject.Test.t
 end

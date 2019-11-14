@@ -19,13 +19,19 @@ end
 
 module Block = struct
   type t = (Metadata.t, Statement.t) Act_c_mini.Block.t
+
+  let make_generated ?(statements : Statement.t list option) () : t =
+    Act_c_mini.Block.make ?statements ~metadata:Metadata.generated ()
+
+  let make_dead_code ?(statements : Statement.t list option) () : t =
+    Act_c_mini.Block.make ?statements ~metadata:Metadata.dead_code ()
 end
 
-module Program = struct
+module Thread = struct
   type t =
-    { decls: Act_c_mini.Initialiser.t Act_c_mini.Named.Alist.t
+    { decls: Act_c_mini.Initialiser.t Act_c_mini.Named.Alist.t [@default []]
     ; stms: Statement.t list }
-  [@@deriving sexp]
+  [@@deriving sexp, make]
 
   let empty : t = {decls= []; stms= []}
 
@@ -39,8 +45,10 @@ module Program = struct
            (Act_c_mini.Statement.On_meta.map ~f:(fun () -> Metadata.existing))
 
   let of_function (func : unit Act_c_mini.Function.t) : t =
-    { decls= Act_c_mini.Function.body_decls func
-    ; stms= statements_of_function func }
+    make
+      ~decls:(Act_c_mini.Function.body_decls func)
+      ~stms:(statements_of_function func)
+      ()
 
   module R_alist = Act_c_mini.Named.Alist.As_named (Var.Record)
 
@@ -73,26 +81,26 @@ module Program = struct
 end
 
 module Test = struct
-  type t = (Act_c_mini.Constant.t, Program.t) Act_litmus.Test.Raw.t
+  type t = (Act_c_mini.Constant.t, Thread.t) Act_litmus.Test.Raw.t
   [@@deriving sexp]
 
-  let add_new_program : t -> t =
-    Act_litmus.Test.Raw.add_thread_at_end ~thread:Program.empty
+  let add_new_thread : t -> t =
+    Act_litmus.Test.Raw.add_thread_at_end ~thread:Thread.empty
 
-  let programs_of_litmus (test : Act_c_mini.Litmus.Test.t) : Program.t list =
+  let threads_of_litmus (test : Act_c_mini.Litmus.Test.t) : Thread.t list =
     test |> Act_c_mini.Litmus.Test.threads
-    |> List.map ~f:(Fn.compose Program.of_function Act_c_mini.Named.value)
+    |> List.map ~f:(Fn.compose Thread.of_function Act_c_mini.Named.value)
 
   let of_litmus (test : Act_c_mini.Litmus.Test.t) : t =
     Act_litmus.Test.Raw.make
       ~header:(Act_c_mini.Litmus.Test.header test)
-      ~threads:(programs_of_litmus test)
+      ~threads:(threads_of_litmus test)
 
   let to_litmus (subject : t) ~(vars : Var.Map.t) :
       Act_c_mini.Litmus.Test.t Or_error.t =
     let header = Act_litmus.Test.Raw.header subject in
     let threads = Act_litmus.Test.Raw.threads subject in
-    let threads' = Program.list_to_litmus ~vars threads in
+    let threads' = Thread.list_to_litmus ~vars threads in
     Act_c_mini.Litmus.Test.make ~header ~threads:threads'
 
   let add_var_to_init (subject : t) (var : Ac.C_id.t)

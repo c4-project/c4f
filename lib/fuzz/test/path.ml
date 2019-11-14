@@ -31,6 +31,56 @@ let%test_module "Statement_list" =
           | _ ->
               failwith "Unexpected path")
 
+    let%test_module "sample path output on example code" =
+      ( module struct
+        (* These test endpoints mainly serve to provide early warning if the
+           way that path generators work has changed. *)
+
+        let print_sample
+            (generator : Act_fuzz.Path_shapes.stm_list Generator.t) : unit =
+          Act_utils.My_quickcheck.print_sample
+            ( module struct
+              type t = Act_fuzz.Path_shapes.stm_list
+              [@@deriving compare, sexp]
+
+              let quickcheck_generator = generator
+
+              let quickcheck_observer = Observer.opaque
+
+              let quickcheck_shrinker = Shrinker.atomic
+            end )
+
+        let%expect_test "gen_insert_stm" =
+          print_sample
+            (Act_fuzz.Path.Statement_list.gen_insert_stm
+               (Lazy.force Subject.Test_data.body_stms)) ;
+          [%expect
+            {|
+              (Insert 0)
+              (Insert 1)
+              (Insert 2)
+              (Insert 3)
+              (In_stm 3 (In_if (In_block false (Insert 0))))
+              (In_stm 3 (In_if (In_block true (Insert 1)))) |}]
+
+        let%expect_test "gen_transform_stm_list" =
+          let gen =
+            Act_fuzz.Path.Statement_list.try_gen_transform_stm_list
+              (Lazy.force Subject.Test_data.body_stms)
+          in
+          print_sample (Option.value_exn gen) ;
+          [%expect
+            {|
+              (In_stm 3 (In_if (In_block true (On_stm_range 0 0))))
+              (On_stm_range 0 0)
+              (On_stm_range 0 1)
+              (On_stm_range 0 3)
+              (On_stm_range 1 0)
+              (On_stm_range 1 2)
+              (On_stm_range 2 0)
+              (On_stm_range 2 1) |}]
+      end )
+
     let%test_module "paths applied to example code" =
       ( module struct
         module F = Act_fuzz
@@ -49,7 +99,7 @@ let%test_module "Statement_list" =
             Stm.atomic_store
               (Atomic_store.make ~mo:Mem_order.Seq_cst
                  ~src:(Expression.int_lit 9001)
-                 ~dst:(Address.of_variable (Act_common.C_id.of_string "y"))))
+                 ~dst:(Address.of_variable_str_exn "y")))
 
         (* TODO(@MattWindsor91): generalise this? *)
         let pp_statement : F.Metadata.t Stm.t Fmt.t =
@@ -142,21 +192,15 @@ let%test_module "Statement_list" =
 
         let%test_module "transform_stm_list" =
           ( module struct
-            type stm = F.Metadata.t Stm.t
-
-            let make_block (statements : stm list) :
-                (F.Metadata.t, stm) Act_c_mini.Block.t =
-              Act_c_mini.Block.make ~metadata:F.Metadata.generated
-                ~statements ()
-
             let iffify (statements : F.Metadata.t Stm.t list) :
                 F.Metadata.t Stm.t list Or_error.t =
               Or_error.return
                 [ Stm.if_stm
                     (Stm.If.make
                        ~cond:(Act_c_mini.Expression.bool_lit true)
-                       ~t_branch:(make_block statements)
-                       ~f_branch:(make_block [])) ]
+                       ~t_branch:
+                         (F.Subject.Block.make_generated ~statements ())
+                       ~f_branch:(F.Subject.Block.make_generated ())) ]
 
             let test_transform_list (path : F.Path_shapes.stm_list) : unit =
               test

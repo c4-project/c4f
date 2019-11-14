@@ -13,7 +13,7 @@
 
 (** An example Litmus test, partitioned into lazily evaluated subcomponents. *)
 module Test_data : sig
-  val body_stms : unit Act_c_mini.Statement.t list Lazy.t
+  val body_stms : Act_fuzz.Subject.Statement.t list Lazy.t
   (** [body_stms] evaluates to the body statements of the example test. *)
 
   val state : Act_fuzz.State.t Lazy.t

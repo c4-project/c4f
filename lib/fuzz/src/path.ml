@@ -383,9 +383,9 @@ struct
 end
 
 module Subject = struct
-  module Program :
-    Path_types.S_function with type target := Subject.Program.t = struct
-    type target = Subject.Program.t
+  module Thread :
+    Path_types.S_function with type target := Subject.Thread.t = struct
+    type target = Subject.Thread.t
 
     let handle_stm (path : Path_shapes.func)
         ~(f :
@@ -438,8 +438,8 @@ module Subject = struct
     let handle_stm (path : Path_shapes.program)
         ~(f :
               Path_shapes.func
-           -> target:Subject.Program.t
-           -> Subject.Program.t Or_error.t) ~(target : target) :
+           -> target:Subject.Thread.t
+           -> Subject.Thread.t Or_error.t) ~(target : target) :
         target Or_error.t =
       match path with
       | In_func (index, rest) ->
@@ -449,23 +449,23 @@ module Subject = struct
 
     let insert_stm (path : Path_shapes.program) ~(to_insert : stm)
         ~(target : target) : target Or_error.t =
-      handle_stm path ~target ~f:(Program.insert_stm ~to_insert)
+      handle_stm path ~target ~f:(Thread.insert_stm ~to_insert)
 
     let transform_stm (path : Path_shapes.program)
         ~(f : stm -> stm Or_error.t) ~(target : target) : target Or_error.t =
-      handle_stm path ~target ~f:(Program.transform_stm ~f)
+      handle_stm path ~target ~f:(Thread.transform_stm ~f)
 
     let transform_stm_list (path : Path_shapes.program)
         ~(f : stm list -> stm list Or_error.t) ~(target : target) :
         target Or_error.t =
-      handle_stm path ~target ~f:(Program.transform_stm_list ~f)
+      handle_stm path ~target ~f:(Thread.transform_stm_list ~f)
 
     let gen_insert_stm (test : target) :
         Path_shapes.program Base_quickcheck.Generator.t =
       let prog_gens =
         List.mapi (Act_litmus.Test.Raw.threads test) ~f:(fun index prog ->
             Base_quickcheck.Generator.map
-              (Program.gen_insert_stm prog)
+              (Thread.gen_insert_stm prog)
               ~f:(Path_shapes.in_func index))
       in
       Base_quickcheck.Generator.union prog_gens
@@ -475,7 +475,7 @@ module Subject = struct
       let prog_gens =
         List.mapi (Act_litmus.Test.Raw.threads test) ~f:(fun index prog ->
             map_opt_gen
-              (Program.try_gen_transform_stm_list prog)
+              (Thread.try_gen_transform_stm_list prog)
               ~f:(Path_shapes.in_func index))
       in
       union_opt prog_gens
