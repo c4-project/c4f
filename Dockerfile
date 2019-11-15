@@ -133,6 +133,7 @@ ENV PATH "/home/act/bin:${PATH}"
 COPY --chown=act:act scripts scripts
 
 # Compiler setup
-RUN ./scripts/make_conf > act.conf
+COPY --chown=act:act c11_lahav.cat c11_lahav.cat
+RUN ./scripts/make_conf --c-model "/home/act/c11_lahav.cat" > act.conf
 
 CMD [ "./scripts/do_memalloy_test", "-v", "/home/act/memalloy" ]

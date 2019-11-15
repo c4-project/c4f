@@ -78,7 +78,7 @@ let atomic_load_to_expr (ld : Atomic_load.t) : Ast.Expr.t =
     [ address_to_expr (Atomic_load.src ld)
     ; mem_order_to_expr (Atomic_load.mo ld) ]
 
-let bop : Expression.Bop.t -> Act_c_lang.Ast_basic.Operators.Bin.t = function
+let bop : Expression.Bop.t -> Act_c_lang.Operators.Bin.t = function
   | Expression.Bop.Eq ->
       `Eq
   | L_and ->
@@ -86,33 +86,36 @@ let bop : Expression.Bop.t -> Act_c_lang.Ast_basic.Operators.Bin.t = function
   | L_or ->
       `Lor
 
-let uop_pre : Expression.Uop.t -> Act_c_lang.Ast_basic.Operators.Pre.t =
-  function
+let uop_pre : Expression.Uop.t -> Act_c_lang.Operators.Pre.t = function
   | Expression.Uop.L_not ->
       `Lnot
 
-(* NB: This works because all of the bops are left-associative, and will need
-   refining if any right-associative Bops appear. *)
-let needs_brackets (o : Act_c_lang.Ast_basic.Operators.Bin.t)
-    (expr : Ast.Expr.t) ~(is_left : bool) : bool =
-  match expr with
-  | Binary (Brackets _, _, _) when is_left ->
-      true
-  | Binary (_, _, Brackets _) when not is_left ->
-      true
-  | Binary (_, o', _) ->
-      is_left && not (Act_c_lang.Ast_basic.Operators.Bin.equal o o')
-  | _ ->
-      false
+module Needs_brackets = struct
+  (* NB: This works ATM because all of the bops are left-associative and have
+     the same precedence, and will need refining if any right-associative
+     Bops appear. *)
+  let bop (o : Act_c_lang.Operators.Bin.t) (expr : Ast.Expr.t)
+      ~(is_left : bool) : bool =
+    match expr with
+    | Binary (Brackets _, _, _) when is_left ->
+        true
+    | Binary (_, _, Brackets _) when not is_left ->
+        true
+    | Binary (_, o', _) ->
+        is_left && not (Act_c_lang.Operators.Bin.equal o o')
+    | _ ->
+        false
+end
 
 let bop_expr (op : Expression.Bop.t) (l : Ast.Expr.t) (r : Ast.Expr.t) :
     Ast.Expr.t =
   let op' = bop op in
   let l' =
-    if needs_brackets op' l ~is_left:true then Ast.Expr.Brackets l else l
+    if Needs_brackets.bop op' l ~is_left:true then Ast.Expr.Brackets l else l
   in
   let r' =
-    if needs_brackets op' r ~is_left:false then Ast.Expr.Brackets r else r
+    if Needs_brackets.bop op' r ~is_left:false then Ast.Expr.Brackets r
+    else r
   in
   Ast.Expr.Binary (l', op', r')
 

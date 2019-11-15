@@ -212,12 +212,13 @@ let rec expr_to_address : Ast.Expr.t -> Address.t Or_error.t = function
   | expr ->
       Or_error.(expr |> expr_to_lvalue >>| Address.lvalue)
 
-let expr_to_identifier (expr : Ast.Expr.t) : Act_common.C_id.t Or_error.t =
-  let open Or_error.Let_syntax in
-  let%bind lv = expr_to_lvalue expr in
+let lvalue_to_identifier (lv : Lvalue.t) : Act_common.C_id.t Or_error.t =
   if Lvalue.is_deref lv then
     Or_error.error_s [%message "Expected identifier" ~got:(lv : Lvalue.t)]
-  else return (Lvalue.variable_of lv)
+  else Or_error.return (Lvalue.variable_of lv)
+
+let expr_to_identifier (expr : Ast.Expr.t) : Act_common.C_id.t Or_error.t =
+  Or_error.(expr |> expr_to_lvalue >>= lvalue_to_identifier)
 
 let expr_to_memory_order (expr : Ast.Expr.t) : Mem_order.t Or_error.t =
   let open Or_error.Let_syntax in
@@ -275,8 +276,7 @@ let identifier_to_expr (id : Ac.C_id.t) : Expression.t =
   | _ ->
       Expression.lvalue (Lvalue.variable id)
 
-let bop : Act_c_lang.Ast_basic.Operators.Bin.t -> Expression.Bop.t Or_error.t
-    =
+let bop : Act_c_lang.Operators.Bin.t -> Expression.Bop.t Or_error.t =
   Or_error.(
     function
     | `Eq ->
@@ -289,10 +289,9 @@ let bop : Act_c_lang.Ast_basic.Operators.Bin.t -> Expression.Bop.t Or_error.t
         error_s
           [%message
             "Unsupported binary operator"
-              ~got:(op : Act_c_lang.Ast_basic.Operators.Bin.t)])
+              ~got:(op : Act_c_lang.Operators.Bin.t)])
 
-let prefix_op :
-    Act_c_lang.Ast_basic.Operators.Pre.t -> Expression.Uop.t Or_error.t =
+let prefix_op : Act_c_lang.Operators.Pre.t -> Expression.Uop.t Or_error.t =
   Or_error.(
     function
     | `Lnot ->
@@ -301,7 +300,7 @@ let prefix_op :
         error_s
           [%message
             "Unsupported prefix operator"
-              ~got:(op : Act_c_lang.Ast_basic.Operators.Pre.t)])
+              ~got:(op : Act_c_lang.Operators.Pre.t)])
 
 let rec expr : Ast.Expr.t -> Expression.t Or_error.t =
   Or_error.Let_syntax.(
