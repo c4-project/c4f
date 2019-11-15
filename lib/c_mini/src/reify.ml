@@ -90,39 +90,89 @@ let uop_pre : Expression.Uop.t -> Act_c_lang.Operators.Pre.t = function
   | Expression.Uop.L_not ->
       `Lnot
 
+(** This module contains functions that try to calculate when brackets need to
+    be inserted into expression ASTs.
+
+    Working out where brackets need to go is a fairly complicated interaction of
+    C operator precedence and associativity rules. *)
 module Needs_brackets = struct
+  let uop_pre : Ast.Expr.t -> bool =
+    function
+    | Brackets _ ->
+      (* Already has brackets. *)
+      false
+    | Identifier _ | Constant _ | String _ ->
+      (* These are all primitives. *)
+      false
+    | Postfix _ ->
+      (* All postfix operators bind tighter than prefixes. *)
+      false
+    | Binary _ ->
+      (* All binary operators bind looser than prefixes, and so need brackets. *)
+      true
+    | Ternary _ ->
+      (* These bind looser than prefixes. *)
+      true
+    | Prefix _ ->
+      (* All prefixes bind equally tightly, and I'm not convinced there are any
+         cases in which brackets are needed, even when the . *)
+      false
+    | Cast _ | Call _ | Subscript _ | Field _ | Sizeof_type _ ->
+      (* These bind equally tightly to prefixes, but at time of writing I was a
+         little confused as to if and when brackets were needed, so this is a
+         conservative overapproximation. *)
+      true
+
   (* NB: This works ATM because all of the bops are left-associative and have
      the same precedence, and will need refining if any right-associative
-     Bops appear. *)
-  let bop (o : Act_c_lang.Operators.Bin.t) (expr : Ast.Expr.t)
+     Bops (assignments!) appear. *)
+  let bop (o : Act_c_lang.Operators.Bin.t) (operand : Ast.Expr.t)
       ~(is_left : bool) : bool =
-    match expr with
-    | Binary (Brackets _, _, _) when is_left ->
-        true
-    | Binary (_, _, Brackets _) when not is_left ->
-        true
+    match operand with
+    | Brackets _ ->
+      (* Already has brackets. *)
+      false
+    | Identifier _ | Constant _ | String _ ->
+      (* These are all primitives. *)
+      false
+    | Prefix _ | Postfix _ ->
+      (* All postfix operators bind tighter than binaries. *)
+      false
+    | Cast _ | Call _ | Subscript _ | Field _ | Sizeof_type _ ->
+      (* All of these also bind tighter than binaries. *)
+      false
+    | Ternary _ ->
+      (* These bind looser than binaries. *)
+      true
+    | Binary (_, #Act_c_lang.Operators.Assign.t, _) ->
+      (* At time of writing, assignments shouldn't turn up in the middle of
+         expressions.  However, in case they do, we'll be conservative and
+         add brackets (they tend to bind looser than other binary expressions,
+         anyway). *)
+      true
     | Binary (_, o', _) ->
-        is_left && not (Act_c_lang.Operators.Bin.equal o o')
-    | _ ->
-        false
+      (* We add brackets if this expression binds looser than its parent, or,
+        as [o] and [o'] at this stage should _both_ be left-associative, if
+        the inner binary is appearing on the LHS of the outer binary. *)
+      Act_c_lang.Operators.Bin.(binds_tighter o ~than:o'
+      || (binds_same o o' && is_left))
+
+  let maybe_bracket (expr : Ast.Expr.t) ~(f : Ast.Expr.t -> bool) : Ast.Expr.t =
+    if f expr then Ast.Expr.Brackets expr else expr
 end
 
 let bop_expr (op : Expression.Bop.t) (l : Ast.Expr.t) (r : Ast.Expr.t) :
     Ast.Expr.t =
   let op' = bop op in
-  let l' =
-    if Needs_brackets.bop op' l ~is_left:true then Ast.Expr.Brackets l else l
-  in
-  let r' =
-    if Needs_brackets.bop op' r ~is_left:false then Ast.Expr.Brackets r
-    else r
-  in
+  let l' = Needs_brackets.(maybe_bracket ~f:(bop op' ~is_left:true)) l in
+  let r' = Needs_brackets.(maybe_bracket ~f:(bop op' ~is_left:false)) r in
   Ast.Expr.Binary (l', op', r')
 
 let uop_expr (op : Expression.Uop.t) (x : Ast.Expr.t) : Ast.Expr.t =
   (* We don't have any postfix operators in mini-C yet. *)
   let op' = uop_pre op in
-  Ast.Expr.Prefix (op', x)
+  let x' = Needs_brackets.(maybe_bracket ~f:uop_pre) x in
+  Ast.Expr.Prefix (op', x')
 
 let expr : Expression.t -> Ast.Expr.t =
   Expression.reduce ~constant:constant_to_expr ~lvalue:lvalue_to_expr

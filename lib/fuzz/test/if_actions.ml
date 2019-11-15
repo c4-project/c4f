@@ -52,7 +52,7 @@ let%test_module "Surround" =
         P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
            bool c, int d, atomic_int e, int f, int foo, atomic_bool foobar)
         {
-            if ((d == 27) && a)
+            if (d == 27 && a)
             { atomic_store_explicit(x, 42, memory_order_seq_cst); ; }
             atomic_store_explicit(y, foo, memory_order_relaxed);
             if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }

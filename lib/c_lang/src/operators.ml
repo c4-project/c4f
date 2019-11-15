@@ -123,6 +123,9 @@ module Bin = struct
     | `Comma ->
         15
 
+  let binds_same : t -> t -> bool =
+    Comparable.lift Int.equal ~f:precedence
+
   let binds_tighter (this : t) ~(than : t) : bool =
     Comparable.lift Int.( < ) ~f:precedence this than
 
