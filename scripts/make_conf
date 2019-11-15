@@ -2,9 +2,11 @@
 
 """Automatically generates an act.conf for the local machine and puts it on stdout."""
 
+import argparse
 import collections
 import enum
 import itertools
+import pathlib
 import platform
 import subprocess
 import typing
@@ -66,10 +68,13 @@ class Backend:
 
     style: str
     cmd: str
+    c_model: typing.Optional[str]
 
     def print(self) -> None:
-        print(f"        style {self.style}")
-        print(f'        cmd   "{self.cmd}"')
+        print(f"        style   {self.style}")
+        print(f'        cmd     "{self.cmd}"')
+        if self.c_model is not None:
+            print(f'        c_model "{self.c_model}"')
 
 
 @dataclass
@@ -183,40 +188,51 @@ def lookup_local_compilers(arch: str) -> typing.Mapping[str, Compiler]:
 
 
 def herdtools_backend_stanzas(
-    cmd: str, style: str
+    cmd: str, style: str, c_model: typing.Optional[str]
 ) -> typing.Iterator[typing.Tuple[str, Backend]]:
-    yield (cmd, Backend(cmd=cmd, style=style))
+    yield (
+        cmd,
+        Backend(cmd=cmd, style=style, c_model=c_model if style == "herd" else None),
+    )
 
 
-def lookup_herdtools_backend(cmd: str, style: str) -> typing.Mapping[str, Backend]:
+def lookup_herdtools_backend(
+    cmd: str, style: str, c_model: typing.Optional[str]
+) -> typing.Mapping[str, Backend]:
     """Tests to see if the named Herdtools-style backend exists.
     If so, emits a dictionary containing one or more stanzas for it.
     If not, emits an empty dictionary.
     """
     return (
-        dict(herdtools_backend_stanzas(cmd, style))
+        dict(herdtools_backend_stanzas(cmd, style, c_model))
         if command_works(cmd, "-version")
         else {}
     )
 
 
-def lookup_herdtools_backends() -> typing.Mapping[str, Backend]:
+def lookup_herdtools_backends(
+    c_model: typing.Optional[str]
+) -> typing.Mapping[str, Backend]:
     return collections.ChainMap(
         *(
-            lookup_herdtools_backend(cmd, style)
+            lookup_herdtools_backend(cmd, style, c_model)
             for (style, cmds) in herdtools_backends.items()
             for cmd in cmds
         )
     )
 
 
-def lookup_local_backends() -> typing.Mapping[str, Backend]:
+def lookup_local_backends(
+    c_model: typing.Optional[str]
+) -> typing.Mapping[str, Backend]:
     # Space for future expansion
-    return lookup_herdtools_backends()
+    return lookup_herdtools_backends(c_model)
 
 
-def lookup_local_machine() -> Machine:
+def lookup_local_machine(c_model: typing.Optional[str]) -> Machine:
     """Looks up compilers and backends on this machine.
+
+    :param c_model: The C model override for herd-style backends, if any.
 
     :return: A `Machine` with the identifier "localhost", and any found
     compilers and backends on the local machine.
@@ -224,7 +240,7 @@ def lookup_local_machine() -> Machine:
     arch = platform.machine()
 
     compilers: typing.Mapping[str, Compiler] = lookup_local_compilers(arch)
-    backends: typing.Mapping[str, Backend] = lookup_local_backends()
+    backends: typing.Mapping[str, Backend] = lookup_local_backends(c_model)
 
     return Machine("localhost", arch, compilers, backends)
 
@@ -235,8 +251,22 @@ def print_default(mach: Machine) -> None:
     print("}")
 
 
-if __name__ == "__main__":
-    mach: Machine = lookup_local_machine()
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-c",
+        "--c-model",
+        metavar="FILE",
+        type=lambda x: pathlib.Path(x),
+        help="If supplied, the path to the C model to supply to 'herd'-like backends",
+    )
+    args = parser.parse_args()
+
+    mach: Machine = lookup_local_machine(args.c_model)
     mach.print()
     print()
     print_default(mach)
+
+
+if __name__ == "__main__":
+    main()
