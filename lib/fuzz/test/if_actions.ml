@@ -70,15 +70,18 @@ let%test_module "Surround" =
       end )
   end )
 
-let%test_module "Invert" = (module struct
-  let initial_state : Src.State.t = Lazy.force Subject.Test_data.state
-  let test : Src.Subject.Test.t = Lazy.force Subject.Test_data.test
-  let payload : Src.Path_shapes.program =
-    Src.Path_shapes.(in_func 0 @@ in_stms @@ in_stm 3 @@ this_stm)
+let%test_module "Invert" =
+  ( module struct
+    let initial_state : Src.State.t = Lazy.force Subject.Test_data.state
 
-  let%expect_test "resulting AST" =
-    Action.Test_utils.run_and_dump_test
-      (Src.If_actions.Invert.run test ~payload)
-        ~initial_state;
-    [%expect]
-end)
+    let test : Src.Subject.Test.t = Lazy.force Subject.Test_data.test
+
+    let payload : Src.Path_shapes.program =
+      Src.Path_shapes.(in_func 0 @@ in_stms @@ in_stm 3 @@ this_stm)
+
+    let%expect_test "resulting AST" =
+      Action.Test_utils.run_and_dump_test
+        (Src.If_actions.Invert.run test ~payload)
+        ~initial_state ;
+      [%expect]
+  end )

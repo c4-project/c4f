@@ -82,8 +82,8 @@ module Bin : sig
   include Ast_basic_types.Ast_node with type t := t
 
   val binds_same : t -> t -> bool
-  (** [binds_same x y] is true provided that [x] has the same precedence level
-      as [y]. *)
+  (** [binds_same x y] is true provided that [x] has the same precedence
+      level as [y]. *)
 
   val binds_tighter : t -> than:t -> bool
   (** [binds_tighter this ~than] is true provided that [this] binds tighter
