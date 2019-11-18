@@ -10,5 +10,6 @@
    compile
    delitmus
    dump-header
+   list-compilers
    modify-header
    replace-header

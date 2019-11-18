@@ -7,5 +7,4 @@
    :maxdepth: 2
    :caption: Sub-commands:
 
-   list-compilers
    list-predicates
