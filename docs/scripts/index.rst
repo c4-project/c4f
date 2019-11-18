@@ -19,7 +19,9 @@ These live in the ``./scripts`` directory.
    :caption: Contents:
 
    do_memalloy
+   do_memalloy_dnf
    do_memalloy_test
+   fuzz_and_test
    fuzz_many
    make_conf
    test_pipeline

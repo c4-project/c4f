@@ -121,6 +121,8 @@ WORKDIR /home/act
 # Copy over the memalloy directory.
 # Memalloy should change infrequently compared to ACT, so we copy it earlier.
 COPY --from=builder --chown=act /home/opam/memalloy memalloy/
+# This is required by Memalloy, and may need changing if we move away from X64.
+ENV OS amd64-linux
 
 # Copy over herdtools and their run-time data.
 COPY --from=builder --chown=act \

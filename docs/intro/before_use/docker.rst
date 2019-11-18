@@ -1,3 +1,5 @@
+.. _intro-before-use-docker:
+
 Using the ACT Docker image
 ==========================
 
