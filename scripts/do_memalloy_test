@@ -90,9 +90,7 @@ main() {
 	   FUZZ_PASSES FORCE_MEMALLOY DUNE_EXEC VERBOSE
   shift $((OPTIND-1))
 
-  if [[ ${DUNE_EXEC} = "true" ]]; then
-    act::log "%s: using 'dune exec' for ACT.\n" "$0"
-  fi
+  act::check_dune_exec
 
   if [[ $# -ne 1 ]]; then act::arg_error "need precisely one directory"; fi
   readonly MEMALLOY_DIR=$1
