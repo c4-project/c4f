@@ -42,10 +42,15 @@ WORKDIR /home/opam
 ENV JAVA_HEAP_SIZE 3g
 ENV JAVA_TOOL_OPTIONS -Dfile.encoding=UTF8
 
+# Install Memalloy's dependencies *before* fetching Memalloy, since they
+# probably change on a slower pace.
+RUN opam update && opam install xml-light ocamlfind ocamlbuild
 # Fetch and build Memalloy.
 RUN git clone git://github.com/JohnWickerson/memalloy
 WORKDIR /home/opam/memalloy
-RUN opam update && opam install xml-light ocamlfind ocamlbuild
+# At time of writing, the `dev` branch of Memalloy is much further along than
+# `master`, and includes fixes we need.
+RUN git checkout dev
 RUN eval $(opam env) && make install
 
 #
