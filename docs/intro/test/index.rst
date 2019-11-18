@@ -13,3 +13,11 @@ that performs the appropriate actions.  This allows some flexibility in how to
 handle tests: for example, the results from one long-running test can be
 inspected for compilation failures, then inspected again for postcondition
 failures at a later date, without re-running the test.
+
+There are also higher-level scripts, which
+
+.. toctree::
+   :maxdepth: 2
+
+   do_memalloy_test
+

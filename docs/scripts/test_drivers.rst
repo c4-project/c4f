@@ -1,3 +1,5 @@
+.. _scripts-test-drivers:
+
 Test drivers
 ============
 

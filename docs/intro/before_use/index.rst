@@ -9,4 +9,5 @@ Before using ACT
    :maxdepth: 2
    :caption: Contents:
 
+   docker
    autoconf
