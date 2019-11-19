@@ -208,8 +208,8 @@ module Invert : Action_types.S with type Payload.t = Path.program = struct
 
     let quickcheck_path (test : Subject.Test.t) :
         Path.program Base_quickcheck.Generator.t option =
-      Path_producers.Test.try_gen_transform_stm
-        ~predicate:Act_c_mini.Statement.is_if_statement test
+      let filter = Path_filter.(empty |> final_if_statements_only) in
+      Path_producers.Test.try_gen_transform_stm ~filter test
 
     let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t) :
         Path.program State.Monad.t =

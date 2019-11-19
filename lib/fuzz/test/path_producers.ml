@@ -79,7 +79,8 @@ let%test_module "Statement_list" =
           let gen =
             Act_fuzz.Path_producers.Statement_list.try_gen_transform_stm
               (Lazy.force Subject.Test_data.body_stms)
-              ~predicate:Act_c_mini.Statement.is_if_statement
+              ~filter:
+                Act_fuzz.Path_filter.(empty |> final_if_statements_only)
           in
           print_sample (Option.value_exn gen) ;
           [%expect {| (In_stm 3 This_stm) |}]

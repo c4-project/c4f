@@ -46,23 +46,25 @@ module rec Statement :
       ~while_loop:nope (* for now *) ~assign:nope ~atomic_cmpxchg:nope
       ~atomic_store:nope ~nop:nope
 
-  let try_gen_insert_stm (m : Subject.Statement.t) :
-      Path.stm Q.Generator.t option =
-    try_gen_recursively m ~if_stm:If_statement.try_gen_insert_stm
+  let try_gen_insert_stm ?(filter : Path_filter.t option)
+      (m : Subject.Statement.t) : Path.stm Q.Generator.t option =
+    try_gen_recursively m ~if_stm:(If_statement.try_gen_insert_stm ?filter)
 
-  let try_gen_transform_stm_list (m : Subject.Statement.t) :
-      Path.stm Q.Generator.t option =
-    try_gen_recursively m ~if_stm:If_statement.try_gen_transform_stm_list
+  let try_gen_transform_stm_list ?(filter : Path_filter.t option)
+      (m : Subject.Statement.t) : Path.stm Q.Generator.t option =
+    try_gen_recursively m
+      ~if_stm:(If_statement.try_gen_transform_stm_list ?filter)
 
-  let try_gen_transform_stm
-      ?(predicate : Subject.Statement.t -> bool = Fn.const true)
+  let try_gen_transform_stm ?(filter : Path_filter.t = Path_filter.empty)
       (stm : Subject.Statement.t) : Path.stm Q.Generator.t option =
     let gen_base =
-      Option.some_if (predicate stm) (Q.Generator.return Path.this_stm)
+      Option.some_if
+        (Path_filter.is_final_statement_ok filter ~stm)
+        (Q.Generator.return Path.this_stm)
     in
     let gen_rec =
       try_gen_recursively stm
-        ~if_stm:(If_statement.try_gen_transform_stm ~predicate)
+        ~if_stm:(If_statement.try_gen_transform_stm ~filter)
     in
     union_opt [gen_base; gen_rec]
 end
@@ -75,35 +77,34 @@ and Statement_list :
 
   type target = Subject.Statement.t list
 
-  let gen_insert_stm_on (index : int) (single_dest : Subject.Statement.t) :
-      t Q.Generator.t list =
+  let gen_insert_stm_on ?(filter : Path_filter.t option) (index : int)
+      (single_dest : Subject.Statement.t) : t Q.Generator.t list =
     let insert_after = Q.Generator.return (Path.insert (index + 1)) in
     let insert_into =
-      single_dest |> Statement.try_gen_insert_stm
+      single_dest
+      |> Statement.try_gen_insert_stm ?filter
       |> map_opt_gen ~f:(Path.in_stm index)
       |> Option.to_list
     in
     insert_after :: insert_into
 
-  let try_gen_insert_stm (dest : target) : Path.stm_list Q.Generator.t option
-      =
+  let try_gen_insert_stm ?(filter : Path_filter.t option) (dest : target) :
+      Path.stm_list Q.Generator.t option =
     Some
       (Q.Generator.union
          ( Q.Generator.return (Path.insert 0)
-         :: List.concat_mapi ~f:gen_insert_stm_on dest ))
+         :: List.concat_mapi ~f:(gen_insert_stm_on ?filter) dest ))
 
-  let gen_transform_stm_on
-      ?(predicate : (Subject.Statement.t -> bool) option) (index : int)
+  let gen_transform_stm_on ?(filter : Path_filter.t option) (index : int)
       (single_dest : Subject.Statement.t) : t Q.Generator.t option =
     single_dest
-    |> Statement.try_gen_transform_stm ?predicate
+    |> Statement.try_gen_transform_stm ?filter
     |> map_opt_gen ~f:(Path.in_stm index)
 
-  let try_gen_transform_stm
-      ?(predicate : (Subject.Statement.t -> bool) option) :
+  let try_gen_transform_stm ?(filter : Path_filter.t option) :
       target -> Path.stm_list Q.Generator.t option =
     Act_utils.My_list.guard_if_empty_opt ~f:(fun dest ->
-        union_opt (List.mapi ~f:(gen_transform_stm_on ?predicate) dest))
+        union_opt (List.mapi ~f:(gen_transform_stm_on ?filter) dest))
 
   let gen_transform_stm_list_here (dest : target) : t Q.Generator.t =
     Q.Generator.(
@@ -112,17 +113,20 @@ and Statement_list :
           Option.value_exn (Act_utils.My_list.Random.stride dest ~random))
       >>| fun (p, d) -> Path.On_stm_range (p, d))
 
-  let gen_transform_stm_list_on (index : int)
-      (single_dest : Subject.Statement.t) : t Q.Generator.t list =
-    single_dest |> Statement.try_gen_transform_stm_list
+  let gen_transform_stm_list_on ?(filter : Path_filter.t option)
+      (index : int) (single_dest : Subject.Statement.t) :
+      t Q.Generator.t list =
+    single_dest
+    |> Statement.try_gen_transform_stm_list ?filter
     |> map_opt_gen ~f:(Path.in_stm index)
     |> Option.to_list
 
-  let try_gen_transform_stm_list : target -> t Q.Generator.t option =
+  let try_gen_transform_stm_list ?(filter : Path_filter.t option) :
+      target -> t Q.Generator.t option =
     Act_utils.My_list.guard_if_empty ~f:(fun dest ->
         Q.Generator.union
           ( gen_transform_stm_list_here dest
-          :: List.concat_mapi dest ~f:gen_transform_stm_list_on ))
+          :: List.concat_mapi dest ~f:(gen_transform_stm_list_on ?filter) ))
 end
 
 and If_statement :
@@ -132,18 +136,6 @@ and If_statement :
   type t = Path.ifs
 
   type target = Subject.Statement.If.t
-
-  let gen_insert_stm_for_branch (branch : bool)
-      (branch_block : Subject.Block.t) : Path.ifs Q.Generator.t option =
-    map_opt_gen ~f:(Path.in_block branch)
-      (Statement_list.try_gen_insert_stm
-         (Act_c_mini.Block.statements branch_block))
-
-  let try_gen_insert_stm (ifs : Metadata.t Stm.If.t) :
-      Path.ifs Q.Generator.t option =
-    union_opt
-      [ gen_insert_stm_for_branch true (Stm.If.t_branch ifs)
-      ; gen_insert_stm_for_branch false (Stm.If.f_branch ifs) ]
 
   let gen_opt_over_block (branch : bool) (block : Subject.Block.t)
       ~(f : Subject.Statement.t list -> Path.stm_list Q.Generator.t option) :
@@ -159,14 +151,18 @@ and If_statement :
       [ gen_opt_over_block ~f true (Stm.If.t_branch ifs)
       ; gen_opt_over_block ~f false (Stm.If.f_branch ifs) ]
 
-  let try_gen_transform_stm
-      ?(predicate : (Subject.Statement.t -> bool) option) :
+  let try_gen_insert_stm ?(filter : Path_filter.t option) :
       Metadata.t Stm.If.t -> Path.ifs Q.Generator.t option =
-    gen_opt_over_blocks ~f:(Statement_list.try_gen_transform_stm ?predicate)
+    gen_opt_over_blocks ~f:(Statement_list.try_gen_insert_stm ?filter)
 
-  let try_gen_transform_stm_list :
+  let try_gen_transform_stm ?(filter : Path_filter.t option) :
       Metadata.t Stm.If.t -> Path.ifs Q.Generator.t option =
-    gen_opt_over_blocks ~f:Statement_list.try_gen_transform_stm_list
+    gen_opt_over_blocks ~f:(Statement_list.try_gen_transform_stm ?filter)
+
+  let try_gen_transform_stm_list ?(filter : Path_filter.t option) :
+      Metadata.t Stm.If.t -> Path.ifs Q.Generator.t option =
+    gen_opt_over_blocks
+      ~f:(Statement_list.try_gen_transform_stm_list ?filter)
 end
 
 module Thread :
@@ -177,22 +173,22 @@ module Thread :
 
   type target = Subject.Thread.t
 
-  let try_gen_insert_stm ({stms; _} : target) :
-      Path.func Q.Generator.t option =
-    map_opt_gen (Statement_list.try_gen_insert_stm stms) ~f:Path.in_stms
-
   let gen_opt_over_stms ({stms; _} : target)
       ~(f : Subject.Statement.t list -> Path.stm_list Q.Generator.t option) :
       Path.func Q.Generator.t option =
     map_opt_gen (f stms) ~f:Path.in_stms
 
-  let try_gen_transform_stm
-      ?(predicate : (Subject.Statement.t -> bool) option) :
+  let try_gen_insert_stm ?(filter : Path_filter.t option) :
       target -> Path.func Q.Generator.t option =
-    gen_opt_over_stms ~f:(Statement_list.try_gen_transform_stm ?predicate)
+    gen_opt_over_stms ~f:(Statement_list.try_gen_insert_stm ?filter)
 
-  let try_gen_transform_stm_list : target -> Path.func Q.Generator.t option =
-    gen_opt_over_stms ~f:Statement_list.try_gen_transform_stm_list
+  let try_gen_transform_stm ?(filter : Path_filter.t option) :
+      target -> Path.func Q.Generator.t option =
+    gen_opt_over_stms ~f:(Statement_list.try_gen_transform_stm ?filter)
+
+  let try_gen_transform_stm_list ?(filter : Path_filter.t option) :
+      target -> Path.func Q.Generator.t option =
+    gen_opt_over_stms ~f:(Statement_list.try_gen_transform_stm_list ?filter)
 end
 
 module Test :
@@ -207,15 +203,6 @@ module Test :
       'a list =
     List.mapi (Act_litmus.Test.Raw.threads test) ~f
 
-  let try_gen_insert_stm (test : target) : Path.program Q.Generator.t option
-      =
-    test
-    |> map_threads ~f:(fun index prog ->
-           map_opt_gen
-             (Thread.try_gen_insert_stm prog)
-             ~f:(Path.in_func index))
-    |> union_opt
-
   let gen_opt_over_threads (test : target)
       ~(f : Subject.Thread.t -> Path.func Q.Generator.t option) :
       Path.program Q.Generator.t option =
@@ -224,12 +211,15 @@ module Test :
            map_opt_gen (f prog) ~f:(Path.in_func index))
     |> union_opt
 
-  let try_gen_transform_stm
-      ?(predicate : (Subject.Statement.t -> bool) option) :
+  let try_gen_insert_stm ?(filter : Path_filter.t option) :
       target -> Path.program Q.Generator.t option =
-    gen_opt_over_threads ~f:(Thread.try_gen_transform_stm ?predicate)
+    gen_opt_over_threads ~f:(Thread.try_gen_insert_stm ?filter)
 
-  let try_gen_transform_stm_list :
+  let try_gen_transform_stm ?(filter : Path_filter.t option) :
       target -> Path.program Q.Generator.t option =
-    gen_opt_over_threads ~f:Thread.try_gen_transform_stm_list
+    gen_opt_over_threads ~f:(Thread.try_gen_transform_stm ?filter)
+
+  let try_gen_transform_stm_list ?(filter : Path_filter.t option) :
+      target -> Path.program Q.Generator.t option =
+    gen_opt_over_threads ~f:(Thread.try_gen_transform_stm_list ?filter)
 end
