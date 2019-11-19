@@ -83,5 +83,14 @@ let%test_module "Invert" =
       Action.Test_utils.run_and_dump_test
         (Src.If_actions.Invert.run test ~payload)
         ~initial_state ;
-      [%expect]
+      [%expect
+        {|
+        void P0(atomic_int *x, atomic_int *y)
+        {
+            atomic_store_explicit(x, 42, memory_order_seq_cst);
+            ;
+            atomic_store_explicit(y, foo, memory_order_relaxed);
+            if (!(foo == y)) {  } else
+            { atomic_store_explicit(x, 56, memory_order_seq_cst); }
+        } |}]
   end )
