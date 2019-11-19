@@ -75,6 +75,7 @@ let%test_module "int tests" =
                                 memory_order_seq_cst);
           atomic_store_explicit(y, foo, memory_order_relaxed);
           if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
+          if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
       } |}]
 
     let%expect_test "test int store: global variables" =

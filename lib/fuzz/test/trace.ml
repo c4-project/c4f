@@ -114,5 +114,15 @@ let%test_module "trace playback" =
                      (mo memory_order_seq_cst)))))
                  (metadata ((source Generated) (liveness Normal)))))
                (f_branch
+                ((statements ()) (metadata ((source Generated) (liveness Dead)))))))
+             (If_stm
+              ((cond (Constant (Bool false)))
+               (t_branch
+                ((statements
+                  ((Atomic_store
+                    ((src (Constant (Int 95))) (dst (Lvalue (Variable y)))
+                     (mo memory_order_seq_cst)))))
+                 (metadata ((source Generated) (liveness Dead)))))
+               (f_branch
                 ((statements ()) (metadata ((source Generated) (liveness Normal)))))))))))))) |}]
   end )

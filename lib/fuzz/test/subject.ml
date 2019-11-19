@@ -68,6 +68,18 @@ module Test_data = struct
                                ~dst:(Address.of_variable_str_exn "x")
                                ~mo:Mem_order.Seq_cst) ]
                       ())
+                 ~f_branch:(Src.Subject.Block.make_dead_code ()))
+          ; if_stm
+              (If.make
+                 ~cond:(Expression.bool_lit false)
+                 ~t_branch:
+                   (Src.Subject.Block.make_dead_code
+                      ~statements:
+                        [ atomic_store
+                            (Atomic_store.make ~src:(Expression.int_lit 95)
+                               ~dst:(Address.of_variable_str_exn "y")
+                               ~mo:Mem_order.Seq_cst) ]
+                      ())
                  ~f_branch:(Src.Subject.Block.make_generated ())) ])
 
   let threads : Src.Subject.Thread.t list Lazy.t =
@@ -131,6 +143,7 @@ let%test_module "using sample environment" =
             ;
             atomic_store_explicit(y, foo, memory_order_relaxed);
             if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
+            if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
         } |}]
 
     let%expect_test "list_to_litmus: sample threads with interspersed \
@@ -150,5 +163,6 @@ let%test_module "using sample environment" =
             ;
             atomic_store_explicit(y, foo, memory_order_relaxed);
             if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
+            if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
         } |}]
   end )

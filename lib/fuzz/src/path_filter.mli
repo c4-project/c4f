@@ -13,9 +13,11 @@
 
     When generating paths, it can be useful to restrict the possible targets
     of the path based on various predicates such as 'is the final statement
-    an if-statement?' or 'is the statement inside a dead code block?'. This
-    module provides an abstract data type for collecting and applying these
-    predicates. *)
+    an if-statement?' or 'is the statement inside a dead code block?'.
+
+    This module provides an abstract data type for collecting and applying
+    these predicates, as well as tracking information about the path as it is
+    constructed that can be filtered at the end of its construction. *)
 
 type t
 (** Opaque type of path filters. *)
@@ -33,9 +35,28 @@ val final_if_statements_only : t -> t
     any statement that is the final destination of the generated path must be
     an if statement. *)
 
+val in_dead_code_only : t -> t
+(** [in_dead_code_only filter] adds to [filter] the restriction that any path
+    must travel through at least one dead-code block. *)
+
+(** {1 Callbacks for the path producers} *)
+
+val update_with_block_metadata : t -> Metadata.t -> t
+(** [update_with_block_metadata filter block_metadata] updates the internal
+    filter compliance records in [filter] with the block metadata
+    [block_metadata]. This propagates information such as whether the block
+    is dead-code. *)
+
 (** {1 Consuming filters} *)
+
+val is_ok : t -> bool
+(** [is_ok filter ~stm] should be applied before constructing a path that
+    doesn't have any more specific filter consume function, and checks
+    whether the path has been constructed correctly according to the
+    predicates in [filter]. *)
 
 val is_final_statement_ok : t -> stm:Subject.Statement.t -> bool
 (** [is_final_statement_ok filter ~stm] should be applied before constructing
     a [This_stm] reference to [stm], and checks whether such a final
-    statement destination is ok according to the predicates in [filter]. *)
+    statement destination is ok according to the predicates in [filter]. It
+    subsumes [is_ok]. *)
