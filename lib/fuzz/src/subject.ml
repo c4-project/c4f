@@ -15,6 +15,10 @@ module Tx = Travesty_base_exts
 
 module Statement = struct
   type t = Metadata.t Act_c_mini.Statement.t [@@deriving sexp]
+
+  module If = struct
+    type t = Metadata.t Act_c_mini.Statement.If.t [@@deriving sexp]
+  end
 end
 
 module Block = struct

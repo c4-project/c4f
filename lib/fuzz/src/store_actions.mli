@@ -16,11 +16,11 @@
 module Random_state : sig
   type t
 
-  val make : store:Act_c_mini.Atomic_store.t -> path:Path_shapes.program -> t
+  val make : store:Act_c_mini.Atomic_store.t -> path:Path.program -> t
 
   val store : t -> Act_c_mini.Atomic_store.t
 
-  val path : t -> Path_shapes.program
+  val path : t -> Path.program
 end
 
 (** {2 Functors} *)

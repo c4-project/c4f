@@ -12,13 +12,11 @@
 open Base
 module Ac = Act_common
 
-let tid_of_path : Path_shapes.program -> int = function In_func (t, _) -> t
-
 module Random_state = struct
   (* We don't give [gen] here, because it depends quite a lot on the functor
      arguments of [Make]. *)
 
-  type t = {store: Act_c_mini.Atomic_store.t; path: Path_shapes.program}
+  type t = {store: Act_c_mini.Atomic_store.t; path: Path.program}
   [@@deriving fields, make, sexp]
 end
 
@@ -146,25 +144,27 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
       gen_store_with_envs src_mod dst_mod o ~random
 
     let gen_path (o : Ac.Output.t) (subject : Subject.Test.t)
-        ~(random : Splittable_random.State.t) : Path_shapes.program =
+        ~(random : Splittable_random.State.t) : Path.program State.Monad.t =
       log o "Generating path" ;
-      Base_quickcheck.Generator.generate ~random ~size:10
-        (Path.Test.gen_insert_stm subject)
+      Action.lift_quickcheck_opt ~random
+        (Path_producers.Test.try_gen_insert_stm subject)
 
     let gen' (o : Ac.Output.t) (subject : Subject.Test.t)
         ~(random : Splittable_random.State.t) (vars : Var.Map.t) :
-        t Or_error.t =
-      let path = gen_path o subject ~random in
-      Or_error.Let_syntax.(
-        let%map store = gen_store o vars ~tid:(tid_of_path path) ~random in
+        t State.Monad.t =
+      State.Monad.Let_syntax.(
+        let%bind path = gen_path o subject ~random in
+        let tid = Path.tid path in
+        let%map store =
+          State.Monad.Monadic.return (gen_store o vars ~tid ~random)
+        in
         Random_state.make ~store ~path)
 
     let gen (subject : Subject.Test.t) ~(random : Splittable_random.State.t)
         : t State.Monad.t =
-      let open State.Monad.Let_syntax in
-      let%bind o = State.Monad.output () in
-      State.Monad.with_vars_m
-        (Fn.compose State.Monad.Monadic.return (gen' o subject ~random))
+      State.Monad.Let_syntax.(
+        let%bind o = State.Monad.output () in
+        State.Monad.with_vars_m (gen' o subject ~random))
   end
 
   let available (_ : Subject.Test.t) =
@@ -205,11 +205,12 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
       ~payload:({store; path} : Random_state.t) :
       Subject.Test.t State.Monad.t =
     let store_stm = Act_c_mini.Statement.atomic_store store in
-    let tid = tid_of_path path in
+    let tid = Path.tid path in
     State.Monad.Let_syntax.(
       let%bind () = do_bookkeeping store ~tid in
       State.Monad.Monadic.return
-        (Path.Test.insert_stm path ~to_insert:store_stm ~target:subject))
+        (Path_consumers.Test.insert_stm path ~to_insert:store_stm
+           ~target:subject))
 end
 
 module Int : Action_types.S with type Payload.t = Random_state.t =

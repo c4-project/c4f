@@ -9,16 +9,58 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Module types for mini-C path-based traversal. *)
+(** Module types for fuzzer path producers and consumers. *)
 
 open Base
 
-(** General signature of paths. *)
-module type S_path = sig
+(** {1 Basic signature}
+
+    This signature is that common to both producers and consumers. *)
+module type S_base = sig
   type t
   (** Type of paths. *)
 
   type target
+  (** Type of path targets. *)
+end
+
+(** {1 Path producers}
+
+    General signature of path producers. *)
+module type S_producer = sig
+  include S_base
+
+  val try_gen_insert_stm : target -> t Base_quickcheck.Generator.t option
+  (** [try_gen_insert_stm dest] tries to create a Quickcheck-style generator
+      for statement insertion paths targeting [dest].
+
+      It can return [None] if [dest] has no position at which statements can
+      be inserted. *)
+
+  val try_gen_transform_stm_list :
+    target -> t Base_quickcheck.Generator.t option
+  (** [try_gen_transform_stm dest] tries to create a Quickcheck-style
+      generator for statement list transformation paths targeting [dest].
+
+      It can return [None] if [dest] has no position at which statement lists
+      can be transformed. *)
+
+  val try_gen_transform_stm :
+       ?predicate:(Subject.Statement.t -> bool)
+    -> target
+    -> t Base_quickcheck.Generator.t option
+  (** [try_gen_transform_stm ?predicate dest] tries to create a
+      Quickcheck-style generator for statement transformation paths targeting
+      [dest], and, optionally, reaching statements satisfying the predicate
+      [predicate]. It returns [None] if the container is empty or no such
+      statements were found. *)
+end
+
+(** {1 Path consumers}
+
+    General signature of path consumers. *)
+module type S_consumer = sig
+  include S_base
 
   val insert_stm :
        t
@@ -49,79 +91,4 @@ module type S_path = sig
       statement at [path] relative to [target] using [f]. Unlike
       {!transform_stm}, [transform_stm_list] can add and remove statements
       from the enclosing block. *)
-
-  val try_gen_transform_stm_list :
-    target -> t Base_quickcheck.Generator.t option
-  (** [try_gen_transform_stm dest] tries to create a Quickcheck-style
-      generator for statement list transformation paths targeting [dest].
-
-      It can return [None] if [dest] has no position at which statement lists
-      can be transformed. *)
-
-  val try_gen_transform_stm :
-       ?predicate:(Subject.Statement.t -> bool)
-    -> target
-    -> t Base_quickcheck.Generator.t option
-  (** [try_gen_transform_stm ?predicate dest] tries to create a
-      Quickcheck-style generator for statement transformation paths targeting
-      [dest], and, optionally, reaching statements satisfying the predicate
-      [predicate]. It returns [None] if the container is empty or no such
-      statements were found. *)
-end
-
-(** Signature of paths over statements and statement-like entities. *)
-module type S_statement = sig
-  type target
-
-  include S_path with type t = Path_shapes.stm and type target := target
-
-  val try_gen_insert_stm : target -> t Base_quickcheck.Generator.t option
-  (** [try_gen_insert_stm dest] tries to create a Quickcheck-style generator
-      for statement insertion paths targeting [dest].
-
-      It can return [None] if [dest] has no position at which statements can
-      be inserted. *)
-end
-
-(** Signature of paths over statement containers (such as lists).
-
-    The key difference between this and path modules over statements
-    themselves is that generating a statement insertion path is guaranteed to
-    succeed. *)
-module type S_stm_container = sig
-  include S_path
-
-  val gen_insert_stm : target -> t Base_quickcheck.Generator.t
-  (** [gen_insert_stm dest] creates a Quickcheck-style generator for
-      statement insertion paths targeting [dest]. *)
-end
-
-(** Signature of paths over conditionals *)
-module type S_if_statement = sig
-  type target
-
-  include S_path with type t := Path_shapes.ifs and type target := target
-
-  include
-    S_stm_container with type t := Path_shapes.ifs and type target := target
-end
-
-(** Signature of paths over statement lists *)
-module type S_statement_list = sig
-  type target
-
-  include
-    S_stm_container
-      with type t = Path_shapes.stm_list
-       and type target := target list
-end
-
-(** Signature of paths over functions *)
-module type S_function = sig
-  include S_stm_container with type t := Path_shapes.func
-end
-
-(** Signature of paths over programs *)
-module type S_program = sig
-  include S_stm_container with type t := Path_shapes.program
 end

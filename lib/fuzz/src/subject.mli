@@ -26,6 +26,10 @@ open Base
 (** Subject statements. *)
 module Statement : sig
   type t = Metadata.t Act_c_mini.Statement.t [@@deriving sexp]
+
+  module If : sig
+    type t = Metadata.t Act_c_mini.Statement.If.t [@@deriving sexp]
+  end
 end
 
 (** {2 Subject blocks} *)

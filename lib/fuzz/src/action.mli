@@ -129,6 +129,14 @@ val lift_quickcheck :
     into a state-monad action taking a random number generator [random] and
     outputting the randomly generated value. *)
 
+val lift_quickcheck_opt :
+     'a Base_quickcheck.Generator.t option
+  -> random:Splittable_random.State.t
+  -> 'a State.Monad.t
+(** [lift_quickcheck_opt gen_opt ~random] behaves as {!lift_quickcheck} if
+    [gen_opt] is [Some gen], and emits an error inside the state monad if
+    not. *)
+
 (** Adapts payload generators that don't depend on the state of the program. *)
 module Pure_payload (S : sig
   type t [@@deriving sexp]

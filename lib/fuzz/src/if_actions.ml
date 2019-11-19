@@ -15,7 +15,7 @@ module Surround = struct
   module Payload = struct
     (* The generation functions vary according to the specific action, and so
        appear in the functor below. *)
-    type t = {cond: Act_c_mini.Expression.t; path: Path_shapes.program}
+    type t = {cond: Act_c_mini.Expression.t; path: Path.program}
     [@@deriving make, sexp, fields]
   end
 
@@ -66,28 +66,27 @@ module Surround = struct
          maybe. *)
 
       let quickcheck_path (test : Subject.Test.t) :
-          Path_shapes.program Base_quickcheck.Generator.t =
-        Option.value_exn (Path.Test.try_gen_transform_stm_list test)
+          Path.program Base_quickcheck.Generator.t option =
+        Path_producers.Test.try_gen_transform_stm_list test
 
       let gen_path (test : Subject.Test.t)
-          ~(random : Splittable_random.State.t) :
-          Path_shapes.program State.Monad.t =
-        Action.lift_quickcheck (quickcheck_path test) ~random
+          ~(random : Splittable_random.State.t) : Path.program State.Monad.t
+          =
+        Action.lift_quickcheck_opt (quickcheck_path test) ~random
 
       let cond_env (vars : Var.Map.t) ~(tid : int) :
           (module Act_c_mini.Env_types.S_with_known_values) =
         Var.Map.env_module_with_known_values ~scope:(Local tid)
           ~predicates:[] vars
 
-      let quickcheck_cond (path : Path_shapes.program) :
+      let quickcheck_cond (path : Path.program) :
           Act_c_mini.Expression.t Base_quickcheck.Generator.t State.Monad.t =
+        let tid = Path.tid path in
         State.Monad.Let_syntax.(
-          let%map vars = State.Monad.peek State.vars in
-          let tid = Path.tid path in
-          let env = cond_env vars ~tid in
+          let%map env = State.Monad.with_vars (cond_env ~tid) in
           Basic.cond_gen env)
 
-      let gen_cond (path : Path_shapes.program)
+      let gen_cond (path : Path.program)
           ~(random : Splittable_random.State.t) :
           Act_c_mini.Expression.t State.Monad.t =
         State.Monad.Let_syntax.(
@@ -126,7 +125,7 @@ module Surround = struct
 
         This is a considerable over-approximation of the actual needed
         dependencies. *)
-    let add_cond_dependencies (path : Path_shapes.program)
+    let add_cond_dependencies (path : Path.program)
         (cond : Act_c_mini.Expression.t) : unit State.Monad.t =
       (* TODO(@MattWindsor91): it would be pretty cool for the lvalues to
          track whether or not they are being used in a tautology, once we add
@@ -143,7 +142,7 @@ module Surround = struct
         Let_syntax.(
           let%bind () = add_cond_dependencies path cond in
           Monadic.return
-            (Path.Test.transform_stm_list path ~target:test
+            (Path_consumers.Test.transform_stm_list path ~target:test
                ~f:(wrap_in_if ~cond))))
   end
 
@@ -192,8 +191,7 @@ module Surround = struct
   end)
 end
 
-module Invert : Action_types.S with type Payload.t = Path_shapes.program =
-struct
+module Invert : Action_types.S with type Payload.t = Path.program = struct
   let name = Act_common.Id.of_string_list ["flow"; "invert-if"]
 
   let readme () =
@@ -206,17 +204,16 @@ struct
     |> State.Monad.return
 
   module Payload = struct
-    type t = Path_shapes.program [@@deriving sexp]
+    type t = Path.program [@@deriving sexp]
 
     let quickcheck_path (test : Subject.Test.t) :
-        Path_shapes.program Base_quickcheck.Generator.t =
-      Option.value_exn
-        (Path.Test.try_gen_transform_stm
-           ~predicate:Act_c_mini.Statement.is_if_statement test)
+        Path.program Base_quickcheck.Generator.t option =
+      Path_producers.Test.try_gen_transform_stm
+        ~predicate:Act_c_mini.Statement.is_if_statement test
 
     let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t) :
-        Path_shapes.program State.Monad.t =
-      Action.lift_quickcheck (quickcheck_path test) ~random
+        Path.program State.Monad.t =
+      Action.lift_quickcheck_opt (quickcheck_path test) ~random
   end
 
   let invert_if (ifs : Metadata.t Act_c_mini.Statement.If.t) :
@@ -247,5 +244,5 @@ struct
   let run (test : Subject.Test.t) ~(payload : Payload.t) :
       Subject.Test.t State.Monad.t =
     State.Monad.Monadic.return
-      (Path.Test.transform_stm payload ~target:test ~f:invert_stm)
+      (Path_consumers.Test.transform_stm payload ~target:test ~f:invert_stm)
 end

@@ -32,7 +32,7 @@ module Surround : sig
     type t
     (** Opaque type of payloads. *)
 
-    val make : cond:Act_c_mini.Expression.t -> path:Path_shapes.program -> t
+    val make : cond:Act_c_mini.Expression.t -> path:Path.program -> t
     (** [make ~cond ~path] makes a payload given a specific condition
         expression [cond] and statement-list selecting path [path]. *)
   end
@@ -52,4 +52,4 @@ end
 
 (** {1 Inverting existing if statements} *)
 
-module Invert : Action_types.S with type Payload.t = Path_shapes.program
+module Invert : Action_types.S with type Payload.t = Path.program

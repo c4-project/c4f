@@ -15,8 +15,8 @@ module Src = Act_fuzz
 
 let%test_module "int tests" =
   ( module struct
-    let path : Src.Path_shapes.program Lazy.t =
-      lazy Src.Path_shapes.(in_func 0 (in_stms (insert 2)))
+    let path : Src.Path.program Lazy.t =
+      lazy Src.Path.(in_func 0 (in_stms (insert 2)))
 
     let store : Act_c_mini.Atomic_store.t Lazy.t =
       lazy

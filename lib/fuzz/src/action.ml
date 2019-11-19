@@ -36,6 +36,19 @@ let lift_quickcheck (type a) (gen : a Base_quickcheck.Generator.t)
   State.Monad.return
     (Base_quickcheck.Generator.generate ~size:10 ~random gen)
 
+let lift_quickcheck_opt (type a)
+    (gen_opt : a Base_quickcheck.Generator.t option)
+    ~(random : Splittable_random.State.t) : a State.Monad.t =
+  State.Monad.Let_syntax.(
+    let%bind gen =
+      State.Monad.Monadic.return
+        (Result.of_option gen_opt
+           ~error:
+             (Error.of_string
+                "A required Quickcheck generator failed to materialise."))
+    in
+    lift_quickcheck gen ~random)
+
 let always : Subject.Test.t -> bool State.Monad.t =
   Fn.const (State.Monad.return true)
 
