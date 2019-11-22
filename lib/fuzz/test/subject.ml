@@ -93,16 +93,6 @@ module Test_data = struct
       Act_litmus.Test.Raw.make ~header ~threads)
 end
 
-let%test_module "Thread" =
-  ( module struct
-    let%expect_test "empty thread has no statements" =
-      Fmt.(
-        pr "%a@."
-          (using Src.Subject.Thread.has_statements bool)
-          Src.Subject.Thread.empty) ;
-      [%expect {| false |}]
-  end )
-
 let%test_module "using sample environment" =
   ( module struct
     type r = Act_c_mini.Litmus.Lang.Program.t list [@@deriving sexp_of]

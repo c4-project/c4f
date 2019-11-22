@@ -27,9 +27,19 @@ type t [@@deriving sexp]
 
 (** {2 Constructors} *)
 
-val make : ?weights:(Act_common.Id.t, int) List.Assoc.t -> unit -> t
-(** [make ?weights ()] constructs a fuzzer configuration with the given
-    action weights table (defaulting to empty). *)
+val make :
+     ?weights:(Act_common.Id.t, int) List.Assoc.t
+  -> ?max_passes:int
+  -> unit
+  -> t
+(** [make ?weights ?max_passes ()] constructs a fuzzer configuration with the
+    given action weights table [weights] (defaulting to empty), and maximum
+    number of passes [max_passes] (defaulting to a sensible number) *)
+
+(** {2 Accessors} *)
+
+val max_passes : t -> int
+(** [max_passes cfg] gets the configured maximum number of passes in [cfg]. *)
 
 (** {2 Actions on a fuzzer configuration} *)
 

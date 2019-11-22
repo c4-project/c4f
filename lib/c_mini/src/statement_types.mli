@@ -93,6 +93,13 @@ module type S_statement = sig
       do-while) loop, or a composite statement for which [has_while_loops] is
       true for at least one sub-statement. *)
 
+  val has_blocks_with_metadata : 'meta t -> predicate:('meta -> bool) -> bool
+  (** [has_blocks_with_metadata stm ~predicate] is true provided that [stm]
+      has at least one block for which [predicate] is true on that block's
+      metadata.
+
+      This is useful for tracking things like the existence of dead-code. *)
+
   (** {3 Traversing} *)
 
   module Base_map (M : Monad.S) : sig

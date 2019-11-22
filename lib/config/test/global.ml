@@ -52,7 +52,7 @@ let%test_module "accessors" =
 
     let%expect_test "fuzz" =
       print_s [%sexp (Global.fuzz global : Act_fuzz.Config.t)] ;
-      [%expect {| ((weights ())) |}]
+      [%expect {| ((weights ()) (max_passes 20)) |}]
 
     let%expect_test "machines" =
       let machines =

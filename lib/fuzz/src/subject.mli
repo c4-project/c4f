@@ -77,14 +77,6 @@ module Thread : sig
   (** [of_litmus func] converts a mini-model C function [func] to the
       intermediate form used for fuzzing. *)
 
-  val has_statements : t -> bool
-  (** [has_statements prog] is true if, and only if, [prog] contains at least
-      one statement. *)
-
-  val has_if_statements : t -> bool
-  (** [has_statements prog] is true if, and only if, [prog] contains at least
-      one if statement. *)
-
   val to_function :
        t
     -> vars:Var.Map.t
@@ -121,6 +113,20 @@ module Test : sig
       test from the subject [subject], using the variable map [vars] to
       reconstitute parameters. It may fail if the resulting litmus is
       invalid---generally, this signifies an internal error. *)
+
+  (** {3 Availability queries} *)
+
+  val has_statements : t -> bool
+  (** [has_statements test] is true if, and only if, [test] contains at least
+      one statement. *)
+
+  val has_if_statements : t -> bool
+  (** [has_statements test] is true if, and only if, [test] contains at least
+      one if statement. *)
+
+  val has_dead_code_blocks : t -> bool
+  (** [has_dead_code_blocks test] is true if, and only if, [test] contains at
+      least one dead code block. *)
 
   (** {3 Helpers for mutating tests} *)
 

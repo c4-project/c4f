@@ -28,7 +28,10 @@ let make_rng : int option -> Splittable_random.State.t = function
     specific to how we choose actions, etc). *)
 module Runner_state = struct
   type t =
-    {pool: Action.Pool.t; random: Splittable_random.State.t; trace: Trace.t}
+    { pool: Action.Pool.t
+    ; random: Splittable_random.State.t
+    ; trace: Trace.t
+    ; cap: int }
   [@@deriving fields]
 
   module Monad = Travesty.State_transform.Make (struct
@@ -92,7 +95,7 @@ let mutate_subject_step (subject : Subject.Test.t) :
 let mutate_subject (subject : Subject.Test.t) :
     Subject.Test.t Runner_state.Monad.t =
   Runner_state.Monad.Let_syntax.(
-    let cap = 10 in
+    let%bind cap = Runner_state.(Monad.peek cap) in
     let%map _, subject' =
       Runner_state.Monad.fix (cap, subject)
         ~f:(fun mu (remaining, subject') ->
@@ -105,11 +108,12 @@ let mutate_subject (subject : Subject.Test.t) :
 
 let make_runner_state (seed : int option) (config : Config.t) :
     Runner_state.t Or_error.t =
+  let cap = Config.max_passes config in
   let random = make_rng seed in
   let trace = Trace.empty in
   Or_error.Let_syntax.(
     let%map pool = Config.make_pool config in
-    {Runner_state.random; trace; pool})
+    {Runner_state.random; cap; trace; pool})
 
 let make_output (rstate : Runner_state.t) (subject : Subject.Test.t) :
     Trace.t Output.t =

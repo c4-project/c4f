@@ -126,6 +126,12 @@ module Main :
       ~(if_stm : meta if_statement -> bool) : meta t -> bool =
     reduce ~while_loop ~if_stm ~prim:(Fn.const false)
 
+  let true_of_any_if_branch_stm (m : 'meta if_statement)
+      ~(predicate : 'meta t -> bool) : bool =
+    List.exists
+      (Block.statements m.t_branch @ Block.statements m.f_branch)
+      ~f:predicate
+
   let is_if_statement (m : 'meta t) : bool =
     is_not_prim_and m ~if_stm:(Fn.const true) ~while_loop:(Fn.const false)
 
@@ -135,10 +141,21 @@ module Main :
 
   let rec has_while_loops (m : 'meta t) : bool =
     is_not_prim_and m ~while_loop:(Fn.const true)
-      ~if_stm:(fun {t_branch; f_branch; _} ->
-        List.exists
-          (Block.statements t_branch @ Block.statements f_branch)
-          ~f:has_while_loops)
+      ~if_stm:(true_of_any_if_branch_stm ~predicate:has_while_loops)
+
+  let has_blocks_with_metadata (m : 'meta t) ~(predicate : 'meta -> bool) :
+      bool =
+    let rec mu x =
+      is_not_prim_and x
+        ~while_loop:(fun {body; _} ->
+          predicate (Block.metadata body)
+          || List.exists (Block.statements body) ~f:mu)
+        ~if_stm:(fun ifs ->
+          predicate (Block.metadata ifs.t_branch)
+          || predicate (Block.metadata ifs.f_branch)
+          || true_of_any_if_branch_stm ifs ~predicate:mu)
+    in
+    mu m
 
   module Base_map (M : Monad.S) = struct
     module F = Travesty.Traversable.Helpers (M)

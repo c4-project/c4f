@@ -102,9 +102,7 @@ module Surround = struct
     end
 
     let available (test : Subject.Test.t) : bool State.Monad.t =
-      test |> Act_litmus.Test.Raw.threads
-      |> List.exists ~f:Subject.Thread.has_statements
-      |> State.Monad.return
+      test |> Subject.Test.has_statements |> State.Monad.return
 
     let wrap_in_if_raw (statements : Metadata.t Act_c_mini.Statement.t list)
         ~(cond : Act_c_mini.Expression.t) : Metadata.t Act_c_mini.Statement.t
@@ -199,9 +197,7 @@ module Invert : Action_types.S with type Payload.t = Path.program = struct
       {| Flips the conditional and branches of an if statement. |}
 
   let available (test : Subject.Test.t) : bool State.Monad.t =
-    test |> Act_litmus.Test.Raw.threads
-    |> List.exists ~f:Subject.Thread.has_if_statements
-    |> State.Monad.return
+    test |> Subject.Test.has_if_statements |> State.Monad.return
 
   module Payload = struct
     type t = Path.program [@@deriving sexp]

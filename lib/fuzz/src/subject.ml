@@ -19,6 +19,10 @@ module Statement = struct
   module If = struct
     type t = Metadata.t Act_c_mini.Statement.If.t [@@deriving sexp]
   end
+
+  let has_dead_code_blocks : t -> bool =
+    Act_c_mini.Statement.has_blocks_with_metadata
+      ~predicate:Metadata.is_dead_code
 end
 
 module Block = struct
@@ -43,6 +47,9 @@ module Thread = struct
 
   let has_if_statements (p : t) : bool =
     List.exists p.stms ~f:Act_c_mini.Statement.has_if_statements
+
+  let has_dead_code_blocks (p : t) : bool =
+    List.exists p.stms ~f:Statement.has_dead_code_blocks
 
   let statements_of_function (func : unit Act_c_mini.Function.t) :
       Statement.t list =
@@ -109,6 +116,18 @@ module Test = struct
     let threads = Act_litmus.Test.Raw.threads subject in
     let threads' = Thread.list_to_litmus ~vars threads in
     Act_c_mini.Litmus.Test.make ~header ~threads:threads'
+
+  let at_least_one_thread_with (p : t) ~(f : Thread.t -> bool) : bool =
+    List.exists (Act_litmus.Test.Raw.threads p) ~f
+
+  let has_statements : t -> bool =
+    at_least_one_thread_with ~f:Thread.has_statements
+
+  let has_if_statements : t -> bool =
+    at_least_one_thread_with ~f:Thread.has_if_statements
+
+  let has_dead_code_blocks : t -> bool =
+    at_least_one_thread_with ~f:Thread.has_dead_code_blocks
 
   let add_var_to_init (subject : t) (var : Ac.C_id.t)
       (initial_value : Act_c_mini.Constant.t) : t Or_error.t =

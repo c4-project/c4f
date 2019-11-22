@@ -147,6 +147,20 @@ end) : Action_types.S_payload with type t = S.t
 module No_payload : Action_types.S_payload with type t = unit
 (** Dummy payload module for actions that take no payload. *)
 
+(** Scaffolding for building payload generators that just build program
+    paths. *)
+module Program_path_payload (S : sig
+  val build_filter : Path_filter.t -> Path_filter.t
+  (** [build_filter flt] should apply the path filter predicates needed for
+      the payload generator to [flt]. *)
+
+  val gen :
+       Subject.Test.t
+    -> filter:Path_filter.t
+    -> Path.program Base_quickcheck.Generator.t option
+  (** [gen] should be a path shape generator. *)
+end) : Action_types.S_payload with type t = Path.program
+
 (** Makes a basic logging function for an action. *)
 module Make_log (B : sig
   val name : Act_common.Id.t

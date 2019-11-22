@@ -1,3 +1,6 @@
+flow.dead-return:
+  Weight: 15x
+  Summary: Inserts a return statement into a random dead-code location.
 flow.if.duplicate:
   Weight: 15x
   Summary:

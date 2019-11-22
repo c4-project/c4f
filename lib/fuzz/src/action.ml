@@ -160,6 +160,26 @@ end) : Action_types.S_payload with type t = S.t = struct
     lift_quickcheck S.quickcheck_generator ~random
 end
 
+module Program_path_payload (S : sig
+  val build_filter : Path_filter.t -> Path_filter.t
+
+  val gen :
+       Subject.Test.t
+    -> filter:Path_filter.t
+    -> Path.program Base_quickcheck.Generator.t option
+end) : Action_types.S_payload with type t = Path.program = struct
+  type t = Path.program [@@deriving sexp]
+
+  let quickcheck_path (test : Subject.Test.t) :
+      Path.program Base_quickcheck.Generator.t option =
+    let filter = S.build_filter Path_filter.empty in
+    S.gen ~filter test
+
+  let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t) :
+      Path.program State.Monad.t =
+    lift_quickcheck_opt (quickcheck_path test) ~random
+end
+
 module No_payload : Action_types.S_payload with type t = unit = struct
   include Unit
 
