@@ -32,9 +32,16 @@ type t =
 
 let variable (v : Ac.C_id.t) : t = lvalue (Lvalue.variable v)
 
+let of_variable_str_exn (s : string) : t =
+  s |> Act_common.C_id.of_string |> variable
+
 let int_lit (i : int) : t = constant (Constant.int i)
 
 let bool_lit (b : bool) : t = constant (Constant.bool b)
+
+let truth : t = bool_lit true
+
+let falsehood : t = bool_lit false
 
 let eq : t -> t -> t = bop Bop.Eq
 

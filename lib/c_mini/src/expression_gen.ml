@@ -172,7 +172,7 @@ end = struct
        can't possibly work---eg, an atomic load when we don't have any atomic
        variables. *)
     eval_guards
-      [ (true, fun () -> Q.Generator.return (Expression.bool_lit true))
+      [ (true, fun () -> Q.Generator.return Expression.truth)
       ; ( Lazy.force is_var_eq_tenable
         , fun () ->
             let module Var_eq = Known_value_comparisons (Env) in

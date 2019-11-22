@@ -50,7 +50,7 @@ module Test_data = struct
           ; nop ()
           ; atomic_store
               (Atomic_store.make
-                 ~src:(Expression.variable (Act_common.C_id.of_string "foo"))
+                 ~src:(Expression.of_variable_str_exn "foo")
                  ~dst:(Address.of_variable_str_exn "y")
                  ~mo:Mem_order.Relaxed)
           ; if_stm
@@ -58,8 +58,7 @@ module Test_data = struct
                  ~cond:
                    Expression.(
                      Infix.(
-                       Expression.variable (Act_common.C_id.of_string "foo")
-                       == Expression.variable (Act_common.C_id.of_string "y")))
+                       of_variable_str_exn "foo" == of_variable_str_exn "y"))
                  ~t_branch:
                    (Src.Subject.Block.make_generated
                       ~statements:
@@ -70,8 +69,7 @@ module Test_data = struct
                       ())
                  ~f_branch:(Src.Subject.Block.make_dead_code ()))
           ; if_stm
-              (If.make
-                 ~cond:(Expression.bool_lit false)
+              (If.make ~cond:Expression.falsehood
                  ~t_branch:
                    (Src.Subject.Block.make_dead_code
                       ~statements:

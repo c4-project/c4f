@@ -28,29 +28,23 @@ let%test_module "Eval" =
         ~env:(Src.Address.eval_on_env (Lazy.force Env.det_known_value_mod))
 
     let invalid_expr : Src.Expression.t =
-      Src.Expression.(eq (int_lit 27) (bool_lit false))
+      Src.Expression.(eq (int_lit 27) falsehood)
 
     let%expect_test "example true 'pure' Boolean expression" =
       test_pure
         Src.Expression.(
-          l_and
-            (eq (int_lit 27) (int_lit 27))
-            (l_or (bool_lit true) (bool_lit false))) ;
+          l_and (eq (int_lit 27) (int_lit 27)) (l_or truth falsehood)) ;
       [%expect {| (Ok (Bool true)) |}]
 
     let%expect_test "example false 'pure' Boolean expression" =
       test_pure
         Src.Expression.(
-          l_and
-            (eq (int_lit 27) (int_lit 27))
-            (l_and (bool_lit true) (bool_lit false))) ;
+          l_and (eq (int_lit 27) (int_lit 27)) (l_and truth falsehood)) ;
       [%expect {| (Ok (Bool false)) |}]
 
     let%expect_test "example short-circuiting true 'pure' Boolean expression"
         =
-      test_pure
-        Src.Expression.(
-          l_or (l_or (bool_lit true) (bool_lit false)) invalid_expr) ;
+      test_pure Src.Expression.(l_or (l_or truth falsehood) invalid_expr) ;
       [%expect {| (Ok (Bool true)) |}]
 
     let%expect_test "example short-circuiting false 'pure' Boolean \
@@ -74,14 +68,13 @@ let%test_module "Eval" =
             (eq
                (lvalue (Src.Lvalue.variable (Act_common.C_id.of_string "x")))
                (int_lit 27))
-            (l_or (bool_lit true) (bool_lit false))) ;
+            (l_or truth falsehood)) ;
       [%expect {| (Ok (Bool true)) |}]
 
     let%expect_test "example false env-sensitive Boolean expression" =
       test_mod
         Src.Expression.(
-          l_and
-            (l_or (bool_lit true) (bool_lit false))
+          l_and (l_or truth falsehood)
             (eq
                (lvalue (Src.Lvalue.variable (Act_common.C_id.of_string "y")))
                (int_lit 27))) ;

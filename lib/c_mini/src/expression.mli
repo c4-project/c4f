@@ -49,9 +49,6 @@ end
 val atomic_load : Atomic_load.t -> t
 (** [atomic_load a] lifts an atomic load [a] to an expression. *)
 
-val constant : Constant.t -> t
-(** [constant k] lifts a constant [k] to an expression. *)
-
 val bop : Bop.t -> t -> t -> t
 (** [bop operator l_operand r_operand] builds an arbitrary binary operator
     expression. *)
@@ -65,13 +62,13 @@ val eq : t -> t -> t
 (** {2 Logical connectives} *)
 
 val l_and : t -> t -> t
-(** [l_and l r] builds a logical AND expression. *)
+(** [l_and l r] builds a logical AND expression. It does not simplify. *)
 
 val l_or : t -> t -> t
-(** [l_or l r] builds a logical OR expression. *)
+(** [l_or l r] builds a logical OR expression. It does not simplify. *)
 
 val l_not : t -> t
-(** [l_not x] builds a logical NOT over [x]. *)
+(** [l_not x] builds a logical NOT over [x]. It does not simplify. *)
 
 (** {2 Lvalues} *)
 
@@ -81,13 +78,28 @@ val lvalue : Lvalue.t -> t
 val variable : Act_common.C_id.t -> t
 (** [variable v] lifts a variable reference [v] to an expression. *)
 
+val of_variable_str_exn : string -> t
+(** [of_variable_str_exn vs] tries to construct a reference to a variable
+    whose name is the string [vs]. It fails with an exception if [vs] is an
+    invalid C identifier. This function is for use mainly in testing, and
+    shouldn't be used on user-supplied C code. *)
+
 (** {2 Literals} *)
+
+val constant : Constant.t -> t
+(** [constant k] lifts a constant [k] to an expression. *)
 
 val bool_lit : bool -> t
 (** [bool_lit b] lifts a Boolean literal [b] to an expression. *)
 
 val int_lit : int -> t
 (** [int_lit i] lifts an integer literal [i] to an expression. *)
+
+val truth : t
+(** [truth] is the 'true' Boolean constant. *)
+
+val falsehood : t
+(** [falsehood] is the 'false' Boolean constant. *)
 
 (** {2 Infix constructors} *)
 

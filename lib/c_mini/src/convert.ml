@@ -270,9 +270,9 @@ let expr_call_table :
 let identifier_to_expr (id : Ac.C_id.t) : Expression.t =
   match Ac.C_id.to_string id with
   | "true" ->
-      Expression.bool_lit true
+      Expression.truth
   | "false" ->
-      Expression.bool_lit false
+      Expression.falsehood
   | _ ->
       Expression.lvalue (Lvalue.variable id)
 
