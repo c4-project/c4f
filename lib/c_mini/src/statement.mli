@@ -16,7 +16,7 @@
     We treat some things that are technically expressions in C as statements,
     for simplicity. *)
 module rec Main :
-  (Types.S_statement
+  (Statement_types.S_statement
     with type address := Address.t
      and type identifier := Act_c_lang.Ast_basic.Identifier.t
      and type lvalue := Lvalue.t
@@ -27,7 +27,7 @@ module rec Main :
      and type 'meta while_loop := 'meta While.t)
 
 and If :
-  (Types.S_if_statement
+  (Statement_types.S_if_statement
     with type address := Address.t
      and type identifier := Act_c_lang.Ast_basic.Identifier.t
      and type lvalue := Lvalue.t
@@ -35,7 +35,7 @@ and If :
      and type 'meta stm := 'meta Main.t)
 
 and While :
-  (Types.S_while_loop
+  (Statement_types.S_while_loop
     with type address := Address.t
      and type identifier := Act_c_lang.Ast_basic.Identifier.t
      and type lvalue := Lvalue.t

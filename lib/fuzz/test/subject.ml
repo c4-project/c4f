@@ -47,7 +47,7 @@ module Test_data = struct
               (Atomic_store.make ~src:(Expression.int_lit 42)
                  ~dst:(Address.of_variable_str_exn "x")
                  ~mo:Mem_order.Seq_cst)
-          ; nop ()
+          ; nop Src.Metadata.generated
           ; atomic_store
               (Atomic_store.make
                  ~src:(Expression.of_variable_str_exn "foo")

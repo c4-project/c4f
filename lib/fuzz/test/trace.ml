@@ -98,20 +98,23 @@ let%test_module "trace playback" =
         (threads
          (((decls ())
            (stms
-            ((Atomic_store
-              ((src (Constant (Int 42))) (dst (Lvalue (Variable x)))
-               (mo memory_order_seq_cst)))
-             Nop
-             (Atomic_store
-              ((src (Lvalue (Variable foo))) (dst (Lvalue (Variable y)))
-               (mo memory_order_relaxed)))
+            ((Prim
+              (Atomic_store
+               ((src (Constant (Int 42))) (dst (Lvalue (Variable x)))
+                (mo memory_order_seq_cst))))
+             (Prim (Nop ((source Generated) (liveness Normal))))
+             (Prim
+              (Atomic_store
+               ((src (Lvalue (Variable foo))) (dst (Lvalue (Variable y)))
+                (mo memory_order_relaxed))))
              (If_stm
               ((cond (Bop Eq (Lvalue (Variable foo)) (Lvalue (Variable y))))
                (t_branch
                 ((statements
-                  ((Atomic_store
-                    ((src (Constant (Int 56))) (dst (Lvalue (Variable x)))
-                     (mo memory_order_seq_cst)))))
+                  ((Prim
+                    (Atomic_store
+                     ((src (Constant (Int 56))) (dst (Lvalue (Variable x)))
+                      (mo memory_order_seq_cst))))))
                  (metadata ((source Generated) (liveness Normal)))))
                (f_branch
                 ((statements ()) (metadata ((source Generated) (liveness Dead)))))))
@@ -119,9 +122,10 @@ let%test_module "trace playback" =
               ((cond (Constant (Bool false)))
                (t_branch
                 ((statements
-                  ((Atomic_store
-                    ((src (Constant (Int 95))) (dst (Lvalue (Variable y)))
-                     (mo memory_order_seq_cst)))))
+                  ((Prim
+                    (Atomic_store
+                     ((src (Constant (Int 95))) (dst (Lvalue (Variable y)))
+                      (mo memory_order_seq_cst))))))
                  (metadata ((source Generated) (liveness Dead)))))
                (f_branch
                 ((statements ()) (metadata ((source Generated) (liveness Normal)))))))))))))) |}]

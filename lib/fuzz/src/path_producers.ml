@@ -46,8 +46,7 @@ module rec Statement :
       Path.stm Q.Generator.t option =
     Stm.reduce m
       ~if_stm:(fun x -> map_opt_gen ~f:Path.in_if (if_stm x))
-      ~while_loop:nope (* for now *) ~assign:nope ~atomic_cmpxchg:nope
-      ~atomic_store:nope ~nop:nope
+      ~while_loop:nope (* for now *) ~prim:nope
 
   let try_gen_insert_stm ?(filter : Path_filter.t option)
       (m : Subject.Statement.t) : Path.stm Q.Generator.t option =

@@ -35,10 +35,7 @@ end
    abbreviation. However, declaring statement inline _also_ means we can't
    use ppx. Hopefully I picked the right one out of Scylla and Charybdis. *)
 type 'meta statement =
-  | Assign of Assign.t
-  | Atomic_store of Atomic_store.t
-  | Atomic_cmpxchg of Atomic_cmpxchg.t
-  | Nop
+  | Prim of 'meta Prim_statement.t
   | If_stm of 'meta if_statement
   | While_loop of 'meta while_loop
 [@@deriving sexp, equal]
@@ -77,7 +74,7 @@ module Whiles_base_map (M : Monad.S) = struct
 end
 
 module Main :
-  Types.S_statement
+  Statement_types.S_statement
     with type address := Address.t
      and type 'meta t = 'meta statement
      and type identifier := Act_c_lang.Ast_basic.Identifier.t
@@ -90,75 +87,68 @@ module Main :
   type 'meta t = 'meta statement [@@deriving sexp, equal]
 
   module Constructors = struct
-    let assign x = Assign x
+    let prim (x : 'meta Prim_statement.t) : 'meta t = Prim x
 
-    let atomic_cmpxchg x = Atomic_cmpxchg x
+    let assign (x : (* 'meta *) Assign.t) : 'meta t =
+      prim (Prim_statement.assign x)
 
-    let atomic_store x = Atomic_store x
+    let atomic_cmpxchg (x : (* 'meta *) Atomic_cmpxchg.t) : 'meta t =
+      prim (Prim_statement.atomic_cmpxchg x)
 
-    let if_stm x = If_stm x
+    let atomic_store (x : (* 'meta *) Atomic_store.t) : 'meta t =
+      prim (Prim_statement.atomic_store x)
 
-    let while_loop x = While_loop x
+    let return (x : 'meta) : 'meta t = prim (Prim_statement.return x)
 
-    let nop () = Nop
+    let nop (x : 'meta) : 'meta t = prim (Prim_statement.nop x)
+
+    let if_stm (x : 'meta if_statement) : 'meta t = If_stm x
+
+    let while_loop (x : 'meta while_loop) : 'meta t = While_loop x
   end
 
   include Constructors
 
-  let reduce (type meta result) (x : meta t) ~assign ~atomic_cmpxchg
-      ~atomic_store ~if_stm ~while_loop ~nop : result =
+  let reduce (type meta result) (x : meta t)
+      ~(prim : meta Prim_statement.t -> result)
+      ~(if_stm : meta if_statement -> result)
+      ~(while_loop : meta while_loop -> result) : result =
     match x with
-    | Assign x ->
-        assign x
-    | Atomic_cmpxchg x ->
-        atomic_cmpxchg x
-    | Atomic_store x ->
-        atomic_store x
+    | Prim x ->
+        prim x
     | If_stm x ->
         if_stm x
     | While_loop x ->
         while_loop x
-    | Nop ->
-        nop ()
 
-  let is_if_statement : 'meta t -> bool = function
-    | If_stm _ ->
-        true
-    | While_loop _ | Assign _ | Atomic_cmpxchg _ | Atomic_store _ | Nop ->
-        false
+  (** Shorthand for writing a predicate that is [false] on primitives. *)
+  let is_not_prim_and (type meta) ~(while_loop : meta while_loop -> bool)
+      ~(if_stm : meta if_statement -> bool) : meta t -> bool =
+    reduce ~while_loop ~if_stm ~prim:(Fn.const false)
 
-  let rec has_if_statements : 'meta t -> bool = function
-    | If_stm _ ->
-        true
-    | While_loop {body; _} ->
-        List.exists (Block.statements body) ~f:has_if_statements
-    | Assign _ | Atomic_cmpxchg _ | Atomic_store _ | Nop ->
-        false
+  let is_if_statement (m : 'meta t) : bool =
+    is_not_prim_and m ~if_stm:(Fn.const true) ~while_loop:(Fn.const false)
 
-  let rec has_while_loops : 'meta t -> bool = function
-    | While_loop _ ->
-        true
-    | If_stm {t_branch; f_branch; _} ->
+  let rec has_if_statements (m : 'meta t) : bool =
+    is_not_prim_and m ~if_stm:(Fn.const true) ~while_loop:(fun {body; _} ->
+        List.exists (Block.statements body) ~f:has_if_statements)
+
+  let rec has_while_loops (m : 'meta t) : bool =
+    is_not_prim_and m ~while_loop:(Fn.const true)
+      ~if_stm:(fun {t_branch; f_branch; _} ->
         List.exists
           (Block.statements t_branch @ Block.statements f_branch)
-          ~f:has_while_loops
-    | Assign _ | Atomic_cmpxchg _ | Atomic_store _ | Nop ->
-        false
+          ~f:has_while_loops)
 
   module Base_map (M : Monad.S) = struct
     module F = Travesty.Traversable.Helpers (M)
 
-    let bmap (type m1 m2) (x : m1 t) ~assign ~atomic_cmpxchg ~atomic_store
-        ~if_stm ~while_loop ~nop : m2 t M.t =
+    let bmap (type m1 m2) (x : m1 t) ~prim ~if_stm ~while_loop : m2 t M.t =
       Travesty_base_exts.Fn.Compose_syntax.(
         reduce x
-          ~assign:(assign >> M.map ~f:Constructors.assign)
-          ~atomic_cmpxchg:
-            (atomic_cmpxchg >> M.map ~f:Constructors.atomic_cmpxchg)
-          ~atomic_store:(atomic_store >> M.map ~f:Constructors.atomic_store)
+          ~prim:(prim >> M.map ~f:Constructors.prim)
           ~if_stm:(if_stm >> M.map ~f:Constructors.if_stm)
-          ~while_loop:(while_loop >> M.map ~f:Constructors.while_loop)
-          ~nop:(nop >> M.map ~f:(Fn.const Nop)))
+          ~while_loop:(while_loop >> M.map ~f:Constructors.while_loop))
   end
 
   module On_meta :
@@ -171,13 +161,13 @@ module Main :
       module IB = Ifs_base_map (M)
       module WB = Whiles_base_map (M)
       module Bk = Block.On_monad (M)
+      module PM = Prim_statement.On_meta.On_monad (M)
 
       (* We have to unroll the map over if/while here, because otherwise we
          end up with unsafe module recursion. *)
 
       let rec map_m (x : 'm1 t) ~(f : 'm1 -> 'm2 M.t) : 'm2 t M.t =
-        B.bmap x ~assign:M.return ~atomic_cmpxchg:M.return
-          ~atomic_store:M.return
+        B.bmap x ~prim:(PM.map_m ~f)
           ~if_stm:
             (IB.bmap ~cond:M.return
                ~t_branch:(Bk.bi_map_m ~left:f ~right:(map_m ~f))
@@ -185,7 +175,6 @@ module Main :
           ~while_loop:
             (WB.bmap ~cond:M.return
                ~body:(Bk.bi_map_m ~left:f ~right:(map_m ~f)))
-          ~nop:M.return
     end
   end)
 
@@ -195,6 +184,7 @@ module Main :
   module With_meta (Meta : T) = struct
     type nonrec t = Meta.t t
 
+    module Prim_meta = Prim_statement.With_meta (Meta)
     module Block_stms = Block.On_statements (Meta)
 
     (** Does the legwork of implementing a particular type of traversal over
@@ -202,24 +192,14 @@ module Main :
     module Make_traversal (Basic : sig
       module Elt : Equal.S
 
-      module A :
+      module P :
         Travesty.Traversable_types.S0
-          with type t := Assign.t
-           and module Elt = Elt
-
-      module C :
-        Travesty.Traversable_types.S0
-          with type t := Atomic_cmpxchg.t
+          with type t := Meta.t Prim_statement.t
            and module Elt = Elt
 
       module E :
         Travesty.Traversable_types.S0
           with type t := Expression.t
-           and module Elt = Elt
-
-      module S :
-        Travesty.Traversable_types.S0
-          with type t := Atomic_store.t
            and module Elt = Elt
     end) =
     Travesty.Traversable.Make0 (struct
@@ -232,17 +212,14 @@ module Main :
         module IBase = Ifs_base_map (M)
         module WBase = Whiles_base_map (M)
         module Bk = Block_stms.On_monad (M)
-        module AM = Basic.A.On_monad (M)
-        module CM = Basic.C.On_monad (M)
+        module PM = Basic.P.On_monad (M)
         module EM = Basic.E.On_monad (M)
-        module SM = Basic.S.On_monad (M)
 
         (* We also have to unroll the map over if/while here. *)
 
         let rec map_m x ~f =
-          SBase.bmap x ~assign:(AM.map_m ~f) ~atomic_store:(SM.map_m ~f)
-            ~atomic_cmpxchg:(CM.map_m ~f) ~if_stm:(map_m_ifs ~f)
-            ~while_loop:(map_m_whiles ~f) ~nop:M.return
+          SBase.bmap x ~prim:(PM.map_m ~f) ~if_stm:(map_m_ifs ~f)
+            ~while_loop:(map_m_whiles ~f)
 
         and map_m_ifs x ~f =
           IBase.bmap x ~cond:(EM.map_m ~f)
@@ -258,10 +235,8 @@ module Main :
       Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
     Make_traversal (struct
       module Elt = Lvalue
-      module A = Assign.On_lvalues
-      module C = Atomic_cmpxchg.On_lvalues
       module E = Expression.On_lvalues
-      module S = Atomic_store.On_lvalues
+      module P = Prim_meta.On_lvalues
     end)
 
     module On_addresses :
@@ -269,10 +244,8 @@ module Main :
         with type t = t
          and type Elt.t = Address.t = Make_traversal (struct
       module Elt = Address
-      module A = Assign.On_addresses
-      module C = Atomic_cmpxchg.On_addresses
       module E = Expression.On_addresses
-      module S = Atomic_store.On_addresses
+      module P = Prim_meta.On_addresses
     end)
 
     module On_identifiers :
@@ -286,7 +259,7 @@ end
 include Main
 
 module If :
-  Types.S_if_statement
+  Statement_types.S_if_statement
     with type address := Address.t
      and type identifier := Act_common.C_id.t
      and type lvalue := Lvalue.t
@@ -400,7 +373,7 @@ module If :
 end
 
 module While :
-  Types.S_while_loop
+  Statement_types.S_while_loop
     with type address := Address.t
      and type identifier := Act_common.C_id.t
      and type lvalue := Lvalue.t

@@ -435,6 +435,8 @@ let rec stm : Ast.Stm.t -> unit Statement.t Or_error.t = function
       expr_stm e
   | If {cond; t_branch; f_branch} ->
       model_if stm cond t_branch f_branch
+  | Return None ->
+      Or_error.return (Statement.return ())
   | ( Continue
     | Break
     | Return _

@@ -236,9 +236,7 @@ module Invert : Action_types.S with type Payload.t = Path.program = struct
 
   let invert_stm (stm : Subject.Statement.t) : Subject.Statement.t Or_error.t
       =
-    Bm.bmap stm ~assign:(not_an_if stm) ~atomic_cmpxchg:(not_an_if stm)
-      ~atomic_store:(not_an_if stm) ~while_loop:(not_an_if stm)
-      ~nop:(not_an_if stm)
+    Bm.bmap stm ~prim:(not_an_if stm) ~while_loop:(not_an_if stm)
       ~if_stm:(Fn.compose Or_error.return invert_if)
 
   let run (test : Subject.Test.t) ~(payload : Payload.t) :

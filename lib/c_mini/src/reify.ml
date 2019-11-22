@@ -210,9 +210,13 @@ let block (type meta stm) (stm : stm -> Ast.Stm.t) (b : (meta, stm) Block.t)
     : Ast.Stm.t =
   Compound (lift_stms stm (Block.statements b))
 
+let prim : _ Prim_statement.t -> Ast.Stm.t =
+  Prim_statement.reduce ~assign ~atomic_cmpxchg ~atomic_store
+    ~nop:(fun _ -> Ast.Stm.Expr None)
+    ~return:(fun _ -> Ast.Stm.Return None)
+
 let rec stm : _ Statement.t -> Ast.Stm.t =
-  Statement.reduce ~assign ~atomic_cmpxchg ~atomic_store ~if_stm ~while_loop
-    ~nop:(fun () -> Expr None)
+  Statement.reduce ~prim ~if_stm ~while_loop
 
 and if_stm (ifs : _ Statement.If.t) : Ast.Stm.t =
   If

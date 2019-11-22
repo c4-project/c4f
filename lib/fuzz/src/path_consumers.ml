@@ -35,9 +35,7 @@ module rec Statement :
       : Subject.Statement.t Or_error.t =
     Stm.reduce dest
       ~if_stm:(fun target -> Or_error.(f ~target >>| Stm.if_stm))
-      ~while_loop:(in_if_error dest) ~assign:(in_if_error dest)
-      ~atomic_cmpxchg:(in_if_error dest) ~atomic_store:(in_if_error dest)
-      ~nop:(in_if_error dest)
+      ~while_loop:(in_if_error dest) ~prim:(in_if_error dest)
 
   let handle_path (path : Path.stm)
       ~(if_stm :
