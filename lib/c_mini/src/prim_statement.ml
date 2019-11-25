@@ -18,34 +18,40 @@ module P = struct
     | Assign of Assign.t
     | Atomic_store of Atomic_store.t
     | Atomic_cmpxchg of Atomic_cmpxchg.t
-    | Return of 'meta
+    | Early_out of 'meta Early_out.t
     | Nop of 'meta
   [@@deriving variants, sexp, equal]
 end
 
 include P
 
+let break (meta : 'meta) : 'meta t = Early_out (Early_out.break meta)
+
+let return (meta : 'meta) : 'meta t = Early_out (Early_out.return meta)
+
 let reduce (type meta result) (x : meta t)
     ~(assign : (* meta *) Assign.t -> result)
     ~(atomic_store : (* meta *) Atomic_store.t -> result)
     ~(atomic_cmpxchg : (* meta *) Atomic_cmpxchg.t -> result)
-    ~(return : meta -> result) ~(nop : meta -> result) : result =
+    ~(early_out : meta Early_out.t -> result) ~(nop : meta -> result) :
+    result =
   Variants.map x ~assign:(Fn.const assign)
     ~atomic_store:(Fn.const atomic_store)
-    ~atomic_cmpxchg:(Fn.const atomic_cmpxchg) ~return:(Fn.const return)
+    ~atomic_cmpxchg:(Fn.const atomic_cmpxchg) ~early_out:(Fn.const early_out)
     ~nop:(Fn.const nop)
 
 module Base_map (M : Monad.S) = struct
   module F = Travesty.Traversable.Helpers (M)
 
   let bmap (type m1 m2) (x : m1 t) ~assign ~atomic_store ~atomic_cmpxchg
-      ~(return : m1 -> m2 M.t) ~(nop : m1 -> m2 M.t) : m2 t M.t =
+      ~(early_out : m1 Early_out.t -> m2 Early_out.t M.t)
+      ~(nop : m1 -> m2 M.t) : m2 t M.t =
     Travesty_base_exts.Fn.Compose_syntax.(
       reduce x
         ~assign:(assign >> M.map ~f:P.assign)
         ~atomic_store:(atomic_store >> M.map ~f:P.atomic_store)
         ~atomic_cmpxchg:(atomic_cmpxchg >> M.map ~f:P.atomic_cmpxchg)
-        ~return:(return >> M.map ~f:P.return)
+        ~early_out:(early_out >> M.map ~f:P.early_out)
         ~nop:(nop >> M.map ~f:P.nop))
 end
 
@@ -55,10 +61,11 @@ Travesty.Traversable.Make1 (struct
 
   module On_monad (M : Monad.S) = struct
     module B = Base_map (M)
+    module EO = Early_out.On_meta.On_monad (M)
 
     let map_m (x : 'm1 t) ~(f : 'm1 -> 'm2 M.t) : 'm2 t M.t =
       B.bmap x ~assign:M.return ~atomic_store:M.return
-        ~atomic_cmpxchg:M.return ~nop:f ~return:f
+        ~atomic_cmpxchg:M.return ~nop:f ~early_out:(EO.map_m ~f)
   end
 end)
 
@@ -96,7 +103,7 @@ module With_meta (Meta : T) = struct
 
       let map_m x ~f =
         SBase.bmap x ~assign:(AM.map_m ~f) ~atomic_store:(SM.map_m ~f)
-          ~atomic_cmpxchg:(CM.map_m ~f) ~return:M.return ~nop:M.return
+          ~atomic_cmpxchg:(CM.map_m ~f) ~early_out:M.return ~nop:M.return
     end
   end)
 

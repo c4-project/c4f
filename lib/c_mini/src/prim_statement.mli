@@ -38,11 +38,18 @@ val atomic_store : Atomic_store.t -> 'meta t
 val atomic_cmpxchg : Atomic_cmpxchg.t -> 'meta t
 (** [atomic_cmpxchg a] lifts an atomic compare-exchange to a statement. *)
 
+val nop : 'meta -> 'meta t
+(** [nop m] creates a no-op (semicolon) statement with metadata [m]. *)
+
+(** {2 Shorthand for early-out statements}
+
+    See {!Early_out}. *)
+
+val break : 'meta -> 'meta t
+(** [break m] creates a break statement with metadata [m]. *)
+
 val return : 'meta -> 'meta t
 (** [return m] creates a return statement with metadata [m]. *)
-
-val nop : 'meta -> 'meta t
-(** [return m] creates a no-op (semicolon) statement with metadata [m]. *)
 
 (** {1 Traversals} *)
 
@@ -51,11 +58,11 @@ val reduce :
   -> assign:((* 'meta *) Assign.t -> 'result)
   -> atomic_store:((* 'meta *) Atomic_store.t -> 'result)
   -> atomic_cmpxchg:((* 'meta *) Atomic_cmpxchg.t -> 'result)
-  -> return:('meta -> 'result)
+  -> early_out:('meta Early_out.t -> 'result)
   -> nop:('meta -> 'result)
   -> 'result
-(** [reduce x ~assign ~atomic_store ~atomic_cmpxchg ~return ~nop] reduces a
-    primitive statement [x] to a particular result type by applying the
+(** [reduce x ~assign ~atomic_store ~atomic_cmpxchg ~early_out ~nop] reduces
+    a primitive statement [x] to a particular result type by applying the
     appropriate function. *)
 
 (** Creates a basic monadic map over [M]. *)
@@ -67,10 +74,10 @@ module Base_map (M : Monad.S) : sig
          ((* 'm1 *) Atomic_store.t -> (* 'm2 *) Atomic_store.t M.t)
     -> atomic_cmpxchg:
          ((* 'm1 *) Atomic_cmpxchg.t -> (* 'm2 *) Atomic_cmpxchg.t M.t)
-    -> return:('m1 -> 'm2 M.t)
+    -> early_out:('m1 Early_out.t -> 'm2 Early_out.t M.t)
     -> nop:('m1 -> 'm2 M.t)
     -> 'm2 t M.t
-  (** [bmap x ~assign ~atomic_store ~atomic_cmpxchg ~return ~nop] maps the
+  (** [bmap x ~assign ~atomic_store ~atomic_cmpxchg ~early_out ~nop] maps the
       appropriate function over [x]. *)
 end
 

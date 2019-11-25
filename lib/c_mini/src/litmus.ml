@@ -29,7 +29,7 @@ module Lang :
       | `Decl named_init ->
           `Decl (Reify.decl (Named.name named_init) (Named.value named_init))
       | `Stm stm ->
-          `Stm (Reify.stm stm)
+          `Stm (Reify_stm.reify stm)
 
     let pp : t Fmt.t =
       Fmt.using reify Act_c_lang.Ast.Litmus_lang.Statement.pp

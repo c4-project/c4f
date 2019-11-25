@@ -9,7 +9,13 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Functions for reifying a mini-model into an AST. *)
+(** Functions for reifying a Mini-C program into an AST.
+
+    These functions reify various top-level elements of a Mini-C program.
+    Other modules govern smaller components:
+
+    - {!Reify_expr} for expressions;
+    - {!Reify_stm} for statements. *)
 
 val func :
   Act_common.C_id.t -> _ Function.t -> Act_c_lang.Ast.External_decl.t
@@ -22,9 +28,3 @@ val program : _ Program.t -> Act_c_lang.Ast.Translation_unit.t
 val decl : Act_common.C_id.t -> Initialiser.t -> Act_c_lang.Ast.Decl.t
 (** [decl id d] reifies the mini-declaration [d], with name [id], into the C
     AST. *)
-
-val expr : Expression.t -> Act_c_lang.Ast.Expr.t
-(** [expr e] reifies the mini-expression [e] into the C AST. *)
-
-val stm : _ Statement.t -> Act_c_lang.Ast.Stm.t
-(** [stm s] reifies the mini-statement [s] into the C AST. *)

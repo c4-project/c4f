@@ -36,7 +36,7 @@ let%test_module "Statement_list" =
 
         (* TODO(@MattWindsor91): generalise this? *)
         let pp_statement : F.Metadata.t Stm.t Fmt.t =
-          Fmt.using Act_c_mini.Reify.stm Act_c_lang.Ast.Stm.pp
+          Fmt.using Act_c_mini.Reify_stm.reify Act_c_lang.Ast.Stm.pp
 
         let test (stms : F.Metadata.t Stm.t list Or_error.t) : unit =
           Fmt.(

@@ -15,7 +15,8 @@ module Q = Base_quickcheck
 module Qx = Act_utils.My_quickcheck
 
 let printer (e : Src.Expression.t) : unit =
-  e |> Src.Reify.expr |> Fmt.(pr "@[%a@]@." (parens Act_c_lang.Ast.Expr.pp))
+  e |> Src.Reify_expr.reify
+  |> Fmt.(pr "@[%a@]@." (parens Act_c_lang.Ast.Expr.pp))
 
 let test_all_expressions_have_type
     (f :

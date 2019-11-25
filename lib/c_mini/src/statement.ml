@@ -98,6 +98,8 @@ module Main :
     let atomic_store (x : (* 'meta *) Atomic_store.t) : 'meta t =
       prim (Prim_statement.atomic_store x)
 
+    let break (x : 'meta) : 'meta t = prim (Prim_statement.break x)
+
     let return (x : 'meta) : 'meta t = prim (Prim_statement.return x)
 
     let nop (x : 'meta) : 'meta t = prim (Prim_statement.nop x)

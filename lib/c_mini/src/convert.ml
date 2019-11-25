@@ -435,11 +435,15 @@ let rec stm : Ast.Stm.t -> unit Statement.t Or_error.t = function
       expr_stm e
   | If {cond; t_branch; f_branch} ->
       model_if stm cond t_branch f_branch
+  | Break ->
+      Or_error.return (Statement.break ())
   | Return None ->
       Or_error.return (Statement.return ())
+  | Return (Some _) as s ->
+      Or_error.error_s
+        [%message
+          "Value returns not supported in Mini-C" ~got:(s : Ast.Stm.t)]
   | ( Continue
-    | Break
-    | Return _
     | Label _
     | Compound _
     | Switch _

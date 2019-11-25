@@ -65,6 +65,9 @@ module type S_statement = sig
   (** [nop meta] is a no-operation statement with metadata [meta]; it
       corresponds to C's empty expression statement. *)
 
+  val break : 'meta -> 'meta t
+  (** [break meta] is a break statement with metadata [meta]. *)
+
   val return : 'meta -> 'meta t
   (** [return meta] is a return statement with metadata [meta]. *)
 
