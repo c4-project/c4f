@@ -1,6 +1,8 @@
-flow.dead-return:
+flow.dead.early-out:
   Weight: 15x
-  Summary: Inserts a return statement into a random dead-code location.
+  Summary:
+    Inserts a valid 'early-out' statement (break or return) into a random
+    dead-code location.
 flow.if.duplicate:
   Weight: 15x
   Summary:

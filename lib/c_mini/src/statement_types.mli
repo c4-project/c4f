@@ -50,6 +50,9 @@ module type S_statement = sig
   val while_loop : 'meta while_loop -> 'meta t
   (** [while_loop loop] lifts a while or do-while loop [loop] to a statement. *)
 
+  val prim : 'meta Prim_statement.t -> 'meta t
+  (** [prim p] lifts a primitive statement [p] to a statement. *)
+
   (** {4 Liftings of primitive statements} *)
 
   val assign : 'meta assign -> 'meta t

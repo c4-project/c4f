@@ -41,6 +41,9 @@ val atomic_cmpxchg : Atomic_cmpxchg.t -> 'meta t
 val nop : 'meta -> 'meta t
 (** [nop m] creates a no-op (semicolon) statement with metadata [m]. *)
 
+val early_out : 'meta Early_out.t -> 'meta t
+(** [early_out e] lifts an early-out statement [e] to a primitive statement. *)
+
 (** {2 Shorthand for early-out statements}
 
     See {!Early_out}. *)

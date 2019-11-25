@@ -12,10 +12,11 @@
 open Base
 
 module Kind = struct
-  type t = Break | Return [@@deriving sexp, equal]
+  type t = Break | Return [@@deriving sexp, equal, quickcheck]
 end
 
-type 'meta t = {kind: Kind.t; meta: 'meta} [@@deriving fields, sexp, equal]
+type 'meta t = {meta: 'meta; kind: Kind.t}
+[@@deriving fields, sexp, equal, make]
 
 let break (meta : 'meta) : 'meta t = {kind= Break; meta}
 

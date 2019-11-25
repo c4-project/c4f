@@ -19,10 +19,23 @@
 
 open Base
 
+(** {1 Kinds of early-out} *)
+
+module Kind : sig
+  (** Type of early-out kinds. *)
+  type t = Break | Return [@@deriving sexp, equal, quickcheck]
+end
+
+(** {1 Early-out statements} *)
+
 type 'meta t [@@deriving sexp, equal]
 (** Opaque type of mini-C early-out statements, parametrised by metadata. *)
 
-(** {1 Constructors} *)
+(** {2 Constructors} *)
+
+val make : meta:'meta -> kind:Kind.t -> 'meta t
+(** [make ~meta ~kind] creates an early-out statement with kind [kind] and
+    metadata [meta]. *)
 
 val break : 'meta -> 'meta t
 (** [break m] creates a break statement with metadata [m]. *)
@@ -30,22 +43,17 @@ val break : 'meta -> 'meta t
 val return : 'meta -> 'meta t
 (** [return m] creates a return statement with metadata [m]. *)
 
-(** {1 Accessors} *)
+(** {2 Accessors} *)
 
 val meta : 'meta t -> 'meta
 (** [kind x] gets [x]'s metadata. *)
 
-(** {2 Kinds} *)
-
-module Kind : sig
-  (** Type of early-out kinds. *)
-  type t = Break | Return [@@deriving sexp, equal]
-end
+(** {3 Kinds} *)
 
 val kind : 'meta t -> Kind.t
 (** [kind x] gets the kind of early-out that [x] is. *)
 
-(** {1 Traversals} *)
+(** {2 Traversals} *)
 
 module On_meta : Travesty.Traversable_types.S1 with type 'meta t := 'meta t
 (** A traversal over the metadata in a primitive statement. *)
