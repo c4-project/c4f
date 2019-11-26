@@ -34,20 +34,20 @@ let command : Command.t =
         Common_cmd.Args.simulator ()
       and arch =
         choose_one
-          [ Common_cmd.Args.flag_to_enum_choice (Some Act_backend.Arch.C)
+          [ Common_cmd.Args.flag_to_enum_choice Act_backend.Arch.C
               "-c"
               ~doc:
                 "Tells the backend to test the input against the C memory \
                  model"
           ; map
               ~f:
-                (Option.map ~f:(fun x -> Some (Act_backend.Arch.Assembly x)))
+                (Option.map ~f:(fun x -> Act_backend.Arch.Assembly x))
               (Common_cmd.Args.arch
                  ~doc:
                    "ARCH tells the backend to test the input against the \
                     given architecture"
                  ()) ]
-          ~if_nothing_chosen:(`Default_to None)
+          ~if_nothing_chosen:Return_none
       in
       fun () ->
         Common_cmd.Common.lift_command

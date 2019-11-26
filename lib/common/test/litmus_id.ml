@@ -77,4 +77,7 @@ let%test_unit "to_memalloy_id doesn't throw when creating local identifiers"
       type t = Act_utils.My_quickcheck.Small_non_negative_int.t * Ac.C_id.t
       [@@deriving sexp, quickcheck]
     end )
-    ~f:(fun (t, id) -> ignore Ac.Litmus_id.(to_memalloy_id (local t id)))
+    ~f:(fun (t, id) ->
+      let mid = Ac.Litmus_id.(to_memalloy_id (local t id)) in
+      ignore (mid : Ac.C_id.t)
+    )

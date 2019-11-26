@@ -107,7 +107,7 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
         Or_error.error_s
           [%message
             "Internal error: Environment was empty." ~here:[%here] ~env]
-      else Result.ok_unit
+      else Ok ()
 
     let log_environment (o : Ac.Output.t) (env_name : string)
         (env : Act_c_mini.Type.t Map.M(Ac.C_id).t) : unit =

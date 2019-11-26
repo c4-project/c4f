@@ -43,7 +43,7 @@ let command : Command.t =
               ~doc:"POST replaces the postcondition of the test"
             |> map ~f:(Option.map ~f:(fun (x : string) -> `Replace_with x))
           ]
-          ~if_nothing_chosen:(`Default_to `Keep)
+          ~if_nothing_chosen:(Default_to `Keep)
       and name =
         flag "name" (optional string)
           ~doc:"NAME replaces the name of the test"

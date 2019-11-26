@@ -36,7 +36,7 @@ let pp_predicate_list :
 let run_list_predicates (_o : Output.t) (_cfg : Act_config.Global.t) :
     unit Or_error.t =
   Fmt.pr "@[<v>%a@]@." pp_predicate_list predicate_lists ;
-  Result.ok_unit
+  Ok ()
 
 let list_predicates_command : Command.t =
   Command.basic ~summary:"describes the filtering predicate languages"

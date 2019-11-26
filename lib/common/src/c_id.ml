@@ -153,14 +153,7 @@ include C
 module Json : Plumbing.Jsonable_types.S with type t := t = struct
   let yojson_of_t (id : t) : Yojson.Safe.t = `String (raw id)
 
-  let t_of_yojson' (json : Yojson.Safe.t) : (t, string) Result.t =
-    Result.(
-      json |> Yojson.Safe.Util.to_string_option
-      |> of_option ~error:(Error.of_string "Not a JSON string.")
-      >>= create
-      |> Result.map_error ~f:Error.to_string_hum)
-
-  let t_of_yojson (json : Yojson.Safe.t) : t =
+ let t_of_yojson (json : Yojson.Safe.t) : t =
     Result.(
       json |> Yojson.Safe.Util.to_string_option
       |> of_option ~error:(Error.of_string "Not a JSON string.")

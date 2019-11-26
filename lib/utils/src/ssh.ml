@@ -115,7 +115,7 @@ Pb.Runner.Make (struct
       | Files lfs, Files rfs ->
           scp_files ~action:file_action lfs rfs
       | Nothing, Nothing ->
-          Result.ok_unit
+          Ok ()
       | _, _ ->
           Or_error.error_string
             {| Internal error: copy_spec_to_remote produced a different

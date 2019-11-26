@@ -22,7 +22,7 @@ let parameter_list_equal :
 let check_parameters_consistent (params : Type.t Named.Alist.t)
     (next : unit Function.t) : unit Or_error.t =
   let params' = Function.parameters next in
-  if parameter_list_equal params params' then Result.ok_unit
+  if parameter_list_equal params params' then Ok ()
   else
     Or_error.error_s
       [%message

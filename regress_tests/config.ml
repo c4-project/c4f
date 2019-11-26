@@ -24,7 +24,7 @@ let parse_config_failures ~(file : Fpath.t) ~(path : Fpath.t) :
     pr "@[%a@]@."
       (result ~ok:pp_ast ~error:(any "UNEXPECTED ERROR:@ " ++ Error.pp)))
     r ;
-  Result.ok_unit
+  Ok ()
 
 let run (test_dir : Fpath.t) : unit Or_error.t =
   let full_dir = Fpath.(test_dir / "config" / "valid" / "") in

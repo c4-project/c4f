@@ -21,10 +21,6 @@ module J = A.Json (struct
 
   let t_of_yojson : Yojson.Safe.t -> int = Yojson.Safe.Util.to_int
 
-  let t_of_yojson' (j : Yojson.Safe.t) : (int, string) Result.t =
-    Result.try_with (fun () -> t_of_yojson j)
-    |> Result.map_error ~f:Exn.to_string
-
   let parse_post_string (s : string) :
       int Act_litmus.Postcondition.t Or_error.t =
     Or_error.try_with (fun () ->
@@ -61,8 +57,8 @@ let%test_module "JSON serialisation" =
   ( module struct
     let test (json_str : string) : unit =
       let json = Yojson.Safe.from_string json_str in
-      let header = J.t_of_yojson' json in
-      print_s [%sexp (header : (int A.t, string) Result.t)]
+      let header = J.t_of_yojson json in
+      print_s [%sexp (header : int A.t)]
 
     let%expect_test "SBSC example header without a postcondition" =
       test
@@ -75,8 +71,7 @@ let%test_module "JSON serialisation" =
         |} ;
       [%expect
         {|
-          (Ok
-           ((locations ((x y))) (init ((x 0) (y 0))) (postcondition ()) (name SBSC))) |}]
+          ((locations ((x y))) (init ((x 0) (y 0))) (postcondition ()) (name SBSC)) |}]
   end )
 
 (* TODO(@MattWindsor91): test with postcondition *)

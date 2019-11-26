@@ -232,7 +232,7 @@ module Make (Lang : Test_types.Basic) :
           let open Or_error.Let_syntax in
           match%bind get_uniform_globals (Raw.threads candidate) with
           | None ->
-              Result.ok_unit
+              Ok ()
           | Some gs ->
               check_init_against_globals
                 (Header.init (Raw.header candidate))
