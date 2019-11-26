@@ -27,6 +27,8 @@ let%test_module "Early_out" =
         in_func 0 @@ in_stms @@ in_stm 3 @@ in_if @@ in_block false
         @@ insert 0)
 
+    (* TODO(@MattWindsor91): invalid paths *)
+
     let%expect_test "valid break on example program" =
       test_on_example_program valid_path Break ;
       [%expect

@@ -30,7 +30,7 @@ let%test_module "S-expression representation" =
       let readme () =
         {| This is a module that is almost, but not quite, entirely unlike a fuzzer action. |}
 
-      module Payload = Src.Action.Pure_payload (Dummy_payload)
+      module Payload = Src.Payload.Pure (Dummy_payload)
 
       let run subject ~(payload : Dummy_payload.t) =
         ignore payload ;
@@ -46,7 +46,7 @@ let%test_module "S-expression representation" =
       let readme () =
         {| This is also a module that is almost, but not quite, entirely unlike a fuzzer action. |}
 
-      module Payload = Src.Action.No_payload
+      module Payload = Src.Payload.None
 
       let run subject ~(payload : unit) =
         ignore payload ;

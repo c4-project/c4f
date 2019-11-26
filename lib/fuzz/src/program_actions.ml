@@ -22,7 +22,7 @@ module Make_empty : Action_types.S with type Payload.t = unit = struct
     with other actions that construct statements and control flows.
     |}
 
-  module Payload = Action.No_payload
+  module Payload = Payload.None
 
   let available = Action.always
 

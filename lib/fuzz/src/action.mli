@@ -119,48 +119,6 @@ val always : Subject.Test.t -> bool State.Monad.t
 (** [always test] always returns [true] without modifying or inspecting the
     fuzzer state. *)
 
-(** {2 Helpers for building action payloads} *)
-
-val lift_quickcheck :
-     'a Base_quickcheck.Generator.t
-  -> random:Splittable_random.State.t
-  -> 'a State.Monad.t
-(** [lift_quickcheck gen ~random] lifts a Quickcheck-style generator [gen]
-    into a state-monad action taking a random number generator [random] and
-    outputting the randomly generated value. *)
-
-val lift_quickcheck_opt :
-     'a Base_quickcheck.Generator.t option
-  -> random:Splittable_random.State.t
-  -> 'a State.Monad.t
-(** [lift_quickcheck_opt gen_opt ~random] behaves as {!lift_quickcheck} if
-    [gen_opt] is [Some gen], and emits an error inside the state monad if
-    not. *)
-
-(** Adapts payload generators that don't depend on the state of the program. *)
-module Pure_payload (S : sig
-  type t [@@deriving sexp]
-
-  val quickcheck_generator : t Base_quickcheck.Generator.t
-end) : Action_types.S_payload with type t = S.t
-
-module No_payload : Action_types.S_payload with type t = unit
-(** Dummy payload module for actions that take no payload. *)
-
-(** Scaffolding for building payload generators that just build program
-    paths. *)
-module Program_path_payload (S : sig
-  val build_filter : Path_filter.t -> Path_filter.t
-  (** [build_filter flt] should apply the path filter predicates needed for
-      the payload generator to [flt]. *)
-
-  val gen :
-       Subject.Test.t
-    -> filter:Path_filter.t
-    -> Path.program Base_quickcheck.Generator.t option
-  (** [gen] should be a path shape generator. *)
-end) : Action_types.S_payload with type t = Path.program
-
 (** Makes a basic logging function for an action. *)
 module Make_log (B : sig
   val name : Act_common.Id.t

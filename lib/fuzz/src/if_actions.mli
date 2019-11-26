@@ -20,24 +20,7 @@
       statement generator;
     - a similar mapping to the 'false' block. *)
 module Surround : sig
-  (** {2 Payload}
-
-      The payload for any if-surround action contains two elements:
-
-      - the expression to insert into the condition of the if statement;
-      - the path to the statements to remove, pass through the if statement
-        block generators, and replace with the statement. *)
-
-  module Payload : sig
-    type t
-    (** Opaque type of payloads. *)
-
-    val make : cond:Act_c_mini.Expression.t -> path:Path.program -> t
-    (** [make ~cond ~path] makes a payload given a specific condition
-        expression [cond] and statement-list selecting path [path]. *)
-  end
-
-  module type S = Action_types.S with type Payload.t = Payload.t
+  module type S = Action_types.S with type Payload.t = Payload.Surround.t
   (** Each if statement generator has this type. *)
 
   module Duplicate : S

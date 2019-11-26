@@ -30,7 +30,7 @@ module Early_out_payload = struct
 
   let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t) :
       t State.Monad.t =
-    Action.lift_quickcheck_opt (quickcheck_payload test) ~random
+    Payload.Helpers.lift_quickcheck_opt (quickcheck_payload test) ~random
 end
 
 module Early_out : Action_types.S with type Payload.t = Early_out_payload.t =

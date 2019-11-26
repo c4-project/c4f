@@ -12,14 +12,10 @@
 open Base
 
 module Surround = struct
-  module Payload = struct
-    (* The generation functions vary according to the specific action, and so
-       appear in the functor below. *)
-    type t = {cond: Act_c_mini.Expression.t; path: Path.program}
-    [@@deriving make, sexp, fields]
-  end
+  (* This is shadowed, so we need to alias it. *)
+  module Helpers = Payload.Helpers
 
-  module type S = Action_types.S with type Payload.t = Payload.t
+  module type S = Action_types.S with type Payload.t = Payload.Surround.t
 
   let readme_prelude : string =
     {| Removes a sublist of statements from the program, replacing them
@@ -58,53 +54,13 @@ module Surround = struct
       let raw = readme_prelude ^ "\n\n" ^ readme_suffix in
       Act_utils.My_string.format_for_readme raw
 
-    module Payload = struct
-      include Payload
-
-      (* TODO(@MattWindsor91): the dependency flow from paths to conditions
-         is a little hackneyed. It could do with being cleaned up a little,
-         maybe. *)
-
-      let quickcheck_path (test : Subject.Test.t) :
-          Path.program Base_quickcheck.Generator.t option =
-        Path_producers.Test.try_gen_transform_stm_list test
-
-      let gen_path (test : Subject.Test.t)
-          ~(random : Splittable_random.State.t) : Path.program State.Monad.t
-          =
-        Action.lift_quickcheck_opt (quickcheck_path test) ~random
-
-      let cond_env (vars : Var.Map.t) ~(tid : int) :
-          (module Act_c_mini.Env_types.S_with_known_values) =
-        Var.Map.env_module_with_known_values ~scope:(Local tid)
-          ~predicates:[] vars
-
-      let quickcheck_cond (path : Path.program) :
-          Act_c_mini.Expression.t Base_quickcheck.Generator.t State.Monad.t =
-        let tid = Path.tid path in
-        State.Monad.Let_syntax.(
-          let%map env = State.Monad.with_vars (cond_env ~tid) in
-          Basic.cond_gen env)
-
-      let gen_cond (path : Path.program)
-          ~(random : Splittable_random.State.t) :
-          Act_c_mini.Expression.t State.Monad.t =
-        State.Monad.Let_syntax.(
-          let%bind gen = quickcheck_cond path in
-          Action.lift_quickcheck gen ~random)
-
-      let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t) :
-          Payload.t State.Monad.t =
-        State.Monad.Let_syntax.(
-          let%bind path = gen_path test ~random in
-          let%map cond = gen_cond path ~random in
-          Payload.make ~cond ~path)
-    end
+    module Surround = Payload.Surround
+    module Payload = Surround.Make (Basic)
 
     let available (test : Subject.Test.t) : bool State.Monad.t =
       test |> Subject.Test.has_statements |> State.Monad.return
 
-    let wrap_in_if_raw (statements : Metadata.t Act_c_mini.Statement.t list)
+    let wrap_in_if (statements : Metadata.t Act_c_mini.Statement.t list)
         ~(cond : Act_c_mini.Expression.t) : Metadata.t Act_c_mini.Statement.t
         =
       Act_c_mini.Statement.if_stm
@@ -112,36 +68,9 @@ module Surround = struct
            ~t_branch:(Basic.t_branch_of_statements statements)
            ~f_branch:(Basic.f_branch_of_statements statements))
 
-    let wrap_in_if (statements : Metadata.t Act_c_mini.Statement.t list)
-        ~(cond : Act_c_mini.Expression.t) :
-        Metadata.t Act_c_mini.Statement.t list Or_error.t =
-      Or_error.return [wrap_in_if_raw statements ~cond]
-
-    (** [add_cond_dependencies path cond] marks every variable in [cond] as
-        having a read dependency, using [path] to resolve the scope at which
-        [cond] is being inserted.
-
-        This is a considerable over-approximation of the actual needed
-        dependencies. *)
-    let add_cond_dependencies (path : Path.program)
-        (cond : Act_c_mini.Expression.t) : unit State.Monad.t =
-      (* TODO(@MattWindsor91): it would be pretty cool for the lvalues to
-         track whether or not they are being used in a tautology, once we add
-         metadata tracking to the expression. In this case, we could skip
-         adding dependencies where not necessary. *)
-      State.Monad.add_expression_dependencies cond
-        ~scope:(Local (Path.tid path))
-
     let run (test : Subject.Test.t) ~(payload : Payload.t) :
         Subject.Test.t State.Monad.t =
-      let path = Payload.path payload in
-      let cond = Payload.cond payload in
-      State.Monad.(
-        Let_syntax.(
-          let%bind () = add_cond_dependencies path cond in
-          Monadic.return
-            (Path_consumers.Test.transform_stm_list path ~target:test
-               ~f:(wrap_in_if ~cond))))
+      Surround.apply payload ~test ~f:(fun cond -> wrap_in_if ~cond)
   end
 
   module Duplicate : S = Make (struct
@@ -209,7 +138,7 @@ module Invert : Action_types.S with type Payload.t = Path.program = struct
 
     let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t) :
         Path.program State.Monad.t =
-      Action.lift_quickcheck_opt (quickcheck_path test) ~random
+      Payload.Helpers.lift_quickcheck_opt (quickcheck_path test) ~random
   end
 
   let invert_if (ifs : Metadata.t Act_c_mini.Statement.If.t) :

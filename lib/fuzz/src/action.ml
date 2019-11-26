@@ -31,24 +31,6 @@ module With_default_weight = struct
       if%map available action subject then weight else 0)
 end
 
-let lift_quickcheck (type a) (gen : a Base_quickcheck.Generator.t)
-    ~(random : Splittable_random.State.t) : a State.Monad.t =
-  State.Monad.return
-    (Base_quickcheck.Generator.generate ~size:10 ~random gen)
-
-let lift_quickcheck_opt (type a)
-    (gen_opt : a Base_quickcheck.Generator.t option)
-    ~(random : Splittable_random.State.t) : a State.Monad.t =
-  State.Monad.Let_syntax.(
-    let%bind gen =
-      State.Monad.Monadic.return
-        (Result.of_option gen_opt
-           ~error:
-             (Error.of_string
-                "A required Quickcheck generator failed to materialise."))
-    in
-    lift_quickcheck gen ~random)
-
 let always : Subject.Test.t -> bool State.Monad.t =
   Fn.const (State.Monad.return true)
 
@@ -146,46 +128,6 @@ module Pool = struct
       (module Action_types.S) State.Monad.t =
     State.Monad.(
       table |> to_available_only ~subject >>= pick_from_available ~random)
-end
-
-module Pure_payload (S : sig
-  type t [@@deriving sexp]
-
-  val quickcheck_generator : t Base_quickcheck.Generator.t
-end) : Action_types.S_payload with type t = S.t = struct
-  include S
-
-  let gen (_subject : Subject.Test.t) ~(random : Splittable_random.State.t) :
-      t State.Monad.t =
-    lift_quickcheck S.quickcheck_generator ~random
-end
-
-module Program_path_payload (S : sig
-  val build_filter : Path_filter.t -> Path_filter.t
-
-  val gen :
-       Subject.Test.t
-    -> filter:Path_filter.t
-    -> Path.program Base_quickcheck.Generator.t option
-end) : Action_types.S_payload with type t = Path.program = struct
-  type t = Path.program [@@deriving sexp]
-
-  let quickcheck_path (test : Subject.Test.t) :
-      Path.program Base_quickcheck.Generator.t option =
-    let filter = S.build_filter Path_filter.empty in
-    S.gen ~filter test
-
-  let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t) :
-      Path.program State.Monad.t =
-    lift_quickcheck_opt (quickcheck_path test) ~random
-end
-
-module No_payload : Action_types.S_payload with type t = unit = struct
-  include Unit
-
-  let gen (_ : Subject.Test.t) ~(random : Splittable_random.State.t) =
-    ignore (random : Splittable_random.State.t) ;
-    State.Monad.return ()
 end
 
 module Make_log (B : sig

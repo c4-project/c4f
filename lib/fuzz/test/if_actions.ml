@@ -34,7 +34,8 @@ let%test_module "Surround" =
 
     let path : Src.Path.program = In_func (0, In_stms (On_stm_range (0, 2)))
 
-    let payload : Surround.Payload.t = Surround.Payload.make ~cond ~path
+    let payload : Src.Payload.Surround.t =
+      Src.Payload.Surround.make ~cond ~path
 
     let%test_module "Tautology" =
       ( module struct
