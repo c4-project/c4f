@@ -31,7 +31,7 @@ let%test_module "Make_global" =
             ~f:
               (fun Src.Var_actions.Global_payload.
                      {basic_type; initial_value; _} ->
-              let _ =
+              let (_ : Act_c_mini.Type.t) =
                 Or_error.ok_exn
                   Act_c_mini.(
                     Type.check_modulo_atomicity

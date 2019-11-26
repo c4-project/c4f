@@ -14,7 +14,7 @@ open Core (* for Filename.arg_type *)
 let write_trace (trace : Act_fuzz.Trace.t) (oc : Stdio.Out_channel.t) :
     unit Or_error.t =
   Sexp.output_hum oc [%sexp (trace : Act_fuzz.Trace.t)] ;
-  Result.ok_unit
+  Ok ()
 
 let run ?(seed : int option) ?(trace_output : string option)
     (args : _ Common_cmd.Args.With_files.t) (o : Act_common.Output.t)

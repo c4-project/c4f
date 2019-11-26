@@ -38,18 +38,6 @@ module Set = struct
       (j : Yojson.Safe.t) : Set.M(C).t =
     j |> list_of_yojson x_of_yojson |> Set.of_list (module C)
 
-  let set_of_yojson' (type x c)
-      (module C : Comparator.S
-        with type t = x
-         and type comparator_witness = c)
-      (x_of_yojson' : Yojson.Safe.t -> x Str_result.t) (j : Yojson.Safe.t) :
-      Set.M(C).t Str_result.t =
-    protect ~f:(fun () ->
-        set_of_yojson
-          (module C)
-          (fun x -> x |> x_of_yojson' |> Result.ok_or_failwith)
-          j)
-
   module Make (V : sig
     include Jsonable_types.S
 
@@ -60,8 +48,6 @@ module Set = struct
     let yojson_of_t = yojson_of_set V.yojson_of_t
 
     let t_of_yojson = set_of_yojson (module V) V.t_of_yojson
-
-    let t_of_yojson' = set_of_yojson' (module V) V.t_of_yojson'
   end
 end
 
@@ -101,9 +87,6 @@ module Alist = struct
     let yojson_of_t (x : t) : Yojson.Safe.t =
       `Assoc (Tx.Alist.bi_map ~left:K.to_string ~right:V.yojson_of_t x)
 
-    let t_of_yojson' : Yojson.Safe.t -> t Str_result.t =
-      alist_of_yojson' K.of_string V.t_of_yojson'
-
     let t_of_yojson : Yojson.Safe.t -> t =
       alist_of_yojson K.of_string V.t_of_yojson
   end
@@ -125,14 +108,6 @@ struct
   let yojson_of_t : t -> Yojson.Safe.t =
     Fn.compose Alist.yojson_of_t Map.to_alist
 
-  let of_alist : (K.t, V.t) List.Assoc.t -> t Str_result.t =
-    Fn.compose
-      (Result.map_error ~f:Error.to_string_hum)
-      (Map.of_alist_or_error (module K))
-
-  let t_of_yojson' : Yojson.Safe.t -> t Str_result.t =
-    Sx.(Alist.t_of_yojson' >=> of_alist)
-
   let t_of_yojson (j : Yojson.Safe.t) : t =
     j |> Alist.t_of_yojson |> Map.of_alist_exn (module K)
 end
@@ -145,9 +120,6 @@ module Of_stringable (E : Stringable.S) :
 
   let t_of_yojson (j : Yojson.Safe.t) : E.t =
     j |> Yojson.Safe.Util.to_string |> E.of_string
-
-  let t_of_yojson' (j : Yojson.Safe.t) : (E.t, string) Result.t =
-    protect ~f:(fun () -> t_of_yojson j)
 end
 
 module String : Jsonable_types.S with type t = string = Of_stringable (String)

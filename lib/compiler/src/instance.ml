@@ -40,7 +40,7 @@ end
 module Fail (E : sig
   val error : Error.t
 end) : Instance_types.S = struct
-  let test () = Result.ok_unit
+  let test () = Ok ()
 
   let compile (_mode : Mode.t) ~infile ~outfile =
     ignore infile ; ignore outfile ; Result.Error E.error

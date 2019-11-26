@@ -92,7 +92,7 @@ let%test_module "SBSC example" =
       [%expect
         {|
       (Error
-       ("Insert failed: index out of range" (here base_exts/src/list.ml:91:54)
+       ("Insert failed: index out of range" (here base_exts/src/list.ml:90:54)
         (insert_at 3) (list_length 2))) |}]
 
     let%expect_test "add_thread, then remove it" =

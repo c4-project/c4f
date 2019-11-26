@@ -128,10 +128,6 @@ end) : Plumbing.Jsonable_types.S with type t = Const.t t = struct
         (postcondition_of_json (U.member "postcondition" json))
     in
     make ~name ?locations ~init ?postcondition ()
-
-  let t_of_yojson' (json : Yojson.Safe.t) : (t, string) Result.t =
-    Result.try_with (fun () -> t_of_yojson json)
-    |> Result.map_error ~f:Exn.to_string
 end
 
 module Change_set = struct

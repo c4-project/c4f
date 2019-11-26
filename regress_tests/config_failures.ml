@@ -18,7 +18,7 @@ let parse_config_failures ~(file : Fpath.t) ~(path : Fpath.t) :
   ignore file ;
   let r = Act_config.Frontend.load (Plumbing.Input.of_fpath path) in
   Fmt.(pr "@[%a@]@." (result ~ok:(always "No failures.") ~error:Error.pp)) r ;
-  Result.ok_unit
+  Ok ()
 
 let run (test_dir : Fpath.t) : unit Or_error.t =
   let full_dir = Fpath.(test_dir / "config" / "failures" / "") in

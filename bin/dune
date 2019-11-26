@@ -33,16 +33,3 @@
  (public_name act-state)
  (modules act_state)
  (libraries base core_kernel core common_cmd cmd_state))
-
-(rule
- (targets specs.output)
- (action
-  (with-stdout-to
-   specs.output
-   (run act-c "list-compilers" "-verbose" "-config" "act.conf.example")))
- (deps "act.conf.example"))
-
-(alias
- (name runtest)
- (action
-  (diff specs.expected specs.output)))

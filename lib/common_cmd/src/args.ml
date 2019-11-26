@@ -68,7 +68,7 @@ module Other = struct
         ; map
             ~f:(Option.map ~f:(fun x -> Act_machine.Target.Arch x))
             (arch ()) ]
-        ~if_nothing_chosen:`Raise)
+        ~if_nothing_chosen:Raise)
 
   let aux_file : string option Command.Param.t =
     flag "aux-file"

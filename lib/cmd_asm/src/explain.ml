@@ -65,14 +65,14 @@ let command =
         Act_asm.Explainer.Config.Format.(
           choose_one
             [ map
-                ~f:(fun flag -> Option.some_if flag (Some Detailed))
+                ~f:(fun flag -> Option.some_if flag Detailed)
                 (flag "detailed" no_arg
                    ~doc:"Print a detailed (but long-winded) explanation")
             ; map
-                ~f:(fun flag -> Option.some_if flag (Some Assembly))
+                ~f:(fun flag -> Option.some_if flag Assembly)
                 (flag "as-assembly" no_arg
                    ~doc:"Print explanation as lightly annotated assembly") ]
-            ~if_nothing_chosen:(`Default_to None))
+            ~if_nothing_chosen:Return_none)
       in
       fun () ->
         Common.lift_command standard_args ~f:(run output_format)
