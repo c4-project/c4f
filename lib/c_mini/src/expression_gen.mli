@@ -11,17 +11,29 @@
 
 (** Mini-C expression generators *)
 
+(** Type of expression generators. *)
+module type S = Act_utils.My_quickcheck.S_with_sexp with type t = Expression.t
+
 (** Generates random, type-safe expressions over the given variable typing
     environment, with type 'int'. *)
-module Int_values (E : Env_types.S) :
-  Act_utils.My_quickcheck.S_with_sexp with type t = Expression.t
+module Int_values (E : Env_types.S) : S
+
+(** {1 Booleans} *)
 
 (** Generates random, type-safe expressions over the given variable typing
     environment, with type 'bool'. *)
-module Bool_values (E : Env_types.S) :
-  Act_utils.My_quickcheck.S_with_sexp with type t = Expression.t
+module Bool_values (E : Env_types.S) : S
 
-(** Generates random, type-safe expressions over the given variable typing
-    environment, with type 'bool' and guaranteed 'true' value. *)
-module Bool_tautologies (E : Env_types.S_with_known_values) :
-  Act_utils.My_quickcheck.S_with_sexp with type t = Expression.t
+(** {2 Booleans with known truth values}
+
+    [Bool_known] constructs two generators over a given environment with
+    known value data: a tautology generator and a falsehood generator. *)
+module Bool_known (E : Env_types.S_with_known_values) : sig
+  (** Generates random, type-safe expressions over the given variable typing
+      environment, with type 'bool' and guaranteed 'true' value. *)
+  module Tautologies : S
+
+  (** Generates random, type-safe expressions over the given variable typing
+      environment, with type 'bool' and guaranteed 'false' value. *)
+  module Falsehoods : S
+end

@@ -105,8 +105,8 @@ module Surround = struct
 
     let cond_gen (module Env : Act_c_mini.Env_types.S_with_known_values) :
         Act_c_mini.Expression.t Base_quickcheck.Generator.t =
-      let module B = Act_c_mini.Expression_gen.Bool_tautologies (Env) in
-      B.quickcheck_generator
+      let module B = Act_c_mini.Expression_gen.Bool_known (Env) in
+      B.Tautologies.quickcheck_generator
 
     let t_branch_of_statements (statements : Subject.Statement.t list) :
         Subject.Block.t =
