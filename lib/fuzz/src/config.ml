@@ -14,7 +14,7 @@ open Base
 type t =
   { weights: (Act_common.Id.t, int) List.Assoc.t
         [@default []] [@drop_if_default]
-  ; max_passes: int [@default 20] [@drop_if_default]
+  ; max_passes: int [@default 25] [@drop_if_default]
         (* TODO(@MattWindsor91): connect this to the top-level config parser;
            at time of writing there is no way to override this. *) }
 [@@deriving sexp, fields, make]
@@ -38,6 +38,9 @@ let modules : Action.With_default_weight.t list Lazy.t =
       ; make
           ~action:(module If_actions.Surround.Duplicate)
           ~default_weight:15
+      ; make
+          ~action:(module Loop_actions.Surround)
+          ~default_weight:20
       ; make ~action:(module Dead_actions.Early_out) ~default_weight:15 ]
 
 let module_map : Action.With_default_weight.t Map.M(Act_common.Id).t Lazy.t =

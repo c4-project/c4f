@@ -26,6 +26,15 @@ flow.if.tautology:
 flow.invert-if:
   Weight: 10x
   Summary: Flips the conditional and branches of an if statement.
+flow.loop.surround:
+  Weight: 20x
+  Summary:
+    Removes a sublist of statements from the program, replacing them with a
+    `do... while` statement containing some transformation of the removed
+    statements.
+    
+    The condition of the `do... while` loop is statically guaranteed to be
+    false.
 program.make.empty:
   Weight: 10x
   Summary:

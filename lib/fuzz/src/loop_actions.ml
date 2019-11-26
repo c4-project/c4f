@@ -11,13 +11,16 @@
 
  open Base
 
-module Surround = struct
+module Surround : Action_types.S with type Payload.t = Payload.Surround.t = struct
   let name = Act_common.Id.of_string_list ["flow"; "loop"; "surround"]
 
   let readme () : string = Act_utils.My_string.format_for_readme
     {| Removes a sublist
        of statements from the program, replacing them with a `do... while`
-       statement containing some transformation of the removed statements. |}
+       statement containing some transformation of the removed statements.
+
+       The condition of the `do... while` loop is statically guaranteed to be
+       false. |}
 
    let available (test : Subject.Test.t) : bool State.Monad.t = test |>
    Subject.Test.has_statements |> State.Monad.return
