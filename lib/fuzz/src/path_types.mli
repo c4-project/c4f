@@ -30,8 +30,7 @@ end
 module type S_producer = sig
   include S_base
 
-  val try_gen_insert_stm :
-    ?filter:Path_filter.t -> target -> t Base_quickcheck.Generator.t option
+  val try_gen_insert_stm : ?filter:Path_filter.t -> target -> t Opt_gen.t
   (** [try_gen_insert_stm dest] tries to create a Quickcheck-style generator
       for statement insertion paths targeting [dest].
 
@@ -39,15 +38,14 @@ module type S_producer = sig
       be inserted. *)
 
   val try_gen_transform_stm_list :
-    ?filter:Path_filter.t -> target -> t Base_quickcheck.Generator.t option
+    ?filter:Path_filter.t -> target -> t Opt_gen.t
   (** [try_gen_transform_stm dest] tries to create a Quickcheck-style
       generator for statement list transformation paths targeting [dest].
 
       It can return [None] if [dest] has no position at which statement lists
       can be transformed. *)
 
-  val try_gen_transform_stm :
-    ?filter:Path_filter.t -> target -> t Base_quickcheck.Generator.t option
+  val try_gen_transform_stm : ?filter:Path_filter.t -> target -> t Opt_gen.t
   (** [try_gen_transform_stm ?predicate dest] tries to create a
       Quickcheck-style generator for statement transformation paths targeting
       [dest], and, optionally, satisfying [filter]. It returns [None] if the

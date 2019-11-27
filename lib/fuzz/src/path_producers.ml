@@ -18,8 +18,9 @@ module Prog = Act_c_mini.Program
 
 (* Helpers for making path generators. *)
 
-let check_ok (type a) (x : a) ~(filter : Path_filter.t) : a option =
-  Option.some_if (Path_filter.is_ok filter) x
+let check_ok (type a) (x : a) ~(filter : Path_filter.t) : a Or_error.t =
+  if Path_filter.is_ok filter then Or_error.return x
+  else Or_error.error_string "This path failed a filter check"
 
 module rec Statement :
   (Path_types.S_producer
@@ -29,8 +30,9 @@ module rec Statement :
 
   type target = Subject.Statement.t
 
-  (* TODO(@MattWindsor91): Travesty? *)
-  let nope (type a b) (_ : a) : b option = None
+  let nope (type a b) (_ : a) : b Or_error.t =
+    Or_error.error_string
+      "Can't generate a path of this type on this statement"
 
   let try_gen_recursively (m : Subject.Statement.t)
       ~(if_stm : If_statement.target -> Path.ifs Opt_gen.t) :
@@ -48,13 +50,19 @@ module rec Statement :
     try_gen_recursively m
       ~if_stm:(If_statement.try_gen_transform_stm_list ?filter)
 
+  let this_stm_if_ok (stm : Subject.Statement.t) ~(filter : Path_filter.t) :
+      Path.stm Opt_gen.t =
+    if Path_filter.is_final_statement_ok filter ~stm then
+      Opt_gen.return Path.this_stm
+    else
+      Or_error.error_s
+        [%message
+          "Generated 'this-statement' path failed filtering checks"
+            ~stm:(stm : Subject.Statement.t)]
+
   let try_gen_transform_stm ?(filter : Path_filter.t = Path_filter.empty)
       (stm : Subject.Statement.t) : Path.stm Opt_gen.t =
-    let gen_base =
-      Option.some_if
-        (Path_filter.is_final_statement_ok filter ~stm)
-        (Q.Generator.return Path.this_stm)
-    in
+    let gen_base = this_stm_if_ok stm ~filter in
     let gen_rec =
       try_gen_recursively stm
         ~if_stm:(If_statement.try_gen_transform_stm ~filter)
@@ -108,34 +116,42 @@ and Statement_list :
     |> Statement.try_gen_transform_stm ?filter
     |> Opt_gen.map ~f:(Path.in_stm index)
 
-  let try_gen_transform_stm ?(filter : Path_filter.t option) :
-      target -> Path.stm_list Opt_gen.t =
-    Act_utils.My_list.guard_if_empty_opt ~f:(fun dest ->
-        Opt_gen.union (List.mapi ~f:(gen_transform_stm_on ?filter) dest))
+  let try_gen_transform_stm ?(filter : Path_filter.t option) (dest : target)
+      : Path.stm_list Opt_gen.t =
+    Opt_gen.union (List.mapi ~f:(gen_transform_stm_on ?filter) dest)
 
-  let gen_transform_stm_list_here (dest : target) : t Q.Generator.t =
+  let gen_transform_stm_list_here_populated (dest : target) : t Q.Generator.t
+      =
     Q.Generator.(
       create (fun ~size ~random ->
           ignore size ;
           Option.value_exn (Act_utils.My_list.Random.stride dest ~random))
       >>| fun (p, d) -> Path.On_stm_range (p, d))
 
+  let gen_transform_stm_list_here (dest : target) : t Q.Generator.t =
+    let len = List.length dest in
+    let after = Q.Generator.return (Path.On_stm_range (len, 0)) in
+    let inner =
+      if len = 0 then [] else [gen_transform_stm_list_here_populated dest]
+    in
+    Q.Generator.union (after :: inner)
+
   let gen_transform_stm_list_on (index : int)
       (single_dest : Subject.Statement.t) ~(filter : Path_filter.t) :
       t Opt_gen.t =
     let f = filter in
-    Option.(
+    Or_error.(
       single_dest
       |> Statement.try_gen_transform_stm_list ~filter:f
       |> Opt_gen.map ~f:(Path.in_stm index)
       >>= check_ok ~filter:f)
 
   let try_gen_transform_stm_list
-      ?(filter : Path_filter.t = Path_filter.empty) : target -> t Opt_gen.t =
-    Act_utils.My_list.guard_if_empty_opt ~f:(fun dest ->
-        Opt_gen.union
-          ( check_ok ~filter (gen_transform_stm_list_here dest)
-          :: List.mapi dest ~f:(gen_transform_stm_list_on ~filter) ))
+      ?(filter : Path_filter.t = Path_filter.empty) (dest : target) :
+      t Opt_gen.t =
+    Opt_gen.union
+      ( check_ok ~filter (gen_transform_stm_list_here dest)
+      :: List.mapi dest ~f:(gen_transform_stm_list_on ~filter) )
 end
 
 and If_statement :
