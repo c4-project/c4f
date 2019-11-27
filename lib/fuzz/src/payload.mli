@@ -27,10 +27,14 @@ module Helpers : sig
       outputting the randomly generated value. *)
 
   val lift_quickcheck_opt :
-    'a Opt_gen.t -> random:Splittable_random.State.t -> 'a State.Monad.t
-  (** [lift_quickcheck_opt gen_opt ~random] behaves as {!lift_quickcheck} if
-      [gen_opt] is [Ok gen], and lifts the error inside the state monad if
-      not. *)
+       'a Opt_gen.t
+    -> random:Splittable_random.State.t
+    -> action_id:Act_common.Id.t
+    -> 'a State.Monad.t
+  (** [lift_quickcheck_opt gen_opt ~random ~action_id] behaves as
+      {!lift_quickcheck} if [gen_opt] is [Ok gen], and lifts the error inside
+      the state monad if not. The caller must provide the ID of the action
+      whose payload is being generated as [action_id]. *)
 end
 
 (** {1 Stock payloads and functors for building them} *)
@@ -39,15 +43,19 @@ module None : Action_types.S_payload with type t = unit
 (** Dummy payload module for actions that take no payload. *)
 
 (** Adapts payload generators that don't depend on the state of the program. *)
-module Pure (S : sig
+module Pure (Basic : sig
   type t [@@deriving sexp]
 
   val quickcheck_generator : t Base_quickcheck.Generator.t
-end) : Action_types.S_payload with type t = S.t
+end) : Action_types.S_payload with type t = Basic.t
 
 (** Scaffolding for building payload generators that just build program
     paths. *)
-module Program_path (S : sig
+module Program_path (Basic : sig
+  val action_id : Act_common.Id.t
+  (** [action_id] should be the approximate ID of the action whose payload is
+      being defined. *)
+
   val build_filter : Path_filter.t -> Path_filter.t
   (** [build_filter flt] should apply the path filter predicates needed for
       the payload generator to [flt]. *)
@@ -101,6 +109,10 @@ module Surround : sig
   (** [Make] builds a fully-functional payload module with the surround
       payload and a generator that uses the given conditional generator. *)
   module Make (Basic : sig
+    val action_id : Act_common.Id.t
+    (** [action_id] should be the approximate ID of the action whose payload
+        is being defined. *)
+
     val cond_gen :
          (module Act_c_mini.Env_types.S_with_known_values)
       -> Act_c_mini.Expression.t Base_quickcheck.Generator.t

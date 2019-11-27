@@ -55,7 +55,12 @@ module Surround = struct
       Act_utils.My_string.format_for_readme raw
 
     module Surround = Payload.Surround
-    module Payload = Surround.Make (Basic)
+
+    module Payload = Surround.Make (struct
+      include Basic
+
+      let action_id = name
+    end)
 
     let available (test : Subject.Test.t) : bool State.Monad.t =
       test |> Subject.Test.has_statements |> State.Monad.return
@@ -138,6 +143,7 @@ module Invert : Action_types.S with type Payload.t = Path.program = struct
     let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t) :
         Path.program State.Monad.t =
       Payload.Helpers.lift_quickcheck_opt (quickcheck_path test) ~random
+        ~action_id:name
   end
 
   let invert_if (ifs : Metadata.t Act_c_mini.Statement.If.t) :
