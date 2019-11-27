@@ -11,6 +11,9 @@
 
 open Base
 
+let early_out_name =
+  Act_common.Id.of_string_list ["flow"; "dead"; "early-out"]
+
 module Early_out_payload = struct
   type t = {path: Path.program; kind: Act_c_mini.Early_out.Kind.t}
   [@@deriving sexp, make]
@@ -29,11 +32,12 @@ module Early_out_payload = struct
   let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t) :
       t State.Monad.t =
     Payload.Helpers.lift_quickcheck_opt (quickcheck_payload test) ~random
+      ~action_id:early_out_name
 end
 
 module Early_out : Action_types.S with type Payload.t = Early_out_payload.t =
 struct
-  let name = Act_common.Id.of_string_list ["flow"; "dead"; "early-out"]
+  let name = early_out_name
 
   let readme () =
     Act_utils.My_string.format_for_readme

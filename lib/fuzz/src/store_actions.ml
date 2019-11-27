@@ -146,7 +146,7 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
     let gen_path (o : Ac.Output.t) (subject : Subject.Test.t)
         ~(random : Splittable_random.State.t) : Path.program State.Monad.t =
       log o "Generating path" ;
-      Payload.Helpers.lift_quickcheck_opt ~random
+      Payload.Helpers.lift_quickcheck_opt ~random ~action_id:name
         (Path_producers.Test.try_gen_insert_stm subject)
 
     let gen' (o : Ac.Output.t) (subject : Subject.Test.t)
