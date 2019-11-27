@@ -52,8 +52,7 @@ module Opcode : sig
      in sanitisation. *)
 
   (** [Opcode] is an abstraction that is currently its own kind enumeration. *)
-  include
-    Node.S with type t := t and type Kind.t = t
+  include Node.S with type t := t and type Kind.t = t
 end
 
 type t [@@deriving sexp]
@@ -61,8 +60,7 @@ type t [@@deriving sexp]
 
 (** When using this module as an abstraction, the kind of each instruction is
     exactly the kind of its opcode. *)
-include
-  Node.S with type t := t and module Kind = Opcode.Kind
+include Node.S with type t := t and module Kind = Opcode.Kind
 
 val make : opcode:Opcode.t -> operands:Operand.Bundle.t -> t
 (** [make ~opcode ~operands] makes a [t] from an [opcode] and an [operands]
@@ -114,8 +112,7 @@ module type S_properties = sig
   type t
   (** The type we're querying. *)
 
-  include
-    S_predicates with type t := t
+  include S_predicates with type t := t
   (** Anything that can access properties can also access predicates. *)
 
   val opcode : t -> Opcode.t
@@ -132,8 +129,7 @@ module Inherit_properties
     (I : Act_utils.Inherit_types.S with type c := P.t) :
   S_properties with type t := I.t
 
-include
-  S_properties with type t := t
+include S_properties with type t := t
 (** We include the functions provided in [S_properties], but define them over
     [with_operands] rather than [t]. This is because some of the operations
     require operand analysis. *)

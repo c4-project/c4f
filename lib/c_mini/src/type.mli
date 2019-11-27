@@ -52,14 +52,12 @@ end
 type t [@@deriving equal, sexp, compare, quickcheck]
 (** Opaque type of types. *)
 
-include
-  Stringable.S with type t := t
+include Stringable.S with type t := t
 (** Types can be converted to strings; this conversion is quite limited in
     both directions, mapping "basic*" for pointer types and "normal" for
     basic types only. *)
 
-include
-  Plumbing.Jsonable_types.S with type t := t
+include Plumbing.Jsonable_types.S with type t := t
 (** Types can be converted to JSON by stringification. *)
 
 (** {2 Constructors} *)

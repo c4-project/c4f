@@ -46,8 +46,7 @@ module type S_predicates = sig
   type t
   (** [t] is the type we're querying. *)
 
-  include
-    Location.S_predicates with type t := t
+  include Location.S_predicates with type t := t
   (** Any predicate on a location also works on an operand; it responds
       negatively if the operand isn't a location. *)
 
@@ -101,8 +100,7 @@ module type S_properties = sig
   type t
   (** [t] is the type we're querying. *)
 
-  include
-    S_predicates with type t := t
+  include S_predicates with type t := t
   (** Anything that can access properties can also access predicates. *)
 
   val flags : t -> Symbol.Table.t -> Set.M(Flag).t
@@ -117,8 +115,7 @@ module Inherit_properties
     (I : Act_utils.Inherit_types.S with type c := P.t) :
   S_properties with type t := I.t
 
-include
-  S_properties with type t := t
+include S_properties with type t := t
 (** This module contains [S_properties] directly. *)
 
 include Node.S with type t := t and module Flag := Flag
@@ -223,8 +220,7 @@ module Bundle : sig
     type t
     (** [t] is the type we're querying. *)
 
-    include
-      S_predicates with type t := t
+    include S_predicates with type t := t
     (** Anything that can access properties can also access predicates. *)
 
     val errors : t -> Error.t list
@@ -243,8 +239,7 @@ module Bundle : sig
       (I : Act_utils.Inherit_types.S with type c := P.t) :
     S_properties with type t := I.t
 
-  include
-    S_properties with type t := t
+  include S_properties with type t := t
   (** This module contains [S_properties] directly. *)
 
   (** Operand bundles are traversable containers. *)

@@ -35,8 +35,7 @@ include Pretty_printer.S with type t := t
 
 include Plumbing.Jsonable_types.S with type t := t
 
-include
-  Stringable.S with type t := t
+include Stringable.S with type t := t
 (** Note that [of_string] is [create_exn]; ie, it can fail. *)
 
 val is_string_safe : string -> bool
@@ -56,8 +55,7 @@ module Herd_safe : sig
 
   include Pretty_printer.S with type t := t
 
-  include
-    Stringable.S with type t := t
+  include Stringable.S with type t := t
   (** Note that [of_string] is [create_exn]; ie, it can fail. *)
 
   val of_c_identifier : c -> t Or_error.t

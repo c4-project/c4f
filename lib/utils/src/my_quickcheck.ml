@@ -52,13 +52,14 @@ end = struct
   let quickcheck_observer = Base_quickcheck.Observer.int
 end
 
-let print_sample (type a) ?(test_count: int = 20) ?(printer : (a -> unit) option)
-    (module M : S_sample with type t = a) : unit =
+let print_sample (type a) ?(test_count : int = 20)
+    ?(printer : (a -> unit) option) (module M : S_sample with type t = a) :
+    unit =
   let print =
     Option.value printer ~default:(fun x -> Stdio.print_s [%sexp (x : M.t)])
   in
   Base_quickcheck.Test.with_sample_exn [%quickcheck.generator: M.t]
-    ~config:{Base_quickcheck.Test.default_config with test_count= test_count}
+    ~config:{Base_quickcheck.Test.default_config with test_count}
     ~f:(fun sequence ->
       sequence |> Sequence.to_list
       |> List.dedup_and_sort ~compare:M.compare

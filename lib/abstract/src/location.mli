@@ -86,8 +86,7 @@ module Kind : sig
   include Act_utils.Enum_types.Extension_table with type t := t
 end
 
-include
-  S_predicates with type t := t
+include S_predicates with type t := t
 (** This module contains [S_predicates] directly. *)
 
 include Node.S with type t := t and module Kind := Kind

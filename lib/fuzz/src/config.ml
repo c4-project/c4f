@@ -38,9 +38,7 @@ let modules : Action.With_default_weight.t list Lazy.t =
       ; make
           ~action:(module If_actions.Surround.Duplicate)
           ~default_weight:15
-      ; make
-          ~action:(module Loop_actions.Surround)
-          ~default_weight:20
+      ; make ~action:(module Loop_actions.Surround) ~default_weight:20
       ; make ~action:(module Dead_actions.Early_out) ~default_weight:15 ]
 
 let module_map : Action.With_default_weight.t Map.M(Act_common.Id).t Lazy.t =

@@ -36,8 +36,7 @@ module type S_predicates = sig
   type t
   (** [t] is the type we're querying. *)
 
-  include
-    Instruction.S_predicates with type t := t
+  include Instruction.S_predicates with type t := t
   (** We can apply instruction predicates to an abstract statement; they
       return [false] when the statement isn't an instruction. *)
 
@@ -99,8 +98,7 @@ module type S_properties = sig
   type t
   (** [t] is the type we're querying. *)
 
-  include
-    S_predicates with type t := t
+  include S_predicates with type t := t
   (** Anything that can access properties can also access predicates. *)
 
   val exists :
@@ -137,8 +135,7 @@ module Inherit_properties
     (I : Act_utils.Inherit_types.S with type c := P.t) :
   S_properties with type t := I.t
 
-include
-  S_properties with type t := t
+include S_properties with type t := t
 (** This module contains [S_properties] directly. *)
 
 include

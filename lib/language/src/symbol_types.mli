@@ -35,8 +35,7 @@ module type Basic = sig
   type t [@@deriving compare, equal, sexp]
   (** [t] is the concrete type of symbols. *)
 
-  include
-    Pretty_printer.S with type t := t
+  include Pretty_printer.S with type t := t
   (** Languages must supply a pretty-printer for their symbols. *)
 
   (** They must allow traversal over any string parts of the symbol. *)

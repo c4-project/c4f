@@ -44,8 +44,7 @@ module type Basic = sig
   module Sym : Equal.S
   (** The type of concrete symbols. *)
 
-  include
-    Pretty_printer.S with type t := t
+  include Pretty_printer.S with type t := t
   (** Languages must supply a pretty-printer for their instructions. *)
 
   val pp_operands : t Fmt.t
@@ -116,8 +115,7 @@ end
 module type S = sig
   include Basic_with_modules
 
-  include
-    Act_abstract.Instruction.S_properties with type t := t
+  include Act_abstract.Instruction.S_properties with type t := t
   (** We can query abstract properties directly on the concrete instruction
       type. *)
 

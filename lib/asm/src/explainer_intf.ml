@@ -58,8 +58,7 @@ module type S = sig
          and type context := Act_abstract.Symbol.Table.t
          and module Abs := Act_abstract.Operand.Bundle
 
-    include
-      Act_abstract.Operand.Bundle.S_properties with type t := t
+    include Act_abstract.Operand.Bundle.S_properties with type t := t
     (** As a shorthand, we can query an explanation directly for properties.
         This uses the explanation's stored abstract representation, but
         bypasses its stored flags. *)
@@ -73,8 +72,7 @@ module type S = sig
          and type context := Act_abstract.Symbol.Table.t
          and module Abs := Act_abstract.Instruction
 
-    include
-      Act_abstract.Instruction.S_properties with type t := t
+    include Act_abstract.Instruction.S_properties with type t := t
     (** As a shorthand, we can query an explanation directly for properties.
         This uses the explanation's stored abstract representation, but
         bypasses its stored flags. *)
@@ -89,8 +87,7 @@ module type S = sig
          and type context := Act_abstract.Symbol.Table.t
          and module Abs := Act_abstract.Statement
 
-    include
-      Act_abstract.Statement.S_properties with type t := t
+    include Act_abstract.Statement.S_properties with type t := t
     (** As a shorthand, we can query an explanation directly for properties.
         This uses the explanation's stored abstract representation, but
         bypasses its stored flags. *)

@@ -31,8 +31,7 @@ module type Basic = sig
   type stm
   (** Type of statements inside programs. *)
 
-  include
-    Pretty_printer.S with type t := t
+  include Pretty_printer.S with type t := t
   (** Languages must supply a pretty-printer for their programs. *)
 
   (** They must allow traversal over statement lists (as a block).

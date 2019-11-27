@@ -79,5 +79,4 @@ let%test_unit "to_memalloy_id doesn't throw when creating local identifiers"
     end )
     ~f:(fun (t, id) ->
       let mid = Ac.Litmus_id.(to_memalloy_id (local t id)) in
-      ignore (mid : Ac.C_id.t)
-    )
+      ignore (mid : Ac.C_id.t))

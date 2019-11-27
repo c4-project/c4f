@@ -81,8 +81,7 @@ val reduce : t -> lvalue:(Lvalue.t -> 'a) -> ref:('a -> 'a) -> 'a
 val lvalue_of : t -> Lvalue.t
 (** [lvalue_of addr] gets the underlying lvalue of [addr]. *)
 
-include
-  Types.S_has_underlying_variable with type t := t
+include Types.S_has_underlying_variable with type t := t
 (** We can get to the variable name inside an address. *)
 
 (** {1 Safe accessors}
@@ -99,8 +98,7 @@ val as_variable : t -> Act_common.C_id.t Or_error.t
 
 (** {1 Type-checking} *)
 
-include
-  Types.S_type_checkable with type t := t
+include Types.S_type_checkable with type t := t
 (** Type-checking for addresses. *)
 
 (** {1 Generating and quickchecking}

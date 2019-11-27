@@ -18,20 +18,18 @@ type t = Id of Ac.Id.Property.t | Is_remote | Is_local
 [@@deriving sexp, variants]
 
 let check_is_remote (spec : Spec.With_id.t) : bool =
-  match Spec.With_id.remoteness spec with
-  | `Remote -> true
-  | _ -> false
+  match Spec.With_id.remoteness spec with `Remote -> true | _ -> false
 
 let check_is_local (spec : Spec.With_id.t) : bool =
-  match Spec.With_id.remoteness spec with
-  | `Local -> true
-  | _ -> false
+  match Spec.With_id.remoteness spec with `Local -> true | _ -> false
 
 let eval (spec : Spec.With_id.t) = function
   | Id prop ->
       Ac.Id.Property.eval ~id:(Spec.With_id.id spec) prop
-  | Is_remote -> check_is_remote spec
-  | Is_local -> check_is_local spec
+  | Is_remote ->
+      check_is_remote spec
+  | Is_local ->
+      check_is_local spec
 
 let eval_b spec expr = Blang.eval expr (eval spec)
 

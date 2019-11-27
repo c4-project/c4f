@@ -27,8 +27,7 @@ val src : t -> Address.t
 val mo : t -> Mem_order.t
 (** [mo ld] gets [ld]'s memory order. *)
 
-include
-  Types.S_has_underlying_variable with type t := t
+include Types.S_has_underlying_variable with type t := t
 (** We can get to the variable name inside an atomic load (that is, the
     source variable). *)
 
@@ -54,6 +53,5 @@ module Quickcheck_atomic_ints (E : Env_types.S) :
 
 (** {2 Type checking} *)
 
-include
-  Types.S_type_checkable with type t := t
+include Types.S_type_checkable with type t := t
 (** Type-checking for atomic loads. *)

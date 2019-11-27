@@ -156,8 +156,7 @@ val quickcheck_observer : t Base_quickcheck.Observer.t
 
 (** {1 Type checking} *)
 
-include
-  Types.S_type_checkable with type t := t
+include Types.S_type_checkable with type t := t
 (** Type-checking for expressions. *)
 
 (** {1 Evaluating expressions} *)
