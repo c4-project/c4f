@@ -21,4 +21,13 @@ module Test_utils : sig
   (** [run_and_dump_test action ~initial_state] runs the monadic computation
       [action] (representing a fuzzer action) on [initial_state], then dumps
       the resulting C to stdout. *)
+
+  val run_and_dump_global_deps :
+       Act_fuzz.Subject.Test.t Act_fuzz.State.Monad.t
+    -> initial_state:Act_fuzz.State.t
+    -> unit
+  (** [run_and_dump_global_deps action ~initial_state] runs the monadic
+      computation [action] (representing a fuzzer action) on [initial_state],
+      then dumps a list of global variables with registered dependencies to
+      stdout. *)
 end

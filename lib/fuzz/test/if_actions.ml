@@ -10,7 +10,6 @@
    project root for more information. *)
 
 open Base
-open Stdio
 module Src = Act_fuzz
 
 let%test_module "Surround" =
@@ -26,11 +25,12 @@ let%test_module "Surround" =
     let test : Src.Subject.Test.t = Lazy.force Subject.Test_data.test
 
     let cond : Act_c_mini.Expression.t =
+      (* should be true with respect to the test var-map *)
       Act_c_mini.(
         Expression.(
           l_and
-            (eq (variable (Act_common.C_id.of_string "d")) (int_lit 27))
-            (variable (Act_common.C_id.of_string "a"))))
+            (eq (of_variable_str_exn "x") (int_lit 27))
+            (of_variable_str_exn "a")))
 
     let path : Src.Path.program = In_func (0, In_stms (On_stm_range (0, 2)))
 
@@ -39,35 +39,59 @@ let%test_module "Surround" =
 
     let%test_module "Tautology" =
       ( module struct
-        let run_test () : (Src.State.t * Src.Subject.Test.t) Or_error.t =
-          Src.State.Monad.run' (Surround.Tautology.run test ~payload) state
+        let action = Surround.Tautology.run test ~payload
 
         let%expect_test "resulting AST" =
-          Action.Test_utils.run_and_dump_test
-            (Surround.Tautology.run test ~payload)
-            ~initial_state:state ;
+          Action.Test_utils.run_and_dump_test action ~initial_state:state ;
           [%expect
             {|
         void
         P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
-           bool c, int d, atomic_int e, int f, int foo, atomic_bool foobar)
+           bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
+           atomic_int y)
         {
-            if (d == 27 && a)
+            if (x == 27 && a)
             { atomic_store_explicit(x, 42, memory_order_seq_cst); ; }
             atomic_store_explicit(y, foo, memory_order_relaxed);
             if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
             if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
         } |}]
 
-        let%expect_test "dependencies after running" =
-          let result =
-            Or_error.(
-              run_test () >>| fst
-              >>| Src.State.vars_satisfying_all ~scope:(Local 0)
-                    ~predicates:[Src.Var.Record.has_dependencies])
-          in
-          print_s [%sexp (result : Act_common.C_id.t list Or_error.t)] ;
-          [%expect {| (Ok (a d)) |}]
+        let%expect_test "global dependencies after running" =
+          Action.Test_utils.run_and_dump_global_deps action
+            ~initial_state:state ;
+          [%expect {|
+          a
+          x |}]
+      end )
+
+    let%test_module "Duplicate" =
+      ( module struct
+        let action = Surround.Duplicate.run test ~payload
+
+        let%expect_test "resulting AST" =
+          Action.Test_utils.run_and_dump_test action ~initial_state:state ;
+          [%expect
+            {|
+        void
+        P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+           bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
+           atomic_int y)
+        {
+            if (x == 27 && a)
+            { atomic_store_explicit(x, 42, memory_order_seq_cst); ; } else
+            { atomic_store_explicit(x, 42, memory_order_seq_cst); ; }
+            atomic_store_explicit(y, foo, memory_order_relaxed);
+            if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
+            if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
+        } |}]
+
+        let%expect_test "global dependencies after running" =
+          Action.Test_utils.run_and_dump_global_deps action
+            ~initial_state:state ;
+          [%expect {|
+          a
+          x |}]
       end )
   end )
 
