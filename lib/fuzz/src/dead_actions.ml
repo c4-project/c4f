@@ -15,10 +15,10 @@ let early_out_name =
   Act_common.Id.of_string_list ["flow"; "dead"; "early-out"]
 
 module Early_out_payload = struct
-  type t = {path: Path.program; kind: Act_c_mini.Early_out.Kind.t}
+  type t = {path: Path.Program.t; kind: Act_c_mini.Early_out.Kind.t}
   [@@deriving sexp, make]
 
-  let quickcheck_path (test : Subject.Test.t) : Path.program Opt_gen.t =
+  let quickcheck_path (test : Subject.Test.t) : Path.Program.t Opt_gen.t =
     let filter = Path_filter.(empty |> in_dead_code_only) in
     Path_producers.Test.try_gen_insert_stm ~filter test
 

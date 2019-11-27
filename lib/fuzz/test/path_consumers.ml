@@ -19,13 +19,13 @@ let%test_module "Statement_list" =
         module F = Act_fuzz
         module Stm = Act_c_mini.Statement
 
-        let insert_path : F.Path.stm_list = Insert 2
+        let insert_path : F.Path.Stms.t = F.Path.Stms.insert 2
 
-        let insert_at_end_path : F.Path.stm_list = Insert 3
+        let insert_at_end_path : F.Path.Stms.t = F.Path.Stms.insert 3
 
-        let in_stm_path : F.Path.stm_list = In_stm (2, This_stm)
+        let in_stm_path : F.Path.Stms.t = F.Path.(Stms.in_stm 2 Stm.this_stm)
 
-        let on_stm_range_path : F.Path.stm_list = On_stm_range (1, 2)
+        let on_stm_range_path : F.Path.Stms.t = F.Path.Stms.on_range 1 2
 
         let example_stm : F.Metadata.t Stm.t =
           Act_c_mini.(
@@ -66,8 +66,8 @@ let%test_module "Statement_list" =
               [%expect
                 {|
           ("Can't use this statement-list path here"
-           (here lib/fuzz/src/path_consumers.ml:110:65) (context insert_stm)
-           (path (On_stm_range 1 2))) |}]
+           (here lib/fuzz/src/path_consumers.ml:131:65) (context insert_stm)
+           (path (On_range 1 2))) |}]
 
             let%expect_test "insert into list" =
               test_insert insert_path ;
@@ -125,7 +125,7 @@ let%test_module "Statement_list" =
               [%expect
                 {|
           ("Can't use this statement-list path here"
-           (here lib/fuzz/src/path_consumers.ml:121:68) (context transform_stm)
+           (here lib/fuzz/src/path_consumers.ml:142:68) (context transform_stm)
            (path (Insert 2))) |}]
           end )
 
@@ -165,7 +165,7 @@ let%test_module "Statement_list" =
               [%expect
                 {|
                   ("Can't use this statement-list path here"
-                   (here lib/fuzz/src/path_consumers.ml:133:16) (context transform_stm_list)
+                   (here lib/fuzz/src/path_consumers.ml:154:16) (context transform_stm_list)
                    (path (Insert 2))) |}]
 
             let%test_unit "generator over stm-list produces valid paths" =

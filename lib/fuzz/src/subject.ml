@@ -20,6 +20,10 @@ module Statement = struct
     type t = Metadata.t Act_c_mini.Statement.If.t [@@deriving sexp]
   end
 
+  module Loop = struct
+    type t = Metadata.t Act_c_mini.Statement.While.t [@@deriving sexp]
+  end
+
   let has_dead_code_blocks : t -> bool =
     Act_c_mini.Statement.has_blocks_with_metadata
       ~predicate:Metadata.is_dead_code

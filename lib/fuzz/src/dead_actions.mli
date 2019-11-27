@@ -19,7 +19,7 @@ module Early_out_payload : sig
   type t
   (** Opaque type of early-out payloads. *)
 
-  val make : path:Path.program -> kind:Act_c_mini.Early_out.Kind.t -> t
+  val make : path:Path.Program.t -> kind:Act_c_mini.Early_out.Kind.t -> t
   (** [make ~path ~kind] constructs an early-out payload with the path ~path
       and early-out kind ~kind. *)
 end

@@ -32,7 +32,8 @@ let%test_module "Surround" =
             (eq (of_variable_str_exn "y") (int_lit 27))
             (of_variable_str_exn "a")))
 
-    let path : Src.Path.program = In_func (0, In_stms (On_stm_range (0, 2)))
+    let path : Src.Path.Program.t =
+      Src.Path.(Program.in_thread 0 @@ Thread.in_stms @@ Stms.on_range 0 2)
 
     let payload : Src.Payload.Surround.t =
       Src.Payload.Surround.make ~cond ~path
@@ -68,8 +69,10 @@ let%test_module "Invert" =
 
     let test : Src.Subject.Test.t = Lazy.force Subject.Test_data.test
 
-    let payload : Src.Path.program =
-      Src.Path.(in_func 0 @@ in_stms @@ in_stm 3 @@ this_stm)
+    let payload : Src.Path.Program.t =
+      Src.Path.(
+        Program.in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 3
+        @@ Stm.this_stm)
 
     let%expect_test "resulting AST" =
       Action.Test_utils.run_and_dump_test

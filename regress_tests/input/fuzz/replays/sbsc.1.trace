@@ -18,7 +18,7 @@
    ((store
      ((src (Constant (Int 59774975))) (dst (Lvalue (Variable Is9Qk0n4Rhat)))
       (mo memory_order_relaxed)))
-    (path (In_func 1 (In_stms (Insert 2)))))))
+    (path (In_thread 1 (In_stms (Insert 2)))))))
  ((name (var make global))
   (payload ((basic_type int) (initial_value (Int -29491608)) (name u))))
  ((name (var make global))

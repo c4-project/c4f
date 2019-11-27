@@ -12,6 +12,26 @@
 open Base
 open Base_quickcheck
 
+let%test_module "Statement" =
+  ( module struct
+    let%expect_test "insert-stm generation is viable inside a do-while loop"
+        =
+      let example =
+        Act_c_mini.(
+          Statement.(
+            while_loop
+              (While.make ~cond:Act_c_mini.Expression.falsehood
+                 ~body:(Act_fuzz.Subject.Block.make_generated ())
+                 ~kind:`Do_while)))
+      in
+      let gen =
+        Act_fuzz.Path_producers.Statement.try_gen_insert_stm example
+      in
+      Or_error.iter_error gen
+        ~f:(Fmt.pr "@[unexpected error:@ %a@]@." Error.pp) ;
+      [%expect]
+  end )
+
 let%test_module "Statement_list" =
   ( module struct
     let%test_unit "insertions into an empty list are always at index 0" =
@@ -63,11 +83,11 @@ let%test_module "Statement_list" =
               (Insert 3)
               (Insert 4)
               (Insert 5)
-              (In_stm 3 (In_if (In_block false (Insert 0))))
-              (In_stm 3 (In_if (In_block true (Insert 1))))
-              (In_stm 4 (In_if (In_block false (Insert 0))))
-              (In_stm 4 (In_if (In_block true (Insert 0))))
-              (In_stm 4 (In_if (In_block true (Insert 1)))) |}]
+              (In_stm 3 (In_if (In_block (false (Insert 0)))))
+              (In_stm 3 (In_if (In_block (true (Insert 1)))))
+              (In_stm 4 (In_if (In_block (false (Insert 0)))))
+              (In_stm 4 (In_if (In_block (true (Insert 0)))))
+              (In_stm 4 (In_if (In_block (true (Insert 1))))) |}]
 
         let%expect_test "try_gen_insert_stm with dead-code filtering" =
           test
@@ -75,9 +95,9 @@ let%test_module "Statement_list" =
                ~filter:Act_fuzz.Path_filter.(empty |> in_dead_code_only)) ;
           [%expect
             {|
-            (In_stm 3 (In_if (In_block false (Insert 0))))
-            (In_stm 4 (In_if (In_block true (Insert 0))))
-            (In_stm 4 (In_if (In_block true (Insert 1)))) |}]
+            (In_stm 3 (In_if (In_block (false (Insert 0)))))
+            (In_stm 4 (In_if (In_block (true (Insert 0)))))
+            (In_stm 4 (In_if (In_block (true (Insert 1))))) |}]
 
         let%expect_test "try_gen_transform_stm with no filtering" =
           test Act_fuzz.Path_producers.Statement_list.try_gen_transform_stm ;
@@ -86,9 +106,9 @@ let%test_module "Statement_list" =
             (In_stm 0 This_stm)
             (In_stm 1 This_stm)
             (In_stm 2 This_stm)
-            (In_stm 3 (In_if (In_block true (In_stm 0 This_stm))))
+            (In_stm 3 (In_if (In_block (true (In_stm 0 This_stm)))))
             (In_stm 3 This_stm)
-            (In_stm 4 (In_if (In_block true (In_stm 0 This_stm)))) |}]
+            (In_stm 4 (In_if (In_block (true (In_stm 0 This_stm))))) |}]
 
         let%expect_test "try_gen_transform_stm with filtering to if \
                          statements" =
@@ -106,7 +126,7 @@ let%test_module "Statement_list" =
             (Act_fuzz.Path_producers.Statement_list.try_gen_transform_stm
                ~filter:Act_fuzz.Path_filter.(empty |> in_dead_code_only)) ;
           [%expect
-            {| (In_stm 4 (In_if (In_block true (In_stm 0 This_stm)))) |}]
+            {| (In_stm 4 (In_if (In_block (true (In_stm 0 This_stm))))) |}]
 
         let%expect_test "gen_transform_stm_list" =
           let gen =
@@ -116,15 +136,15 @@ let%test_module "Statement_list" =
           print_sample (Or_error.ok_exn gen) ;
           [%expect
             {|
-              (In_stm 3 (In_if (In_block false (On_stm_range 0 0))))
-              (In_stm 3 (In_if (In_block true (On_stm_range 0 0))))
-              (In_stm 3 (In_if (In_block true (On_stm_range 1 0))))
-              (In_stm 4 (In_if (In_block false (On_stm_range 0 0))))
-              (In_stm 4 (In_if (In_block true (On_stm_range 1 0))))
-              (On_stm_range 0 2)
-              (On_stm_range 0 4)
-              (On_stm_range 1 2)
-              (On_stm_range 3 1)
-              (On_stm_range 5 0) |}]
+              (In_stm 3 (In_if (In_block (false (On_range 0 0)))))
+              (In_stm 3 (In_if (In_block (true (On_range 0 0)))))
+              (In_stm 3 (In_if (In_block (true (On_range 1 0)))))
+              (In_stm 4 (In_if (In_block (false (On_range 0 0)))))
+              (In_stm 4 (In_if (In_block (true (On_range 1 0)))))
+              (On_range 0 2)
+              (On_range 0 4)
+              (On_range 1 2)
+              (On_range 3 1)
+              (On_range 5 0) |}]
       end )
   end )

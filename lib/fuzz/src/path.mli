@@ -31,56 +31,131 @@ type branch = bool [@@deriving sexp, compare, equal]
 
 (** {1 Path shapes} *)
 
+(** {2 Base definitions}
+
+    These definitions appear here and not inside their respective submodules
+    to break mutually recursive dependencies. Generally, you'll want to use
+    the submodules instead. *)
+
+(** A path focusing on a conditionally guarded compound statement (that is,
+    an if statement, while loop, or do-while loop). *)
+type 'a cond_block = In_block of 'a | This_cond
+[@@deriving sexp, compare, equal]
+
 (** A path focusing on a statement. *)
-type stm = In_if of ifs | This_stm [@@deriving sexp, compare, equal]
+type stm =
+  | In_if of (branch * stm_list) cond_block
+  | In_loop of stm_list cond_block
+  | This_stm
+[@@deriving sexp, compare, equal]
 
 (** A path focusing on a list of statements. *)
 and stm_list =
   | Insert of index  (** Inserting one statement at the given index. *)
   | In_stm of index * stm  (** Traversing further into one statement. *)
-  | On_stm_range of index * length
+  | On_range of index * length
       (** Appling something to an entire subrange of statements. *)
 [@@deriving sexp, compare, equal]
 
-(** A path focusing on an if-statement. *)
-and ifs = In_block of branch * stm_list | This_cond
-[@@deriving sexp, compare, equal]
+(** {2 Submodules}
 
-(** A path focusing on a function. *)
-type func = In_stms of stm_list [@@deriving sexp, compare, equal]
+    These submodules expose a nicer interface over the recursive types above,
+    and also provide paths at the thread and program level. *)
 
-(** A path focusing on a program. *)
-type program = In_func of index * func [@@deriving sexp, compare, equal]
+(** A path focusing on an if statement. *)
+module If : sig
+  type t = (bool * stm_list) cond_block [@@deriving sexp, compare, equal]
 
-(** {2 Constructors} *)
+  include Pretty_printer.S with type t := t
 
-(** {3 Statement paths} *)
+  (** {3 Constructors} *)
 
-val in_if : ifs -> stm
+  val in_branch : branch -> stm_list -> t
+  (** [this_cond b rest] focuses on the branch of an if statement given by
+      [b], using subpath [rest]. *)
 
-val this_stm : stm
+  val this_cond : t
+  (** [this_cond] focuses on the conditional of an if statement. *)
+end
 
-(** {3 Statement list paths} *)
+(** A path focusing on a while or do-while loop statement. *)
+module Loop : sig
+  type t = stm_list cond_block [@@deriving sexp, compare, equal]
 
-val insert : index -> stm_list
+  include Pretty_printer.S with type t := t
 
-val in_stm : index -> stm -> stm_list
+  (** {3 Constructors} *)
 
-(** {3 If-statement paths} *)
+  val in_body : stm_list -> t
+  (** [in_body rest] focuses on the body of a while loop using subpath
+      [rest]. *)
 
-val in_block : branch -> stm_list -> ifs
+  val this_cond : t
+  (** [this_cond] focuses on the conditional of an if statement. *)
+end
 
-val this_cond : ifs
+module Stm : sig
+  type t = stm [@@deriving sexp, compare, equal]
 
-(** {3 Function paths} *)
+  include Pretty_printer.S with type t := t
 
-val in_stms : stm_list -> func
+  (** {3 Constructors} *)
 
-val in_func : index -> func -> program
+  val in_if : If.t -> t
+  (** [in_if rest] focuses on an if statement using subpath [rest]. *)
 
-(** {3 Program paths} *)
+  val in_loop : Loop.t -> t
+  (** [in_if rest] focuses on a loop using subpath [rest]. *)
 
-(** {2 Helpers} *)
+  val this_stm : t
+  (** [this_stm] focuses on a statement as a whole. *)
+end
 
-val tid : program -> int
-(** [tid] gets the thread ID of a program path. *)
+module Stms : sig
+  type t = stm_list [@@deriving sexp, compare, equal]
+
+  include Pretty_printer.S with type t := t
+
+  (** {3 Constructors} *)
+
+  val insert : index -> t
+  (** [insert index] focuses on inserting a new statement at index [index] of
+      a statement list. *)
+
+  val in_stm : index -> Stm.t -> t
+  (** [in_stm index rest] focuses on an existing statement at index [index]
+      of a statement list, using subpath [rest]. *)
+
+  val on_range : index -> length -> t
+  (** [on_range index length] focuses on an [length]-wide slice of a
+      statement list starting at [index]. [length] may be 0, in which case
+      the path targets the space just before any statement at [index];
+      consequently, [on_range (List.length stms) 0] is a valid path. *)
+end
+
+(** A path focusing on a single thread. *)
+module Thread : sig
+  type t = In_stms of stm_list [@@deriving sexp, compare, equal]
+
+  include Pretty_printer.S with type t := t
+
+  (** {3 Constructors} *)
+
+  val in_stms : stm_list -> t
+end
+
+(** A path focusing on a whole program. *)
+module Program : sig
+  type t = In_thread of index * Thread.t [@@deriving sexp, compare, equal]
+
+  include Pretty_printer.S with type t := t
+
+  (** {3 Constructors} *)
+
+  val in_thread : index -> Thread.t -> t
+
+  (** {3 Accessors} *)
+
+  val tid : t -> int
+  (** [tid] gets the thread ID of a program path. *)
+end
