@@ -28,6 +28,18 @@ module Test_utils = struct
       pr "%a@."
         (result ~ok:(list Act_c_lang.Ast.External_decl.pp) ~error:Error.pp))
       r
+
+  let run_and_dump_global_deps
+      (action : Src.Subject.Test.t Src.State.Monad.t)
+      ~(initial_state : Src.State.t) : unit =
+    let r =
+      Or_error.(
+        Src.State.Monad.run' action initial_state
+        >>| fst
+        >>| Src.State.vars_satisfying_all ~scope:Global
+              ~predicates:[Src.Var.Record.has_dependencies])
+    in
+    Fmt.(pr "%a@." (result ~ok:(list Act_common.C_id.pp) ~error:Error.pp)) r
 end
 
 let%test_module "Summary" =

@@ -38,18 +38,19 @@ module Test_data = struct
           , Src.Var.Record.make_generated_global ~initial_value:Con.truth
               (Ty.bool ~atomic:true ()) )
         ; ("c", Src.Var.Record.make_generated_global (Ty.bool ()))
-        ; ( "d"
+        ; ("d", existing_global (Ty.int ()))
+        ; ("e", Src.Var.Record.make_generated_global (Ty.int ()))
+        ; ( "x"
           , Src.Var.Record.make_generated_global ~initial_value:(Con.int 27)
-              (Ty.int ()) )
-        ; ( "e"
+              (Ty.int ~atomic:true ()) )
+        ; ( "y"
           , Src.Var.Record.make_generated_global ~initial_value:(Con.int 53)
               (Ty.int ~atomic:true ()) )
-        ; ("f", Src.Var.Record.make_generated_global (Ty.int ()))
-        ; ("1:x", existing_local 1 (Ty.bool ()))
-        ; ("1:y", existing_local 1 (Ty.int ()))
-        ; ("2:x", existing_local 1 (Ty.int ()))
-        ; ("2:y", existing_local 1 (Ty.bool ()))
-        ; ("3:x", existing_local 1 (Ty.int ~pointer:true ())) ]
+        ; ("1:r0", existing_local 1 (Ty.bool ()))
+        ; ("1:r1", existing_local 1 (Ty.int ()))
+        ; ("2:r0", existing_local 2 (Ty.int ()))
+        ; ("2:r1", existing_local 2 (Ty.bool ()))
+        ; ("3:r0", existing_local 3 (Ty.int ~pointer:true ())) ]
       |> Tx.Alist.map_left ~f:Ac.Litmus_id.of_string
       |> Map.of_alist_exn (module Ac.Litmus_id)
       |> Ac.Scoped_map.of_litmus_id_map )
@@ -69,11 +70,11 @@ let%test_module "environment modules in a test map" =
 
     let%expect_test "all integer variables from thread 1" =
       test_variables_of_basic_type (Ac.Scope.Local 1) (Ty.Basic.int ()) ;
-      [%expect {| ((d int) (f int) (foo int) (y int)) |}]
+      [%expect {| ((d int) (e int) (foo int) (r1 int)) |}]
 
     let%expect_test "all boolean variables from thread 2" =
       test_variables_of_basic_type (Ac.Scope.Local 2) (Ty.Basic.bool ()) ;
-      [%expect {| ((a bool) (barbaz bool) (c bool) (y bool)) |}]
+      [%expect {| ((a bool) (barbaz bool) (c bool) (r1 bool)) |}]
 
     let%expect_test "known values in environment form" =
       let (module Env) =
@@ -87,6 +88,6 @@ let%test_module "environment modules in a test map" =
       print_s [%sexp (vals : (Ac.C_id.t, Ty.t * Con.t) List.Assoc.t)] ;
       [%expect
         {|
-        ((a (bool (Bool false))) (b (atomic_bool (Bool true))) (d (int (Int 27)))
-         (e (atomic_int (Int 53)))) |}]
+        ((a (bool (Bool false))) (b (atomic_bool (Bool true)))
+         (x (atomic_int (Int 27))) (y (atomic_int (Int 53)))) |}]
   end )
