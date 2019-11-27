@@ -17,15 +17,13 @@ module Helpers = struct
       ~(random : Splittable_random.State.t) : a State.Monad.t =
     State.Monad.return (Q.Generator.generate ~size:10 ~random gen)
 
-  let lift_quickcheck_opt (type a) (gen_opt : a Q.Generator.t option)
+  let lift_quickcheck_opt (type a) (gen_opt : a Opt_gen.t)
       ~(random : Splittable_random.State.t) : a State.Monad.t =
     State.Monad.Let_syntax.(
       let%bind gen =
         State.Monad.Monadic.return
-          (Result.of_option gen_opt
-             ~error:
-               (Error.of_string
-                  "A required Quickcheck generator failed to materialise."))
+          (Or_error.tag gen_opt
+             ~tag:"A required Quickcheck generator failed to materialise.")
       in
       lift_quickcheck gen ~random)
 end
@@ -68,8 +66,7 @@ module Surround = struct
   (* These bits of the generator are the same regardless of conditional
      generator. *)
 
-  let quickcheck_path (test : Subject.Test.t) :
-      Path.program Q.Generator.t option =
+  let quickcheck_path (test : Subject.Test.t) : Path.program Opt_gen.t =
     Path_producers.Test.try_gen_transform_stm_list test
 
   let gen_path (test : Subject.Test.t) ~(random : Splittable_random.State.t)
@@ -117,15 +114,11 @@ end
 module Program_path (S : sig
   val build_filter : Path_filter.t -> Path_filter.t
 
-  val gen :
-       Subject.Test.t
-    -> filter:Path_filter.t
-    -> Path.program Q.Generator.t option
+  val gen : Subject.Test.t -> filter:Path_filter.t -> Path.program Opt_gen.t
 end) : Action_types.S_payload with type t = Path.program = struct
   type t = Path.program [@@deriving sexp]
 
-  let quickcheck_path (test : Subject.Test.t) :
-      Path.program Q.Generator.t option =
+  let quickcheck_path (test : Subject.Test.t) : Path.program Opt_gen.t =
     let filter = S.build_filter Path_filter.empty in
     S.gen ~filter test
 

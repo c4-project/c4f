@@ -27,11 +27,9 @@ module Helpers : sig
       outputting the randomly generated value. *)
 
   val lift_quickcheck_opt :
-       'a Base_quickcheck.Generator.t option
-    -> random:Splittable_random.State.t
-    -> 'a State.Monad.t
+    'a Opt_gen.t -> random:Splittable_random.State.t -> 'a State.Monad.t
   (** [lift_quickcheck_opt gen_opt ~random] behaves as {!lift_quickcheck} if
-      [gen_opt] is [Some gen], and emits an error inside the state monad if
+      [gen_opt] is [Ok gen], and lifts the error inside the state monad if
       not. *)
 end
 
@@ -54,10 +52,7 @@ module Program_path (S : sig
   (** [build_filter flt] should apply the path filter predicates needed for
       the payload generator to [flt]. *)
 
-  val gen :
-       Subject.Test.t
-    -> filter:Path_filter.t
-    -> Path.program Base_quickcheck.Generator.t option
+  val gen : Subject.Test.t -> filter:Path_filter.t -> Path.program Opt_gen.t
   (** [gen] should be a path shape generator. *)
 end) : Action_types.S_payload with type t = Path.program
 

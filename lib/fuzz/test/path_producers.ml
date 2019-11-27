@@ -20,7 +20,7 @@ let%test_module "Statement_list" =
           type t = Act_fuzz.Path.stm_list [@@deriving sexp]
 
           let quickcheck_generator =
-            Option.value_exn
+            Or_error.ok_exn
               (Act_fuzz.Path_producers.Statement_list.try_gen_insert_stm [])
 
           let quickcheck_shrinker = Shrinker.atomic
@@ -49,9 +49,9 @@ let%test_module "Statement_list" =
         let test
             (gen :
                  Act_fuzz.Subject.Statement.t list
-              -> Act_fuzz.Path.stm_list Generator.t option) : unit =
+              -> Act_fuzz.Path.stm_list Act_fuzz.Opt_gen.t) : unit =
           print_sample
-            (Option.value_exn (gen (Lazy.force Subject.Test_data.body_stms)))
+            (Or_error.ok_exn (gen (Lazy.force Subject.Test_data.body_stms)))
 
         let%expect_test "try_gen_insert_stm with no filtering" =
           test Act_fuzz.Path_producers.Statement_list.try_gen_insert_stm ;
@@ -113,16 +113,18 @@ let%test_module "Statement_list" =
             Act_fuzz.Path_producers.Statement_list.try_gen_transform_stm_list
               (Lazy.force Subject.Test_data.body_stms)
           in
-          print_sample (Option.value_exn gen) ;
+          print_sample (Or_error.ok_exn gen) ;
           [%expect
             {|
+              (In_stm 3 (In_if (In_block false (On_stm_range 0 0))))
               (In_stm 3 (In_if (In_block true (On_stm_range 0 0))))
-              (In_stm 4 (In_if (In_block true (On_stm_range 0 0))))
+              (In_stm 3 (In_if (In_block true (On_stm_range 1 0))))
+              (In_stm 4 (In_if (In_block false (On_stm_range 0 0))))
+              (In_stm 4 (In_if (In_block true (On_stm_range 1 0))))
               (On_stm_range 0 2)
-              (On_stm_range 0 3)
+              (On_stm_range 0 4)
               (On_stm_range 1 2)
-              (On_stm_range 2 1)
-              (On_stm_range 3 0)
-              (On_stm_range 3 1) |}]
+              (On_stm_range 3 1)
+              (On_stm_range 5 0) |}]
       end )
   end )

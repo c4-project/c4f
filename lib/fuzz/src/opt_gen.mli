@@ -24,7 +24,7 @@
 
 open Base
 
-type 'a t = 'a Base_quickcheck.Generator.t option
+type 'a t = 'a Base_quickcheck.Generator.t Or_error.t
 (** The type of partial generators. *)
 
 include Applicative.S with type 'a t := 'a t
@@ -34,5 +34,5 @@ include Applicative.S with type 'a t := 'a t
 
 val union : 'a t list -> 'a t
 (** [union xs] combines a list of partial generators into a partial
-    generator. If there are no [Some] generators, the result is [None]; else,
-    it is [Some x] where [x] unites the viable generators in [xs]. *)
+    generator. If there are no valid generators, the result is an error;
+    else, it is the union of the viable generators in [xs]. *)

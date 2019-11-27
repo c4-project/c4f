@@ -174,7 +174,7 @@ let%test_module "Statement_list" =
                   type t = F.Path.stm_list [@@deriving sexp]
 
                   let quickcheck_generator =
-                    Option.value_exn ~here:[%here]
+                    Or_error.ok_exn
                       (F.Path_producers.Statement_list
                        .try_gen_transform_stm_list (Lazy.force body_stms))
 

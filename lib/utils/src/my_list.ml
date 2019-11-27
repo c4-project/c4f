@@ -51,11 +51,10 @@ module Random = struct
 
   let stride_raw (xs : 'a list) ~(random : Splittable_random.State.t) :
       int * int =
-    let ix1 = index_raw xs ~random in
-    let ix2 = index_raw xs ~random in
-    let ixmin = min ix1 ix2 in
-    let ixmax = max ix1 ix2 in
-    (ixmin, ixmax - ixmin)
+    let len = List.length xs in
+    let ix1 = Splittable_random.int random ~lo:0 ~hi:(len - 1) in
+    let ix2 = Splittable_random.int random ~lo:ix1 ~hi:(len - 1) in
+    (ix1, ix2 - ix1)
 
   let index (xs : 'a list) ~(random : Splittable_random.State.t) : int option
       =

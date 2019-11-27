@@ -11,23 +11,23 @@
 
 open Base
 
-type 'a t = 'a Base_quickcheck.Generator.t option
+type 'a t = 'a Base_quickcheck.Generator.t Or_error.t
 
 include Applicative.Make_using_map2 (struct
   type nonrec 'a t = 'a t
 
   let return (type a) (x : a) : a t =
-    Option.return (Base_quickcheck.Generator.return x)
+    Or_error.return (Base_quickcheck.Generator.return x)
 
   let map' (type a b) (x : a t) ~(f : a -> b) : b t =
-    Option.map x ~f:(Base_quickcheck.Generator.map ~f)
+    Or_error.map x ~f:(Base_quickcheck.Generator.map ~f)
 
   let map = `Custom map'
 
   let map2 (type a b c) (x : a t) (y : b t) ~(f : a -> b -> c) : c t =
-    Option.map2 x y ~f:(Base_quickcheck.Generator.map2 ~f)
+    Or_error.map2 x y ~f:(Base_quickcheck.Generator.map2 ~f)
 end)
 
 let union (type a) (gens : a t list) : a t =
-  Act_utils.My_list.guard_if_empty ~f:Base_quickcheck.Generator.union
-    (List.filter_opt gens)
+  Or_error.(
+    gens |> filter_ok_at_least_one >>| Base_quickcheck.Generator.union)

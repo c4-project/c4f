@@ -15,14 +15,12 @@ module Early_out_payload = struct
   type t = {path: Path.program; kind: Act_c_mini.Early_out.Kind.t}
   [@@deriving sexp, make]
 
-  let quickcheck_path (test : Subject.Test.t) :
-      Path.program Base_quickcheck.Generator.t option =
+  let quickcheck_path (test : Subject.Test.t) : Path.program Opt_gen.t =
     let filter = Path_filter.(empty |> in_dead_code_only) in
     Path_producers.Test.try_gen_insert_stm ~filter test
 
-  let quickcheck_payload (test : Subject.Test.t) :
-      t Base_quickcheck.Generator.t option =
-    Option.map (quickcheck_path test) ~f:(fun path_gen ->
+  let quickcheck_payload (test : Subject.Test.t) : t Opt_gen.t =
+    Or_error.map (quickcheck_path test) ~f:(fun path_gen ->
         Base_quickcheck.Generator.Let_syntax.(
           let%bind path = path_gen in
           let%map kind = Act_c_mini.Early_out.Kind.quickcheck_generator in

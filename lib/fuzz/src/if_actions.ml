@@ -131,8 +131,7 @@ module Invert : Action_types.S with type Payload.t = Path.program = struct
   module Payload = struct
     type t = Path.program [@@deriving sexp]
 
-    let quickcheck_path (test : Subject.Test.t) :
-        Path.program Base_quickcheck.Generator.t option =
+    let quickcheck_path (test : Subject.Test.t) : Path.program Opt_gen.t =
       let filter = Path_filter.(empty |> final_if_statements_only) in
       Path_producers.Test.try_gen_transform_stm ~filter test
 
