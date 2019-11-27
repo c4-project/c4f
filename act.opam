@@ -11,7 +11,7 @@ doc: "https://automagic-compiler-tormentor.readthedocs.io"
 bug-reports: "https://github.com/MattWindsor91/act/issues"
 depends: [
   "ocaml" {>= "4.08" & < "4.10"}
-  "dune" {build & >= "1.10" & < "2"}
+  "dune" {build & >= "2.0" & < "3"}
   "ppx_deriving"
   "ppx_jane"
   "ppx_yojson_conv" {>= "v0.13" & < "v0.14"}
