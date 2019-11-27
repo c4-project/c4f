@@ -60,9 +60,10 @@ module Program_path (Basic : sig
   (** [build_filter flt] should apply the path filter predicates needed for
       the payload generator to [flt]. *)
 
-  val gen : Subject.Test.t -> filter:Path_filter.t -> Path.program Opt_gen.t
+  val gen :
+    Subject.Test.t -> filter:Path_filter.t -> Path.Program.t Opt_gen.t
   (** [gen] should be a path shape generator. *)
-end) : Action_types.S_payload with type t = Path.program
+end) : Action_types.S_payload with type t = Path.Program.t
 
 (** {2 Surround} *)
 
@@ -80,7 +81,7 @@ module Surround : sig
 
   (** {3 Constructors} *)
 
-  val make : cond:Act_c_mini.Expression.t -> path:Path.program -> t
+  val make : cond:Act_c_mini.Expression.t -> path:Path.Program.t -> t
   (** [make ~cond ~path] makes a payload given a specific condition
       expression [cond] and statement-list selecting path [path]. *)
 
@@ -89,7 +90,7 @@ module Surround : sig
   val cond : t -> Act_c_mini.Expression.t
   (** [cond payload] retrieves the generated condition inside [payload]. *)
 
-  val path : t -> Path.program
+  val path : t -> Path.Program.t
   (** [path payload] retrieves the generated path inside [payload]. *)
 
   val apply :

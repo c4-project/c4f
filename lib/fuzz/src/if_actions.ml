@@ -123,7 +123,7 @@ module Surround = struct
   end)
 end
 
-module Invert : Action_types.S with type Payload.t = Path.program = struct
+module Invert : Action_types.S with type Payload.t = Path.Program.t = struct
   let name = Act_common.Id.of_string_list ["flow"; "invert-if"]
 
   let readme () =
@@ -134,14 +134,14 @@ module Invert : Action_types.S with type Payload.t = Path.program = struct
     test |> Subject.Test.has_if_statements |> State.Monad.return
 
   module Payload = struct
-    type t = Path.program [@@deriving sexp]
+    type t = Path.Program.t [@@deriving sexp]
 
-    let quickcheck_path (test : Subject.Test.t) : Path.program Opt_gen.t =
+    let quickcheck_path (test : Subject.Test.t) : Path.Program.t Opt_gen.t =
       let filter = Path_filter.(empty |> final_if_statements_only) in
       Path_producers.Test.try_gen_transform_stm ~filter test
 
     let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t) :
-        Path.program State.Monad.t =
+        Path.Program.t State.Monad.t =
       Payload.Helpers.lift_quickcheck_opt (quickcheck_path test) ~random
         ~action_id:name
   end

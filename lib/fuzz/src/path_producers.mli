@@ -21,36 +21,43 @@
 (** {1 Path producer modules} *)
 
 (** A path producer that takes in {!Subject.Statement.t} and produces
-    {!Path.stm_list}. *)
+    {!Path.Stms.t}. *)
 module Statement_list :
   Path_types.S_producer
-    with type t = Path.stm_list
+    with type t = Path.Stms.t
      and type target = Subject.Statement.t list
 
 (** A path producer that takes in {!Subject.Statement.If.t} and produces
-    {!Path.ifs}. *)
-module If_statement :
+    {!Path.If.t}. *)
+module If :
   Path_types.S_producer
-    with type t = Path.ifs
+    with type t = Path.If.t
      and type target = Subject.Statement.If.t
 
+(** A path producer that takes in {!Subject.Statement.Loop.t} and produces
+    {!Path.Loop.t}. *)
+module Loop :
+  Path_types.S_producer
+    with type t = Path.Loop.t
+     and type target = Subject.Statement.Loop.t
+
 (** A path producer that takes in {!Subject.Statement.t} and produces
-    {!Path.stm}. *)
+    {!Path.Stm.t}. *)
 module Statement :
   Path_types.S_producer
-    with type t = Path.stm
+    with type t = Path.Stm.t
      and type target = Subject.Statement.t
 
 (** A path producer that takes in {!Subject.Thread.t} and produces
-    {!Path.func}. *)
+    {!Path.Thread.t}. *)
 module Thread :
   Path_types.S_producer
-    with type t = Path.func
+    with type t = Path.Thread.t
      and type target = Subject.Thread.t
 
 (** A path producer that takes in {!Subject.Test.t} and produces
-    {!Path.program}. *)
+    {!Path.Program.t}. *)
 module Test :
   Path_types.S_producer
-    with type t = Path.program
+    with type t = Path.Program.t
      and type target = Subject.Test.t

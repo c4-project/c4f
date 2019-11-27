@@ -13,7 +13,7 @@ module Src = Act_fuzz
 
 let%test_module "Early_out" =
   ( module struct
-    let test_on_example_program (path : Src.Path.program)
+    let test_on_example_program (path : Src.Path.Program.t)
         (kind : Act_c_mini.Early_out.Kind.t) : unit =
       let initial_state : Src.State.t = Lazy.force Subject.Test_data.state in
       let test : Src.Subject.Test.t = Lazy.force Subject.Test_data.test in
@@ -22,10 +22,10 @@ let%test_module "Early_out" =
         (Src.Dead_actions.Early_out.run test ~payload)
         ~initial_state
 
-    let valid_path : Src.Path.program =
+    let valid_path : Src.Path.Program.t =
       Src.Path.(
-        in_func 0 @@ in_stms @@ in_stm 3 @@ in_if @@ in_block false
-        @@ insert 0)
+        Program.in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 3 @@ Stm.in_if
+        @@ If.in_branch false @@ Stms.insert 0)
 
     (* TODO(@MattWindsor91): invalid paths *)
 
