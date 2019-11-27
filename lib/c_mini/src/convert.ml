@@ -407,10 +407,10 @@ let possible_compound_to_list : Ast.Stm.t -> Ast.Stm.t list Or_error.t =
   | stm ->
       Or_error.return [stm]
 
-let model_if_branch (model_stm : Ast.Stm.t -> unit Statement.t Or_error.t)
-    (branch : Ast.Stm.t) : (unit, unit Statement.t) Block.t Or_error.t =
+let block (model_stm : Ast.Stm.t -> unit Statement.t Or_error.t)
+    (old_block : Ast.Stm.t) : (unit, unit Statement.t) Block.t Or_error.t =
   Or_error.(
-    branch |> possible_compound_to_list
+    old_block |> possible_compound_to_list
     >>= Tx.Or_error.combine_map ~f:model_stm
     >>| Block.of_statement_list)
 
@@ -419,14 +419,22 @@ let model_if (model_stm : Ast.Stm.t -> unit Statement.t Or_error.t)
     (old_f_branch : Ast.Stm.t option) : unit Statement.t Or_error.t =
   Or_error.Let_syntax.(
     let%bind cond = expr old_cond in
-    let%bind t_branch = model_if_branch model_stm old_t_branch in
+    let%bind t_branch = block model_stm old_t_branch in
     let%map f_branch =
-      Option.value_map old_f_branch
-        ~f:(model_if_branch model_stm)
+      Option.value_map old_f_branch ~f:(block model_stm)
         ~default:(Or_error.return (Block.of_statement_list []))
     in
     let ifs = Statement.If.make ~cond ~t_branch ~f_branch in
     Statement.if_stm ifs)
+
+let loop (model_stm : Ast.Stm.t -> unit Statement.t Or_error.t)
+    (old_cond : Ast.Expr.t) (old_body : Ast.Stm.t)
+    (kind : [`While | `Do_while]) : unit Statement.t Or_error.t =
+  Or_error.Let_syntax.(
+    let%bind cond = expr old_cond in
+    let%map body = block model_stm old_body in
+    let loop = Statement.While.make ~cond ~body ~kind in
+    Statement.while_loop loop)
 
 let rec stm : Ast.Stm.t -> unit Statement.t Or_error.t = function
   | Expr None ->
@@ -443,14 +451,11 @@ let rec stm : Ast.Stm.t -> unit Statement.t Or_error.t = function
       Or_error.error_s
         [%message
           "Value returns not supported in Mini-C" ~got:(s : Ast.Stm.t)]
-  | ( Continue
-    | Label _
-    | Compound _
-    | Switch _
-    | While _
-    | Do_while _
-    | For _
-    | Goto _ ) as s ->
+  | While (c, b) ->
+      loop stm c b `While
+  | Do_while (b, c) ->
+      loop stm c b `Do_while
+  | (Continue | Label _ | Compound _ | Switch _ | For _ | Goto _) as s ->
       Or_error.error_s
         [%message "Unsupported statement" ~got:(s : Ast.Stm.t)]
 
