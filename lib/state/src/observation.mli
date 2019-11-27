@@ -16,12 +16,10 @@ open Base
 type t [@@deriving sexp_of, quickcheck, yojson]
 (** Opaque type of a simulator observation record. *)
 
-include
-  Plumbing.Loadable_types.S with type t := t
+include Plumbing.Loadable_types.S with type t := t
 (** Observations can be loaded from JSON files. *)
 
-include
-  Plumbing.Storable_types.S with type t := t
+include Plumbing.Storable_types.S with type t := t
 (** Observations can be stored to JSON files. *)
 
 (** {1 Constructing an observation record} *)

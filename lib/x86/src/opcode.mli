@@ -100,8 +100,7 @@ module Sizable : sig
     | `Xor ]
   [@@deriving sexp, equal]
 
-  include
-    String_table.S with type t := t
+  include String_table.S with type t := t
   (** [Sizable] contains a string table for sizable opcodes. These strings
       _don't_ have a size suffix attached; to parse or emit an AT&T-style
       opcode with size suffix, use [Sized]. *)
@@ -129,8 +128,7 @@ module Sized : sig
   type t = Sizable.t * Size.t [@@deriving sexp, equal]
   (** A [Sized.t] is a pair of sizable instruction and actual size. *)
 
-  include
-    String_table.S with type t := t
+  include String_table.S with type t := t
   (** [Sized] contains a string table for AT&T-style size-suffixed opcodes. *)
 
   (** We can convert sized opcodes to the act abstract form. *)
@@ -148,8 +146,7 @@ module Basic : sig
   (** A [Basic.t] is either a [Sizable.t] or one of several other known
       opcodes. *)
 
-  include
-    String_table.S with type t := t
+  include String_table.S with type t := t
   (** [Basic] contains a string table for basic opcodes. This is a superset
       of [Sizable]'s string table. *)
 
@@ -203,8 +200,7 @@ module Jump : sig
   [@@deriving sexp, equal, enumerate]
   (** [t] is a description of a jump. *)
 
-  include
-    String_table.S with type t := t
+  include String_table.S with type t := t
   (** [Jump] contains a string table for jump instructions. *)
 
   (** We can convert jumps to the act abstract form. *)

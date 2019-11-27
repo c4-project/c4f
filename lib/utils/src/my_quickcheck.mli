@@ -41,10 +41,11 @@ module Small_non_negative_int : sig
 end
 
 val print_sample :
-  ?test_count:int ->
-  ?printer:('a -> unit) -> (module S_sample with type t = 'a) -> unit
-(** [print_sample ?test_count ?printer m] runs the quickcheck generator in [m] a
-    small number of times ([test_count] or, if not given, 20), sorts and
-    de-duplicates the results, and prints them to
-    stdout, using [printer] if given or an S-expression representation
-    otherwise. *)
+     ?test_count:int
+  -> ?printer:('a -> unit)
+  -> (module S_sample with type t = 'a)
+  -> unit
+(** [print_sample ?test_count ?printer m] runs the quickcheck generator in
+    [m] a small number of times ([test_count] or, if not given, 20), sorts
+    and de-duplicates the results, and prints them to stdout, using [printer]
+    if given or an S-expression representation otherwise. *)

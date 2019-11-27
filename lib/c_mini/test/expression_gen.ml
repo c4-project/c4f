@@ -15,17 +15,16 @@ module Q = Base_quickcheck
 module Qx = Act_utils.My_quickcheck
 
 let printer (e : Src.Expression.t) : unit =
-  e |> Src.Reify_expr.reify
-  |> Fmt.(pr "@[%a@]@." Act_c_lang.Ast.Expr.pp)
+  e |> Src.Reify_expr.reify |> Fmt.(pr "@[%a@]@." Act_c_lang.Ast.Expr.pp)
 
 let print_sample (module G : Src.Expression_gen.S) : unit =
   (* Expressions are quite big, so we tone down the generation parameters a
      bit. *)
   Qx.print_sample ~test_count:5 ~printer
-  (module struct
-     include Src.Expression
-     include G
-   end)
+    ( module struct
+      include Src.Expression
+      include G
+    end )
 
 let test_all_expressions_have_type
     (f :
@@ -115,7 +114,6 @@ let%test_module "Int_values" =
           (module Src.Expression_gen.Int_values ((val e))))
   end )
 
-
 let%test_module "Bool_values" =
   ( module struct
     let print_sample (module E : Src.Env_types.S) =
@@ -197,7 +195,7 @@ let%test_module "Bool falsehoods" =
           false || false |}]
 
     let test_fun (module E : Src.Env_types.S_with_known_values) :
-      (module Q.Test.S with type t = Src.Expression.t) =
+        (module Q.Test.S with type t = Src.Expression.t) =
       let module K = Src.Expression_gen.Bool_known (E) in
       (module K.Falsehoods)
 
@@ -233,7 +231,7 @@ let%test_module "Bool tautologies" =
           (*blep == *blep || -38250 == foo) || !false || !(470264907 == -879720314) |}]
 
     let test_fun (module E : Src.Env_types.S_with_known_values) :
-      (module Q.Test.S with type t = Src.Expression.t) =
+        (module Q.Test.S with type t = Src.Expression.t) =
       let module K = Src.Expression_gen.Bool_known (E) in
       (module K.Tautologies)
 

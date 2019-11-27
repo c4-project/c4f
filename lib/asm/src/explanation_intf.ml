@@ -36,12 +36,10 @@ module type Basic = sig
   (** Type of additional information included in the explanation (for
       example, recursive explanations of child components). *)
 
-  include
-    Act_abstract.Abstractable_types.S with type t := elt
+  include Act_abstract.Abstractable_types.S with type t := elt
   (** Items of type [elt] must be abstractable. *)
 
-  include
-    Pretty_printer.S with type t := elt
+  include Pretty_printer.S with type t := elt
   (** Items of type [elt] must also be printable. *)
 
   module Flag : Act_abstract.Flag_enum.S
@@ -79,12 +77,10 @@ module type S = sig
   (** Type of additional information included in the explanation (for
       example, recursive explanations of child components). *)
 
-  include
-    Act_abstract.Abstractable_types.S with type t := t
+  include Act_abstract.Abstractable_types.S with type t := t
   (** Each [t] inherits the abstract type projection of its underlying [exp]. *)
 
-  include
-    Pretty_printer.S with type t := t
+  include Pretty_printer.S with type t := t
   (** Explanations can be pretty-printed. *)
 
   module Flag : Act_abstract.Flag_enum.S

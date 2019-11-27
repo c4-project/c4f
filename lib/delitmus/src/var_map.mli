@@ -62,6 +62,5 @@ val lookup_and_require_global :
 
 (** {2 Interface implementations} *)
 
-include
-  Plumbing.Jsonable_types.S with type t := t
+include Plumbing.Jsonable_types.S with type t := t
 (** A var map can be serialised to, and deserialised from, (Yo)JSON. *)

@@ -67,12 +67,10 @@ module On_identifiers :
     with type t := t
      and type Elt.t = Act_common.C_id.t
 
-include
-  Types.S_has_underlying_variable with type t := t
+include Types.S_has_underlying_variable with type t := t
 (** We can get to the variable name inside an lvalue. *)
 
-include
-  Types.S_type_checkable with type t := t
+include Types.S_type_checkable with type t := t
 (** Type-checking for lvalues. *)
 
 (** {3 Safe accessors}

@@ -47,8 +47,7 @@ type t =
   | `Warn  (** Warn about things the sanitiser doesn't understand. *) ]
 (** [t] enumerates the various high-level sanitisation passes. *)
 
-include
-  Enum_types.Extension_table with type t := t
+include Enum_types.Extension_table with type t := t
 (** We include the usual enum extensions for [Pass]. *)
 
 val explain : (t, comparator_witness) Set.t
@@ -82,8 +81,7 @@ module Selector : sig
   [@@deriving sexp]
   (** [t] is the base element type of the language. *)
 
-  include
-    Property_types.S with type t := t
+  include Property_types.S with type t := t
   (** This module implements the usual interface for looking up predicate
       documentation. *)
 

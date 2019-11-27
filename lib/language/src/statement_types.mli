@@ -41,8 +41,7 @@ module type Basic = sig
   module Sym : Equal.S
   (** Type of concrete symbols. *)
 
-  include
-    Pretty_printer.S with type t := t
+  include Pretty_printer.S with type t := t
   (** Languages must supply a pretty-printer for their statements. *)
 
   (** They must allow traversal over symbols... *)
@@ -91,8 +90,7 @@ module type S = sig
   (** [is_program_boundary stm] tests whether [stm] is a program boundary per
       act's conventions. *)
 
-  include
-    Act_abstract.Statement.S_properties with type t := t
+  include Act_abstract.Statement.S_properties with type t := t
   (** We can query abstract properties (and, transitively, abstract
       instruction properties) directly on the concrete statement type. *)
 

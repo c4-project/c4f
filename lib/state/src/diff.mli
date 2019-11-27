@@ -27,8 +27,7 @@ open Base
 type t [@@deriving yojson]
 (** Opaque type of partial order results. *)
 
-include
-  Pretty_printer.S with type t := t
+include Pretty_printer.S with type t := t
 (** Diffs are pretty-printable (though the result isn't guaranteed to be
     machine-readable; use the Yojson instance for interoperability with other
     tools). *)

@@ -57,8 +57,7 @@ module Adjusted_weight : sig
     | Adjusted of {original: int; actual: int}
         (** The weight has changed from [original] to [actual]. *)
 
-  include
-    Pretty_printer.S with type t := t
+  include Pretty_printer.S with type t := t
   (** Adjusted weights may be pretty-printed. *)
 end
 
@@ -81,8 +80,7 @@ module Summary : sig
   val readme : t -> string
   (** [readme summary] gets the README of the action described by [summary]. *)
 
-  include
-    Pretty_printer.S with type t := t
+  include Pretty_printer.S with type t := t
   (** Summaries may be pretty-printed. *)
 
   val pp_map : t Map.M(Act_common.Id).t Fmt.t

@@ -57,24 +57,24 @@ let%test_module "expressions" =
         let%test_unit "round-trip on Boolean expressions" =
           Bool_values.run_round_trip ()
 
-        module Bool_tautologies_in (E : Src.Env_types.S_with_known_values) = struct
+        module Bool_tautologies_in (E : Src.Env_types.S_with_known_values) =
+        struct
           module K = Src.Expression_gen.Bool_known (E)
           include K.Tautologies
         end
 
-        module Bool_tautologies =
-          Make_kv (Bool_tautologies_in)
+        module Bool_tautologies = Make_kv (Bool_tautologies_in)
 
         let%test_unit "round-trip on Boolean tautologies" =
           Bool_tautologies.run_round_trip ()
 
-        module Bool_falsehoods_in (E : Src.Env_types.S_with_known_values) = struct
+        module Bool_falsehoods_in (E : Src.Env_types.S_with_known_values) =
+        struct
           module K = Src.Expression_gen.Bool_known (E)
           include K.Tautologies
         end
 
-        module Bool_falsehoods =
-          Make_kv (Bool_falsehoods_in)
+        module Bool_falsehoods = Make_kv (Bool_falsehoods_in)
 
         let%test_unit "round-trip on Boolean falsehoods" =
           Bool_falsehoods.run_round_trip ()

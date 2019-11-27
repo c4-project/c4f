@@ -34,8 +34,7 @@ module type S = sig
   type t [@@deriving compare, equal, sexp, quickcheck]
   (** [t] is the type of constants. *)
 
-  include
-    Pretty_printer.S with type t := t
+  include Pretty_printer.S with type t := t
   (** Languages must supply a pretty-printer for their constants. *)
 
   val of_int : int -> t

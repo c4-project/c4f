@@ -40,8 +40,7 @@ module With_id : sig
 end
 
 (** Machine specifications are specifications. *)
-include
-  Act_common.Spec.S with type t := t and module With_id := With_id
+include Act_common.Spec.S with type t := t and module With_id := With_id
 
 (** We can monadically traverse the compiler specification sets in a machine
     specification. (Technically, there is only one, but phrasing it as a

@@ -18,12 +18,10 @@ type t = Constant.t Act_litmus.Header.t [@@deriving equal, yojson]
 
 (** {1 JSON} *)
 
-include
-  Plumbing.Loadable_types.S with type t := t
+include Plumbing.Loadable_types.S with type t := t
 (** Loading Litmus headers from JSON. *)
 
-include
-  Plumbing.Storable_types.S with type t := t
+include Plumbing.Storable_types.S with type t := t
 (** Storing Litmus headers to JSON. *)
 
 (** {1 Change sets}

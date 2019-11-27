@@ -77,11 +77,9 @@ module Table : sig
       is present, we additionally require that [symbol] has sort [sort] in
       [tbl]. *)
 
-  include
-    Tabulator.Tabular with type data := t
+  include Tabulator.Tabular with type data := t
   (** Tables can be turned into [Tabulator] instances. *)
 
-  include
-    Tabulator.Tabular_extensions with type data := t
+  include Tabulator.Tabular_extensions with type data := t
   (** They can also, therefore, be pretty-printed as tables. *)
 end

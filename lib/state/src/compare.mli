@@ -41,8 +41,7 @@ module Result : sig
   (** [to_string result] returns a human-readable string representing
       [result]. *)
 
-  include
-    Pretty_printer.S with type t := t
+  include Pretty_printer.S with type t := t
   (** We can also pretty-print diff results, with similar results to running
       [to_string]. *)
 

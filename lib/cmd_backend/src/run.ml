@@ -34,14 +34,12 @@ let command : Command.t =
         Common_cmd.Args.simulator ()
       and arch =
         choose_one
-          [ Common_cmd.Args.flag_to_enum_choice Act_backend.Arch.C
-              "-c"
+          [ Common_cmd.Args.flag_to_enum_choice Act_backend.Arch.C "-c"
               ~doc:
                 "Tells the backend to test the input against the C memory \
                  model"
           ; map
-              ~f:
-                (Option.map ~f:(fun x -> Act_backend.Arch.Assembly x))
+              ~f:(Option.map ~f:(fun x -> Act_backend.Arch.Assembly x))
               (Common_cmd.Args.arch
                  ~doc:
                    "ARCH tells the backend to test the input against the \

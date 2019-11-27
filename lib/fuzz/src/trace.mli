@@ -36,8 +36,7 @@ val add :
 
 (** {2 From files} *)
 
-include
-  Plumbing.Loadable_types.S with type t := t
+include Plumbing.Loadable_types.S with type t := t
 (** We can load traces (from S-expressions). *)
 
 (** {1 Replaying traces} *)

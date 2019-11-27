@@ -67,8 +67,7 @@ val try_find_assoc_with_suggestions_prefix :
     [try_find_assoc_with_suggestions], but finds the first element of [assoc]
     whose ID is a prefix of [id], and returns that ID alongside the result. *)
 
-include
-  Identifiable.S with type t := t
+include Identifiable.S with type t := t
 (** We can use [t] as an [Identifiable]. *)
 
 (** {2 Operators for building identifiers} *)

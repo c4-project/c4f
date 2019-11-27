@@ -88,23 +88,19 @@ val is_in_scope : t -> from:int -> bool
 
 (** {2 Interface implementations} *)
 
-include
-  Stringable.S with type t := t
+include Stringable.S with type t := t
 (** Litmus identifiers can be converted to and from strings. Note that
     conversion from strings can fail if the C identifier parts don't obey C
     identifier validation. *)
 
-include
-  Plumbing.Jsonable_types.S with type t := t
+include Plumbing.Jsonable_types.S with type t := t
 (** Litmus-style identifiers are trivially serialisable to, and
     deserialisable from, JSON; we just encode them as strings. *)
 
-include
-  Pretty_printer.S with type t := t
+include Pretty_printer.S with type t := t
 (** Litmus identifiers can be pretty-printed. *)
 
-include
-  Comparable.S with type t := t
+include Comparable.S with type t := t
 (** Litmus identifiers suit various comparable scenarios, such as map keys. *)
 
 (** Monadic traversal over the C identifier part of a Litmus identifier. *)
