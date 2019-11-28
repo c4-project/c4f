@@ -18,10 +18,16 @@ type t
 
 (** {2 Constructing an initial fuzzer state} *)
 
-val make : ?o:Act_common.Output.t -> vars:Var.Map.t -> unit -> t
-(** [make ?o ~vars ()] creates an initial state with the variable map [vars].
-    If an output context [o] is provided, it can be used for logging
-    verbose/debug information during the fuzzing process. *)
+val make :
+     ?o:Act_common.Output.t
+  -> labels:Set.M(Subject.Label).t
+  -> vars:Var.Map.t
+  -> unit
+  -> t
+(** [make ?o ~labels ~vars ()] creates an initial state with the label set
+    [labels] and variable map [vars]. If an output context [o] is provided,
+    it can be used for logging verbose/debug information during the fuzzing
+    process. *)
 
 val of_litmus :
   ?o:Act_common.Output.t -> Act_c_mini.Litmus.Test.t -> t Or_error.t
@@ -31,6 +37,9 @@ val of_litmus :
     fuzzing process. *)
 
 (** {2 Directly accessing a fuzzer state} *)
+
+val labels : t -> Set.M(Subject.Label).t
+(** [labels state] gets the set of labels that are known to [state]. *)
 
 val vars : t -> Var.Map.t
 (** [vars state] gets the state's variable map. *)

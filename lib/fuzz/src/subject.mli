@@ -21,9 +21,24 @@
 
 open Base
 
-(** {1 Shorthand for mini-C constructs with subject metadata} *)
+(** {1 Shorthand for mini-C constructs with subject metadata}
 
-(** Subject statements. *)
+    Compared to the metadata-parametric forms in {!Act_c_mini}, these don't
+    contain any accessors/constructors/traversals, but do group useful
+    functionality that depends on knowing the metadata type. *)
+
+(** {2 Subject labels} *)
+
+module Label : sig
+  type t = Metadata.t Act_c_mini.Label.t [@@deriving compare, equal, sexp]
+
+  include Comparable.S with type t := t
+  (** Labels can be compared; this becomes useful when maintaining label
+      sets. *)
+end
+
+(** {2 Subject statements} *)
+
 module Statement : sig
   type t = Metadata.t Act_c_mini.Statement.t [@@deriving sexp]
 

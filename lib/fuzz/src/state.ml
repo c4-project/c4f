@@ -13,14 +13,20 @@ open Base
 module Ac = Act_common
 module Tx = Travesty_base_exts
 
-type t = {o: Ac.Output.t [@default Ac.Output.silent ()]; vars: Var.Map.t}
+type t =
+  { (* Optionals to the top, to make sure [make] derives correctly. *)
+    o: Ac.Output.t [@default Ac.Output.silent ()]
+  ; labels: Set.M(Subject.Label).t
+  ; vars: Var.Map.t }
 [@@deriving fields, make]
 
 let of_litmus ?(o : Ac.Output.t option) (lt : Act_c_mini.Litmus.Test.t) :
     t Or_error.t =
+  (* TODO(@MattWindsor91): add label scan *)
+  let labels = Set.empty (module Subject.Label) in
   Or_error.Let_syntax.(
     let%map vars = Var.Map.make_existing_var_map lt in
-    make ?o ~vars ())
+    make ?o ~vars ~labels ())
 
 let try_map_vars (s : t) ~(f : Var.Map.t -> Var.Map.t Or_error.t) :
     t Or_error.t =

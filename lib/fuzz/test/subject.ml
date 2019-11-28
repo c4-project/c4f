@@ -27,6 +27,8 @@ module Test_data = struct
           , Type.(int ~pointer:true ~atomic:true ()) ) ]
 
   let state : Act_fuzz.State.t Lazy.t =
+    (* TODO(@MattWindsor91): labels? *)
+    let labels = Set.empty (module Src.Subject.Label) in
     Lazy.Let_syntax.(
       let%map globals_alist = globals in
       let vars =
@@ -37,7 +39,7 @@ module Test_data = struct
         |> Map.of_alist_exn (module Act_common.Litmus_id)
         |> Act_common.Scoped_map.of_litmus_id_map
       in
-      Act_fuzz.State.make ~vars ())
+      Act_fuzz.State.make ~vars ~labels ())
 
   let body_stms : Src.Subject.Statement.t list Lazy.t =
     lazy
