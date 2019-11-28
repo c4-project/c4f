@@ -10,76 +10,132 @@
    act.state act.utils))
 
 (rule
-  (deps (glob_files "input/config/valid/*.conf"))
-  (action (with-stdout-to config.output (run ./config.exe input))))
-(rule
-  (alias runtest)
-  (action (diff config.expected config.output)))
+ (deps
+  (glob_files "input/config/valid/*.conf"))
+ (action
+  (with-stdout-to
+   config.output
+   (run ./config.exe input))))
 
 (rule
-  (deps (glob_files "input/config/failures/*.conf"))
-  (action (with-stdout-to config_failures.output (run ./config_failures.exe input))))
-(rule
-  (alias runtest)
-  (action (diff config_failures.expected config_failures.output)))
+ (alias runtest)
+ (action
+  (diff config.expected config.output)))
 
 (rule
-  (deps (glob_files "input/litmus/*.litmus"))
-  (action (with-stdout-to delitmus.output (run ./delitmus.exe input))))
-(rule
-  (alias runtest)
-  (action (diff delitmus.expected delitmus.output)))
+ (deps
+  (glob_files "input/config/failures/*.conf"))
+ (action
+  (with-stdout-to
+   config_failures.output
+   (run ./config_failures.exe input))))
 
 (rule
-  (deps (glob_files "input/litmus/*.litmus"))
-  (action (with-stdout-to dump_header.output (run ./dump_header.exe input))))
-(rule
-  (alias runtest)
-  (action (diff dump_header.expected dump_header.output)))
+ (alias runtest)
+ (action
+  (diff config_failures.expected config_failures.output)))
 
 (rule
-  (deps
-    "input/asm/x86/att/spec.json"
-    (glob_files "input/asm/x86/att/*.s"))
-  (action (with-stdout-to explain.output (run ./explain.exe input))))
-(rule
-  (alias runtest)
-  (action (diff explain.expected explain.output)))
+ (deps
+  (glob_files "input/litmus/*.litmus"))
+ (action
+  (with-stdout-to
+   delitmus.output
+   (run ./delitmus.exe input))))
 
 (rule
-  (deps
-    (glob_files "input/fuzz/replays/*.litmus")
-    (glob_files "input/fuzz/replays/*.trace"))
-  (action (with-stdout-to fuzz_replays.output (run ./fuzz_replays.exe input))))
-(rule
-  (alias runtest)
-  (action (diff fuzz_replays.expected fuzz_replays.output)))
+ (alias runtest)
+ (action
+  (diff delitmus.expected delitmus.output)))
 
 (rule
-  (action (with-stdout-to fuzz_action_list.output (run ./fuzz_action_list.exe input))))
-(rule
-  (alias runtest)
-  (action (diff fuzz_action_list.expected fuzz_action_list.output)))
+ (deps
+  (glob_files "input/litmus/*.litmus"))
+ (action
+  (with-stdout-to
+   dump_header.output
+   (run ./dump_header.exe input))))
 
 (rule
-  (deps (glob_files "input/observations/herd/*.txt"))
-  (action (with-stdout-to herd_observations.output (run ./herd_observations.exe input))))
-(rule
-  (alias runtest)
-  (action (diff herd_observations.expected herd_observations.output)))
+ (alias runtest)
+ (action
+  (diff dump_header.expected dump_header.output)))
 
 (rule
-  (deps (glob_files "input/observations/litmus/*.txt"))
-  (action (with-stdout-to litmus_observations.output (run ./litmus_observations.exe input))))
-(rule
-  (alias runtest)
-  (action (diff litmus_observations.expected litmus_observations.output)))
+ (deps
+  "input/asm/x86/att/spec.json"
+  (glob_files "input/asm/x86/att/*.s"))
+ (action
+  (with-stdout-to
+   explain.output
+   (run ./explain.exe input))))
 
 (rule
-  (deps
-    "input/asm/x86/att/spec.json"
-    (glob_files "input/asm/x86/att/*.s"))
-  (action (with-stdout-to litmusify.output (run ./litmusify.exe input))))
+ (alias runtest)
+ (action
+  (diff explain.expected explain.output)))
+
 (rule
-  (alias runtest)
-  (action (diff litmusify.expected litmusify.output)))
+ (deps
+  (glob_files "input/fuzz/replays/*.litmus")
+  (glob_files "input/fuzz/replays/*.trace"))
+ (action
+  (with-stdout-to
+   fuzz_replays.output
+   (run ./fuzz_replays.exe input))))
+
+(rule
+ (alias runtest)
+ (action
+  (diff fuzz_replays.expected fuzz_replays.output)))
+
+(rule
+ (action
+  (with-stdout-to
+   fuzz_action_list.output
+   (run ./fuzz_action_list.exe input))))
+
+(rule
+ (alias runtest)
+ (action
+  (diff fuzz_action_list.expected fuzz_action_list.output)))
+
+(rule
+ (deps
+  (glob_files "input/observations/herd/*.txt"))
+ (action
+  (with-stdout-to
+   herd_observations.output
+   (run ./herd_observations.exe input))))
+
+(rule
+ (alias runtest)
+ (action
+  (diff herd_observations.expected herd_observations.output)))
+
+(rule
+ (deps
+  (glob_files "input/observations/litmus/*.txt"))
+ (action
+  (with-stdout-to
+   litmus_observations.output
+   (run ./litmus_observations.exe input))))
+
+(rule
+ (alias runtest)
+ (action
+  (diff litmus_observations.expected litmus_observations.output)))
+
+(rule
+ (deps
+  "input/asm/x86/att/spec.json"
+  (glob_files "input/asm/x86/att/*.s"))
+ (action
+  (with-stdout-to
+   litmusify.output
+   (run ./litmusify.exe input))))
+
+(rule
+ (alias runtest)
+ (action
+  (diff litmusify.expected litmusify.output)))
