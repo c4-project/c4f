@@ -20,7 +20,10 @@ let%test_module "Surround" =
        example and var map. *)
 
     let state : Src.State.t =
-      Src.State.make ~vars:(Lazy.force Var.Test_data.test_map) ()
+      Src.State.make
+        ~labels:(Set.empty (module Src.Subject.Label))
+        ~vars:(Lazy.force Var.Test_data.test_map)
+        ()
 
     let test : Src.Subject.Test.t = Lazy.force Subject.Test_data.test
 

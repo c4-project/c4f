@@ -13,7 +13,7 @@
 
     The label structure is used both for labels and gotos. *)
 
-type 'meta t [@@deriving sexp, equal]
+type 'meta t [@@deriving sexp, compare, equal]
 (** Type of labels, parametrised over their metadata. *)
 
 (** {1 Constructors} *)

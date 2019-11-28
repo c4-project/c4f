@@ -12,7 +12,7 @@
 open Base
 
 type t = {source: [`Existing | `Generated]; liveness: [`Normal | `Dead]}
-[@@deriving sexp, equal]
+[@@deriving sexp, compare, equal]
 
 let existing : t = {source= `Existing; liveness= `Normal}
 

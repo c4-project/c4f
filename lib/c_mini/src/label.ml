@@ -16,7 +16,7 @@
 open Base
 
 type 'meta t = {meta: 'meta; name: Act_common.C_id.t}
-[@@deriving fields, make, sexp, equal]
+[@@deriving fields, make, sexp, compare, equal]
 
 let of_c_id (name : Act_common.C_id.t) : unit t = make ~name ~meta:()
 

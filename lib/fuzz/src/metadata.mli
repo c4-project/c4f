@@ -20,7 +20,7 @@
 
 (** {1 Metadata records} *)
 
-type t [@@deriving equal, sexp]
+type t [@@deriving compare, equal, sexp]
 
 (** {2 Constructors} *)
 
