@@ -34,6 +34,12 @@ RUN apt-get update && apt-get -y install \
 USER opam
 WORKDIR /home/opam
 
+# The opam2 image keeps its OPAM repository in a Git clone in the opam user's
+# directory.
+# At time of writing (2019-11-28), this clone is too outdated to pick up act
+# dependencies like dune2.  The various references to git-cloning OPAM below
+# are a fairly hacky way of fixing this.
+
 #
 # Memalloy
 #
@@ -44,11 +50,11 @@ ENV JAVA_TOOL_OPTIONS -Dfile.encoding=UTF8
 
 # Install Memalloy's dependencies *before* fetching Memalloy, since they
 # probably change on a slower pace.
-RUN opam update && opam install xml-light ocamlfind ocamlbuild
+RUN (cd /home/opam/opam-repository && git pull) && opam update && opam install xml-light ocamlfind ocamlbuild
 # Fetch and build Memalloy.
 RUN git clone git://github.com/JohnWickerson/memalloy
 WORKDIR /home/opam/memalloy
-# At time of writing, the `dev` branch of Memalloy is much further along than
+# As of 2019-11-18, the `dev` branch of Memalloy is much further along than
 # `master`, and includes fixes we need.
 RUN git checkout dev
 RUN eval $(opam env) && make install
@@ -57,9 +63,16 @@ RUN eval $(opam env) && make install
 # Herdtools7
 #
 
+# TODO (@CaptainHayashi): as of 2019-11-28, the version of herdtools in
+# OPAM doesn't work with Dune 2.0.  As such, we have to install a version from
+# master.
+WORKDIR /home/opam
+RUN git clone git://github.com/herd/herdtools7
+WORKDIR /home/opam/herdtools7
+
 # Note that the `herdtools7` binaries, `herd7` and `litmus7`, will have
 # hardcoded references to ${opam_root}
-RUN opam update && opam install herdtools7
+RUN (cd /home/opam/opam-repository && git pull) && opam update && opam install .
 
 #
 # ACT
@@ -72,7 +85,7 @@ WORKDIR /home/opam/act
 # Do this _before_ gulping down the source trees, so that a cache invalidation
 # on the source doesn't force a rebuild of all of ACT's dependencies.
 COPY --chown=opam act.opam dune-project Makefile /home/opam/act/
-RUN opam update && opam install --deps-only .
+RUN (cd /home/opam/opam-repository && git pull) && opam update && opam install --deps-only .
 
 # Then, get the source trees, in rough increasing order of likelihood of
 # change.
@@ -81,7 +94,7 @@ COPY --chown=opam regress_tests /home/opam/act/regress_tests
 COPY --chown=opam lib /home/opam/act/lib
 
 # Now, build the ACT OCaml binaries.
-RUN opam update && opam install .
+RUN (cd /home/opam/opam-repository && git pull) && opam update && opam install .
 
 ##
 ## Stage 2: Building the running environment
