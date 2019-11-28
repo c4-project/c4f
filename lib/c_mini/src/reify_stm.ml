@@ -57,8 +57,15 @@ let early_out (e : _ Early_out.t) : Ast.Stm.t =
   | Return ->
       Ast.Stm.Return None
 
+let label (l : _ Label.t) : Ast.Stm.t =
+  (* This might need revisiting later. *)
+  Label (Normal (Label.name l), Expr None)
+
+let goto (l : _ Label.t) : Ast.Stm.t = Goto (Label.name l)
+
 let prim : _ Prim_statement.t -> Ast.Stm.t =
-  Prim_statement.reduce ~assign ~atomic_cmpxchg ~atomic_store ~nop ~early_out
+  Prim_statement.reduce ~assign ~atomic_cmpxchg ~atomic_store ~early_out
+    ~label ~goto ~nop
 
 let rec reify : _ Statement.t -> Ast.Stm.t =
   Statement.reduce ~prim ~if_stm ~while_loop
