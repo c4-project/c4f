@@ -19,7 +19,7 @@
   (description "'act' is a toolkit for testing memory-model behaviour of compilers.")
   (depends
     (ocaml (and (>= 4.08) (< 4.10)))
-    (dune (and :build (>= 2.0) (< 3)))
+    (dune (and (>= 2.0) (< 3)))
     ppx_deriving
     ppx_jane
     (ppx_yojson_conv (and (>= v0.13) (< v0.14)))
@@ -30,7 +30,7 @@
     (sedlex (and (>= 2.1) (< 3)))
     (shell (and (>= v0.13) (< v0.14)))
     (textutils_kernel (and (>= v0.13) (< v0.14)))
-    (travesty (and (>= 0.6.0) (< 0.7)))
+    (travesty (and (>= 0.6.1) (< 0.7)))
     (yojson (and (>= 1.7) (< 2)))
     ))
 
