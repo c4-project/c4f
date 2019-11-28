@@ -455,7 +455,13 @@ let rec stm : Ast.Stm.t -> unit Statement.t Or_error.t = function
       loop stm c b `While
   | Do_while (b, c) ->
       loop stm c b `Do_while
-  | (Continue | Label _ | Compound _ | Switch _ | For _ | Goto _) as s ->
+  | Label (Normal l, Expr None) ->
+      (* This is a particularly weird subset of the labels, but I'm not sure
+         how best to expand it. *)
+      Or_error.return (Statement.label (Label.of_c_id l))
+  | Goto l ->
+      Or_error.return (Statement.goto (Label.of_c_id l))
+  | (Continue | Label _ | Compound _ | Switch _ | For _) as s ->
       Or_error.error_s
         [%message "Unsupported statement" ~got:(s : Ast.Stm.t)]
 

@@ -30,16 +30,24 @@ type 'meta t [@@deriving sexp, equal]
 (** {1 Constructors} *)
 
 val assign : Assign.t -> 'meta t
-(** [assign a] lifts an assignment to a statement. *)
+(** [assign a] lifts an assignment [a] to a primitive statement. *)
 
 val atomic_store : Atomic_store.t -> 'meta t
-(** [atomic_store a] lifts an atomic store to a statement. *)
+(** [atomic_store a] lifts an atomic store [a] to a primitive statement. *)
 
 val atomic_cmpxchg : Atomic_cmpxchg.t -> 'meta t
-(** [atomic_cmpxchg a] lifts an atomic compare-exchange to a statement. *)
+(** [atomic_cmpxchg a] lifts an atomic compare-exchange [a] to a primitive
+    statement. *)
+
+val label : 'meta Label.t -> 'meta t
+(** [label l] lifts a label [l] to a primitive statement. *)
+
+val goto : 'meta Label.t -> 'meta t
+(** [goto l] lifts a goto to label [l] to a primitive statement. *)
 
 val nop : 'meta -> 'meta t
-(** [nop m] creates a no-op (semicolon) statement with metadata [m]. *)
+(** [nop m] creates a no-op (semicolon) primitive statement with metadata
+    [m]. *)
 
 val early_out : 'meta Early_out.t -> 'meta t
 (** [early_out e] lifts an early-out statement [e] to a primitive statement. *)
@@ -62,6 +70,8 @@ val reduce :
   -> atomic_store:((* 'meta *) Atomic_store.t -> 'result)
   -> atomic_cmpxchg:((* 'meta *) Atomic_cmpxchg.t -> 'result)
   -> early_out:('meta Early_out.t -> 'result)
+  -> label:('meta Label.t -> 'result)
+  -> goto:('meta Label.t -> 'result)
   -> nop:('meta -> 'result)
   -> 'result
 (** [reduce x ~assign ~atomic_store ~atomic_cmpxchg ~early_out ~nop] reduces
@@ -78,6 +88,8 @@ module Base_map (M : Monad.S) : sig
     -> atomic_cmpxchg:
          ((* 'm1 *) Atomic_cmpxchg.t -> (* 'm2 *) Atomic_cmpxchg.t M.t)
     -> early_out:('m1 Early_out.t -> 'm2 Early_out.t M.t)
+    -> label:('m1 Label.t -> 'm2 Label.t M.t)
+    -> goto:('m1 Label.t -> 'm2 Label.t M.t)
     -> nop:('m1 -> 'm2 M.t)
     -> 'm2 t M.t
   (** [bmap x ~assign ~atomic_store ~atomic_cmpxchg ~early_out ~nop] maps the

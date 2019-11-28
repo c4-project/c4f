@@ -68,6 +68,12 @@ module type S_statement = sig
   (** [nop meta] is a no-operation statement with metadata [meta]; it
       corresponds to C's empty expression statement. *)
 
+  val label : 'meta Label.t -> 'meta t
+  (** [label label] is a label statement with label [label]. *)
+
+  val goto : 'meta Label.t -> 'meta t
+  (** [goto label] is a GOTO statement with label [label]. *)
+
   val break : 'meta -> 'meta t
   (** [break meta] is a break statement with metadata [meta]. *)
 

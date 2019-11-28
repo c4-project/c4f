@@ -19,6 +19,8 @@ module P = struct
     | Atomic_store of Atomic_store.t
     | Atomic_cmpxchg of Atomic_cmpxchg.t
     | Early_out of 'meta Early_out.t
+    | Label of 'meta Label.t
+    | Goto of 'meta Label.t
     | Nop of 'meta
   [@@deriving variants, sexp, equal]
 end
@@ -33,25 +35,30 @@ let reduce (type meta result) (x : meta t)
     ~(assign : (* meta *) Assign.t -> result)
     ~(atomic_store : (* meta *) Atomic_store.t -> result)
     ~(atomic_cmpxchg : (* meta *) Atomic_cmpxchg.t -> result)
-    ~(early_out : meta Early_out.t -> result) ~(nop : meta -> result) :
-    result =
+    ~(early_out : meta Early_out.t -> result)
+    ~(label : meta Label.t -> result) ~(goto : meta Label.t -> result)
+    ~(nop : meta -> result) : result =
   Variants.map x ~assign:(Fn.const assign)
     ~atomic_store:(Fn.const atomic_store)
     ~atomic_cmpxchg:(Fn.const atomic_cmpxchg) ~early_out:(Fn.const early_out)
-    ~nop:(Fn.const nop)
+    ~label:(Fn.const label) ~goto:(Fn.const goto) ~nop:(Fn.const nop)
 
 module Base_map (M : Monad.S) = struct
   module F = Travesty.Traversable.Helpers (M)
 
   let bmap (type m1 m2) (x : m1 t) ~assign ~atomic_store ~atomic_cmpxchg
       ~(early_out : m1 Early_out.t -> m2 Early_out.t M.t)
-      ~(nop : m1 -> m2 M.t) : m2 t M.t =
+      ~(label : m1 Label.t -> m2 Label.t M.t)
+      ~(goto : m1 Label.t -> m2 Label.t M.t) ~(nop : m1 -> m2 M.t) : m2 t M.t
+      =
     Travesty_base_exts.Fn.Compose_syntax.(
       reduce x
         ~assign:(assign >> M.map ~f:P.assign)
         ~atomic_store:(atomic_store >> M.map ~f:P.atomic_store)
         ~atomic_cmpxchg:(atomic_cmpxchg >> M.map ~f:P.atomic_cmpxchg)
         ~early_out:(early_out >> M.map ~f:P.early_out)
+        ~label:(label >> M.map ~f:P.label)
+        ~goto:(goto >> M.map ~f:P.goto)
         ~nop:(nop >> M.map ~f:P.nop))
 end
 
@@ -62,10 +69,12 @@ Travesty.Traversable.Make1 (struct
   module On_monad (M : Monad.S) = struct
     module B = Base_map (M)
     module EO = Early_out.On_meta.On_monad (M)
+    module LO = Label.On_meta.On_monad (M)
 
     let map_m (x : 'm1 t) ~(f : 'm1 -> 'm2 M.t) : 'm2 t M.t =
       B.bmap x ~assign:M.return ~atomic_store:M.return
-        ~atomic_cmpxchg:M.return ~nop:f ~early_out:(EO.map_m ~f)
+        ~atomic_cmpxchg:M.return ~early_out:(EO.map_m ~f)
+        ~label:(LO.map_m ~f) ~goto:(LO.map_m ~f) ~nop:f
   end
 end)
 
@@ -103,7 +112,8 @@ module With_meta (Meta : T) = struct
 
       let map_m x ~f =
         SBase.bmap x ~assign:(AM.map_m ~f) ~atomic_store:(SM.map_m ~f)
-          ~atomic_cmpxchg:(CM.map_m ~f) ~early_out:M.return ~nop:M.return
+          ~atomic_cmpxchg:(CM.map_m ~f) ~early_out:M.return ~label:M.return
+          ~goto:M.return ~nop:M.return
     end
   end)
 

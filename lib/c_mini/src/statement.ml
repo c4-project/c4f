@@ -102,6 +102,10 @@ module Main :
 
     let return (x : 'meta) : 'meta t = prim (Prim_statement.return x)
 
+    let label (x : 'meta Label.t) : 'meta t = prim (Prim_statement.label x)
+
+    let goto (x : 'meta Label.t) : 'meta t = prim (Prim_statement.goto x)
+
     let nop (x : 'meta) : 'meta t = prim (Prim_statement.nop x)
 
     let if_stm (x : 'meta if_statement) : 'meta t = If_stm x
