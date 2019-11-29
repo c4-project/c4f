@@ -22,7 +22,7 @@ let to_runner = function
   | Local ->
       (module Pb.Runner.Local : Pb.Runner_types.S)
   | Ssh c ->
-      ( module Au.Ssh.Runner (struct
+      ( module Pb.Ssh.Runner (struct
         include Ssh.To_config (struct
           let ssh = c
         end)

@@ -24,17 +24,23 @@ type t =
 
 module Load : Plumbing.Loadable_types.S with type t = t = struct
   module File = struct
-    let ssh (items : Ast.Ssh.t list) : Act_machine.Ssh.t Or_error.t =
+    let ssh_remote (items : Ast.Ssh.t list) : Plumbing.Ssh.t Or_error.t =
       Or_error.Let_syntax.(
         let%map user =
           Au.My_list.find_one items ~item_name:"user" ~f:Ast.Ssh.as_user
         and host =
           Au.My_list.find_one items ~item_name:"host" ~f:Ast.Ssh.as_host
+        in
+        Plumbing.Ssh.make ~user ~host ())
+
+    let ssh (items : Ast.Ssh.t list) : Act_machine.Ssh.t Or_error.t =
+      Or_error.Let_syntax.(
+        let%map remote = ssh_remote items
         and copy_dir =
           Au.My_list.find_one items ~item_name:"copy to"
             ~f:Ast.Ssh.as_copy_to
         in
-        Act_machine.Ssh.make ~user ~host ~copy_dir ())
+        Act_machine.Ssh.make ~remote ~copy_dir)
 
     let via = function
       | Ast.Via.Local ->

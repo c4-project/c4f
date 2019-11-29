@@ -1,33 +1,21 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the "Software"),
-   to deal in the Software without restriction, including without limitation
-   the rights to use, copy, modify, merge, publish, distribute, sublicense,
-   and/or sell copies of the Software, and to permit persons to whom the
-   Software is furnished to do so, subject to the following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included in
-   all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-   DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 (** [Ssh] contains types, modules, and functions for doing remote work over
     SSH. *)
 
 open Core
-module Pb = Plumbing
 
 type t = {user: string option [@sexp.option]; host: string}
-[@@deriving sexp, fields, make]
+[@@deriving sexp, equal, fields, make]
 
 module Make (C : sig
   val ssh : t
@@ -62,11 +50,11 @@ module Scp (Conf : Ssh_types.S) = struct
       @ if recurse then ["-r" (* recursive *)] else []
     in
     let argv = flags @ [scp_stanza remote; Fpath.to_string local] in
-    Pb.Runner.Local.run ~prog:"scp" argv
+    Runner.Local.run ~prog:"scp" argv
 end
 
-module Runner (Conf : Ssh_types.Basic_runner) : Pb.Runner_types.S =
-Pb.Runner.Make (struct
+module Runner (Conf : Ssh_types.Basic_runner) : Runner_types.S =
+Runner.Make (struct
   open Conf
   module Scp = Scp (Conf)
 
@@ -93,7 +81,7 @@ Pb.Runner.Make (struct
         ~error:(Error.of_string "Internal: file list length changed.")
       >>= combine_errors_unit)
 
-  let copy_spec_to_remote : Fpath.t Pb.Copy_spec.t -> string Pb.Copy_spec.t =
+  let copy_spec_to_remote : Fpath.t Copy_spec.t -> string Copy_spec.t =
     function
     | Directory local ->
         Directory (Conf.remote_dir local)
@@ -105,7 +93,7 @@ Pb.Runner.Make (struct
   let scp_spec
       ~(dir_action : local:Fpath.t -> remote:string -> unit Or_error.t)
       ~(file_action : local:Fpath.t -> remote:string -> unit Or_error.t)
-      (cs : Fpath.t Pb.Copy_spec.t) : string Pb.Copy_spec.t Or_error.t =
+      (cs : Fpath.t Copy_spec.t) : string Copy_spec.t Or_error.t =
     let open Or_error.Let_syntax in
     let rcs = copy_spec_to_remote cs in
     let%map () =
@@ -123,31 +111,30 @@ Pb.Runner.Make (struct
     in
     rcs
 
-  let scp_send_spec :
-      Fpath.t Pb.Copy_spec.t -> string Pb.Copy_spec.t Or_error.t =
+  let scp_send_spec : Fpath.t Copy_spec.t -> string Copy_spec.t Or_error.t =
     scp_spec ~dir_action:(Scp.send ~recurse:true)
       ~file_action:(Scp.send ~recurse:false)
 
-  let scp_receive_spec :
-      Fpath.t Pb.Copy_spec.t -> string Pb.Copy_spec.t Or_error.t =
+  let scp_receive_spec : Fpath.t Copy_spec.t -> string Copy_spec.t Or_error.t
+      =
     scp_spec
       ~dir_action:(fun ~local ~remote ->
         Scp.receive ~recurse:true ~remote ~local)
       ~file_action:(fun ~local ~remote ->
         Scp.receive ~recurse:false ~remote ~local)
 
-  let pre (cs_pair : Fpath.t Pb.Copy_spec.Pair.t) :
-      string Pb.Copy_spec.Pair.t Or_error.t =
+  let pre (cs_pair : Fpath.t Copy_spec.Pair.t) :
+      string Copy_spec.Pair.t Or_error.t =
     let open Or_error.Let_syntax in
-    let%bind () = Pb.Copy_spec.validate_local cs_pair.input in
+    let%bind () = Copy_spec.validate_local cs_pair.input in
     let%map input' = scp_send_spec cs_pair.input in
     let output' = copy_spec_to_remote cs_pair.output in
-    {Pb.Copy_spec.Pair.input= input'; output= output'}
+    {Copy_spec.Pair.input= input'; output= output'}
 
-  let post (cs : Fpath.t Pb.Copy_spec.t) : unit Or_error.t =
+  let post (cs : Fpath.t Copy_spec.t) : unit Or_error.t =
     let open Or_error.Let_syntax in
     let%bind _ = scp_receive_spec cs in
-    Pb.Copy_spec.validate_local cs
+    Copy_spec.validate_local cs
 
   let run_one oc prog args =
     let open Or_error in

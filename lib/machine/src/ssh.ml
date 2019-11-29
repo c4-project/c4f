@@ -11,20 +11,20 @@
 
 open Base
 
-type t = {user: string option [@sexp.option]; host: string; copy_dir: string}
+type t = {remote: Plumbing.Ssh.t; copy_dir: string}
 [@@deriving sexp, make, fields, equal]
 
-let pp f {host; user; copy_dir} =
-  match user with
-  | Some u ->
-      Fmt.pf f "%s@@%s:%s" host u copy_dir
-  | None ->
-      Fmt.pf f "%s:%s" host copy_dir
+let host (ssh : t) : string = Plumbing.Ssh.host (remote ssh)
+
+let user (ssh : t) : string option = Plumbing.Ssh.user (remote ssh)
+
+let pp : t Fmt.t =
+  Fmt.(
+    using user (option (string ++ any "@@"))
+    ++ using host string ++ any ":" ++ using copy_dir string)
 
 module To_config (C : sig
   val ssh : t
-end) : Act_utils.Ssh_types.S = struct
-  let host = host C.ssh
-
-  let user = user C.ssh
-end
+end) : Plumbing.Ssh_types.S = Plumbing.Ssh.Make (struct
+  let ssh = remote C.ssh
+end)
