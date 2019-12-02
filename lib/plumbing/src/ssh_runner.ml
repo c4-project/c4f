@@ -1,0 +1,99 @@
+(* The Automagic Compiler Tormentor
+
+   Copyright (c) 2018--2019 Matt Windsor and contributors
+
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
+
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
+
+open Core
+module Tx = Travesty_base_exts
+
+module Config = struct
+  type t = {remote: Ssh.t; copy_dir: string}
+  [@@deriving sexp, make, fields, equal]
+
+  let host (ssh : t) : string = Ssh.host (remote ssh)
+
+  let user (ssh : t) : string option = Ssh.user (remote ssh)
+
+  let pp : t Fmt.t =
+    Fmt.(
+      using user (option (string ++ any "@@"))
+      ++ using host string ++ any ":" ++ using copy_dir string)
+end
+
+module Make (C : sig
+  val config : Config.t
+end) : Runner_types.S = Runner.Make (struct
+  let remote_cfg : Ssh.t = Config.remote C.config
+
+  let copy_dir : string = Config.copy_dir C.config
+
+  let remote_file_name (local_path : Fpath.t) : string =
+    (* Assuming that scp always supports unix-style paths *)
+    let local_file = Fpath.filename local_path in
+    sprintf "%s/%s" copy_dir local_file
+
+  let copy_spec_to_remote : Fpath.t Copy_spec.t -> string Copy_spec.t =
+    function
+    | Directory _ ->
+        Directory copy_dir
+    | Files fs ->
+        Files (List.map ~f:remote_file_name fs)
+    | Nothing ->
+        Nothing
+
+  let scp_receive : Fpath.t Copy_spec.t -> unit Or_error.t = function
+    | Directory local ->
+        Scp.receive remote_cfg ~recurse:true ~remotes:[copy_dir] ~local
+    | Files [] | Nothing ->
+        Ok ()
+    | Files fs ->
+        (* TODO(@MattWindsor91): work out how to get multi-file receive
+           without having to break it into separate receives. *)
+        Tx.Or_error.combine_map_unit fs ~f:(fun local ->
+            let remote = remote_file_name local in
+            Scp.receive remote_cfg ~recurse:false ~remotes:[remote] ~local)
+
+  (* TODO(@MattWindsor91): mangle the files such that duplicate files get
+     non-overlapping names, forbid duplicate files, or do a two-speed thing
+     where ambiguous cases turn into iterated single-file copies. *)
+  let scp_send : Fpath.t Copy_spec.t -> unit Or_error.t = function
+    | Directory local ->
+        Scp.send remote_cfg ~recurse:true ~locals:[local] ~remote:copy_dir
+    | Files [] | Nothing ->
+        Ok ()
+    | Files [file] ->
+        (* We do this to prevent ambiguity between scp-ing a file to a
+           directory and scp-ing a file to a file, but, as mentioned above,
+           we might want to enable this path in a loop when the fast path is
+           unavailable. *)
+        let remote = remote_file_name file in
+        Scp.send remote_cfg ~recurse:false ~locals:[file] ~remote
+    | Files locals ->
+        Scp.send remote_cfg ~recurse:false ~locals ~remote:copy_dir
+
+  let pre (cs_pair : Fpath.t Copy_spec.Pair.t) :
+      string Copy_spec.Pair.t Or_error.t =
+    let input' = copy_spec_to_remote cs_pair.input in
+    let output' = copy_spec_to_remote cs_pair.output in
+    Or_error.Let_syntax.(
+      let%bind () = Copy_spec.validate_local cs_pair.input in
+      let%map () = scp_send cs_pair.input in
+      {Copy_spec.Pair.input= input'; output= output'})
+
+  let post (cs : Fpath.t Copy_spec.t) : unit Or_error.t =
+    Or_error.Let_syntax.(
+      let%bind () = scp_receive cs in
+      Copy_spec.validate_local cs)
+
+  let run_batch ?(oc : Out_channel.t option) (argvs : string list list)
+      ~(prog : string) : unit Or_error.t =
+    Tx.Or_error.combine_map_unit
+      ~f:(fun argv -> Ssh.run ?oc remote_cfg ~prog ~argv)
+      argvs
+end)

@@ -14,12 +14,13 @@
 open Base
 
 (** [t] is the type of a machine-reaching method. *)
-type t = Local | Ssh of Ssh.t [@@deriving sexp, equal]
+type t = Local | Ssh of Plumbing.Ssh_runner.Config.t
+[@@deriving sexp, equal]
 
 val local : t
 (** [local] is a [Via] for a local machine. *)
 
-val ssh : Ssh.t -> t
+val ssh : Plumbing.Ssh_runner.Config.t -> t
 (** [ssh ssh_config] is a [Via] for a SSH connection. *)
 
 include Pretty_printer.S with type t := t

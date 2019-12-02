@@ -5,7 +5,7 @@
  (public_name act.plumbing)
  (synopsis "Modules for building Unix-style filters and other pipework")
  (modules_without_implementation convert_types io_types jsonable_types
-   loadable_types storable_types ssh_types)
+   loadable_types runner_types scp_types storable_types)
  (preprocess
   (pps ppx_yojson_conv ppx_deriving.std ppx_jane))
  (libraries result sexplib sexplib0 core core_kernel base base.caml shell

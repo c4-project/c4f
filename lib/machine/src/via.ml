@@ -14,20 +14,21 @@ module Au = Act_utils
 module Ac = Act_common
 module Pb = Plumbing
 
-type t = Local | Ssh of Ssh.t [@@deriving sexp, variants, equal]
+type t = Local | Ssh of Pb.Ssh_runner.Config.t
+[@@deriving sexp, variants, equal]
 
-let pp f = function Local -> String.pp f "local" | Ssh s -> Ssh.pp f s
+let pp f = function
+  | Local ->
+      String.pp f "local"
+  | Ssh s ->
+      Pb.Ssh_runner.Config.pp f s
 
 let to_runner = function
   | Local ->
       (module Pb.Runner.Local : Pb.Runner_types.S)
   | Ssh c ->
-      ( module Pb.Ssh.Runner (struct
-        include Ssh.To_config (struct
-          let ssh = c
-        end)
-
-        let remote_dir = Fn.const (Ssh.copy_dir c)
+      ( module Pb.Ssh_runner.Make (struct
+        let config = c
       end) : Pb.Runner_types.S )
 
 let remoteness = function

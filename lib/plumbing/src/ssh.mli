@@ -19,6 +19,13 @@ open Base
 type t [@@deriving sexp, equal]
 (** [t] contains a SSH hostname and optional user. *)
 
+val to_string : t -> string
+(** [to_string ssh] converts [ssh] to a string. This string is intended to be
+    suitable for prefixing a SCP remote. *)
+
+include Pretty_printer.S with type t := t
+(** SSH configuration records can be pretty-printed. *)
+
 (** {2 Constructors} *)
 
 val make : ?user:string -> host:string -> unit -> t
@@ -33,27 +40,15 @@ val host : t -> string
 val user : t -> string option
 (** [user ssh] gets the configured user, if any, for [ssh]. *)
 
-(** {1 Functors} *)
+(** {2 Running commands} *)
 
-(** [Make] makes an [S] from a [t]. *)
-module Make (Conf : sig
-  val ssh : t
-end) : Ssh_types.S
-
-(** [Runner] provides a {!Runner_types.S} using the given SSH config. *)
-module Runner (Conf : Ssh_types.Basic_runner) : Runner_types.S
-
-(** [Scp] provides SCP file transfer operations, given an [S]. *)
-module Scp (Conf : Ssh_types.S) : sig
-  val send :
-    recurse:bool -> local:Fpath.t -> remote:string -> unit Or_error.t
-  (** [send ~recurse ~local ~remote] tries to copy the local path [local] to
-      the remote host at path [remote] using scp. [recurse], if true, turns
-      on the recursive copy flag. *)
-
-  val receive :
-    recurse:bool -> remote:string -> local:Fpath.t -> unit Or_error.t
-  (** [receive ~recurse ~remote ~local] tries to copy the path [remote] on
-      the remote host to the local path [local] using scp. [recurse], if
-      true, turns on the recursive copy flag. *)
-end
+val run :
+     ?oc:Stdio.Out_channel.t
+  -> t
+  -> prog:string
+  -> argv:string list
+  -> unit Or_error.t
+(** [run ?oc ssh ~prog ~argv] is a wrapper around Jane Street's [Shell]
+    library's SSH support. It invokes [prog] with arguments [argv] on the
+    remote host and user given by [ssh]. If [oc] is supplied, the final
+    output from the command gets printed to it. *)
