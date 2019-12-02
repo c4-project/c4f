@@ -11,17 +11,6 @@
 
 (** High-level interface for specifying and invoking compilers. *)
 
-open Base
-
-(** A compiler that always passes its tests, but fails with [E.error] on
-    runtime.
-
-    Generally used when building a compiler chain fails, but the error is one
-    that can be sidestepped over if the compiler never gets run. *)
-module Fail (E : sig
-  val error : Error.t
-end) : Instance_types.S
-
 (** [Make] produces a runnable compiler satisfying [S] from a
     [Basic_with_run_info]. *)
 module Make (B : Instance_types.Basic_with_run_info) : Instance_types.S

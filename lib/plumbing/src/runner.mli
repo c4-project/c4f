@@ -11,14 +11,6 @@
 
 (** Quick and easy process running *)
 
-open Base
-
-val argv_one_file :
-     (string, 'a) Runner_types.argv_fun
-  -> (string Copy_spec.t, 'a) Runner_types.argv_fun
-(** [argv_one_file f] adapts a function that builds an argument list from one
-    input file and one output file to one that works on manifests. *)
-
 (** Makes a {{!S} S} from a {{!Basic} Basic}. *)
 module Make (B : Runner_types.Basic) : Runner_types.S
 

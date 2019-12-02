@@ -12,12 +12,39 @@
 open Core_kernel
 module Cq_spec = Act_machine.Qualified.Compiler
 
-let resolve_compiler_filter (target : Cq_spec.t Act_machine.Target.t) :
-    (module Act_compiler.Filter.S) Or_error.t =
+(* This used to use Act_compiler.Filter.Make directly, but filters don't
+   support >1 file. However, we _do_ want to be able to make use of a lot of
+   the filter infrastructure for dealing with stdin/stdout, so we compromise:
+   if more than one file is given as input, we fall back to not using a
+   filter.
+
+   TODO(@MattWindsor91): maybe generalise filters so that we don't have this
+   issue. *)
+
+let resolve_compiler_instance (target : Cq_spec.t Act_machine.Target.t) :
+    (module Act_compiler.Instance_types.S) Or_error.t =
+  Or_error.(
+    target |> Act_machine.Target.ensure_spec
+    >>= Common_cmd.Language_support.resolve)
+
+let run_single (module Compiler : Act_compiler.Instance_types.S)
+    (mode : Act_compiler.Mode.t) (input : Plumbing.Input.t)
+    (output : Plumbing.Output.t) : unit Or_error.t =
+  let module Filter = Act_compiler.Filter.Make (Compiler) in
+  Filter.run mode input output
+
+let run_multiple (module Compiler : Act_compiler.Instance_types.S)
+    (mode : Act_compiler.Mode.t) (infiles : Fpath.t list)
+    (output : Plumbing.Output.t) : unit Or_error.t =
   Or_error.Let_syntax.(
-    let%bind spec = Act_machine.Target.ensure_spec target in
-    let%map (module Compiler) = Common_cmd.Language_support.resolve spec in
-    (module Act_compiler.Filter.Make (Compiler) : Act_compiler.Filter.S))
+    let%bind outfile =
+      Or_error.tag
+        (Plumbing.Output.to_fpath_err output)
+        ~tag:
+          "Multi-input compiles require an explicit output file; this is a \
+           known issue"
+    in
+    Compiler.compile mode ~infiles ~outfile)
 
 let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t)
     (_o : Act_common.Output.t) (cfg : Act_config.Global.t)
@@ -25,14 +52,29 @@ let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t)
     unit Or_error.t =
   Or_error.Let_syntax.(
     let%bind target = Common_cmd.Asm_target.resolve ~cfg raw_target in
-    let%bind (module R) = resolve_compiler_filter target in
-    let%bind input = Common_cmd.Args.With_files.infile_source args in
+    let%bind (module Compiler) = resolve_compiler_instance target in
     let%bind output = Common_cmd.Args.With_files.outfile_sink args in
-    Or_error.ignore_m (R.run mode input output))
+    match%bind Common_cmd.Args.With_files.infiles_fpath args with
+    | [] ->
+        run_single
+          (module Compiler)
+          mode
+          (Plumbing.Input.stdin ~file_type:"c" ())
+          output
+    | [input] ->
+        run_single
+          (module Compiler)
+          mode
+          (Plumbing.Input.of_fpath input)
+          output
+    | inputs ->
+        run_multiple (module Compiler) mode inputs output)
+
+let mode_alist : (string, Act_compiler.Mode.t) List.Assoc.t =
+  List.Assoc.inverse Act_compiler.Mode.table
 
 let mode_type : Act_compiler.Mode.t Command.Arg_type.t =
-  Command.Arg_type.of_alist_exn
-    Act_compiler.Mode.[("assembly", Assembly); ("object", Object)]
+  Command.Arg_type.of_alist_exn mode_alist
 
 let mode_param : Act_compiler.Mode.t Command.Param.t =
   Command.Param.flag_optional_with_default_doc "mode" mode_type
@@ -44,14 +86,17 @@ let readme () : string =
   Act_utils.My_string.format_for_readme
     {|
     This command runs a compiler, given its fully qualified identifier, on
-    a single input file.  It either outputs an assembly (.s) file (the default),
-    or an object (.o) file.
+    one or more input file.  It either outputs an assembly (.s) file
+    (the default), or an object (.o) file.
+
+    When taking more than one file as input, the
     |}
 
 let command : Command.t =
   Command.basic ~summary:"run the given compiler on a single file" ~readme
     Command.Let_syntax.(
-      let%map standard_args = Common_cmd.Args.(With_files.get Standard.get)
+      let%map standard_args =
+        Common_cmd.Args.(With_files.get_with_multiple_inputs Standard.get)
       and raw_target = Common_cmd.Args.asm_target
       and mode = mode_param in
       fun () ->

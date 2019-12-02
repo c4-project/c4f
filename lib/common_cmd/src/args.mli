@@ -41,9 +41,8 @@ module Standard : sig
   (** [config_file t] gets the configuration file according to [t]. *)
 end
 
-(** Wrapper of {!Standard} (etc) including arguments for
-    (optional) input and output files. This is useful for exposing a filter
-    as an act command.
+(** Wrapper of {!Standard} (etc) including arguments for (optional) input and
+    output files. This is useful for exposing a filter as an act command.
 
     This module contains support for dealing with both single-input,
     single-output commands such as filters, and multi-input, single-output
@@ -58,8 +57,8 @@ module With_files : sig
   (** {3 Parsing from the command line} *)
 
   val get : 'a Command.Param.t -> 'a t Command.Param.t
-  (** [get cmd] lifts a [Command.Param.t] [cmd] over arguments to one that also
-      retrieves the file arguments for a single-input, single-out. *)
+  (** [get cmd] lifts a [Command.Param.t] [cmd] over arguments to one that
+      also retrieves the file arguments for a single-input, single-out. *)
 
   val get_with_multiple_inputs : 'a Command.Param.t -> 'a t Command.Param.t
   (** [get_with_multiple_inputs cmd] behaves as [get cmd], but allows for
@@ -69,35 +68,33 @@ module With_files : sig
 
   (** {4 Single input}
 
-      These should be used with {!get}.  They will fail with an error if
-      more than one input argument was given. *)
+      These should be used with {!get}. They will fail with an error if more
+      than one input argument was given. *)
 
   val infile_raw : _ t -> string option Or_error.t
-  (** [infile_raw args] gets the input file provided as an argument, if
-      one indeed was.  It returns an error if more than one file was given. *)
+  (** [infile_raw args] gets the input file provided as an argument, if one
+      indeed was. It returns an error if more than one file was given. *)
 
   val infile_fpath : _ t -> Fpath.t option Or_error.t
-  (** [infile_fpath args] behaves as {!infile_raw}, but tries to
-      parse any given input file as an Fpath. This may fail if the path is
-      ill-formed. *)
+  (** [infile_fpath args] behaves as {!infile_raw}, but tries to parse any
+      given input file as an Fpath. This may fail if the path is ill-formed. *)
 
   val infile_source : _ t -> Plumbing.Input.t Or_error.t
-  (** [infile_source args] behaves as {!infile_raw}, but tries
-      to convert the result to an {!Plumbing.Input.t}. This may
-      fail if the path is ill-formed. *)
+  (** [infile_source args] behaves as {!infile_raw}, but tries to convert the
+      result to an {!Plumbing.Input.t}. This may fail if the path is
+      ill-formed. *)
 
   (** {4 Multiple input}
 
       These should be used with {!get_multiple_inputs}. *)
 
   val infiles_raw : _ t -> string list
-  (** [infiles_raw args] gets the input files provided as an argument, if
-      any indeed were. *)
+  (** [infiles_raw args] gets the input files provided as an argument, if any
+      indeed were. *)
 
   val infiles_fpath : _ t -> Fpath.t list Or_error.t
-  (** [infiles_fpath args] behaves as {!infiles_raw}, but tries to
-      parse any given input files as Fpaths. This may fail if any path is
-      ill-formed. *)
+  (** [infiles_fpath args] behaves as {!infiles_raw}, but tries to parse any
+      given input files as Fpaths. This may fail if any path is ill-formed. *)
 
   (** {4 Output} *)
 
@@ -106,14 +103,12 @@ module With_files : sig
       one indeed was. *)
 
   val outfile_fpath : _ t -> Fpath.t option Or_error.t
-  (** [outfile_fpath args] behaves as {!outfile_raw}, but tries
-      to parse any given output file as an Fpath. This may fail if the path
-      is ill-formed. *)
+  (** [outfile_fpath args] behaves as {!outfile_raw}, but tries to parse any
+      given output file as an Fpath. This may fail if the path is ill-formed. *)
 
   val outfile_sink : _ t -> Plumbing.Output.t Or_error.t
-  (** [outfile_sink args] behaves as {!outfile_raw}, but tries
-      to convert the result to an {!Io.Out_sink.t}. This may
-      fail if the path is ill-formed. *)
+  (** [outfile_sink args] behaves as {!outfile_raw}, but tries to convert the
+      result to an {!Io.Out_sink.t}. This may fail if the path is ill-formed. *)
 
   (** {3 Running filters using the given arguments} *)
   val run_filter :

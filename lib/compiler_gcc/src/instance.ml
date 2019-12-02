@@ -14,21 +14,22 @@ let mode_args : Act_compiler.Mode.t -> string list = function
       ["-S"]
   | Object ->
       ["-c"]
+  | Binary ->
+      []
 
 let no_position_independence_args : string list = ["-fno-pic"]
 
 let output_args (file : string) : string list = ["-o"; file]
 
-let input_args (file : string) : string list = [file]
-
 let compile_args ~user_args ~(arch : Act_common.Id.t)
-    ~(mode : Act_compiler.Mode.t) ~infile ~outfile =
+    ~(mode : Act_compiler.Mode.t) ~(infiles : string list)
+    ~(outfile : string) =
   ignore arch ;
   List.concat
     [ mode_args mode
     ; no_position_independence_args
     ; user_args
     ; output_args outfile
-    ; input_args infile ]
+    ; infiles ]
 
 let test_args = ["--version"]

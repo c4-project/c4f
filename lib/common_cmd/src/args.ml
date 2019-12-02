@@ -12,7 +12,6 @@
 open Core
 open Act_common
 open Act_utils
-
 module Tx = Travesty_base_exts
 
 module Colour_table = String_table.Make (struct
@@ -136,31 +135,34 @@ module Standard = struct
 end
 
 module With_files = struct
-  type 'a t =
-    {rest: 'a; infiles_raw: string list; outfile_raw: string option}
+  type 'a t = {rest: 'a; infiles_raw: string list; outfile_raw: string option}
   [@@deriving fields]
 
   let out : string option Command.Param.t =
-    Command.Param.(flag "output"
-          (optional Filename.arg_type)
-          ~doc:"FILE the output file (default: stdout)")
+    Command.Param.(
+      flag "output"
+        (optional Filename.arg_type)
+        ~doc:"FILE the output file (default: stdout)")
 
   let get (type a) (rest : a Command.Param.t) : a t Command.Param.t =
     Command.Let_syntax.(
       let%map_open infile_raw = anon (maybe ("FILE" %: Filename.arg_type))
       and outfile_raw = out
       and rest = rest in
-      {rest; infiles_raw=Option.to_list infile_raw; outfile_raw})
+      {rest; infiles_raw= Option.to_list infile_raw; outfile_raw})
 
-  let get_with_multiple_inputs (type a) (rest : a Command.Param.t) : a t Command.Param.t =
+  let get_with_multiple_inputs (type a) (rest : a Command.Param.t) :
+      a t Command.Param.t =
     Command.Let_syntax.(
-      let%map_open infiles_raw = anon (sequence ("FILE" %: Filename.arg_type))
+      let%map_open infiles_raw =
+        anon (sequence ("FILE" %: Filename.arg_type))
       and outfile_raw = out
       and rest = rest in
       {rest; infiles_raw; outfile_raw})
 
   let infiles_fpath (args : _ t) : Fpath.t list Or_error.t =
-    Tx.Or_error.combine_map (infiles_raw args) ~f:Plumbing.Fpath_helpers.of_string
+    Tx.Or_error.combine_map (infiles_raw args)
+      ~f:Plumbing.Fpath_helpers.of_string
 
   let infile_raw (args : _ t) : string option Or_error.t =
     args |> infiles_raw |> Tx.List.at_most_one
@@ -194,8 +196,7 @@ module With_files = struct
       unit Or_error.t =
     Or_error.Let_syntax.(
       let%bind aux_out = run_filter (module F) args ~aux_in in
-      Tx.Option.With_errors.iter_m aux_out_filename
-        ~f:(fun filename ->
+      Tx.Option.With_errors.iter_m aux_out_filename ~f:(fun filename ->
           Or_error.try_with_join (fun () ->
               Stdio.Out_channel.with_file filename ~f:(aux_out_f aux_out))))
 end

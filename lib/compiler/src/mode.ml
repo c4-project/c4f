@@ -10,10 +10,16 @@
    project root for more information. *)
 
 module M = struct
-  type t = Assembly | Object [@@deriving enum]
+  type t = Assembly | Object | Binary [@@deriving enum]
 
-  let table = [(Assembly, "assembly"); (Object, "object")]
+  let table = [(Assembly, "assembly"); (Object, "object"); (Binary, "binary")]
 end
 
 include M
 include Act_utils.Enum.Extend_table (M)
+
+let supports_multiple_inputs : t -> bool = function
+  | Assembly | Object ->
+      false
+  | Binary ->
+      true

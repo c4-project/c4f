@@ -12,15 +12,6 @@
 open Core
 module Tx = Travesty_base_exts
 
-let argv_one_file (fn : (string, 'a) Runner_types.argv_fun) :
-    (string Copy_spec.t, 'a) Runner_types.argv_fun =
- fun ~input ~output ->
-  match (input, output) with
-  | Files [infile], Files [outfile] ->
-      fn ~input:infile ~output:outfile
-  | _, _ ->
-      Or_error.error_string "Expected one input file and one output file"
-
 module Make (B : Runner_types.Basic) : Runner_types.S = struct
   include B
 

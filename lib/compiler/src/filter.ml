@@ -23,7 +23,7 @@ module Make (S : Instance_types.S) : S = Pb.Filter.Make_files_only (struct
 
   let name = "C compiler"
 
-  let run (ctx : Mode.t Pb.Filter_context.t) :
-      infile:Fpath.t -> outfile:Fpath.t -> unit Or_error.t =
-    S.compile (Pb.Filter_context.aux ctx)
+  let run (ctx : Mode.t Pb.Filter_context.t) ~(infile : Fpath.t) :
+      outfile:Fpath.t -> unit Or_error.t =
+    S.compile (Pb.Filter_context.aux ctx) ~infiles:[infile]
 end)

@@ -20,19 +20,36 @@ struct
 
   let cmd = Spec.With_id.cmd B.cspec
 
-  let make_argv_fun (spec : Spec.t) (mode : Mode.t) =
+  let make_argv (spec : Spec.t) (mode : Mode.t)
+      ~(input : string Pb.Copy_spec.t) ~(output : string Pb.Copy_spec.t) :
+      string list Or_error.t =
     let user_args = Spec.argv spec in
     let arch = Spec.emits spec in
-    Pb.Runner.argv_one_file (fun ~input ~output ->
+    match (input, output) with
+    | Files infiles, Files [outfile] ->
         Or_error.return
-          (B.compile_args ~user_args ~arch ~mode ~infile:input
-             ~outfile:output))
+          (compile_args ~user_args ~arch ~mode ~infiles ~outfile)
+    | _, _ ->
+        Or_error.error_string
+          "Expected one output file and at least one output file"
 
-  let compile (mode : Mode.t) ~(infile : Fpath.t) ~(outfile : Fpath.t) =
+  let check_mode_compatible (mode : Mode.t) (infiles : Fpath.t list) =
+    match infiles with
+    | _ :: _ :: _ when not (Mode.supports_multiple_inputs mode) ->
+        Or_error.error_s
+          [%message
+            "Mode does not support multiple inputs." ~mode:(mode : Mode.t)]
+    | _ ->
+        Ok ()
+
+  let compile (mode : Mode.t) ~(infiles : Fpath.t list) ~(outfile : Fpath.t)
+      =
     let spec = Spec.With_id.spec B.cspec in
-    B.Runner.run_with_copy ~prog:cmd
-      {input= Pb.Copy_spec.file infile; output= Pb.Copy_spec.file outfile}
-      (make_argv_fun spec mode)
+    Or_error.Let_syntax.(
+      let%bind () = check_mode_compatible mode infiles in
+      B.Runner.run_with_copy ~prog:cmd
+        {input= Pb.Copy_spec.files infiles; output= Pb.Copy_spec.file outfile}
+        (make_argv spec mode))
 
   let test () = B.Runner.run ~prog:cmd B.test_args
 end
@@ -42,6 +59,7 @@ module Fail (E : sig
 end) : Instance_types.S = struct
   let test () = Ok ()
 
-  let compile (_mode : Mode.t) ~infile ~outfile =
-    ignore infile ; ignore outfile ; Result.Error E.error
+  let compile (_mode : Mode.t) ~(infiles : Fpath.t list) ~(outfile : Fpath.t)
+      =
+    ignore infiles ; ignore outfile ; Result.Error E.error
 end
