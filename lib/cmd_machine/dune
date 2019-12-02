@@ -1,0 +1,10 @@
+; -*- mode: lisp; -*-
+
+(library
+ (name cmd_machine)
+ ; This module is deliberately left private, as it's so tightly coupled to the
+ ; act binaries that it's not particularly useful on its own.
+ (preprocess
+  (pps ppx_jane))
+ (libraries stdio base base.caml core_kernel core fmt fpath yojson plumbing
+   common_cmd act.backend act.config act.machine act.utils))

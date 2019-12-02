@@ -9,7 +9,15 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** The 'c' command. *)
+open Core_kernel
 
-val command : Core_kernel.Command.t
-(** [command] is the top-level 'c' command. *)
+let readme () : string =
+  Act_utils.My_string.format_for_readme
+    {|
+This program provides miscellaneous commands for dealing with the machines
+known to ACT.
+|}
+
+let command : Command.t =
+  Command.group ~summary:"commands for dealing with machines" ~readme
+    [("license", Common_cmd.License.command)]

@@ -9,7 +9,6 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** The 'c' command. *)
+(** Main entry point for ACT's miscellaneous machine services. *)
 
-val command : Core_kernel.Command.t
-(** [command] is the top-level 'c' command. *)
+let () = Core.Command.run Cmd_machine.Main.command
