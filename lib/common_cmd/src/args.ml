@@ -13,6 +13,8 @@ open Core
 open Act_common
 open Act_utils
 
+module Tx = Travesty_base_exts
+
 module Colour_table = String_table.Make (struct
   let equal_style_renderer (x : Fmt.style_renderer) (y : Fmt.style_renderer)
       : bool =
@@ -135,24 +137,39 @@ end
 
 module With_files = struct
   type 'a t =
-    {rest: 'a; infile_raw: string option; outfile_raw: string option}
+    {rest: 'a; infiles_raw: string list; outfile_raw: string option}
   [@@deriving fields]
+
+  let out : string option Command.Param.t =
+    Command.Param.(flag "output"
+          (optional Filename.arg_type)
+          ~doc:"FILE the output file (default: stdout)")
 
   let get (type a) (rest : a Command.Param.t) : a t Command.Param.t =
     Command.Let_syntax.(
       let%map_open infile_raw = anon (maybe ("FILE" %: Filename.arg_type))
-      and outfile_raw =
-        flag "output"
-          (optional Filename.arg_type)
-          ~doc:"FILE the output file (default: stdout)"
-      and rest = ignore anon ; rest in
-      {rest; infile_raw; outfile_raw})
+      and outfile_raw = out
+      and rest = rest in
+      {rest; infiles_raw=Option.to_list infile_raw; outfile_raw})
+
+  let get_with_multiple_inputs (type a) (rest : a Command.Param.t) : a t Command.Param.t =
+    Command.Let_syntax.(
+      let%map_open infiles_raw = anon (sequence ("FILE" %: Filename.arg_type))
+      and outfile_raw = out
+      and rest = rest in
+      {rest; infiles_raw; outfile_raw})
+
+  let infiles_fpath (args : _ t) : Fpath.t list Or_error.t =
+    Tx.Or_error.combine_map (infiles_raw args) ~f:Plumbing.Fpath_helpers.of_string
+
+  let infile_raw (args : _ t) : string option Or_error.t =
+    args |> infiles_raw |> Tx.List.at_most_one
 
   let infile_fpath (args : _ t) : Fpath.t option Or_error.t =
-    args |> infile_raw |> Plumbing.Fpath_helpers.of_string_option
+    Or_error.(args |> infile_raw >>= Plumbing.Fpath_helpers.of_string_option)
 
   let infile_source (args : _ t) : Plumbing.Input.t Or_error.t =
-    args |> infile_raw |> Plumbing.Input.of_string_opt
+    Or_error.(args |> infile_raw >>= Plumbing.Input.of_string_opt)
 
   let outfile_fpath (args : _ t) : Fpath.t option Or_error.t =
     args |> outfile_raw |> Plumbing.Fpath_helpers.of_string_option
@@ -177,7 +194,7 @@ module With_files = struct
       unit Or_error.t =
     Or_error.Let_syntax.(
       let%bind aux_out = run_filter (module F) args ~aux_in in
-      Travesty_base_exts.Option.With_errors.iter_m aux_out_filename
+      Tx.Option.With_errors.iter_m aux_out_filename
         ~f:(fun filename ->
           Or_error.try_with_join (fun () ->
               Stdio.Out_channel.with_file filename ~f:(aux_out_f aux_out))))
