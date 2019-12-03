@@ -38,33 +38,39 @@ end) : Runner_types.S = Runner.Make (struct
     let local_file = Fpath.filename local_path in
     sprintf "%s/%s" copy_dir local_file
 
-  let copy_spec_to_remote : Fpath.t Copy_spec.t -> string Copy_spec.t =
-    function
-    | Directory _ ->
-        Directory copy_dir
-    | Files fs ->
-        Files (List.map ~f:remote_file_name fs)
-    | Nothing ->
-        Nothing
+  let copy_spec_to_remote :
+      Fpath.t Copy_spec.t -> Copy_projection.t Copy_spec.t =
+    Copy_projection.project ~f:(fun kind path ->
+        match kind with
+        | `Directory ->
+            copy_dir
+        | `File ->
+            remote_file_name path)
 
-  let scp_receive : Fpath.t Copy_spec.t -> unit Or_error.t = function
-    | Directory local ->
-        Scp.receive remote_cfg ~recurse:true ~remotes:[copy_dir] ~local
+  let scp_receive : Copy_projection.t Copy_spec.t -> unit Or_error.t =
+    function
+    | Directory dir ->
+        let local = Copy_projection.local dir in
+        let remote = Copy_projection.remote dir in
+        Scp.receive remote_cfg ~recurse:true ~remotes:[remote] ~local
     | Files [] | Nothing ->
         Ok ()
     | Files fs ->
         (* TODO(@MattWindsor91): work out how to get multi-file receive
            without having to break it into separate receives. *)
-        Tx.Or_error.combine_map_unit fs ~f:(fun local ->
-            let remote = remote_file_name local in
+        Tx.Or_error.combine_map_unit fs ~f:(fun file ->
+            let local = Copy_projection.local file in
+            let remote = Copy_projection.remote file in
             Scp.receive remote_cfg ~recurse:false ~remotes:[remote] ~local)
 
   (* TODO(@MattWindsor91): mangle the files such that duplicate files get
      non-overlapping names, forbid duplicate files, or do a two-speed thing
      where ambiguous cases turn into iterated single-file copies. *)
-  let scp_send : Fpath.t Copy_spec.t -> unit Or_error.t = function
-    | Directory local ->
-        Scp.send remote_cfg ~recurse:true ~locals:[local] ~remote:copy_dir
+  let scp_send : Copy_projection.t Copy_spec.t -> unit Or_error.t = function
+    | Directory dir ->
+        let local = Copy_projection.local dir in
+        let remote = Copy_projection.remote dir in
+        Scp.send remote_cfg ~recurse:true ~locals:[local] ~remote
     | Files [] | Nothing ->
         Ok ()
     | Files [file] ->
@@ -72,24 +78,28 @@ end) : Runner_types.S = Runner.Make (struct
            directory and scp-ing a file to a file, but, as mentioned above,
            we might want to enable this path in a loop when the fast path is
            unavailable. *)
-        let remote = remote_file_name file in
-        Scp.send remote_cfg ~recurse:false ~locals:[file] ~remote
-    | Files locals ->
+        let local = Copy_projection.local file in
+        let remote = Copy_projection.remote file in
+        Scp.send remote_cfg ~recurse:false ~locals:[local] ~remote
+    | Files files ->
+        (* TODO(@MattWindsor91): check that all of the files have the same
+           directory? *)
+        let locals = List.map ~f:Copy_projection.local files in
         Scp.send remote_cfg ~recurse:false ~locals ~remote:copy_dir
 
   let pre (cs_pair : Fpath.t Copy_spec.Pair.t) :
-      string Copy_spec.Pair.t Or_error.t =
+      Copy_projection.t Copy_spec.Pair.t Or_error.t =
     let input' = copy_spec_to_remote cs_pair.input in
     let output' = copy_spec_to_remote cs_pair.output in
     Or_error.Let_syntax.(
       let%bind () = Copy_spec.validate_local cs_pair.input in
-      let%map () = scp_send cs_pair.input in
+      let%map () = scp_send input' in
       {Copy_spec.Pair.input= input'; output= output'})
 
-  let post (cs : Fpath.t Copy_spec.t) : unit Or_error.t =
+  let post (cs : Copy_projection.t Copy_spec.t) : unit Or_error.t =
     Or_error.Let_syntax.(
       let%bind () = scp_receive cs in
-      Copy_spec.validate_local cs)
+      Copy_spec.validate_local (Copy_projection.all_local cs))
 
   let run_batch ?(oc : Out_channel.t option) (argvs : string list list)
       ~(prog : string) : unit Or_error.t =

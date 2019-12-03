@@ -120,10 +120,12 @@ end
 module Make_on_runner (R : Basic_on_runner) :
   S with type aux_i = R.aux_i and type aux_o = unit =
 Make_in_file_only (struct
-  let make_argv (aux : R.aux_i) ~(input : string Copy_spec.t)
-      ~(output : string Copy_spec.t) : string list Or_error.t =
+  let make_argv (aux : R.aux_i) ~(input : Copy_projection.t Copy_spec.t)
+      ~(output : Copy_projection.t Copy_spec.t) : string list Or_error.t =
     ignore output ;
-    Or_error.(Copy_spec.get_file input >>| R.argv aux)
+    Or_error.(
+      input |> Copy_projection.all_remote |> Copy_spec.get_file
+      >>| R.argv aux)
 
   include R
 
@@ -135,5 +137,5 @@ Make_in_file_only (struct
     let prog = R.prog aux in
     R.Runner.run_with_copy ~oc ~prog
       {input= Copy_spec.file infile; output= Copy_spec.nothing}
-      (make_argv aux)
+      ~argv_f:(make_argv aux)
 end)

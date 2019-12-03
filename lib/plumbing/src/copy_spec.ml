@@ -18,14 +18,26 @@ type 'path t = Directory of 'path | Files of 'path list | Nothing
 
 let file (path : 'a) : 'a t = Files [path]
 
-let map (spec : 'a t) ~(f : 'a -> 'b) : 'b t =
+let map_with_kind (spec : 'a t) ~(f : [> `Directory | `File] -> 'a -> 'b) :
+    'b t =
   match spec with
   | Directory d ->
-      Directory (f d)
+      Directory (f `Directory d)
   | Files fs ->
-      Files (List.map ~f fs)
+      Files (List.map ~f:(f `File) fs)
   | Nothing ->
       Nothing
+
+let map (spec : 'a t) ~(f : 'a -> 'b) : 'b t =
+  map_with_kind spec ~f:(Fn.const f)
+
+let paths : 'a t -> 'a list = function
+  | Files fs ->
+      fs
+  | Directory dir ->
+      [dir]
+  | Nothing ->
+      []
 
 let get_file : string t -> string Or_error.t = function
   | Files fs ->
@@ -63,8 +75,14 @@ let validate_local : Fpath.t t -> unit Or_error.t = function
       Ok ()
 
 module Pair = struct
+  open struct
+    type 'a spec = 'a t
+  end
+
   type nonrec 'a t = {input: 'a t; output: 'a t}
 
-  let map (pair : 'a t) ~(f : 'a -> 'b) : 'b t =
-    {input= map ~f pair.input; output= map ~f pair.output}
+  let map_specs (pair : 'a t) ~(f : 'a spec -> 'b spec) : 'b t =
+    {input= f pair.input; output= f pair.output}
+
+  let map (pair : 'a t) ~(f : 'a -> 'b) : 'b t = map_specs ~f:(map ~f) pair
 end

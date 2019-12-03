@@ -1,24 +1,13 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the "Software"),
-   to deal in the Software without restriction, including without limitation
-   the rights to use, copy, modify, merge, publish, distribute, sublicense,
-   and/or sell copies of the Software, and to permit persons to whom the
-   Software is furnished to do so, subject to the following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included in
-   all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-   DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 (** A description of the files on which a runner task depends.
 
@@ -28,7 +17,11 @@
 
 open Base
 
+(** {1 Specs themselves} *)
+
 type 'path t = Directory of 'path | Files of 'path list | Nothing
+
+(** {2 Constructors} *)
 
 val directory : 'path -> 'path t
 (** [directory path] generates a directory spec over [path]. *)
@@ -42,6 +35,8 @@ val files : 'path list -> 'path t
 val nothing : 'path t
 (** [nothing] is the empty manifest. *)
 
+(** {2 Using a copy-spec} *)
+
 val validate_local : Fpath.t t -> unit Or_error.t
 (** [validate_local cs] validates a local copy spec by seeing if the listed
     files and directories actually exist. *)
@@ -50,12 +45,28 @@ val get_file : string t -> string Or_error.t
 (** [get_file cs] tries to extract a single file from [cs], and fails if more
     than one file, or no files, are mentioned in it. *)
 
+val paths : 'a t -> 'a list
+(** [paths cs] gets the raw list of paths covered by [cs], without further
+    context. *)
+
+(** {2 Mapping over a copy-spec} *)
+
+val map_with_kind : 'a t -> f:([`Directory | `File] -> 'a -> 'b) -> 'b t
+(** [map_with_kind cs ~f] maps [f] over all of the paths in [cs], providing
+    [f] with a hint as to whether the path is supposed to be a directory or a
+    file. *)
+
 val map : 'a t -> f:('a -> 'b) -> 'b t
 (** [map cs ~f] maps [f] over all of the paths in [cs]. *)
 
-(** Pairs of input and output copy specs. *)
+(** {1 Pairs of input and output copy specs} *)
 module Pair : sig
+  type 'a spec := 'a t
+
   type nonrec 'path t = {input: 'path t; output: 'path t}
+
+  val map_specs : 'a t -> f:('a spec -> 'b spec) -> 'b t
+  (** [map_specs cs_pair ~f] maps [f] over both of the specs in [cs_pair]. *)
 
   val map : 'a t -> f:('a -> 'b) -> 'b t
   (** [map cs_pair ~f] maps [f] over all of the paths in [cs_pair]. *)

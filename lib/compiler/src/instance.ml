@@ -21,17 +21,21 @@ struct
   let cmd = Spec.With_id.cmd B.cspec
 
   let make_argv (spec : Spec.t) (mode : Mode.t)
-      ~(input : string Pb.Copy_spec.t) ~(output : string Pb.Copy_spec.t) :
+      ~(input : Pb.Copy_projection.t Pb.Copy_spec.t)
+      ~(output : Pb.Copy_projection.t Pb.Copy_spec.t) :
       string list Or_error.t =
     let user_args = Spec.argv spec in
     let arch = Spec.emits spec in
-    match (input, output) with
+    match
+      ( Pb.Copy_projection.all_remote input
+      , Pb.Copy_projection.all_remote output )
+    with
     | Files infiles, Files [outfile] ->
         Or_error.return
           (compile_args ~user_args ~arch ~mode ~infiles ~outfile)
     | _, _ ->
         Or_error.error_string
-          "Expected one output file and at least one output file"
+          "Expected one output file and at least one input file"
 
   let check_mode_compatible (mode : Mode.t) (infiles : Fpath.t list) =
     match infiles with
@@ -49,17 +53,7 @@ struct
       let%bind () = check_mode_compatible mode infiles in
       B.Runner.run_with_copy ~prog:cmd
         {input= Pb.Copy_spec.files infiles; output= Pb.Copy_spec.file outfile}
-        (make_argv spec mode))
+        ~argv_f:(make_argv spec mode))
 
   let test () = B.Runner.run ~prog:cmd B.test_args
-end
-
-module Fail (E : sig
-  val error : Error.t
-end) : Instance_types.S = struct
-  let test () = Ok ()
-
-  let compile (_mode : Mode.t) ~(infiles : Fpath.t list) ~(outfile : Fpath.t)
-      =
-    ignore infiles ; ignore outfile ; Result.Error E.error
 end
