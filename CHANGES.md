@@ -3,6 +3,11 @@
 Note that these changes are infrequently maintained and may not tell the
 whole story.
 
+## 2019-Dec-03
+
+- New command, `act-machine xrun`, whose sole purpose is to copy a binary to
+  a remote machine and run it.
+
 ## 2019-Nov-05
 
 - `act-config list-compilers` is now `act-c list-compilers`.

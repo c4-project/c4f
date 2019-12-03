@@ -9,15 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Core_kernel
+(** Command for cross-machine program running *)
 
-let readme () : string =
-  Act_utils.My_string.format_for_readme
-    {|
-This program provides miscellaneous commands for dealing with the machines
-known to ACT.
-|}
-
-let command : Command.t =
-  Command.group ~summary:"commands for dealing with machines" ~readme
-    [("license", Common_cmd.License.command); ("xrun", Xrun.command)]
+val command : Core_kernel.Command.t
+(** [command] is the `act-machine xrun` command. *)

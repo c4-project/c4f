@@ -31,9 +31,7 @@ module Make (B : Runner_types.Basic) : Runner_types.S = struct
   let run_batch_with_copy ?(oc : Out_channel.t option)
       ?(prog_f : Runner_types.prog_fun = id_prog)
       (cs_pair : Fpath.t Copy_spec.Pair.t)
-      ~(argvs_f :
-         (string Copy_spec.t, string list list) Runner_types.argv_fun)
-      ~(prog : string) =
+      ~(argvs_f : string list list Runner_types.argv_fun) ~(prog : string) =
     Or_error.Let_syntax.(
       let%bind cs_pair' = pre cs_pair in
       let input = cs_pair'.input in
@@ -46,8 +44,7 @@ module Make (B : Runner_types.Basic) : Runner_types.S = struct
   let run_with_copy ?(oc : Out_channel.t option)
       ?(prog_f : Runner_types.prog_fun option)
       (cs_pair : Fpath.t Copy_spec.Pair.t)
-      ~(argv_f : (string Copy_spec.t, string list) Runner_types.argv_fun)
-      ~(prog : string) =
+      ~(argv_f : string list Runner_types.argv_fun) ~(prog : string) =
     let argvs_f ~input ~output =
       Or_error.map ~f:List.return (argv_f ~input ~output)
     in

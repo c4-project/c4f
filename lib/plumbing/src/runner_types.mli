@@ -27,7 +27,7 @@ type prog_fun = string -> input:copy_spec -> string Or_error.t
     specification. This lets runner users handle the possibility of the
     program itself being copied. *)
 
-type ('m, 'a) argv_fun = input:copy_spec -> output:copy_spec -> 'a Or_error.t
+type 'a argv_fun = input:copy_spec -> output:copy_spec -> 'a Or_error.t
 (** Type of functions that return argument vectors given manifests of the
     input and output being copied by the runner. *)
 
@@ -67,7 +67,7 @@ module type S = sig
        ?oc:Out_channel.t
     -> ?prog_f:prog_fun
     -> Fpath.t Copy_spec.Pair.t
-    -> argvs_f:(string, string list list) argv_fun
+    -> argvs_f:string list list argv_fun
     -> prog:string
     -> unit Or_error.t
   (** [run_batch_with_copy ?oc ?prog_f specs ~argvs_f ~prog] behaves like
@@ -89,7 +89,7 @@ module type S = sig
        ?oc:Out_channel.t
     -> ?prog_f:prog_fun
     -> Fpath.t Copy_spec.Pair.t
-    -> argv_f:(string, string list) argv_fun
+    -> argv_f:string list argv_fun
     -> prog:string
     -> unit Or_error.t
   (** [run_with_copy ?oc ?prog_f specs ~argv_f ~prog] behaves like
