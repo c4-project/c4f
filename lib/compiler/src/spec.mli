@@ -26,6 +26,15 @@ val make :
 (** [make ?argv ~enabled ~style ~emits ~cmd ()] creates a compiler spec with
     the given fields. *)
 
+val append_argv : t -> more_argv:string list -> t
+(** [append_argv spec ~more_argv] adds the arguments in [more_argv] to the
+    end of the existing arguments supplied in [spec]. This is useful for
+    adding arguments specified to compilers on the command line onto the end
+    of arguments specified in [spec]'s config record. *)
+
+(** Note: the forwarding extensions below are soft-deprecated, and will
+    likely be removed later on. *)
+
 (** We extend [With_id] to include all of the accessors from [Basic_spec]. *)
 module With_id : sig
   include

@@ -11,7 +11,10 @@
 
 open Base
 open Filter_types
-module Tx = Travesty_base_exts
+
+open struct
+  module Tx = Travesty_base_exts
+end
 
 let wrap_error (name : string) : 'a Or_error.t -> 'a Or_error.t =
   Or_error.tag ~tag:(Printf.sprintf "In filter '%s'" name)
@@ -120,9 +123,9 @@ end
 module Make_on_runner (R : Basic_on_runner) :
   S with type aux_i = R.aux_i and type aux_o = unit =
 Make_in_file_only (struct
-  let make_argv (aux : R.aux_i) ~(input : Copy_projection.t Copy_spec.t)
-      ~(output : Copy_projection.t Copy_spec.t) : string list Or_error.t =
-    ignore output ;
+  let make_argv (aux : R.aux_i)
+      ({input; _} : Copy_projection.t Copy_spec.Pair.t) :
+      string list Or_error.t =
     Or_error.(
       input |> Copy_projection.all_remote |> Copy_spec.get_file
       >>| R.argv aux)

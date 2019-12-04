@@ -11,11 +11,29 @@
 
 open Base
 open Spec_types
-module Au = Act_utils
-module Tx = Travesty_base_exts
+
+open struct
+  module Au = Act_utils
+  module Tx = Travesty_base_exts
+end
 
 module With_id = struct
   type 'spec t = {id: Id.t; spec: 'spec} [@@deriving fields, make, equal]
+
+  module T : Travesty.Traversable_types.S1 with type 'spec t := 'spec t =
+  Travesty.Traversable.Make1 (struct
+    type nonrec 'spec t = 'spec t
+
+    module On_monad (M : Monad.S) = struct
+      let map_m (type s1 s2) (wid : s1 t) ~(f : s1 -> s2 M.t) : s2 t M.t =
+        let id = id wid in
+        M.Let_syntax.(
+          let%map spec = f (spec wid) in
+          make ~id ~spec)
+    end
+  end)
+
+  include T
 end
 
 module Set = struct

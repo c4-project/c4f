@@ -34,20 +34,16 @@ module Make (B : Runner_types.Basic) : Runner_types.S = struct
       ~(argvs_f : string list list Runner_types.argv_fun) ~(prog : string) =
     Or_error.Let_syntax.(
       let%bind cs_pair' = pre cs_pair in
-      let input = cs_pair'.input in
-      let output = cs_pair'.output in
-      let%bind prog' = prog_f prog ~input in
-      let%bind argss = argvs_f ~input ~output in
+      let%bind prog' = prog_f prog ~input:cs_pair'.input in
+      let%bind argss = argvs_f cs_pair' in
       let%bind () = run_batch ?oc ~prog:prog' argss in
-      post output)
+      post ~output:cs_pair'.output)
 
   let run_with_copy ?(oc : Out_channel.t option)
       ?(prog_f : Runner_types.prog_fun option)
       (cs_pair : Fpath.t Copy_spec.Pair.t)
       ~(argv_f : string list Runner_types.argv_fun) ~(prog : string) =
-    let argvs_f ~input ~output =
-      Or_error.map ~f:List.return (argv_f ~input ~output)
-    in
+    let argvs_f cs_pair = Or_error.map ~f:List.return (argv_f cs_pair) in
     run_batch_with_copy ?oc ?prog_f cs_pair ~prog ~argvs_f
 end
 
@@ -64,9 +60,8 @@ let local_pre (cs_pair : Fpath.t Copy_spec.Pair.t) :
     let%bind () = Copy_spec.validate_local cs_pair.input in
     local_map_specs cs_pair)
 
-let local_post (output_spec : Copy_projection.t Copy_spec.t) :
-    unit Or_error.t =
-  Copy_spec.validate_local (Copy_projection.all_local output_spec)
+let local_post ~(output : Copy_projection.t Copy_spec.t) : unit Or_error.t =
+  Copy_spec.validate_local (Copy_projection.all_local output)
 
 module Local : Runner_types.S = Make (struct
   let post = local_post
@@ -141,7 +136,9 @@ module Local : Runner_types.S = Make (struct
 end)
 
 module Dry_run : Runner_types.S = Make (struct
-  let post (_ : Copy_projection.t Copy_spec.t) : unit Or_error.t = Ok ()
+  let post ~(output : Copy_projection.t Copy_spec.t) : unit Or_error.t =
+    ignore (output : Copy_projection.t Copy_spec.t) ;
+    Ok ()
 
   let pre :
          Fpath.t Copy_spec.Pair.t

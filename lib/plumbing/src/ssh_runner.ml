@@ -96,10 +96,10 @@ end) : Runner_types.S = Runner.Make (struct
       let%map () = scp_send input' in
       {Copy_spec.Pair.input= input'; output= output'})
 
-  let post (cs : Copy_projection.t Copy_spec.t) : unit Or_error.t =
+  let post ~(output : Copy_projection.t Copy_spec.t) : unit Or_error.t =
     Or_error.Let_syntax.(
-      let%bind () = scp_receive cs in
-      Copy_spec.validate_local (Copy_projection.all_local cs))
+      let%bind () = scp_receive output in
+      Copy_spec.validate_local (Copy_projection.all_local output))
 
   let run_batch ?(oc : Out_channel.t option) (argvs : string list list)
       ~(prog : string) : unit Or_error.t =

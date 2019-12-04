@@ -52,6 +52,14 @@ val m_spec_id : _ t -> Act_common.Id.t
 val fqid : _ t -> Act_common.Id.t
 (** [fqid q] gets the fully qualified ID (machine, dot, spec) of [q]. *)
 
+(** {2 Traversals} *)
+
+(** Traversal over the raw specs inside a qualified spec. *)
+module On_specs :
+  Travesty.Bi_traversable_types.S1_left
+    with type 'qual t = 'qual t
+     and type right = Spec.t
+
 (** {1 Qualified compiler specifications} *)
 module Compiler : sig
   type nonrec t = Act_compiler.Spec.t t [@@deriving equal]

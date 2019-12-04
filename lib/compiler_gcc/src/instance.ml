@@ -11,25 +11,23 @@
 
 let mode_args : Act_compiler.Mode.t -> string list = function
   | Assembly ->
-      ["-S"]
+      (* -fno-pic disables position independent code, which is useful in
+         assembly mode as it removes a lot of indirection and cruft that
+         frustrates trying to use the output of a GCC-like compiler as an
+         assembly corpus for other tools. It ISN'T so useful in other modes,
+         and can break binary builds outright. *)
+      ["-S"; "-fno-pic"]
   | Object ->
       ["-c"]
   | Binary ->
       []
 
-let no_position_independence_args : string list = ["-fno-pic"]
-
 let output_args (file : string) : string list = ["-o"; file]
 
-let compile_args ~user_args ~(arch : Act_common.Id.t)
+let compile_args ~(user_args : string list) ~(arch : Act_common.Id.t)
     ~(mode : Act_compiler.Mode.t) ~(infiles : string list)
     ~(outfile : string) =
   ignore arch ;
-  List.concat
-    [ mode_args mode
-    ; no_position_independence_args
-    ; user_args
-    ; output_args outfile
-    ; infiles ]
+  List.concat [mode_args mode; user_args; output_args outfile; infiles]
 
 let test_args = ["--version"]

@@ -10,9 +10,13 @@
    project root for more information. *)
 
 open Base
-module Ac = Act_common
-module Au = Act_utils
-module Pb = Plumbing
+
+open struct
+  module Ac = Act_common
+  module Au = Act_utils
+  module Pb = Plumbing
+  module Tx = Travesty_base_exts
+end
 
 module Make (B : Instance_types.Basic_with_run_info) : Instance_types.S =
 struct
@@ -20,22 +24,44 @@ struct
 
   let cmd = Spec.With_id.cmd B.cspec
 
+  let is_c_input : string -> bool =
+    (* TODO(@MattWindsor91): this may be overly naive. *)
+    Act_utils.My_string.has_suffix ~suffix:".c"
+
+  let sift_c_inputs :
+      string Pb.Copy_spec.t -> string Au.Non_empty.t Or_error.t = function
+    | Directory dir ->
+        Or_error.error_s
+          [%message "Expected at least one .c file, got a directory" ~dir]
+    | Files fs ->
+        fs |> List.filter ~f:is_c_input |> Au.Non_empty.of_list_err
+        |> Or_error.tag ~tag:"Expected at least one .c file"
+    | Nothing ->
+        Or_error.error_string "Expected at least one .c file, got nothing"
+
+  let sift_output : string Pb.Copy_spec.t -> string Or_error.t = function
+    | Directory dir ->
+        Or_error.error_s
+          [%message "Expected one output file, got a directory" ~dir]
+    | Nothing ->
+        Or_error.error_string "Expected at one output file, got nothing"
+    | Files fs ->
+        fs |> Tx.List.one |> Or_error.tag ~tag:"Expected one output file"
+
   let make_argv (spec : Spec.t) (mode : Mode.t)
-      ~(input : Pb.Copy_projection.t Pb.Copy_spec.t)
-      ~(output : Pb.Copy_projection.t Pb.Copy_spec.t) :
+      (c_specs : Pb.Copy_projection.t Pb.Copy_spec.Pair.t) :
       string list Or_error.t =
     let user_args = Spec.argv spec in
     let arch = Spec.emits spec in
-    match
-      ( Pb.Copy_projection.all_remote input
-      , Pb.Copy_projection.all_remote output )
-    with
-    | Files infiles, Files [outfile] ->
-        Or_error.return
-          (compile_args ~user_args ~arch ~mode ~infiles ~outfile)
-    | _, _ ->
-        Or_error.error_string
-          "Expected one output file and at least one input file"
+    let {Pb.Copy_spec.Pair.input; output} =
+      Pb.Copy_projection.all_remote_pair c_specs
+    in
+    Or_error.Let_syntax.(
+      let%bind infiles = sift_c_inputs input in
+      let%map outfile = sift_output output in
+      compile_args ~user_args ~arch ~mode
+        ~infiles:(Au.Non_empty.to_list infiles)
+        ~outfile)
 
   let check_mode_compatible (mode : Mode.t) (infiles : Fpath.t list) =
     match infiles with

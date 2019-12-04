@@ -21,7 +21,7 @@ type t
 val make : local:Fpath.t -> remote:string -> t
 (** [make ~local ~remote] makes a projection from [local] to [remote]. *)
 
-(** {2 Accessors} *)
+(** {1 Accessors} *)
 
 val local : t -> Fpath.t
 (** [local proj] gets the original path of [proj]. *)
@@ -29,7 +29,7 @@ val local : t -> Fpath.t
 val remote : t -> string
 (** [local proj] gets the projected path of [proj]. *)
 
-(** {2 Using projections inside copy specs} *)
+(** {1 Using projections inside copy specs} *)
 
 val project :
      Fpath.t Copy_spec.t
@@ -56,3 +56,9 @@ val all_remote : t Copy_spec.t -> string Copy_spec.t
 val try_find : t Copy_spec.t -> Fpath.t -> string option
 (** [try_find haystack needle] tries to find the remote projection of local
     path [needle] in [haystack]. *)
+
+(** {2 Inside copy spec pairs} *)
+
+val all_remote_pair : t Copy_spec.Pair.t -> string Copy_spec.Pair.t
+(** [all_remote pair] resolves every path in the copy spec pair [pair] to its
+    remote projection. *)

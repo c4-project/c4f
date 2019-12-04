@@ -32,3 +32,7 @@ let all_remote (spec : t Copy_spec.t) : string Copy_spec.t =
 let try_find (spec : t Copy_spec.t) (looking_for : Fpath.t) : string option =
   List.find_map (Copy_spec.paths spec) ~f:(fun {local; remote} ->
       Option.some_if (Fpath.equal local looking_for) remote)
+
+let all_remote_pair ({input; output} : t Copy_spec.Pair.t) :
+    string Copy_spec.Pair.t =
+  {input= all_remote input; output= all_remote output}

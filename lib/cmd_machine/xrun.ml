@@ -35,11 +35,11 @@ let machine_runner ?(machine : Ac.Id.t option) (cfg : Act_config.Global.t) :
     let%map spec = Ac.Spec.Set.get ~id_type:"machine" machine_specs ~id in
     Act_machine.Spec.runner spec)
 
-let argv_f ~(input : Pb.Runner_types.copy_spec)
-    ~(output : Pb.Runner_types.copy_spec) : string list Or_error.t =
+let argv_f (_spec : Pb.Copy_projection.t Pb.Copy_spec.Pair.t) :
+    string list Or_error.t =
   (* TODO(@MattWindsor91): support argvs, ideally constructed with both
      working set and non-working set components *)
-  ignore input ; ignore output ; Or_error.return []
+  Or_error.return []
 
 let make_copy_specs (prog : string) : Fpath.t Pb.Copy_spec.Pair.t Or_error.t
     =

@@ -10,8 +10,11 @@
    project root for more information. *)
 
 open Base
-module Ac = Act_common
-module Tx = Travesty_base_exts
+
+open struct
+  module Ac = Act_common
+  module Tx = Travesty_base_exts
+end
 
 (* This M brought to you by ppx_deriving not supporting nonrec *)
 module M = struct
@@ -21,6 +24,23 @@ module M = struct
 end
 
 include M
+
+module On_specs = Travesty.Bi_traversable.Make1_left (struct
+  type nonrec 'qual t = 'qual t
+
+  type right = Spec.t
+
+  module On_monad (M : Monad.S) = struct
+    module With_id = Act_common.Spec.With_id.On_monad (M)
+
+    let bi_map_m (type q1 q2) (qspec : q1 t) ~(left : q1 -> q2 M.t)
+        ~(right : right -> right M.t) : q2 t M.t =
+      M.Let_syntax.(
+        let%map spec = With_id.map_m ~f:left (spec qspec)
+        and m_spec = With_id.map_m ~f:right (m_spec qspec) in
+        make ~spec ~m_spec)
+  end
+end)
 
 let m_spec_id (q : _ t) : Ac.Id.t = Ac.Spec.With_id.id (M.m_spec q)
 

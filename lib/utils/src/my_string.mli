@@ -11,6 +11,30 @@
 
 (** Miscellaneous string utility functions. *)
 
+(** {1 String prefixes and suffixes} *)
+
+(** {2 Prefixes} *)
+
+val has_prefix : string -> prefix:string -> bool
+(** [has_prefix str ~prefix] is true if, and only if, [str] begins with
+    [prefix]. *)
+
+val ensure_prefix : string -> prefix:string -> string
+(** [ensure_prefix str ~prefix] is [str] if [str] begins with [prefix], and
+    [prefix ^ str] otherwise. *)
+
+(** {2 Suffixes} *)
+
+val has_suffix : string -> suffix:string -> bool
+(** [has_suffix str ~suffix] is true if, and only if, [str] ends with
+    [suffix]. *)
+
+val ensure_suffix : string -> suffix:string -> string
+(** [ensure_suffix str ~suffix] is [str] if [str] ends with [suffix], and
+    [str ^ suffix] otherwise. *)
+
+(** {1 Other} *)
+
 val format_for_readme : string -> string
 (** [format_for_readme str] applies word-wrapping and squeezing to [str] to
     make it suitable for command READMEs. *)

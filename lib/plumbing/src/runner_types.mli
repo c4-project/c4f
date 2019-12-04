@@ -14,20 +14,15 @@
 open Base
 open Stdio
 
-(** {1 Type synonyms} *)
+(** {1 Function type synonyms} *)
 
-type copy_spec = Copy_projection.t Copy_spec.t
-(** Shorthand for the type of copy specifications used in most of the
-    runner's callbacks. *)
-
-(** {2 Function type synonyms} *)
-
-type prog_fun = string -> input:copy_spec -> string Or_error.t
+type prog_fun =
+  string -> input:Copy_projection.t Copy_spec.t -> string Or_error.t
 (** Type of functions that transform programs according to an input copy
     specification. This lets runner users handle the possibility of the
     program itself being copied. *)
 
-type 'a argv_fun = input:copy_spec -> output:copy_spec -> 'a Or_error.t
+type 'a argv_fun = Copy_projection.t Copy_spec.Pair.t -> 'a Or_error.t
 (** Type of functions that return argument vectors given manifests of the
     input and output being copied by the runner. *)
 
@@ -44,10 +39,10 @@ module type Basic = sig
       pair of altered input and output manifests specifying where the files
       are relative to the target. *)
 
-  val post : copy_spec -> unit Or_error.t
-  (** [post in_manifest] does any cleanup required by the runner after it
-      runs the main job, taking a manifest of items that it should transfer
-      _from_ the runner target. *)
+  val post : output:Copy_projection.t Copy_spec.t -> unit Or_error.t
+  (** [post ~output] does any cleanup required by the runner after it runs
+      the main job, taking a manifest [output] of items that it should
+      transfer _from_ the runner target. *)
 
   val run_batch :
     ?oc:Out_channel.t -> string list list -> prog:string -> unit Or_error.t

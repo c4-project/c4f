@@ -29,6 +29,11 @@ module With_id : sig
 
   val spec : 'spec t -> 'spec
   (** [spec s] unwraps the identifier of [s]. *)
+
+  (** {2 Traversals} *)
+
+  include Travesty.Traversable_types.S1 with type 'spec t := 'spec t
+  (** We can traverse over the specification inside a with-ID pair. *)
 end
 
 (** Specification tables, parametrised directly on the spec type.

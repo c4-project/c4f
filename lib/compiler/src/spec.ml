@@ -48,6 +48,9 @@ module M = struct
     ; cmd: string }
   [@@deriving sexp, fields, equal, make]
 
+  let append_argv (s : t) ~(more_argv : string list) : t =
+    {s with argv= s.argv @ more_argv}
+
   (* We use a different name for the getter than the one [@@deriving fields]
      infers. *)
   let is_enabled = enabled
