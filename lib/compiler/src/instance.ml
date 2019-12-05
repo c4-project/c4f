@@ -22,7 +22,7 @@ module Make (B : Instance_types.Basic_with_run_info) : Instance_types.S =
 struct
   include B
 
-  let cmd = Spec.With_id.cmd B.cspec
+  let cmd = Spec.With_id.cmd B.spec
 
   let is_c_input : string -> bool =
     (* TODO(@MattWindsor91): this may be overly naive. *)
@@ -74,7 +74,7 @@ struct
 
   let compile (mode : Mode.t) ~(infiles : Fpath.t list) ~(outfile : Fpath.t)
       =
-    let spec = Spec.With_id.spec B.cspec in
+    let spec = Spec.With_id.spec B.spec in
     Or_error.Let_syntax.(
       let%bind () = check_mode_compatible mode infiles in
       B.Runner.run_with_copy ~prog:cmd

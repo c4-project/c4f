@@ -10,8 +10,11 @@
    project root for more information. *)
 
 open Base
-module Ac = Act_common
-module Au = Act_utils
+
+open struct
+  module Ac = Act_common
+  module Au = Act_utils
+end
 
 module Forward_spec
     (Outer : Equal.S)

@@ -4,9 +4,7 @@
  (name act_backend_herd)
  (public_name act.backend_herd)
  (synopsis "Backend for the Herd7 multicore CPU simulator")
- (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_jane))
- (libraries ppx_inline_test.config ppx_expect.common ppx_expect.config stdio
-   base base.caml core_kernel act.common act.plumbing act.backend
-   act.backend_herdtools_common act.utils))
+ (libraries stdio base base.caml core_kernel act.common act.plumbing
+   act.backend act.backend_herdtools_common act.utils))

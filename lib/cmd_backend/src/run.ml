@@ -16,7 +16,7 @@ let run ?(arch = Act_backend.Arch.C) ?(fqid : Id.t = Id.of_string "herd")
     (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t)
     (_o : Output.t) (cfg : Act_config.Global.t) : unit Or_error.t =
   Or_error.Let_syntax.(
-    let%bind (module Backend : Act_backend.Runner_types.S) =
+    let%bind (module Backend : Act_backend.Instance_types.S) =
       Common_cmd.Backend_support.lookup_and_resolve_in_cfg fqid ~cfg
     in
     Common_cmd.Args.With_files.run_filter

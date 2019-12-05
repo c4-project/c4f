@@ -20,6 +20,7 @@ open Base
 (** {1 Specs themselves} *)
 
 type 'path t = Directory of 'path | Files of 'path list | Nothing
+[@@deriving sexp]
 
 (** {2 Constructors} *)
 
@@ -63,7 +64,7 @@ val map : 'a t -> f:('a -> 'b) -> 'b t
 module Pair : sig
   type 'a spec := 'a t
 
-  type nonrec 'path t = {input: 'path t; output: 'path t}
+  type nonrec 'path t = {input: 'path t; output: 'path t} [@@deriving sexp]
 
   val map_specs : 'a t -> f:('a spec -> 'b spec) -> 'b t
   (** [map_specs cs_pair ~f] maps [f] over both of the specs in [cs_pair]. *)

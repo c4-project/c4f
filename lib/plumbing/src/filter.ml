@@ -128,7 +128,7 @@ Make_in_file_only (struct
       string list Or_error.t =
     Or_error.(
       input |> Copy_projection.all_remote |> Copy_spec.get_file
-      >>| R.argv aux)
+      >>= R.argv aux)
 
   include R
 

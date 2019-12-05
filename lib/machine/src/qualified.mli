@@ -70,7 +70,7 @@ module Compiler : sig
   val lift_resolver :
        t
     -> f:
-         (   Act_compiler.Spec.With_id.t
+         (   Act_compiler.Spec.t Act_common.Spec.With_id.t
           -> (module Act_compiler.Instance_types.Basic) Or_error.t)
     -> (module Act_compiler.Instance_types.S) Or_error.t
   (** [lift_resolver spec ~f] lifts the basic compiler resolving function [f]
@@ -88,12 +88,10 @@ module Backend : sig
   val lift_resolver :
        t
     -> f:
-         (   Act_backend.Spec.With_id.t
-          -> (   (module Act_backend.Runner_types.Basic)
-              -> (module Act_backend.Runner_types.S))
-             Or_error.t)
-    -> (module Act_backend.Runner_types.S) Or_error.t
+         (   Act_backend.Spec.t Act_common.Spec.With_id.t
+          -> (module Act_backend.Instance_types.Basic) Or_error.t)
+    -> (module Act_backend.Instance_types.S) Or_error.t
   (** [lift_resolver spec ~f] lifts the basic backend resolving function [f]
       such that it accepts a qualified backend spec [spec] and returns, on
-      success, a {!Act_backend.Runner_types.S} instance. *)
+      success, a {!Act_backend.Instance_types.S} instance. *)
 end

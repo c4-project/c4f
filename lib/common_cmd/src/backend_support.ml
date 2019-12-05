@@ -10,31 +10,29 @@
    project root for more information. *)
 
 open Base
-module Ac = Act_common
-module Tx = Travesty_base_exts
 
-let sim_procs :
-    ( Ac.Id.t
-    ,    (module Act_backend.Runner_types.Basic)
-      -> (module Act_backend.Runner_types.S) )
-    List.Assoc.t =
-  [ (Ac.Id.of_string "herd", Act_backend_herd.Runner.make)
-  ; (Ac.Id.of_string "litmus", Act_backend_litmus.Runner.make) ]
+open struct
+  module Ac = Act_common
+  module Tx = Travesty_base_exts
+end
 
-let try_get_sim_proc (style_id : Ac.Id.t) :
-    (   (module Act_backend.Runner_types.Basic)
-     -> (module Act_backend.Runner_types.S))
-    Or_error.t =
-  Ac.Id.try_find_assoc_with_suggestions sim_procs style_id
+let backends :
+    (Ac.Id.t, (module Act_backend.Instance_types.Basic)) List.Assoc.t =
+  [ (Ac.Id.of_string "herd", (module Act_backend_herd.Instance))
+  ; (Ac.Id.of_string "litmus", (module Act_backend_litmus.Instance)) ]
+
+let try_get_backend (style_id : Ac.Id.t) :
+    (module Act_backend.Instance_types.Basic) Or_error.t =
+  Ac.Id.try_find_assoc_with_suggestions backends style_id
     ~id_type:"backend style"
 
 let resolve :
        Act_machine.Qualified.Backend.t
-    -> (module Act_backend.Runner_types.S) Or_error.t =
+    -> (module Act_backend.Instance_types.S) Or_error.t =
   Act_machine.Qualified.Backend.lift_resolver
     ~f:(fun (sspec : Act_backend.Spec.With_id.t) ->
       sspec |> Act_common.Spec.With_id.spec |> Act_backend.Spec.style
-      |> try_get_sim_proc)
+      |> try_get_backend)
 
 module Lookup = struct
   include Act_machine.Lookup.Backend (struct
@@ -55,5 +53,5 @@ end
 
 let lookup_and_resolve_in_cfg (fqid : Act_common.Id.t)
     ~(cfg : Act_config.Global.t) :
-    (module Act_backend.Runner_types.S) Or_error.t =
+    (module Act_backend.Instance_types.S) Or_error.t =
   Or_error.(fqid |> Lookup.lookup_in_cfg ~cfg >>= resolve)

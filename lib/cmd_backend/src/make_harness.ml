@@ -18,12 +18,12 @@ let run ?(arch = Act_backend.Arch.C) ?(fqid : Id.t = Id.of_string "herd")
   Or_error.Let_syntax.(
     let%bind input = Common_cmd.Args.With_files.infile_source args in
     let%bind output = Common_cmd.Args.With_files.outfile_sink args in
-    let%bind input_path = Plumbing.Input.to_fpath_err input in
+    let%bind input_file = Plumbing.Input.to_fpath_err input in
     let%bind output_dir = Plumbing.Output.to_fpath_err output in
-    let%bind (module Backend : Act_backend.Runner_types.S) =
+    let%bind (module Backend : Act_backend.Instance_types.S) =
       Common_cmd.Backend_support.lookup_and_resolve_in_cfg fqid ~cfg
     in
-    let%map cmds = Backend.make_harness arch ~input_path ~output_dir in
+    let%map cmds = Backend.make_harness arch ~input_file ~output_dir in
     List.iter ~f:Stdio.print_endline cmds)
 
 let command : Command.t =

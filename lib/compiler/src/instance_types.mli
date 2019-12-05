@@ -43,18 +43,14 @@ module type S = sig
       errors that arise. *)
 end
 
-(** [With_spec] is an interface for modules containing a (full) compiler
-    specification. *)
-module type With_spec = sig
-  val cspec : Spec.With_id.t
-end
-
 (** [Basic_with_run_info] is a signature collecting both a base compiler
     specification and context about how to run the compiler. *)
 module type Basic_with_run_info = sig
   include Basic
 
-  include With_spec
+  val spec : Spec.t Act_common.Spec.With_id.t
+  (** The full name-qualified compiler spec. *)
 
   module Runner : Plumbing.Runner_types.S
+  (** The runner on which the compiler will run. *)
 end

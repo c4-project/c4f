@@ -4,7 +4,7 @@
  (name act_backend)
  (public_name act.backend)
  (synopsis "Automagic Compiler Tormentor: backend running framework")
- (modules_without_implementation reader_types runner_types)
+ (modules_without_implementation reader_types instance_types)
  (preprocess
   (pps ppx_deriving.std ppx_yojson_conv ppx_jane))
  (libraries result yojson ppx_expect.common sexplib0 stdio base base.caml

@@ -18,7 +18,7 @@ let run ?(fqid : Id.t = Id.of_string "herd")
   Or_error.Let_syntax.(
     let%bind input = Common_cmd.Args.With_files.infile_source args in
     let%bind output = Common_cmd.Args.With_files.outfile_sink args in
-    let%bind (module Backend : Act_backend.Runner_types.S) =
+    let%bind (module Backend : Act_backend.Instance_types.S) =
       Common_cmd.Backend_support.lookup_and_resolve_in_cfg fqid ~cfg
     in
     let%bind obs = Backend.Reader.load input in

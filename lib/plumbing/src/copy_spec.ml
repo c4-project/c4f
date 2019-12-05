@@ -14,7 +14,7 @@ open Core (* not Base or Core_kernel; for Sys *)
 module Tx = Travesty_base_exts
 
 type 'path t = Directory of 'path | Files of 'path list | Nothing
-[@@deriving variants]
+[@@deriving sexp, variants]
 
 let file (path : 'a) : 'a t = Files [path]
 
@@ -76,10 +76,10 @@ let validate_local : Fpath.t t -> unit Or_error.t = function
 
 module Pair = struct
   open struct
-    type 'a spec = 'a t
+    type 'a spec = 'a t [@@deriving sexp]
   end
 
-  type nonrec 'a t = {input: 'a t; output: 'a t}
+  type 'a t = {input: 'a spec; output: 'a spec} [@@deriving sexp]
 
   let map_specs (pair : 'a t) ~(f : 'a spec -> 'b spec) : 'b t =
     {input= f pair.input; output= f pair.output}

@@ -12,7 +12,10 @@
 (** Tests the output of the 'act asm explain' command. *)
 
 open Core
-module Ac = Act_common
+
+open struct
+  module Ac = Act_common
+end
 
 let run (dir : Fpath.t) : unit Or_error.t =
   let arch = Ac.Id.of_string "x86.att" in
@@ -26,7 +29,7 @@ let run (dir : Fpath.t) : unit Or_error.t =
       "Explainer" Act_sanitiser.Pass_group.explain dir
       ~config_fn:(fun aux -> Act_asm.Explainer.Config.make ~aux ()))
 
-let command =
+let command : Command.t =
   Common.make_regress_command ~summary:"runs explainer regressions" run
 
 let () = Command.run command

@@ -11,7 +11,15 @@
 
 open Base
 
-type t = {local: Fpath.t; remote: string} [@@deriving fields, make]
+open struct
+  type fpath = Fpath.t
+
+  let sexp_of_fpath = Fn.compose String.sexp_of_t Fpath.to_string
+
+  let fpath_of_sexp = Fn.compose Fpath.v String.t_of_sexp
+end
+
+type t = {local: fpath; remote: string} [@@deriving fields, make, sexp]
 
 let project (spec : Fpath.t Copy_spec.t)
     ~(f : [`Directory | `File] -> Fpath.t -> string) : t Copy_spec.t =

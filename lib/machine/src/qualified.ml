@@ -61,11 +61,11 @@ module Compiler = struct
       (module Act_compiler.Instance_types.S) Or_error.t =
     let c_spec = spec q_spec in
     let m_spec = m_spec q_spec in
+    let (module Runner) = Spec.With_id.runner m_spec in
     Or_error.Let_syntax.(
       let%map (module B : Act_compiler.Instance_types.Basic) = f c_spec in
-      let (module Runner) = Spec.With_id.runner m_spec in
       ( module Act_compiler.Instance.Make (struct
-        let cspec = c_spec
+        let spec = c_spec
 
         include B
         module Runner = Runner
@@ -78,22 +78,17 @@ module Backend = struct
   let lift_resolver (q_spec : t)
       ~(f :
             Act_backend.Spec.With_id.t
-         -> (   (module Act_backend.Runner_types.Basic)
-             -> (module Act_backend.Runner_types.S))
-            Or_error.t) : (module Act_backend.Runner_types.S) Or_error.t =
+         -> (module Act_backend.Instance_types.Basic) Or_error.t) :
+      (module Act_backend.Instance_types.S) Or_error.t =
     let s_spec = spec q_spec in
     let m_spec = m_spec q_spec in
+    let (module Runner) = Spec.With_id.runner m_spec in
     Or_error.Let_syntax.(
-      let%map backend_maker = f s_spec in
-      let (module Runner) = Spec.With_id.runner m_spec in
-      let (b : (module Act_backend.Runner_types.Basic)) =
-        ( module struct
-          let spec = Ac.Spec.With_id.spec s_spec
+      let%map (module B : Act_backend.Instance_types.Basic) = f s_spec in
+      ( module Act_backend.Instance.Make (struct
+        let spec = s_spec
 
-          let machine_id = Ac.Spec.With_id.id m_spec
-
-          module Runner = Runner
-        end )
-      in
-      backend_maker b)
+        include B
+        module Runner = Runner
+      end) : Act_backend.Instance_types.S ))
 end

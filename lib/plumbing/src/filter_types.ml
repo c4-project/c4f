@@ -1,26 +1,15 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the "Software"),
-   to deal in the Software without restriction, including without limitation
-   the rights to use, copy, modify, merge, publish, distribute, sublicense,
-   and/or sell copies of the Software, and to permit persons to whom the
-   Software is furnished to do so, subject to the following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included in
-   all copies or substantial portions of the Software.
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-   DEALINGS IN THE SOFTWARE. *)
-
-(** Signatures used in the plumbing module. *)
+(** Signatures used in {!Filter}. *)
 
 open Stdio
 open Base
@@ -103,9 +92,11 @@ module type Basic_on_runner = sig
   (** The runner to use to run the program. *)
 
   val prog : aux_i -> string
-  (** [prog aux] gets the program to run, given the auxiliary input [aux]. *)
+  (** [prog aux] gets the name of the program to run, given the auxiliary
+      input [aux]. *)
 
-  val argv : aux_i -> string -> string list
+  val argv : aux_i -> string -> string list Or_error.t
   (** [argv aux file] gets the argument vector to supply, given the auxiliary
-      input [aux] and input file [file]. *)
+      input [aux] and input file [file]. It can fail if the inputs given do
+      not correspond to a valid invocation of the program. *)
 end
