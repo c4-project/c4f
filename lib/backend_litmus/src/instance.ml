@@ -30,23 +30,49 @@ let capabilities ~(test_stdout : string list) : Bk.Capability.Summary.t =
          Bk.Capability.Flag.[Run; Make_harness])
     ~arches:(Set.of_list (module Bk.Arch) (* for now *) Bk.Arch.[c; asm_x86])
 
-let make_harness_argv (_arch : Act_backend.Arch.t) ~(input_file : string)
-    ~(output_dir : string) : string list Or_error.t =
-  Or_error.return [input_file; "-o"; output_dir]
+let arch_map : string Map.M(Act_common.Id).t Lazy.t =
+  lazy
+    (Map.of_alist_exn
+       (module Act_common.Id)
+       Act_common.Id.[(of_string "x86", "X86"); (of_string "x64", "X86")])
+
+let make_c_args : Act_common.Id.t option -> string list Or_error.t = function
+  | None ->
+      Ok []
+  | Some arch ->
+      Or_error.(
+        arch
+        |> Map.find (Lazy.force arch_map)
+        |> Result.of_option
+             ~error:
+               (Error.create_s
+                  [%message
+                    "Architecture not supported by Litmus7"
+                      ~arch:(arch : Act_common.Id.t)])
+        >>| fun litmus_arch -> ["-c11"; "true"; "-carch"; litmus_arch])
+
+let make_harness_argv (c_arch : Act_common.Id.t option)
+    ~(input_file : string) ~(output_dir : string) : string list Or_error.t =
+  Or_error.Let_syntax.(
+    let%map c_args = make_c_args c_arch in
+    [input_file; "-o"; output_dir] @ c_args)
 
 let make_harness (_spec : Bk.Spec.t) ~(arch : Bk.Arch.t) :
     Bk.Capability.Make_harness.t =
   (* for now *)
   match arch with
-  | C ->
+  | C {underlying_arch= None} ->
       Cannot_make_harness
         { why=
             Error.of_string
               "Must specify a target architecture when making a C harness" }
+  | C {underlying_arch= Some a} ->
+      Can_make_harness
+        {argv_f= make_harness_argv (Some a); run_as= ["make"; "sh ./run.sh"]}
   | Assembly id ->
       ignore id ;
       Can_make_harness
-        {argv_f= make_harness_argv arch; run_as= ["make"; "sh ./run.sh"]}
+        {argv_f= make_harness_argv None; run_as= ["make"; "sh ./run.sh"]}
 
 let make_argv_from_spec (_spec : Act_backend.Spec.t)
     (_arch : Act_backend.Arch.t) ~(input_file : string) :

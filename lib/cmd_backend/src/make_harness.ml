@@ -12,7 +12,7 @@
 open Core_kernel
 open Act_common
 
-let run ?(arch = Act_backend.Arch.C) ?(fqid : Id.t = Id.of_string "herd")
+let run ?(arch = Act_backend.Arch.c) ?(fqid : Id.t = Id.of_string "herd")
     (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t)
     (_o : Output.t) (cfg : Act_config.Global.t) : unit Or_error.t =
   Or_error.Let_syntax.(
@@ -31,23 +31,9 @@ let command : Command.t =
     Command.Let_syntax.(
       let%map_open standard_args =
         Common_cmd.Args.(With_files.get Standard.get)
-      and sim = Common_cmd.Args.simulator ()
-      and arch =
-        choose_one
-          [ Common_cmd.Args.flag_to_enum_choice Act_backend.Arch.C "-c"
-              ~doc:
-                "Tells the backend to test the input against the C memory \
-                 model"
-          ; map
-              ~f:(Option.map ~f:(fun x -> Act_backend.Arch.Assembly x))
-              (Common_cmd.Args.arch
-                 ~doc:
-                   "ARCH tells the backend to test the input against the \
-                    given architecture"
-                 ()) ]
-          ~if_nothing_chosen:Return_none
-      in
+      and backend = Common_cmd.Args.backend ()
+      and arch = Common_cmd.Args.backend_arch in
       fun () ->
         Common_cmd.Common.lift_command
           (Common_cmd.Args.With_files.rest standard_args)
-          ~f:(run standard_args ?arch ?fqid:sim))
+          ~f:(run standard_args ?arch ?fqid:backend))

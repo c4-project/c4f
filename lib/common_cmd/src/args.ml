@@ -49,15 +49,40 @@ module Other = struct
 
   let id_type = Arg_type.create Id.of_string
 
-  let simulator ?(name : string = "-simulator")
-      ?(doc : string = "the simulator to use") () :
-      Id.t option Command.Param.t =
+  let backend ?(name : string = "-backend")
+      ?(doc : string = "the backend to use") () : Id.t option Command.Param.t
+      =
     flag name (optional id_type) ~doc:("SIM_ID " ^ doc)
 
   let arch ?(name : string = "-arch")
       ?(doc : string = "the architecture to target") () :
       Id.t option Command.Param.t =
     flag name (optional id_type) ~doc:("ARCH_ID " ^ doc)
+
+  let backend_arch : Act_backend.Arch.t option Command.Param.t =
+    Command.Param.(
+      choose_one
+        [ flag_to_enum_choice Act_backend.Arch.c "-c"
+            ~doc:
+              "Tells the backend to treat the input as C, with no \
+               underlying target architecture"
+        ; map
+            ~f:
+              (Option.map ~f:(fun x ->
+                   Act_backend.Arch.C {underlying_arch= Some x}))
+            (arch ~name:"-carch"
+               ~doc:
+                 "tells the backend to treat the input as C, with the given \
+                  underlying target architecture"
+               ())
+        ; map
+            ~f:(Option.map ~f:(fun x -> Act_backend.Arch.Assembly x))
+            (arch
+               ~doc:
+                 "tells the backend to treat the input as assembly, with \
+                  the given target architecture"
+               ()) ]
+        ~if_nothing_chosen:Return_none)
 
   let asm_target : Asm_target.t Command.Param.t =
     Command.Param.(

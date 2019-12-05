@@ -153,14 +153,18 @@ val flag_to_enum_choice :
     choose-one choices between multiple flags where each flag [str]
     corresponds to an enum variant [enum]. *)
 
-val simulator :
+val backend :
   ?name:string -> ?doc:string -> unit -> Id.t option Command.Param.t
-(** [simulator ?name ?doc ()] produces a parameter, normally named
-    [-simulator] but overridable by [name], that accepts a simulator ID. *)
+(** [backend ?name ?doc ()] produces a parameter, normally named [-backend]
+    but overridable by [name], that accepts a backend ID. *)
 
 val arch : ?name:string -> ?doc:string -> unit -> Id.t option Command.Param.t
 (** [arch ?name ?doc ()] produces a parameter, normally named [-arch] but
     overridable by [name], that accepts an architecture ID. *)
+
+val backend_arch : Act_backend.Arch.t option Command.Param.t
+(** [backend_arch] is a parameter that accepts an architecture specifier for
+    a backend. *)
 
 val aux_file : string option Command.Param.t
 (** [aux_file] defines a parameter for receiving the path of an input litmus

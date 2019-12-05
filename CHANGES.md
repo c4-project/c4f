@@ -3,6 +3,14 @@
 Note that these changes are infrequently maintained and may not tell the
 whole story.
 
+## 2019-Dec-05
+
+- Any command that previously took `-simulator` as an argument now takes
+  `-backend`.
+- Backend commands that take `-c` and `-args` now take `-carch`, which behaves
+  as `-c` but supplies a hint as to the underlying architecture.  This makes
+  it possible to run Litmus7 in C mode.
+
 ## 2019-Dec-03
 
 - New command, `act-machine xrun`, whose sole purpose is to copy a binary to

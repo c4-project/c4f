@@ -31,8 +31,8 @@ let command : Command.t =
   Command.basic ~summary:"parse native output from a configured test backend"
     Command.Let_syntax.(
       let%map standard_args = Common_cmd.Args.(With_files.get Standard.get)
-      and sim = Common_cmd.Args.simulator () in
+      and backend = Common_cmd.Args.backend () in
       fun () ->
         Common_cmd.Common.lift_command
           (Common_cmd.Args.With_files.rest standard_args)
-          ~f:(run standard_args ?fqid:sim))
+          ~f:(run standard_args ?fqid:backend))

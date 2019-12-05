@@ -26,7 +26,7 @@ let test_args : string list = ["-version"]
 
 let model_for_arch (config : Act_backend.Spec.t) :
     Act_backend.Arch.t -> string option Or_error.t = function
-  | C ->
+  | C _ ->
       Or_error.return (Act_backend.Spec.c_model config)
   | Assembly emits_spec ->
       Or_error.return

@@ -11,7 +11,16 @@
 
 open Base
 
-type t = C | Assembly of Act_common.Id.t [@@deriving sexp, compare]
+(** Type of architecture specifiers for ACT backends. *)
+type t =
+  | C of {underlying_arch: Act_common.Id.t option}
+      (** Use the backend's C support.
+
+          Some backends require a hint as to the architecture to which the C
+          will be compiled. This is the optional field [underlying_arch]. *)
+  | Assembly of Act_common.Id.t
+      (** Use the backend's assembly support for the given architecture. *)
+[@@deriving sexp, compare]
 
 include Comparable.S with type t := t
 
@@ -22,6 +31,9 @@ include Comparable.S with type t := t
 val c : t
 (** [c] is the C architecture, with no information about the underlying
     target. *)
+
+val c_x86 : t
+(** [c] is the C architecture, with underlying architecture "x86". *)
 
 val asm_x86 : t
 (** [asm_x86] is the assembly architecture "x86". *)
