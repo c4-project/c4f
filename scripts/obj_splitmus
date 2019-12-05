@@ -109,7 +109,7 @@ make_litmus_harness() {
   "${SCRIPTDIR}/gen_asm_skel.py" "${auxfile}" > "${skelfile}"
   act::litmusify -compiler "${compiler}" -aux "${auxfile}" -o "${alitfile}" "${skelfile}"
   # TODO(@MattWindsor91): store the outputted commands somewhere and run them
-  act::backend make-harness -sim "${backend}" "${alitfile}" -output "${litdir}" > /dev/null
+  act::backend make-harness -backend "${backend}" "${alitfile}" -output "${litdir}" > /dev/null
 }
 
 
