@@ -1,0 +1,181 @@
+#!/usr/bin/env bash
+#
+# A driver that works by running Litmus in C/make-harness mode, then sending the
+# whole harness over to the target machine and compiler.
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+SCRIPTDIR="${SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"}"
+readonly SCRIPTDIR
+
+# shellcheck source=scripts/act_bash/args.sh
+source "${SCRIPTDIR}/act_bash/args.sh"
+# shellcheck source=scripts/act_bash/exec.sh
+source "${SCRIPTDIR}/act_bash/exec.sh"
+# shellcheck source=scripts/act_bash/log.sh
+source "${SCRIPTDIR}/act_bash/log.sh"
+# shellcheck source=scripts/act_bash/naming.sh
+source "${SCRIPTDIR}/act_bash/naming.sh"
+
+## Constants and arguments ##
+
+
+# The backend ID to use to get state sets.
+# If empty, a default is chosen.
+BACKEND=""
+
+# The name of the compiler to compile through.
+# Must not be empty at the end of argument parsing.
+COMPILER=""
+
+# Whether or not we're running ACT programs through `dune exec`.
+DUNE_EXEC="false"
+
+# The path to the C Litmus test being used as a subject.
+INPUT_FILE=""
+
+# The directory to which we will output intermediate results.
+# If empty, we construct a temporary directory.
+OUTPUT_DIR=""
+
+# Whether or not verbose logging is enabled.
+VERBOSE="false"
+
+
+## Functions ##
+
+
+# Produces a Litmus harness from a C litmus test, ready to compile with the
+# stated compiler.
+#
+# Globals:
+#   - Various globals read indirectly.
+#
+# Arguments:
+#   1: the backend ID.
+#   2: the compiler ID.
+#   3: path to the test to convert to a Litmus harness.
+#   4: directory into which the Litmus harness should be constructed.
+make_litmus_harness() {
+  local backend="$1"
+  local compiler="$2"
+  local litfile="$3"
+  local litdir="$4"
+
+  carch=$(act::compiler info "${compiler}" emits)
+  # TODO(@MattWindsor91): store the outputted commands somewhere and run them
+  act::backend make-harness -backend "${backend}" "${litfile}" -carch "${carch}" -output "${litdir}" > /dev/null
+}
+
+# Compiles the given litmus harness using the given compiler.
+# Outputs the results to a binary stored locally, and echoes its name.
+#
+# Arguments:
+#   1. The ID of the compiler to use.
+#   2. The directory containing the litmus harness.
+#
+# Outputs:
+#   The name of the outputted binary.  Note that this binary might not be in a
+#   locally executable format, and should be run on the same machine as the
+#   compiler using `act-machine xrun`.
+compile_litmus_harness() {
+  local compiler="$1"
+  local litdir="$2"
+
+  local payload="${litdir}/a.out"
+  touch payload
+
+  act::compile -compiler "${compiler}" -mode binary "${litdir}"/*.c "${litdir}"/*.h -arg "pthread" -o "${payload}"
+  echo "${payload}"
+}
+
+# Uses `act-machine xrun` to run a binary compiled with the given compiler
+# on the compiler's own machine.
+#
+# Arguments:
+#   1. The ID of the compiler whose machine should be used.
+#   2. The binary to run on the compiler's machine.
+#
+# Outputs:
+#   Any stdout emitted from the binary (which should be a Litmus observation).
+run_litmus_harness() {
+  local compiler="$1"
+  local payload="$2"
+
+  machine=$(act::compiler info "${compiler}" machine)
+  act::machine xrun -machine "${machine}" "${payload}"
+}
+
+
+# Runs the obj_splitmus driver once all arguments are parsed.
+#
+# Globals:
+#   - OUTPUT_DIR (read)
+#   - TEST_NAME (read)
+run() {
+  # This done mainly to line up with obj_splitmus.
+  local litdir="${OUTPUT_DIR}/exec"
+  mkdir -p "${litdir}"
+
+  make_litmus_harness "${BACKEND}" "${COMPILER}" "${INPUT_FILE}" "${litdir}"
+
+  local payload
+  payload=$(compile_litmus_harness "${COMPILER}" "${litdir}")
+
+  run_litmus_harness "${COMPILER}" "${payload}" | act::backend parse -backend "${BACKEND}"
+}
+
+
+# Prints the script's usage and exits.
+usage() {
+  echo "usage: $0 -b BACKEND_ID -c COMPILER_ID [-d DIR] [-n NAME] [-qvxh?] FILE" >&2
+  echo
+  echo "-b: ID of Litmus-style ACT backend to use for making harnesses"
+  echo "-c: ID of compiler to use to compile file"
+  echo "-d: directory to use for outputting intermediate files"
+  echo "-n: name to use for Litmus test"
+  echo "-v/-q: verbose/quiet"
+  echo "-x: run ACT binaries with \`dune exec\`"
+  echo "-h/-?: usage"
+  exit 1
+}
+
+
+# Main function.
+main() {
+  while getopts "b:c:d:qvx?h" a; do
+    case ${a} in
+    b) BACKEND=${OPTARG} ;;
+    c) COMPILER=${OPTARG} ;;
+    d) OUTPUT_DIR=${OPTARG} ;;
+    q) VERBOSE="false" ;;
+    v) VERBOSE="true" ;;
+    x) DUNE_EXEC="true" ;;
+    h|?) usage ;;
+    esac
+  done
+  # VERBOSE etc. are used indirectly by various library functions.
+  # shellcheck disable=SC2034
+  readonly BACKEND COMPILER VERBOSE DUNE_EXEC
+  shift $((OPTIND-1))
+
+  if [[ -z ${BACKEND} ]]; then act::arg_error "expected a nonempty backend (-b)"; fi
+  if [[ -z ${COMPILER} ]]; then act::arg_error "expected a nonempty compiler (-c)"; fi
+
+  if [[ $# -ne 1 ]]; then act::arg_error "expected precisely one anonymous argument"; fi
+  INPUT_FILE="$1"
+  readonly INPUT_FILE
+
+  if [[ -z ${OUTPUT_DIR} ]]; then act::setup_temp_output_dir; fi
+  readonly OUTPUT_DIR
+
+  act::check_dune_exec
+
+  run
+}
+
+
+## Entry point ##
+main "$@"

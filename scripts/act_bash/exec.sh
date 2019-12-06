@@ -18,10 +18,13 @@ declare ACT_BACKEND
 declare ACT_C
 
 # If set, overrides the choice of `act-compiler` executable.
-declare ACT_C
+declare ACT_COMPILER
 
 # If set, overrides the choice of `act-fuzz` executable.
 declare ACT_FUZZ
+
+# If set, overrides the choice of `act-machine` executable.
+declare ACT_MACHINE
 
 # If set, overrides the choice of `act-state` executable.
 declare ACT_STATE
@@ -141,6 +144,19 @@ act::fuzz() {
 #   *: the arguments to the program.
 act::litmusify() {
   act::exec "${ACT_ASM:-"act-asm"}" litmusify "$@"
+}
+
+
+# Runs the ACT 'state' tool.
+#
+# Globals:
+#   - ACT_MACHINE (read)
+#   - DUNE_EXEC (transitively read)
+#
+# Arguments:
+#   *: the arguments to the program.
+act::machine() {
+  act::exec "${ACT_MACHINE:-"act-machine"}" "$@"
 }
 
 

@@ -65,7 +65,7 @@ run() {
     "${SCRIPTDIR}/obj_splitmus" ${flags} -b "${BACKEND}" -c "${COMPILER}" "${infile}"
   else
     act::log "Using backend '%s' directly, target '%s'.\n" "${BACKEND}" "${infile}"
-    act::backend run -c -sim "${BACKEND}" "${infile}" | act::backend parse -sim "${BACKEND}"
+    act::backend run -c -backend "${BACKEND}" "${infile}" | act::backend parse -backend "${BACKEND}"
   fi
 }
 

@@ -176,7 +176,7 @@ run() {
   splice_litmus "${auxfile}" "${makefile}" "${runfile}" "${stubfile}"
 
   (cd "${litdir}" && make >/dev/null)
-  "${litdir}/${TEST_NAME}.exe" | act::backend parse -sim "${BACKEND}"
+  "${litdir}/${TEST_NAME}.exe" | act::backend parse -backend "${BACKEND}"
 }
 
 
