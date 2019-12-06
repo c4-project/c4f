@@ -34,7 +34,9 @@ let%test_module "run" =
     let test (arch : Bk.Arch.t) : unit =
       print_s [%sexp (test_inner arch : string list Or_error.t)]
 
-    let%expect_test "C" = test Bk.Arch.c ; [%expect{| (Ok (-model c_lahav.cat example.litmus)) |}]
+    let%expect_test "C" =
+      test Bk.Arch.c ;
+      [%expect {| (Ok (-model c_lahav.cat example.litmus)) |}]
 
     let%expect_test "Assembly (X86)" =
       test Bk.Arch.asm_x86 ; [%expect {| (Ok (example.litmus)) |}]

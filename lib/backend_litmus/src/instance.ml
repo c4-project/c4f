@@ -31,19 +31,19 @@ let capabilities ~(test_stdout : string list) : Bk.Capability.Summary.t =
     ~arches:(Set.of_list (module Bk.Arch) (* for now *) Bk.Arch.[c; asm_x86])
 
 let arch_map : (Act_common.Id.t, string) List.Assoc.t Lazy.t =
-  lazy
-     Act_common.Id.[(of_string "x86", "X86"); (of_string "x64", "X86")]
+  lazy Act_common.Id.[(of_string "x86", "X86"); (of_string "x64", "X86")]
 
-let lookup_litmus_arch : Act_common.Id.t -> (Act_common.Id.t * string) Or_error.t =
+let lookup_litmus_arch :
+    Act_common.Id.t -> (Act_common.Id.t * string) Or_error.t =
   Act_common.Id.try_find_assoc_with_suggestions_prefix (Lazy.force arch_map)
-  ~id_type:"architecture supported by Litmus7"
+    ~id_type:"architecture supported by Litmus7"
 
 let make_c_args : Act_common.Id.t option -> string list Or_error.t = function
   | None ->
       Ok []
   | Some arch ->
       Or_error.Let_syntax.(
-        let%map (_, litmus_arch) = lookup_litmus_arch arch in
+        let%map _, litmus_arch = lookup_litmus_arch arch in
         ["-c11"; "true"; "-carch"; litmus_arch])
 
 let make_harness_argv (c_arch : Act_common.Id.t option)

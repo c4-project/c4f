@@ -9,6 +9,6 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Main entry point for ACT's backend interface. *)
+(** Main entry point for ACT's compiler interface. *)
 
-let () = Core.Command.run Cmd_backend.Main.command
+let () = Core.Command.run Cmd_compiler.Main.command

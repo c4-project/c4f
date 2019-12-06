@@ -17,6 +17,9 @@ declare ACT_BACKEND
 # If set, overrides the choice of `act-c` executable.
 declare ACT_C
 
+# If set, overrides the choice of `act-compiler` executable.
+declare ACT_C
+
 # If set, overrides the choice of `act-fuzz` executable.
 declare ACT_FUZZ
 
@@ -75,6 +78,19 @@ act::c() {
 }
 
 
+# Runs the ACT 'compiler' tool.
+#
+# Globals:
+#   - ACT_COMPILER (read)
+#   - DUNE_EXEC (transitively read)
+#
+# Arguments:
+#   *: the arguments to the program.
+act::compiler() {
+  act::exec "${ACT_COMPILER:-"act-compiler"}" "$@"
+}
+
+
 # Runs the ACT 'compile' sub-tool.
 #
 # Globals:
@@ -84,8 +100,7 @@ act::c() {
 # Arguments:
 #   *: the arguments to the program.
 act::compile() {
-  # `compile` is currently `act-c compile`; this may change later.
-  act::c compile "$@"
+  act::compiler run "$@"
 }
 
 

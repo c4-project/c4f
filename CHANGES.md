@@ -3,6 +3,12 @@
 Note that these changes are infrequently maintained and may not tell the
 whole story.
 
+## 2019-Dec-06
+
+- New tool `act-compile`, which inherits the compiler interface from `act-c`.
+- `act-c compile` is now `act-compiler run`.
+- `act-c list-compilers` is now `act-compiler list`.
+
 ## 2019-Dec-05
 
 - Any command that previously took `-simulator` as an argument now takes

@@ -9,19 +9,15 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Core_kernel
-
 let readme () : string =
   Act_utils.My_string.format_for_readme
     {|
-Commands for querying and manipulating
-single C files or litmus tests in a target-independent way.
+Commands for querying and invoking the C compilers known to ACT.
 |}
 
-let command : Command.t =
-  Command.group ~summary:"commands for dealing with C files" ~readme
-    [ ("delitmus", Delitmus.command)
-    ; ("dump-header", Dump_header.command)
-    ; ("license", Common_cmd.License.command)
-    ; ("modify-header", Modify_header.command)
-    ; ("replace-header", Replace_header.command) ]
+let command : Core_kernel.Command.t =
+  Core_kernel.Command.group ~summary:"commands for dealing with compilers"
+    ~readme
+    [ ("license", Common_cmd.License.command)
+    ; ("list", List.command)
+    ; ("run", Run.command) ]

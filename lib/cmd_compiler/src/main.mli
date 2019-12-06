@@ -9,6 +9,5 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Main entry point for ACT's backend interface. *)
-
-let () = Core.Command.run Cmd_backend.Main.command
+val command : Core_kernel.Command.t
+(** Top-level command for ACT's compiler interface. *)
