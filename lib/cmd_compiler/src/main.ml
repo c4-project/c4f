@@ -18,6 +18,7 @@ Commands for querying and invoking the C compilers known to ACT.
 let command : Core_kernel.Command.t =
   Core_kernel.Command.group ~summary:"commands for dealing with compilers"
     ~readme
-    [ ("license", Common_cmd.License.command)
+    [ ("info", Info.command)
+    ; ("license", Common_cmd.License.command)
     ; ("list", List.command)
     ; ("run", Run.command) ]

@@ -50,3 +50,10 @@ module Lookup : sig
   (** [lookup_in_cfg fqid ~cfg] looks up the fully qualified backend ID
       [fqid] in the specs, and using the defaults, given by [cfg]. *)
 end
+
+val lookup_and_resolve_in_cfg :
+     Act_common.Id.t
+  -> cfg:Act_config.Global.t
+  -> (module Act_compiler.Instance_types.S) Or_error.t
+(** [lookup_and_resolve_in_cfg fqid ~cfg] composes {!Lookup.lookup_in_cfg}
+    and {!resolve}. *)

@@ -8,6 +8,8 @@ whole story.
 - New tool `act-compile`, which inherits the compiler interface from `act-c`.
 - `act-c compile` is now `act-compiler run`.
 - `act-c list-compilers` is now `act-compiler list`.
+- New command `act-compiler info`, for machine-readably querying ACT about
+  properties of a single compiler.
 
 ## 2019-Dec-05
 

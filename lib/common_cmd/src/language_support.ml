@@ -76,3 +76,8 @@ module Lookup = struct
     in
     lookup_single ~default_machines specs ~fqid
 end
+
+let lookup_and_resolve_in_cfg (fqid : Act_common.Id.t)
+    ~(cfg : Act_config.Global.t) :
+    (module Act_compiler.Instance_types.S) Or_error.t =
+  Or_error.(fqid |> Lookup.lookup_in_cfg ~cfg >>= resolve)
