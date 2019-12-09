@@ -22,11 +22,29 @@ from act_py import act_id, machine_info, str_utils, test, test_common
 # TODO(@MattWindsor91): understand drivers other than obj_splitmus.
 # TODO(@MattWindsor91): understand backends other than machine.litmus.
 
+drivers: typing.Mapping[str, typing.List[str]] = {
+    "obj_splitmus":
+      ["-b", '"{backend}"', '-c', '"{compiler}"', '-n', '"{subject_name}"', '-d', "{dir}", "{subject_path}"],
+    "c_litmus":
+      ["-b", '"{backend}"', '-c', '"{compiler}"', '-d', '"{dir}"', "{subject_path}"]
+}
 
-obj_splitmus_name: str = os.path.join(os.path.dirname(__file__), "obj_splitmus")
+default_driver: str = "obj_splitmus"
 
 
-obj_splitmus_driver: str = obj_splitmus_name + " -b \"{backend}\" -c {compiler} -n {subject_name} -d {dir} {subject_path}"
+def make_driver(name: str, argv: typing.List[str]) -> str:
+    full_name = os.path.join(os.path.dirname(__file__), name)
+    return " ".join([full_name, *argv])
+
+
+def get_driver(name: str) -> str:
+    argv: typing.List[str]
+    try:
+        argv = drivers[name]
+    except KeyError:
+        print(f"No such driver: {name}, using {default_driver} instead.", file=sys.stderr)
+        argv = drivers[default_driver]
+    return make_driver(name, argv)
 
 
 def make_test(
@@ -34,10 +52,12 @@ def make_test(
     subject_paths: typing.List[pathlib.Path],
     machine_predicate: typing.Optional[str],
     compiler_predicate: typing.Optional[str],
+    driver_name: str
 ) -> test.Test:
     subjects = [inspect_subject(path) for path in subject_paths]
 
-    env: test_common.Env = test_common.Env(subjects, obj_splitmus_driver, output_dir)
+    driver: str = get_driver(driver_name)
+    env: test_common.Env = test_common.Env(subjects, driver, output_dir)
     machines: typing.Mapping[act_id.Id, test.MachineTest] = get_machines(
         compiler_predicate=compiler_predicate, machine_predicate=machine_predicate
     )
@@ -144,6 +164,15 @@ if __name__ == "__main__":
         help="A filtering predicate to use to restrict the compilers under test.",
     )
     parser.add_argument(
+        "-d",
+        "--driver",
+        dest="driver_name",
+        metavar="NAME",
+        type=str,
+        default=default_driver,
+        help="The name of the driver (eg 'obj_splitmus', 'c_litmus') to use.",
+    )
+    parser.add_argument(
         "subjects",
         metavar="FILE",
         type=(lambda x: pathlib.Path(x)),
@@ -157,5 +186,6 @@ if __name__ == "__main__":
         subject_paths=args.subjects,
         compiler_predicate=sanitise_predicate(args.compiler_predicate),
         machine_predicate=sanitise_predicate(args.machine_predicate),
+        driver_name=str_utils.with_default_if_blank(args.driver_name, default=default_driver)
     )
     result.dump(sys.stdout)

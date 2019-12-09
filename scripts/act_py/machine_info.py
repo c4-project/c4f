@@ -52,7 +52,7 @@ def run_list_compilers(predicate_args):
         successfully.
     :raise: `ActMachineInspectError` if the lister failed.
     """
-    args: typing.List[str] = ["act-c", "list-compilers", *predicate_args]
+    args: typing.List[str] = ["act-compiler", "list", *predicate_args]
     proc: subprocess.CompletedProcess = subprocess.run(
         args, capture_output=True, text=True
     )

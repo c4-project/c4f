@@ -49,6 +49,10 @@ MEMALLOY_DIR=""
 # Defaults to `DEFAULT_MEMALLOY_EVENTS` if empty.
 MEMALLOY_EVENTS=""
 
+# The driver to use in the generated test.
+# If empty, `make_test` fills in a default.
+TEST_DRIVER=""
+
 # Whether or not verbose logging is enabled.
 VERBOSE="false"
 
@@ -61,10 +65,13 @@ usage() {
   echo "Usage: $0"
   echo "  [-c COMPILER_PREDICATE] [-m MACHINE_PREDICATE]"
   echo "  [-e NUM_MEMALLOY_EVENTS] [-k NUM_FUZZ_PASSES]"
-  echo "  [-fsuwtnSUWTNqvxh?] MEMALLOY_DIR"
+  echo "  [-D TEST_DRIVER] [-fsuwtnSUWTNqvxh?] MEMALLOY_DIR"
   echo
+  echo "-c: filtering predicate to use when selecting compilers"
+  echo "-m: filtering predicate to use when selecting machines"
   echo "-e: number of events for Memalloy to produce (default ${DEFAULT_MEMALLOY_EVENTS})"
   echo "-k: number of times each Memalloy output will be fuzzed"
+  echo "-D: name of driver to use (default supplied by 'make_test')"
   echo "-h/-?: usage"
   exit
 }
@@ -72,13 +79,14 @@ usage() {
 
 # Main function.
 main() {
-  while getopts "c:e:k:m:fsuwtnSUWTNqvx?h" a; do
+  while getopts "c:e:k:m:D:fsuwtnSUWTNqvx?h" a; do
     case ${a} in
     c) COMPILER_PREDICATE=${OPTARG} ;;
     e) MEMALLOY_EVENTS=${OPTARG} ;;
     k) FUZZ_PASSES=${OPTARG} ;;
     m) MACHINE_PREDICATE=${OPTARG} ;;
     s|u|w|t|n|S|U|W|T|N) CHECK_FLAGS="${CHECK_FLAGS}${a}" ;;
+    D) TEST_DRIVER=${OPTARG} ;;
     f) FORCE_MEMALLOY="true" ;;
     q) VERBOSE="false" ;;
     v) VERBOSE="true" ;;
@@ -87,7 +95,7 @@ main() {
     esac
   done
   readonly CHECK_FLAGS COMPILER_PREDICATE MACHINE_PREDICATE MEMALLOY_EVENTS \
-	   FUZZ_PASSES FORCE_MEMALLOY DUNE_EXEC VERBOSE
+	   FUZZ_PASSES FORCE_MEMALLOY TEST_DRIVER DUNE_EXEC VERBOSE
   shift $((OPTIND-1))
 
   act::check_dune_exec
@@ -136,6 +144,7 @@ run_fuzz_and_test() {
     -d "${output_dir}" \
     -k "${FUZZ_PASSES}" \
     -m "${MACHINE_PREDICATE}" \
+    -D "${TEST_DRIVER}" \
     "${qvx_flags}${CHECK_FLAGS}" \
     "${input_dir}"/*.litmus
 }

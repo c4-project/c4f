@@ -55,6 +55,10 @@ COMPILER_PREDICATE=""
 # The machine-filtering predicate to send to the test builder.
 MACHINE_PREDICATE=""
 
+# The driver to use in the generated test.
+# If empty, `make_test` fills in a default.
+TEST_DRIVER=""
+
 # Whether or not verbose logging is enabled.
 VERBOSE="false"
 
@@ -66,27 +70,52 @@ VERBOSE="false"
 usage() {
   echo "Usage: $0"
   echo "  [-c COMPILER_PREDICATE] [-m MACHINE_PREDICATE]"
-  echo "  [-d OUTPUT_DIR] [-k NUM_FUZZ_PASSES] [-qvxh?] FILE [FILE ...]"
+  echo "  [-d OUTPUT_DIR] [-k NUM_FUZZ_PASSES] [-qvxh?]"
+  echo "  [-D TEST_DRIVER]  FILE [FILE ...]"
   echo
-  echo "-c: ID of compiler to use (if given, obj_splitmus is used)"
+  echo "-c: filtering predicate to use when selecting compilers"
   echo "-d: Output directory to use (defaults to a temporary directory)"
-  echo "-m: ID of backend to use for checking C files"
+  echo "-m: filtering predicate to use when selecting machines"
   echo "-k: number of times to fuzz each item"
+  echo "-D: name of driver to use (default supplied by 'make_test')"
   echo "-v/-q: verbose/quiet"
   echo "-x: run ACT binaries with \`dune exec\`"
   echo "-h/-?: usage"
   exit
 }
 
+test() {
+  local fuzz_dir="$1"
+  local test_dir="$2"
+
+  local test_file="${test_dir}/test.json"
+
+  act::log "now making test (%s)\n" "${test_file}"
+  if [[ -n "${TEST_DRIVER}" ]]; then act::log "using driver: %s\n" "${TEST_DRIVER}"; fi
+  mkdir -p "${test_dir}"
+  "${SCRIPTDIR}/make_test" -o "${test_dir}" --driver="${TEST_DRIVER}" --compilers="${COMPILER_PREDICATE}" --machines="${MACHINE_PREDICATE}" "${fuzz_dir}"/* > "${test_file}"
+
+  if [[ ${VERBOSE} = "true" ]]; then echo_test_file "${test_file}" >&2; fi
+
+  # Flags used to communicate verbosity/dune-exec to other scripts.
+  local qv_flags
+  qv_flags="$(act::flags_qv)"
+
+  act::log "now running test (%s)\n" "${test_file}"
+  "${SCRIPTDIR}/run_test" "${qv_flags}" "${test_file}"
+  "${SCRIPTDIR}/report_test" "${qv_flags}${CHECK_FLAGS}" "${test_file}"
+}
+
 # Main function.
 main() {
-  while getopts "c:d:k:m:suwtnSUWTNqvx?h" a; do
+  while getopts "c:d:k:m:D:suwtnSUWTNqvx?h" a; do
     case ${a} in
     c) COMPILER_PREDICATE=${OPTARG} ;;
     d) OUTPUT_DIR=${OPTARG} ;;
     k) FUZZ_PASSES=${OPTARG} ;;
     m) MACHINE_PREDICATE=${OPTARG} ;;
     s|u|w|t|n|S|U|W|T|N) CHECK_FLAGS="${CHECK_FLAGS}${a}" ;;
+    D) TEST_DRIVER=${OPTARG} ;;
     q) VERBOSE="false" ;;
     v) VERBOSE="true" ;;
     x) DUNE_EXEC="true" ;;
@@ -103,8 +132,6 @@ main() {
   readonly OUTPUT_DIR
 
   # Flags used to communicate verbosity/dune-exec to other scripts.
-  local qv_flags
-  qv_flags="$(act::flags_qv)"
   local qvx_flags
   qvx_flags="$(act::flags_qvx)"
 
@@ -114,16 +141,7 @@ main() {
   "${SCRIPTDIR}/fuzz_many" "${qvx_flags}" -c "${FUZZ_PASSES}" -d "${fuzz_dir}" "$@"
 
   local test_dir="${OUTPUT_DIR}/${TEST_OUTPUT_DIR}"
-  local test_file="${test_dir}/test.json"
-  act::log "now making test (%s)\n" "${test_file}"
-  mkdir -p "${test_dir}"
-  "${SCRIPTDIR}/make_test" -o "${test_dir}" --compilers="${COMPILER_PREDICATE}" --machines="${MACHINE_PREDICATE}" "${fuzz_dir}"/* > "${test_file}"
-
-  if [[ ${VERBOSE} = "true" ]]; then echo_test_file "${test_file}" >&2; fi
-
-  act::log "now running test (%s)\n" "${test_file}"
-  "${SCRIPTDIR}/run_test" "${qv_flags}" "${test_file}"
-  "${SCRIPTDIR}/report_test" "${qv_flags}${CHECK_FLAGS}" "${test_file}"
+  test "${fuzz_dir}" "${test_dir}"
 }
 
 # Dumps the contents of the given test file.

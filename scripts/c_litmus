@@ -87,7 +87,7 @@ compile_litmus_harness() {
   local payload="${litdir}/a.out"
   touch payload
 
-  act::compile -compiler "${compiler}" -mode binary "${litdir}"/*.c "${litdir}"/*.h -arg "pthread" -o "${payload}"
+  act::compile -compiler "${compiler}" -mode binary "${litdir}"/*.c "${litdir}"/*.h -arg "pthread" -arg "std=gnu11" -o "${payload}"
   echo "${payload}"
 }
 
