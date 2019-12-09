@@ -18,15 +18,15 @@ let prelude : string list =
   ; "#include <stdbool.h>"
   ; "" ]
 
-let pp_prelude (type a) : a Fmt.t =
-  Fmt.(const (vbox (list ~sep:sp string)) prelude)
+let pp_prelude (type a) : a Fmt.t = Fmt.(const (list ~sep:sp string) prelude)
 
-let pp_del : Output.t Fmt.t =
-  Fmt.(
-    pp_prelude
-    ++ using
-         (Fn.compose Act_c_mini.Reify.program Output.program)
-         (vbox Act_c_lang.Ast.Translation_unit.pp))
+let pp_unit : Act_c_lang.Ast.Translation_unit.t Fmt.t =
+  Fmt.(vbox (pp_prelude ++ Act_c_lang.Ast.Translation_unit.pp))
+
+let c_of_output : Output.t -> Act_c_lang.Ast.Translation_unit.t =
+  Fn.compose Act_c_mini.Reify.program Output.program
+
+let pp_del : Output.t Fmt.t = Fmt.(using c_of_output pp_unit)
 
 let delitmusify_and_print (test : Act_c_mini.Litmus.Test.t)
     (oc : Stdio.Out_channel.t) ~(style : Runner.Style.t) : Aux.t Or_error.t =
