@@ -45,6 +45,12 @@ P3()
     "postcondition":
       "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0" },
+    "P1": { "is_thread_body": true, "c_id": "P1" },
+    "P2": { "is_thread_body": true, "c_id": "P2" },
+    "P3": { "is_thread_body": true, "c_id": "P3" }
+  },
   "var_map": {
     "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to_global": true },
     "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to_global": true },
@@ -52,8 +58,7 @@ P3()
     "2:r1": { "c_type": "int", "c_id": "t2r1", "mapped_to_global": true },
     "3:r0": { "c_type": "int", "c_id": "t3r0", "mapped_to_global": true },
     "3:r1": { "c_type": "int", "c_id": "t3r1", "mapped_to_global": true }
-  },
-  "num_threads": 4
+  }
 } 
 --End auxiliary output-- */
 //
@@ -92,6 +97,12 @@ P3_body(atomic_int *x, atomic_int *y, int *r0, int *r1)
     "postcondition":
       "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0_body" },
+    "P1": { "is_thread_body": true, "c_id": "P1_body" },
+    "P2": { "is_thread_body": true, "c_id": "P2_body" },
+    "P3": { "is_thread_body": true, "c_id": "P3_body" }
+  },
   "var_map": {
     "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to_global": false },
     "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to_global": false },
@@ -99,8 +110,7 @@ P3_body(atomic_int *x, atomic_int *y, int *r0, int *r1)
     "2:r1": { "c_type": "int", "c_id": "t2r1", "mapped_to_global": false },
     "3:r0": { "c_type": "int", "c_id": "t3r0", "mapped_to_global": false },
     "3:r1": { "c_type": "int", "c_id": "t3r1", "mapped_to_global": false }
-  },
-  "num_threads": 4
+  }
 } 
 --End auxiliary output-- */
 ```
@@ -172,6 +182,13 @@ P4()
     "postcondition":
       "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0" },
+    "P1": { "is_thread_body": true, "c_id": "P1" },
+    "P2": { "is_thread_body": true, "c_id": "P2" },
+    "P3": { "is_thread_body": true, "c_id": "P3" },
+    "P4": { "is_thread_body": true, "c_id": "P4" }
+  },
   "var_map": {
     "MaJgQmON3yu": {
       "c_type": "int",
@@ -200,8 +217,7 @@ P4()
     "3:r1": { "c_type": "int", "c_id": "t3r1", "mapped_to_global": true },
     "4:r0": { "c_type": "int", "c_id": "t4r0", "mapped_to_global": true },
     "4:r1": { "c_type": "int", "c_id": "t4r1", "mapped_to_global": true }
-  },
-  "num_threads": 5
+  }
 } 
 --End auxiliary output-- */
 //
@@ -265,6 +281,13 @@ P4_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
     "postcondition":
       "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0_body" },
+    "P1": { "is_thread_body": true, "c_id": "P1_body" },
+    "P2": { "is_thread_body": true, "c_id": "P2_body" },
+    "P3": { "is_thread_body": true, "c_id": "P3_body" },
+    "P4": { "is_thread_body": true, "c_id": "P4_body" }
+  },
   "var_map": {
     "MaJgQmON3yu": {
       "c_type": "int",
@@ -297,8 +320,7 @@ P4_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
     "3:r1": { "c_type": "int", "c_id": "t3r1", "mapped_to_global": false },
     "4:r0": { "c_type": "int", "c_id": "t4r0", "mapped_to_global": false },
     "4:r1": { "c_type": "int", "c_id": "t4r1", "mapped_to_global": false }
-  },
-  "num_threads": 5
+  }
 } 
 --End auxiliary output-- */
 ```
@@ -335,11 +357,14 @@ P1()
     "init": { "x": 0 },
     "postcondition": "exists (t0r0 == 0 /\\ x == 2)"
   },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0" },
+    "P1": { "is_thread_body": true, "c_id": "P1" }
+  },
   "var_map": {
     "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to_global": true },
     "0:r0": { "c_type": "int", "c_id": "t0r0", "mapped_to_global": true }
-  },
-  "num_threads": 2
+  }
 } 
 --End auxiliary output-- */
 //
@@ -369,11 +394,14 @@ P1_body(atomic_int *x)
     "init": { "x": 0 },
     "postcondition": "exists (t0r0 == 0 /\\ x == 2)"
   },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0_body" },
+    "P1": { "is_thread_body": true, "c_id": "P1_body" }
+  },
   "var_map": {
     "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to_global": false },
     "0:r0": { "c_type": "int", "c_id": "t0r0", "mapped_to_global": false }
-  },
-  "num_threads": 2
+  }
 } 
 --End auxiliary output-- */
 ```
@@ -402,11 +430,11 @@ P0()
     "init": { "x": 0 },
     "postcondition": "exists (t0r0 == 0 /\\ x == 1)"
   },
+  "function_map": { "P0": { "is_thread_body": true, "c_id": "P0" } },
   "var_map": {
     "x": { "c_type": "int", "c_id": "x", "mapped_to_global": true },
     "0:r0": { "c_type": "int", "c_id": "t0r0", "mapped_to_global": true }
-  },
-  "num_threads": 1
+  }
 } 
 --End auxiliary output-- */
 //
@@ -429,11 +457,11 @@ P0_body(int *x, int *r0)
     "init": { "x": 0 },
     "postcondition": "exists (t0r0 == 0 /\\ x == 1)"
   },
+  "function_map": { "P0": { "is_thread_body": true, "c_id": "P0_body" } },
   "var_map": {
     "x": { "c_type": "int", "c_id": "x", "mapped_to_global": false },
     "0:r0": { "c_type": "int", "c_id": "t0r0", "mapped_to_global": false }
-  },
-  "num_threads": 1
+  }
 } 
 --End auxiliary output-- */
 ```
@@ -477,14 +505,18 @@ P2()
     "init": { "x": 0, "y": 0 },
     "postcondition": "exists (t1r0 == 1 /\\ t1r1 == 0 /\\ t2r0 == 0)"
   },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0" },
+    "P1": { "is_thread_body": true, "c_id": "P1" },
+    "P2": { "is_thread_body": true, "c_id": "P2" }
+  },
   "var_map": {
     "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to_global": true },
     "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to_global": true },
     "1:r0": { "c_type": "int", "c_id": "t1r0", "mapped_to_global": true },
     "1:r1": { "c_type": "int", "c_id": "t1r1", "mapped_to_global": true },
     "2:r0": { "c_type": "int", "c_id": "t2r0", "mapped_to_global": true }
-  },
-  "num_threads": 3
+  }
 } 
 --End auxiliary output-- */
 //
@@ -519,14 +551,18 @@ P2_body(atomic_int *x, atomic_int *y, int *r0)
     "init": { "x": 0, "y": 0 },
     "postcondition": "exists (t1r0 == 1 /\\ t1r1 == 0 /\\ t2r0 == 0)"
   },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0_body" },
+    "P1": { "is_thread_body": true, "c_id": "P1_body" },
+    "P2": { "is_thread_body": true, "c_id": "P2_body" }
+  },
   "var_map": {
     "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to_global": false },
     "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to_global": false },
     "1:r0": { "c_type": "int", "c_id": "t1r0", "mapped_to_global": false },
     "1:r1": { "c_type": "int", "c_id": "t1r1", "mapped_to_global": false },
     "2:r0": { "c_type": "int", "c_id": "t2r0", "mapped_to_global": false }
-  },
-  "num_threads": 3
+  }
 } 
 --End auxiliary output-- */
 ```

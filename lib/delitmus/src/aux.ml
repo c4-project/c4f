@@ -10,23 +10,22 @@
    project root for more information. *)
 
 open Base
-module Tx = Travesty_base_exts
+
+open struct
+  module Tx = Travesty_base_exts
+end
 
 module M = struct
-  open Caml
-
   type t =
     { litmus_header: Act_c_mini.Litmus_header.t
           [@default Act_litmus.Header.empty]
+    ; function_map: Function_map.t
+                    [@default Map.empty (module Act_common.C_id)]
     ; var_map: Var_map.t
-    ; num_threads: int }
+          [@default Act_common.Scoped_map.empty] }
   [@@deriving make, fields, equal, yojson]
 end
-
 include M
-
-(* Using Base above this line interferes with yojson! *)
-open Base
 
 (* TODO(@MattWindsor91): validate litmus locations/etc against the variable
    map. *)
@@ -35,12 +34,12 @@ let symbols (aux : t) : string list =
   aux |> var_map |> Var_map.global_c_variables |> Set.to_list
   |> List.map ~f:Act_common.C_id.to_string
 
-let empty : t =
-  { litmus_header= Act_litmus.Header.empty
-  ; var_map= Act_common.Scoped_map.empty
-  ; num_threads= 0 }
+let empty : t = make ()
 
 module Load : Plumbing.Loadable_types.S with type t := t =
   Plumbing.Loadable.Of_jsonable (M)
 
 include Load
+
+let pp : t Fmt.t =
+  Fmt.(using yojson_of_t (Yojson.Safe.pretty_print ~std:false))

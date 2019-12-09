@@ -12,17 +12,17 @@
 (** Tests the output of the 'act-c delitmus' command. *)
 
 open Core
-module Ac = Act_common
 
-let pp_aux : Act_delitmus.Aux.t Fmt.t =
+open struct
+  module Ac = Act_common
+end
+
+let print_aux : Act_delitmus.Output.t -> unit =
   Fmt.(
-    using Act_delitmus.Aux.yojson_of_t (Yojson.Safe.pretty_print ~std:false))
-
-let print_aux : Act_delitmus.Aux.t -> unit =
-  Fmt.pr
-    "@[<v>@ /* --Begin auxiliary output--@ @ %a@ @ --End auxiliary output-- \
-     */@]@."
-    pp_aux
+    pr
+      "@[<v>@ /* --Begin auxiliary output--@ @ %a@ @ --End auxiliary \
+       output-- */@]@."
+      (using Act_delitmus.Output.aux Act_delitmus.Aux.pp))
 
 let delitmus_file_with_style (style : Act_delitmus.Runner.Style.t)
     ~(path : Fpath.t) : unit Or_error.t =

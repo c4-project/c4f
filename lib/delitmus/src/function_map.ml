@@ -11,24 +11,16 @@
 
 open Base
 
-type t
-(** Opaque type of delitmus context. *)
+module Record = struct
+  type t =
+    { is_thread_body: bool [@default false]
+    ; c_id: Act_common.C_id.t
+    }
+  [@@deriving yojson, equal, make, fields]
+end
 
-(** {2 Constructors} *)
+include Plumbing.Jsonable.Make_map (Act_common.C_id) (Record)
+let equal : t -> t -> bool = Map.equal Record.equal
 
-val make :
-     aux:Aux.t
-  -> local_inits:
-       ( int
-       , (Act_common.C_id.t, Act_c_mini.Constant.t) List.Assoc.t )
-       List.Assoc.t
-  -> t
-
-(** {2 Components} *)
-
-val aux : t -> Aux.t
-
-val var_map : t -> Var_map.t
-
-val lookup_initial_value :
-  t -> id:Act_common.Litmus_id.t -> Act_c_mini.Constant.t option
+let num_threads : t -> int =
+  Map.count ~f:Record.is_thread_body

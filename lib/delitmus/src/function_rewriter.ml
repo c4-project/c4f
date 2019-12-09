@@ -34,8 +34,6 @@ module Make (Basic : sig
   val rewrite_global_address : C.Address.t rw_fun
 
   val rewrite_global_lvalue : C.Lvalue.t rw_fun
-
-  val rewrite_function_name : Act_common.C_id.t rw_fun
 end) =
 struct
   module Rewriter_with_thread (Ctx : sig
@@ -153,9 +151,27 @@ struct
     end) in
     M.rewrite func
 
+  let lookup_function (name: Act_common.C_id.t)
+      ~(context : Context.t) : Function_map.Record.t Or_error.t =
+    let fmap =
+    context
+    |> Context.aux
+    |> Aux.function_map
+    in
+    Map.find fmap name
+    |> Result.of_option
+      ~error:(Error.create_s [%message "Could not find function in function map."
+        ~name:(name: Act_common.C_id.t)])
+
+  let rewrite_function_name (name: Act_common.C_id.t)
+      ~(context : Context.t) : Act_common.C_id.t Or_error.t =
+    Or_error.map
+      (lookup_function name ~context)
+      ~f:Function_map.Record.c_id
+
   let rewrite_named (tid : int) (fn : unit C.Function.t C.Named.t)
       ~(context : Context.t) : unit C.Function.t C.Named.t Or_error.t =
-    C.Named.With_errors.bi_map_m fn ~left:Basic.rewrite_function_name
+    C.Named.With_errors.bi_map_m fn ~left:(rewrite_function_name ~context)
       ~right:(rewrite tid ~context)
 
   let rewrite_all (fs : unit C.Function.t C.Named.t list)
@@ -188,10 +204,6 @@ module Vars_as_globals = Make (struct
     let vm = Context.var_map context in
     Var_map.lookup_and_require_global vm
       ~id:(Act_common.Litmus_id.local tid cid)
-
-  let rewrite_function_name :
-      Act_common.C_id.t -> Act_common.C_id.t Or_error.t =
-    Or_error.return
 end)
 
 module Vars_as_parameters = Make (struct
@@ -214,11 +226,4 @@ module Vars_as_parameters = Make (struct
     ignore (tid : int) ;
     ignore (context : Context.t) ;
     Or_error.return cid
-
-  let rewrite_function_name (fname : Act_common.C_id.t) :
-      Act_common.C_id.t Or_error.t =
-    (* TODO(@MattWindsor91): make this customisable? *)
-    let fname_str = Act_common.C_id.to_string fname in
-    let fname_str' = fname_str ^ "_body" in
-    Act_common.C_id.create fname_str'
 end)
