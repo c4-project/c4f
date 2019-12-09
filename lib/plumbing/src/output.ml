@@ -39,14 +39,15 @@ let as_input : t -> Input.t Or_error.t = function
   | x ->
       Or_error.errorf "Can't use %s as an input source" (to_string x)
 
-let with_file_output (fpath : Fpath.t) f =
+let with_file_output (fpath : Fpath.t) (f : Out_channel.t -> 'a Or_error.t) :
+    'a Or_error.t =
   let fpath_raw = Fpath.to_string fpath in
   Or_error.(
     tag_arg
       (try_with_join (fun _ -> Out_channel.with_file fpath_raw ~f))
       "While writing to file:" fpath_raw [%sexp_of: string])
 
-let with_stdout_output f =
+let with_stdout_output (f : Out_channel.t -> 'a Or_error.t) : 'a Or_error.t =
   Or_error.try_with_join (fun _ -> f Out_channel.stdout)
 
 let with_output (snk : t) ~(f : Out_channel.t -> 'a Or_error.t) :
@@ -57,3 +58,7 @@ let with_output (snk : t) ~(f : Out_channel.t -> 'a Or_error.t) :
   | Stdout ->
       with_stdout_output )
     f
+
+let with_output_opt (snk : t option) ~(f : Out_channel.t -> unit Or_error.t)
+    : unit Or_error.t =
+  match snk with None -> Ok () | Some x -> with_output x ~f

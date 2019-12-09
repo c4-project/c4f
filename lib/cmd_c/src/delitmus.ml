@@ -16,12 +16,16 @@ let write_aux (aux : Act_delitmus.Aux.t) (oc : Stdio.Out_channel.t) :
   let aux_json = Act_delitmus.Aux.yojson_of_t aux in
   Or_error.try_with (fun () -> Yojson.Safe.pretty_to_channel oc aux_json)
 
-let run ?(aux_output : string option)
+let run ?(aux_output : Plumbing.Output.t option)
     (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o _cfg
     ~(style : Act_delitmus.Runner.Style.t) =
-  Common_cmd.Args.With_files.run_filter_with_aux_out
-    (module Act_delitmus.Filter)
-    args ~aux_in:style ~aux_out_f:write_aux ?aux_out_filename:aux_output
+  Or_error.Let_syntax.(
+    let%bind aux_out =
+      Common_cmd.Args.With_files.run_filter
+        (module Act_delitmus.Filter)
+        args ~aux_in:style
+    in
+    Plumbing.Output.with_output_opt aux_output ~f:(write_aux aux_out))
 
 let command : Command.t =
   Command.basic ~summary:"convert a C litmus test to a normal C file"
@@ -30,7 +34,7 @@ let command : Command.t =
         Common_cmd.Args.(With_files.get Standard.get)
       and aux_output =
         flag "aux-output"
-          (optional Filename.arg_type)
+          (optional Common_cmd.Args.output_type)
           ~doc:
             "FILE if given, the filename to write auxiliary litmus \
              information to"

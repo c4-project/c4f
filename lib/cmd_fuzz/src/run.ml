@@ -16,14 +16,18 @@ let write_trace (trace : Act_fuzz.Trace.t) (oc : Stdio.Out_channel.t) :
   Sexp.output_hum oc [%sexp (trace : Act_fuzz.Trace.t)] ;
   Ok ()
 
-let run ?(seed : int option) ?(trace_output : string option)
+let run ?(seed : int option) ?(trace_output : Plumbing.Output.t option)
     (args : _ Common_cmd.Args.With_files.t) (o : Act_common.Output.t)
     (global_config : Act_config.Global.t) : unit Or_error.t =
   let config = Act_config.Global.fuzz global_config in
   let aux_in = Act_fuzz.Filter.Aux.make ~o ~config seed in
-  Common_cmd.Args.With_files.run_filter_with_aux_out
-    (module Act_fuzz.Filter.Random)
-    args ~aux_in ~aux_out_f:write_trace ?aux_out_filename:trace_output
+  Or_error.Let_syntax.(
+    let%bind aux_out =
+      Common_cmd.Args.With_files.run_filter
+        (module Act_fuzz.Filter.Random)
+        args ~aux_in
+    in
+    Plumbing.Output.with_output_opt trace_output ~f:(write_trace aux_out))
 
 let readme () : string =
   Act_utils.My_string.format_for_readme
@@ -43,7 +47,7 @@ let command : Command.t =
           ~doc:"INT use this integer as the seed to the fuzzer RNG"
       and trace_output =
         flag "trace-output"
-          (optional Filename.arg_type)
+          (optional Common_cmd.Args.output_type)
           ~doc:
             "FILE if given, write a trace of completed fuzz actions to this \
              filename"

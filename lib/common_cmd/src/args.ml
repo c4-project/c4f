@@ -49,6 +49,19 @@ module Other = struct
 
   let id_type = Arg_type.create Id.of_string
 
+  let fpath_type : Fpath.t Arg_type.t =
+    Arg_type.map ~f:Fpath.v Filename.arg_type
+
+  let input_type : Plumbing.Input.t Arg_type.t =
+    Arg_type.map
+      ~f:(Fn.compose Or_error.ok_exn Plumbing.Input.of_string)
+      Filename.arg_type
+
+  let output_type : Plumbing.Output.t Arg_type.t =
+    Arg_type.map
+      ~f:(Fn.compose Or_error.ok_exn Plumbing.Output.of_string)
+      Filename.arg_type
+
   let backend ?(name : string = "-backend")
       ?(doc : string = "the backend to use") () : Id.t option Command.Param.t
       =
@@ -212,16 +225,4 @@ module With_files = struct
       let%bind input = infile_source args in
       let%bind output = outfile_sink args in
       F.run aux_in input output)
-
-  let run_filter_with_aux_out (type i o) ?(aux_out_filename : string option)
-      (module F : Plumbing.Filter_types.S
-        with type aux_i = i
-         and type aux_o = o) (args : _ t) ~(aux_in : i)
-      ~(aux_out_f : o -> Stdio.Out_channel.t -> unit Or_error.t) :
-      unit Or_error.t =
-    Or_error.Let_syntax.(
-      let%bind aux_out = run_filter (module F) args ~aux_in in
-      Tx.Option.With_errors.iter_m aux_out_filename ~f:(fun filename ->
-          Or_error.try_with_join (fun () ->
-              Stdio.Out_channel.with_file filename ~f:(aux_out_f aux_out))))
 end

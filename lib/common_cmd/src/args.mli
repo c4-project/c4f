@@ -121,27 +121,23 @@ module With_files : sig
   (** [run_filter f args ~aux_in] runs the filter [f] with the file input and
       output arguments specified in [args], and the auxiliary input [aux_in],
       returning the auxiliary output or errors arising. *)
-
-  val run_filter_with_aux_out :
-       ?aux_out_filename:string
-    -> (module Plumbing.Filter_types.S
-          with type aux_i = 'i
-           and type aux_o = 'o)
-    -> _ t
-    -> aux_in:'i
-    -> aux_out_f:('o -> Stdio.Out_channel.t -> unit Or_error.t)
-    -> unit Or_error.t
-  (** [run_filter_with_aux_out ?aux_out_filename f args ~aux_in ~aux_out_f]
-      runs the filter [f] with the file input and output arguments specified
-      in [args], and the auxiliary input [aux_in]; it then outputs the
-      auxiliary output to the file named by [aux_out_filename], using
-      [aux_out_f], or otherwise discards it. It returns any errors arising. *)
 end
 
 (** {2 Miscellaneous argument helpers} *)
 
 val id_type : Act_common.Id.t Command.Arg_type.t
 (** [id_type] is an argument type for ACT IDs. *)
+
+val fpath_type : Fpath.t Command.Arg_type.t
+(** [fpath_type] is an argument type for Fpaths. *)
+
+val input_type : Plumbing.Input.t Command.Arg_type.t
+(** [input_type] is an argument type for Plumbing inputs. For stdin, use the
+    {!With_files} argument helpers instead. *)
+
+val output_type : Plumbing.Output.t Command.Arg_type.t
+(** [output_type] is an argument type for Plumbing outputs. For stdout, use
+    the {!With_files} argument helpers instead. *)
 
 val asm_target : Asm_target.t Command.Param.t
 (** [asm_target] defines a parameter for collecting an assembly target

@@ -1,24 +1,13 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the "Software"),
-   to deal in the Software without restriction, including without limitation
-   the rights to use, copy, modify, merge, publish, distribute, sublicense,
-   and/or sell copies of the Software, and to permit persons to whom the
-   Software is furnished to do so, subject to the following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included in
-   all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-   DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 (** Type of output into a filter or similar construct.
 
@@ -34,7 +23,7 @@ type t
 include Io_types.Common with type t := t
 (** @inline *)
 
-(** {2 Constructing an output} *)
+(** {1 Constructing an output} *)
 
 val file : Fpath.t -> t
 (** [file fname] creates an output sink for a given filename. *)
@@ -46,7 +35,7 @@ val temp : prefix:string -> ext:string -> t
 (** [temp ~prefix ~ext] creates an output sink for a temporary file with the
     given prefix and extension. *)
 
-(** {2 Consuming an output} *)
+(** {1 Consuming an output} *)
 
 val as_input : t -> Input.t Or_error.t
 (** [as_input o] tries to get an {{!Input.t} input} pointing to the same data
@@ -55,3 +44,8 @@ val as_input : t -> Input.t Or_error.t
 val with_output : t -> f:(Out_channel.t -> 'a Or_error.t) -> 'a Or_error.t
 (** [with_output o ~f] runs [f] connected to the output channel pointed to by
     [o]. *)
+
+val with_output_opt :
+  t option -> f:(Out_channel.t -> unit Or_error.t) -> unit Or_error.t
+(** [with_output_opt o ~f] does nothing if [o] is None, and behaves as
+    [with_output o'] if [o] is [Some o']. *)
