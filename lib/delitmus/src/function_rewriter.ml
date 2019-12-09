@@ -151,27 +151,25 @@ struct
     end) in
     M.rewrite func
 
-  let lookup_function (name: Act_common.C_id.t)
-      ~(context : Context.t) : Function_map.Record.t Or_error.t =
-    let fmap =
-    context
-    |> Context.aux
-    |> Aux.function_map
-    in
+  let lookup_function (name : Act_common.C_id.t) ~(context : Context.t) :
+      Function_map.Record.t Or_error.t =
+    let fmap = context |> Context.aux |> Aux.function_map in
     Map.find fmap name
     |> Result.of_option
-      ~error:(Error.create_s [%message "Could not find function in function map."
-        ~name:(name: Act_common.C_id.t)])
+         ~error:
+           (Error.create_s
+              [%message
+                "Could not find function in function map."
+                  ~name:(name : Act_common.C_id.t)])
 
-  let rewrite_function_name (name: Act_common.C_id.t)
-      ~(context : Context.t) : Act_common.C_id.t Or_error.t =
-    Or_error.map
-      (lookup_function name ~context)
-      ~f:Function_map.Record.c_id
+  let rewrite_function_name (name : Act_common.C_id.t) ~(context : Context.t)
+      : Act_common.C_id.t Or_error.t =
+    Or_error.map (lookup_function name ~context) ~f:Function_map.Record.c_id
 
   let rewrite_named (tid : int) (fn : unit C.Function.t C.Named.t)
       ~(context : Context.t) : unit C.Function.t C.Named.t Or_error.t =
-    C.Named.With_errors.bi_map_m fn ~left:(rewrite_function_name ~context)
+    C.Named.With_errors.bi_map_m fn
+      ~left:(rewrite_function_name ~context)
       ~right:(rewrite tid ~context)
 
   let rewrite_all (fs : unit C.Function.t C.Named.t list)

@@ -20,11 +20,11 @@ module M = struct
     { litmus_header: Act_c_mini.Litmus_header.t
           [@default Act_litmus.Header.empty]
     ; function_map: Function_map.t
-                    [@default Map.empty (module Act_common.C_id)]
-    ; var_map: Var_map.t
-          [@default Act_common.Scoped_map.empty] }
+          [@default Map.empty (module Act_common.C_id)]
+    ; var_map: Var_map.t [@default Act_common.Scoped_map.empty] }
   [@@deriving make, fields, equal, yojson]
 end
+
 include M
 
 (* TODO(@MattWindsor91): validate litmus locations/etc against the variable

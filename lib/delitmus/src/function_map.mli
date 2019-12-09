@@ -9,8 +9,8 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Part of the delitmus aux record that tracks function movements from Litmus
-    to C. *)
+(** Part of the delitmus aux record that tracks function movements from
+    Litmus to C. *)
 
 open Base
 
@@ -19,9 +19,10 @@ open Base
 module Record : sig
   type t [@@deriving yojson, equal]
 
-  val make : ?is_thread_body: bool -> c_id:Act_common.C_id.t -> unit -> t
+  val make : ?is_thread_body:bool -> c_id:Act_common.C_id.t -> unit -> t
 
   val c_id : t -> Act_common.C_id.t
+
   val is_thread_body : t -> bool
 end
 
