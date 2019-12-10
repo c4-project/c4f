@@ -24,18 +24,6 @@ end
 let check_ok (type a) (x : a) ~(filter : Path_filter.t) : a Or_error.t =
   Tx.Or_error.tee_m x ~f:(fun (_ : a) -> Path_filter.check filter)
 
-let lift_over_block ?(filter : Path_filter.t = Path_filter.empty)
-    (block : Subject.Block.t)
-    ~(f :
-          ?filter:Path_filter.t
-       -> Subject.Statement.t list
-       -> Path.stm_list Opt_gen.t) : Path.stm_list Opt_gen.t =
-  let filter' =
-    Path_filter.update_with_block_metadata filter
-      (Act_c_mini.Block.metadata block)
-  in
-  f ~filter:filter' (Act_c_mini.Block.statements block)
-
 module rec Statement :
   (Path_types.S_producer
     with type t = Path.stm
@@ -92,16 +80,16 @@ module rec Statement :
     Opt_gen.union [gen_base; gen_rec]
 end
 
-and Statement_list :
+and Block :
   (Path_types.S_producer
     with type t = Path.stm_list
-     and type target = Subject.Statement.t list) = struct
+     and type target = Subject.Block.t) = struct
   type t = Path.stm_list
 
   let in_stm (index : int) : Path.Stm.t Opt_gen.t -> Path.Stms.t Opt_gen.t =
     Opt_gen.map ~f:(Path.Stms.in_stm index)
 
-  type target = Subject.Statement.t list
+  type target = Subject.Block.t
 
   module Insert (I : sig
     val filter : Path_filter.t
@@ -123,13 +111,14 @@ and Statement_list :
       [insert_after; insert_inside]
 
     let try_gen_at_each : target -> t Opt_gen.t list =
-      List.concat_mapi ~f:try_gen_at
+      Fn.compose (List.concat_mapi ~f:try_gen_at) Act_c_mini.Block.statements
   end
 
   let try_gen_insert_stm ?(filter : Path_filter.t = Path_filter.empty)
       (dest : target) : Path.stm_list Opt_gen.t =
     let module I = Insert (struct
-      let filter = filter
+        let filter = Path_filter.update_with_block_metadata filter
+            (Act_c_mini.Block.metadata dest)
     end) in
     Opt_gen.union (I.try_gen_here 0 :: I.try_gen_at_each dest)
 
@@ -137,23 +126,26 @@ and Statement_list :
       (single_dest : Subject.Statement.t) : t Opt_gen.t =
     single_dest |> Statement.try_gen_transform_stm ?filter |> in_stm index
 
-  let try_gen_transform_stm ?(filter : Path_filter.t option) (dest : target)
+  let try_gen_transform_stm ?(filter : Path_filter.t = Path_filter.empty) (dest : target)
       : Path.stm_list Opt_gen.t =
-    Opt_gen.union (List.mapi ~f:(gen_transform_stm_on ?filter) dest)
+    let filter = Path_filter.update_with_block_metadata filter
+        (Act_c_mini.Block.metadata dest) in
+    let stms = Act_c_mini.Block.statements dest in
+    Opt_gen.union (List.mapi ~f:(gen_transform_stm_on ~filter) stms)
 
-  let gen_transform_stm_list_here_populated (dest : target) : t Q.Generator.t
+  let gen_transform_stm_list_here_populated (stms : Subject.Statement.t list) : t Q.Generator.t
       =
     Q.Generator.(
       create (fun ~size ~random ->
           ignore size ;
-          Option.value_exn (Act_utils.My_list.Random.stride dest ~random))
+          Option.value_exn (Act_utils.My_list.Random.stride stms ~random))
       >>| fun (p, d) -> Path.Stms.on_range p d)
 
-  let gen_transform_stm_list_here (dest : target) : t Q.Generator.t =
-    let len = List.length dest in
+  let gen_transform_stm_list_here (stms : Subject.Statement.t list) : t Q.Generator.t =
+    let len = List.length stms in
     let after = Q.Generator.return (Path.Stms.on_range len 0) in
     let inner =
-      if len = 0 then [] else [gen_transform_stm_list_here_populated dest]
+      if len = 0 then [] else [gen_transform_stm_list_here_populated stms]
     in
     Q.Generator.union (after :: inner)
 
@@ -169,9 +161,12 @@ and Statement_list :
   let try_gen_transform_stm_list
       ?(filter : Path_filter.t = Path_filter.empty) (dest : target) :
       t Opt_gen.t =
+    let filter = Path_filter.update_with_block_metadata filter
+        (Act_c_mini.Block.metadata dest) in
+    let stms = Act_c_mini.Block.statements dest in
     Opt_gen.union
-      ( check_ok ~filter (gen_transform_stm_list_here dest)
-      :: List.mapi dest ~f:(gen_transform_stm_list_on ~filter) )
+      ( check_ok ~filter (gen_transform_stm_list_here stms)
+      :: List.mapi stms ~f:(gen_transform_stm_list_on ~filter) )
 end
 
 and If :
@@ -186,17 +181,17 @@ and If :
       (branch : bool) (block : Subject.Block.t)
       ~(f :
             ?filter:Path_filter.t
-         -> Subject.Statement.t list
+         -> Subject.Block.t
          -> Path.Stms.t Opt_gen.t) : Path.If.t Opt_gen.t =
     Opt_gen.map
-      (lift_over_block ~f ~filter block)
+      (f ~filter block)
       ~f:(Path.If.in_branch branch)
 
   let gen_opt_over_blocks ?(filter : Path_filter.t option)
       (ifs : Metadata.t Stm.If.t)
       ~(f :
             ?filter:Path_filter.t
-         -> Subject.Statement.t list
+         -> Subject.Block.t
          -> Path.stm_list Opt_gen.t) : Path.If.t Opt_gen.t =
     Opt_gen.union
       [ gen_opt_over_block ?filter ~f true (Stm.If.t_branch ifs)
@@ -205,17 +200,17 @@ and If :
   let try_gen_insert_stm :
       ?filter:Path_filter.t -> Subject.Statement.If.t -> Path.If.t Opt_gen.t
       =
-    gen_opt_over_blocks ~f:Statement_list.try_gen_insert_stm
+    gen_opt_over_blocks ~f:Block.try_gen_insert_stm
 
   let try_gen_transform_stm :
       ?filter:Path_filter.t -> Subject.Statement.If.t -> Path.If.t Opt_gen.t
       =
-    gen_opt_over_blocks ~f:Statement_list.try_gen_transform_stm
+    gen_opt_over_blocks ~f:Block.try_gen_transform_stm
 
   let try_gen_transform_stm_list :
       ?filter:Path_filter.t -> Subject.Statement.If.t -> Path.If.t Opt_gen.t
       =
-    gen_opt_over_blocks ~f:Statement_list.try_gen_transform_stm_list
+    gen_opt_over_blocks ~f:Block.try_gen_transform_stm_list
 end
 
 and Loop :
@@ -230,30 +225,30 @@ and Loop :
       (loop : Subject.Statement.Loop.t)
       ~(f :
             ?filter:Path_filter.t
-         -> Subject.Statement.t list
+         -> Subject.Block.t
          -> Path.Stms.t Opt_gen.t) : Path.Loop.t Opt_gen.t =
     let filter = Path_filter.update_with_loop filter in
     Opt_gen.map
-      (lift_over_block ~f ~filter (Stm.While.body loop))
+      (f ~filter (Stm.While.body loop))
       ~f:Path.Loop.in_body
 
   let try_gen_insert_stm :
          ?filter:Path_filter.t
       -> Subject.Statement.Loop.t
       -> Path.Loop.t Opt_gen.t =
-    gen_opt_over_body ~f:Statement_list.try_gen_insert_stm
+    gen_opt_over_body ~f:Block.try_gen_insert_stm
 
   let try_gen_transform_stm :
          ?filter:Path_filter.t
       -> Subject.Statement.Loop.t
       -> Path.Loop.t Opt_gen.t =
-    gen_opt_over_body ~f:Statement_list.try_gen_transform_stm
+    gen_opt_over_body ~f:Block.try_gen_transform_stm
 
   let try_gen_transform_stm_list :
          ?filter:Path_filter.t
       -> Subject.Statement.Loop.t
       -> Path.Loop.t Opt_gen.t =
-    gen_opt_over_body ~f:Statement_list.try_gen_transform_stm_list
+    gen_opt_over_body ~f:Block.try_gen_transform_stm_list
 end
 
 module Thread :
@@ -265,21 +260,23 @@ module Thread :
   type target = Subject.Thread.t
 
   let gen_opt_over_stms ({stms; _} : target)
-      ~(f : Subject.Statement.t list -> Path.stm_list Opt_gen.t) :
+      ~(f : Subject.Block.t -> Path.stm_list Opt_gen.t) :
       Path.Thread.t Opt_gen.t =
-    Opt_gen.map (f stms) ~f:Path.Thread.in_stms
+    (* TODO(@MattWindsor91): get rid of this hack. *)
+    let block = Subject.Block.make_existing ~statements:stms () in
+    Opt_gen.map (f block) ~f:Path.Thread.in_stms
 
   let try_gen_insert_stm ?(filter : Path_filter.t option) :
       target -> Path.Thread.t Opt_gen.t =
-    gen_opt_over_stms ~f:(Statement_list.try_gen_insert_stm ?filter)
+    gen_opt_over_stms ~f:(Block.try_gen_insert_stm ?filter)
 
   let try_gen_transform_stm ?(filter : Path_filter.t option) :
       target -> Path.Thread.t Opt_gen.t =
-    gen_opt_over_stms ~f:(Statement_list.try_gen_transform_stm ?filter)
+    gen_opt_over_stms ~f:(Block.try_gen_transform_stm ?filter)
 
   let try_gen_transform_stm_list ?(filter : Path_filter.t option) :
       target -> Path.Thread.t Opt_gen.t =
-    gen_opt_over_stms ~f:(Statement_list.try_gen_transform_stm_list ?filter)
+    gen_opt_over_stms ~f:(Block.try_gen_transform_stm_list ?filter)
 end
 
 module Test :

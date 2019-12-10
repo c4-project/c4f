@@ -58,6 +58,20 @@ end
 module type S_consumer = sig
   include S_base
 
+  val check_path :
+       t
+    -> filter:Path_filter.t
+    -> target:target
+    -> target Or_error.t
+  (** [check_path path ~filter ~target] does a post-generation check
+     of [path] against the path filter [filter] and target [target].
+
+      Don't confuse this with the in-generation checks done in
+     {!Path_producers}, which serve to stop invalid paths from being
+     generated.  The purpose of *this* check is to protect fuzzer
+     actions against generation errors, stale traces, and badly
+     written test cases. *)
+
   val insert_stm :
        t
     -> to_insert:Metadata.t Act_c_mini.Statement.t

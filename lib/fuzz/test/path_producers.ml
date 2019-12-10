@@ -32,16 +32,16 @@ let%test_module "Statement" =
       [%expect]
   end )
 
-let%test_module "Statement_list" =
+let%test_module "Block" =
   ( module struct
-    let%test_unit "insertions into an empty list are always at index 0" =
+    let%test_unit "insertions into an empty block are always at index 0" =
       Test.run_exn
         ( module struct
-          type t = Act_fuzz.Path.stm_list [@@deriving sexp]
+          type t = Act_fuzz.Path.Stms.t [@@deriving sexp]
 
           let quickcheck_generator =
             Or_error.ok_exn
-              (Act_fuzz.Path_producers.Statement_list.try_gen_insert_stm [])
+              (Act_fuzz.Path_producers.Block.try_gen_insert_stm (Act_fuzz.Subject.Block.make_existing ()))
 
           let quickcheck_shrinker = Shrinker.atomic
         end )
@@ -69,13 +69,15 @@ let%test_module "Statement_list" =
 
         let test
             (gen :
-                 Act_fuzz.Subject.Statement.t list
-              -> Act_fuzz.Path.stm_list Act_fuzz.Opt_gen.t) : unit =
+                 Act_fuzz.Subject.Block.t
+              -> Act_fuzz.Path.Stms.t Act_fuzz.Opt_gen.t) : unit =
+          let statements = Lazy.force Subject.Test_data.body_stms in
+          let block = Act_fuzz.Subject.Block.make_existing ~statements () in
           print_sample
-            (Or_error.ok_exn (gen (Lazy.force Subject.Test_data.body_stms)))
+            (Or_error.ok_exn (gen block))
 
         let%expect_test "try_gen_insert_stm with no filtering" =
-          test Act_fuzz.Path_producers.Statement_list.try_gen_insert_stm ;
+          test Act_fuzz.Path_producers.Block.try_gen_insert_stm ;
           [%expect
             {|
               Insert[0]
@@ -93,7 +95,7 @@ let%test_module "Statement_list" =
 
         let%expect_test "try_gen_insert_stm with dead-code filtering" =
           test
-            (Act_fuzz.Path_producers.Statement_list.try_gen_insert_stm
+            (Act_fuzz.Path_producers.Block.try_gen_insert_stm
                ~filter:Act_fuzz.Path_filter.(empty |> in_dead_code_only)) ;
           [%expect
             {|
@@ -104,7 +106,7 @@ let%test_module "Statement_list" =
             Stm[5]!Loop!Body!Insert[1] |}]
 
         let%expect_test "try_gen_transform_stm with no filtering" =
-          test Act_fuzz.Path_producers.Statement_list.try_gen_transform_stm ;
+          test Act_fuzz.Path_producers.Block.try_gen_transform_stm ;
           [%expect
             {|
             Stm[0]!This
@@ -119,7 +121,7 @@ let%test_module "Statement_list" =
         let%expect_test "try_gen_transform_stm with filtering to if \
                          statements" =
           test
-            (Act_fuzz.Path_producers.Statement_list.try_gen_transform_stm
+            (Act_fuzz.Path_producers.Block.try_gen_transform_stm
                ~filter:
                  Act_fuzz.Path_filter.(empty |> final_if_statements_only)) ;
           [%expect {|
@@ -128,7 +130,7 @@ let%test_module "Statement_list" =
 
         let%expect_test "try_gen_transform_stm with filtering to dead code" =
           test
-            (Act_fuzz.Path_producers.Statement_list.try_gen_transform_stm
+            (Act_fuzz.Path_producers.Block.try_gen_transform_stm
                ~filter:Act_fuzz.Path_filter.(empty |> in_dead_code_only)) ;
           [%expect
             {|
@@ -137,16 +139,13 @@ let%test_module "Statement_list" =
 
         let%expect_test "try_gen_transform_stm with filtering to loops" =
           test
-            (Act_fuzz.Path_producers.Statement_list.try_gen_transform_stm
+            (Act_fuzz.Path_producers.Block.try_gen_transform_stm
                ~filter:Act_fuzz.Path_filter.(empty |> in_loop_only)) ;
           [%expect {| Stm[5]!Loop!Body!Stm[0]!This |}]
 
-        let%expect_test "gen_transform_stm_list" =
-          let gen =
-            Act_fuzz.Path_producers.Statement_list.try_gen_transform_stm_list
-              (Lazy.force Subject.Test_data.body_stms)
-          in
-          print_sample (Or_error.ok_exn gen) ;
+        let%expect_test "try_gen_transform_stm_list" =
+          test
+            Act_fuzz.Path_producers.Block.try_gen_transform_stm_list;
           [%expect
             {|
               Stm[3]!If!False!Range[0, 0]

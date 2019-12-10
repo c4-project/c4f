@@ -10,8 +10,11 @@
    project root for more information. *)
 
 open Base
-module Ac = Act_common
-module Tx = Travesty_base_exts
+
+open struct
+  module Ac = Act_common
+  module Tx = Travesty_base_exts
+end
 
 module Label = struct
   module M = struct
@@ -42,6 +45,9 @@ end
 
 module Block = struct
   type t = (Metadata.t, Statement.t) Act_c_mini.Block.t
+
+  let make_existing ?(statements : Statement.t list option) () : t =
+    Act_c_mini.Block.make ?statements ~metadata:Metadata.existing ()
 
   let make_generated ?(statements : Statement.t list option) () : t =
     Act_c_mini.Block.make ?statements ~metadata:Metadata.generated ()

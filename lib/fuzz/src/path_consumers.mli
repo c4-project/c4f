@@ -20,12 +20,12 @@
 
 (** {1 Path consumer modules} *)
 
-(** A path consumer that acts upon a {!Subject.Statement.t} according to a
+(** A path consumer that acts upon a {!Subject.Block.t} according to a
     {!Path.Stms.t}. *)
-module Statement_list :
+module Block :
   Path_types.S_consumer
     with type t = Path.Stms.t
-     and type target = Subject.Statement.t list
+     and type target = Subject.Block.t
 
 (** A path consumer that acts upon a {!Subject.Statement.If.t} according to a
     {!Path.If.t}. *)

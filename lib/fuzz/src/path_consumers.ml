@@ -73,6 +73,14 @@ module rec Statement :
     | This_stm ->
         this_stm ~target
 
+  let check_path (path : Path.Stm.t) ~(filter : Path_filter.t)
+      ~(target : Subject.Statement.t) : Subject.Statement.t Or_error.t =
+    handle_path path ~target ~if_stm:(If.check_path ~filter)
+      ~while_loop:(Loop.check_path ~filter) ~this_stm:(fun ~target ->
+          Tx.Or_error.tee_m target
+            ~f:(fun stm -> Path_filter.check_final_statement filter ~stm)
+        )
+
   let insert_stm (path : Path.Stm.t) ~(to_insert : Subject.Statement.t)
       ~(target : Subject.Statement.t) : Subject.Statement.t Or_error.t =
     handle_path path ~target ~if_stm:(If.insert_stm ~to_insert)
@@ -99,19 +107,24 @@ module rec Statement :
               ~path:(path : Path.Stm.t)])
 end
 
-and Statement_list :
+and Block :
   (Path_types.S_consumer
     with type t = Path.Stms.t
-     and type target = Subject.Statement.t list) = struct
+     and type target = Subject.Block.t) = struct
   type t = Path.Stms.t
 
-  type target = Subject.Statement.t list
+  type target = Subject.Block.t
+
+  module Block_stms = Act_c_mini.Block.On_meta_statement_list (Stm)
+  module Block_stms_err = Block_stms.On_monad (Or_error)
 
   let handle_in_stm (dest : target) (index : int)
       ~(f : target:Subject.Statement.t -> Subject.Statement.t Or_error.t) :
       target Or_error.t =
-    Tx.List.With_errors.replace_m dest index ~f:(fun target ->
-        Or_error.(f ~target >>| Option.some))
+    Block_stms_err.map_m dest ~f:(fun stms ->
+        Tx.List.With_errors.replace_m stms index ~f:(fun target ->
+            Or_error.(f ~target >>| Option.some))
+      )
 
   let bad_stm_list_path_error (path : Path.Stms.t)
       ~(here : Source_code_position.t) ~(context : string) :
@@ -123,11 +136,21 @@ and Statement_list :
           ~context
           ~path:(path : Path.Stms.t)]
 
+  let check_path (path : Path.Stms.t) ~(filter : Path_filter.t) ~(target : target) : target Or_error.t =
+    let filter = Path_filter.update_with_block_metadata filter (Act_c_mini.Block.metadata target) in
+    match path with
+    | In_stm (index, rest) ->
+        handle_in_stm target index ~f:(Statement.check_path rest ~filter)
+    | Insert _ | On_range (_, _) ->
+        Tx.Or_error.(Path_filter.check filter >> Or_error.return target)
+
   let insert_stm (path : Path.Stms.t) ~(to_insert : Subject.Statement.t)
       ~(target : target) : target Or_error.t =
     match path with
     | Insert index ->
-        Tx.List.insert target index to_insert
+      Block_stms_err.map_m target ~f:(fun stms ->
+        Tx.List.insert stms index to_insert
+        )
     | In_stm (index, rest) ->
         handle_in_stm target index ~f:(Statement.insert_stm rest ~to_insert)
     | On_range (_, _) ->
@@ -140,7 +163,9 @@ and Statement_list :
     | In_stm (index, rest) ->
         handle_in_stm target index ~f:(Statement.transform_stm rest ~f)
     | On_range (pos, len) ->
-        Act_utils.My_list.try_map_sub ~pos ~len ~f target
+      Block_stms_err.map_m target ~f:(
+        Act_utils.My_list.try_map_sub ~pos ~len ~f
+      )
     | Insert _ ->
         bad_stm_list_path_error path ~context:"transform_stm" ~here:[%here]
 
@@ -151,7 +176,8 @@ and Statement_list :
     | In_stm (index, rest) ->
         handle_in_stm target index ~f:(Statement.transform_stm_list rest ~f)
     | On_range (pos, len) ->
-        Act_utils.My_list.try_splice ~pos ~len ~replace_f:f target
+      Block_stms_err.map_m target ~f:(
+        Act_utils.My_list.try_splice ~pos ~len ~replace_f:f)
     | Insert _ ->
         bad_stm_list_path_error path ~context:"transform_stm_list"
           ~here:[%here]
@@ -166,21 +192,14 @@ and If :
   type target = Subject.Statement.If.t
 
   module B = Stm.If.Base_map (Or_error)
-  module Block_stms = Act_c_mini.Block.On_meta_statement_list (Stm)
-  module Block_stms_err = Block_stms.On_monad (Or_error)
 
-  (* TODO(@MattWindsor91): this will probably need to be changed to accept
-     full blocks. *)
-
-  let handle_stm (path : Path.If.t)
+  let handle_stm (path : t)
       ~(f :
             Path.Stms.t
-         -> target:Subject.Statement.t list
-         -> Subject.Statement.t list Or_error.t) ~(target : target) :
+         -> target:Subject.Block.t
+         -> Subject.Block.t Or_error.t) ~(target : target) :
       target Or_error.t =
-    let lift_f rest =
-      Block_stms_err.map_m ~f:(fun target -> f rest ~target)
-    in
+    let lift_f rest target = f rest ~target in
     match path with
     | In_block (branch, rest) ->
         let t_branch, f_branch =
@@ -191,18 +210,22 @@ and If :
     | This_cond ->
         Or_error.error_string "Not a statement path"
 
-  let insert_stm (path : Path.If.t) ~(to_insert : Subject.Statement.t)
-      ~(target : target) : target Or_error.t =
-    handle_stm path ~target ~f:(Statement_list.insert_stm ~to_insert)
+  let check_path (path : t) ~(filter : Path_filter.t) ~(target : target) : target Or_error.t =
+    (* TODO(@MattWindsor91): note in filter that we're in an if statement *)
+    handle_stm path ~target ~f:(Block.check_path ~filter)
 
-  let transform_stm (path : Path.If.t) ~(f : Subject.Statement.t transformer)
+  let insert_stm (path : t) ~(to_insert : Subject.Statement.t)
       ~(target : target) : target Or_error.t =
-    handle_stm path ~target ~f:(Statement_list.transform_stm ~f)
+    handle_stm path ~target ~f:(Block.insert_stm ~to_insert)
 
-  let transform_stm_list (path : Path.If.t)
+  let transform_stm (path : t) ~(f : Subject.Statement.t transformer)
+      ~(target : target) : target Or_error.t =
+    handle_stm path ~target ~f:(Block.transform_stm ~f)
+
+  let transform_stm_list (path : t)
       ~(f : Subject.Statement.t list transformer) ~(target : target) :
       target Or_error.t =
-    handle_stm path ~target ~f:(Statement_list.transform_stm_list ~f)
+    handle_stm path ~target ~f:(Block.transform_stm_list ~f)
 end
 
 and Loop :
@@ -214,38 +237,38 @@ and Loop :
   type target = Subject.Statement.Loop.t
 
   module B = Stm.While.Base_map (Or_error)
-  module Block_stms = Act_c_mini.Block.On_meta_statement_list (Stm)
-  module Block_stms_err = Block_stms.On_monad (Or_error)
 
-  (* TODO(@MattWindsor91): this will probably need to be changed to accept
-     full blocks. *)
-
-  let handle_stm (path : Path.Loop.t)
+  let handle_stm (path : t)
       ~(f :
             Path.Stms.t
-         -> target:Subject.Statement.t list
-         -> Subject.Statement.t list Or_error.t) ~(target : target) :
+         -> target:Subject.Block.t
+         -> Subject.Block.t Or_error.t) ~(target : target) :
       target Or_error.t =
     match path with
     | In_block rest ->
-        let body = Block_stms_err.map_m ~f:(fun target -> f rest ~target) in
+        let body target = f rest ~target in
         B.bmap target ~cond:Or_error.return ~body
     | This_cond ->
         Or_error.error_string "Not a statement path"
 
-  let insert_stm (path : Path.Loop.t) ~(to_insert : Subject.Statement.t)
+  let check_path (path : t) ~(filter : Path_filter.t)
       ~(target : target) : target Or_error.t =
-    handle_stm path ~target ~f:(Statement_list.insert_stm ~to_insert)
+    let filter = Path_filter.update_with_loop filter in
+    handle_stm path ~target ~f:(Block.check_path ~filter)
 
-  let transform_stm (path : Path.Loop.t)
+  let insert_stm (path : t) ~(to_insert : Subject.Statement.t)
+      ~(target : target) : target Or_error.t =
+    handle_stm path ~target ~f:(Block.insert_stm ~to_insert)
+
+  let transform_stm (path : t)
       ~(f : Subject.Statement.t transformer) ~(target : target) :
       target Or_error.t =
-    handle_stm path ~target ~f:(Statement_list.transform_stm ~f)
+    handle_stm path ~target ~f:(Block.transform_stm ~f)
 
   let transform_stm_list (path : Path.Loop.t)
       ~(f : Subject.Statement.t list transformer) ~(target : target) :
       target Or_error.t =
-    handle_stm path ~target ~f:(Statement_list.transform_stm_list ~f)
+    handle_stm path ~target ~f:(Block.transform_stm_list ~f)
 end
 
 module Thread :
@@ -259,28 +282,32 @@ module Thread :
   let handle_stm (path : t)
       ~(f :
             Path.Stms.t
-         -> target:Subject.Statement.t list
-         -> Subject.Statement.t list Or_error.t) ~(target : target) :
+         -> target:Subject.Block.t
+         -> Subject.Block.t Or_error.t) ~(target : target) :
       target Or_error.t =
     match path with
     | In_stms rest ->
+      (* TODO(@MattWindsor91): fix this horrific mess *)
         Or_error.(
-          f rest ~target:target.stms
-          >>| fun stms' -> {target with stms= stms'})
+          f rest ~target:(Subject.Block.make_existing ~statements:target.stms ())
+          >>| fun block -> {target with stms= Act_c_mini.Block.statements block})
+
+  let check_path (path : t) ~(filter : Path_filter.t) ~(target : target) : target Or_error.t =
+    handle_stm path ~target ~f:(Block.check_path ~filter)
 
   let insert_stm (path : t) ~(to_insert : Subject.Statement.t)
       ~(target : target) : target Or_error.t =
-    handle_stm path ~target ~f:(fun rest ->
-        Statement_list.insert_stm rest ~to_insert)
+    handle_stm path ~target ~f:(
+        Block.insert_stm ~to_insert)
 
   let transform_stm (path : t) ~(f : Subject.Statement.t transformer)
       ~(target : target) : target Or_error.t =
-    handle_stm path ~target ~f:(Statement_list.transform_stm ~f)
+    handle_stm path ~target ~f:(Block.transform_stm ~f)
 
   let transform_stm_list (path : t)
       ~(f : Subject.Statement.t list transformer) ~(target : target) :
       target Or_error.t =
-    handle_stm path ~target ~f:(Statement_list.transform_stm_list ~f)
+    handle_stm path ~target ~f:(Block.transform_stm_list ~f)
 end
 
 module Test :
@@ -302,6 +329,9 @@ module Test :
         Act_litmus.Test.Raw.try_map_thread ~index
           ~f:(fun target -> f rest ~target)
           target
+
+  let check_path (path : t) ~(filter : Path_filter.t) ~(target : target) : target Or_error.t =
+    handle_stm path ~target ~f:(Thread.check_path ~filter)
 
   let insert_stm (path : t) ~(to_insert : Subject.Statement.t)
       ~(target : target) : target Or_error.t =

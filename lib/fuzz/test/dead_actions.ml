@@ -22,15 +22,20 @@ let%test_module "Early_out" =
         (Src.Dead_actions.Early_out.run test ~payload)
         ~initial_state
 
-    let valid_path : Src.Path.Program.t =
+    let if_path : Src.Path.Program.t =
       Src.Path.(
         Program.in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 3 @@ Stm.in_if
         @@ If.in_branch false @@ Stms.insert 0)
 
+    let loop_path : Src.Path.Program.t =
+      Src.Path.(
+        Program.in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 5 @@ Stm.in_loop
+        @@ Loop.in_body @@ Stms.insert 0)
+
     (* TODO(@MattWindsor91): invalid paths *)
 
     let%expect_test "valid break on example program" =
-      test_on_example_program valid_path Break ;
+      test_on_example_program loop_path Break ;
       [%expect
         {|
       void P0(atomic_int *x, atomic_int *y)
@@ -39,14 +44,13 @@ let%test_module "Early_out" =
           ;
           atomic_store_explicit(y, foo, memory_order_relaxed);
           if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
-          else { break; }
           if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
-          do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
-          5);
+          do { break; atomic_store_explicit(x, 44, memory_order_seq_cst); } while
+          (4 == 5);
       } |}]
 
     let%expect_test "valid return on example program" =
-      test_on_example_program valid_path Return ;
+      test_on_example_program if_path Return ;
       [%expect
         {|
       void P0(atomic_int *x, atomic_int *y)

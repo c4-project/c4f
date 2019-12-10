@@ -20,12 +20,12 @@
 
 (** {1 Path producer modules} *)
 
-(** A path producer that takes in {!Subject.Statement.t} and produces
+(** A path producer that takes in {!Subject.Block.t} and produces
     {!Path.Stms.t}. *)
-module Statement_list :
+module Block :
   Path_types.S_producer
     with type t = Path.Stms.t
-     and type target = Subject.Statement.t list
+     and type target = Subject.Block.t
 
 (** A path producer that takes in {!Subject.Statement.If.t} and produces
     {!Path.If.t}. *)
