@@ -117,8 +117,9 @@ and Block :
   let try_gen_insert_stm ?(filter : Path_filter.t = Path_filter.empty)
       (dest : target) : Path.stm_list Opt_gen.t =
     let module I = Insert (struct
-        let filter = Path_filter.update_with_block_metadata filter
-            (Act_c_mini.Block.metadata dest)
+      let filter =
+        Path_filter.update_with_block_metadata filter
+          (Act_c_mini.Block.metadata dest)
     end) in
     Opt_gen.union (I.try_gen_here 0 :: I.try_gen_at_each dest)
 
@@ -126,22 +127,25 @@ and Block :
       (single_dest : Subject.Statement.t) : t Opt_gen.t =
     single_dest |> Statement.try_gen_transform_stm ?filter |> in_stm index
 
-  let try_gen_transform_stm ?(filter : Path_filter.t = Path_filter.empty) (dest : target)
-      : Path.stm_list Opt_gen.t =
-    let filter = Path_filter.update_with_block_metadata filter
-        (Act_c_mini.Block.metadata dest) in
+  let try_gen_transform_stm ?(filter : Path_filter.t = Path_filter.empty)
+      (dest : target) : Path.stm_list Opt_gen.t =
+    let filter =
+      Path_filter.update_with_block_metadata filter
+        (Act_c_mini.Block.metadata dest)
+    in
     let stms = Act_c_mini.Block.statements dest in
     Opt_gen.union (List.mapi ~f:(gen_transform_stm_on ~filter) stms)
 
-  let gen_transform_stm_list_here_populated (stms : Subject.Statement.t list) : t Q.Generator.t
-      =
+  let gen_transform_stm_list_here_populated (stms : Subject.Statement.t list)
+      : t Q.Generator.t =
     Q.Generator.(
       create (fun ~size ~random ->
           ignore size ;
           Option.value_exn (Act_utils.My_list.Random.stride stms ~random))
       >>| fun (p, d) -> Path.Stms.on_range p d)
 
-  let gen_transform_stm_list_here (stms : Subject.Statement.t list) : t Q.Generator.t =
+  let gen_transform_stm_list_here (stms : Subject.Statement.t list) :
+      t Q.Generator.t =
     let len = List.length stms in
     let after = Q.Generator.return (Path.Stms.on_range len 0) in
     let inner =
@@ -161,8 +165,10 @@ and Block :
   let try_gen_transform_stm_list
       ?(filter : Path_filter.t = Path_filter.empty) (dest : target) :
       t Opt_gen.t =
-    let filter = Path_filter.update_with_block_metadata filter
-        (Act_c_mini.Block.metadata dest) in
+    let filter =
+      Path_filter.update_with_block_metadata filter
+        (Act_c_mini.Block.metadata dest)
+    in
     let stms = Act_c_mini.Block.statements dest in
     Opt_gen.union
       ( check_ok ~filter (gen_transform_stm_list_here stms)
@@ -180,19 +186,15 @@ and If :
   let gen_opt_over_block ?(filter : Path_filter.t = Path_filter.empty)
       (branch : bool) (block : Subject.Block.t)
       ~(f :
-            ?filter:Path_filter.t
-         -> Subject.Block.t
-         -> Path.Stms.t Opt_gen.t) : Path.If.t Opt_gen.t =
-    Opt_gen.map
-      (f ~filter block)
-      ~f:(Path.If.in_branch branch)
+         ?filter:Path_filter.t -> Subject.Block.t -> Path.Stms.t Opt_gen.t) :
+      Path.If.t Opt_gen.t =
+    Opt_gen.map (f ~filter block) ~f:(Path.If.in_branch branch)
 
   let gen_opt_over_blocks ?(filter : Path_filter.t option)
       (ifs : Metadata.t Stm.If.t)
       ~(f :
-            ?filter:Path_filter.t
-         -> Subject.Block.t
-         -> Path.stm_list Opt_gen.t) : Path.If.t Opt_gen.t =
+         ?filter:Path_filter.t -> Subject.Block.t -> Path.stm_list Opt_gen.t)
+      : Path.If.t Opt_gen.t =
     Opt_gen.union
       [ gen_opt_over_block ?filter ~f true (Stm.If.t_branch ifs)
       ; gen_opt_over_block ?filter ~f false (Stm.If.f_branch ifs) ]
@@ -224,13 +226,10 @@ and Loop :
   let gen_opt_over_body ?(filter : Path_filter.t = Path_filter.empty)
       (loop : Subject.Statement.Loop.t)
       ~(f :
-            ?filter:Path_filter.t
-         -> Subject.Block.t
-         -> Path.Stms.t Opt_gen.t) : Path.Loop.t Opt_gen.t =
+         ?filter:Path_filter.t -> Subject.Block.t -> Path.Stms.t Opt_gen.t) :
+      Path.Loop.t Opt_gen.t =
     let filter = Path_filter.update_with_loop filter in
-    Opt_gen.map
-      (f ~filter (Stm.While.body loop))
-      ~f:Path.Loop.in_body
+    Opt_gen.map (f ~filter (Stm.While.body loop)) ~f:Path.Loop.in_body
 
   let try_gen_insert_stm :
          ?filter:Path_filter.t

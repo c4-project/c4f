@@ -61,9 +61,9 @@ module Block : sig
       For normal constructors, see {!Act_c_mini.Block}. *)
 
   val make_existing : ?statements:Statement.t list -> unit -> t
-  (** [make_existing ?statements ()] makes a block, optionally containing
-      the existing statements [statements], that is metadata-marked as
-      existing before fuzzing. *)
+  (** [make_existing ?statements ()] makes a block, optionally containing the
+      existing statements [statements], that is metadata-marked as existing
+      before fuzzing. *)
 
   val make_generated : ?statements:Statement.t list -> unit -> t
   (** [make_generated ?statements ()] makes a block, optionally containing

@@ -24,6 +24,9 @@ open Base
 module Kind : sig
   (** Type of early-out kinds. *)
   type t = Break | Return [@@deriving sexp, equal, quickcheck]
+
+  val in_loop_only : t -> bool
+  (** [in_loop_only kind] gets whether [kind] is valid only in loops. *)
 end
 
 (** {1 Early-out statements} *)

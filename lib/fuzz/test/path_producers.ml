@@ -41,7 +41,8 @@ let%test_module "Block" =
 
           let quickcheck_generator =
             Or_error.ok_exn
-              (Act_fuzz.Path_producers.Block.try_gen_insert_stm (Act_fuzz.Subject.Block.make_existing ()))
+              (Act_fuzz.Path_producers.Block.try_gen_insert_stm
+                 (Act_fuzz.Subject.Block.make_existing ()))
 
           let quickcheck_shrinker = Shrinker.atomic
         end )
@@ -73,8 +74,7 @@ let%test_module "Block" =
               -> Act_fuzz.Path.Stms.t Act_fuzz.Opt_gen.t) : unit =
           let statements = Lazy.force Subject.Test_data.body_stms in
           let block = Act_fuzz.Subject.Block.make_existing ~statements () in
-          print_sample
-            (Or_error.ok_exn (gen block))
+          print_sample (Or_error.ok_exn (gen block))
 
         let%expect_test "try_gen_insert_stm with no filtering" =
           test Act_fuzz.Path_producers.Block.try_gen_insert_stm ;
@@ -144,8 +144,7 @@ let%test_module "Block" =
           [%expect {| Stm[5]!Loop!Body!Stm[0]!This |}]
 
         let%expect_test "try_gen_transform_stm_list" =
-          test
-            Act_fuzz.Path_producers.Block.try_gen_transform_stm_list;
+          test Act_fuzz.Path_producers.Block.try_gen_transform_stm_list ;
           [%expect
             {|
               Stm[3]!If!False!Range[0, 0]

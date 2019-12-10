@@ -41,7 +41,11 @@ let%test_module "Statement_list" =
         let test (stms : F.Subject.Block.t Or_error.t) : unit =
           Fmt.(
             pr "@[<v>%a@]@."
-              (result ~ok:(using Act_c_mini.Block.statements (list ~sep:sp (box pp_statement))) ~error:Error.pp)
+              (result
+                 ~ok:
+                   (using Act_c_mini.Block.statements
+                      (list ~sep:sp (box pp_statement)))
+                 ~error:Error.pp)
               stms)
 
         let body_stms : F.Subject.Statement.t list Lazy.t =
@@ -51,7 +55,10 @@ let%test_module "Statement_list" =
                   ~f:(Stm.On_meta.map ~f:(Fn.const F.Metadata.existing)))
 
         let body_block : F.Subject.Block.t Lazy.t =
-          Lazy.(body_stms >>| fun statements -> F.Subject.Block.make_existing ~statements ())
+          Lazy.(
+            body_stms
+            >>| fun statements ->
+            F.Subject.Block.make_existing ~statements ())
 
         let%test_module "insert_stm" =
           ( module struct
@@ -150,8 +157,8 @@ let%test_module "Statement_list" =
 
             let test_transform_list (path : F.Path.stm_list) : unit =
               test
-                (F.Path_consumers.Block.transform_stm_list path
-                   ~f:iffify ~target:(Lazy.force body_block))
+                (F.Path_consumers.Block.transform_stm_list path ~f:iffify
+                   ~target:(Lazy.force body_block))
 
             let%expect_test "try to list-transform a statement (invalid)" =
               test_transform_list in_stm_path ;
@@ -183,8 +190,8 @@ let%test_module "Statement_list" =
 
                   let quickcheck_generator =
                     Or_error.ok_exn
-                      (F.Path_producers.Block
-                       .try_gen_transform_stm_list (Lazy.force body_block))
+                      (F.Path_producers.Block.try_gen_transform_stm_list
+                         (Lazy.force body_block))
 
                   let quickcheck_shrinker =
                     (* for now *)
@@ -194,9 +201,8 @@ let%test_module "Statement_list" =
                   [%test_result: unit Or_error.t] ~here:[[%here]]
                     ~expect:(Or_error.return ())
                     (Or_error.map ~f:(Fn.const ())
-                       (F.Path_consumers.Block.transform_stm_list
-                          path ~f:Or_error.return
-                          ~target:(Lazy.force body_block))))
+                       (F.Path_consumers.Block.transform_stm_list path
+                          ~f:Or_error.return ~target:(Lazy.force body_block))))
           end )
       end )
   end )

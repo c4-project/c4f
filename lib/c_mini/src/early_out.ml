@@ -13,6 +13,8 @@ open Base
 
 module Kind = struct
   type t = Break | Return [@@deriving sexp, equal, quickcheck]
+
+  let in_loop_only : t -> bool = function Break -> true | Return -> false
 end
 
 type 'meta t = {meta: 'meta; kind: Kind.t}
