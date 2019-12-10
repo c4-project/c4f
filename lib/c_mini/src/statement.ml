@@ -100,6 +100,8 @@ module Main :
 
     let break (x : 'meta) : 'meta t = prim (Prim_statement.break x)
 
+    let continue (x : 'meta) : 'meta t = prim (Prim_statement.continue x)
+
     let return (x : 'meta) : 'meta t = prim (Prim_statement.return x)
 
     let label (x : 'meta Label.t) : 'meta t = prim (Prim_statement.label x)

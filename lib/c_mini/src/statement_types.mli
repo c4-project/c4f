@@ -77,6 +77,9 @@ module type S_statement = sig
   val break : 'meta -> 'meta t
   (** [break meta] is a break statement with metadata [meta]. *)
 
+  val continue : 'meta -> 'meta t
+  (** [continue meta] is a continue statement with metadata [meta]. *)
+
   val return : 'meta -> 'meta t
   (** [return meta] is a return statement with metadata [meta]. *)
 

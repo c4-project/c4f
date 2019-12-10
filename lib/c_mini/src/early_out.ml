@@ -12,15 +12,21 @@
 open Base
 
 module Kind = struct
-  type t = Break | Return [@@deriving sexp, equal, quickcheck]
+  type t = Break | Continue | Return [@@deriving sexp, equal, quickcheck]
 
-  let in_loop_only : t -> bool = function Break -> true | Return -> false
+  let in_loop_only : t -> bool = function
+    | Break | Continue ->
+        true
+    | Return ->
+        false
 end
 
 type 'meta t = {meta: 'meta; kind: Kind.t}
 [@@deriving fields, sexp, equal, make]
 
 let break (meta : 'meta) : 'meta t = {kind= Break; meta}
+
+let continue (meta : 'meta) : 'meta t = {kind= Continue; meta}
 
 let return (meta : 'meta) : 'meta t = {kind= Return; meta}
 

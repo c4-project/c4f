@@ -76,7 +76,7 @@ let%test_module "Statement_list" =
               [%expect
                 {|
           ("Can't use this statement-list path here"
-           (here lib/fuzz/src/path_consumers.ml:157:65) (context insert_stm)
+           (here lib/fuzz/src/path_consumers.ml:158:65) (context insert_stm)
            (path (On_range 1 2))) |}]
 
             let%expect_test "insert into list" =

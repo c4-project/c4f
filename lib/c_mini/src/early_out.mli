@@ -15,6 +15,7 @@
     that represents an abrupt break in control flow. These are:
 
     - breaks;
+    - continues;
     - returns (Mini-C doesn't support valued return statements). *)
 
 open Base
@@ -23,7 +24,7 @@ open Base
 
 module Kind : sig
   (** Type of early-out kinds. *)
-  type t = Break | Return [@@deriving sexp, equal, quickcheck]
+  type t = Break | Continue | Return [@@deriving sexp, equal, quickcheck]
 
   val in_loop_only : t -> bool
   (** [in_loop_only kind] gets whether [kind] is valid only in loops. *)
@@ -41,17 +42,18 @@ val make : meta:'meta -> kind:Kind.t -> 'meta t
     metadata [meta]. *)
 
 val break : 'meta -> 'meta t
-(** [break m] creates a break statement with metadata [m]. *)
+(** [break m] creates a break early-out with metadata [m]. *)
+
+val continue : 'meta -> 'meta t
+(** [continue m] creates a continue early-out with metadata [m]. *)
 
 val return : 'meta -> 'meta t
-(** [return m] creates a return statement with metadata [m]. *)
+(** [return m] creates a return early-out with metadata [m]. *)
 
 (** {2 Accessors} *)
 
 val meta : 'meta t -> 'meta
 (** [kind x] gets [x]'s metadata. *)
-
-(** {3 Kinds} *)
 
 val kind : 'meta t -> Kind.t
 (** [kind x] gets the kind of early-out that [x] is. *)

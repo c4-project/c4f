@@ -29,6 +29,8 @@ include P
 
 let break (meta : 'meta) : 'meta t = Early_out (Early_out.break meta)
 
+let continue (meta : 'meta) : 'meta t = Early_out (Early_out.continue meta)
+
 let return (meta : 'meta) : 'meta t = Early_out (Early_out.return meta)
 
 let reduce (type meta result) (x : meta t)

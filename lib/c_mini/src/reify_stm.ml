@@ -54,6 +54,8 @@ let early_out (e : _ Early_out.t) : Ast.Stm.t =
   match Early_out.kind e with
   | Break ->
       Ast.Stm.Break
+  | Continue ->
+      Ast.Stm.Continue
   | Return ->
       Ast.Stm.Return None
 

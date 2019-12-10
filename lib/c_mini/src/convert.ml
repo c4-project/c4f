@@ -443,6 +443,8 @@ let rec stm : Ast.Stm.t -> unit Statement.t Or_error.t = function
       expr_stm e
   | If {cond; t_branch; f_branch} ->
       model_if stm cond t_branch f_branch
+  | Continue ->
+      Or_error.return (Statement.continue ())
   | Break ->
       Or_error.return (Statement.break ())
   | Return None ->
@@ -461,7 +463,7 @@ let rec stm : Ast.Stm.t -> unit Statement.t Or_error.t = function
       Or_error.return (Statement.label (Label.of_c_id l))
   | Goto l ->
       Or_error.return (Statement.goto (Label.of_c_id l))
-  | (Continue | Label _ | Compound _ | Switch _ | For _) as s ->
+  | (Label _ | Compound _ | Switch _ | For _) as s ->
       Or_error.error_s
         [%message "Unsupported statement" ~got:(s : Ast.Stm.t)]
 

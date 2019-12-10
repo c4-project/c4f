@@ -59,6 +59,9 @@ val early_out : 'meta Early_out.t -> 'meta t
 val break : 'meta -> 'meta t
 (** [break m] creates a break statement with metadata [m]. *)
 
+val continue : 'meta -> 'meta t
+(** [continue m] creates a continue statement with metadata [m]. *)
+
 val return : 'meta -> 'meta t
 (** [return m] creates a return statement with metadata [m]. *)
 
