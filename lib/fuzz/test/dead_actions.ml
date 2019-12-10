@@ -41,6 +41,8 @@ let%test_module "Early_out" =
           if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
           else { break; }
           if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
+          do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
+          5);
       } |}]
 
     let%expect_test "valid return on example program" =
@@ -55,5 +57,7 @@ let%test_module "Early_out" =
           if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
           else { return ; }
           if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
+          do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
+          5);
       } |}]
   end )

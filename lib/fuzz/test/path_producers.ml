@@ -84,11 +84,12 @@ let%test_module "Statement_list" =
               Insert[3]
               Insert[4]
               Insert[5]
-              Stm[3]!If!False!Insert[0]
+              Insert[6]
               Stm[3]!If!True!Insert[1]
               Stm[4]!If!False!Insert[0]
               Stm[4]!If!True!Insert[0]
-              Stm[4]!If!True!Insert[1] |}]
+              Stm[5]!Loop!Body!Insert[0]
+              Stm[5]!Loop!Body!Insert[1] |}]
 
         let%expect_test "try_gen_insert_stm with dead-code filtering" =
           test
@@ -98,7 +99,9 @@ let%test_module "Statement_list" =
             {|
             Stm[3]!If!False!Insert[0]
             Stm[4]!If!True!Insert[0]
-            Stm[4]!If!True!Insert[1] |}]
+            Stm[4]!If!True!Insert[1]
+            Stm[5]!Loop!Body!Insert[0]
+            Stm[5]!Loop!Body!Insert[1] |}]
 
         let%expect_test "try_gen_transform_stm with no filtering" =
           test Act_fuzz.Path_producers.Statement_list.try_gen_transform_stm ;
@@ -109,7 +112,9 @@ let%test_module "Statement_list" =
             Stm[2]!This
             Stm[3]!If!True!Stm[0]!This
             Stm[3]!This
-            Stm[4]!If!True!Stm[0]!This |}]
+            Stm[4]!If!True!Stm[0]!This
+            Stm[5]!Loop!Body!Stm[0]!This
+            Stm[5]!This |}]
 
         let%expect_test "try_gen_transform_stm with filtering to if \
                          statements" =
@@ -117,8 +122,7 @@ let%test_module "Statement_list" =
             (Act_fuzz.Path_producers.Statement_list.try_gen_transform_stm
                ~filter:
                  Act_fuzz.Path_filter.(empty |> final_if_statements_only)) ;
-          [%expect
-            {|
+          [%expect {|
             Stm[3]!This
             Stm[4]!This |}]
 
@@ -127,7 +131,15 @@ let%test_module "Statement_list" =
             (Act_fuzz.Path_producers.Statement_list.try_gen_transform_stm
                ~filter:Act_fuzz.Path_filter.(empty |> in_dead_code_only)) ;
           [%expect
-            {| Stm[4]!If!True!Stm[0]!This |}]
+            {|
+              Stm[4]!If!True!Stm[0]!This
+              Stm[5]!Loop!Body!Stm[0]!This |}]
+
+        let%expect_test "try_gen_transform_stm with filtering to loops" =
+          test
+            (Act_fuzz.Path_producers.Statement_list.try_gen_transform_stm
+               ~filter:Act_fuzz.Path_filter.(empty |> in_loop_only)) ;
+          [%expect {| Stm[5]!Loop!Body!Stm[0]!This |}]
 
         let%expect_test "gen_transform_stm_list" =
           let gen =
@@ -141,11 +153,12 @@ let%test_module "Statement_list" =
               Stm[3]!If!True!Range[0, 0]
               Stm[3]!If!True!Range[1, 0]
               Stm[4]!If!False!Range[0, 0]
+              Stm[4]!If!True!Range[0, 0]
               Stm[4]!If!True!Range[1, 0]
-              Range[0, 2]
-              Range[0, 4]
-              Range[1, 2]
+              Stm[5]!Loop!Body!Range[0, 0]
+              Range[3, 0]
               Range[3, 1]
-              Range[5, 0] |}]
+              Range[5, 0]
+              Range[6, 0] |}]
       end )
   end )

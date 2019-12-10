@@ -41,8 +41,64 @@ module Test_data = struct
       in
       Act_fuzz.State.make ~vars ~labels ())
 
-  let body_stms : Src.Subject.Statement.t list Lazy.t =
+  let sample_known_true_if : Src.Subject.Statement.t Lazy.t =
     lazy
+      Act_c_mini.(
+        Statement.(
+          if_stm
+            (If.make
+               ~cond:
+                 Expression.(
+                   Infix.(
+                     of_variable_str_exn "foo" == of_variable_str_exn "y"))
+               ~t_branch:
+                 (Src.Subject.Block.make_generated
+                    ~statements:
+                      [ atomic_store
+                          (Atomic_store.make ~src:(Expression.int_lit 56)
+                             ~dst:(Address.of_variable_str_exn "x")
+                             ~mo:Mem_order.Seq_cst) ]
+                    ())
+               ~f_branch:(Src.Subject.Block.make_dead_code ()))))
+
+  let sample_known_false_if : Src.Subject.Statement.t Lazy.t =
+    lazy
+      Act_c_mini.(
+        Statement.(
+          if_stm
+            (If.make ~cond:Expression.falsehood
+               ~t_branch:
+                 (Src.Subject.Block.make_dead_code
+                    ~statements:
+                      [ atomic_store
+                          (Atomic_store.make ~src:(Expression.int_lit 95)
+                             ~dst:(Address.of_variable_str_exn "y")
+                             ~mo:Mem_order.Seq_cst) ]
+                    ())
+               ~f_branch:(Src.Subject.Block.make_generated ()))))
+
+  let sample_once_do_while : Src.Subject.Statement.t Lazy.t =
+    lazy
+      Act_c_mini.(
+        Statement.(
+          while_loop
+            (While.make
+               ~cond:Expression.(Infix.(int_lit 4 == int_lit 5))
+               ~body:
+                 (Src.Subject.Block.make_dead_code
+                    ~statements:
+                      [ atomic_store
+                          (Atomic_store.make ~src:(Expression.int_lit 44)
+                             ~dst:(Address.of_variable_str_exn "x")
+                             ~mo:Mem_order.Seq_cst) ]
+                    ())
+               ~kind:`Do_while)))
+
+  let body_stms : Src.Subject.Statement.t list Lazy.t =
+    Lazy.Let_syntax.(
+      let%map sample_known_true_if = sample_known_true_if
+      and sample_known_false_if = sample_known_false_if
+      and sample_once_do_while = sample_once_do_while in
       Act_c_mini.(
         Statement.
           [ atomic_store
@@ -55,32 +111,9 @@ module Test_data = struct
                  ~src:(Expression.of_variable_str_exn "foo")
                  ~dst:(Address.of_variable_str_exn "y")
                  ~mo:Mem_order.Relaxed)
-          ; if_stm
-              (If.make
-                 ~cond:
-                   Expression.(
-                     Infix.(
-                       of_variable_str_exn "foo" == of_variable_str_exn "y"))
-                 ~t_branch:
-                   (Src.Subject.Block.make_generated
-                      ~statements:
-                        [ atomic_store
-                            (Atomic_store.make ~src:(Expression.int_lit 56)
-                               ~dst:(Address.of_variable_str_exn "x")
-                               ~mo:Mem_order.Seq_cst) ]
-                      ())
-                 ~f_branch:(Src.Subject.Block.make_dead_code ()))
-          ; if_stm
-              (If.make ~cond:Expression.falsehood
-                 ~t_branch:
-                   (Src.Subject.Block.make_dead_code
-                      ~statements:
-                        [ atomic_store
-                            (Atomic_store.make ~src:(Expression.int_lit 95)
-                               ~dst:(Address.of_variable_str_exn "y")
-                               ~mo:Mem_order.Seq_cst) ]
-                      ())
-                 ~f_branch:(Src.Subject.Block.make_generated ())) ])
+          ; sample_known_true_if
+          ; sample_known_false_if
+          ; sample_once_do_while ]))
 
   let threads : Src.Subject.Thread.t list Lazy.t =
     Lazy.Let_syntax.(
@@ -134,6 +167,8 @@ let%test_module "using sample environment" =
             atomic_store_explicit(y, foo, memory_order_relaxed);
             if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
             if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
+            do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
+            5);
         } |}]
 
     let%expect_test "list_to_litmus: sample threads with interspersed \
@@ -154,5 +189,7 @@ let%test_module "using sample environment" =
             atomic_store_explicit(y, foo, memory_order_relaxed);
             if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
             if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
+            do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
+            5);
         } |}]
   end )

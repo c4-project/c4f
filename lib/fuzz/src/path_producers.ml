@@ -22,7 +22,7 @@ end
 (* Helpers for making path generators. *)
 
 let check_ok (type a) (x : a) ~(filter : Path_filter.t) : a Or_error.t =
-  Tx.Or_error.tee_m x ~f:(fun (_:a) -> Path_filter.check filter)
+  Tx.Or_error.tee_m x ~f:(fun (_ : a) -> Path_filter.check filter)
 
 let lift_over_block ?(filter : Path_filter.t = Path_filter.empty)
     (block : Subject.Block.t)
@@ -75,11 +75,11 @@ module rec Statement :
       Path.Stm.t Opt_gen.t =
     Or_error.Let_syntax.(
       let%bind () =
-        Or_error.tag (Path_filter.check_final_statement filter ~stm)
+        Or_error.tag
+          (Path_filter.check_final_statement filter ~stm)
           ~tag:"Generated 'this-statement' path failed filtering checks"
       in
-      Opt_gen.return Path.Stm.this_stm
-    )
+      Opt_gen.return Path.Stm.this_stm)
 
   let try_gen_transform_stm ?(filter : Path_filter.t = Path_filter.empty)
       (stm : Subject.Statement.t) : Path.Stm.t Opt_gen.t =

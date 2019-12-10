@@ -10,6 +10,7 @@
    project root for more information. *)
 
 open Base
+
 open struct
   module Tx = Travesty_base_exts
 end
@@ -57,8 +58,8 @@ module End_check = struct
         Act_c_mini.Statement.is_if_statement stm
 
   let check (check : t) ~(stm : Subject.Statement.t) : unit Or_error.t =
-    Tx.Or_error.unless_m (is_ok check ~stm)
-      ~f:(fun () -> Or_error.errorf "Statement failed check: %s" (to_string check))
+    Tx.Or_error.unless_m (is_ok check ~stm) ~f:(fun () ->
+        Or_error.errorf "Statement failed check: %s" (to_string check))
 end
 
 type t =
@@ -122,15 +123,12 @@ let error_of_flag (flag : Flag.t) : unit Or_error.t =
   Or_error.errorf "Unmet flag condition: %s" (Flag.to_string flag)
 
 let check (filter : t) : unit Or_error.t =
-  filter
-  |> unmet_flags
-  |> Set.to_list
+  filter |> unmet_flags |> Set.to_list
   |> Tx.Or_error.combine_map_unit ~f:error_of_flag
 
-let check_final_statement (filter : t) ~(stm : Subject.Statement.t) : unit Or_error.t =
+let check_final_statement (filter : t) ~(stm : Subject.Statement.t) :
+    unit Or_error.t =
   let end_checks =
-    filter.end_checks
-    |> Set.to_list
-    |> List.map ~f:(End_check.check ~stm)
+    filter.end_checks |> Set.to_list |> List.map ~f:(End_check.check ~stm)
   in
   Or_error.combine_errors_unit (check filter :: end_checks)

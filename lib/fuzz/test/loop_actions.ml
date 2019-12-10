@@ -57,6 +57,8 @@ let%test_module "Surround" =
               atomic_store_explicit(y, foo, memory_order_relaxed);
               if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
               if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
+              do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
+              5);
           } |}]
 
     let%expect_test "global dependencies after running" =
@@ -91,5 +93,7 @@ let%test_module "Invert" =
             if (!(foo == y)) {  } else
             { atomic_store_explicit(x, 56, memory_order_seq_cst); }
             if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
+            do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
+            5);
         } |}]
   end )
