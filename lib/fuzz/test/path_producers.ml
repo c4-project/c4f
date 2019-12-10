@@ -53,9 +53,10 @@ let%test_module "Statement_list" =
         (* These test endpoints mainly serve to provide early warning if the
            way that path generators work has changed. *)
 
-        let print_sample (generator : Act_fuzz.Path.stm_list Generator.t) :
+        let print_sample (generator : Act_fuzz.Path.Stms.t Generator.t) :
             unit =
           Act_utils.My_quickcheck.print_sample
+            ~printer:(Fmt.pr "@[%a@]@." Act_fuzz.Path.Stms.pp)
             ( module struct
               type t = Act_fuzz.Path.stm_list [@@deriving compare, sexp]
 
@@ -77,17 +78,17 @@ let%test_module "Statement_list" =
           test Act_fuzz.Path_producers.Statement_list.try_gen_insert_stm ;
           [%expect
             {|
-              (Insert 0)
-              (Insert 1)
-              (Insert 2)
-              (Insert 3)
-              (Insert 4)
-              (Insert 5)
-              (In_stm 3 (In_if (In_block (false (Insert 0)))))
-              (In_stm 3 (In_if (In_block (true (Insert 1)))))
-              (In_stm 4 (In_if (In_block (false (Insert 0)))))
-              (In_stm 4 (In_if (In_block (true (Insert 0)))))
-              (In_stm 4 (In_if (In_block (true (Insert 1))))) |}]
+              Insert[0]
+              Insert[1]
+              Insert[2]
+              Insert[3]
+              Insert[4]
+              Insert[5]
+              Stm[3]!If!False!Insert[0]
+              Stm[3]!If!True!Insert[1]
+              Stm[4]!If!False!Insert[0]
+              Stm[4]!If!True!Insert[0]
+              Stm[4]!If!True!Insert[1] |}]
 
         let%expect_test "try_gen_insert_stm with dead-code filtering" =
           test
@@ -95,20 +96,20 @@ let%test_module "Statement_list" =
                ~filter:Act_fuzz.Path_filter.(empty |> in_dead_code_only)) ;
           [%expect
             {|
-            (In_stm 3 (In_if (In_block (false (Insert 0)))))
-            (In_stm 4 (In_if (In_block (true (Insert 0)))))
-            (In_stm 4 (In_if (In_block (true (Insert 1))))) |}]
+            Stm[3]!If!False!Insert[0]
+            Stm[4]!If!True!Insert[0]
+            Stm[4]!If!True!Insert[1] |}]
 
         let%expect_test "try_gen_transform_stm with no filtering" =
           test Act_fuzz.Path_producers.Statement_list.try_gen_transform_stm ;
           [%expect
             {|
-            (In_stm 0 This_stm)
-            (In_stm 1 This_stm)
-            (In_stm 2 This_stm)
-            (In_stm 3 (In_if (In_block (true (In_stm 0 This_stm)))))
-            (In_stm 3 This_stm)
-            (In_stm 4 (In_if (In_block (true (In_stm 0 This_stm))))) |}]
+            Stm[0]!This
+            Stm[1]!This
+            Stm[2]!This
+            Stm[3]!If!True!Stm[0]!This
+            Stm[3]!This
+            Stm[4]!If!True!Stm[0]!This |}]
 
         let%expect_test "try_gen_transform_stm with filtering to if \
                          statements" =
@@ -118,15 +119,15 @@ let%test_module "Statement_list" =
                  Act_fuzz.Path_filter.(empty |> final_if_statements_only)) ;
           [%expect
             {|
-            (In_stm 3 This_stm)
-            (In_stm 4 This_stm) |}]
+            Stm[3]!This
+            Stm[4]!This |}]
 
         let%expect_test "try_gen_transform_stm with filtering to dead code" =
           test
             (Act_fuzz.Path_producers.Statement_list.try_gen_transform_stm
                ~filter:Act_fuzz.Path_filter.(empty |> in_dead_code_only)) ;
           [%expect
-            {| (In_stm 4 (In_if (In_block (true (In_stm 0 This_stm))))) |}]
+            {| Stm[4]!If!True!Stm[0]!This |}]
 
         let%expect_test "gen_transform_stm_list" =
           let gen =
@@ -136,15 +137,15 @@ let%test_module "Statement_list" =
           print_sample (Or_error.ok_exn gen) ;
           [%expect
             {|
-              (In_stm 3 (In_if (In_block (false (On_range 0 0)))))
-              (In_stm 3 (In_if (In_block (true (On_range 0 0)))))
-              (In_stm 3 (In_if (In_block (true (On_range 1 0)))))
-              (In_stm 4 (In_if (In_block (false (On_range 0 0)))))
-              (In_stm 4 (In_if (In_block (true (On_range 1 0)))))
-              (On_range 0 2)
-              (On_range 0 4)
-              (On_range 1 2)
-              (On_range 3 1)
-              (On_range 5 0) |}]
+              Stm[3]!If!False!Range[0, 0]
+              Stm[3]!If!True!Range[0, 0]
+              Stm[3]!If!True!Range[1, 0]
+              Stm[4]!If!False!Range[0, 0]
+              Stm[4]!If!True!Range[1, 0]
+              Range[0, 2]
+              Range[0, 4]
+              Range[1, 2]
+              Range[3, 1]
+              Range[5, 0] |}]
       end )
   end )
