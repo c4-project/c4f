@@ -230,6 +230,7 @@ and Loop :
             ?filter:Path_filter.t
          -> Subject.Statement.t list
          -> Path.Stms.t Opt_gen.t) : Path.Loop.t Opt_gen.t =
+    let filter = Path_filter.update_with_loop filter in
     Opt_gen.map
       (lift_over_block ~f ~filter (Stm.While.body loop))
       ~f:Path.Loop.in_body

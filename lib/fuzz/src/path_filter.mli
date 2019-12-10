@@ -39,7 +39,15 @@ val in_dead_code_only : t -> t
 (** [in_dead_code_only filter] adds to [filter] the restriction that any path
     must travel through at least one dead-code block. *)
 
+val in_loop_only : t -> t
+(** [in_loop_only filter] adds to [filter] the restriction that any path must
+    travel through at least one loop. *)
+
 (** {1 Callbacks for the path producers} *)
+
+val update_with_loop : t -> t
+(** [update_with_loop filter] updates the internal filter compliance records
+    in [filter] with the fact that the path just passed into a loop. *)
 
 val update_with_block_metadata : t -> Metadata.t -> t
 (** [update_with_block_metadata filter block_metadata] updates the internal

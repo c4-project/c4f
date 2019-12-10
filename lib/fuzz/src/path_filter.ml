@@ -64,25 +64,49 @@ let empty : t =
   ; req_flags= Set.empty (module Flag)
   ; end_checks= Set.empty (module End_check) }
 
-let require_flag (existing : t) ~(flag : Flag.t) : t =
-  {existing with req_flags= Set.add existing.req_flags flag}
+module Obs_flags = struct
+  let observe_flag (existing : t) ~(flag : Flag.t) : t =
+    {existing with obs_flags= Set.add existing.obs_flags flag}
 
-let require_end_check (existing : t) ~(check : End_check.t) : t =
-  {existing with end_checks= Set.add existing.end_checks check}
+  let observe_flags (existing : t) ~(flags : Set.M(Flag).t) : t =
+    {existing with obs_flags= Set.union existing.obs_flags flags}
 
-let in_dead_code_only : t -> t = require_flag ~flag:In_dead_code
+  let update_with_loop : t -> t = observe_flag ~flag:In_loop
 
-let final_if_statements_only : t -> t =
-  require_end_check ~check:Is_if_statement
-
-let update_with_block_metadata (existing : t) (m : Metadata.t) : t =
-  let new_flags =
+  (* Moving this into the Flag module'd require a lot of module gymnastics to
+     get the set module correct, so we don't. *)
+  let flags_of_metadata (m : Metadata.t) : Set.M(Flag).t =
     Flag.metadata_predicates
     |> List.filter_map ~f:(fun (flag, predicate) ->
            Option.some_if (predicate m) flag)
     |> Set.of_list (module Flag)
-  in
-  {existing with obs_flags= Set.union existing.obs_flags new_flags}
+
+  let update_with_block_metadata (existing : t) (m : Metadata.t) : t =
+    observe_flags existing ~flags:(flags_of_metadata m)
+end
+
+include Obs_flags
+
+module Req_flags = struct
+  let require_flag (existing : t) ~(flag : Flag.t) : t =
+    {existing with req_flags= Set.add existing.req_flags flag}
+
+  let in_dead_code_only : t -> t = require_flag ~flag:In_dead_code
+
+  let in_loop_only : t -> t = require_flag ~flag:In_loop
+end
+
+include Req_flags
+
+module End_checks = struct
+  let require_end_check (existing : t) ~(check : End_check.t) : t =
+    {existing with end_checks= Set.add existing.end_checks check}
+
+  let final_if_statements_only : t -> t =
+    require_end_check ~check:Is_if_statement
+end
+
+include End_checks
 
 let is_ok (filter : t) : bool =
   (* TODO(@MattWindsor91): give a proper or-error here *)
