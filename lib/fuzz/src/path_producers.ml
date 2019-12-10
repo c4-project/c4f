@@ -10,17 +10,19 @@
    project root for more information. *)
 
 open Base
-module Tx = Travesty_base_exts
-module Q = Base_quickcheck
-module Stm = Act_c_mini.Statement
-module Fun = Act_c_mini.Function
-module Prog = Act_c_mini.Program
+
+open struct
+  module Tx = Travesty_base_exts
+  module Q = Base_quickcheck
+  module Stm = Act_c_mini.Statement
+  module Fun = Act_c_mini.Function
+  module Prog = Act_c_mini.Program
+end
 
 (* Helpers for making path generators. *)
 
 let check_ok (type a) (x : a) ~(filter : Path_filter.t) : a Or_error.t =
-  if Path_filter.is_ok filter then Or_error.return x
-  else Or_error.error_string "This path failed a filter check"
+  Tx.Or_error.tee_m x ~f:(fun (_:a) -> Path_filter.check filter)
 
 let lift_over_block ?(filter : Path_filter.t = Path_filter.empty)
     (block : Subject.Block.t)
@@ -71,13 +73,13 @@ module rec Statement :
 
   let this_stm_if_ok (stm : Subject.Statement.t) ~(filter : Path_filter.t) :
       Path.Stm.t Opt_gen.t =
-    if Path_filter.is_final_statement_ok filter ~stm then
+    Or_error.Let_syntax.(
+      let%bind () =
+        Or_error.tag (Path_filter.check_final_statement filter ~stm)
+          ~tag:"Generated 'this-statement' path failed filtering checks"
+      in
       Opt_gen.return Path.Stm.this_stm
-    else
-      Or_error.error_s
-        [%message
-          "Generated 'this-statement' path failed filtering checks"
-            ~stm:(stm : Subject.Statement.t)]
+    )
 
   let try_gen_transform_stm ?(filter : Path_filter.t = Path_filter.empty)
       (stm : Subject.Statement.t) : Path.Stm.t Opt_gen.t =

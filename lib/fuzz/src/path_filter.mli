@@ -19,6 +19,8 @@
     these predicates, as well as tracking information about the path as it is
     constructed that can be filtered at the end of its construction. *)
 
+open Base
+
 type t
 (** Opaque type of path filters. *)
 
@@ -57,14 +59,14 @@ val update_with_block_metadata : t -> Metadata.t -> t
 
 (** {1 Consuming filters} *)
 
-val is_ok : t -> bool
-(** [is_ok filter ~stm] should be applied before constructing a path that
+val check : t -> unit Or_error.t
+(** [check filter ~stm] should be applied before constructing a path that
     doesn't have any more specific filter consume function, and checks
     whether the path has been constructed correctly according to the
     predicates in [filter]. *)
 
-val is_final_statement_ok : t -> stm:Subject.Statement.t -> bool
+val check_final_statement : t -> stm:Subject.Statement.t -> unit Or_error.t
 (** [is_final_statement_ok filter ~stm] should be applied before constructing
     a [This_stm] reference to [stm], and checks whether such a final
     statement destination is ok according to the predicates in [filter]. It
-    subsumes [is_ok]. *)
+    subsumes [check]. *)

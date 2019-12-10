@@ -10,6 +10,9 @@
    project root for more information. *)
 
 open Base
+open struct
+  module Tx = Travesty_base_exts
+end
 
 (* This module used to be highly functionalised (with each check being a
    predicate function collected in a list); we replaced this with the present
@@ -48,10 +51,14 @@ module End_check = struct
   include M
   include Act_utils.Enum.Extend_table (M)
 
-  let check (check : t) ~(stm : Subject.Statement.t) : bool =
+  let is_ok (check : t) ~(stm : Subject.Statement.t) : bool =
     match check with
     | Is_if_statement ->
         Act_c_mini.Statement.is_if_statement stm
+
+  let check (check : t) ~(stm : Subject.Statement.t) : unit Or_error.t =
+    Tx.Or_error.unless_m (is_ok check ~stm)
+      ~f:(fun () -> Or_error.errorf "Statement failed check: %s" (to_string check))
 end
 
 type t =
@@ -108,11 +115,22 @@ end
 
 include End_checks
 
-let is_ok (filter : t) : bool =
-  (* TODO(@MattWindsor91): give a proper or-error here *)
-  let unmet_flags = Set.diff filter.req_flags filter.obs_flags in
-  Set.is_empty unmet_flags
+let unmet_flags (filter : t) : Set.M(Flag).t =
+  Set.diff filter.req_flags filter.obs_flags
 
-let is_final_statement_ok (filter : t) ~(stm : Subject.Statement.t) : bool =
-  is_ok filter
-  && Set.for_all filter.end_checks ~f:(fun x -> End_check.check x ~stm)
+let error_of_flag (flag : Flag.t) : unit Or_error.t =
+  Or_error.errorf "Unmet flag condition: %s" (Flag.to_string flag)
+
+let check (filter : t) : unit Or_error.t =
+  filter
+  |> unmet_flags
+  |> Set.to_list
+  |> Tx.Or_error.combine_map_unit ~f:error_of_flag
+
+let check_final_statement (filter : t) ~(stm : Subject.Statement.t) : unit Or_error.t =
+  let end_checks =
+    filter.end_checks
+    |> Set.to_list
+    |> List.map ~f:(End_check.check ~stm)
+  in
+  Or_error.combine_errors_unit (check filter :: end_checks)
