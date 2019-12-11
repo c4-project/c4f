@@ -83,6 +83,10 @@ module type S_statement = sig
   val return : 'meta -> 'meta t
   (** [return meta] is a return statement with metadata [meta]. *)
 
+  val procedure_call : 'meta Call.t -> 'meta t
+  (** [procedure_call a] lifts a procedure (non-value-returning function) call
+      [a] to a statement. *)
+
   (** {3 Accessors} *)
 
   val reduce :

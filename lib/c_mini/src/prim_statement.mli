@@ -32,13 +32,6 @@ type 'meta t [@@deriving sexp, equal]
 val assign : Assign.t -> 'meta t
 (** [assign a] lifts an assignment [a] to a primitive statement. *)
 
-val atomic_store : Atomic_store.t -> 'meta t
-(** [atomic_store a] lifts an atomic store [a] to a primitive statement. *)
-
-val atomic_cmpxchg : Atomic_cmpxchg.t -> 'meta t
-(** [atomic_cmpxchg a] lifts an atomic compare-exchange [a] to a primitive
-    statement. *)
-
 val label : 'meta Label.t -> 'meta t
 (** [label l] lifts a label [l] to a primitive statement. *)
 
@@ -49,12 +42,25 @@ val nop : 'meta -> 'meta t
 (** [nop m] creates a no-op (semicolon) primitive statement with metadata
     [m]. *)
 
-val early_out : 'meta Early_out.t -> 'meta t
-(** [early_out e] lifts an early-out statement [e] to a primitive statement. *)
+val procedure_call : 'meta Call.t -> 'meta t
+(** [procedure_call a] lifts a procedure (non-value-returning function) call
+    [a] to a primitive statement. *)
+
+(** {2 Atomics} *)
+
+val atomic_store : Atomic_store.t -> 'meta t
+(** [atomic_store a] lifts an atomic store [a] to a primitive statement. *)
+
+val atomic_cmpxchg : Atomic_cmpxchg.t -> 'meta t
+(** [atomic_cmpxchg a] lifts an atomic compare-exchange [a] to a primitive
+    statement. *)
 
 (** {2 Shorthand for early-out statements}
 
     See {!Early_out}. *)
+
+val early_out : 'meta Early_out.t -> 'meta t
+(** [early_out e] lifts an early-out statement [e] to a primitive statement. *)
 
 val break : 'meta -> 'meta t
 (** [break m] creates a break statement with metadata [m]. *)
@@ -76,6 +82,7 @@ val reduce :
   -> label:('meta Label.t -> 'result)
   -> goto:('meta Label.t -> 'result)
   -> nop:('meta -> 'result)
+  -> procedure_call:('meta Call.t -> 'result)
   -> 'result
 (** [reduce x ~assign ~atomic_store ~atomic_cmpxchg ~early_out ~nop] reduces
     a primitive statement [x] to a particular result type by applying the
@@ -94,6 +101,7 @@ module Base_map (M : Monad.S) : sig
     -> label:('m1 Label.t -> 'm2 Label.t M.t)
     -> goto:('m1 Label.t -> 'm2 Label.t M.t)
     -> nop:('m1 -> 'm2 M.t)
+    -> procedure_call:('m1 Call.t -> 'm2 Call.t M.t)
     -> 'm2 t M.t
   (** [bmap x ~assign ~atomic_store ~atomic_cmpxchg ~early_out ~nop] maps the
       appropriate function over [x]. *)

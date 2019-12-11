@@ -230,25 +230,6 @@ let expr_to_memory_order (expr : Ast.Expr.t) : Mem_order.t Or_error.t =
             [%message
               "Unsupported memory order" ~got:(id : Act_common.C_id.t)])
 
-(** [call call_table func arguments] models a function call with function
-    [func] and arguments [arguments], using the modellers in [call_table]. *)
-let call
-    (call_table : (Ast.Expr.t list -> 'a Or_error.t) Named.Alist.t Lazy.t)
-    (func : Ast.Expr.t) (arguments : Ast.Expr.t list) : 'a Or_error.t =
-  let open Or_error.Let_syntax in
-  let%bind func_name = expr_to_identifier func in
-  let%bind call_handler =
-    func_name
-    |> List.Assoc.find ~equal:Ac.C_id.equal (Lazy.force call_table)
-    |> Result.of_option
-         ~error:
-           (Error.create_s
-              [%message
-                "Unsupported function in expression position"
-                  ~got:(func_name : Ac.C_id.t)])
-  in
-  call_handler arguments
-
 let model_atomic_load_explicit : Ast.Expr.t list -> Expression.t Or_error.t =
   function
   | [raw_src; raw_mo] ->
@@ -263,9 +244,27 @@ let model_atomic_load_explicit : Ast.Expr.t list -> Expression.t Or_error.t =
             ~got:(args : Ast.Expr.t list)]
 
 let expr_call_table :
-    (Ast.Expr.t list -> Expression.t Or_error.t) Named.Alist.t Lazy.t =
+    (Ast.Expr.t list -> Expression.t Or_error.t) Map.M(Ac.C_id).t Lazy.t =
   lazy
-    [(Ac.C_id.of_string "atomic_load_explicit", model_atomic_load_explicit)]
+    (Map.of_alist_exn (module Ac.C_id)
+       [(Ac.C_id.of_string "atomic_load_explicit", model_atomic_load_explicit)])
+
+let function_call
+    (func : Ast.Expr.t) (arguments : Ast.Expr.t list) : Expression.t Or_error.t =
+  Or_error.Let_syntax.(
+    let%bind func_name = expr_to_identifier func in
+    let%bind call_handler =
+      func_name
+      |> Map.find (Lazy.force expr_call_table)
+      |> Result.of_option
+        ~error:
+          (Error.create_s
+             [%message
+               "Unsupported function in expression position"
+                 ~got:(func_name : Ac.C_id.t)])
+    in
+    call_handler arguments
+  )
 
 let identifier_to_expr (id : Ac.C_id.t) : Expression.t =
   match Ac.C_id.to_string id with
@@ -327,7 +326,7 @@ let rec expr : Ast.Expr.t -> Expression.t Or_error.t =
     | Prefix (op, expr) ->
         model_prefix op expr
     | Call {func; arguments} ->
-        call expr_call_table func arguments
+        function_call func arguments
     | ( Postfix _
       | Ternary _
       | Cast _
@@ -370,11 +369,34 @@ let model_atomic_cmpxchg : Ast.Expr.t list -> unit Statement.t Or_error.t =
             ~got:(args : Ast.Expr.t list)]
 
 let expr_stm_call_table :
-    (Ast.Expr.t list -> unit Statement.t Or_error.t) Named.Alist.t Lazy.t =
+    (Ast.Expr.t list -> unit Statement.t Or_error.t) Map.M(Ac.C_id).t Lazy.t =
   lazy
-    [ (Ac.C_id.of_string "atomic_store_explicit", model_atomic_store)
-    ; ( Ac.C_id.of_string "atomic_compare_exchange_strong_explicit"
-      , model_atomic_cmpxchg ) ]
+    (Map.of_alist_exn (module Ac.C_id)
+       [ (Ac.C_id.of_string "atomic_store_explicit", model_atomic_store)
+       ; ( Ac.C_id.of_string "atomic_compare_exchange_strong_explicit"
+         , model_atomic_cmpxchg ) ])
+
+let arbitrary_procedure_call
+    (function_id : Ac.C_id.t)
+    (raw_arguments : Ast.Expr.t list)
+  : unit Statement.t Or_error.t =
+  Or_error.Let_syntax.(
+    let%map arguments = Tx.Or_error.combine_map ~f:expr raw_arguments in
+    (Statement.procedure_call
+       (Call.make
+          ~metadata:()
+          ~arguments
+          ~function_id:function_id
+          ())))
+
+let procedure_call
+    (func : Ast.Expr.t) (arguments : Ast.Expr.t list) : unit Statement.t Or_error.t =
+  Or_error.Let_syntax.(
+    let%bind function_id = expr_to_identifier func in
+    match Map.find (Lazy.force expr_stm_call_table) function_id with
+    | Some call_handler -> call_handler arguments
+    | None -> arbitrary_procedure_call function_id arguments
+  )
 
 let expr_stm : Ast.Expr.t -> unit Statement.t Or_error.t = function
   | Binary (l, `Assign, r) ->
@@ -382,7 +404,7 @@ let expr_stm : Ast.Expr.t -> unit Statement.t Or_error.t = function
       let%map lvalue = expr_to_lvalue l and rvalue = expr r in
       Statement.assign (Assign.make ~lvalue ~rvalue)
   | Call {func; arguments} ->
-      call expr_stm_call_table func arguments
+      procedure_call func arguments
   | ( Brackets _
     | Constant _
     | Prefix _

@@ -23,5 +23,6 @@ let command : Command.t =
     [ ("delitmus", Delitmus.command)
     ; ("dump-header", Dump_header.command)
     ; ("license", Common_cmd.License.command)
+    ; ("make-stub", Make_stub.command)
     ; ("modify-header", Modify_header.command)
     ; ("replace-header", Replace_header.command) ]

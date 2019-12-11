@@ -22,6 +22,7 @@ module P = struct
     | Label of 'meta Label.t
     | Goto of 'meta Label.t
     | Nop of 'meta
+    | Procedure_call of 'meta Call.t
   [@@deriving variants, sexp, equal]
 end
 
@@ -39,19 +40,23 @@ let reduce (type meta result) (x : meta t)
     ~(atomic_cmpxchg : (* meta *) Atomic_cmpxchg.t -> result)
     ~(early_out : meta Early_out.t -> result)
     ~(label : meta Label.t -> result) ~(goto : meta Label.t -> result)
-    ~(nop : meta -> result) : result =
+    ~(nop : meta -> result)
+    ~(procedure_call : meta Call.t -> result) : result
+ =
   Variants.map x ~assign:(Fn.const assign)
     ~atomic_store:(Fn.const atomic_store)
     ~atomic_cmpxchg:(Fn.const atomic_cmpxchg) ~early_out:(Fn.const early_out)
     ~label:(Fn.const label) ~goto:(Fn.const goto) ~nop:(Fn.const nop)
+    ~procedure_call:(Fn.const procedure_call)
 
 module Base_map (M : Monad.S) = struct
   module F = Travesty.Traversable.Helpers (M)
 
-  let bmap (type m1 m2) (x : m1 t) ~assign ~atomic_store ~atomic_cmpxchg
+  let bmap (type m1 m2) (x : m1 t) ~(assign : Assign.t -> Assign.t M.t) ~(atomic_store : Atomic_store.t -> Atomic_store.t M.t) ~(atomic_cmpxchg : Atomic_cmpxchg.t -> Atomic_cmpxchg.t M.t)
       ~(early_out : m1 Early_out.t -> m2 Early_out.t M.t)
       ~(label : m1 Label.t -> m2 Label.t M.t)
-      ~(goto : m1 Label.t -> m2 Label.t M.t) ~(nop : m1 -> m2 M.t) : m2 t M.t
+      ~(goto : m1 Label.t -> m2 Label.t M.t) ~(nop : m1 -> m2 M.t) 
+    ~(procedure_call : m1 Call.t -> m2 Call.t M.t) : m2 t M.t
       =
     Travesty_base_exts.Fn.Compose_syntax.(
       reduce x
@@ -61,7 +66,8 @@ module Base_map (M : Monad.S) = struct
         ~early_out:(early_out >> M.map ~f:P.early_out)
         ~label:(label >> M.map ~f:P.label)
         ~goto:(goto >> M.map ~f:P.goto)
-        ~nop:(nop >> M.map ~f:P.nop))
+        ~nop:(nop >> M.map ~f:P.nop)
+      ~procedure_call:(procedure_call >> M.map ~f:P.procedure_call))
 end
 
 module On_meta : Travesty.Traversable_types.S1 with type 'meta t := 'meta t =
@@ -72,11 +78,13 @@ Travesty.Traversable.Make1 (struct
     module B = Base_map (M)
     module EO = Early_out.On_meta.On_monad (M)
     module LO = Label.On_meta.On_monad (M)
+    module CO = Call.On_meta.On_monad (M)
 
     let map_m (x : 'm1 t) ~(f : 'm1 -> 'm2 M.t) : 'm2 t M.t =
       B.bmap x ~assign:M.return ~atomic_store:M.return
         ~atomic_cmpxchg:M.return ~early_out:(EO.map_m ~f)
         ~label:(LO.map_m ~f) ~goto:(LO.map_m ~f) ~nop:f
+        ~procedure_call:(CO.map_m ~f)
   end
 end)
 
@@ -91,7 +99,7 @@ module With_meta (Meta : T) = struct
         with type t := Assign.t
          and module Elt = Elt
 
-    module C :
+    module X :
       Travesty.Traversable_types.S0
         with type t := Atomic_cmpxchg.t
          and module Elt = Elt
@@ -100,6 +108,12 @@ module With_meta (Meta : T) = struct
       Travesty.Traversable_types.S0
         with type t := Atomic_store.t
          and module Elt = Elt
+
+    module C :
+      Travesty.Traversable_types.S0
+        with type t := Meta.t Call.t
+         and module Elt = Elt
+
   end) =
   Travesty.Traversable.Make0 (struct
     type nonrec t = Meta.t t
@@ -111,13 +125,16 @@ module With_meta (Meta : T) = struct
       module AM = Basic.A.On_monad (M)
       module CM = Basic.C.On_monad (M)
       module SM = Basic.S.On_monad (M)
+      module XM = Basic.X.On_monad (M)
 
       let map_m x ~f =
         SBase.bmap x ~assign:(AM.map_m ~f) ~atomic_store:(SM.map_m ~f)
-          ~atomic_cmpxchg:(CM.map_m ~f) ~early_out:M.return ~label:M.return
-          ~goto:M.return ~nop:M.return
+          ~atomic_cmpxchg:(XM.map_m ~f) ~early_out:M.return ~label:M.return
+          ~goto:M.return ~nop:M.return ~procedure_call:(CM.map_m ~f)
     end
   end)
+
+  module Call = Call.With_meta (Meta)
 
   module On_lvalues :
     Travesty.Traversable_types.S0
@@ -125,8 +142,9 @@ module With_meta (Meta : T) = struct
        and type Elt.t = Lvalue.t = Make_traversal (struct
     module Elt = Lvalue
     module A = Assign.On_lvalues
-    module C = Atomic_cmpxchg.On_lvalues
+    module C = Call.On_lvalues
     module S = Atomic_store.On_lvalues
+    module X = Atomic_cmpxchg.On_lvalues
   end)
 
   module On_addresses :
@@ -135,8 +153,9 @@ module With_meta (Meta : T) = struct
        and type Elt.t = Address.t = Make_traversal (struct
     module Elt = Address
     module A = Assign.On_addresses
-    module C = Atomic_cmpxchg.On_addresses
+    module C = Call.On_addresses
     module S = Atomic_store.On_addresses
+    module X = Atomic_cmpxchg.On_addresses
   end)
 
   module On_identifiers :
