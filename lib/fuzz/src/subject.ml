@@ -58,7 +58,7 @@ end
 
 module Thread = struct
   type t =
-    { decls: Act_c_mini.Initialiser.t Act_c_mini.Named.Alist.t [@default []]
+    { decls: Act_c_mini.Initialiser.t Ac.C_named.Alist.t [@default []]
     ; stms: Statement.t list }
   [@@deriving sexp, make]
 
@@ -85,18 +85,18 @@ module Thread = struct
       ~stms:(statements_of_function func)
       ()
 
-  module R_alist = Act_c_mini.Named.Alist.As_named (Var.Record)
+  module R_alist = Ac.C_named.Alist.As_named (Var.Record)
 
   (** [make_function_parameters vars] creates a uniform function parameter
       list for a C litmus test using the global variable records in [vars]. *)
   let make_function_parameters (vars : Var.Map.t) :
-      Act_c_mini.Type.t Act_c_mini.Named.Alist.t =
+      Act_c_mini.Type.t Ac.C_named.Alist.t =
     vars
     |> Var.Map.env_satisfying_all ~scope:Global ~predicates:[]
     |> Map.to_alist
 
   let to_function (prog : t) ~(vars : Var.Map.t) ~(id : int) :
-      unit Act_c_mini.Function.t Act_c_mini.Named.t =
+      unit Act_c_mini.Function.t Ac.C_named.t =
     let name = Ac.C_id.of_string (Printf.sprintf "P%d" id) in
     let body_stms = List.map prog.stms ~f:Act_c_mini.Statement.erase_meta in
     let parameters = make_function_parameters vars in
@@ -104,7 +104,7 @@ module Thread = struct
       Act_c_mini.Function.make ~parameters ~body_decls:prog.decls ~body_stms
         ()
     in
-    Act_c_mini.Named.make func ~name
+    Ac.C_named.make func ~name
 
   let list_to_litmus (progs : t list) ~(vars : Var.Map.t) :
       Act_c_mini.Litmus.Lang.Program.t list =
@@ -124,7 +124,7 @@ module Test = struct
 
   let threads_of_litmus (test : Act_c_mini.Litmus.Test.t) : Thread.t list =
     test |> Act_c_mini.Litmus.Test.threads
-    |> List.map ~f:(Fn.compose Thread.of_function Act_c_mini.Named.value)
+    |> List.map ~f:(Fn.compose Thread.of_function Ac.C_named.value)
 
   let of_litmus (test : Act_c_mini.Litmus.Test.t) : t =
     Act_litmus.Test.Raw.make

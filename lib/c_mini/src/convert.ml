@@ -11,9 +11,12 @@
 
 open Core_kernel (* for Fqueue *)
 
-module Ac = Act_common
-module Tx = Travesty_base_exts
-module Ast = Act_c_lang.Ast
+open struct
+  module Ac = Act_common
+  module Tx = Travesty_base_exts
+  module Ast = Act_c_lang.Ast
+  module Named = Ac.C_named
+end
 
 (** [sift_decls maybe_decl_list] tries to separate [maybe_decl_list] into a
     list of declarations followed immediately by a list of code, C89-style. *)
@@ -246,25 +249,26 @@ let model_atomic_load_explicit : Ast.Expr.t list -> Expression.t Or_error.t =
 let expr_call_table :
     (Ast.Expr.t list -> Expression.t Or_error.t) Map.M(Ac.C_id).t Lazy.t =
   lazy
-    (Map.of_alist_exn (module Ac.C_id)
-       [(Ac.C_id.of_string "atomic_load_explicit", model_atomic_load_explicit)])
+    (Map.of_alist_exn
+       (module Ac.C_id)
+       [ ( Ac.C_id.of_string "atomic_load_explicit"
+         , model_atomic_load_explicit ) ])
 
-let function_call
-    (func : Ast.Expr.t) (arguments : Ast.Expr.t list) : Expression.t Or_error.t =
+let function_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list) :
+    Expression.t Or_error.t =
   Or_error.Let_syntax.(
     let%bind func_name = expr_to_identifier func in
     let%bind call_handler =
       func_name
       |> Map.find (Lazy.force expr_call_table)
       |> Result.of_option
-        ~error:
-          (Error.create_s
-             [%message
-               "Unsupported function in expression position"
-                 ~got:(func_name : Ac.C_id.t)])
+           ~error:
+             (Error.create_s
+                [%message
+                  "Unsupported function in expression position"
+                    ~got:(func_name : Ac.C_id.t)])
     in
-    call_handler arguments
-  )
+    call_handler arguments)
 
 let identifier_to_expr (id : Ac.C_id.t) : Expression.t =
   match Ac.C_id.to_string id with
@@ -369,34 +373,31 @@ let model_atomic_cmpxchg : Ast.Expr.t list -> unit Statement.t Or_error.t =
             ~got:(args : Ast.Expr.t list)]
 
 let expr_stm_call_table :
-    (Ast.Expr.t list -> unit Statement.t Or_error.t) Map.M(Ac.C_id).t Lazy.t =
+    (Ast.Expr.t list -> unit Statement.t Or_error.t) Map.M(Ac.C_id).t Lazy.t
+    =
   lazy
-    (Map.of_alist_exn (module Ac.C_id)
+    (Map.of_alist_exn
+       (module Ac.C_id)
        [ (Ac.C_id.of_string "atomic_store_explicit", model_atomic_store)
        ; ( Ac.C_id.of_string "atomic_compare_exchange_strong_explicit"
          , model_atomic_cmpxchg ) ])
 
-let arbitrary_procedure_call
-    (function_id : Ac.C_id.t)
-    (raw_arguments : Ast.Expr.t list)
-  : unit Statement.t Or_error.t =
+let arbitrary_procedure_call (function_id : Ac.C_id.t)
+    (raw_arguments : Ast.Expr.t list) : unit Statement.t Or_error.t =
   Or_error.Let_syntax.(
     let%map arguments = Tx.Or_error.combine_map ~f:expr raw_arguments in
-    (Statement.procedure_call
-       (Call.make
-          ~metadata:()
-          ~arguments
-          ~function_id:function_id
-          ())))
+    Statement.procedure_call
+      (Call.make ~metadata:() ~arguments ~function_id ()))
 
-let procedure_call
-    (func : Ast.Expr.t) (arguments : Ast.Expr.t list) : unit Statement.t Or_error.t =
+let procedure_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list) :
+    unit Statement.t Or_error.t =
   Or_error.Let_syntax.(
     let%bind function_id = expr_to_identifier func in
     match Map.find (Lazy.force expr_stm_call_table) function_id with
-    | Some call_handler -> call_handler arguments
-    | None -> arbitrary_procedure_call function_id arguments
-  )
+    | Some call_handler ->
+        call_handler arguments
+    | None ->
+        arbitrary_procedure_call function_id arguments)
 
 let expr_stm : Ast.Expr.t -> unit Statement.t Or_error.t = function
   | Binary (l, `Assign, r) ->

@@ -51,5 +51,5 @@ module With_meta (Meta : Equal.S) : sig
   module On_decls :
     Travesty.Traversable_types.S0
       with type t = t
-       and type Elt.t = Initialiser.t Named.t
+       and type Elt.t = Initialiser.t Act_common.C_named.t
 end

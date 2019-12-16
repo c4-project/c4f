@@ -19,7 +19,10 @@ module Test_utils = struct
     Src.State.Monad.with_vars (fun vars ->
         List.mapi (Act_litmus.Test.Raw.threads test) ~f:(fun id p ->
             let fn = Src.Subject.Thread.to_function ~vars ~id p in
-            Act_c_mini.(Reify.func (Named.name fn) (Named.value fn))))
+            Act_c_mini.(
+              Reify.func
+                (Act_common.C_named.name fn)
+                (Act_common.C_named.value fn))))
 
   let run_and_dump_test (action : Src.Subject.Test.t Src.State.Monad.t)
       ~(initial_state : Src.State.t) : unit =

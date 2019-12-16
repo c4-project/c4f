@@ -40,9 +40,8 @@ let reduce (type meta result) (x : meta t)
     ~(atomic_cmpxchg : (* meta *) Atomic_cmpxchg.t -> result)
     ~(early_out : meta Early_out.t -> result)
     ~(label : meta Label.t -> result) ~(goto : meta Label.t -> result)
-    ~(nop : meta -> result)
-    ~(procedure_call : meta Call.t -> result) : result
- =
+    ~(nop : meta -> result) ~(procedure_call : meta Call.t -> result) :
+    result =
   Variants.map x ~assign:(Fn.const assign)
     ~atomic_store:(Fn.const atomic_store)
     ~atomic_cmpxchg:(Fn.const atomic_cmpxchg) ~early_out:(Fn.const early_out)
@@ -52,12 +51,13 @@ let reduce (type meta result) (x : meta t)
 module Base_map (M : Monad.S) = struct
   module F = Travesty.Traversable.Helpers (M)
 
-  let bmap (type m1 m2) (x : m1 t) ~(assign : Assign.t -> Assign.t M.t) ~(atomic_store : Atomic_store.t -> Atomic_store.t M.t) ~(atomic_cmpxchg : Atomic_cmpxchg.t -> Atomic_cmpxchg.t M.t)
+  let bmap (type m1 m2) (x : m1 t) ~(assign : Assign.t -> Assign.t M.t)
+      ~(atomic_store : Atomic_store.t -> Atomic_store.t M.t)
+      ~(atomic_cmpxchg : Atomic_cmpxchg.t -> Atomic_cmpxchg.t M.t)
       ~(early_out : m1 Early_out.t -> m2 Early_out.t M.t)
       ~(label : m1 Label.t -> m2 Label.t M.t)
-      ~(goto : m1 Label.t -> m2 Label.t M.t) ~(nop : m1 -> m2 M.t) 
-    ~(procedure_call : m1 Call.t -> m2 Call.t M.t) : m2 t M.t
-      =
+      ~(goto : m1 Label.t -> m2 Label.t M.t) ~(nop : m1 -> m2 M.t)
+      ~(procedure_call : m1 Call.t -> m2 Call.t M.t) : m2 t M.t =
     Travesty_base_exts.Fn.Compose_syntax.(
       reduce x
         ~assign:(assign >> M.map ~f:P.assign)
@@ -67,7 +67,7 @@ module Base_map (M : Monad.S) = struct
         ~label:(label >> M.map ~f:P.label)
         ~goto:(goto >> M.map ~f:P.goto)
         ~nop:(nop >> M.map ~f:P.nop)
-      ~procedure_call:(procedure_call >> M.map ~f:P.procedure_call))
+        ~procedure_call:(procedure_call >> M.map ~f:P.procedure_call))
 end
 
 module On_meta : Travesty.Traversable_types.S1 with type 'meta t := 'meta t =
@@ -113,7 +113,6 @@ module With_meta (Meta : T) = struct
       Travesty.Traversable_types.S0
         with type t := Meta.t Call.t
          and module Elt = Elt
-
   end) =
   Travesty.Traversable.Make0 (struct
     type nonrec t = Meta.t t

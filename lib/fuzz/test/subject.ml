@@ -13,12 +13,12 @@ open Base
 module Src = Act_fuzz
 
 module Test_data = struct
-  let init : Act_c_mini.Constant.t Act_c_mini.Named.Alist.t Lazy.t =
+  let init : Act_c_mini.Constant.t Act_common.C_named.Alist.t Lazy.t =
     lazy
       [ (Act_common.C_id.of_string "x", Act_c_mini.Constant.int 27)
       ; (Act_common.C_id.of_string "y", Act_c_mini.Constant.int 53) ]
 
-  let globals : Act_c_mini.Type.t Act_c_mini.Named.Alist.t Lazy.t =
+  let globals : Act_c_mini.Type.t Act_common.C_named.Alist.t Lazy.t =
     lazy
       Act_c_mini.
         [ ( Act_common.C_id.of_string "x"

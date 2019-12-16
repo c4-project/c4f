@@ -10,14 +10,18 @@
    project root for more information. *)
 
 open Base
-module C = Act_c_mini
-module Tx = Travesty_base_exts
+
+open struct
+  module Ac = Act_common
+  module C = Act_c_mini
+  module Tx = Travesty_base_exts
+end
 
 module type S = sig
   val rewrite_all :
-       unit Act_c_mini.Function.t Act_c_mini.Named.t list
+       unit Act_c_mini.Function.t Ac.C_named.t list
     -> context:Context.t
-    -> unit Act_c_mini.Function.t Act_c_mini.Named.t list Or_error.t
+    -> unit Act_c_mini.Function.t Ac.C_named.t list Or_error.t
 end
 
 type 'a local_rw_fun = 'a -> tid:int -> context:Context.t -> 'a Or_error.t
@@ -166,14 +170,15 @@ struct
       : Act_common.C_id.t Or_error.t =
     Or_error.map (lookup_function name ~context) ~f:Function_map.Record.c_id
 
-  let rewrite_named (tid : int) (fn : unit C.Function.t C.Named.t)
-      ~(context : Context.t) : unit C.Function.t C.Named.t Or_error.t =
-    C.Named.With_errors.bi_map_m fn
+  let rewrite_named (tid : int) (fn : unit C.Function.t Ac.C_named.t)
+      ~(context : Context.t) : unit C.Function.t Ac.C_named.t Or_error.t =
+    Ac.C_named.With_errors.bi_map_m fn
       ~left:(rewrite_function_name ~context)
       ~right:(rewrite tid ~context)
 
-  let rewrite_all (fs : unit C.Function.t C.Named.t list)
-      ~(context : Context.t) : unit C.Function.t C.Named.t list Or_error.t =
+  let rewrite_all (fs : unit C.Function.t Ac.C_named.t list)
+      ~(context : Context.t) : unit C.Function.t Ac.C_named.t list Or_error.t
+      =
     fs |> List.mapi ~f:(rewrite_named ~context) |> Or_error.combine_errors
 end
 

@@ -34,7 +34,8 @@ val expr : Act_c_lang.Ast.Expr.t -> Expression.t Or_error.t
     statement. *)
 
 val func :
-  Act_c_lang.Ast.Function_def.t -> unit Function.t Named.t Or_error.t
+     Act_c_lang.Ast.Function_def.t
+  -> unit Function.t Act_common.C_named.t Or_error.t
 (** [func ast] tries to interpret a C function definition AST as a mini-model
     function. *)
 

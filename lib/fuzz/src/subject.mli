@@ -79,7 +79,7 @@ end
 (** {1 Fuzzable representation of a thread} *)
 module Thread : sig
   type t =
-    { decls: Act_c_mini.Initialiser.t Act_c_mini.Named.Alist.t
+    { decls: Act_c_mini.Initialiser.t Act_common.C_named.Alist.t
     ; stms: Statement.t list }
   [@@deriving sexp]
   (** Transparent type of fuzzable programs. *)
@@ -90,7 +90,7 @@ module Thread : sig
   (** [empty] is the empty program. *)
 
   val make :
-       ?decls:Act_c_mini.Initialiser.t Act_c_mini.Named.Alist.t
+       ?decls:Act_c_mini.Initialiser.t Act_common.C_named.Alist.t
     -> ?stms:Statement.t list
     -> unit
     -> t
@@ -105,7 +105,7 @@ module Thread : sig
        t
     -> vars:Var.Map.t
     -> id:int
-    -> unit Act_c_mini.Function.t Act_c_mini.Named.t
+    -> unit Act_c_mini.Function.t Act_common.C_named.t
   (** [to_function prog ~vars ~id] lifts a subject-program [prog] with ID
       [prog_id] back into a Litmus function, adding a parameter list
       generated from [vars] and erasing any metadata. *)

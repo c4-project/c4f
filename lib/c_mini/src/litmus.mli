@@ -20,8 +20,9 @@
 module Lang :
   Act_litmus.Test_types.Basic
     with type Statement.t =
-          [`Stm of unit Statement.t | `Decl of Initialiser.t Named.t]
-     and type Program.t = unit Function.t Named.t
+          [ `Stm of unit Statement.t
+          | `Decl of Initialiser.t Act_common.C_named.t ]
+     and type Program.t = unit Function.t Act_common.C_named.t
      and type Constant.t = Constant.t
 
 (** The mini-model's full Litmus test module. *)

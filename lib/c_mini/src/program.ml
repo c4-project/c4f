@@ -10,8 +10,12 @@
    project root for more information. *)
 
 open Base
-module Ac = Act_common
-module Tx = Travesty_base_exts
+
+open struct
+  module Ac = Act_common
+  module Tx = Travesty_base_exts
+  module Named = Ac.C_named
+end
 
 type 'meta t =
   { globals: (Ac.C_id.t, Initialiser.t) List.Assoc.t

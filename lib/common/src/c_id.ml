@@ -133,8 +133,7 @@ module C = Make (struct
        to be changed, as parts of ACT do treat them as if they were keywords
        (eg in C_mini), but keeping them in `badwords` presently causes large
        amounts of test failures. *)
-    lazy
-      (Base.Set.of_list (module String) ["do"; "while"; "if"; "for"; "void"])
+    lazy (Set.of_list (module String) ["do"; "while"; "if"; "for"; "void"])
 
   let validate_general : string Validate.check = Fn.const Validate.pass
 

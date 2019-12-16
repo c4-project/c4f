@@ -67,16 +67,14 @@ let goto (l : _ Label.t) : Ast.Stm.t = Goto (Label.name l)
 
 let procedure_call (c : _ Call.t) : Ast.Stm.t =
   Ast.Stm.Expr
-    (Some (Ast.Expr.Call
-             { func= Identifier (Call.function_id c)
-             ; arguments= List.map ~f:Reify_expr.reify (Call.arguments c)
-             }
-    ))
+    (Some
+       (Ast.Expr.Call
+          { func= Identifier (Call.function_id c)
+          ; arguments= List.map ~f:Reify_expr.reify (Call.arguments c) }))
 
 let prim : _ Prim_statement.t -> Ast.Stm.t =
   Prim_statement.reduce ~assign ~atomic_cmpxchg ~atomic_store ~early_out
-    ~procedure_call
-    ~label ~goto ~nop
+    ~procedure_call ~label ~goto ~nop
 
 let rec reify : _ Statement.t -> Ast.Stm.t =
   Statement.reduce ~prim ~if_stm ~while_loop

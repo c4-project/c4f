@@ -18,8 +18,8 @@ end
 type 'meta t =
   { arguments: Expression.t list
   ; metadata: 'meta
-  ; function_id: Act_common.C_id.t
-  } [@@deriving make, fields, sexp, equal]
+  ; function_id: Act_common.C_id.t }
+[@@deriving make, fields, sexp, equal]
 
 module On_meta : Travesty.Traversable_types.S1 with type 'meta t = 'meta t =
 Travesty.Traversable.Make1 (struct
@@ -30,26 +30,26 @@ Travesty.Traversable.Make1 (struct
       M.Let_syntax.(
         let%map metadata = f x.metadata in
         (* TODO(@MattWindsor91): expression metadata *)
-        make ~metadata ~function_id:x.function_id ~arguments:x.arguments ()
-      )
+        make ~metadata ~function_id:x.function_id ~arguments:x.arguments ())
   end
 end)
 
 module With_meta (Meta : T) = struct
-  module On_expressions:
+  module On_expressions :
     Travesty.Traversable_types.S0
       with type t = Meta.t t
        and type Elt.t = Expression.t = Travesty.Traversable.Make0 (struct
     type nonrec t = Meta.t t
+
     module Elt = Expression
 
     module On_monad (M : Monad.S) = struct
       module Ls = Tx.List.On_monad (M)
+
       let map_m (x : t) ~(f : Expression.t -> Expression.t M.t) : t M.t =
         M.Let_syntax.(
           let%map arguments = Ls.map_m ~f x.arguments in
-          make ~metadata:x.metadata ~function_id:x.function_id ~arguments ()
-        )
+          make ~metadata:x.metadata ~function_id:x.function_id ~arguments ())
     end
   end)
 

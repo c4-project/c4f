@@ -9,8 +9,12 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Core_kernel
-module Ast = Act_c_lang.Ast
+open Base
+
+open struct
+  module Ast = Act_c_lang.Ast
+  module Named = Act_common.C_named
+end
 
 let to_initialiser (value : Constant.t) : Ast.Initialiser.t =
   Assign (Reify_expr.constant value)
@@ -43,7 +47,7 @@ let func_parameter (id : Act_common.C_id.t) (ty : Type.t) : Ast.Param_decl.t
 
 let func_parameters (parameters : Type.t Named.Alist.t) :
     Ast.Param_type_list.t =
-  { params= List.map ~f:(Tuple2.uncurry func_parameter) parameters
+  { params= List.map ~f:(fun (i, t) -> func_parameter i t) parameters
   ; style= `Normal }
 
 let func_signature (id : Act_common.C_id.t)
@@ -68,4 +72,4 @@ let func (id : Act_common.C_id.t) (def : _ Function.t) : Ast.External_decl.t
 let program (prog : _ Program.t) : Ast.Translation_unit.t =
   let globals = Program.globals prog in
   let functions = Program.functions prog in
-  List.concat [decls globals; List.map ~f:(Tuple2.uncurry func) functions]
+  List.concat [decls globals; List.map ~f:(fun (i, p) -> func i p) functions]

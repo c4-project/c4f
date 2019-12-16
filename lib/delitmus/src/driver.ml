@@ -74,9 +74,9 @@ struct
     Act_c_mini.Litmus_vars.make_scoped_map ~make_global ~make_local
 
   let make_named_function_record
-      (func : unit Act_c_mini.Function.t Act_c_mini.Named.t) :
+      (func : unit Act_c_mini.Function.t Ac.C_named.t) :
       (Act_common.C_id.t * Function_map.Record.t) Or_error.t =
-    let name = Act_c_mini.Named.name func in
+    let name = Ac.C_named.name func in
     Or_error.Let_syntax.(
       let%map new_name = B.rewrite_function_name name in
       ( name
@@ -85,7 +85,7 @@ struct
         Function_map.Record.make ~is_thread_body:true ~c_id:new_name () ))
 
   let make_function_map
-      (threads : unit Act_c_mini.Function.t Act_c_mini.Named.t list) :
+      (threads : unit Act_c_mini.Function.t Ac.C_named.t list) :
       Function_map.t Or_error.t =
     Or_error.(
       threads
@@ -108,7 +108,7 @@ struct
       let%map function_list =
         B.Function.rewrite_all raw_functions ~context
       in
-      let functions = Act_c_mini.Named.alist_of_list function_list in
+      let functions = Ac.C_named.alist_of_list function_list in
       Act_c_mini.Program.make ~globals ~functions)
 
   let make_local_init (fn : unit Act_c_mini.Function.t) :
@@ -129,8 +129,7 @@ struct
     (* We can get the context just from looking at functions, because of the
        way in which C litmus tests are constructed. *)
     let functions =
-      List.map ~f:Act_c_mini.Named.value
-        (Act_c_mini.Litmus.Test.threads input)
+      List.map ~f:Ac.C_named.value (Act_c_mini.Litmus.Test.threads input)
     in
     let local_inits = make_local_inits functions in
     Context.make ~aux ~local_inits

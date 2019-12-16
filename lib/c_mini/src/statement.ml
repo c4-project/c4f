@@ -110,7 +110,8 @@ module Main :
 
     let nop (x : 'meta) : 'meta t = prim (Prim_statement.nop x)
 
-    let procedure_call (x : 'meta Call.t) : 'meta t = prim (Prim_statement.procedure_call x)
+    let procedure_call (x : 'meta Call.t) : 'meta t =
+      prim (Prim_statement.procedure_call x)
 
     let if_stm (x : 'meta if_statement) : 'meta t = If_stm x
 

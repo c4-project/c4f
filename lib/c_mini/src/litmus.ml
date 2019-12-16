@@ -10,8 +10,12 @@
    project root for more information. *)
 
 open Base
-module Tx = Travesty_base_exts
-module Ac = Act_common
+
+open struct
+  module Tx = Travesty_base_exts
+  module Ac = Act_common
+  module Named = Ac.C_named
+end
 
 module Lang :
   Act_litmus.Test_types.Basic
