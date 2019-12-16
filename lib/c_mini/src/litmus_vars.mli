@@ -20,15 +20,13 @@
 
 open Base
 
-val make_scoped_map :
-     Litmus.Test.t
-  -> make_global:(Act_common.C_id.t -> Type.t -> 'a Or_error.t)
-  -> make_local:(int -> Act_common.C_id.t -> Type.t -> 'a Or_error.t)
-  -> 'a Act_common.Scoped_map.t Or_error.t
-(** [make_scoped_map vast ~make_global ~make_local] tries to make a scoped
-    map by inspecting all local variable declarations and global-representing
-    parameters in the functions in [vast]. It uses [make_global] and
-    [make_local] to construct the values stored in the scoped map. *)
+val make_type_alist :
+  Litmus.Test.t -> (Act_common.Litmus_id.t, Type.t) List.Assoc.t Or_error.t
+(** [make_type_alist vast] tries to make an associative list from the global
+    and local variables present in [vast] to their types. The resulting list
+    is ordered such that each global appears in the same order that it
+    appears in the threads' parameter lists, and each local is in increasing
+    thread ID and declaration order. *)
 
 val make_set : Litmus.Test.t -> Set.M(Act_common.Litmus_id).t Or_error.t
 (** [make_set vast] tries to make a Litmus ID set by inspecting all local

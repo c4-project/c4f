@@ -57,8 +57,14 @@ module Of_jsonable (B : Jsonable_types.Of) :
 
   let load_from_ic ?(path = "stdin") (ic : Stdio.In_channel.t) : t Or_error.t
       =
-    wrap path (fun () ->
-        B.t_of_yojson (Yojson.Safe.from_channel ~fname:path ic))
+    try
+      Or_error.return
+        (B.t_of_yojson (Yojson.Safe.from_channel ~fname:path ic))
+    with Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error (exn, t) ->
+      Or_error.error_s
+        [%message
+          "Could not parse JSON" ~path ~error:(Exn.to_string exn)
+            ~json_fragment:(Yojson.Safe.to_string t)]
 end)
 
 module To_filter (L : Loadable_types.S) :

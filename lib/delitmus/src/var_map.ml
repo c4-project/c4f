@@ -10,17 +10,26 @@
    project root for more information. *)
 
 open Base
-module Ac = Act_common
-module Tx = Travesty_base_exts
+
+open struct
+  module Ac = Act_common
+  module Tx = Travesty_base_exts
+end
+
+module Mapping = struct
+  type t = Global | Param of int [@@deriving yojson, equal]
+end
 
 module Record = struct
   type t =
-    { c_type: Act_c_mini.Type.t
-    ; c_id: Act_common.C_id.t
-    ; mapped_to_global: bool }
-  [@@deriving fields, yojson, equal]
+    {c_type: Act_c_mini.Type.t; c_id: Act_common.C_id.t; mapped_to: Mapping.t}
+  [@@deriving fields, make, yojson, equal]
 
-  let make = Fields.create
+  let mapped_to_global : t -> bool = function
+    | {mapped_to= Global; _} ->
+        true
+    | _ ->
+        false
 end
 
 type t = Record.t Ac.Scoped_map.t [@@deriving equal]
@@ -28,15 +37,14 @@ type t = Record.t Ac.Scoped_map.t [@@deriving equal]
 let lookup_and_require_global (map : t) ~(id : Ac.Litmus_id.t) :
     Ac.C_id.t Or_error.t =
   Or_error.Let_syntax.(
-    match%bind Ac.Scoped_map.find_by_litmus_id map ~id with
-    | {mapped_to_global= false; _} ->
-        Or_error.error_s
-          [%message
-            "Litmus identifier was mapped to something other than a global \
-             variable"
-              ~id:(id : Ac.Litmus_id.t)]
-    | {c_id= x; _} ->
-        Or_error.return x)
+    let%bind r = Ac.Scoped_map.find_by_litmus_id map ~id in
+    if Record.mapped_to_global r then Or_error.return (Record.c_id r)
+    else
+      Or_error.error_s
+        [%message
+          "Litmus identifier was mapped to something other than a global \
+           variable"
+            ~id:(id : Ac.Litmus_id.t)])
 
 let filter_to_alist (pred : Record.t -> bool) :
     t -> (Ac.Litmus_id.t, Record.t) List.Assoc.t =

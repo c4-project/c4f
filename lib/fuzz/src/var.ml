@@ -10,8 +10,11 @@
    project root for more information. *)
 
 open Base
-module Ac = Act_common
-module Tx = Travesty_base_exts
+
+open struct
+  module Ac = Act_common
+  module Tx = Travesty_base_exts
+end
 
 module Known_value = struct
   type t = {value: Act_c_mini.Constant.t; has_dependencies: bool}
@@ -73,13 +76,16 @@ end
 module Map = struct
   type t = Record.t Ac.Scoped_map.t
 
+  let make_existing_record (id : Ac.Litmus_id.t) (ty : Act_c_mini.Type.t) :
+      Record.t =
+    Record.make_existing (Ac.Scope.of_litmus_id id) ty
+
   let make_existing_var_map (test : Act_c_mini.Litmus.Test.t) : t Or_error.t
       =
-    Act_c_mini.Litmus_vars.make_scoped_map test
-      ~make_global:(fun _ ty ->
-        Or_error.return (Record.make_existing Global ty))
-      ~make_local:(fun tid _ ty ->
-        Or_error.return (Record.make_existing (Local tid) ty))
+    Or_error.(
+      test |> Act_c_mini.Litmus_vars.make_type_alist
+      >>| List.map ~f:(fun (id, ty) -> (id, make_existing_record id ty))
+      >>= Act_common.Scoped_map.of_litmus_id_alist)
 
   let register_global ?(initial_value : Act_c_mini.Constant.t option)
       (map : t) (id : Ac.C_id.t) (ty : Act_c_mini.Type.t) : t =

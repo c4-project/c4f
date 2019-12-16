@@ -20,6 +20,11 @@ let empty (type a) : a t = Map.empty (module Litmus_id)
 
 let of_litmus_id_map (type a) : a Map.M(Litmus_id).t -> a t = Fn.id
 
+let of_litmus_id_alist (type a) (xs : (Litmus_id.t, a) List.Assoc.t) :
+    a t Or_error.t =
+  (* yay value restriction *)
+  Map.of_alist_or_error (module Litmus_id) xs
+
 let set (type a) (m : a t) ~(id : Litmus_id.t) ~(record : a) : a t =
   Map.set m ~key:id ~data:record
 
@@ -66,12 +71,15 @@ let resolve (vars : _ t) ~(id : C_id.t) ~(scope : Scope.t) : Litmus_id.t =
 
 let to_litmus_id_map (type a) : a t -> a Map.M(Litmus_id).t = Fn.id
 
+let filter_in_scope (type a) ~(scope : Scope.t) ~(key : Litmus_id.t)
+    ~(data : a) : (Scope.t * a) option =
+  Option.some_if
+    (Scope.id_in_scope scope ~id:key)
+    (Scope.of_litmus_id key, data)
+
 let to_c_id_map (type a) (map : a t) ~(scope : Scope.t) : a Map.M(C_id).t =
   map
-  |> Map.filter_mapi ~f:(fun ~key ~data ->
-         Option.some_if
-           (Scope.id_in_scope scope ~id:key)
-           (Scope.of_litmus_id key, data))
+  |> Map.filter_mapi ~f:(filter_in_scope ~scope)
   |> Map.to_alist
   |> Tx.Alist.map_left ~f:Litmus_id.variable_name
   |> Map.of_alist_reduce (module C_id) ~f:Scope.reduce

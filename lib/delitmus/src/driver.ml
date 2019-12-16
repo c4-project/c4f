@@ -10,8 +10,11 @@
    project root for more information. *)
 
 open Base
-module Ac = Act_common
-module Tx = Travesty_base_exts
+
+open struct
+  module Ac = Act_common
+  module Tx = Travesty_base_exts
+end
 
 module type S = sig
   val run : Act_c_mini.Litmus.Test.t -> Output.t Or_error.t
@@ -55,23 +58,43 @@ struct
     let locations = Act_c_mini.Litmus.Test.locations input in
     Act_litmus.Header.make ~name ?postcondition ~init ?locations ()
 
-  let make_global (c_id : Ac.C_id.t) (ptr_type : Act_c_mini.Type.t) :
-      Var_map.Record.t Or_error.t =
-    let mapped_to_global = B.globals_become_globals in
+  let make_global (c_id : Ac.C_id.t) (ptr_type : Act_c_mini.Type.t)
+      ~(index : int) : Var_map.Record.t Or_error.t =
+    let mapped_to =
+      if B.globals_become_globals then Var_map.Mapping.Global
+      else Param index
+    in
     Or_error.Let_syntax.(
       (* Globals in a valid C litmus test come through as pointers. *)
       let%map c_type = Act_c_mini.Type.deref ptr_type in
-      Var_map.Record.make ~c_type ~mapped_to_global ~c_id)
+      Var_map.Record.make ~c_type ~mapped_to ~c_id)
 
-  let make_local (tid : int) (local_c_id : Ac.C_id.t)
-      (c_type : Act_c_mini.Type.t) : Var_map.Record.t Or_error.t =
-    let mapped_to_global = B.locals_become_globals in
-    let lit_id = Act_common.Litmus_id.local tid local_c_id in
-    let c_id = Qualify.litmus_id lit_id in
-    Or_error.return (Var_map.Record.make ~c_type ~mapped_to_global ~c_id)
+  let make_var_record (index : int) (id : Ac.Litmus_id.t)
+      (orig_type : Act_c_mini.Type.t) : Var_map.Record.t Or_error.t =
+    let is_global = Ac.Litmus_id.is_global id in
+    let map_to_global =
+      if is_global then B.globals_become_globals else B.locals_become_globals
+    in
+    let mapped_to =
+      if map_to_global then Var_map.Mapping.Global else Param index
+    in
+    let c_id = Qualify.litmus_id id in
+    Or_error.Let_syntax.(
+      let%map c_type =
+        (* Globals in a valid C litmus test come through as pointers. *)
+        if is_global then Act_c_mini.Type.deref orig_type
+        else Or_error.return orig_type
+      in
+      Var_map.Record.make ~c_type ~mapped_to ~c_id)
 
-  let make_var_map : Act_c_mini.Litmus.Test.t -> Var_map.t Or_error.t =
-    Act_c_mini.Litmus_vars.make_scoped_map ~make_global ~make_local
+  let make_var_map (test : Act_c_mini.Litmus.Test.t) : Var_map.t Or_error.t =
+    Or_error.(
+      test |> Act_c_mini.Litmus_vars.make_type_alist
+      >>| List.mapi ~f:(fun index (id, ty) ->
+              make_var_record index id ty >>| fun rc -> (id, rc))
+      >>= Or_error.combine_errors
+      >>= Map.of_alist_or_error (module Ac.Litmus_id)
+      >>| Ac.Scoped_map.of_litmus_id_map)
 
   let make_named_function_record
       (func : unit Act_c_mini.Function.t Ac.C_named.t) :

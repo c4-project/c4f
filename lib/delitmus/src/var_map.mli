@@ -16,7 +16,22 @@
 
 open Base
 
-(** {2 Records} *)
+(** {1 Mapping information}
+
+    {!Mapping} contains an enumeration of ways in which a variable in a
+    Litmus test maps to a variable in the delitmusified form. *)
+
+module Mapping : sig
+  (** Type of mappings. *)
+  type t =
+    | Global  (** Mapped to a global variable. *)
+    | Param of int
+        (** Mapped to a parameter on each thread function, with the given
+            index. *)
+  [@@deriving yojson, equal]
+end
+
+(** {1 Records} *)
 
 module Record : sig
   type t [@@deriving yojson, equal]
@@ -24,8 +39,13 @@ module Record : sig
   val make :
        c_type:Act_c_mini.Type.t
     -> c_id:Act_common.C_id.t
-    -> mapped_to_global:bool
+    -> mapped_to:Mapping.t
     -> t
+  (** [make ~c_type ~c_id ~mapped_to] constructs a variable map record for a
+      variable with mapped C name [c_id] and type [c_id], and delitmus
+      mapping information supplied by [mapped_to]. *)
+
+  (** {2 Accessors} *)
 
   val c_type : t -> Act_c_mini.Type.t
   (** [c_type r] gets the C type of [r]. *)
@@ -41,7 +61,7 @@ end
 type t = Record.t Act_common.Scoped_map.t [@@deriving equal]
 (** Delitmus variable maps are a specific case of scoped map. *)
 
-(** {2 Projections specific to delitmus variable maps} *)
+(** {1 Projections specific to delitmus variable maps} *)
 
 val globally_unmapped_vars :
   t -> (Act_common.Litmus_id.t, Record.t) List.Assoc.t

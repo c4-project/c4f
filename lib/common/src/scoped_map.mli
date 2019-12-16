@@ -16,16 +16,21 @@ open Base
 type 'a t [@@deriving equal]
 (** Opaque type of scoped maps. *)
 
-(** {2 Constructing a scoped map} *)
+(** {1 Constructing a scoped map} *)
 
 val empty : 'a t
 (** [empty] is the empty scoped map. *)
 
 val of_litmus_id_map : 'a Map.M(Litmus_id).t -> 'a t
-(** [of_litmus_id map map] constructs a scoped map from a map [map] from
+(** [of_litmus_id_map map] constructs a scoped map from a map [map] from
     Litmus-style scoped identifiers to records. *)
 
-(** {2 Looking up variable identifiers} *)
+val of_litmus_id_alist : (Litmus_id.t, 'a) List.Assoc.t -> 'a t Or_error.t
+(** [of_litmus_id_alist xs] constructs a scoped map from an associative list
+    [xs] from Litmus-style scoped identifiers to records. It fails if [xs]
+    has duplicate keys. *)
+
+(** {1 Looking up variable identifiers} *)
 
 val find_by_litmus_id : 'a t -> id:Litmus_id.t -> 'a Or_error.t
 (** [find_by_litmus_id map ~id] directly looks up a litmus ID in [map]
