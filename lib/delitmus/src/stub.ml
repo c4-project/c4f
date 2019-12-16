@@ -17,18 +17,32 @@ let try_parse_program_id (id : Act_common.C_id.t) : int Or_error.t =
     tag ~tag:"Thread function does not have a well-formed name"
       (try_with (fun () -> Caml.Scanf.sscanf strid "P%d" Fn.id)))
 
+let to_param_opt (rc : Var_map.Record.t) :
+  (int * (Act_common.C_id.t * Act_c_mini.Type.t)) option =
+  match Var_map.Record.mapped_to rc with
+  | Param k -> Some (k, (Var_map.Record.c_id rc, Var_map.Record.c_type rc))
+  | Global -> None
+
+let to_sorted_params_opt (type k) (alist : (k, Var_map.Record.t) List.Assoc.t) :
+  (Act_common.C_id.t, Act_c_mini.Type.t) List.Assoc.t =
+  alist
+  |> List.filter_map ~f:(fun (_, r) -> to_param_opt r)
+  |> List.sort ~compare:(Comparable.lift Int.compare ~f:fst)
+  |> List.map ~f:snd
+
+let all_params (vars : Var_map.t) :
+  (Act_common.C_id.t, Act_c_mini.Type.t) List.Assoc.t =
+  vars
+  |> Act_common.Scoped_map.to_litmus_id_map
+  |> Map.to_alist
+  |> to_sorted_params_opt
+
 let params_of_tid (vars : Var_map.t) (tid : int) :
     (Act_common.C_id.t, Act_c_mini.Type.t) List.Assoc.t =
-  (* TODO(@MattWindsor91): we're very much assuming here that the parameters
-     always appear in ascending string order. Does delitmus give those
-     guarantees? *)
   vars
   |> Act_common.Scoped_map.to_c_id_map ~scope:(Act_common.Scope.Local tid)
-  |> Map.to_alist ~key_order:`Increasing
-  |> List.filter_map ~f:(fun (_, record) ->
-         Option.some_if
-           (not (Var_map.Record.mapped_to_global record))
-           (Var_map.Record.c_id record, Var_map.Record.c_type record))
+  |> Map.to_alist
+  |> to_sorted_params_opt
 
 let make_function_stub (vars : Var_map.t) ~(old_id : Act_common.C_id.t)
     ~(new_id : Act_common.C_id.t) :
@@ -38,9 +52,9 @@ let make_function_stub (vars : Var_map.t) ~(old_id : Act_common.C_id.t)
      stub should pass in their initial values directly. *)
   Or_error.Let_syntax.(
     let%map tid = try_parse_program_id old_id in
-    let parameters = params_of_tid vars tid in
+    let parameters = all_params vars in
     let arguments =
-      List.map parameters ~f:(fun (id, ty) ->
+      List.map (params_of_tid vars tid) ~f:(fun (id, ty) ->
           Act_c_mini.Expression.lvalue
             (Act_c_mini.Lvalue.on_value_of_typed_id ~id ~ty))
     in

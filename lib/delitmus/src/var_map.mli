@@ -53,6 +53,10 @@ module Record : sig
   val c_id : t -> Act_common.C_id.t
   (** [c_id r] gets the delitmusified C variable name of [r]. *)
 
+  val mapped_to : t -> Mapping.t
+  (** [mapped_to_global r] gets how [r]'s variable maps into the delitmusified
+      version of the test. *)
+
   val mapped_to_global : t -> bool
   (** [mapped_to_global r] gets whether [r]'s variable has been mapped into
       the global scope. *)
