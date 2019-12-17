@@ -138,4 +138,4 @@ let uop (op : Expression.Uop.t) (x : Ast.Expr.t) : Ast.Expr.t =
   Ast.Expr.Prefix (op', x')
 
 let reify : Expression.t -> Ast.Expr.t =
-  Expression.reduce ~constant ~lvalue ~atomic_load ~bop ~uop
+  Expression.reduce ~constant ~address ~atomic_load ~bop ~uop

@@ -24,11 +24,13 @@ end
 
 type t =
   | Constant of Constant.t
-  | Lvalue of Lvalue.t
+  | Address of Address.t
   | Atomic_load of Atomic_load.t
   | Bop of Bop.t * t * t
   | Uop of Uop.t * t
 [@@deriving sexp, variants, compare, equal]
+
+let lvalue (l : Lvalue.t) : t = address (Address.lvalue l)
 
 let variable (v : Ac.C_id.t) : t = lvalue (Lvalue.variable v)
 
@@ -62,13 +64,13 @@ module Infix = struct
 end
 
 let reduce_step (expr : t) ~(constant : Constant.t -> 'a)
-    ~(lvalue : Lvalue.t -> 'a) ~(atomic_load : Atomic_load.t -> 'a)
+    ~(address : Address.t -> 'a) ~(atomic_load : Atomic_load.t -> 'a)
     ~(bop : Bop.t -> t -> t -> 'a) ~(uop : Uop.t -> t -> 'a) : 'a =
   match expr with
   | Constant k ->
       constant k
-  | Lvalue l ->
-      lvalue l
+  | Address l ->
+      address l
   | Atomic_load ld ->
       atomic_load ld
   | Bop (b, x, y) ->
@@ -77,19 +79,19 @@ let reduce_step (expr : t) ~(constant : Constant.t -> 'a)
       uop u x
 
 let reduce (expr : t) ~(constant : Constant.t -> 'a)
-    ~(lvalue : Lvalue.t -> 'a) ~(atomic_load : Atomic_load.t -> 'a)
+    ~(address : Address.t -> 'a) ~(atomic_load : Atomic_load.t -> 'a)
     ~(bop : Bop.t -> 'a -> 'a -> 'a) ~(uop : Uop.t -> 'a -> 'a) : 'a =
   let rec mu (expr : t) =
     let bop b l r = bop b (mu l) (mu r) in
     let uop u x = uop u (mu x) in
-    reduce_step expr ~constant ~lvalue ~atomic_load ~bop ~uop
+    reduce_step expr ~constant ~address ~atomic_load ~bop ~uop
   in
   mu expr
 
 let anonymise = function
   | Constant k ->
       `A k
-  | Lvalue l ->
+  | Address l ->
       `B l
   | Bop (b, x, y) ->
       `C (b, x, y)
@@ -105,12 +107,12 @@ module Make_traversal (Basic : sig
 
   module A :
     Travesty.Traversable_types.S0
-      with type t := Atomic_load.t
+      with type t := Address.t
        and module Elt = Elt
 
   module L :
     Travesty.Traversable_types.S0
-      with type t := Lvalue.t
+      with type t := Atomic_load.t
        and module Elt = Elt
 end) =
 Travesty.Traversable.Make0 (struct
@@ -126,7 +128,7 @@ Travesty.Traversable.Make0 (struct
     let rec map_m x ~f =
       Variants.map x
         ~constant:(F.proc_variant1 M.return)
-        ~lvalue:(F.proc_variant1 (L.map_m ~f))
+        ~address:(F.proc_variant1 (A.map_m ~f))
         ~uop:
           (F.proc_variant2 (fun (u, x) ->
                M.Let_syntax.(
@@ -138,7 +140,7 @@ Travesty.Traversable.Make0 (struct
                  let%bind l' = map_m l ~f in
                  let%map r' = map_m r ~f in
                  (b, l', r'))))
-        ~atomic_load:(F.proc_variant1 (A.map_m ~f))
+        ~atomic_load:(F.proc_variant1 (L.map_m ~f))
   end
 end)
 
@@ -146,27 +148,17 @@ module On_addresses :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t =
 Make_traversal (struct
   module Elt = Address
-  module A = Atomic_load.On_addresses
-
-  (* TODO(@MattWindsor91): move this device to Travesty *)
-  module L = Travesty.Traversable.Make0 (struct
-    type t = Lvalue.t
-
-    module Elt = Elt
-
-    module On_monad (M : Monad.S) = struct
-      let map_m m ~f = ignore f ; M.return m
-    end
-  end)
+  module A =
+    Travesty.Traversable.Fix_elt (Travesty_containers.Singleton) (Address)
+  module L = Atomic_load.On_addresses
 end)
 
 module On_lvalues :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
 Make_traversal (struct
   module Elt = Lvalue
-  module A = Atomic_load.On_lvalues
-  module L =
-    Travesty.Traversable.Fix_elt (Travesty_containers.Singleton) (Lvalue)
+  module A = Address.On_lvalues
+  module L = Atomic_load.On_lvalues
 end)
 
 module On_identifiers :
@@ -174,7 +166,7 @@ module On_identifiers :
   Travesty.Traversable.Chain0 (On_lvalues) (Lvalue.On_identifiers)
 
 module Type_check (E : Env_types.S) = struct
-  module Lv = Lvalue.Type_check (E)
+  module Ad = Address.Type_check (E)
   module Ld = Atomic_load.Type_check (E)
 
   let type_of_resolved_bop (b : Bop.t) (l_type : Type.t) (r_type : Type.t) :
@@ -218,8 +210,8 @@ module Type_check (E : Env_types.S) = struct
   let rec type_of : t -> Type.t Or_error.t = function
     | Constant k ->
         Or_error.return (Constant.type_of k)
-    | Lvalue l ->
-        Lv.type_of l
+    | Address l ->
+        Ad.type_of l
     | Bop (b, l, r) ->
         type_of_bop b l r
     | Uop (u, x) ->
@@ -244,7 +236,7 @@ let quickcheck_observer : t Base_quickcheck.Observer.t =
         unmap ~f:anonymise
           [%quickcheck.observer:
             [ `A of Constant.t
-            | `B of Lvalue.t
+            | `B of Address.t
             | `C of Bop.t * [%custom mu] * [%custom mu]
             | `D of Atomic_load.t
             | `E of Uop.t * [%custom mu] ]]))
@@ -307,7 +299,7 @@ module Eval = struct
     let rec mu : t -> Constant.t Or_error.t =
       (* We reduce in single steps to support short-circuiting evaluation. *)
       reduce_step ~constant:Or_error.return
-        ~lvalue:(Fn.compose env Address.lvalue)
+        ~address:env
         ~atomic_load:(eval_atomic_load ~env)
         ~bop:(fun o -> eval_bop mu o)
         ~uop:(fun o -> eval_uop mu o)

@@ -70,7 +70,10 @@ val l_or : t -> t -> t
 val l_not : t -> t
 (** [l_not x] builds a logical NOT over [x]. It does not simplify. *)
 
-(** {2 Lvalues} *)
+(** {2 Addresses, lvalues, and variables} *)
+
+val address : Address.t -> t
+(** [address ad] lifts an address [ad] to an expression. *)
 
 val lvalue : Lvalue.t -> t
 (** [lvalue lv] lifts a lvalue [lv] to an expression. *)
@@ -122,7 +125,7 @@ end
 val reduce :
      t
   -> constant:(Constant.t -> 'a)
-  -> lvalue:(Lvalue.t -> 'a)
+  -> address:(Address.t -> 'a)
   -> atomic_load:(Atomic_load.t -> 'a)
   -> bop:(Bop.t -> 'a -> 'a -> 'a)
   -> uop:(Uop.t -> 'a -> 'a)
