@@ -10,6 +10,7 @@
 # project root for more information.
 
 import dataclasses
+import enum
 import json
 import typing
 from dataclasses import dataclass
@@ -32,13 +33,24 @@ class FunctionRecord:
         return json.dumps(dataclasses.asdict(self))
 
 
+class MappingType(enum.Enum):
+    """Types of mapping-to used in aux mappings."""
+
+
 @dataclass
 class VarRecord:
     """Representation of a var-map record in an ACT 'aux file'."""
 
-    mapped_to_global: bool
+    # Deliberately loose encoding for now, may need tightening up later.
+    mapped_to: typing.List[typing.Union[str, int]]
+
     c_id: str
     c_type: str
+
+    @property
+    def mapped_to_global(self) -> bool:
+        """Gets whether this variable has been mapped to a global variable in C."""
+        return len(self.mapped_to) == 1 and self.mapped_to[0].lower() == "global"
 
     def __str__(self) -> str:
         """Converts this aux record to a string.
@@ -99,11 +111,27 @@ def function_record_of_dict(fun_dict: typing.Dict[str, typing.Any]) -> FunctionR
     return FunctionRecord(is_thread_body=is_thread_body, c_id=c_id)
 
 
+def parse_mapped_to(input: typing.Any) -> typing.List[typing.Union[str, int]]:
+    input_list = list(input)
+    if not input_list:
+        raise ValueError("mapped-to is an empty list")
+    key = str(input_list[0]).lower()
+    if key == "global":
+        if len(input_list) != 1:
+            raise ValueError("mapped-to is global but has arguments")
+        return ["Global"]
+    elif key == "param":
+        if len(input_list) != 2:
+            raise ValueError("mapped-to is param but doesn't have strictly one argument")
+        return ["Param", int(input_list[1])]
+    raise ValueError("mapped-to is not recognised", key)
+
+
 def var_record_of_dict(vr_dict: typing.Dict[str, typing.Any]) -> VarRecord:
-    mapped_to_global = json_utils.bool_field(vr_dict, "mapped_to_global", "var record")
+    mapped_to = parse_mapped_to(vr_dict["mapped_to"])
     c_id = json_utils.str_field(vr_dict, "c_id", "var record")
     c_type = json_utils.str_field(vr_dict, "c_type", "var record")
-    return VarRecord(mapped_to_global=mapped_to_global, c_id=c_id, c_type=c_type)
+    return VarRecord(mapped_to=mapped_to, c_id=c_id, c_type=c_type)
 
 
 def of_dict(aux_dict: typing.Dict[str, typing.Any]) -> Aux:

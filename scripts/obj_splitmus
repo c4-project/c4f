@@ -78,7 +78,7 @@ delitmus_and_compile() {
   local hfile="$5"
   local objfile="$6"
 
-  act::delitmus -style vars-as-parameters -aux "${auxfile}" -o "${cfile}" "${infile}"
+  act::delitmus -style vars-as-parameters -impl-suffix "_body" -aux "${auxfile}" -o "${cfile}" "${infile}"
   act::compile -compiler "${compiler}" -mode object -o "${objfile}" "${cfile}"
   "${SCRIPTDIR}"/make_header.awk "${cfile}" > "${hfile}"
 }
