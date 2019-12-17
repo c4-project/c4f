@@ -16,15 +16,20 @@ open Base
    optional set of global identifiers, and should try some munging if they
    generate clashes. *)
 
-let litmus_id (id : Act_common.Litmus_id.t) : Act_common.C_id.t =
-  Act_common.Litmus_id.to_memalloy_id id
+let litmus_id ?(qualify_locals : bool = true) (id : Act_common.Litmus_id.t) :
+    Act_common.C_id.t =
+  ( if qualify_locals then Act_common.Litmus_id.to_memalloy_id
+  else Act_common.Litmus_id.variable_name )
+    id
 
-let local (t : int) (id : Act_common.C_id.t) : Act_common.C_id.t =
-  litmus_id (Act_common.Litmus_id.local t id)
-
-let postcondition (pc : Act_c_mini.Constant.t Act_litmus.Postcondition.t) :
+let postcondition ?(qualify_locals : bool = true)
+    (pc : Act_c_mini.Constant.t Act_litmus.Postcondition.t) :
     Act_c_mini.Constant.t Act_litmus.Postcondition.t =
+  (* We can't just map over [litmus_id ~qualify_locals], as it'll lose the
+     thread IDs in the postcondition. *)
   (* TODO(@MattWindsor91): perhaps don't qualify things we've already
    * qualified. *)
-  Act_litmus.Postcondition.map_left pc
-    ~f:(Fn.compose Act_common.Litmus_id.global litmus_id)
+  if qualify_locals then
+    Act_litmus.Postcondition.map_left pc
+      ~f:(Fn.compose Act_common.Litmus_id.global litmus_id)
+  else pc

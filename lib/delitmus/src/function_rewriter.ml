@@ -105,13 +105,13 @@ struct
         unit C.Statement.t list -> unit C.Statement.t list Or_error.t =
       Tx.Or_error.combine_map ~f:rewrite_statement
 
-    let expand_parameter (id : Act_common.Litmus_id.t)
+    let expand_parameter
         (record : Var_map.Record.t) :
         (Act_common.C_id.t * C.Type.t) Or_error.t =
       let ty = Var_map.Record.c_type record in
       Or_error.Let_syntax.(
         let%map pty = C.Type.ref ty in
-        (Act_common.Litmus_id.variable_name id, pty))
+        (Var_map.Record.c_id record, pty))
 
     let populate_parameters () :
         (Act_common.C_id.t, C.Type.t) List.Assoc.t Or_error.t =
@@ -127,7 +127,7 @@ struct
           all_unmapped
       in
       Tx.Or_error.combine_map
-        ~f:(fun (i, r) -> expand_parameter i r)
+        ~f:(fun (_, r) -> expand_parameter r)
         relevant_unmapped
 
     module F = C.Function.On_monad (Or_error)
@@ -226,7 +226,7 @@ module Vars_as_parameters = Make (struct
 
   let rewrite_local_cid (cid : Act_common.C_id.t) ~(tid : int)
       ~(context : Context.t) : Act_common.C_id.t Or_error.t =
-    ignore (tid : int) ;
-    ignore (context : Context.t) ;
-    Or_error.return cid
+    let vm = Context.var_map context in
+    Var_map.lookup_and_require_param vm
+      ~id:(Act_common.Litmus_id.local tid cid)
 end)

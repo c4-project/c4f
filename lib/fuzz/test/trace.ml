@@ -105,10 +105,12 @@ let%test_module "trace playback" =
              (Prim (Nop ((source Generated) (liveness Normal))))
              (Prim
               (Atomic_store
-               ((src (Lvalue (Variable foo))) (dst (Lvalue (Variable y)))
+               ((src (Address (Lvalue (Variable foo)))) (dst (Lvalue (Variable y)))
                 (mo memory_order_relaxed))))
              (If_stm
-              ((cond (Bop Eq (Lvalue (Variable foo)) (Lvalue (Variable y))))
+              ((cond
+                (Bop Eq (Address (Lvalue (Variable foo)))
+                 (Address (Lvalue (Variable y)))))
                (t_branch
                 ((statements
                   ((Prim

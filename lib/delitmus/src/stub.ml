@@ -10,6 +10,7 @@
    project root for more information. *)
 
 open Base
+
 open struct
   module Ac = Act_common
   module Tx = Travesty_base_exts
@@ -22,13 +23,16 @@ let try_parse_program_id (id : Ac.C_id.t) : int Or_error.t =
       (try_with (fun () -> Caml.Scanf.sscanf strid "P%d" Fn.id)))
 
 let to_param_opt (lit_id : Ac.Litmus_id.t) (rc : Var_map.Record.t) :
-  (int * (Ac.Litmus_id.t * Act_c_mini.Type.t)) option =
+    (int * (Ac.Litmus_id.t * Act_c_mini.Type.t)) option =
   match Var_map.Record.mapped_to rc with
-  | Param k -> Some (k, (lit_id, Var_map.Record.c_type rc))
-  | Global -> None
+  | Param k ->
+      Some (k, (lit_id, Var_map.Record.c_type rc))
+  | Global ->
+      None
 
-let to_sorted_params_opt (alist : (Ac.Litmus_id.t, Var_map.Record.t) List.Assoc.t) :
-  (Ac.Litmus_id.t, Act_c_mini.Type.t) List.Assoc.t =
+let to_sorted_params_opt
+    (alist : (Ac.Litmus_id.t, Var_map.Record.t) List.Assoc.t) :
+    (Ac.Litmus_id.t, Act_c_mini.Type.t) List.Assoc.t =
   alist
   |> List.filter_map ~f:(fun (l, r) -> to_param_opt l r)
   |> List.sort ~compare:(Comparable.lift Int.compare ~f:fst)
@@ -36,64 +40,63 @@ let to_sorted_params_opt (alist : (Ac.Litmus_id.t, Var_map.Record.t) List.Assoc.
 
 let sorted_params (vars : Var_map.t) :
     (Ac.Litmus_id.t, Act_c_mini.Type.t) List.Assoc.t =
-  vars
-  |> Ac.Scoped_map.to_litmus_id_map
-  |> Map.to_alist
+  vars |> Ac.Scoped_map.to_litmus_id_map |> Map.to_alist
   |> to_sorted_params_opt
 
-(** Adjusts the type of a parameter in a (ID, type) associative list by turning
-    it into a pointer if it is global, and leaving it unchanged otherwise.
+(** Adjusts the type of a parameter in a (ID, type) associative list by
+    turning it into a pointer if it is global, and leaving it unchanged
+    otherwise.
 
     This serves to make the type fit its position in the stub: pointers to
     the Litmus harness's variables if global, local variables otherwise. *)
-let type_adjusted_param ((id, ty) : Ac.Litmus_id.t * Act_c_mini.Type.t)
-    : (Ac.Litmus_id.t * Act_c_mini.Type.t) Or_error.t =
+let type_adjusted_param ((id, ty) : Ac.Litmus_id.t * Act_c_mini.Type.t) :
+    (Ac.Litmus_id.t * Act_c_mini.Type.t) Or_error.t =
   Or_error.Let_syntax.(
     let%map ty' =
-      if Ac.Litmus_id.is_global id
-      then Act_c_mini.Type.ref ty
+      if Ac.Litmus_id.is_global id then Act_c_mini.Type.ref ty
       else Or_error.return ty
-    in (id, ty')
-  )
+    in
+    (id, ty'))
 
-(** Produces a list of sorted, type-adjusted parameters from [vars].
-    These are the parameters of the inner call, and need to be filtered to
-    produce the other parameter/argument lists. *)
+(** Produces a list of sorted, type-adjusted parameters from [vars]. These
+    are the parameters of the inner call, and need to be filtered to produce
+    the other parameter/argument lists. *)
 let sorted_type_adjusted_params (vars : Var_map.t) :
     (Ac.Litmus_id.t, Act_c_mini.Type.t) List.Assoc.t Or_error.t =
-  vars
-  |> sorted_params
-  |> Tx.Or_error.combine_map ~f:type_adjusted_param
+  vars |> sorted_params |> Tx.Or_error.combine_map ~f:type_adjusted_param
 
-let thread_params : (Ac.Litmus_id.t, Act_c_mini.Type.t) List.Assoc.t ->
-  (Ac.C_id.t, Act_c_mini.Type.t) List.Assoc.t =
-  List.filter_map
-    ~f:(fun (id, ty) ->
-        Option.map ~f:(fun id' -> (id', ty)) (Ac.Litmus_id.as_global id))
+let thread_params :
+       (Ac.Litmus_id.t, Act_c_mini.Type.t) List.Assoc.t
+    -> (Ac.C_id.t, Act_c_mini.Type.t) List.Assoc.t =
+  List.filter_map ~f:(fun (id, ty) ->
+      Option.map ~f:(fun id' -> (id', ty)) (Ac.Litmus_id.as_global id))
 
-let local_decls (tid: int) : (Ac.Litmus_id.t, Act_c_mini.Type.t) List.Assoc.t ->
-  (Ac.C_id.t, Act_c_mini.Initialiser.t) List.Assoc.t =
-  List.filter_map
-    ~f:(fun (id, ty) ->
-        if [%equal: int option] (Ac.Litmus_id.tid id) (Some tid)
-        then Some (Ac.Litmus_id.variable_name id, Act_c_mini.Initialiser.make ~ty ())
-        else None)
+let local_decls (tid : int) :
+       (Ac.Litmus_id.t, Act_c_mini.Type.t) List.Assoc.t
+    -> (Ac.C_id.t, Act_c_mini.Initialiser.t) List.Assoc.t =
+  List.filter_map ~f:(fun (id, ty) ->
+      if [%equal: int option] (Ac.Litmus_id.tid id) (Some tid) then
+        Some
+          (Ac.Litmus_id.variable_name id, Act_c_mini.Initialiser.make ~ty ())
+      else None)
 
-let inner_call_argument (lid : Ac.Litmus_id.t) (ty : Act_c_mini.Type.t) : Act_c_mini.Expression.t =
+let inner_call_argument (lid : Ac.Litmus_id.t) (ty : Act_c_mini.Type.t) :
+    Act_c_mini.Expression.t =
   let id = Ac.Litmus_id.variable_name lid in
   Act_c_mini.Expression.address
     (Act_c_mini.Address.on_address_of_typed_id ~id ~ty)
 
-let inner_call_arguments (tid: int) : (Ac.Litmus_id.t, Act_c_mini.Type.t) List.Assoc.t ->
-  Act_c_mini.Expression.t list =
-  List.filter_map
-    ~f:(fun (lid, ty) ->
-        if Ac.Litmus_id.is_in_scope ~from:tid lid
-        then Some (inner_call_argument lid ty)
-        else None)
+let inner_call_arguments (tid : int) :
+       (Ac.Litmus_id.t, Act_c_mini.Type.t) List.Assoc.t
+    -> Act_c_mini.Expression.t list =
+  List.filter_map ~f:(fun (lid, ty) ->
+      if Ac.Litmus_id.is_in_scope ~from:tid lid then
+        Some (inner_call_argument lid ty)
+      else None)
 
-let inner_call_stm (tid: int) (function_id: Ac.C_id.t) (all_params: (Ac.Litmus_id.t, Act_c_mini.Type.t) List.Assoc.t) :
-  unit Act_c_mini.Statement.t =
+let inner_call_stm (tid : int) (function_id : Ac.C_id.t)
+    (all_params : (Ac.Litmus_id.t, Act_c_mini.Type.t) List.Assoc.t) :
+    unit Act_c_mini.Statement.t =
   let arguments = inner_call_arguments tid all_params in
   let call = Act_c_mini.Call.make ~function_id ~metadata:() ~arguments () in
   Act_c_mini.Statement.procedure_call call

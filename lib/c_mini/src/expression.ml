@@ -298,8 +298,7 @@ module Eval = struct
       Constant.t Or_error.t =
     let rec mu : t -> Constant.t Or_error.t =
       (* We reduce in single steps to support short-circuiting evaluation. *)
-      reduce_step ~constant:Or_error.return
-        ~address:env
+      reduce_step ~constant:Or_error.return ~address:env
         ~atomic_load:(eval_atomic_load ~env)
         ~bop:(fun o -> eval_bop mu o)
         ~uop:(fun o -> eval_uop mu o)

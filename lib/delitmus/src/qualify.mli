@@ -15,30 +15,14 @@
     needs to flatten out thread-local variables in the global scope. This
     module contains the logic for doing so. *)
 
-open Base
-
-(** {2 Qualifying identifiers in Litmus constructs}
-
-    These functions involve thread-qualifying thread-local litmus IDs in
-    litmus constructs. Generally, these contain the requisite thread IDs
-    in-place, meaning we needn't carry around a thread context. *)
-
-val litmus_id : Act_common.Litmus_id.t -> Act_common.C_id.t
-(** [litmus_id id] qualifies a litmus identifier [id], using any thread
-    information therein. *)
+val litmus_id :
+  ?qualify_locals:bool -> Act_common.Litmus_id.t -> Act_common.C_id.t
+(** [litmus_id ?qualify_locals id] qualifies a litmus identifier [id], using
+    any thread information therein. *)
 
 val postcondition :
-     Act_c_mini.Constant.t Act_litmus.Postcondition.t
+     ?qualify_locals:bool
   -> Act_c_mini.Constant.t Act_litmus.Postcondition.t
-(** [locals_in_statement thread statement] qualifies all local variables in
-    the mini-statement [statement] using the information in [thread]. *)
-
-(** {2 Qualifying identifiers in C constructs}
-
-    These functions involve thread-qualifying C IDs in thread bodies.
-    Generally, these do _not_ contain self-starting thread context, and so we
-    need to carry around increasing amounts of auxiliary information. *)
-
-val local : int -> Act_common.C_id.t -> Act_common.C_id.t
-(** [local tid id] qualifies a local variable [id] using the thread
-    identifier [tid]. *)
+  -> Act_c_mini.Constant.t Act_litmus.Postcondition.t
+(** [postcondition ?qualify_locals pc] qualifies all identifiers in the
+    postcondition [pc]. *)

@@ -5,6 +5,128 @@
 ```
 //
 // style: vars-as-globals
+// qualify-locals: false
+// suffix: (none)
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+atomic_int x = 0;
+atomic_int y = 0;
+int r0 = 0;
+int r1 = 0;
+int r0 = 0;
+int r1 = 0;
+void
+P0()
+{ atomic_store_explicit(&x, 1, memory_order_seq_cst); }
+void
+P1()
+{ atomic_store_explicit(&y, 1, memory_order_seq_cst); }
+void
+P2()
+{
+    r0 = atomic_load_explicit(&x, memory_order_acquire);
+    r1 = atomic_load_explicit(&y, memory_order_seq_cst);
+}
+void
+P3()
+{
+    r0 = atomic_load_explicit(&y, memory_order_acquire);
+    r1 = atomic_load_explicit(&x, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "iriw",
+    "locations": null,
+    "init": { "x": 0, "y": 0 },
+    "postcondition":
+      "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0" },
+    "P1": { "is_thread_body": true, "c_id": "P1" },
+    "P2": { "is_thread_body": true, "c_id": "P2" },
+    "P3": { "is_thread_body": true, "c_id": "P3" }
+  },
+  "var_map": {
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Global" ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Global" ] },
+    "2:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Global" ] },
+    "2:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Global" ] },
+    "3:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Global" ] },
+    "3:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Global" ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-globals
+// qualify-locals: false
+// suffix: _body
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+atomic_int x = 0;
+atomic_int y = 0;
+int r0 = 0;
+int r1 = 0;
+int r0 = 0;
+int r1 = 0;
+void
+P0_body()
+{ atomic_store_explicit(&x, 1, memory_order_seq_cst); }
+void
+P1_body()
+{ atomic_store_explicit(&y, 1, memory_order_seq_cst); }
+void
+P2_body()
+{
+    r0 = atomic_load_explicit(&x, memory_order_acquire);
+    r1 = atomic_load_explicit(&y, memory_order_seq_cst);
+}
+void
+P3_body()
+{
+    r0 = atomic_load_explicit(&y, memory_order_acquire);
+    r1 = atomic_load_explicit(&x, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "iriw",
+    "locations": null,
+    "init": { "x": 0, "y": 0 },
+    "postcondition":
+      "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0_body" },
+    "P1": { "is_thread_body": true, "c_id": "P1_body" },
+    "P2": { "is_thread_body": true, "c_id": "P2_body" },
+    "P3": { "is_thread_body": true, "c_id": "P3_body" }
+  },
+  "var_map": {
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Global" ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Global" ] },
+    "2:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Global" ] },
+    "2:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Global" ] },
+    "3:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Global" ] },
+    "3:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Global" ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-globals
+// qualify-locals: true
+// suffix: (none)
 //
 
 // <!> Auto-generated from a litmus test by ACT.
@@ -62,7 +184,123 @@ P3()
 } 
 --End auxiliary output-- */
 //
+// style: vars-as-globals
+// qualify-locals: true
+// suffix: _body
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+atomic_int x = 0;
+atomic_int y = 0;
+int t2r0 = 0;
+int t2r1 = 0;
+int t3r0 = 0;
+int t3r1 = 0;
+void
+P0_body()
+{ atomic_store_explicit(&x, 1, memory_order_seq_cst); }
+void
+P1_body()
+{ atomic_store_explicit(&y, 1, memory_order_seq_cst); }
+void
+P2_body()
+{
+    t2r0 = atomic_load_explicit(&x, memory_order_acquire);
+    t2r1 = atomic_load_explicit(&y, memory_order_seq_cst);
+}
+void
+P3_body()
+{
+    t3r0 = atomic_load_explicit(&y, memory_order_acquire);
+    t3r1 = atomic_load_explicit(&x, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "iriw",
+    "locations": null,
+    "init": { "x": 0, "y": 0 },
+    "postcondition":
+      "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0_body" },
+    "P1": { "is_thread_body": true, "c_id": "P1_body" },
+    "P2": { "is_thread_body": true, "c_id": "P2_body" },
+    "P3": { "is_thread_body": true, "c_id": "P3_body" }
+  },
+  "var_map": {
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Global" ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Global" ] },
+    "2:r0": { "c_type": "int", "c_id": "t2r0", "mapped_to": [ "Global" ] },
+    "2:r1": { "c_type": "int", "c_id": "t2r1", "mapped_to": [ "Global" ] },
+    "3:r0": { "c_type": "int", "c_id": "t3r0", "mapped_to": [ "Global" ] },
+    "3:r1": { "c_type": "int", "c_id": "t3r1", "mapped_to": [ "Global" ] }
+  }
+} 
+--End auxiliary output-- */
+//
 // style: vars-as-parameters
+// qualify-locals: false
+// suffix: (none)
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+void
+P0(atomic_int *x, atomic_int *y)
+{ atomic_store_explicit(x, 1, memory_order_seq_cst); }
+void
+P1(atomic_int *x, atomic_int *y)
+{ atomic_store_explicit(y, 1, memory_order_seq_cst); }
+void
+P2(atomic_int *x, atomic_int *y, int *r0, int *r1)
+{
+    *r0 = atomic_load_explicit(x, memory_order_acquire);
+    *r1 = atomic_load_explicit(y, memory_order_seq_cst);
+}
+void
+P3(atomic_int *x, atomic_int *y, int *r0, int *r1)
+{
+    *r0 = atomic_load_explicit(y, memory_order_acquire);
+    *r1 = atomic_load_explicit(x, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "iriw",
+    "locations": null,
+    "init": { "x": 0, "y": 0 },
+    "postcondition":
+      "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0" },
+    "P1": { "is_thread_body": true, "c_id": "P1" },
+    "P2": { "is_thread_body": true, "c_id": "P2" },
+    "P3": { "is_thread_body": true, "c_id": "P3" }
+  },
+  "var_map": {
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Param", 0 ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 1 ] },
+    "2:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 2 ] },
+    "2:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 3 ] },
+    "3:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 4 ] },
+    "3:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 5 ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-parameters
+// qualify-locals: false
+// suffix: _body
 //
 
 // <!> Auto-generated from a litmus test by ACT.
@@ -85,6 +323,114 @@ P3_body(atomic_int *x, atomic_int *y, int *r0, int *r1)
 {
     *r0 = atomic_load_explicit(y, memory_order_acquire);
     *r1 = atomic_load_explicit(x, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "iriw",
+    "locations": null,
+    "init": { "x": 0, "y": 0 },
+    "postcondition":
+      "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0_body" },
+    "P1": { "is_thread_body": true, "c_id": "P1_body" },
+    "P2": { "is_thread_body": true, "c_id": "P2_body" },
+    "P3": { "is_thread_body": true, "c_id": "P3_body" }
+  },
+  "var_map": {
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Param", 0 ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 1 ] },
+    "2:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 2 ] },
+    "2:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 3 ] },
+    "3:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 4 ] },
+    "3:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 5 ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-parameters
+// qualify-locals: true
+// suffix: (none)
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+void
+P0(atomic_int *x, atomic_int *y)
+{ atomic_store_explicit(x, 1, memory_order_seq_cst); }
+void
+P1(atomic_int *x, atomic_int *y)
+{ atomic_store_explicit(y, 1, memory_order_seq_cst); }
+void
+P2(atomic_int *x, atomic_int *y, int *t2r0, int *t2r1)
+{
+    *t2r0 = atomic_load_explicit(x, memory_order_acquire);
+    *t2r1 = atomic_load_explicit(y, memory_order_seq_cst);
+}
+void
+P3(atomic_int *x, atomic_int *y, int *t3r0, int *t3r1)
+{
+    *t3r0 = atomic_load_explicit(y, memory_order_acquire);
+    *t3r1 = atomic_load_explicit(x, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "iriw",
+    "locations": null,
+    "init": { "x": 0, "y": 0 },
+    "postcondition":
+      "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0" },
+    "P1": { "is_thread_body": true, "c_id": "P1" },
+    "P2": { "is_thread_body": true, "c_id": "P2" },
+    "P3": { "is_thread_body": true, "c_id": "P3" }
+  },
+  "var_map": {
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Param", 0 ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 1 ] },
+    "2:r0": { "c_type": "int", "c_id": "t2r0", "mapped_to": [ "Param", 2 ] },
+    "2:r1": { "c_type": "int", "c_id": "t2r1", "mapped_to": [ "Param", 3 ] },
+    "3:r0": { "c_type": "int", "c_id": "t3r0", "mapped_to": [ "Param", 4 ] },
+    "3:r1": { "c_type": "int", "c_id": "t3r1", "mapped_to": [ "Param", 5 ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-parameters
+// qualify-locals: true
+// suffix: _body
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+void
+P0_body(atomic_int *x, atomic_int *y)
+{ atomic_store_explicit(x, 1, memory_order_seq_cst); }
+void
+P1_body(atomic_int *x, atomic_int *y)
+{ atomic_store_explicit(y, 1, memory_order_seq_cst); }
+void
+P2_body(atomic_int *x, atomic_int *y, int *t2r0, int *t2r1)
+{
+    *t2r0 = atomic_load_explicit(x, memory_order_acquire);
+    *t2r1 = atomic_load_explicit(y, memory_order_seq_cst);
+}
+void
+P3_body(atomic_int *x, atomic_int *y, int *t3r0, int *t3r1)
+{
+    *t3r0 = atomic_load_explicit(y, memory_order_acquire);
+    *t3r1 = atomic_load_explicit(x, memory_order_seq_cst);
 }
 
 /* --Begin auxiliary output--
@@ -119,6 +465,226 @@ P3_body(atomic_int *x, atomic_int *y, int *r0, int *r1)
 ```
 //
 // style: vars-as-globals
+// qualify-locals: false
+// suffix: (none)
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+int MaJgQmON3yu = 2728;
+int VFTQNWN = -13;
+int ZgoV7uel9o = 1073;
+int m02M5s = -64856;
+atomic_int ne0J8wrPQam = -12197004;
+atomic_int x = 0;
+atomic_int y = 0;
+int r0 = 0;
+int r1 = 0;
+int r0 = 0;
+int r1 = 0;
+void
+P0()
+{ atomic_store_explicit(&ne0J8wrPQam, 3417, memory_order_seq_cst); }
+void
+P1()
+{
+    atomic_store_explicit(&ne0J8wrPQam, 481486, memory_order_relaxed);
+    atomic_store_explicit(&x, 1, memory_order_seq_cst);
+}
+void
+P2()
+{ atomic_store_explicit(&y, 1, memory_order_seq_cst); }
+void
+P3()
+{
+    r0 = atomic_load_explicit(&x, memory_order_acquire);
+    r1 = atomic_load_explicit(&y, memory_order_seq_cst);
+    atomic_store_explicit(&ne0J8wrPQam, -7, memory_order_seq_cst);
+}
+void
+P4()
+{
+    r0 = atomic_load_explicit(&y, memory_order_acquire);
+    r1 = atomic_load_explicit(&x, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "iriw",
+    "locations": [
+      "MaJgQmON3yu", "ZgoV7uel9o", "VFTQNWN", "m02M5s", "ne0J8wrPQam", "x",
+      "y"
+    ],
+    "init": {
+      "MaJgQmON3yu": 2728,
+      "ZgoV7uel9o": 1073,
+      "VFTQNWN": -13,
+      "m02M5s": -64856,
+      "ne0J8wrPQam": -12197004,
+      "x": 0,
+      "y": 0
+    },
+    "postcondition":
+      "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0" },
+    "P1": { "is_thread_body": true, "c_id": "P1" },
+    "P2": { "is_thread_body": true, "c_id": "P2" },
+    "P3": { "is_thread_body": true, "c_id": "P3" },
+    "P4": { "is_thread_body": true, "c_id": "P4" }
+  },
+  "var_map": {
+    "MaJgQmON3yu": {
+      "c_type": "int",
+      "c_id": "MaJgQmON3yu",
+      "mapped_to": [ "Global" ]
+    },
+    "VFTQNWN": {
+      "c_type": "int",
+      "c_id": "VFTQNWN",
+      "mapped_to": [ "Global" ]
+    },
+    "ZgoV7uel9o": {
+      "c_type": "int",
+      "c_id": "ZgoV7uel9o",
+      "mapped_to": [ "Global" ]
+    },
+    "m02M5s": {
+      "c_type": "int",
+      "c_id": "m02M5s",
+      "mapped_to": [ "Global" ]
+    },
+    "ne0J8wrPQam": {
+      "c_type": "atomic_int",
+      "c_id": "ne0J8wrPQam",
+      "mapped_to": [ "Global" ]
+    },
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Global" ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Global" ] },
+    "3:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Global" ] },
+    "3:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Global" ] },
+    "4:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Global" ] },
+    "4:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Global" ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-globals
+// qualify-locals: false
+// suffix: _body
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+int MaJgQmON3yu = 2728;
+int VFTQNWN = -13;
+int ZgoV7uel9o = 1073;
+int m02M5s = -64856;
+atomic_int ne0J8wrPQam = -12197004;
+atomic_int x = 0;
+atomic_int y = 0;
+int r0 = 0;
+int r1 = 0;
+int r0 = 0;
+int r1 = 0;
+void
+P0_body()
+{ atomic_store_explicit(&ne0J8wrPQam, 3417, memory_order_seq_cst); }
+void
+P1_body()
+{
+    atomic_store_explicit(&ne0J8wrPQam, 481486, memory_order_relaxed);
+    atomic_store_explicit(&x, 1, memory_order_seq_cst);
+}
+void
+P2_body()
+{ atomic_store_explicit(&y, 1, memory_order_seq_cst); }
+void
+P3_body()
+{
+    r0 = atomic_load_explicit(&x, memory_order_acquire);
+    r1 = atomic_load_explicit(&y, memory_order_seq_cst);
+    atomic_store_explicit(&ne0J8wrPQam, -7, memory_order_seq_cst);
+}
+void
+P4_body()
+{
+    r0 = atomic_load_explicit(&y, memory_order_acquire);
+    r1 = atomic_load_explicit(&x, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "iriw",
+    "locations": [
+      "MaJgQmON3yu", "ZgoV7uel9o", "VFTQNWN", "m02M5s", "ne0J8wrPQam", "x",
+      "y"
+    ],
+    "init": {
+      "MaJgQmON3yu": 2728,
+      "ZgoV7uel9o": 1073,
+      "VFTQNWN": -13,
+      "m02M5s": -64856,
+      "ne0J8wrPQam": -12197004,
+      "x": 0,
+      "y": 0
+    },
+    "postcondition":
+      "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0_body" },
+    "P1": { "is_thread_body": true, "c_id": "P1_body" },
+    "P2": { "is_thread_body": true, "c_id": "P2_body" },
+    "P3": { "is_thread_body": true, "c_id": "P3_body" },
+    "P4": { "is_thread_body": true, "c_id": "P4_body" }
+  },
+  "var_map": {
+    "MaJgQmON3yu": {
+      "c_type": "int",
+      "c_id": "MaJgQmON3yu",
+      "mapped_to": [ "Global" ]
+    },
+    "VFTQNWN": {
+      "c_type": "int",
+      "c_id": "VFTQNWN",
+      "mapped_to": [ "Global" ]
+    },
+    "ZgoV7uel9o": {
+      "c_type": "int",
+      "c_id": "ZgoV7uel9o",
+      "mapped_to": [ "Global" ]
+    },
+    "m02M5s": {
+      "c_type": "int",
+      "c_id": "m02M5s",
+      "mapped_to": [ "Global" ]
+    },
+    "ne0J8wrPQam": {
+      "c_type": "atomic_int",
+      "c_id": "ne0J8wrPQam",
+      "mapped_to": [ "Global" ]
+    },
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Global" ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Global" ] },
+    "3:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Global" ] },
+    "3:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Global" ] },
+    "4:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Global" ] },
+    "4:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Global" ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-globals
+// qualify-locals: true
+// suffix: (none)
 //
 
 // <!> Auto-generated from a litmus test by ACT.
@@ -225,7 +791,221 @@ P4()
 } 
 --End auxiliary output-- */
 //
+// style: vars-as-globals
+// qualify-locals: true
+// suffix: _body
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+int MaJgQmON3yu = 2728;
+int VFTQNWN = -13;
+int ZgoV7uel9o = 1073;
+int m02M5s = -64856;
+atomic_int ne0J8wrPQam = -12197004;
+atomic_int x = 0;
+atomic_int y = 0;
+int t3r0 = 0;
+int t3r1 = 0;
+int t4r0 = 0;
+int t4r1 = 0;
+void
+P0_body()
+{ atomic_store_explicit(&ne0J8wrPQam, 3417, memory_order_seq_cst); }
+void
+P1_body()
+{
+    atomic_store_explicit(&ne0J8wrPQam, 481486, memory_order_relaxed);
+    atomic_store_explicit(&x, 1, memory_order_seq_cst);
+}
+void
+P2_body()
+{ atomic_store_explicit(&y, 1, memory_order_seq_cst); }
+void
+P3_body()
+{
+    t3r0 = atomic_load_explicit(&x, memory_order_acquire);
+    t3r1 = atomic_load_explicit(&y, memory_order_seq_cst);
+    atomic_store_explicit(&ne0J8wrPQam, -7, memory_order_seq_cst);
+}
+void
+P4_body()
+{
+    t4r0 = atomic_load_explicit(&y, memory_order_acquire);
+    t4r1 = atomic_load_explicit(&x, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "iriw",
+    "locations": [
+      "MaJgQmON3yu", "ZgoV7uel9o", "VFTQNWN", "m02M5s", "ne0J8wrPQam", "x",
+      "y"
+    ],
+    "init": {
+      "MaJgQmON3yu": 2728,
+      "ZgoV7uel9o": 1073,
+      "VFTQNWN": -13,
+      "m02M5s": -64856,
+      "ne0J8wrPQam": -12197004,
+      "x": 0,
+      "y": 0
+    },
+    "postcondition":
+      "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0_body" },
+    "P1": { "is_thread_body": true, "c_id": "P1_body" },
+    "P2": { "is_thread_body": true, "c_id": "P2_body" },
+    "P3": { "is_thread_body": true, "c_id": "P3_body" },
+    "P4": { "is_thread_body": true, "c_id": "P4_body" }
+  },
+  "var_map": {
+    "MaJgQmON3yu": {
+      "c_type": "int",
+      "c_id": "MaJgQmON3yu",
+      "mapped_to": [ "Global" ]
+    },
+    "VFTQNWN": {
+      "c_type": "int",
+      "c_id": "VFTQNWN",
+      "mapped_to": [ "Global" ]
+    },
+    "ZgoV7uel9o": {
+      "c_type": "int",
+      "c_id": "ZgoV7uel9o",
+      "mapped_to": [ "Global" ]
+    },
+    "m02M5s": {
+      "c_type": "int",
+      "c_id": "m02M5s",
+      "mapped_to": [ "Global" ]
+    },
+    "ne0J8wrPQam": {
+      "c_type": "atomic_int",
+      "c_id": "ne0J8wrPQam",
+      "mapped_to": [ "Global" ]
+    },
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Global" ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Global" ] },
+    "3:r0": { "c_type": "int", "c_id": "t3r0", "mapped_to": [ "Global" ] },
+    "3:r1": { "c_type": "int", "c_id": "t3r1", "mapped_to": [ "Global" ] },
+    "4:r0": { "c_type": "int", "c_id": "t4r0", "mapped_to": [ "Global" ] },
+    "4:r1": { "c_type": "int", "c_id": "t4r1", "mapped_to": [ "Global" ] }
+  }
+} 
+--End auxiliary output-- */
+//
 // style: vars-as-parameters
+// qualify-locals: false
+// suffix: (none)
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+void
+P0(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+   atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y)
+{ atomic_store_explicit(ne0J8wrPQam, 3417, memory_order_seq_cst); }
+void
+P1(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+   atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y)
+{
+    atomic_store_explicit(ne0J8wrPQam, 481486, memory_order_relaxed);
+    atomic_store_explicit(x, 1, memory_order_seq_cst);
+}
+void
+P2(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+   atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y)
+{ atomic_store_explicit(y, 1, memory_order_seq_cst); }
+void
+P3(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+   atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y, int *r0, int *r1)
+{
+    *r0 = atomic_load_explicit(x, memory_order_acquire);
+    *r1 = atomic_load_explicit(y, memory_order_seq_cst);
+    atomic_store_explicit(ne0J8wrPQam, -7, memory_order_seq_cst);
+}
+void
+P4(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+   atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y, int *r0, int *r1)
+{
+    *r0 = atomic_load_explicit(y, memory_order_acquire);
+    *r1 = atomic_load_explicit(x, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "iriw",
+    "locations": [
+      "MaJgQmON3yu", "ZgoV7uel9o", "VFTQNWN", "m02M5s", "ne0J8wrPQam", "x",
+      "y"
+    ],
+    "init": {
+      "MaJgQmON3yu": 2728,
+      "ZgoV7uel9o": 1073,
+      "VFTQNWN": -13,
+      "m02M5s": -64856,
+      "ne0J8wrPQam": -12197004,
+      "x": 0,
+      "y": 0
+    },
+    "postcondition":
+      "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0" },
+    "P1": { "is_thread_body": true, "c_id": "P1" },
+    "P2": { "is_thread_body": true, "c_id": "P2" },
+    "P3": { "is_thread_body": true, "c_id": "P3" },
+    "P4": { "is_thread_body": true, "c_id": "P4" }
+  },
+  "var_map": {
+    "MaJgQmON3yu": {
+      "c_type": "int",
+      "c_id": "MaJgQmON3yu",
+      "mapped_to": [ "Param", 0 ]
+    },
+    "VFTQNWN": {
+      "c_type": "int",
+      "c_id": "VFTQNWN",
+      "mapped_to": [ "Param", 1 ]
+    },
+    "ZgoV7uel9o": {
+      "c_type": "int",
+      "c_id": "ZgoV7uel9o",
+      "mapped_to": [ "Param", 2 ]
+    },
+    "m02M5s": {
+      "c_type": "int",
+      "c_id": "m02M5s",
+      "mapped_to": [ "Param", 3 ]
+    },
+    "ne0J8wrPQam": {
+      "c_type": "atomic_int",
+      "c_id": "ne0J8wrPQam",
+      "mapped_to": [ "Param", 4 ]
+    },
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Param", 5 ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 6 ] },
+    "3:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 7 ] },
+    "3:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 8 ] },
+    "4:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 9 ] },
+    "4:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 10 ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-parameters
+// qualify-locals: false
+// suffix: _body
 //
 
 // <!> Auto-generated from a litmus test by ACT.
@@ -262,6 +1042,216 @@ P4_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
 {
     *r0 = atomic_load_explicit(y, memory_order_acquire);
     *r1 = atomic_load_explicit(x, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "iriw",
+    "locations": [
+      "MaJgQmON3yu", "ZgoV7uel9o", "VFTQNWN", "m02M5s", "ne0J8wrPQam", "x",
+      "y"
+    ],
+    "init": {
+      "MaJgQmON3yu": 2728,
+      "ZgoV7uel9o": 1073,
+      "VFTQNWN": -13,
+      "m02M5s": -64856,
+      "ne0J8wrPQam": -12197004,
+      "x": 0,
+      "y": 0
+    },
+    "postcondition":
+      "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0_body" },
+    "P1": { "is_thread_body": true, "c_id": "P1_body" },
+    "P2": { "is_thread_body": true, "c_id": "P2_body" },
+    "P3": { "is_thread_body": true, "c_id": "P3_body" },
+    "P4": { "is_thread_body": true, "c_id": "P4_body" }
+  },
+  "var_map": {
+    "MaJgQmON3yu": {
+      "c_type": "int",
+      "c_id": "MaJgQmON3yu",
+      "mapped_to": [ "Param", 0 ]
+    },
+    "VFTQNWN": {
+      "c_type": "int",
+      "c_id": "VFTQNWN",
+      "mapped_to": [ "Param", 1 ]
+    },
+    "ZgoV7uel9o": {
+      "c_type": "int",
+      "c_id": "ZgoV7uel9o",
+      "mapped_to": [ "Param", 2 ]
+    },
+    "m02M5s": {
+      "c_type": "int",
+      "c_id": "m02M5s",
+      "mapped_to": [ "Param", 3 ]
+    },
+    "ne0J8wrPQam": {
+      "c_type": "atomic_int",
+      "c_id": "ne0J8wrPQam",
+      "mapped_to": [ "Param", 4 ]
+    },
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Param", 5 ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 6 ] },
+    "3:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 7 ] },
+    "3:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 8 ] },
+    "4:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 9 ] },
+    "4:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 10 ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-parameters
+// qualify-locals: true
+// suffix: (none)
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+void
+P0(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+   atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y)
+{ atomic_store_explicit(ne0J8wrPQam, 3417, memory_order_seq_cst); }
+void
+P1(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+   atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y)
+{
+    atomic_store_explicit(ne0J8wrPQam, 481486, memory_order_relaxed);
+    atomic_store_explicit(x, 1, memory_order_seq_cst);
+}
+void
+P2(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+   atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y)
+{ atomic_store_explicit(y, 1, memory_order_seq_cst); }
+void
+P3(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+   atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y, int *t3r0,
+   int *t3r1)
+{
+    *t3r0 = atomic_load_explicit(x, memory_order_acquire);
+    *t3r1 = atomic_load_explicit(y, memory_order_seq_cst);
+    atomic_store_explicit(ne0J8wrPQam, -7, memory_order_seq_cst);
+}
+void
+P4(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+   atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y, int *t4r0,
+   int *t4r1)
+{
+    *t4r0 = atomic_load_explicit(y, memory_order_acquire);
+    *t4r1 = atomic_load_explicit(x, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "iriw",
+    "locations": [
+      "MaJgQmON3yu", "ZgoV7uel9o", "VFTQNWN", "m02M5s", "ne0J8wrPQam", "x",
+      "y"
+    ],
+    "init": {
+      "MaJgQmON3yu": 2728,
+      "ZgoV7uel9o": 1073,
+      "VFTQNWN": -13,
+      "m02M5s": -64856,
+      "ne0J8wrPQam": -12197004,
+      "x": 0,
+      "y": 0
+    },
+    "postcondition":
+      "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0" },
+    "P1": { "is_thread_body": true, "c_id": "P1" },
+    "P2": { "is_thread_body": true, "c_id": "P2" },
+    "P3": { "is_thread_body": true, "c_id": "P3" },
+    "P4": { "is_thread_body": true, "c_id": "P4" }
+  },
+  "var_map": {
+    "MaJgQmON3yu": {
+      "c_type": "int",
+      "c_id": "MaJgQmON3yu",
+      "mapped_to": [ "Param", 0 ]
+    },
+    "VFTQNWN": {
+      "c_type": "int",
+      "c_id": "VFTQNWN",
+      "mapped_to": [ "Param", 1 ]
+    },
+    "ZgoV7uel9o": {
+      "c_type": "int",
+      "c_id": "ZgoV7uel9o",
+      "mapped_to": [ "Param", 2 ]
+    },
+    "m02M5s": {
+      "c_type": "int",
+      "c_id": "m02M5s",
+      "mapped_to": [ "Param", 3 ]
+    },
+    "ne0J8wrPQam": {
+      "c_type": "atomic_int",
+      "c_id": "ne0J8wrPQam",
+      "mapped_to": [ "Param", 4 ]
+    },
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Param", 5 ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 6 ] },
+    "3:r0": { "c_type": "int", "c_id": "t3r0", "mapped_to": [ "Param", 7 ] },
+    "3:r1": { "c_type": "int", "c_id": "t3r1", "mapped_to": [ "Param", 8 ] },
+    "4:r0": { "c_type": "int", "c_id": "t4r0", "mapped_to": [ "Param", 9 ] },
+    "4:r1": { "c_type": "int", "c_id": "t4r1", "mapped_to": [ "Param", 10 ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-parameters
+// qualify-locals: true
+// suffix: _body
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+void
+P0_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+        atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y)
+{ atomic_store_explicit(ne0J8wrPQam, 3417, memory_order_seq_cst); }
+void
+P1_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+        atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y)
+{
+    atomic_store_explicit(ne0J8wrPQam, 481486, memory_order_relaxed);
+    atomic_store_explicit(x, 1, memory_order_seq_cst);
+}
+void
+P2_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+        atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y)
+{ atomic_store_explicit(y, 1, memory_order_seq_cst); }
+void
+P3_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+        atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y, int *t3r0,
+        int *t3r1)
+{
+    *t3r0 = atomic_load_explicit(x, memory_order_acquire);
+    *t3r1 = atomic_load_explicit(y, memory_order_seq_cst);
+    atomic_store_explicit(ne0J8wrPQam, -7, memory_order_seq_cst);
+}
+void
+P4_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+        atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y, int *t4r0,
+        int *t4r1)
+{
+    *t4r0 = atomic_load_explicit(y, memory_order_acquire);
+    *t4r1 = atomic_load_explicit(x, memory_order_seq_cst);
 }
 
 /* --Begin auxiliary output--
@@ -333,6 +1323,90 @@ P4_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
 ```
 //
 // style: vars-as-globals
+// qualify-locals: false
+// suffix: (none)
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+atomic_int x = 0;
+int r0 = 0;
+void
+P0()
+{
+    r0 = 0;
+    atomic_compare_exchange_strong_explicit(&x, &r0, 2, memory_order_relaxed,
+                                            memory_order_relaxed);
+}
+void
+P1()
+{ atomic_store_explicit(&x, 1, memory_order_relaxed); }
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "test_7",
+    "locations": null,
+    "init": { "x": 0 },
+    "postcondition": "exists (0:r0 == 0 /\\ x == 2)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0" },
+    "P1": { "is_thread_body": true, "c_id": "P1" }
+  },
+  "var_map": {
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Global" ] },
+    "0:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Global" ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-globals
+// qualify-locals: false
+// suffix: _body
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+atomic_int x = 0;
+int r0 = 0;
+void
+P0_body()
+{
+    r0 = 0;
+    atomic_compare_exchange_strong_explicit(&x, &r0, 2, memory_order_relaxed,
+                                            memory_order_relaxed);
+}
+void
+P1_body()
+{ atomic_store_explicit(&x, 1, memory_order_relaxed); }
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "test_7",
+    "locations": null,
+    "init": { "x": 0 },
+    "postcondition": "exists (0:r0 == 0 /\\ x == 2)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0_body" },
+    "P1": { "is_thread_body": true, "c_id": "P1_body" }
+  },
+  "var_map": {
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Global" ] },
+    "0:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Global" ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-globals
+// qualify-locals: true
+// suffix: (none)
 //
 
 // <!> Auto-generated from a litmus test by ACT.
@@ -372,7 +1446,90 @@ P1()
 } 
 --End auxiliary output-- */
 //
+// style: vars-as-globals
+// qualify-locals: true
+// suffix: _body
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+atomic_int x = 0;
+int t0r0 = 0;
+void
+P0_body()
+{
+    t0r0 = 0;
+    atomic_compare_exchange_strong_explicit(&x, &t0r0, 2,
+                                            memory_order_relaxed,
+                                            memory_order_relaxed);
+}
+void
+P1_body()
+{ atomic_store_explicit(&x, 1, memory_order_relaxed); }
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "test_7",
+    "locations": null,
+    "init": { "x": 0 },
+    "postcondition": "exists (t0r0 == 0 /\\ x == 2)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0_body" },
+    "P1": { "is_thread_body": true, "c_id": "P1_body" }
+  },
+  "var_map": {
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Global" ] },
+    "0:r0": { "c_type": "int", "c_id": "t0r0", "mapped_to": [ "Global" ] }
+  }
+} 
+--End auxiliary output-- */
+//
 // style: vars-as-parameters
+// qualify-locals: false
+// suffix: (none)
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+void
+P0(atomic_int *x, int *r0)
+{
+    *r0 = 0;
+    atomic_compare_exchange_strong_explicit(x, r0, 2, memory_order_relaxed,
+                                            memory_order_relaxed);
+}
+void
+P1(atomic_int *x)
+{ atomic_store_explicit(x, 1, memory_order_relaxed); }
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "test_7",
+    "locations": null,
+    "init": { "x": 0 },
+    "postcondition": "exists (0:r0 == 0 /\\ x == 2)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0" },
+    "P1": { "is_thread_body": true, "c_id": "P1" }
+  },
+  "var_map": {
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Param", 0 ] },
+    "0:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 1 ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-parameters
+// qualify-locals: false
+// suffix: _body
 //
 
 // <!> Auto-generated from a litmus test by ACT.
@@ -383,6 +1540,84 @@ P0_body(atomic_int *x, int *r0)
 {
     *r0 = 0;
     atomic_compare_exchange_strong_explicit(x, r0, 2, memory_order_relaxed,
+                                            memory_order_relaxed);
+}
+void
+P1_body(atomic_int *x)
+{ atomic_store_explicit(x, 1, memory_order_relaxed); }
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "test_7",
+    "locations": null,
+    "init": { "x": 0 },
+    "postcondition": "exists (0:r0 == 0 /\\ x == 2)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0_body" },
+    "P1": { "is_thread_body": true, "c_id": "P1_body" }
+  },
+  "var_map": {
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Param", 0 ] },
+    "0:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 1 ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-parameters
+// qualify-locals: true
+// suffix: (none)
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+void
+P0(atomic_int *x, int *t0r0)
+{
+    *t0r0 = 0;
+    atomic_compare_exchange_strong_explicit(x, t0r0, 2, memory_order_relaxed,
+                                            memory_order_relaxed);
+}
+void
+P1(atomic_int *x)
+{ atomic_store_explicit(x, 1, memory_order_relaxed); }
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "test_7",
+    "locations": null,
+    "init": { "x": 0 },
+    "postcondition": "exists (t0r0 == 0 /\\ x == 2)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0" },
+    "P1": { "is_thread_body": true, "c_id": "P1" }
+  },
+  "var_map": {
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Param", 0 ] },
+    "0:r0": { "c_type": "int", "c_id": "t0r0", "mapped_to": [ "Param", 1 ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-parameters
+// qualify-locals: true
+// suffix: _body
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+void
+P0_body(atomic_int *x, int *t0r0)
+{
+    *t0r0 = 0;
+    atomic_compare_exchange_strong_explicit(x, t0r0, 2, memory_order_relaxed,
                                             memory_order_relaxed);
 }
 void
@@ -414,6 +1649,70 @@ P1_body(atomic_int *x)
 ```
 //
 // style: vars-as-globals
+// qualify-locals: false
+// suffix: (none)
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+int x = 0;
+int r0 = 0;
+void
+P0()
+{ x = 1; r0 = x; }
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "test_0",
+    "locations": null,
+    "init": { "x": 0 },
+    "postcondition": "exists (0:r0 == 0 /\\ x == 1)"
+  },
+  "function_map": { "P0": { "is_thread_body": true, "c_id": "P0" } },
+  "var_map": {
+    "x": { "c_type": "int", "c_id": "x", "mapped_to": [ "Global" ] },
+    "0:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Global" ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-globals
+// qualify-locals: false
+// suffix: _body
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+int x = 0;
+int r0 = 0;
+void
+P0_body()
+{ x = 1; r0 = x; }
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "test_0",
+    "locations": null,
+    "init": { "x": 0 },
+    "postcondition": "exists (0:r0 == 0 /\\ x == 1)"
+  },
+  "function_map": { "P0": { "is_thread_body": true, "c_id": "P0_body" } },
+  "var_map": {
+    "x": { "c_type": "int", "c_id": "x", "mapped_to": [ "Global" ] },
+    "0:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Global" ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-globals
+// qualify-locals: true
+// suffix: (none)
 //
 
 // <!> Auto-generated from a litmus test by ACT.
@@ -442,7 +1741,69 @@ P0()
 } 
 --End auxiliary output-- */
 //
+// style: vars-as-globals
+// qualify-locals: true
+// suffix: _body
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+int x = 0;
+int t0r0 = 0;
+void
+P0_body()
+{ x = 1; t0r0 = x; }
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "test_0",
+    "locations": null,
+    "init": { "x": 0 },
+    "postcondition": "exists (t0r0 == 0 /\\ x == 1)"
+  },
+  "function_map": { "P0": { "is_thread_body": true, "c_id": "P0_body" } },
+  "var_map": {
+    "x": { "c_type": "int", "c_id": "x", "mapped_to": [ "Global" ] },
+    "0:r0": { "c_type": "int", "c_id": "t0r0", "mapped_to": [ "Global" ] }
+  }
+} 
+--End auxiliary output-- */
+//
 // style: vars-as-parameters
+// qualify-locals: false
+// suffix: (none)
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+void
+P0(int *x, int *r0)
+{ *x = 1; *r0 = *x; }
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "test_0",
+    "locations": null,
+    "init": { "x": 0 },
+    "postcondition": "exists (0:r0 == 0 /\\ x == 1)"
+  },
+  "function_map": { "P0": { "is_thread_body": true, "c_id": "P0" } },
+  "var_map": {
+    "x": { "c_type": "int", "c_id": "x", "mapped_to": [ "Param", 0 ] },
+    "0:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 1 ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-parameters
+// qualify-locals: false
+// suffix: _body
 //
 
 // <!> Auto-generated from a litmus test by ACT.
@@ -451,6 +1812,64 @@ P0()
 void
 P0_body(int *x, int *r0)
 { *x = 1; *r0 = *x; }
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "test_0",
+    "locations": null,
+    "init": { "x": 0 },
+    "postcondition": "exists (0:r0 == 0 /\\ x == 1)"
+  },
+  "function_map": { "P0": { "is_thread_body": true, "c_id": "P0_body" } },
+  "var_map": {
+    "x": { "c_type": "int", "c_id": "x", "mapped_to": [ "Param", 0 ] },
+    "0:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 1 ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-parameters
+// qualify-locals: true
+// suffix: (none)
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+void
+P0(int *x, int *t0r0)
+{ *x = 1; *t0r0 = *x; }
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "test_0",
+    "locations": null,
+    "init": { "x": 0 },
+    "postcondition": "exists (t0r0 == 0 /\\ x == 1)"
+  },
+  "function_map": { "P0": { "is_thread_body": true, "c_id": "P0" } },
+  "var_map": {
+    "x": { "c_type": "int", "c_id": "x", "mapped_to": [ "Param", 0 ] },
+    "0:r0": { "c_type": "int", "c_id": "t0r0", "mapped_to": [ "Param", 1 ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-parameters
+// qualify-locals: true
+// suffix: _body
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+void
+P0_body(int *x, int *t0r0)
+{ *x = 1; *t0r0 = *x; }
 
 /* --Begin auxiliary output--
 
@@ -474,6 +1893,114 @@ P0_body(int *x, int *r0)
 ```
 //
 // style: vars-as-globals
+// qualify-locals: false
+// suffix: (none)
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+atomic_int x = 0;
+atomic_int y = 0;
+int r0 = 0;
+int r1 = 0;
+int r0 = 0;
+void
+P0()
+{ atomic_store_explicit(&x, 1, memory_order_seq_cst); }
+void
+P1()
+{
+    r0 = atomic_load_explicit(&x, memory_order_acquire);
+    r1 = atomic_load_explicit(&y, memory_order_seq_cst);
+}
+void
+P2()
+{
+    atomic_store_explicit(&y, 1, memory_order_seq_cst);
+    r0 = atomic_load_explicit(&x, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "rwc",
+    "locations": null,
+    "init": { "x": 0, "y": 0 },
+    "postcondition": "exists (1:r0 == 1 /\\ 1:r1 == 0 /\\ 2:r0 == 0)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0" },
+    "P1": { "is_thread_body": true, "c_id": "P1" },
+    "P2": { "is_thread_body": true, "c_id": "P2" }
+  },
+  "var_map": {
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Global" ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Global" ] },
+    "1:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Global" ] },
+    "1:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Global" ] },
+    "2:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Global" ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-globals
+// qualify-locals: false
+// suffix: _body
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+atomic_int x = 0;
+atomic_int y = 0;
+int r0 = 0;
+int r1 = 0;
+int r0 = 0;
+void
+P0_body()
+{ atomic_store_explicit(&x, 1, memory_order_seq_cst); }
+void
+P1_body()
+{
+    r0 = atomic_load_explicit(&x, memory_order_acquire);
+    r1 = atomic_load_explicit(&y, memory_order_seq_cst);
+}
+void
+P2_body()
+{
+    atomic_store_explicit(&y, 1, memory_order_seq_cst);
+    r0 = atomic_load_explicit(&x, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "rwc",
+    "locations": null,
+    "init": { "x": 0, "y": 0 },
+    "postcondition": "exists (1:r0 == 1 /\\ 1:r1 == 0 /\\ 2:r0 == 0)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0_body" },
+    "P1": { "is_thread_body": true, "c_id": "P1_body" },
+    "P2": { "is_thread_body": true, "c_id": "P2_body" }
+  },
+  "var_map": {
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Global" ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Global" ] },
+    "1:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Global" ] },
+    "1:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Global" ] },
+    "2:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Global" ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-globals
+// qualify-locals: true
+// suffix: (none)
 //
 
 // <!> Auto-generated from a litmus test by ACT.
@@ -524,7 +2051,110 @@ P2()
 } 
 --End auxiliary output-- */
 //
+// style: vars-as-globals
+// qualify-locals: true
+// suffix: _body
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+atomic_int x = 0;
+atomic_int y = 0;
+int t1r0 = 0;
+int t1r1 = 0;
+int t2r0 = 0;
+void
+P0_body()
+{ atomic_store_explicit(&x, 1, memory_order_seq_cst); }
+void
+P1_body()
+{
+    t1r0 = atomic_load_explicit(&x, memory_order_acquire);
+    t1r1 = atomic_load_explicit(&y, memory_order_seq_cst);
+}
+void
+P2_body()
+{
+    atomic_store_explicit(&y, 1, memory_order_seq_cst);
+    t2r0 = atomic_load_explicit(&x, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "rwc",
+    "locations": null,
+    "init": { "x": 0, "y": 0 },
+    "postcondition": "exists (t1r0 == 1 /\\ t1r1 == 0 /\\ t2r0 == 0)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0_body" },
+    "P1": { "is_thread_body": true, "c_id": "P1_body" },
+    "P2": { "is_thread_body": true, "c_id": "P2_body" }
+  },
+  "var_map": {
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Global" ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Global" ] },
+    "1:r0": { "c_type": "int", "c_id": "t1r0", "mapped_to": [ "Global" ] },
+    "1:r1": { "c_type": "int", "c_id": "t1r1", "mapped_to": [ "Global" ] },
+    "2:r0": { "c_type": "int", "c_id": "t2r0", "mapped_to": [ "Global" ] }
+  }
+} 
+--End auxiliary output-- */
+//
 // style: vars-as-parameters
+// qualify-locals: false
+// suffix: (none)
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+void
+P0(atomic_int *x, atomic_int *y)
+{ atomic_store_explicit(x, 1, memory_order_seq_cst); }
+void
+P1(atomic_int *x, atomic_int *y, int *r0, int *r1)
+{
+    *r0 = atomic_load_explicit(x, memory_order_acquire);
+    *r1 = atomic_load_explicit(y, memory_order_seq_cst);
+}
+void
+P2(atomic_int *x, atomic_int *y, int *r0)
+{
+    atomic_store_explicit(y, 1, memory_order_seq_cst);
+    *r0 = atomic_load_explicit(x, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "rwc",
+    "locations": null,
+    "init": { "x": 0, "y": 0 },
+    "postcondition": "exists (1:r0 == 1 /\\ 1:r1 == 0 /\\ 2:r0 == 0)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0" },
+    "P1": { "is_thread_body": true, "c_id": "P1" },
+    "P2": { "is_thread_body": true, "c_id": "P2" }
+  },
+  "var_map": {
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Param", 0 ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 1 ] },
+    "1:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 2 ] },
+    "1:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 3 ] },
+    "2:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 4 ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-parameters
+// qualify-locals: false
+// suffix: _body
 //
 
 // <!> Auto-generated from a litmus test by ACT.
@@ -544,6 +2174,102 @@ P2_body(atomic_int *x, atomic_int *y, int *r0)
 {
     atomic_store_explicit(y, 1, memory_order_seq_cst);
     *r0 = atomic_load_explicit(x, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "rwc",
+    "locations": null,
+    "init": { "x": 0, "y": 0 },
+    "postcondition": "exists (1:r0 == 1 /\\ 1:r1 == 0 /\\ 2:r0 == 0)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0_body" },
+    "P1": { "is_thread_body": true, "c_id": "P1_body" },
+    "P2": { "is_thread_body": true, "c_id": "P2_body" }
+  },
+  "var_map": {
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Param", 0 ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 1 ] },
+    "1:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 2 ] },
+    "1:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 3 ] },
+    "2:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 4 ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-parameters
+// qualify-locals: true
+// suffix: (none)
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+void
+P0(atomic_int *x, atomic_int *y)
+{ atomic_store_explicit(x, 1, memory_order_seq_cst); }
+void
+P1(atomic_int *x, atomic_int *y, int *t1r0, int *t1r1)
+{
+    *t1r0 = atomic_load_explicit(x, memory_order_acquire);
+    *t1r1 = atomic_load_explicit(y, memory_order_seq_cst);
+}
+void
+P2(atomic_int *x, atomic_int *y, int *t2r0)
+{
+    atomic_store_explicit(y, 1, memory_order_seq_cst);
+    *t2r0 = atomic_load_explicit(x, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "rwc",
+    "locations": null,
+    "init": { "x": 0, "y": 0 },
+    "postcondition": "exists (t1r0 == 1 /\\ t1r1 == 0 /\\ t2r0 == 0)"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0" },
+    "P1": { "is_thread_body": true, "c_id": "P1" },
+    "P2": { "is_thread_body": true, "c_id": "P2" }
+  },
+  "var_map": {
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Param", 0 ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 1 ] },
+    "1:r0": { "c_type": "int", "c_id": "t1r0", "mapped_to": [ "Param", 2 ] },
+    "1:r1": { "c_type": "int", "c_id": "t1r1", "mapped_to": [ "Param", 3 ] },
+    "2:r0": { "c_type": "int", "c_id": "t2r0", "mapped_to": [ "Param", 4 ] }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-parameters
+// qualify-locals: true
+// suffix: _body
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+void
+P0_body(atomic_int *x, atomic_int *y)
+{ atomic_store_explicit(x, 1, memory_order_seq_cst); }
+void
+P1_body(atomic_int *x, atomic_int *y, int *t1r0, int *t1r1)
+{
+    *t1r0 = atomic_load_explicit(x, memory_order_acquire);
+    *t1r1 = atomic_load_explicit(y, memory_order_seq_cst);
+}
+void
+P2_body(atomic_int *x, atomic_int *y, int *t2r0)
+{
+    atomic_store_explicit(y, 1, memory_order_seq_cst);
+    *t2r0 = atomic_load_explicit(x, memory_order_seq_cst);
 }
 
 /* --Begin auxiliary output--

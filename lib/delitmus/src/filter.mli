@@ -13,5 +13,5 @@
 
 include
   Plumbing.Filter_types.S
-    with type aux_i = Runner.Style.t
+    with type aux_i = Config.t
      and type aux_o = Output.t

@@ -54,12 +54,16 @@ module Record : sig
   (** [c_id r] gets the delitmusified C variable name of [r]. *)
 
   val mapped_to : t -> Mapping.t
-  (** [mapped_to_global r] gets how [r]'s variable maps into the delitmusified
-      version of the test. *)
+  (** [mapped_to_global r] gets how [r]'s variable maps into the
+      delitmusified version of the test. *)
 
   val mapped_to_global : t -> bool
   (** [mapped_to_global r] gets whether [r]'s variable has been mapped into
       the global scope. *)
+
+  val mapped_to_param : t -> bool
+  (** [mapped_to_param r] gets whether [r]'s variable has been mapped into
+      a parameter. *)
 end
 
 type t = Record.t Act_common.Scoped_map.t [@@deriving equal]
@@ -83,6 +87,11 @@ val lookup_and_require_global :
     var map. It returns [x] if [id] was mapped to a global C variable [id] in
     [map], or an error otherwise (ie, [id] was not mapped to a global C
     variable, or not seen at all). *)
+
+val lookup_and_require_param :
+  t -> id:Act_common.Litmus_id.t -> Act_common.C_id.t Or_error.t
+(** [lookup_and_require_param map ~id] behaves as {!lookup_and_require_global},
+but instead requires that [id] was mapped to a function parameter. *)
 
 (** {2 Interface implementations} *)
 

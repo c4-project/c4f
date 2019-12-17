@@ -116,7 +116,7 @@ let%test_module "expr" =
         {|
           (Ok
            (Bop L_and (Constant (Bool true))
-            (Bop L_or (Constant (Bool false)) (Lvalue (Variable foo))))) |}]
+            (Bop L_or (Constant (Bool false)) (Address (Lvalue (Variable foo)))))) |}]
 
     let%expect_test "model atomic_load_explicit" =
       test

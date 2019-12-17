@@ -9,18 +9,40 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** De-litmusification of memalloy-style C litmus tests *)
+(** Delitmus: main drivers.
+
+    These modules actually 'do' the delitmusifying process: they take a
+    validated C litmus AST and output a pair of C program and auxiliary
+    output file. *)
 
 open Base
 
-(** Enumeration of different styles of delitmusification. *)
-module Style : sig
-  type t = Vars_as_globals | Vars_as_parameters
-  [@@deriving compare, equal, enumerate]
-
-  include Act_utils.Enum_types.Extension_table with type t := t
+(** Base signature for delitmus drivers *)
+module type S = sig
+  val run : Act_c_mini.Litmus.Test.t -> Output.t Or_error.t
 end
 
-val run : Act_c_mini.Litmus.Test.t -> style:Style.t -> Output.t Or_error.t
-(** [run litmus ~style] runs de-litmusification on [litmus] according to
-    style [style]. *)
+(** Makes a delitmus driver given a function rewriter, information about how
+    global and local variables are mapped, and various other configuration
+    tidbits. *)
+module Make (Basic : sig
+  val global_mapping : int -> Var_map.Mapping.t
+  (** [global_mapping index] returns the intended mapping for a global
+      variable that forms the [index]th variable declaration. *)
+
+  val local_mapping : int -> Var_map.Mapping.t
+  (** [local_mapping index] returns the intended mapping for a local variable
+      that forms the [index]th variable declaration. *)
+
+  val impl_suffix : string option
+  (** [impl_suffix] is, if given, the suffix to append to the thread function
+      names. This is intended to facilitate generating 'stub' litmus tests
+      whose bodies bounce into delitmusified bodies. *)
+
+  val qualify_locals : bool
+  (** [qualify_locals] is [true] if local variable references should be
+      qualified with their thread ID, and [false] otherwise. *)
+
+  module Function : Function_rewriter.S
+  (** [Function] is a function rewriter. *)
+end) : S
