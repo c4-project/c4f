@@ -62,8 +62,8 @@ module Record : sig
       the global scope. *)
 
   val mapped_to_param : t -> bool
-  (** [mapped_to_param r] gets whether [r]'s variable has been mapped into
-      a parameter. *)
+  (** [mapped_to_param r] gets whether [r]'s variable has been mapped into a
+      parameter. *)
 end
 
 type t = Record.t Act_common.Scoped_map.t [@@deriving equal]
@@ -90,8 +90,9 @@ val lookup_and_require_global :
 
 val lookup_and_require_param :
   t -> id:Act_common.Litmus_id.t -> Act_common.C_id.t Or_error.t
-(** [lookup_and_require_param map ~id] behaves as {!lookup_and_require_global},
-but instead requires that [id] was mapped to a function parameter. *)
+(** [lookup_and_require_param map ~id] behaves as
+    {!lookup_and_require_global}, but instead requires that [id] was mapped
+    to a function parameter. *)
 
 (** {2 Interface implementations} *)
 

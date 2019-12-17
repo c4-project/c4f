@@ -105,8 +105,7 @@ struct
         unit C.Statement.t list -> unit C.Statement.t list Or_error.t =
       Tx.Or_error.combine_map ~f:rewrite_statement
 
-    let expand_parameter
-        (record : Var_map.Record.t) :
+    let expand_parameter (record : Var_map.Record.t) :
         (Act_common.C_id.t * C.Type.t) Or_error.t =
       let ty = Var_map.Record.c_type record in
       Or_error.Let_syntax.(
