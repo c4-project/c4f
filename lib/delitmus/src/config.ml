@@ -49,7 +49,7 @@ type t =
   ; style: Style.t }
 [@@deriving fields, make]
 
-let to_runner (config : t) : (module Runner.S) =
+let to_runner (config : t) : (module Runner_types.S) =
   let style = style config in
   let (module F) = Style.to_rewriter style in
   ( module Runner.Make (struct

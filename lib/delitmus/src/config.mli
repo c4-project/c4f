@@ -69,6 +69,6 @@ val style : t -> Style.t
 
 (** {2 Using a config record} *)
 
-val to_runner : t -> (module Runner.S)
-(** [to_runner config] produces a {!Runner.S} that runs a delitmusification
-    campaign according to [config]. *)
+val to_runner : t -> (module Runner_types.S)
+(** [to_runner config] produces a {!Runner_types.S} that runs a
+    delitmusification campaign according to [config]. *)
