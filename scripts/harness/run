@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+# Uses `act-machine xrun` to run a binary compiled with the given compiler
+# on the compiler's own machine.
+#
+# Arguments:
+#   1. The ID of the compiler whose machine should be used.
+#   2. The binary to run on the compiler's machine.
+#
+# Outputs:
+#   Any stdout emitted from the binary (which should be a Litmus observation).
+
+# TODO(@MattWindsor91): be more robust in handling arguments.
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+SCRIPTDIR="${SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"}"
+readonly SCRIPTDIR
+
+# shellcheck source=scripts/act_bash/args.sh
+source "${SCRIPTDIR}/act_bash/args.sh"
+# shellcheck source=scripts/act_bash/exec.sh
+source "${SCRIPTDIR}/act_bash/exec.sh"
+
+
+readonly compiler="$1"
+readonly payload="$2"
+
+machine=$(act::compiler info "${compiler}" machine)
+act::machine xrun -machine "${machine}" "${payload}"

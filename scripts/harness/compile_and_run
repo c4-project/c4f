@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+# Compiles the given litmus harness using the given compiler, stores the binary locally,
+# runs it on the compiler's native machine, and parses it into ACT's format.
+#
+# Arguments:
+#   1. The ID of the compiler to use.
+#   2. The ID of the backend whose harness is being used.
+#   3. The directory containing the litmus harness.
+#
+# Outputs:
+#   The observation in ACT's json format.
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+SCRIPTDIR="${SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"}"
+readonly SCRIPTDIR
+
+# shellcheck source=scripts/act_bash/args.sh
+source "${SCRIPTDIR}/act_bash/args.sh"
+# shellcheck source=scripts/act_bash/exec.sh
+source "${SCRIPTDIR}/act_bash/exec.sh"
+
+THISDIR="${THISDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"}"
+readonly THISDIR
+
+# TODO(@MattWindsor91): be more robust in handling arguments.
+
+readonly compiler="$1"
+readonly backend="$2"
+readonly litdir="$3"
+
+payload="$("${THISDIR}/compile" "${compiler}" "${litdir}")"
+"${THISDIR}/run" "${compiler}" "${payload}" | act::backend parse -backend "${backend}"

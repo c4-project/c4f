@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+# Compiles the given litmus harness using the given compiler.
+# Outputs the results to a binary stored locally, and echoes its name.
+#
+# Arguments:
+#   1. The ID of the compiler to use.
+#   2. The directory containing the litmus harness.
+#
+# Outputs:
+#   The name of the outputted binary.  Note that this binary might not be in a
+#   locally executable format, and should be run on the same machine as the
+#   compiler using `act-machine xrun`.
+
+# TODO(@MattWindsor91): be more robust in handling arguments.
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+SCRIPTDIR="${SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"}"
+readonly SCRIPTDIR
+
+# shellcheck source=scripts/act_bash/args.sh
+source "${SCRIPTDIR}/act_bash/args.sh"
+# shellcheck source=scripts/act_bash/exec.sh
+source "${SCRIPTDIR}/act_bash/exec.sh"
+
+readonly compiler="$1"
+readonly litdir="$2"
+
+readonly payload="${litdir}/a.out"
+touch payload
+
+act::compile -compiler "${compiler}" -mode binary "${litdir}"/*.c "${litdir}"/*.h -arg "pthread" -arg "std=gnu11" -o "${payload}"
+echo "${payload}"

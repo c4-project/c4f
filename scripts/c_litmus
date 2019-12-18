@@ -69,45 +69,6 @@ make_litmus_harness() {
   act::backend make-harness -backend "${backend}" "${litfile}" -carch "${carch}" -output "${litdir}" > /dev/null
 }
 
-# Compiles the given litmus harness using the given compiler.
-# Outputs the results to a binary stored locally, and echoes its name.
-#
-# Arguments:
-#   1. The ID of the compiler to use.
-#   2. The directory containing the litmus harness.
-#
-# Outputs:
-#   The name of the outputted binary.  Note that this binary might not be in a
-#   locally executable format, and should be run on the same machine as the
-#   compiler using `act-machine xrun`.
-compile_litmus_harness() {
-  local compiler="$1"
-  local litdir="$2"
-
-  local payload="${litdir}/a.out"
-  touch payload
-
-  act::compile -compiler "${compiler}" -mode binary "${litdir}"/*.c "${litdir}"/*.h -arg "pthread" -arg "std=gnu11" -o "${payload}"
-  echo "${payload}"
-}
-
-# Uses `act-machine xrun` to run a binary compiled with the given compiler
-# on the compiler's own machine.
-#
-# Arguments:
-#   1. The ID of the compiler whose machine should be used.
-#   2. The binary to run on the compiler's machine.
-#
-# Outputs:
-#   Any stdout emitted from the binary (which should be a Litmus observation).
-run_litmus_harness() {
-  local compiler="$1"
-  local payload="$2"
-
-  machine=$(act::compiler info "${compiler}" machine)
-  act::machine xrun -machine "${machine}" "${payload}"
-}
-
 
 # Runs the obj_splitmus driver once all arguments are parsed.
 #
@@ -120,11 +81,7 @@ run() {
   mkdir -p "${litdir}"
 
   make_litmus_harness "${BACKEND}" "${COMPILER}" "${INPUT_FILE}" "${litdir}"
-
-  local payload
-  payload=$(compile_litmus_harness "${COMPILER}" "${litdir}")
-
-  run_litmus_harness "${COMPILER}" "${payload}" | act::backend parse -backend "${BACKEND}"
+  "${SCRIPTDIR}/harness/compile_and_run" "${COMPILER}" "${BACKEND}" "${litdir}"
 }
 
 

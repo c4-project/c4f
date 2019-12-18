@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 #
-# A driver that works by running Litmus on a stubbed-out version of
-# a litmus test in cross-compile mode, then generates an object file
-# containing the body of the litmus test and links it into the
-# Litmus harness.
+# A driver that works by:
+#
+# 1) converting a Litmus test to a delitmusified C file and matching header;
+# 2) generating a new Litmus test that calls into the C file;
+# 3) building a Litmus harness over the stub test;
+# 4) patching up the harness so that it can compile against the C file;
+# 5) compiling the whole thing against the compiler under test.
 
 set -o errexit
 set -o pipefail
@@ -24,14 +27,11 @@ source "${SCRIPTDIR}/act_bash/naming.sh"
 ## Constants and arguments ##
 
 
-# The `sed` binary to use; this can be overrode using shell/environment variables.
-SED=${SED="sed"}
-
 # The backend ID to use to get state sets.
-# If empty, a default
+# If empty, a default Litmus-style backend will be acquired.
 BACKEND=""
 
-# The name of the compiler to compile through (using obj_splitmus).
+# The name of the compiler to compile through.
 # Must not be empty at the end of argument parsing.
 COMPILER=""
 
@@ -56,7 +56,7 @@ VERBOSE="false"
 ## Functions ##
 
 
-# Runs the delitmusifier and compiler on an input litmus test, saving an
+# Runs the delitmusifier on an input litmus test, saving an
 # aux file and header file for future consumption.
 #
 # Globals:
@@ -69,22 +69,23 @@ VERBOSE="false"
 #   3: path to which a delitmus auxiliary file should be written.
 #   4: path to which the intermediate C file should be written.
 #   5: path to which a header file exposing the C file's functions should be written.
-#   4: path to which the compiled object code should be written.
-delitmus_and_compile() {
+delitmus() {
   local compiler="$1"
   local infile="$2"
   local auxfile="$3"
   local cfile="$4"
   local hfile="$5"
-  local objfile="$6"
 
-  act::delitmus -style vars-as-parameters -impl-suffix "_body" -aux "${auxfile}" -o "${cfile}" "${infile}"
-  act::compile -compiler "${compiler}" -mode object -o "${objfile}" "${cfile}"
+  act::delitmus \
+    -style vars-as-parameters \
+    -impl-suffix "_body" \
+    -no-qualify-locals \
+    -aux "${auxfile}" -o "${cfile}" "${infile}"
   "${SCRIPTDIR}"/make_header.awk "${cfile}" > "${hfile}"
 }
 
 
-# Produces a ready-to-splice Litmus harness from a delitmus aux file.
+# Produces a Litmus stub harness from a delitmus aux file.
 #
 # Globals:
 #   - LITMUS (read)
@@ -95,86 +96,46 @@ delitmus_and_compile() {
 #   1: the backend ID.
 #   2: the compiler ID.
 #   3: path to the delitmus aux file to use when generating the harness.
-#   4: path to which a skeleton assembly file should be written.
-#   5: path to which a skeleton assembly Litmus test should be written.
-#   6: directory into which the Litmus harness should be constructed.
+#   4: path to which a skeleton Litmus test should be written.
+#   5: directory into which the Litmus harness should be constructed.
 make_litmus_harness() {
   local backend="$1"
   local compiler="$2"
   local auxfile="$3"
-  local skelfile="$4"
-  local alitfile="$5"
-  local litdir="$6"
-
-  local arch
-  arch=$(act::compiler info "${compiler}" emits)
-
-  "${SCRIPTDIR}/gen_asm_skel.py" "${auxfile}" > "${skelfile}"
-  act::litmusify -compiler "${compiler}" -aux "${auxfile}" -o "${alitfile}" "${skelfile}"
-  # TODO(@MattWindsor91): store the outputted commands somewhere and run them
-  act::backend make-harness -backend "${backend}" -arch "${arch}" "${alitfile}" -output "${litdir}" > /dev/null
-}
-
-
-# Splices function calls corresponding to an object-file test candidate into a
-# Litmus harness.  The object file, and its corresponding header, must be
-# called 'body'.
-#
-# Globals:
-#   - SCRIPTDIR (read)
-#   - SED (read)
-#
-# Arguments:
-#   1: path to the delitmus aux file to use when generating the harness.
-#   2: path to the Litmus harness Makefile.
-#   3: path to the Litmus harness's main .c file.
-#   4: path to which a function call stub file should be written.
-splice_litmus() {
-  local auxfile="$1"
-  local makefile="$2"
-  local runfile="$3"
   local stubfile="$4"
+  local litdir="$5"
 
-  "${SCRIPTDIR}/gen_call_stubs.py" "${auxfile}" > "${stubfile}"
-  "${SCRIPTDIR}"/splice.awk "${stubfile}" "${runfile}" > "${runfile}.new"
-  mv "${runfile}.new" "${runfile}"
+  local carch
+  carch=$(act::compiler info "${compiler}" emits)
 
-  "${SCRIPTDIR}/add_header_to_litmus" 'body.h' "${runfile}"
-
-  "${SED}" "s/UTILS=/UTILS=body.o /" "${makefile}" > "${makefile}.new"
-  mv "${makefile}.new" "${makefile}"
+  act::c make-stub "${auxfile}" -output "${stubfile=}"
+  # TODO(@MattWindsor91): store the outputted commands somewhere and run them
+  act::backend make-harness -backend "${backend}" -carch "${carch}" "${stubfile}" -output "${litdir}" > /dev/null
 }
 
 
-# Runs the obj_splitmus driver once all arguments are parsed.
+# Runs the driver once all arguments are parsed.
 #
 # Globals:
 #   - OUTPUT_DIR (read)
 #   - TEST_NAME (read)
 run() {
   local auxfile="${OUTPUT_DIR}/${TEST_NAME}.aux.json"
-  local cfile="${OUTPUT_DIR}/${TEST_NAME}.c"
-  local stubfile="${OUTPUT_DIR}/${TEST_NAME}.stubs.c"
-  local skelfile="${OUTPUT_DIR}/${TEST_NAME}.skel.s"
-  local alitfile="${OUTPUT_DIR}/${TEST_NAME}.litmus"
+  local stubfile="${OUTPUT_DIR}/${TEST_NAME}.litmus"
 
   local litdir="${OUTPUT_DIR}/exec"
   mkdir -p "${litdir}"
 
+  local cfile="${litdir}/${TEST_NAME}.body.c"
   local runfile="${litdir}/${TEST_NAME}.c"
-
-  # TODO(@MattWindsor91): what if $TEST_NAME is body?
-  local objfile="${litdir}/body.o"
-  local hfile="${litdir}/body.h"
+  local hfile="${litdir}/${TEST_NAME}.body.h"
 
   local makefile="${litdir}/Makefile"
 
-  delitmus_and_compile "${COMPILER}" "${INPUT_FILE}" "${auxfile}" "${cfile}" "${hfile}" "${objfile}"
-  make_litmus_harness "${BACKEND}" "${COMPILER}" "${auxfile}" "${skelfile}" "${alitfile}" "${litdir}"
-  splice_litmus "${auxfile}" "${makefile}" "${runfile}" "${stubfile}"
-
-  (cd "${litdir}" && make >/dev/null)
-  "${litdir}/${TEST_NAME}.exe" | act::backend parse -backend "${BACKEND}"
+  delitmus "${COMPILER}" "${INPUT_FILE}" "${auxfile}" "${cfile}" "${hfile}"
+  make_litmus_harness "${BACKEND}" "${COMPILER}" "${auxfile}" "${stubfile}" "${litdir}"
+  "${SCRIPTDIR}/add_header_to_litmus" "${hfile}" "${runfile}"
+  "${SCRIPTDIR}/harness/compile_and_run" "${COMPILER}" "${BACKEND}" "${litdir}"
 }
 
 
@@ -212,17 +173,10 @@ main() {
   readonly BACKEND COMPILER VERBOSE DUNE_EXEC
   shift $((OPTIND-1))
 
-  if [[ -z ${BACKEND} ]]; then
-    act::error "expected a nonempty backend (-b)"
-    usage
-  fi
-  if [[ -z ${COMPILER} ]]; then
-    act::arg_error "expected a nonempty compiler (-c)"
-  fi
+  if [[ -z ${BACKEND} ]]; then act::arg_error "expected a nonempty backend (-b)"; fi
+  if [[ -z ${COMPILER} ]]; then act::arg_error "expected a nonempty compiler (-c)"; fi
+  if [[ $# -ne 1 ]]; then act::arg_error "expected precisely one anonymous argument"; fi
 
-  if [[ $# -ne 1 ]]; then
-    act::arg_error "expected precisely one anonymous argument"
-  fi
   INPUT_FILE="$1"
   if [[ -z ${TEST_NAME} ]]; then
     TEST_NAME="$("${SCRIPTDIR}/litmus_test_name" "${INPUT_FILE}")"
