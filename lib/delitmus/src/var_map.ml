@@ -63,17 +63,25 @@ let lookup_and_require_param (map : t) ~(id : Ac.Litmus_id.t) :
           "Litmus identifier was mapped to something other than a param"
             ~id:(id : Ac.Litmus_id.t)])
 
-let filter_to_alist (pred : Record.t -> bool) :
-    t -> (Ac.Litmus_id.t, Record.t) List.Assoc.t =
-  Tx.Fn.Compose_syntax.(
-    Ac.Scoped_map.filter ~f:pred
-    >> Ac.Scoped_map.to_litmus_id_map >> Map.to_alist)
+let to_param_opt (lit_id : Ac.Litmus_id.t) (rc : Record.t) :
+    (int * (Ac.Litmus_id.t * Record.t)) option =
+  match Record.mapped_to rc with
+  | Param k ->
+      Some (k, (lit_id, rc))
+  | Global ->
+      None
 
-let globally_unmapped_vars : t -> (Ac.Litmus_id.t, Record.t) List.Assoc.t =
-  filter_to_alist (Fn.non Record.mapped_to_global)
+let param_mapped_vars (vmap : t) : (Ac.Litmus_id.t, Record.t) List.Assoc.t =
+  (* Much of the complexity here is because of sorting by parameter position. *)
+  vmap |> Ac.Scoped_map.to_litmus_id_map |> Map.to_alist
+  |> List.filter_map ~f:(fun (l, r) -> to_param_opt l r)
+  |> List.sort ~compare:(Comparable.lift Int.compare ~f:fst)
+  |> List.map ~f:snd
 
 let globally_mapped_vars : t -> (Ac.Litmus_id.t, Record.t) List.Assoc.t =
-  filter_to_alist Record.mapped_to_global
+  Tx.Fn.Compose_syntax.(
+    Ac.Scoped_map.filter ~f:Record.mapped_to_global
+    >> Ac.Scoped_map.to_litmus_id_map >> Map.to_alist)
 
 let global_c_variables : t -> Set.M(Ac.C_id).t =
   Ac.Scoped_map.build_set

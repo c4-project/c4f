@@ -105,6 +105,12 @@ struct
         unit C.Statement.t list -> unit C.Statement.t list Or_error.t =
       Tx.Or_error.combine_map ~f:rewrite_statement
 
+    let filter_by_scope :
+           (Act_common.Litmus_id.t, Var_map.Record.t) List.Assoc.t
+        -> (Act_common.Litmus_id.t, Var_map.Record.t) List.Assoc.t =
+      List.filter ~f:(fun (k, _) ->
+          Act_common.Litmus_id.is_in_scope k ~from:Ctx.T.tid)
+
     let expand_parameter (record : Var_map.Record.t) :
         (Act_common.C_id.t * C.Type.t) Or_error.t =
       let ty = Var_map.Record.c_type record in
@@ -112,22 +118,15 @@ struct
         let%map pty = C.Type.ref ty in
         (Var_map.Record.c_id record, pty))
 
+    let expand_parameters :
+           (Act_common.Litmus_id.t, Var_map.Record.t) List.Assoc.t
+        -> (Act_common.C_id.t, C.Type.t) List.Assoc.t Or_error.t =
+      Tx.Or_error.combine_map ~f:(fun (_, r) -> expand_parameter r)
+
     let populate_parameters () :
         (Act_common.C_id.t, C.Type.t) List.Assoc.t Or_error.t =
-      (* We assume that all variables that aren't mapped to global variables,
-         and relevant to this thread, are supposed to be passed in as
-         parameters. *)
-      let var_map = Context.var_map Ctx.context in
-      let all_unmapped = Var_map.globally_unmapped_vars var_map in
-      let relevant_unmapped =
-        List.filter
-          ~f:(fun (k, _) ->
-            Act_common.Litmus_id.is_in_scope k ~from:Ctx.T.tid)
-          all_unmapped
-      in
-      Tx.Or_error.combine_map
-        ~f:(fun (_, r) -> expand_parameter r)
-        relevant_unmapped
+      Ctx.context |> Context.var_map |> Var_map.param_mapped_vars
+      |> filter_by_scope |> expand_parameters
 
     module F = C.Function.On_monad (Or_error)
 
