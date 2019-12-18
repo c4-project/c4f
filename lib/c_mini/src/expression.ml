@@ -35,7 +35,7 @@ let lvalue (l : Lvalue.t) : t = address (Address.lvalue l)
 let variable (v : Ac.C_id.t) : t = lvalue (Lvalue.variable v)
 
 let of_variable_str_exn (s : string) : t =
-  s |> Act_common.C_id.of_string |> variable
+  lvalue (Lvalue.of_variable_str_exn s)
 
 let int_lit (i : int) : t = constant (Constant.int i)
 

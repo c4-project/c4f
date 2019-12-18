@@ -33,6 +33,12 @@ val variable : Act_common.C_id.t -> t
 (** [variable id] constructs an lvalue pointing to variable [id]. It doesn't
     do any validation. *)
 
+val of_variable_str_exn : string -> t
+(** [of_variable_str_exn vs] tries to construct an lvalue over a variable
+    whose name is the string [vs]. It fails with an exception if [vs] is an
+    invalid C identifier. This function is for use mainly in testing, and
+    shouldn't be used on user-supplied C code. *)
+
 val deref : t -> t
 (** [deref lvalue] constructs a dereference ([*]) of another lvalue [lvalue].
     It doesn't do any validation. *)

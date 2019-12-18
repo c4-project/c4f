@@ -28,6 +28,12 @@ end
 type 'const t = {quantifier: Quantifier.t; predicate: 'const Predicate.t}
 [@@deriving sexp, compare, equal, quickcheck, fields, make]
 
+let exists (type const) (predicate : const Predicate.t) : const t =
+  make ~quantifier:Exists ~predicate
+
+let for_all (type const) (predicate : const Predicate.t) : const t =
+  make ~quantifier:For_all ~predicate
+
 module BT :
   Travesty.Bi_traversable_types.S1_right
     with type 'const t := 'const t

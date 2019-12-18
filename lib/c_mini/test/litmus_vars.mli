@@ -9,11 +9,4 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Base
-open Base_quickcheck
-
-type t = {ty: Type.t; value: Constant.t option}
-[@@deriving sexp, make, equal, fields, quickcheck]
-
-let of_int ?(atomic : bool = false) (value : int) =
-  make ~ty:(Type.int ~atomic ()) ~value:(Constant.int value) ()
+(** This interface intentionally left blank. *)

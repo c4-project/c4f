@@ -33,9 +33,21 @@ end
 type 'const t [@@deriving sexp, compare, equal, quickcheck]
 (** Type of Litmus postconditions. *)
 
+(** {2 Constructors} *)
+
 val make :
   quantifier:Quantifier.t -> predicate:'const Predicate.t -> 'const t
 (** [make ~quantifier ~predicate] constructs a postcondition. *)
+
+val exists : 'const Predicate.t -> 'const t
+(** [exists predicate] is shorthand for constructing an existentially
+    quantified predicate. *)
+
+val for_all : 'const Predicate.t -> 'const t
+(** [for_all predicate] is shorthand for constructing a universally
+    quantified predicate. *)
+
+(** {2 Accessors} *)
 
 val quantifier : 'const t -> Quantifier.t
 (** [quantifier post] gets [post]'s quantifier. *)

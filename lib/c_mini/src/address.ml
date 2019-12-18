@@ -18,7 +18,7 @@ type t = Lvalue of Lvalue.t | Ref of t
 let of_variable (v : Ac.C_id.t) : t = Lvalue (Lvalue.variable v)
 
 let of_variable_str_exn (vs : string) : t =
-  of_variable (Ac.C_id.of_string vs)
+  lvalue (Lvalue.of_variable_str_exn vs)
 
 let of_variable_ref (v : Ac.C_id.t) : t = Ref (of_variable v)
 

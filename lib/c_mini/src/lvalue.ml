@@ -15,6 +15,9 @@ module Ac = Act_common
 type t = Variable of Ac.C_id.t | Deref of t
 [@@deriving sexp, variants, compare, equal]
 
+let of_variable_str_exn (s : string) : t =
+  s |> Act_common.C_id.of_string |> variable
+
 let rec reduce (lv : t) ~(variable : Ac.C_id.t -> 'a) ~(deref : 'a -> 'a) :
     'a =
   match lv with
