@@ -38,43 +38,46 @@ let lookup_litmus_arch :
   Act_common.Id.try_find_assoc_with_suggestions_prefix (Lazy.force arch_map)
     ~id_type:"architecture supported by Litmus7"
 
-let make_c_args : Act_common.Id.t option -> string list Or_error.t = function
-  | None ->
-      Ok []
-  | Some arch ->
+let make_arch_args : Bk.Arch.t -> string list Or_error.t = function
+  | C {underlying_arch= None} ->
+      Or_error.error_string
+        "Must specify a target architecture when making a C harness"
+  | C {underlying_arch= Some arch} ->
       Or_error.Let_syntax.(
         let%map _, litmus_arch = lookup_litmus_arch arch in
         ["-c11"; "true"; "-carch"; litmus_arch])
+  | Assembly id ->
+      (* for now *)
+      ignore id ; Or_error.return []
 
-let make_harness_argv (c_arch : Act_common.Id.t option)
-    ~(input_file : string) ~(output_dir : string) : string list Or_error.t =
+let make_harness_argv (arch : Bk.Arch.t) :
+    (input_file:string -> output_dir:string -> string list Or_error.t)
+    Staged.t
+    Or_error.t =
   Or_error.Let_syntax.(
-    let%map c_args = make_c_args c_arch in
-    [input_file; "-o"; output_dir] @ c_args)
+    let%map arch_args = make_arch_args arch in
+    Staged.stage (fun ~input_file ~output_dir ->
+        Or_error.return ([input_file; "-o"; output_dir] @ arch_args)))
 
 let make_harness (_spec : Bk.Spec.t) ~(arch : Bk.Arch.t) :
     Bk.Capability.Make_harness.t =
-  (* for now *)
-  match arch with
-  | C {underlying_arch= None} ->
-      Cannot_make_harness
-        { why=
-            Error.of_string
-              "Must specify a target architecture when making a C harness" }
-  | C {underlying_arch= Some a} ->
+  match make_harness_argv arch with
+  | Ok argv_f ->
       Can_make_harness
-        {argv_f= make_harness_argv (Some a); run_as= ["make"; "sh ./run.sh"]}
-  | Assembly id ->
-      ignore id ;
-      Can_make_harness
-        {argv_f= make_harness_argv None; run_as= ["make"; "sh ./run.sh"]}
+        {argv_f= Staged.unstage argv_f; run_as= ["make"; "sh ./run.sh"]}
+  | Error why ->
+      Cannot_make_harness {why}
 
-let make_argv_from_spec (_spec : Act_backend.Spec.t)
-    (_arch : Act_backend.Arch.t) ~(input_file : string) :
-    string list Or_error.t =
-  Or_error.Let_syntax.((* for now *)
-                       return [input_file])
+let make_run_argv (arch : Bk.Arch.t) :
+    (input_file:string -> string list Or_error.t) Staged.t Or_error.t =
+  Or_error.Let_syntax.(
+    let%map arch_args = make_arch_args arch in
+    Staged.stage (fun ~input_file ->
+        Or_error.return ([input_file] @ arch_args)))
 
-let run (spec : Bk.Spec.t) ~(arch : Bk.Arch.t) : Bk.Capability.Run.t =
-  let argv_f = make_argv_from_spec spec arch in
-  Bk.Capability.Run.Can_run {argv_f}
+let run (_spec : Bk.Spec.t) ~(arch : Bk.Arch.t) : Bk.Capability.Run.t =
+  match make_run_argv arch with
+  | Ok argv_f ->
+      Can_run {argv_f= Staged.unstage argv_f}
+  | Error why ->
+      Cannot_run {why}
