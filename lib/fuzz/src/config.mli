@@ -38,6 +38,9 @@ val make :
 
 (** {2 Accessors} *)
 
+val weights : t -> (Act_common.Id.t, int) List.Assoc.t
+(** [weights cfg] gets the action weightings in [cfg]. *)
+
 val max_passes : t -> int
 (** [max_passes cfg] gets the configured maximum number of passes in [cfg]. *)
 

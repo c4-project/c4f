@@ -27,7 +27,7 @@ val make :
   -> ?var_map:Var_map.t
   -> unit
   -> t
-(** [make ?litmus_header ?function_map ?var_map () builds a delitmus aux
+(** [make ?litmus_header ?function_map ?var_map ()] builds a delitmus aux
     record for a test with variable migration map [var_map] (empty by
     default), function migration map [function_map] (empty by default), and
     Litmus test header [litmus_header] (empty by default). *)

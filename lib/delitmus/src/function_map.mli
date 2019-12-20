@@ -14,7 +14,7 @@
 
 open Base
 
-(** {2 Information about function parameters. *)
+(** {1 Information about function parameters} *)
 
 module Record : sig
   type t [@@deriving yojson, equal]

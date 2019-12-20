@@ -10,6 +10,10 @@
    project root for more information. *)
 
 open Base
+
+(* We can't use 'open struct' here, because the sedlex PPX only supports the
+   4.07 AST. Aargh! *)
+
 module Ac = Act_common
 module Au = Act_utils
 module Tx = Travesty_base_exts

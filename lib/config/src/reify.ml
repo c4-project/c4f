@@ -1,0 +1,117 @@
+(* The Automagic Compiler Tormentor
+
+   Copyright (c) 2018--2019 Matt Windsor and contributors
+
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
+
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
+
+open Base
+
+module Defaults = struct
+  let reify_try (category : Ast.Default.Category.t) :
+      Act_common.Id.t list -> Ast.Default.t list =
+    List.map ~f:(fun id -> Ast.Default.Try (category, id))
+
+  let reify (defaults : Default.t) : Ast.t =
+    [ Default
+        (List.concat
+           [ reify_try Arch (Default.arches defaults)
+           ; reify_try Compiler (Default.compilers defaults)
+           ; reify_try Machine (Default.machines defaults)
+           ; reify_try Sim (Default.sims defaults) ]) ]
+end
+
+module Fuzz = struct
+  let reify_weights : (Act_common.Id.t, int) List.Assoc.t -> Ast.Fuzz.t list
+      =
+    List.map ~f:(fun (id, weight) -> Ast.Fuzz.Action (id, Some weight))
+
+  let reify (fuzz : Act_fuzz.Config.t) : Ast.t =
+    [ Fuzz
+        (List.concat
+           [ reify_weights (Act_fuzz.Config.weights fuzz)
+             (* TODO(@MattWindsor91): passes *) ]) ]
+end
+
+module Machines = struct
+  let reify_spec_set (type spec result)
+      ~(f : Act_common.Id.t -> spec -> result)
+      (specs : spec Act_common.Spec.Set.t) : result list =
+    specs |> Act_common.Spec.Set.to_list
+    |> List.map ~f:(fun wid ->
+           Act_common.Spec.With_id.(f (id wid) (spec wid)))
+
+  let reify_backend_spec (spec : Act_backend.Spec.t) : Ast.Sim.t list =
+    List.concat
+      Act_backend.Spec.
+        [ [Ast.Sim.Style (style spec); Cmd (cmd spec)]
+        ; List.map
+            ~f:(fun str -> Ast.Sim.C_model str)
+            (Option.to_list (c_model spec))
+        ; List.map
+            ~f:(fun (id, str) -> Ast.Sim.Asm_model (id, str))
+            (asm_models spec) ]
+
+  let reify_backends :
+      Act_backend.Spec.t Act_common.Spec.Set.t -> Ast.Machine.t list =
+    reify_spec_set ~f:(fun id spec ->
+        Ast.Machine.Sim (id, reify_backend_spec spec))
+
+  let reify_compiler_spec (spec : Act_compiler.Spec.t) : Ast.Compiler.t list
+      =
+    Act_compiler.Spec.
+      [ Enabled (is_enabled spec)
+      ; Style (style spec)
+      ; Emits (emits spec)
+      ; Cmd (cmd spec)
+      ; Argv (argv spec) ]
+
+  let reify_compilers :
+      Act_compiler.Spec.t Act_common.Spec.Set.t -> Ast.Machine.t list =
+    reify_spec_set ~f:(fun id spec ->
+        Ast.Machine.Compiler (id, reify_compiler_spec spec))
+
+  let reify_ssh (cfg : Plumbing.Ssh_runner.Config.t) : Ast.Ssh.t list =
+    List.filter_opt
+      Plumbing.Ssh_runner.Config.
+        [ Option.map ~f:(fun x -> Ast.Ssh.User x) (user cfg)
+        ; Some (Host (host cfg))
+        ; Some (Copy_to (copy_dir cfg)) ]
+
+  let reify_via : Act_machine.Via.t -> Ast.Via.t = function
+    | Local ->
+        Local
+    | Ssh cfg ->
+        Ssh (reify_ssh cfg)
+
+  let reify_standalone_items (spec : Act_machine.Spec.t) : Ast.Machine.t list
+      =
+    Act_machine.Spec.[Enabled (is_enabled spec); Via (reify_via (via spec))]
+
+  let reify_spec (spec : Act_machine.Spec.t) : Ast.Machine.t list =
+    List.concat
+      [ reify_standalone_items spec
+      ; reify_backends (Act_machine.Spec.backends spec)
+      ; reify_compilers (Act_machine.Spec.compilers spec) ]
+
+  let reify_spec_with_id (wid : Act_machine.Spec.t Act_common.Spec.With_id.t)
+      : Ast.Top.t =
+    Ast.Top.Machine
+      ( Act_common.Spec.With_id.id wid
+      , reify_spec (Act_common.Spec.With_id.spec wid) )
+
+  let reify (machines : Act_machine.Spec.t Act_common.Spec.Set.t) : Ast.t =
+    machines |> Act_common.Spec.Set.to_list |> List.map ~f:reify_spec_with_id
+end
+
+let reify (config : Global.t) : Ast.t =
+  List.concat
+    [ Defaults.reify (Global.defaults config)
+    ; Fuzz.reify (Global.fuzz config)
+    ; Machines.reify (Global.machines config) ]
+
+let pp : Global.t Fmt.t = Fmt.using reify Ast.pp

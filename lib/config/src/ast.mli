@@ -140,3 +140,6 @@ end
 
 type t = Top.t list [@@deriving sexp]
 (** A config AST is a list of top-level items. *)
+
+include Pretty_printer.S with type t := t
+(** We can pretty-print config ASTs. *)
