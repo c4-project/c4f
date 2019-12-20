@@ -9,29 +9,47 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Act_common
-
 (** Abstract syntax tree for config files
 
-    The config {{!Config_parser} parser} emits this AST; later on, the
-    {{!Config.File} config module proper} uses it to build a raw config. *)
+    The config {{!Parser} parser} emits this AST; later on, the {{!Global}
+    config module proper} uses it to build a raw config. *)
 
 open Base
 
 (** Items in a fuzzer stanza *)
 module Fuzz : sig
-  type t = Action of Id.t * int option [@@deriving sexp]
+  (** Values on Boolean flags. *)
+  module Flag_value : sig
+    (** Type of flag value AST nodes. *)
+    type t = Ratio of int * int | Exact of bool [@@deriving sexp]
+
+    include Pretty_printer.S with type t := t
+  end
+
+  (** Bodies of 'set' directives in fuzz configurations. *)
+  module Setter : sig
+    (** Type of property setter AST nodes. *)
+    type t =
+      | Param of Act_common.Id.t * int
+      | Flag of Act_common.Id.t * Flag_value.t
+    [@@deriving sexp]
+
+    include Pretty_printer.S with type t := t
+  end
+
+  type t = Action of Act_common.Id.t * int option | Set of Setter.t
+  [@@deriving sexp]
 
   include Pretty_printer.S with type t := t
 end
 
-(** Items in a simulator stanza *)
+(** Items in a backend stanza *)
 module Backend : sig
   type t =
     | Cmd of string
-    | Style of Id.t
+    | Style of Act_common.Id.t
     | C_model of string
-    | Asm_model of Id.t * string
+    | Asm_model of Act_common.Id.t * string
   [@@deriving sexp]
 
   include Pretty_printer.S with type t := t
@@ -62,8 +80,8 @@ end
 module Compiler : sig
   type t =
     | Enabled of bool
-    | Style of Id.t
-    | Emits of Id.t
+    | Style of Act_common.Id.t
+    | Emits of Act_common.Id.t
     | Cmd of string
     | Argv of string list
   [@@deriving sexp]
@@ -75,18 +93,18 @@ end
 module Machine : sig
   (** Type of machine stanza items. *)
   type t =
-    | Compiler of Id.t * Compiler.t list
+    | Compiler of Act_common.Id.t * Compiler.t list
         (** A compiler on this particular machine. *)
     | Enabled of bool  (** Whether or not the machine is enabled. *)
     | Via of Via.t  (** Where the machine is located. *)
-    | Backend of Id.t * Backend.t list
+    | Backend of Act_common.Id.t * Backend.t list
         (** Information about how to run a particular simulator on this
             machine. *)
   [@@deriving sexp]
 
   include Pretty_printer.S with type t := t
 
-  val as_compiler : t -> (Id.t * Compiler.t list) option
+  val as_compiler : t -> (Act_common.Id.t * Compiler.t list) option
   (** [as_compiler top] is [Some (i, c)] if [top] is [Compiler (i, c)], and
       [None] otherwise. *)
 end
@@ -100,7 +118,7 @@ module Default : sig
     include Act_utils.Enum_types.Extension_table with type t := t
   end
 
-  type t = Try of Category.t * Id.t [@@deriving sexp]
+  type t = Try of Category.t * Act_common.Id.t [@@deriving sexp]
 
   include Pretty_printer.S with type t := t
 end
@@ -110,7 +128,8 @@ module Top : sig
   type t =
     | Default of Default.t list  (** A default resolution config block. *)
     | Fuzz of Fuzz.t list  (** A fuzzer config block. *)
-    | Machine of Id.t * Machine.t list  (** A machine config block. *)
+    | Machine of Act_common.Id.t * Machine.t list
+        (** A machine config block. *)
   [@@deriving sexp]
 
   include Pretty_printer.S with type t := t
@@ -122,7 +141,7 @@ module Top : sig
   val as_fuzz : t -> Fuzz.t list option
   (** [as_fuzz top] is [Some f] if [top] is [Fuzz f], and [None] otherwise. *)
 
-  val as_machine : t -> (Id.t * Machine.t list) option
+  val as_machine : t -> (Act_common.Id.t * Machine.t list) option
   (** [as_machine top] is [Some (i, m)] if [top] is [Machine (i, m)], and
       [None] otherwise. *)
 end

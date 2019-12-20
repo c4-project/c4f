@@ -51,7 +51,30 @@ module Pp_helpers = struct
 end
 
 module Fuzz = struct
-  type t = Action of Id.t * int option [@@deriving sexp]
+  module Flag_value = struct
+    type t = Ratio of int * int | Exact of bool [@@deriving sexp]
+
+    let pp (f : Formatter.t) : t -> unit = function
+      | Ratio (d, n) ->
+          Fmt.pf f "%d:%d" d n
+      | Exact b ->
+          Pp_helpers.pp_bool f b
+  end
+
+  module Setter = struct
+    type t =
+      | Param of Act_common.Id.t * int
+      | Flag of Act_common.Id.t * Flag_value.t
+    [@@deriving sexp]
+
+    let pp (f : Formatter.t) : t -> unit = function
+      | Param (id, v) ->
+          Fmt.pf f "param@ %a@ to@ %d" Act_common.Id.pp id v
+      | Flag (id, v) ->
+          Fmt.pf f "flag@ %a@ to@ %a" Act_common.Id.pp id Flag_value.pp v
+  end
+
+  type t = Action of Id.t * int option | Set of Setter.t [@@deriving sexp]
 
   let pp (f : Formatter.t) : t -> unit =
     Pp_helpers.(
@@ -59,7 +82,9 @@ module Fuzz = struct
       | Action (id, Some c) ->
           pp_directive Fmt.(pair ~sep:sp Id.pp int) f ("action", (id, c))
       | Action (id, None) ->
-          pp_id_directive f ("action", id))
+          pp_id_directive f ("action", id)
+      | Set set ->
+          pp_directive Setter.pp f ("set", set))
 end
 
 module Backend = struct

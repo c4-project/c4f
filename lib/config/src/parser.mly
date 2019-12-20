@@ -12,15 +12,17 @@
 (* delimiters *)
 %token LBRACE "{"
 %token RBRACE "}"
+%token COLON  ":"
 %token EOF EOL
 
 %token (* main groups *) MACHINE COMPILER BACKEND FUZZ
 %token (* default resolutipn *) DEFAULT TRY
 %token (* common keywords *) ENABLED CMD ARGV
-%token (* fuzz-specific keywords *) ACTION WEIGHT
+%token (* fuzz-specific keywords *) ACTION WEIGHT SET PARAM FLAG RATIO
 %token (* Herd-specific keywords *) ASM_MODEL C_MODEL
-%token (* machine-specific keywords *) VIA SSH HOST USER COPY TO LOCAL
+%token (* machine-specific keywords *) VIA SSH HOST USER COPY LOCAL
 %token (* compiler-specific keywords *) STYLE ARCH
+%token (* noise words *) TO
 
 %token <bool>   BOOL
 %token <string> STRING
@@ -67,8 +69,17 @@ let try_category :=
 
 let fuzz_stanza := simple_stanza(FUZZ, fuzz_item)
 
+let fuzz_flag_value :=
+  | RATIO; ~ = INTEGER; COLON; ~ = INTEGER ; < Ast.Fuzz.Flag_value.Ratio >
+  | ~ = BOOL                               ; < Ast.Fuzz.Flag_value.Exact >
+
+let fuzz_setter :=
+  | PARAM; ~ = IDENTIFIER; TO?; ~ = INTEGER        ; < Ast.Fuzz.Setter.Param >
+  | FLAG; ~ = IDENTIFIER; TO?; ~ = fuzz_flag_value ; < Ast.Fuzz.Setter.Flag  >
+
 let fuzz_item :=
   | ACTION; ~ = IDENTIFIER; ~ = fuzz_weight?; < Ast.Fuzz.Action >
+  | SET; ~ = fuzz_setter                    ; < Ast.Fuzz.Set    >
 
 let fuzz_weight := WEIGHT; INTEGER
 
@@ -93,9 +104,9 @@ let via_stanza :=
   | ~ = simple_stanza(SSH, ssh_item); < Ast.Via.Ssh   >
 
 let ssh_item :=
-  | USER;     ~ = STRING ; < Ast.Ssh.User    >
-  | HOST;     ~ = STRING ; < Ast.Ssh.Host    >
-  | COPY; TO; ~ = STRING ; < Ast.Ssh.Copy_to >
+  | USER;      ~ = STRING ; < Ast.Ssh.User    >
+  | HOST;      ~ = STRING ; < Ast.Ssh.Host    >
+  | COPY; TO?; ~ = STRING ; < Ast.Ssh.Copy_to >
 
 let compiler_stanza := id_stanza(COMPILER, compiler_item)
 

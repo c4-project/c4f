@@ -190,6 +190,8 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
       function
       | Ast.Fuzz.Action (a, w) ->
           Some (a, Option.value w ~default:1)
+      | Set _ ->
+          None
 
     let fuzz_of_ast (ast : Ast.Fuzz.t list) : Act_fuzz.Config.t Or_error.t =
       let weights = List.filter_map ast ~f:to_weight_opt in
