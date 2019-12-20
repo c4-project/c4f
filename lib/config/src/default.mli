@@ -22,10 +22,10 @@ val make :
      ?arches:Act_common.Id.t list
   -> ?compilers:Act_common.Id.t list
   -> ?machines:Act_common.Id.t list
-  -> ?sims:Act_common.Id.t list
+  -> ?backends:Act_common.Id.t list
   -> unit
   -> t
-(** [make ?arches ?compilers ?machines ?sims ()] constructs a default ID
+(** [make ?arches ?compilers ?machines ?backends ()] constructs a default ID
     environment with the given bin contents. *)
 
 val of_ast : Ast.Default.t list -> t Or_error.t
@@ -46,8 +46,8 @@ val compilers : t -> Act_common.Id.t list
 val machines : t -> Act_common.Id.t list
 (** [machines ds] gets the list of default machine IDs from [ds]. *)
 
-val sims : t -> Act_common.Id.t list
-(** [sims ds] gets the list of default simulator IDs from [ds]. *)
+val backends : t -> Act_common.Id.t list
+(** [backends ds] gets the list of default backend IDs from [ds]. *)
 
 val to_ast : t -> Ast.Default.t list
 (** [to_ast ds] converts [ds] into its abstract syntax tree representation. *)

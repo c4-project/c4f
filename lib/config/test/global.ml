@@ -48,7 +48,7 @@ let%test_module "accessors" =
       [%expect
         {|
           ((arches ((x86 att))) (compilers ((localhost gcc x86 normal)))
-           (machines ((foo) (bar) (localhost))) (sims ())) |}]
+           (machines ((foo) (bar) (localhost))) (backends ())) |}]
 
     let%expect_test "fuzz" =
       print_s [%sexp (Global.fuzz global : Act_fuzz.Config.t)] ;

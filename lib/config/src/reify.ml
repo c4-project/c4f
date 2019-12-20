@@ -22,7 +22,7 @@ module Defaults = struct
            [ reify_try Arch (Default.arches defaults)
            ; reify_try Compiler (Default.compilers defaults)
            ; reify_try Machine (Default.machines defaults)
-           ; reify_try Sim (Default.sims defaults) ]) ]
+           ; reify_try Backend (Default.backends defaults) ]) ]
 end
 
 module Fuzz = struct
@@ -45,21 +45,21 @@ module Machines = struct
     |> List.map ~f:(fun wid ->
            Act_common.Spec.With_id.(f (id wid) (spec wid)))
 
-  let reify_backend_spec (spec : Act_backend.Spec.t) : Ast.Sim.t list =
+  let reify_backend_spec (spec : Act_backend.Spec.t) : Ast.Backend.t list =
     List.concat
       Act_backend.Spec.
-        [ [Ast.Sim.Style (style spec); Cmd (cmd spec)]
+        [ [Ast.Backend.Style (style spec); Cmd (cmd spec)]
         ; List.map
-            ~f:(fun str -> Ast.Sim.C_model str)
+            ~f:(fun str -> Ast.Backend.C_model str)
             (Option.to_list (c_model spec))
         ; List.map
-            ~f:(fun (id, str) -> Ast.Sim.Asm_model (id, str))
+            ~f:(fun (id, str) -> Ast.Backend.Asm_model (id, str))
             (asm_models spec) ]
 
   let reify_backends :
       Act_backend.Spec.t Act_common.Spec.Set.t -> Ast.Machine.t list =
     reify_spec_set ~f:(fun id spec ->
-        Ast.Machine.Sim (id, reify_backend_spec spec))
+        Ast.Machine.Backend (id, reify_backend_spec spec))
 
   let reify_compiler_spec (spec : Act_compiler.Spec.t) : Ast.Compiler.t list
       =

@@ -1,24 +1,13 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the "Software"),
-   to deal in the Software without restriction, including without limitation
-   the rights to use, copy, modify, merge, publish, distribute, sublicense,
-   and/or sell copies of the Software, and to permit persons to whom the
-   Software is furnished to do so, subject to the following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included in
-   all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-   DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 open Act_common
 
@@ -37,7 +26,7 @@ module Fuzz : sig
 end
 
 (** Items in a simulator stanza *)
-module Sim : sig
+module Backend : sig
   type t =
     | Cmd of string
     | Style of Id.t
@@ -90,7 +79,7 @@ module Machine : sig
         (** A compiler on this particular machine. *)
     | Enabled of bool  (** Whether or not the machine is enabled. *)
     | Via of Via.t  (** Where the machine is located. *)
-    | Sim of Id.t * Sim.t list
+    | Backend of Id.t * Backend.t list
         (** Information about how to run a particular simulator on this
             machine. *)
   [@@deriving sexp]
@@ -106,7 +95,7 @@ end
 module Default : sig
   (** Categories of default item *)
   module Category : sig
-    type t = Arch | Compiler | Machine | Sim [@@deriving sexp]
+    type t = Arch | Compiler | Machine | Backend [@@deriving sexp]
 
     include Act_utils.Enum_types.Extension_table with type t := t
   end

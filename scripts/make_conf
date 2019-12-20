@@ -94,7 +94,7 @@ class Machine:
 
     def print_backends(self) -> None:
         for (key, val) in self.backends.items():
-            print(f"    sim {key} {{")
+            print(f"    backend {key} {{")
             val.print()
             print("    }")
 

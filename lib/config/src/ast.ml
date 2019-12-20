@@ -62,7 +62,7 @@ module Fuzz = struct
           pp_id_directive f ("action", id))
 end
 
-module Sim = struct
+module Backend = struct
   type t =
     | Cmd of string
     | Style of Id.t
@@ -160,7 +160,7 @@ module Machine = struct
     | Compiler of Id.t * Compiler.t list [@sexp.list]
     | Enabled of bool
     | Via of Via.t
-    | Sim of Id.t * Sim.t list [@sexp.list]
+    | Backend of Id.t * Backend.t list [@sexp.list]
   [@@deriving sexp]
 
   let as_compiler : t -> (Id.t * Compiler.t list) option = function
@@ -178,20 +178,20 @@ module Machine = struct
           pp_enabled f b
       | Via v ->
           Fmt.(hbox (any "via@ " ++ Via.pp)) f v
-      | Sim (i, ss) ->
-          pp_id_stanza Sim.pp f (("sim", i), ss))
+      | Backend (i, ss) ->
+          pp_id_stanza Backend.pp f (("backend", i), ss))
 end
 
 module Default = struct
   module Category = struct
     module M = struct
-      type t = Arch | Compiler | Machine | Sim [@@deriving enum]
+      type t = Arch | Compiler | Machine | Backend [@@deriving enum]
 
       let table : (t, string) List.Assoc.t =
         [ (Arch, "arch")
         ; (Compiler, "compiler")
         ; (Machine, "machine")
-        ; (Sim, "sim") ]
+        ; (Backend, "backend") ]
     end
 
     include M

@@ -18,7 +18,7 @@ default {
   try arch x86.att
   try compiler localhost.gcc.x86.normal
   try machine localhost
-  try sim herd
+  try backend herd
 }
 
 fuzz {

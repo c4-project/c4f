@@ -53,7 +53,8 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
       | Ssh items ->
           Or_error.(ssh items >>| Act_machine.Via.ssh)
 
-    let simulator (items : Ast.Sim.t list) : Act_backend.Spec.t Or_error.t =
+    let backends (items : Ast.Backend.t list) : Act_backend.Spec.t Or_error.t
+        =
       Or_error.Let_syntax.(
         let%map cmd =
           Au.My_list.find_one_opt items ~item_name:"cmd" ~f:(function
@@ -114,13 +115,13 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
         in
         Act_compiler.Spec.make ~enabled ~style ~emits ~cmd ~argv ())
 
-    let try_get_named_simulator :
+    let try_get_named_backends :
            Ast.Machine.t
         -> (Act_common.Id.t * Act_backend.Spec.t) option Or_error.t =
       function
-      | Sim (n, s) ->
+      | Backend (n, s) ->
           Or_error.Let_syntax.(
-            let%map s' = simulator s in
+            let%map s' = backends s in
             Some (n, s'))
       | _ ->
           Or_error.return None
@@ -146,9 +147,9 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
         >>= Map.of_alist_or_error (module Act_common.Id)
         >>| Ac.Spec.Set.of_map)
 
-    let try_get_named_simulators :
+    let try_get_named_backendss :
         Ast.Machine.t list -> Act_backend.Spec.t Ac.Spec.Set.t Or_error.t =
-      try_get_named_specs ~f:try_get_named_simulator
+      try_get_named_specs ~f:try_get_named_backends
 
     let try_get_named_compilers :
         Ast.Machine.t list -> Act_compiler.Spec.t Ac.Spec.Set.t Or_error.t =
@@ -160,7 +161,7 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
           Au.My_list.find_at_most_one items ~item_name:"enabled"
             ~f:(function Enabled b -> Some b | _ -> None)
             ~on_empty:(Or_error.return true)
-        and backends = try_get_named_simulators items
+        and backends = try_get_named_backendss items
         and compilers = try_get_named_compilers items
         and via_raw =
           Au.My_list.find_one items ~item_name:"via" ~f:(function

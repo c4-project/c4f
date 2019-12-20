@@ -1,29 +1,20 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
-BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE. *)
+(* delimiters *)
+%token LBRACE "{"
+%token RBRACE "}"
+%token EOF EOL
 
-%token (* delimiters *) LBRACE RBRACE EOF EOL
-%token (* main groups *) MACHINE COMPILER SIM FUZZ
+%token (* main groups *) MACHINE COMPILER BACKEND FUZZ
 %token (* default resolutipn *) DEFAULT TRY
 %token (* common keywords *) ENABLED CMD ARGV
 %token (* fuzz-specific keywords *) ACTION WEIGHT
@@ -41,96 +32,83 @@ SOFTWARE. *)
 
 %%
 
-%inline braced(x):
-  | xs = delimited(LBRACE, x, RBRACE) { xs }
+let braced(x) == delimited(LBRACE, x, RBRACE)
 
-%inline line_list(x):
-  | xs = separated_nonempty_list(EOL, x?) { Base.List.filter_map ~f:Base.Fn.id xs }
+let line_list(x) ==
+  | ~ = separated_nonempty_list(EOL, x?); < Base.List.filter_opt >
 
-%inline stanza(x):
-  | xs = braced(line_list(x)) { xs }
+let stanza(x) == braced(line_list(x))
 
-simple_stanza(n, x):
-  | xs = preceded(n, stanza(x)) { xs }
+let simple_stanza(n, x) := preceded(n, stanza(x))
 
-id_stanza(n, x):
-  | n; id = IDENTIFIER; xs = stanza(x) { (id, xs) }
+let id_stanza(n, x) :=
+  | n; ~ = IDENTIFIER; ~ = stanza(x); <>
 
-id_directive(n):
-  | id = preceded(n, IDENTIFIER) { id }
+let id_directive(n) := preceded(n, IDENTIFIER)
 
-main:
-  | stanzas = line_list(top_stanza); EOF { stanzas }
+let main :=
+  | ~ = line_list(top_stanza); EOF; <>
 
-top_stanza:
-  | d = default_stanza  {                 Ast.Top.Default  d      }
-  | f = fuzz_stanza     {                 Ast.Top.Fuzz     f      }
-  | x = machine_stanza  { let i, m = x in Ast.Top.Machine  (i, m) }
+let top_stanza :=
+  | ~ = default_stanza ; <                 Ast.Top.Default         >
+  | ~ = fuzz_stanza    ; <                 Ast.Top.Fuzz            >
+  | x = machine_stanza ; { let i, m = x in Ast.Top.Machine  (i, m) }
 
-default_stanza:
-  | items = simple_stanza(DEFAULT, default_item) { items }
+let default_stanza := simple_stanza(DEFAULT, default_item)
 
-default_item:
-  | TRY; cat = try_category; id = IDENTIFIER { Ast.Default.Try (cat, id) }
+let default_item :=
+  | TRY; ~ = try_category; ~ = IDENTIFIER; < Ast.Default.Try >
 
-try_category:
-  | ARCH     { Ast.Default.Category.Arch }
-  | COMPILER { Ast.Default.Category.Compiler }
-  | MACHINE  { Ast.Default.Category.Machine }
-  | SIM      { Ast.Default.Category.Sim }
+let try_category :=
+  | ARCH     ; { Ast.Default.Category.Arch }
+  | COMPILER ; { Ast.Default.Category.Compiler }
+  | MACHINE  ; { Ast.Default.Category.Machine }
+  | BACKEND  ; { Ast.Default.Category.Backend }
 
-fuzz_stanza:
-  | items = simple_stanza(FUZZ, fuzz_item) { items }
+let fuzz_stanza := simple_stanza(FUZZ, fuzz_item)
 
-fuzz_item:
-  | ACTION; action = IDENTIFIER; weight = fuzz_weight? { Ast.Fuzz.Action (action, weight) }
+let fuzz_item :=
+  | ACTION; ~ = IDENTIFIER; ~ = fuzz_weight?; < Ast.Fuzz.Action >
 
-fuzz_weight:
-  | WEIGHT; w = INTEGER { w }
+let fuzz_weight := WEIGHT; INTEGER
 
-sim_stanza:
-  | s = id_stanza(SIM, sim_item) { s }
+let backend_stanza := id_stanza(BACKEND, backend_item)
 
-sim_item:
-  | c = cmd                               { Ast.Sim.Cmd c }
-  | s = id_directive(STYLE)               { Ast.Sim.Style s }
-  | C_MODEL;   s = STRING                 { Ast.Sim.C_model s }
-  | ASM_MODEL; e = IDENTIFIER; s = STRING { Ast.Sim.Asm_model (e, s) }
+let backend_item :=
+  | ~ = cmd                               ; < Ast.Backend.Cmd       >
+  | ~ = id_directive(STYLE)               ; < Ast.Backend.Style     >
+  | C_MODEL;   ~ = STRING                 ; < Ast.Backend.C_model   >
+  | ASM_MODEL; ~ = IDENTIFIER; s = STRING ; < Ast.Backend.Asm_model >
 
-machine_stanza:
-  | s = id_stanza(MACHINE, machine_item) { s }
+let machine_stanza := id_stanza(MACHINE, machine_item)
 
-machine_item:
-  | b = enabled         {                 Ast.Machine.Enabled  b      }
-  | VIA; v = via_stanza {                 Ast.Machine.Via      v      }
-  | x = compiler_stanza { let i, c = x in Ast.Machine.Compiler (i, c) }
-  | x = sim_stanza      { let i, s = x in Ast.Machine.Sim      (i, s) }
+let machine_item :=
+  | ~ = enabled         ; <                 Ast.Machine.Enabled         >
+  | VIA; ~ = via_stanza ; <                 Ast.Machine.Via             >
+  | x = compiler_stanza ; { let i, c = x in Ast.Machine.Compiler (i, c) }
+  | x = backend_stanza  ; { let i, s = x in Ast.Machine.Backend  (i, s) }
 
-via_stanza:
-  | LOCAL                                { Ast.Via.Local }
-  | items = simple_stanza(SSH, ssh_item) { Ast.Via.Ssh items }
+let via_stanza :=
+  | LOCAL                           ; { Ast.Via.Local }
+  | ~ = simple_stanza(SSH, ssh_item); < Ast.Via.Ssh   >
 
-ssh_item:
-  | USER;     user    = STRING { Ast.Ssh.User    user }
-  | HOST;     host    = STRING { Ast.Ssh.Host    host }
-  | COPY; TO; copy_to = STRING { Ast.Ssh.Copy_to copy_to }
+let ssh_item :=
+  | USER;     ~ = STRING ; < Ast.Ssh.User    >
+  | HOST;     ~ = STRING ; < Ast.Ssh.Host    >
+  | COPY; TO; ~ = STRING ; < Ast.Ssh.Copy_to >
 
-compiler_stanza:
-  | s = id_stanza(COMPILER, compiler_item) { s }
+let compiler_stanza := id_stanza(COMPILER, compiler_item)
 
-compiler_item:
-  | b = enabled                    { Ast.Compiler.Enabled b }
-  | c = cmd                        { Ast.Compiler.Cmd     c }
-  | vs = argv                      { Ast.Compiler.Argv    vs }
-  | style = id_directive(STYLE)    { Ast.Compiler.Style   style }
-  | emits = id_directive(ARCH)     { Ast.Compiler.Emits   emits }
+let compiler_item :=
+  | ~ = enabled             ; < Ast.Compiler.Enabled >
+  | ~ = cmd                 ; < Ast.Compiler.Cmd     >
+  | ~ = argv                ; < Ast.Compiler.Argv    >
+  | ~ = id_directive(STYLE) ; < Ast.Compiler.Style   >
+  | ~ = id_directive(ARCH)  ; < Ast.Compiler.Emits   >
 
-cmd:
-  | CMD; c = STRING { c }
+let cmd := CMD; STRING
 
-argv:
-  | ARGV; vs = STRING+ { vs }
+let argv := ARGV; STRING+
 
-enabled:
-  | ENABLED; b = BOOL { b }
+let enabled := ENABLED; BOOL
 
