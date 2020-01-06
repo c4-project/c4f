@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -12,40 +12,13 @@
 open Base
 
 type t =
-  { weights: (Act_common.Id.t, int) List.Assoc.t
-        [@default []] [@drop_if_default]
-  ; max_passes: int [@default 25] [@drop_if_default]
-        (* TODO(@MattWindsor91): connect this to the top-level config parser;
-           at time of writing there is no way to override this. *) }
+  { weights: int Map.M(Act_common.Id).t
+        [@default Map.empty (module Act_common.Id)] [@drop_if_default]
+  ; params: int Map.M(Act_common.Id).t
+        [@default Map.empty (module Act_common.Id)] [@drop_if_default]
+  ; flags: Flag.t Map.M(Act_common.Id).t
+        [@default Map.empty (module Act_common.Id)] [@drop_if_default] }
 [@@deriving sexp, fields, make]
-
-let modules : Action.With_default_weight.t list Lazy.t =
-  lazy
-    Action.With_default_weight.
-      [ make
-          ~action:(module Var_actions.Make_global : Action_types.S)
-          ~default_weight:20
-      ; make
-          ~action:(module Store_actions.Int : Action_types.S)
-          ~default_weight:30
-      ; make
-          ~action:(module Program_actions.Make_empty : Action_types.S)
-          ~default_weight:10
-      ; make ~action:(module If_actions.Invert) ~default_weight:10
-      ; make
-          ~action:(module If_actions.Surround.Tautology)
-          ~default_weight:25
-      ; make
-          ~action:(module If_actions.Surround.Duplicate)
-          ~default_weight:15
-      ; make ~action:(module Loop_actions.Surround) ~default_weight:20
-      ; make ~action:(module Dead_actions.Early_out) ~default_weight:15 ]
-
-let module_map : Action.With_default_weight.t Map.M(Act_common.Id).t Lazy.t =
-  Lazy.(
-    modules
-    >>| List.map ~f:(fun a -> (Action.With_default_weight.name a, a))
-    >>| Map.of_alist_exn (module Act_common.Id))
 
 let make_weight_pair (weight_overrides : int Map.M(Act_common.Id).t)
     (action : Action.With_default_weight.t) :
@@ -61,14 +34,29 @@ let make_weight_alist (actions : Action.With_default_weight.t list)
   List.map ~f:(make_weight_pair weight_overrides) actions
 
 let make_pool (config : t) : Action.Pool.t Or_error.t =
-  let actions = Lazy.force modules in
-  let weight_overrides_alist = weights config in
-  Or_error.Let_syntax.(
-    let%bind weight_overrides =
-      Map.of_alist_or_error (module Act_common.Id) weight_overrides_alist
-    in
-    let weights = make_weight_alist actions weight_overrides in
-    Action.Pool.of_weighted_actions weights)
+  let actions = Lazy.force Config_tables.actions in
+  let weight_overrides = weights config in
+  let weights = make_weight_alist actions weight_overrides in
+  Action.Pool.of_weighted_actions weights
+
+let make_merged_param_map (type v)
+    (specs : v Param_spec.t Map.M(Act_common.Id).t Lazy.t)
+    (user_provided : v Map.M(Act_common.Id).t) : v Map.M(Act_common.Id).t =
+  let defaults = specs |> Lazy.force |> Map.map ~f:Param_spec.default in
+  (* Yeet any values that are user-provided but don't correspond to actual
+     parameters.
+
+     TODO(@MattWindsor91): error on these? *)
+  Map.merge defaults user_provided ~f:(fun ~key ->
+      ignore key ;
+      function `Left v | `Both (_, v) -> Some v | `Right _ -> None)
+
+let make_param_map (config : t) : Param_map.t =
+  let params =
+    make_merged_param_map Config_tables.param_map (params config)
+  in
+  let flags = make_merged_param_map Config_tables.flag_map (flags config) in
+  Param_map.make ~params ~flags ()
 
 let summarise (cfg : t) : Action.Summary.t Map.M(Act_common.Id).t Or_error.t
     =

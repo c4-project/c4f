@@ -62,7 +62,9 @@ module Surround = struct
       let action_id = name
     end)
 
-    let available (test : Subject.Test.t) : bool State.Monad.t =
+    let available (test : Subject.Test.t) ~(param_map : Param_map.t) :
+        bool State.Monad.t =
+      ignore (param_map : Param_map.t) ;
       test |> Subject.Test.has_statements |> State.Monad.return
 
     let wrap_in_if (statements : Metadata.t Act_c_mini.Statement.t list)
@@ -130,7 +132,9 @@ module Invert : Action_types.S with type Payload.t = Path.Program.t = struct
     Act_utils.My_string.format_for_readme
       {| Flips the conditional and branches of an if statement. |}
 
-  let available (test : Subject.Test.t) : bool State.Monad.t =
+  let available (test : Subject.Test.t) ~(param_map : Param_map.t) :
+      bool State.Monad.t =
+    ignore (param_map : Param_map.t) ;
     test |> Subject.Test.has_if_statements |> State.Monad.return
 
   module Payload = struct
@@ -140,8 +144,9 @@ module Invert : Action_types.S with type Payload.t = Path.Program.t = struct
       let filter = Path_filter.(empty |> final_if_statements_only) in
       Path_producers.Test.try_gen_transform_stm ~filter test
 
-    let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t) :
-        Path.Program.t State.Monad.t =
+    let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
+        ~(param_map : Param_map.t) : Path.Program.t State.Monad.t =
+      ignore (param_map : Param_map.t) ;
       Payload.Helpers.lift_quickcheck_opt (quickcheck_path test) ~random
         ~action_id:name
   end

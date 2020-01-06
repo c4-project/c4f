@@ -55,7 +55,8 @@ struct
     include Global_payload
 
     let gen (_subject : Subject.Test.t) ~(random : Splittable_random.State.t)
-        : t State.Monad.t =
+        ~(param_map : Param_map.t) : t State.Monad.t =
+      ignore param_map ;
       State.Monad.(
         Let_syntax.(
           let%map generator = with_vars generator in

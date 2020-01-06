@@ -31,7 +31,7 @@ module Runner_state = struct
     { pool: Action.Pool.t
     ; random: Splittable_random.State.t
     ; trace: Trace.t
-    ; cap: int }
+    ; param_map: Param_map.t }
   [@@deriving fields]
 
   module Monad = Travesty.State_transform.Make (struct
@@ -49,11 +49,13 @@ let generate_payload (type rs)
     (subject : Subject.Test.t) : rs Runner_state.Monad.t =
   Runner_state.Monad.Let_syntax.(
     let%bind o = output () in
+    let%bind param_map = Runner_state.Monad.peek Runner_state.param_map in
     let%bind random = Runner_state.Monad.peek Runner_state.random in
     Ac.Output.pv o "fuzz: generating random state for %a...@." Ac.Id.pp
       Act.name ;
     let%map g =
-      Runner_state.Monad.Monadic.return (Act.Payload.gen subject ~random)
+      Runner_state.Monad.Monadic.return
+        (Act.Payload.gen subject ~random ~param_map)
     in
     Ac.Output.pv o "fuzz: done generating random state.@." ;
     g)
@@ -61,9 +63,9 @@ let generate_payload (type rs)
 let pick_action (subject : Subject.Test.t) :
     (module Action_types.S) Runner_state.Monad.t =
   Runner_state.Monad.Let_syntax.(
-    let%bind {pool; random; _} = Runner_state.Monad.peek Fn.id in
+    let%bind {pool; random; param_map; _} = Runner_state.Monad.peek Fn.id in
     Runner_state.Monad.Monadic.return
-      (Action.Pool.pick pool ~subject ~random))
+      (Action.Pool.pick pool ~subject ~random ~param_map))
 
 let log_action (type p)
     (action : (module Action_types.S with type Payload.t = p)) (payload : p)
@@ -92,10 +94,16 @@ let mutate_subject_step (subject : Subject.Test.t) :
     >>= Runner_state.Monad.tee ~f:(fun _ ->
             Ac.Output.pv o "fuzz: action done.@."))
 
+let get_cap () : int Runner_state.Monad.t =
+  Runner_state.Monad.Let_syntax.(
+    let%bind param_map = Runner_state.Monad.peek Runner_state.param_map in
+    Runner_state.Monad.Monadic.return
+      (State.Monad.Monadic.return (Param_map.get_action_cap param_map)))
+
 let mutate_subject (subject : Subject.Test.t) :
     Subject.Test.t Runner_state.Monad.t =
   Runner_state.Monad.Let_syntax.(
-    let%bind cap = Runner_state.(Monad.peek cap) in
+    let%bind cap = get_cap () in
     let%map _, subject' =
       Runner_state.Monad.fix (cap, subject)
         ~f:(fun mu (remaining, subject') ->
@@ -108,12 +116,12 @@ let mutate_subject (subject : Subject.Test.t) :
 
 let make_runner_state (seed : int option) (config : Config.t) :
     Runner_state.t Or_error.t =
-  let cap = Config.max_passes config in
   let random = make_rng seed in
   let trace = Trace.empty in
+  let param_map = Config.make_param_map config in
   Or_error.Let_syntax.(
     let%map pool = Config.make_pool config in
-    {Runner_state.random; cap; trace; pool})
+    {Runner_state.random; param_map; trace; pool})
 
 let make_output (rstate : Runner_state.t) (subject : Subject.Test.t) :
     Trace.t Output.t =

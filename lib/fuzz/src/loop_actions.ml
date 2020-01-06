@@ -24,7 +24,9 @@ struct
        The condition of the `do... while` loop is statically guaranteed to be
        false. |}
 
-  let available (test : Subject.Test.t) : bool State.Monad.t =
+  let available (test : Subject.Test.t) ~(param_map : Param_map.t) :
+      bool State.Monad.t =
+    ignore (param_map : Param_map.t) ;
     test |> Subject.Test.has_statements |> State.Monad.return
 
   module Surround = Payload.Surround

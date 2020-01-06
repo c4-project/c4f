@@ -48,8 +48,9 @@ module Early_out_payload = struct
     Opt_gen.union
       [quickcheck_loop_payload test; quickcheck_non_loop_payload test]
 
-  let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t) :
-      t State.Monad.t =
+  let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
+      ~(param_map : Param_map.t) : t State.Monad.t =
+    ignore (param_map : Param_map.t) ;
     Payload.Helpers.lift_quickcheck_opt (quickcheck_payload test) ~random
       ~action_id:early_out_name
 end
@@ -63,7 +64,9 @@ struct
       {| Inserts a valid 'early-out' statement (break or return) into a random
          dead-code location. |}
 
-  let available (test : Subject.Test.t) : bool State.Monad.t =
+  let available (test : Subject.Test.t) ~(param_map : Param_map.t) :
+      bool State.Monad.t =
+    ignore (param_map : Param_map.t) ;
     test |> Subject.Test.has_dead_code_blocks |> State.Monad.return
 
   module Payload = Early_out_payload

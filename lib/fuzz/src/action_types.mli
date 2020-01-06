@@ -25,9 +25,13 @@ module type S_payload = sig
   (** The type of the payload. *)
 
   val gen :
-    Subject.Test.t -> random:Splittable_random.State.t -> t State.Monad.t
-  (** [gen subject ~random] is a stateful computation that, given subject
-      [subject], RNG [random], and and the current state, returns a payload. *)
+       Subject.Test.t
+    -> random:Splittable_random.State.t
+    -> param_map:Param_map.t
+    -> t State.Monad.t
+  (** [gen subject ~random ~param_map] is a stateful computation that, given
+      subject [subject], RNG [random], fuzzer parameter map [param_map], and
+      the current state, returns a payload. *)
 end
 
 (** Module type of fuzzer actions. *)
@@ -41,10 +45,12 @@ module type S = sig
   module Payload : S_payload
   (** The type of any payload on which this action depends. *)
 
-  val available : Subject.Test.t -> bool State.Monad.t
-  (** [available subject] is a stateful computation that, given subject
-      [subject] and the current state, decides whether this action can run
-      (given any member of [Random_state.t]). *)
+  val available :
+    Subject.Test.t -> param_map:Param_map.t -> bool State.Monad.t
+  (** [available subject ~param_map] is a stateful computation that, given
+      subject [subject], the current state, and the fuzzer parameters in
+      [param_map], decides whether this action can run (given any member of
+      [Random_state.t]). *)
 
   val run :
     Subject.Test.t -> payload:Payload.t -> Subject.Test.t State.Monad.t

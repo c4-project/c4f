@@ -162,13 +162,16 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
         Random_state.make ~store ~path)
 
     let gen (subject : Subject.Test.t) ~(random : Splittable_random.State.t)
-        : t State.Monad.t =
+        ~(param_map : Param_map.t) : t State.Monad.t =
+      ignore param_map ;
       State.Monad.Let_syntax.(
         let%bind o = State.Monad.output () in
         State.Monad.with_vars_m (gen' o subject ~random))
   end
 
-  let available (_ : Subject.Test.t) =
+  let available (_ : Subject.Test.t) ~(param_map : Param_map.t) :
+      bool State.Monad.t =
+    ignore param_map ;
     State.Monad.with_vars
       (Var.Map.exists_satisfying_all ~scope:Ac.Scope.Global
          ~predicates:(Lazy.force dst_restrictions))

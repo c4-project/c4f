@@ -98,7 +98,7 @@ module Machine : sig
     | Enabled of bool  (** Whether or not the machine is enabled. *)
     | Via of Via.t  (** Where the machine is located. *)
     | Backend of Act_common.Id.t * Backend.t list
-        (** Information about how to run a particular backend on this
+        (** Information about how to run a particular simulator on this
             machine. *)
   [@@deriving sexp]
 

@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -22,17 +22,20 @@ module With_default_weight = struct
   let name ({action= (module M); _} : t) : Act_common.Id.t = M.name
 
   let available ({action= (module M); _} : t) :
-      Subject.Test.t -> bool State.Monad.t =
+      Subject.Test.t -> param_map:Param_map.t -> bool State.Monad.t =
     M.available
 
-  let zero_if_not_available (subject : Subject.Test.t) (action : t)
-      (weight : int) : int State.Monad.t =
+  let zero_if_not_available (action : t) (weight : int)
+      ~(subject : Subject.Test.t) ~(param_map : Param_map.t) :
+      int State.Monad.t =
     State.Monad.Let_syntax.(
-      if%map available action subject then weight else 0)
+      if%map available action subject ~param_map then weight else 0)
 end
 
-let always : Subject.Test.t -> bool State.Monad.t =
-  Fn.const (State.Monad.return true)
+let always (_ : Subject.Test.t) ~(param_map : Param_map.t) :
+    bool State.Monad.t =
+  ignore (param_map : Param_map.t) ;
+  State.Monad.return true
 
 module Adjusted_weight = struct
   type t = Not_adjusted of int | Adjusted of {original: int; actual: int}
@@ -109,11 +112,12 @@ module Pool = struct
   end)
 
   (** [to_available_only wl ~subject] is a stateful action that modifies [wl]
-      to pull any actions not available on [subject] to weight 0. *)
-  let to_available_only (wl : t) ~(subject : Subject.Test.t) :
-      t State.Monad.t =
+      to pull any actions not available on [subject] and [param_map] to
+      weight 0. *)
+  let to_available_only (wl : t) ~(subject : Subject.Test.t)
+      ~(param_map : Param_map.t) : t State.Monad.t =
     W.adjust_weights_m wl
-      ~f:(With_default_weight.zero_if_not_available subject)
+      ~f:(With_default_weight.zero_if_not_available ~subject ~param_map)
 
   let pick_from_available (available : t)
       ~(random : Splittable_random.State.t) :
@@ -124,10 +128,12 @@ module Pool = struct
       |> Monadic.return >>| With_default_weight.action)
 
   let pick (table : t) ~(subject : Subject.Test.t)
-      ~(random : Splittable_random.State.t) :
+      ~(random : Splittable_random.State.t) ~(param_map : Param_map.t) :
       (module Action_types.S) State.Monad.t =
     State.Monad.(
-      table |> to_available_only ~subject >>= pick_from_available ~random)
+      table
+      |> to_available_only ~subject ~param_map
+      >>= pick_from_available ~random)
 end
 
 module Make_log (B : sig

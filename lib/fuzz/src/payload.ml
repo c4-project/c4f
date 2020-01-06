@@ -109,8 +109,9 @@ module Surround = struct
         let%bind gen = quickcheck_cond path in
         Helpers.lift_quickcheck gen ~random)
 
-    let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t) :
-        Body.t State.Monad.t =
+    let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
+        ~(param_map : Param_map.t) : Body.t State.Monad.t =
+      ignore (param_map : Param_map.t) ;
       State.Monad.Let_syntax.(
         let%bind path = gen_path test ~random ~action_id:Basic.action_id in
         let%map cond = gen_cond path ~random in
@@ -132,8 +133,9 @@ end) : Action_types.S_payload with type t = Path.Program.t = struct
     let filter = Basic.build_filter Path_filter.empty in
     Basic.gen ~filter test
 
-  let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t) :
-      Path.Program.t State.Monad.t =
+  let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
+      ~(param_map : Param_map.t) : Path.Program.t State.Monad.t =
+    ignore (param_map : Param_map.t) ;
     Helpers.lift_quickcheck_opt (quickcheck_path test) ~random
       ~action_id:Basic.action_id
 end
@@ -141,8 +143,10 @@ end
 module None : Action_types.S_payload with type t = unit = struct
   include Unit
 
-  let gen (_ : Subject.Test.t) ~(random : Splittable_random.State.t) =
+  let gen (_ : Subject.Test.t) ~(random : Splittable_random.State.t)
+      ~(param_map : Param_map.t) =
     ignore (random : Splittable_random.State.t) ;
+    ignore (param_map : Param_map.t) ;
     State.Monad.return ()
 end
 
@@ -153,7 +157,8 @@ module Pure (S : sig
 end) : Action_types.S_payload with type t = S.t = struct
   include S
 
-  let gen (_subject : Subject.Test.t) ~(random : Splittable_random.State.t) :
-      t State.Monad.t =
+  let gen (_subject : Subject.Test.t) ~(random : Splittable_random.State.t)
+      ~(param_map : Param_map.t) : t State.Monad.t =
+    ignore (param_map : Param_map.t) ;
     Helpers.lift_quickcheck S.quickcheck_generator ~random
 end
