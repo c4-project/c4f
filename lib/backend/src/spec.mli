@@ -53,5 +53,4 @@ val asm_models : t -> (Id.t, string) List.Assoc.t
     to a path. *)
 
 val style : t -> Id.t
-(** [style cfg] gets the 'style' of simulator: for example, 'litmus' or
-    'herd'. *)
+(** [style cfg] gets the 'style' of backend: for example, 'litmus' or 'herd'. *)

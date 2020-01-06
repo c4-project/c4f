@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** A single state in a simulator run output.
+(** A single state in a backend run output.
 
     The only thing stopping this module from being called [State] is the fact
     that [State] is already the name of the {i library}. *)

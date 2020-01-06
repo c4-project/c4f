@@ -21,7 +21,7 @@ Example
        # ...
      }
 
-     sim herd {
+     backend herd {
        # ...
      }
    }

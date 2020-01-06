@@ -20,15 +20,15 @@ machine this {
   # `via local` tells act the machine is the one on which act is running.
   via local
 
-  # A `sim` block configures a simulator on a machine.  Simulators take
+  # A `backend` block configures a backend on a machine.  Backends take
   # litmus tests, simulate (or execute, etc.) them, and return information
   # about the potential final states of the test.
-  sim herd {
+  backend herd {
     # 'cmd' tells us where Herd is.
     cmd "herd7"
 
-    # Each simulator block requires a `style ID` directive; this tells ACT
-    # how it should execute the simulator, and how to interpret the simulator's
+    # Each backend block requires a `style ID` directive; this tells ACT
+    # how it should execute the backend, and how to interpret the backend's
     # results.
     style herd
 

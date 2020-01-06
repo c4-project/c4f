@@ -42,7 +42,7 @@ module Spec_common = struct
 
   let is_enabled = enabled
 
-  let type_name = "sim"
+  let type_name = "backend"
 
   let cmd_line (s : t) : string list = s.cmd :: s.argv
 

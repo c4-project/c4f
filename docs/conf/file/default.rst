@@ -15,7 +15,7 @@ Example
      try arch x86.att
      try machine local
      try compiler local.gcc.x86.normal
-     try simulator herd
+     try backend herd
    }
 
 The ``try`` directive
@@ -49,5 +49,5 @@ The possible categories are as follows:
     Specifies the machine to use for compilers that don't otherwise
     specify a machine.
 
-``simulator``
-    Specifies the simulator to use when no other simulator is given.
+``backend``
+    Specifies the backend to use when no other backend is given.

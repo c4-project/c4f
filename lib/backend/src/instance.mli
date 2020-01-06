@@ -14,7 +14,7 @@
     This module, and its {!Instance_types} counterpart, provide a standard
     interface for interacting with C and assembly backends, such as Herd and
     Litmus, as well as a functor for implementing that interface using a
-    filter wrapper over the simulator and a simulator output parser. *)
+    filter wrapper over the backend and a backend output parser. *)
 
 (** [Make] makes a backend instance given a combination of a skeleton
     instance (without machine or runner information) and the running context. *)

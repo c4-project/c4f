@@ -49,5 +49,5 @@ module type Basic =
     with type state_line := string State_line.t
      and type test_type := Test_type.t
 
-(** Makes an output scraper for the Herdtools7 simulator described in [B]. *)
+(** Makes an output scraper for the Herdtools7 backend described in [B]. *)
 module Make (B : Basic) : Act_backend.Reader_types.S

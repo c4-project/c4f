@@ -525,7 +525,7 @@ main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE C_MODEL STRING EOL VIA
 ## option(backend_item) EOL
 ##
 
-Expected a valid simulator configuration item; for example:
+Expected a valid backend configuration item; for example:
 - `cmd "/path/to/herd"`
 - `c_model "/path/to/C/model.cat"`
 - `asm_model ARCH-ID "/path/to/asm/model.cat"`

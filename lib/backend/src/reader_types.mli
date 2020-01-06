@@ -11,5 +11,5 @@
 
 module type S =
   Plumbing.Loadable_types.S with type t = Act_state.Observation.t
-(** Shorthand for the specific type of loadable module a simulator runner
+(** Shorthand for the specific type of loadable module a backend runner
     expects. *)

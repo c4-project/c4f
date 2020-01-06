@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Top-level simulator resolution etc. *)
+(** Top-level backend resolution etc. *)
 
 open Base
 

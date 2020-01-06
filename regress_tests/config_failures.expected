@@ -24,7 +24,8 @@
   (details
     "Expected a valid top-level item; for example:\
    \n- `default { ... }`\
-   \n- `compiler ID { ... }`\
+   \n- `machine ID { ... }`\
+   \n- `fuzz { ... }`\
    \n")))
 ```
 
