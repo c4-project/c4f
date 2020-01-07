@@ -1,13 +1,10 @@
 (* The Automagic Compiler Tormentor
-
    Copyright (c) 2018--2020 Matt Windsor and contributors
-
-   ACT itself is licensed under the MIT License. See the LICENSE file in the
-   project root for more information.
-
-   ACT is based in part on code from the Herdtools7 project
-   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
-   project root for more information. *)
+   - ACT itself is licensed under the MIT License. See the LICENSE file in the
+     project root for more information.
+   - ACT is based in part on code from the Herdtools7 project
+     (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+     project root for more information. *)
 
 (** Values on Boolean flags.
 
@@ -39,13 +36,26 @@ val exact : bool -> t
 
 (** {1 Accessors} *)
 
+val to_exact_opt : t -> bool option
+(** [to_exact_opt f] returns [Some b] if [eval f ~random] will always return
+    the same Boolean [b], and [None] otherwise. *)
+
+(** {2 Evaluation}
+
+    Flags can be stochastic, and so must be evaluated in the presence of a
+    random number generator.
+
+    There are two ways to evaluate a flag: directly, or wrapped as a
+    quickcheck generator.  The latter is useful for tests and payload
+    generators. *)
+
 val eval : t -> random:Splittable_random.State.t -> bool
 (** [eval f ~random] evaluates [f] to a truth value, using [random] as a
     random number generator if necessary. *)
 
-val to_exact_opt : t -> bool option
-(** [to_exact_opt f] returns [Some b] if [eval f ~random] will always return
-    the same Boolean [b], and [None] otherwise. *)
+val as_quickcheck_generator : t -> bool Base_quickcheck.Generator.t
+(** [as_quickcheck_generator f] converts [f] into a quickcheck generator for
+    Boolean values. *)
 
 (** {2 Extracting the raw odds}
 
