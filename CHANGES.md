@@ -3,6 +3,17 @@
 Note that these changes are infrequently maintained and may not tell the
 whole story.
 
+## 2020-Jan-07
+
+- New command `act-config dump`, which emits the current configuration in pretty
+  printed form to stdout.
+- New fuzzer config stanzas: `set param ID to INT` for setting integer fuzzer
+  parameters; `set flag ID to BOOL` for setting Boolean fuzzer flags, and
+  `set flag ID to ratio WINS:LOSSES` for stochastically setting fuzzer flags.
+- New fuzzer parameters: `cap.threads` for capping the number of threads the
+  fuzzer is allowed to generate towards, and `cap.actions` for capping the
+  number of actions the fuzzer performs.
+
 ## 2019-Dec-06
 
 - New tool `act-compile`, which inherits the compiler interface from `act-c`.

@@ -47,5 +47,6 @@ let list_predicates_command : Command.t =
 
 let command : Command.t =
   Command.group ~summary:"commands for dealing with ACT configuration"
-    [ ("license", Common_cmd.License.command)
+    [ ("dump", Dump.command)
+    ; ("license", Common_cmd.License.command)
     ; ("list-predicates", list_predicates_command) ]
