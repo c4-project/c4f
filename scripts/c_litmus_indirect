@@ -128,13 +128,14 @@ run() {
 
   local cfile="${litdir}/${TEST_NAME}.body.c"
   local runfile="${litdir}/${TEST_NAME}.c"
-  local hfile="${litdir}/${TEST_NAME}.body.h"
+  local hname="${TEST_NAME}.body.h"
+  local hfile="${litdir}/${hname}"
 
   local makefile="${litdir}/Makefile"
 
   delitmus "${COMPILER}" "${INPUT_FILE}" "${auxfile}" "${cfile}" "${hfile}"
   make_litmus_harness "${BACKEND}" "${COMPILER}" "${auxfile}" "${stubfile}" "${litdir}"
-  "${SCRIPTDIR}/add_header_to_litmus" "${hfile}" "${runfile}"
+  "${SCRIPTDIR}/add_header_to_litmus" "${hname}" "${runfile}"
   "${SCRIPTDIR}/harness/compile_and_run" "${COMPILER}" "${BACKEND}" "${litdir}"
 }
 
