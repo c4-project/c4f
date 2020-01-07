@@ -87,6 +87,6 @@ let eval (flag : t) ~(random : Splittable_random.State.t) : bool =
   Raw.eval (raw flag) ~random
 
 let as_quickcheck_generator (flag : t) : bool Base_quickcheck.Generator.t =
-  Base_quickcheck.Generator.create (fun ~size -> ignore size; eval flag)
+  Base_quickcheck.Generator.create (fun ~size -> ignore size ; eval flag)
 
 let pp : t Fmt.t = Fmt.using raw Raw.pp

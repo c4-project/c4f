@@ -1,10 +1,9 @@
-(* The Automagic Compiler Tormentor
-   Copyright (c) 2018--2020 Matt Windsor and contributors
-   - ACT itself is licensed under the MIT License. See the LICENSE file in the
-     project root for more information.
-   - ACT is based in part on code from the Herdtools7 project
-     (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
-     project root for more information. *)
+(* The Automagic Compiler Tormentor Copyright (c) 2018--2020 Matt Windsor and
+   contributors - ACT itself is licensed under the MIT License. See the
+   LICENSE file in the project root for more information. - ACT is based in
+   part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 (** Values on Boolean flags.
 
@@ -46,7 +45,7 @@ val to_exact_opt : t -> bool option
     random number generator.
 
     There are two ways to evaluate a flag: directly, or wrapped as a
-    quickcheck generator.  The latter is useful for tests and payload
+    quickcheck generator. The latter is useful for tests and payload
     generators. *)
 
 val eval : t -> random:Splittable_random.State.t -> bool

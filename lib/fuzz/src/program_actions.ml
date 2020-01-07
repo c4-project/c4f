@@ -24,14 +24,12 @@ module Make_empty : Action_types.S with type Payload.t = unit = struct
 
   module Payload = Payload.None
 
-  let available (subject : Subject.Test.t) ~(param_map : Param_map.t)
-    : bool State.Monad.t =
-    State.Monad.Monadic.return (
+  let available (subject : Subject.Test.t) ~(param_map : Param_map.t) :
+      bool State.Monad.t =
+    State.Monad.Monadic.return
       Or_error.Let_syntax.(
         let%map cap = Param_map.get_thread_cap param_map in
-        List.length (Act_litmus.Test.Raw.threads subject) < cap
-      )
-    )
+        List.length (Act_litmus.Test.Raw.threads subject) < cap)
 
   let run (subject : Subject.Test.t) ~(payload : Payload.t) :
       Subject.Test.t State.Monad.t =
