@@ -19,14 +19,15 @@ import typing
 
 from act_py import act_id, machine_info, str_utils, test, test_common
 
-# TODO(@MattWindsor91): understand drivers other than obj_splitmus.
 # TODO(@MattWindsor91): understand backends other than machine.litmus.
 
 drivers: typing.Mapping[str, typing.List[str]] = {
     "obj_splitmus":
       ["-b", '"{backend}"', '-c', '"{compiler}"', '-n', '"{subject_name}"', '-d', "{dir}", "{subject_path}"],
     "c_litmus":
-      ["-b", '"{backend}"', '-c', '"{compiler}"', '-d', '"{dir}"', "{subject_path}"]
+      ["-b", '"{backend}"', '-c', '"{compiler}"', '-d', '"{dir}"', "{subject_path}"],
+    "c_litmus_indirect":
+      ["-b", '"{backend}"', '-c', '"{compiler}"', '-n', '"{subject_name}"', '-d', "{dir}", "{subject_path}"]
 }
 
 default_driver: str = "obj_splitmus"

@@ -31,7 +31,7 @@ let get_flag (pmap : t) ~(id : Act_common.Id.t) : Flag.t Or_error.t =
   find (flags pmap) ~id ~map_name:"flag map"
 
 let get_action_cap : t -> int Or_error.t =
-  get_param ~id:(Act_common.Id.of_string "cap.action")
+  get_param ~id:(Act_common.Id.of_string "cap.actions")
 
 let get_thread_cap : t -> int Or_error.t =
-  get_param ~id:(Act_common.Id.of_string "cap.thread")
+  get_param ~id:(Act_common.Id.of_string "cap.threads")

@@ -55,7 +55,7 @@ let make_param_spec_map (xs : (string, 'a Param_spec.t) List.Assoc.t) :
 let param_map : Param_spec.Int.t Map.M(Act_common.Id).t Lazy.t =
   lazy
     (make_param_spec_map
-       [ ( "cap.passes"
+       [ ( "cap.actions"
          , Param_spec.make ~default:30
              ~description:
                {|
