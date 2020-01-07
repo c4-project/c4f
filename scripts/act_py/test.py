@@ -5,9 +5,11 @@ from dataclasses import dataclass
 
 from act_py import act_id, json_utils, test_common
 
+
 @dataclass
 class CompilerTest:
     """A grouping of compiler metadata and instances."""
+
     compiler_id: act_id.Id
     machine_id: act_id.Id
     backend: act_id.Id
@@ -26,7 +28,10 @@ class CompilerTest:
         :param env: The environment from which we get the test subjects.
         :return: An iterable sequence of test instances.
         """
-        return (test_common.Instance(self.backend, self.qualified_compiler_id, subject, env) for subject in env.subjects)
+        return (
+            test_common.Instance(self.backend, self.qualified_compiler_id, subject, env)
+            for subject in env.subjects
+        )
 
 
 @dataclass
@@ -45,7 +50,10 @@ class MachineTest:
         :return: an iterable sequence of compiler tests; this sequence is
         generated fresh each time this method is called.
         """
-        return (CompilerTest(compiler_id, machine_id, self.backend) for compiler_id in self.compilers)
+        return (
+            CompilerTest(compiler_id, machine_id, self.backend)
+            for compiler_id in self.compilers
+        )
 
 
 @dataclass

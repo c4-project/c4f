@@ -210,7 +210,9 @@ class Instance:
         except FileNotFoundError:
             pass
 
-    def log_result(self, logger: logging.Logger, proc: subprocess.CompletedProcess) -> None:
+    def log_result(
+        self, logger: logging.Logger, proc: subprocess.CompletedProcess
+    ) -> None:
         """Logs the exit code of a test driver that has run on this instance.
 
         :param logger: The logger to which we are logging.

@@ -33,7 +33,9 @@ class Runner:
         for machine_id, machine in test.machines.items():
             self.run_on_machine(machine_id, machine, test.env)
 
-    def run_on_machine(self, machine_id: act_id.Id, machine: test.MachineTest, env: test_common.Env):
+    def run_on_machine(
+        self, machine_id: act_id.Id, machine: test.MachineTest, env: test_common.Env
+    ):
         """Reports on the given machine test.
 
         :param machine_id: The ID of the machine to summarise.

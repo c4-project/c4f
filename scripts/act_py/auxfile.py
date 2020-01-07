@@ -106,7 +106,9 @@ class Aux:
 
 
 def function_record_of_dict(fun_dict: typing.Dict[str, typing.Any]) -> FunctionRecord:
-    is_thread_body = json_utils.bool_field(fun_dict, "is_thread_body", "function record")
+    is_thread_body = json_utils.bool_field(
+        fun_dict, "is_thread_body", "function record"
+    )
     c_id = json_utils.str_field(fun_dict, "c_id", "function record")
     return FunctionRecord(is_thread_body=is_thread_body, c_id=c_id)
 
@@ -122,7 +124,9 @@ def parse_mapped_to(input: typing.Any) -> typing.List[typing.Union[str, int]]:
         return ["Global"]
     elif key == "param":
         if len(input_list) != 2:
-            raise ValueError("mapped-to is param but doesn't have strictly one argument")
+            raise ValueError(
+                "mapped-to is param but doesn't have strictly one argument"
+            )
         return ["Param", int(input_list[1])]
     raise ValueError("mapped-to is not recognised", key)
 

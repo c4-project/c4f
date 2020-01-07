@@ -2,114 +2,36 @@
 
 """Automatically generates an act.conf for the local machine and puts it on stdout."""
 
+#  The Automagic Compiler Tormentor
+#  Copyright (c) 2018--2020 Matt Windsor and contributors.
+#  - ACT itself is licensed under the MIT License. See the LICENSE file in the
+#    project root for more information.
+#  - ACT is based in part on code from the Herdtools7 project
+#    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+#    project root for more information.
+
 import argparse
 import collections
-import enum
 import itertools
+import multiprocessing
 import pathlib
 import platform
 import subprocess
+import sys
 import typing
-from dataclasses import dataclass
 from datetime import datetime
 
-
-class Target(enum.Enum):
-    """Enumeration of target IDs supported in act.conf 'arch' directives."""
-
-    X64_ATT = "x64.att"
-    X86_ATT = "x86.att"
-
-    @property
-    def short_name(self) -> str:
-        """The most significant part of the target's ID."""
-        (sn, _, _) = self.value.partition(".")
-        return sn
-
-    def force_32bit(self, arch: str) -> bool:
-        """Tests whether 32-bit mode needs to be forced in a compiler."""
-        return self is Target.X86_ATT and arch == "x86_64"
-
+from act_py import act_id, config
 
 gcc_like_compilers = ["gcc", "clang"]
 olevels = [0, 3]
 
 gcc_targets_of_arch = {
-    "x86_64": [Target.X86_ATT, Target.X64_ATT],
-    "i386": [Target.X86_ATT],
+    "x86_64": [config.Target.X86_ATT, config.Target.X64_ATT],
+    "i386": [config.Target.X86_ATT],
 }
 
 herdtools_backends = {"herd": ["herd", "herd7"], "litmus": ["litmus", "litmus7"]}
-
-
-@dataclass
-class Compiler:
-    """Information about a compiler on an ACT target machine."""
-
-    style: str
-    target: Target
-    cmd: str
-    args: typing.List[str]
-
-    @property
-    def args_str(self) -> str:
-        return " ".join((f'"{a}"' for a in self.args))
-
-    def print(self) -> None:
-        print(f"        style {self.style}")
-        print(f"        arch  {self.target.value}")
-        print(f'        cmd   "{self.cmd}"')
-        print(f"        argv  {self.args_str}")
-
-
-@dataclass
-class Backend:
-    """Information about a backend on an ACT target machine."""
-
-    style: str
-    cmd: str
-    c_model: typing.Optional[str]
-
-    def print(self) -> None:
-        print(f"        style   {self.style}")
-        print(f'        cmd     "{self.cmd}"')
-        if self.c_model is not None:
-            print(f'        c_model "{self.c_model}"')
-
-
-@dataclass
-class Machine:
-    """Information about an ACT target machine."""
-
-    id: str
-    arch: str
-    compilers: typing.Mapping[str, Compiler]
-    backends: typing.Mapping[str, Backend]
-
-    def print_compilers(self) -> None:
-        for (key, val) in self.compilers.items():
-            print(f"    compiler {key} {{")
-            val.print()
-            print("    }")
-
-    def print_backends(self) -> None:
-        for (key, val) in self.backends.items():
-            print(f"    backend {key} {{")
-            val.print()
-            print("    }")
-
-    def print_header(self) -> None:
-        print(f"# Auto-generated act.conf for '{self.id}' (architecture {self.arch}).")
-        print(f"# Generated on {datetime.today()}.")
-
-    def print(self) -> None:
-        self.print_header()
-        print(f"machine {self.id} {{")
-        print("    via local")
-        self.print_compilers()
-        self.print_backends()
-        print("}")
-
 
 nodetrans = str.maketrans("-", "_")
 
@@ -119,7 +41,7 @@ def trim_node(full_node: str) -> str:
     return node_prefix.translate(nodetrans)
 
 
-def gcc_args(arch: str, target: Target, olevel: int) -> typing.Iterator[str]:
+def gcc_args(arch: str, target: config.Target, olevel: int) -> typing.Iterator[str]:
     if target.force_32bit(arch):
         yield "-m32"
     if olevel != 0:
@@ -142,29 +64,31 @@ def command_works(cmd: str, *args: str) -> bool:
 
 
 def gcc_like_compiler_stanza(
-    cmd: str, arch: str, target: Target, olevel: int
-) -> Compiler:
+    cmd: str, arch: str, target: config.Target, olevel: int
+) -> config.Compiler:
     """Emits a compiler stanza for a particular O-level of a GCC-like compiler.
     Assumes that the compiler has already been checked.
     """
     args = list(gcc_args(arch, target, olevel))
-    return Compiler(style="gcc", target=target, cmd=cmd, args=args)
+    return config.Compiler(style="gcc", target=target, cmd=cmd, args=args)
 
 
 def gcc_like_compiler_stanzas(
     cmd: str, arch: str
-) -> typing.Iterator[typing.Tuple[str, Compiler]]:
+) -> typing.Iterator[typing.Tuple[str, config.Compiler]]:
     """Emits a set of compiler stanzas for a particular GCC-like compiler.
     Assumes that the compiler has already been checked.
     """
     targets = gcc_targets_of_arch[arch]
     for (target, olevel) in itertools.product(targets, olevels):
-        id = ".".join([cmd, target.short_name, f"O{olevel}"])
+        compiler_id = ".".join([cmd, target.short_name, f"O{olevel}"])
         compiler = gcc_like_compiler_stanza(cmd, arch, target, olevel)
-        yield (id, compiler)
+        yield compiler_id, compiler
 
 
-def lookup_gcc_like_compiler(cmd: str, arch: str) -> typing.Mapping[str, Compiler]:
+def lookup_gcc_like_compiler(
+    cmd: str, arch: str
+) -> typing.Mapping[str, config.Compiler]:
     """Tests to see if the named GCC-like compiler exists.
     If so, emits a dictionary containing one or more stanzas for it.
     If not, emits an empty dictionary.
@@ -176,29 +100,31 @@ def lookup_gcc_like_compiler(cmd: str, arch: str) -> typing.Mapping[str, Compile
     )
 
 
-def lookup_gcc_like_compilers(arch: str) -> typing.Mapping[str, Compiler]:
+def lookup_gcc_like_compilers(arch: str) -> typing.Mapping[str, config.Compiler]:
     return collections.ChainMap(
         *(lookup_gcc_like_compiler(cmd, arch) for cmd in gcc_like_compilers)
     )
 
 
-def lookup_local_compilers(arch: str) -> typing.Mapping[str, Compiler]:
+def lookup_local_compilers(arch: str) -> typing.Mapping[str, config.Compiler]:
     # Space for future expansion
     return lookup_gcc_like_compilers(arch)
 
 
 def herdtools_backend_stanzas(
     cmd: str, style: str, c_model: typing.Optional[str]
-) -> typing.Iterator[typing.Tuple[str, Backend]]:
+) -> typing.Iterator[typing.Tuple[str, config.Backend]]:
     yield (
         cmd,
-        Backend(cmd=cmd, style=style, c_model=c_model if style == "herd" else None),
+        config.Backend(
+            cmd=cmd, style=style, c_model=c_model if style == "herd" else None
+        ),
     )
 
 
 def lookup_herdtools_backend(
     cmd: str, style: str, c_model: typing.Optional[str]
-) -> typing.Mapping[str, Backend]:
+) -> typing.Mapping[str, config.Backend]:
     """Tests to see if the named Herdtools-style backend exists.
     If so, emits a dictionary containing one or more stanzas for it.
     If not, emits an empty dictionary.
@@ -212,7 +138,7 @@ def lookup_herdtools_backend(
 
 def lookup_herdtools_backends(
     c_model: typing.Optional[str]
-) -> typing.Mapping[str, Backend]:
+) -> typing.Mapping[str, config.Backend]:
     return collections.ChainMap(
         *(
             lookup_herdtools_backend(cmd, style, c_model)
@@ -224,12 +150,12 @@ def lookup_herdtools_backends(
 
 def lookup_local_backends(
     c_model: typing.Optional[str]
-) -> typing.Mapping[str, Backend]:
+) -> typing.Mapping[str, config.Backend]:
     # Space for future expansion
     return lookup_herdtools_backends(c_model)
 
 
-def lookup_local_machine(c_model: typing.Optional[str]) -> Machine:
+def lookup_local_machine(c_model: typing.Optional[str]) -> config.Machine:
     """Looks up compilers and backends on this machine.
 
     :param c_model: The C model override for herd-style backends, if any.
@@ -239,16 +165,39 @@ def lookup_local_machine(c_model: typing.Optional[str]) -> Machine:
     """
     arch = platform.machine()
 
-    compilers: typing.Mapping[str, Compiler] = lookup_local_compilers(arch)
-    backends: typing.Mapping[str, Backend] = lookup_local_backends(c_model)
+    compilers: typing.Mapping[str, config.Compiler] = lookup_local_compilers(arch)
+    backends: typing.Mapping[str, config.Backend] = lookup_local_backends(c_model)
 
-    return Machine("localhost", arch, compilers, backends)
+    return config.Machine("localhost", arch, compilers, backends)
 
 
-def print_default(mach: Machine) -> None:
+def make_fuzz() -> config.Fuzz:
+    """Makes a fuzzer configuration that respects the limits of the current
+    machine.
+
+    :return: A fuzz configuration.
+    """
+    cores: int
+    try:
+        cores = multiprocessing.cpu_count()
+    except NotImplementedError:
+        print(
+            "Couldn't get number of cores, putting in a sensible default.",
+            file=sys.stderr,
+        )
+        cores = 2
+    return config.Fuzz(params={act_id.Id("cap.threads"): cores}, flags=dict())
+
+
+def print_default(mach: config.Machine) -> None:
     print("default {")
     print(f"    try machine {mach.id}")
     print("}")
+
+
+def print_header(mach: config.Machine) -> None:
+    print(f"# Auto-generated act.conf for '{mach.id}' (architecture {mach.arch}).")
+    print(f"# Generated on {datetime.today()}.")
 
 
 def main() -> None:
@@ -262,9 +211,13 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    mach: Machine = lookup_local_machine(args.c_model)
+    mach: config.Machine = lookup_local_machine(args.c_model)
+    fuzz: config.Fuzz = make_fuzz()
+
+    print_header(mach)
     mach.print()
     print()
+    fuzz.print()
     print_default(mach)
 
 

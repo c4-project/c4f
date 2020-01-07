@@ -56,7 +56,7 @@ class MarkdownReportWriter:
         :param body: The body of the header.
         :return: Nothing.
         """
-        print('#' * max(1, level), body, file=self.file)
+        print("#" * max(1, level), body, file=self.file)
         print(file=self.file)
 
     def print_machine_header(self, name: str) -> None:
@@ -112,11 +112,7 @@ class Reporter:
 
     settings: ReportSettings
 
-    def __init__(
-        self,
-        reporter: MarkdownReportWriter,
-        settings: ReportSettings,
-    ):
+    def __init__(self, reporter: MarkdownReportWriter, settings: ReportSettings):
         self.reporter = reporter
         self.settings = settings
 
@@ -129,7 +125,9 @@ class Reporter:
         for machine_id, machine in test.machines.items():
             self.run_on_machine(machine_id, machine, test.env)
 
-    def run_on_machine(self, machine_id: act_id.Id, machine: test.MachineTest, env: test_common.Env):
+    def run_on_machine(
+        self, machine_id: act_id.Id, machine: test.MachineTest, env: test_common.Env
+    ):
         """Reports on the given machine test.
 
         :param machine_id: The ID of the machine to summarise.
@@ -156,7 +154,9 @@ class Reporter:
         obs = observation.load_from_path(instance.state_file)
         self.inspect_observation(obs, instance)
 
-    def inspect_observation(self, obs: observation.Observation, instance: test_common.Instance) -> None:
+    def inspect_observation(
+        self, obs: observation.Observation, instance: test_common.Instance
+    ) -> None:
         """Inspects the given observation, grumbling onto stdout about what
         lies within.
 
@@ -180,7 +180,6 @@ class Reporter:
         if self.settings.print_unknown:
             return True
         return False
-
 
     def print_state_breakdown(self, obs: observation.Observation) -> None:
         if self.settings.print_witnesses:

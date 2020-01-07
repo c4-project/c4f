@@ -45,7 +45,9 @@ def of_dict(aux_dict: typing.Dict[str, typing.Any]) -> LitmusHeader:
     locations = aux_dict["locations"]
     init = aux_dict["init"]
     postcondition = aux_dict["postcondition"]
-    return LitmusHeader(name=name, locations=locations, init=init, postcondition=postcondition)
+    return LitmusHeader(
+        name=name, locations=locations, init=init, postcondition=postcondition
+    )
 
 
 def load(fp: typing.TextIO) -> LitmusHeader:

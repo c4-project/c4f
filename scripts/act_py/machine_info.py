@@ -125,7 +125,9 @@ class ActInspectError(Exception):
         )
 
 
-def get_backend_for(machine_id: typing.Optional[act_id.Id], style_id: typing.Optional[act_id.Id]):
+def get_backend_for(
+    machine_id: typing.Optional[act_id.Id], style_id: typing.Optional[act_id.Id]
+):
     """Runs the 'get_a_backend' script with the given arguments.
 
     :param machine_id: The (optional) machine ID to request.
