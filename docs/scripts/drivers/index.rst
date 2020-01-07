@@ -12,4 +12,6 @@ and slot into the test runner.
    :maxdepth: 2
    :caption: Contents:
 
+   c_litmus
+   c_litmus_indirect
    obj_splitmus

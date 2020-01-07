@@ -1,0 +1,6 @@
+<component name="CopyrightManager">
+  <copyright>
+    <option name="notice" value="The Automagic Compiler Tormentor&#10;&#10; Copyright (c) 2018--&amp;#36;today.year Matt Windsor and contributors&#10;&#10; ACT itself is licensed under the MIT License. See the LICENSE file in the&#10; project root for more information.&#10;&#10; ACT is based in part on code from the Herdtools7 project&#10; (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the&#10; project root for more information." />
+    <option name="myName" value="act" />
+  </copyright>
+</component>

@@ -25,4 +25,4 @@ These live in the ``./scripts`` directory.
    fuzz_many
    make_conf
    test_pipeline
-   test_drivers
+   drivers/index

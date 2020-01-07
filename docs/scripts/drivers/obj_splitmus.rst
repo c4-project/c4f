@@ -1,3 +1,5 @@
+.. _scripts-test-drivers-obj_splitmus:
+
 ``obj_splitmus``: spliced Litmus test driver
 ============================================
 
