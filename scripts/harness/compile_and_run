@@ -83,7 +83,7 @@ main() {
   local litdir="$1"
 
   local payload
-  payload="$("${THISDIR}/compile" -c "${COMPILER}" "${litdir}")"
+  payload="$(act::run_with_qvx "${THISDIR}/compile" -c "${COMPILER}" "${litdir}")"
 
   act::run_with_qvx "${THISDIR}/run" -c "${COMPILER}" "${payload}" | act::backend parse -backend "${BACKEND}"
 }

@@ -70,13 +70,39 @@ main() {
   if [[ -z ${COMPILER} ]]; then act::arg_error "expected a nonempty compiler (-c)"; fi
   if [[ $# -ne 1 ]]; then act::arg_error "expected precisely one anonymous argument"; fi
 
-  readonly litdir="$1"
+  local litdir="$1"
 
-  readonly payload="${litdir}/a.out"
+  local payload="${litdir}/a.out"
   touch payload
+
+  patch_casts "${litdir}"
 
   act::compile -compiler "${COMPILER}" -mode binary "${litdir}"/*.c "${litdir}"/*.h -arg "pthread" -arg "std=gnu11" -o "${payload}"
   echo "${payload}"
+}
+
+
+# Works around an oddity with litmus and clang in which the casts from intmax_t
+# to atomic_int used in the histogram printer trigger compiler errors -- by
+# dropping those casts and hoping the representation of intmax_t and atomic_int
+# are compatible.
+#
+# This is a temporary workaround that should be removed as soon as a better
+# solution becomes apparent.
+#
+# Arguments:
+#   1. The directory in which each C file should have its casts patched.
+patch_casts() {
+  local litdir="$1"
+
+  for file in "${litdir}"/*.c; do
+    act::log "Patching casts in %s..." "${file}"
+
+    sed 's/(_Atomic int)o\[/o\[/g' "${file}" > "${file}.tmp"
+    mv "${file}.tmp" "${file}"
+
+    act::log " done.\n"
+  done
 }
 
 
