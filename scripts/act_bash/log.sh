@@ -32,7 +32,8 @@ act::fatal() {
 #   1: the string to echo.
 act::arg_error() {
   act::error "$1"
-  usage
+  echo >&2
+  usage >&2
 }
 
 # If VERBOSE is "true", sends all subsequent arguments to printf.

@@ -46,7 +46,7 @@ VERBOSE="false"
 
 # Prints usage information and exits.
 usage() {
-  echo "Usage: $0 [-b ID] [-m ID] [-s STYLE] [-ilqvxh?]"
+  echo "Usage: $0 [-b ID] [-m ID] [-s STYLE] [-il] ${ACT_STANDARD_USAGE}"
   echo
   echo "-b ID: Require that the backend has the given ID"
   echo "-m ID: Require that the machine has the given ID"
@@ -59,7 +59,7 @@ usage() {
 }
 
 main() {
-  while getopts "b:m:s:lqvx?h" a; do
+  while getopts "b:m:s:l${ACT_STANDARD_OPTS}" a; do
     case ${a} in
     b) BACKEND_ID="${OPTARG}" ;;
     m) MACHINE_ID="${OPTARG}" ;;
@@ -75,10 +75,12 @@ main() {
   readonly BACKEND_ID MACHINE_ID REQUIRE_LOCAL STYLE DUNE_EXEC VERBOSE
   shift $((OPTIND-1))
 
-  local backend=$(list_backends | head -n 1 | cut -f1-2 -d' ' | sed 's/ /./')
+  local backend
+  backend=$(list_backends | head -n 1 | cut -f1-2 -d' ' | sed 's/ /./')
   if [[ -z "${backend}" ]]; then act::fatal "No matching backend found."; fi
+
   # Not using echo to avoid a spurious newline
-  printf "${backend}"
+  printf "%s" "${backend}"
 }
 
 list_backends() {
@@ -88,7 +90,9 @@ list_backends() {
 }
 
 make_backend_predicate() {
-  local predicate=$("${SCRIPTDIR}/make_backend_predicate" -i "${BACKEND_ID}" -s "${STYLE}")
+  local predicate
+  predicate=$("${SCRIPTDIR}/make_backend_predicate" -i "${BACKEND_ID}" -s "${STYLE}")
+
   act::log "Backend predicate: %s\n" "${predicate}"
 	echo "${predicate}"
 }
@@ -96,7 +100,10 @@ make_backend_predicate() {
 make_machine_predicate() {
 	local lflag=""
 	if [[ "${REQUIRE_LOCAL}" = "true" ]]; then lflag="l"; fi
-  local predicate=$("${SCRIPTDIR}/make_machine_predicate" -"${lflag}"i "${MACHINE_ID}")
+
+  local predicate
+  predicate=$("${SCRIPTDIR}/make_machine_predicate" -"${lflag}"i "${MACHINE_ID}")
+
   act::log "Machine predicate: %s\n" "${predicate}"
 	echo "${predicate}"
 }

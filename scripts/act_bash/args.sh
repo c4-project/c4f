@@ -11,6 +11,14 @@ declare DUNE_EXEC
 declare VERBOSE
 
 
+# A stanza of standard flags, to be inserted into `usage` summaries.
+readonly ACT_STANDARD_FLAGS="qvxh"
+
+# A stanza of standard `getopts` incantations.
+readonly ACT_STANDARD_OPTS="${ACT_STANDARD_FLAGS}"
+
+
+
 # Sets a variable, but errors if the value is an empty ('zero') string.
 #
 # Globals:
@@ -25,10 +33,7 @@ act::set_nz() {
   local name="$2"
   local value="$3"
 
-  if [[ -z ${value} ]]; then
-    act::error "can't set ${hr_name} to ''"
-    exit
-  fi
+  if [[ -z ${value} ]]; then act::fatal "can't set ${hr_name} to ''"; fi
   printf -v "${name}" '%s' "${value}"
 }
 
@@ -48,10 +53,7 @@ act::set_nz_once() {
   local name="$2"
   local value="$3"
 
-  if [[ -n ${!name} ]]; then
-    act::error "${hr_name} already set"
-    exit
-  fi
+  if [[ -n ${!name} ]]; then act::fatal "${hr_name} already set"; fi
   act::set_nz "${hr_name}" "${name}" "${value}"
 }
 
@@ -127,9 +129,32 @@ act::run_with_qvx() {
 # Arguments:
 #   1. The program to run.
 #   2+. Extra arguments to supply to the program.
-function act::run_with_bcqvx() {
+act::run_with_bcqvx() {
   local prog="$1"
   shift
 
   act::run_with_qvx "${prog}" -b "${BACKEND}" -c "${COMPILER}" "$@"
+}
+
+
+# Parses the various arguments that are common to all act shell scripts.
+#
+# Arguments:
+#   1. The flag being parsed.
+#   2. OPTARG.
+act::parse_standard_args() {
+  case "$1" in
+    q) VERBOSE="false" ;;
+    v) VERBOSE="true" ;;
+    x) DUNE_EXEC="true" ;;
+    h|\?) usage >&2 ;;
+  esac
+}
+
+
+# Echoes information about the standard arguments to stdout.
+act::standard_usage() {
+  echo "-v/-q: verbose/quiet"
+  echo "-x: run ACT binaries with \`dune exec\`"
+  echo "-h/-?: usage"
 }

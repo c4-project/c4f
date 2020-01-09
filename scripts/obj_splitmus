@@ -212,17 +212,11 @@ main() {
   readonly BACKEND COMPILER VERBOSE DUNE_EXEC
   shift $((OPTIND-1))
 
-  if [[ -z ${BACKEND} ]]; then
-    act::error "expected a nonempty backend (-b)"
-    usage
-  fi
-  if [[ -z ${COMPILER} ]]; then
-    act::arg_error "expected a nonempty compiler (-c)"
-  fi
+  if [[ -z ${BACKEND} ]]; then act::arg_error "expected a nonempty backend (-b)"; fi
+  if [[ -z ${COMPILER} ]]; then act::arg_error "expected a nonempty compiler (-c)"; fi
+  if [[ $# -ne 1 ]]; then act::arg_error "expected precisely one anonymous argument"; fi
+  act::check_dune_exec
 
-  if [[ $# -ne 1 ]]; then
-    act::arg_error "expected precisely one anonymous argument"
-  fi
   INPUT_FILE="$1"
   if [[ -z ${TEST_NAME} ]]; then
     TEST_NAME="$("${SCRIPTDIR}/litmus_test_name" "${INPUT_FILE}")"
@@ -232,10 +226,6 @@ main() {
 
   if [[ -z ${OUTPUT_DIR} ]]; then act::setup_temp_output_dir; fi
   readonly OUTPUT_DIR
-
-  if [[ ${DUNE_EXEC} = "true" ]]; then
-    act::log "%s: using 'dune exec' for ACT.\n" "$0"
-  fi
 
   run
 }

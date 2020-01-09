@@ -8,9 +8,7 @@
 # 4) patching up the harness so that it can compile against the C file;
 # 5) compiling the whole thing against the compiler under test.
 
-set -o errexit
-set -o pipefail
-set -o nounset
+set -euo pipefail
 
 SCRIPTDIR="${SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"}"
 readonly SCRIPTDIR
@@ -28,7 +26,7 @@ source "${SCRIPTDIR}/act_bash/naming.sh"
 
 
 # The backend ID to use to get state sets.
-# If empty, a default Litmus-style backend will be acquired.
+# Must not be empty at the end of argument parsing.
 BACKEND=""
 
 # The name of the compiler to compile through.
@@ -131,42 +129,36 @@ run() {
   local hname="${TEST_NAME}.body.h"
   local hfile="${litdir}/${hname}"
 
-  local makefile="${litdir}/Makefile"
-
   delitmus "${COMPILER}" "${INPUT_FILE}" "${auxfile}" "${cfile}" "${hfile}"
   make_litmus_harness "${BACKEND}" "${COMPILER}" "${auxfile}" "${stubfile}" "${litdir}"
   "${SCRIPTDIR}/add_header_to_litmus" "${hname}" "${runfile}"
-  "${SCRIPTDIR}/harness/compile_and_run" "${COMPILER}" "${BACKEND}" "${litdir}"
+  act::run_with_bcqvx "${SCRIPTDIR}/harness/compile_and_run" "${litdir}"
 }
 
 
 # Prints the script's usage and exits.
 usage() {
-  echo "usage: $0 -b BACKEND_ID -c COMPILER_ID [-d DIR] [-n NAME] [-qvxh?] FILE" >&2
+  echo "usage: $0 -b BACKEND_ID -c COMPILER_ID [-d DIR] [-n NAME] [-${ACT_STANDARD_FLAGS}] FILE" >&2
   echo
   echo "-b: ID of Litmus-style ACT backend to use for making harnesses"
   echo "-c: ID of compiler to use to compile file"
   echo "-d: directory to use for outputting intermediate files"
   echo "-n: name to use for Litmus test"
-  echo "-v/-q: verbose/quiet"
-  echo "-x: run ACT binaries with \`dune exec\`"
-  echo "-h/-?: usage"
+  act::standard_usage
+
   exit 1
 }
 
 
 # Main function.
 main() {
-  while getopts "b:c:d:n:qvx?h" a; do
+  while getopts "b:c:d:n:${ACT_STANDARD_OPTS}" a; do
     case ${a} in
     b) BACKEND=${OPTARG} ;;
     c) COMPILER=${OPTARG} ;;
     d) OUTPUT_DIR=${OPTARG} ;;
     n) TEST_NAME=${OPTARG} ;;
-    q) VERBOSE="false" ;;
-    v) VERBOSE="true" ;;
-    x) DUNE_EXEC="true" ;;
-    h|?) usage ;;
+    *) act::parse_standard_args "${a}" "${OPTARG:-}" ;;
     esac
   done
   # VERBOSE etc. are used indirectly by various library functions.
@@ -188,9 +180,7 @@ main() {
   if [[ -z ${OUTPUT_DIR} ]]; then act::setup_temp_output_dir; fi
   readonly OUTPUT_DIR
 
-  if [[ ${DUNE_EXEC} = "true" ]]; then
-    act::log "%s: using 'dune exec' for ACT.\n" "$0"
-  fi
+  act::check_dune_exec
 
   run
 }

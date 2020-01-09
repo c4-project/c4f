@@ -49,7 +49,7 @@ main() {
   local predicate=""
   if [[ -n "${ID}" ]]; then predicate="${predicate} (id (is ${ID}))"; fi
   if [[ -n "${STYLE}" ]]; then predicate="${predicate} (style (is ${STYLE}))"; fi
-  if [[ -z predicate ]]; then echo "true"; else echo "(and${predicate})"; fi
+  if [[ -z "${predicate}" ]]; then echo "true"; else echo "(and${predicate})"; fi
 }
 
 

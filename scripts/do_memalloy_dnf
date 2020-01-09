@@ -39,10 +39,6 @@ DNF_DIR=""
 # Defaults to `DEFAULT_MEMALLOY_EVENTS` if empty.
 MEMALLOY_EVENTS=""
 
-# The number of times the fuzzer should run on each Memalloy output.
-# Defaults to `DEFAULT_FUZZ_PASSES` if empty.
-FUZZ_PASSES=""
-
 ## Functions ##
 
 
@@ -50,7 +46,7 @@ FUZZ_PASSES=""
 usage() {
   echo "Usage: $0"
   echo "  [-e NUM_MEMALLOY_EVENTS]"
-  echo "  [-fsuwtnSUWTNqvxh?] MEMALLOY_DIR OUTPUT_DIR"
+  echo "  [-fsuwtnSUWTN${ACT_STANDARD_FLAGS}] MEMALLOY_DIR OUTPUT_DIR"
   echo
   echo "-e: number of events for Memalloy to produce (default ${DEFAULT_MEMALLOY_EVENTS})"
   echo "-h/-?: usage"
