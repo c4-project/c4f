@@ -4,9 +4,7 @@
 # DNF-converts every result it generates, and outputs it into another given
 # directory.
 
-set -o errexit
-set -o pipefail
-set -o nounset
+set -euo pipefail
 
 SCRIPTDIR="${SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"}"
 # shellcheck source=scripts/act_bash/args.sh
@@ -16,7 +14,7 @@ source "${SCRIPTDIR}/act_bash/exec.sh"
 # shellcheck source=scripts/act_bash/log.sh
 source "${SCRIPTDIR}/act_bash/log.sh"
 
-declare DEFAULT_MEMALLOY_EVENTS
+declare DEFAULT_MEMALLOY_EVENTS ACT_STANDARD_FLAGS ACT_STANDARD_OPTS
 # shellcheck source=scripts/act_bash/memalloy.sh
 source "${SCRIPTDIR}/act_bash/memalloy.sh"
 
@@ -49,7 +47,7 @@ usage() {
   echo "  [-fsuwtnSUWTN${ACT_STANDARD_FLAGS}] MEMALLOY_DIR OUTPUT_DIR"
   echo
   echo "-e: number of events for Memalloy to produce (default ${DEFAULT_MEMALLOY_EVENTS})"
-  echo "-h/-?: usage"
+  act::standard_usage
   echo
   echo "OUTPUT_DIR will be created if needed, and MAY be a subdirectory of"
   echo "MEMALLOY_DIR/results/_latest".
@@ -59,14 +57,11 @@ usage() {
 
 # Main function.
 main() {
-  while getopts "e:fqvx?h" a; do
+  while getopts "e:f${ACT_STANDARD_OPTS}" a; do
     case ${a} in
     e) MEMALLOY_EVENTS=${OPTARG} ;;
     f) FORCE_MEMALLOY="true" ;;
-    q) VERBOSE="false" ;;
-    v) VERBOSE="true" ;;
-    x) DUNE_EXEC="true" ;;
-    h|?) usage ;;
+    *) act::parse_standard_args "${a}" "${OPTARG:-}" ;;
     esac
   done
   readonly MEMALLOY_EVENTS FORCE_MEMALLOY DUNE_EXEC VERBOSE
@@ -125,7 +120,7 @@ run_memalloy_if_needed() {
 #   (various others read indirectly)
 run_memalloy() {
   act::log "Running memalloy.\n"
-  "${SCRIPTDIR}/do_memalloy" -e "${MEMALLOY_EVENTS}" "${MEMALLOY_DIR}"
+  act::run_with_qvx "${SCRIPTDIR}/do_memalloy" -e "${MEMALLOY_EVENTS}" "${MEMALLOY_DIR}"
 }
 
 
@@ -154,9 +149,7 @@ run_dnf_if_needed() {
     act::log ".\n"
   fi
 
-  if [[ ! -d "${DNF_DIR}" ]]; then
-    act::fatal "Missing DNF directory"
-  fi
+  if [[ ! -d "${DNF_DIR}" ]]; then act::fatal "Missing DNF directory"; fi
 }
 
 

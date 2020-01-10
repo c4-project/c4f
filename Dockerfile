@@ -156,4 +156,4 @@ COPY --chown=act:act scripts scripts
 COPY --chown=act:act c11_lahav.cat c11_lahav.cat
 RUN ./scripts/make_conf --c-model "/home/act/c11_lahav.cat" > act.conf
 
-CMD [ "./scripts/do_memalloy_test", "-v", "/home/act/memalloy" ]
+CMD [ "./scripts/do_memalloy_test", "-v", "-m", "is_local", "-c", "(id (has_tag x64))", "-D", "c_litmus_indirect", "memalloy" ]

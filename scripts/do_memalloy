@@ -2,17 +2,19 @@
 # Runs Memalloy from the given directory, giving sensible defaults for
 # ACT usage.
 
-set -o errexit
-set -o pipefail
-set -o nounset
+set -euo pipefail
 
 
 SCRIPTDIR="${SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"}"
 
 declare DEFAULT_MEMALLOY_EVENTS MEMALLOY_VIOLATES_MODEL MEMALLOY_NORMWS_MODEL
+declare ACT_STANDARD_FLAGS ACT_STANDARD_OPTS
 # shellcheck source=scripts/act_bash/memalloy.sh
 source "${SCRIPTDIR}/act_bash/memalloy.sh"
-
+# shellcheck source=scripts/act_bash/log.sh
+source "${SCRIPTDIR}/act_bash/log.sh"
+# shellcheck source=scripts/act_bash/args.sh
+source "${SCRIPTDIR}/act_bash/args.sh"
 
 ## Arguments ##
 
@@ -30,37 +32,47 @@ MEMALLOY_EVENTS=""
 
 # Prints usage information and exits.
 usage() {
-  echo "Usage: $0 [-e NUM_EVENTS] MEMALLOY_DIR"
+  echo "Usage: $0 [-e NUM_EVENTS] [-${ACT_STANDARD_FLAGS}] MEMALLOY_DIR"
   echo
   echo "-e: number of events for Memalloy to produce (default ${DEFAULT_MEMALLOY_EVENTS})"
-  echo "-h/-?: usage"
+  act::standard_usage
   exit
 }
 
-
-# The main body of the script.
-main() {
-    while getopts "e:?h" a; do
-    case ${a} in
-    e) MEMALLOY_EVENTS=${OPTARG} ;;
-    h|?) usage ;;
-    esac
-  done
-  if [[ -z "${MEMALLOY_EVENTS}" ]]; then MEMALLOY_EVENTS="${DEFAULT_MEMALLOY_EVENTS}"; fi
-  readonly MEMALLOY_EVENTS
-  shift $((OPTIND-1))
-
-  readonly MEMALLOY_DIR="$1"
-  cd "${MEMALLOY_DIR}"
-  # -batch stops Memalloy from trying to open the directory;
-  # >/dev/null is because Memalloy is quite chatty by default.
+# Actually runs Memalloy, with the various options in situ.
+# Assumes that we are currently in the appropriate direction.
+run_memalloy() {
+  # -batch stops Memalloy from trying to open the directory.
   ./comparator \
     -arch C \
     -violates "models/${MEMALLOY_VIOLATES_MODEL}" \
     -satisfies "models/${MEMALLOY_NORMWS_MODEL}" \
     -events "${MEMALLOY_EVENTS}" \
     -iter \
-    -batch >/dev/null
+    -batch
+}
+
+# The main body of the script.
+main() {
+  while getopts "e:${ACT_STANDARD_OPTS}" a; do
+    case ${a} in
+    e) MEMALLOY_EVENTS=${OPTARG} ;;
+    *) act::parse_standard_args "${a}" "${OPTARG:-}" ;;
+    esac
+  done
+  if [[ -z "${MEMALLOY_EVENTS}" ]]; then MEMALLOY_EVENTS="${DEFAULT_MEMALLOY_EVENTS}"; fi
+  readonly MEMALLOY_EVENTS
+  shift $((OPTIND-1))
+
+  if [[ $# -ne 1 ]]; then act::arg_error "expected precisely one anonymous argument"; fi
+  readonly MEMALLOY_DIR="$1"
+  cd "${MEMALLOY_DIR}"
+
+  if [[ "${VERBOSE}" == "true" ]]; then
+    run_memalloy
+  else
+    run_memalloy >/dev/null
+  fi
 }
 
 

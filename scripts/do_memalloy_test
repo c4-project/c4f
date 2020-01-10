@@ -111,7 +111,7 @@ main() {
   flags="$(act::flags_qvx)"
   if [[ ${FORCE_MEMALLOY} = "true" ]]; then flags="${flags}f"; fi
 
-  "${SCRIPTDIR}/do_memalloy_dnf" "${flags}" -e "${MEMALLOY_EVENTS}" "${MEMALLOY_DIR}" "${dnf_dir}"
+  act::run_with_qvx "${SCRIPTDIR}/do_memalloy_dnf" "${flags}" -e "${MEMALLOY_EVENTS}" "${MEMALLOY_DIR}" "${dnf_dir}"
 
   run_fuzz_and_test "${dnf_dir}" "${scratch_dir}"
 }
