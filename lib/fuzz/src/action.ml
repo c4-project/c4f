@@ -139,11 +139,13 @@ end
 module Make_log (B : sig
   val name : Act_common.Id.t
 end) : sig
-  val log : Act_common.Output.t -> string -> unit
+  val log : Act_common.Output.t -> ('a, Formatter.t, unit) format -> 'a
 end = struct
-  let log (o : Act_common.Output.t) (s : string) : unit =
+  let log (o : Act_common.Output.t) (format : ('a, Formatter.t, unit) format)
+      : 'a =
     Fmt.(
-      Act_common.Output.pv o "@[<h>%a:@ @[%a@]@]@."
+      Act_common.Output.pv o
+        Caml.("@[<h>%a:@ @[" ^^ format ^^ "@]@]@.")
         (styled (`Fg `Green) Act_common.Id.pp)
-        B.name Fmt.lines s)
+        B.name)
 end

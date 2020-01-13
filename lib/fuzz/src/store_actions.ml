@@ -12,6 +12,12 @@
 open Base
 module Ac = Act_common
 
+let forbid_already_written_flag (param_map : Param_map.t) :
+    Flag.t State.Monad.t =
+  State.Monad.Monadic.return
+    (Param_map.get_flag param_map
+       ~id:(Ac.Id.of_string_list ["store"; "forbid-already-written"]))
+
 module Random_state = struct
   (* We don't give [gen] here, because it depends quite a lot on the functor
      arguments of [Make]. *)
@@ -22,8 +28,6 @@ end
 
 module Make (B : sig
   val name : Ac.Id.t
-
-  val forbid_already_written : bool
 
   val dst_type : Act_c_mini.Type.Basic.t
 
@@ -44,19 +48,19 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
       , {|
        Generates a store operation on a randomly selected fuzzer-generated
        global variable.
+
+       If 'store.forbid-already-written' is true, this action will only store
+       to variables that haven't previously been selected for store actions.
+       This makes calculating candidate executions easier, but limits the degree
+       of entropy somewhat.  (Note that if the value is stochastic, the action
+       will only fire if such variables exist, but may or may not proceed to
+       select a previously-stored variable.  This is a limitation of the flag
+       system.)
        |}
       )
     ; ( true
       , Printf.sprintf "This operation generates '%s's."
-          (Act_c_mini.Type.Basic.to_string B.dst_type) )
-    ; ( B.forbid_already_written
-      , {|
-       This version of the action only stores to variables that haven't
-       previously been selected for store actions.  This makes calculating
-       candidate executions easier, but limits the degree of entropy
-       somewhat.
-       |}
-      ) ]
+          (Act_c_mini.Type.Basic.to_string B.dst_type) ) ]
 
   let select_and_format_chunk (select : bool) (chunk : string) :
       string option =
@@ -73,18 +77,18 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
   let src_restrictions : (Var.Record.t -> bool) list Lazy.t = lazy []
 
   (** Lists the restrictions we put on destination variables. *)
-  let dst_restrictions : (Var.Record.t -> bool) list Lazy.t =
-    lazy
-      Var.Record.(
-        [ is_atomic
-        ; was_generated
-        ; has_basic_type ~basic:B.dst_type
-          (* This is to make sure that we don't change the observable
-             semantics of the program over its original variables. *)
-        ; Fn.non has_dependencies
-          (* This action changes the value, so we can't do it to variables
-             with depended-upon values. *) ]
-        @ if B.forbid_already_written then [Fn.non has_writes] else [])
+  let dst_restrictions (forbid_already_written : bool) :
+      (Var.Record.t -> bool) list =
+    Var.Record.(
+      [ is_atomic
+      ; was_generated
+      ; has_basic_type ~basic:B.dst_type
+        (* This is to make sure that we don't change the observable semantics
+           of the program over its original variables. *)
+      ; Fn.non has_dependencies
+        (* This action changes the value, so we can't do it to variables with
+           depended-upon values. *) ]
+      @ if forbid_already_written then [Fn.non has_writes] else [])
 
   module Payload = struct
     type t = Random_state.t [@@deriving sexp]
@@ -96,9 +100,9 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
       let predicates = Lazy.force src_restrictions in
       Var.Map.env_module_satisfying_all ~predicates ~scope:(Local tid) vars
 
-    let dst_env (vars : Var.Map.t) ~(tid : int) :
-        (module Act_c_mini.Env_types.S) =
-      let predicates = Lazy.force dst_restrictions in
+    let dst_env (vars : Var.Map.t) ~(tid : int)
+        ~(forbid_already_written : bool) : (module Act_c_mini.Env_types.S) =
+      let predicates = dst_restrictions forbid_already_written in
       Var.Map.env_module_satisfying_all ~predicates ~scope:(Local tid) vars
 
     let error_if_empty (env : string) (module M : Act_c_mini.Env_types.S) :
@@ -111,7 +115,7 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
 
     let log_environment (o : Ac.Output.t) (env_name : string)
         (env : Act_c_mini.Type.t Map.M(Ac.C_id).t) : unit =
-      Ac.Output.pv o "%s environment: %a@." env_name Sexp.pp_hum
+      log o "%s environment: %a@." env_name Sexp.pp_hum
         [%sexp (env : Act_c_mini.Type.t Map.M(Ac.C_id).t)]
 
     let log_environments (o : Ac.Output.t)
@@ -135,11 +139,12 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
           [%quickcheck.generator: Gen.t])
 
     let gen_store (o : Ac.Output.t) (vars : Var.Map.t) ~(tid : int)
-        ~(random : Splittable_random.State.t) :
+        ~(random : Splittable_random.State.t)
+        ~(forbid_already_written : bool) :
         Act_c_mini.Atomic_store.t Or_error.t =
       log o "Generating store" ;
       let src_mod = src_env vars ~tid in
-      let dst_mod = dst_env vars ~tid in
+      let dst_mod = dst_env vars ~tid ~forbid_already_written in
       log o "Found environments for store" ;
       gen_store_with_envs src_mod dst_mod o ~random
 
@@ -150,43 +155,56 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
       Payload.Helpers.lift_quickcheck_opt ~random ~action_id:name
         (Path_producers.Test.try_gen_insert_stm subject)
 
-    let gen' (o : Ac.Output.t) (subject : Subject.Test.t)
-        ~(random : Splittable_random.State.t) (vars : Var.Map.t) :
-        t State.Monad.t =
+    let gen' (o : Ac.Output.t) (subject : Subject.Test.t) (vars : Var.Map.t)
+        ~(random : Splittable_random.State.t)
+        ~(forbid_already_written : bool) : t State.Monad.t =
       State.Monad.Let_syntax.(
         let%bind path = gen_path o subject ~random in
         let tid = Path.Program.tid path in
         let%map store =
-          State.Monad.Monadic.return (gen_store o vars ~tid ~random)
+          State.Monad.Monadic.return
+            (gen_store o vars ~tid ~random ~forbid_already_written)
         in
         Random_state.make ~store ~path)
 
     let gen (subject : Subject.Test.t) ~(random : Splittable_random.State.t)
         ~(param_map : Param_map.t) : t State.Monad.t =
-      ignore param_map ;
       State.Monad.Let_syntax.(
+        let%bind faw_flag = forbid_already_written_flag param_map in
+        let forbid_already_written = Flag.eval faw_flag ~random in
         let%bind o = State.Monad.output () in
-        State.Monad.with_vars_m (gen' o subject ~random))
+        log o "forbid already written: %b" forbid_already_written ;
+        State.Monad.with_vars_m
+          (gen' o subject ~random ~forbid_already_written))
   end
 
   let available (_ : Subject.Test.t) ~(param_map : Param_map.t) :
       bool State.Monad.t =
-    ignore param_map ;
-    State.Monad.with_vars
-      (Var.Map.exists_satisfying_all ~scope:Ac.Scope.Global
-         ~predicates:(Lazy.force dst_restrictions))
+    State.Monad.(
+      Let_syntax.(
+        let%bind faw_flag = forbid_already_written_flag param_map in
+        (* If the flag is stochastic, then we can't tell whether its value
+           will be the same in the payload check. As such, we need to be
+           pessimistic and assume that we _can't_ make writes to
+           already-written variables if we can't guarantee an exact value.
+
+           See https://github.com/MattWindsor91/act/issues/172. *)
+        let faw = Option.value (Flag.to_exact_opt faw_flag) ~default:true in
+        with_vars
+          (Var.Map.exists_satisfying_all ~scope:Ac.Scope.Global
+             ~predicates:(dst_restrictions faw))))
 
   (* This action writes to the destination, so we no longer have a known
      value for it. *)
   let mark_store_dst (store : Act_c_mini.Atomic_store.t) : unit State.Monad.t
       =
-    let open State.Monad.Let_syntax in
     let dst = Act_c_mini.Atomic_store.dst store in
     let dst_var =
       Act_common.Litmus_id.global (Act_c_mini.Address.variable_of dst)
     in
-    let%bind () = State.Monad.erase_var_value dst_var in
-    State.Monad.add_write dst_var
+    State.Monad.Let_syntax.(
+      let%bind () = State.Monad.erase_var_value dst_var in
+      State.Monad.add_write dst_var)
 
   (* This action also introduces dependencies on every variable in the
      source. *)
@@ -222,8 +240,6 @@ Make (struct
   let name = Ac.Id.of_string "store.make.int.single"
 
   let dst_type = Act_c_mini.Type.Basic.int ~atomic:true ()
-
-  let forbid_already_written = true (* for now *)
 
   module Quickcheck = Act_c_mini.Atomic_store.Quickcheck_ints
 end)

@@ -123,5 +123,5 @@ val always : Subject.Test.t -> param_map:Param_map.t -> bool State.Monad.t
 module Make_log (B : sig
   val name : Act_common.Id.t
 end) : sig
-  val log : Act_common.Output.t -> string -> unit
+  val log : Act_common.Output.t -> ('a, Formatter.t, unit) format -> 'a
 end

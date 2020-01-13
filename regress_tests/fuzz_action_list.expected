@@ -47,11 +47,14 @@ store.make.int.single:
     Generates a store operation on a randomly selected fuzzer-generated
     global variable.
     
-    This operation generates 'atomic_int's.
+    If 'store.forbid-already-written' is true, this action will only store to
+    variables that haven't previously been selected for store actions. This
+    makes calculating candidate executions easier, but limits the degree of
+    entropy somewhat. (Note that if the value is stochastic, the action will
+    only fire if such variables exist, but may or may not proceed to select a
+    previously-stored variable. This is a limitation of the flag system.)
     
-    This version of the action only stores to variables that haven't
-    previously been selected for store actions. This makes calculating
-    candidate executions easier, but limits the degree of entropy somewhat.
+    This operation generates 'atomic_int's.
 var.make.global:
   Weight: 20x
   Summary:

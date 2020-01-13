@@ -80,4 +80,19 @@ let param_map : Param_spec.Int.t Map.M(Act_common.Id).t Lazy.t =
 
 let flag_map : Param_spec.Bool.t Map.M(Act_common.Id).t Lazy.t =
   (* Space for rent. *)
-  lazy (make_param_spec_map [])
+  lazy
+    (make_param_spec_map
+       [ ( "store.forbid-already-written"
+         , Param_spec.make ~default:(Flag.exact false)
+             ~description:
+               {|
+              If 'true', stops store actions from selecting a destination
+              variable to which there already exists a write action.
+
+              Note that, because of the limitations of the flag system, setting
+              this flag to a ratio will cause any dependent actions to stop
+              firing when no non-written variables exist (but, once the action
+              fires, it can decide with the given probability to restrict
+              itself to already-written variables).
+            |}
+         ) ])
