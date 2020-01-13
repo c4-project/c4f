@@ -18,18 +18,6 @@
     up the correct language-dependent modules. *)
 
 open Core_kernel
-open Act_common
-
-val asm_runner_of_arch :
-  Id.t -> (module Act_asm.Runner_intf.Basic) Or_error.t
-(** [asm_runner_of_arch arch] generates an assembly job runner from an
-    architecture ID [arch]. *)
-
-val asm_runner_of_target :
-     Act_machine.Qualified.Compiler.t Act_machine.Target.t
-  -> (module Act_asm.Runner_intf.Basic) Or_error.t
-(** [asm_runner_of_target target] gets the runner dependency module
-    associated with a target (either a compiler spec or emits clause). *)
 
 val resolve :
      Act_machine.Qualified.Compiler.t

@@ -19,9 +19,7 @@ let predicate_lists : (string, (module Property_types.S)) List.Assoc.t =
   ; ( "Compiler predicates (-filter-compilers)"
     , (module Act_compiler.Property) )
   ; ("Machine predicates (-filter-machines)", (module Act_machine.Property))
-  ; ("Identifier predicates", (module Id.Property))
-  ; ( "Sanitiser passes (-sanitiser-passes)"
-    , (module Act_sanitiser.Pass_group.Selector) ) ]
+  ; ("Identifier predicates", (module Id.Property)) ]
 
 let pp_tree_module : (module Property_types.S) Fmt.t =
  fun f (module M) -> M.pp_tree f ()

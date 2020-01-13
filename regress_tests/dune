@@ -1,13 +1,12 @@
 (executables
- (names config config_failures delitmus dump_header explain fuzz_replays
-   fuzz_action_list herd_observations litmus_observations litmusify)
+ (names config config_failures delitmus dump_header fuzz_replays
+   fuzz_action_list herd_observations litmus_observations)
  (preprocess
   (pps ppx_jane))
  (libraries result yojson ppx_yojson_conv_lib sexplib0 base.caml core_kernel
    core stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
-   act.asm act.backend act.backend_herd act.backend_litmus act.c_mini
-   act.common act.config act.delitmus act.fuzz act.litmus act.sanitiser
-   act.state act.utils))
+   act.backend act.backend_herd act.backend_litmus act.c_mini act.common
+   act.config act.delitmus act.fuzz act.litmus act.state act.utils))
 
 (rule
  (deps
@@ -63,20 +62,6 @@
 
 (rule
  (deps
-  "input/asm/x86/att/spec.json"
-  (glob_files "input/asm/x86/att/*.s"))
- (action
-  (with-stdout-to
-   explain.output
-   (run ./explain.exe input))))
-
-(rule
- (alias runtest)
- (action
-  (diff explain.expected explain.output)))
-
-(rule
- (deps
   (glob_files "input/fuzz/replays/*.litmus")
   (glob_files "input/fuzz/replays/*.trace"))
  (action
@@ -125,17 +110,3 @@
  (alias runtest)
  (action
   (diff litmus_observations.expected litmus_observations.output)))
-
-(rule
- (deps
-  "input/asm/x86/att/spec.json"
-  (glob_files "input/asm/x86/att/*.s"))
- (action
-  (with-stdout-to
-   litmusify.output
-   (run ./litmusify.exe input))))
-
-(rule
- (alias runtest)
- (action
-  (diff litmusify.expected litmusify.output)))

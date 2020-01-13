@@ -1,10 +1,4 @@
 (executable
- (name act_asm)
- (public_name act-asm)
- (modules act_asm)
- (libraries base core_kernel core common_cmd cmd_asm))
-
-(executable
  (name act_backend)
  (public_name act-backend)
  (modules act_backend)

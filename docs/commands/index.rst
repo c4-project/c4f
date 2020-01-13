@@ -10,7 +10,6 @@ Here is documentation on ACT's low-level commands, grouped by binary:
    :maxdepth: 2
    :caption: Contents:
 
-   asm/index
    backend/index
    c/index
    config/index

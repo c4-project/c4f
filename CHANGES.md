@@ -6,6 +6,10 @@ whole story.
 ## 2020-Jan-13
 
 - `obj_splitmus` has been removed: use `c_litmus_indirect` instead.
+- `act-asm` and all of its traces in the other ACT subsystems and scripts have
+  been removed per [#171](https://github.com/MattWindsor91/act/issues/171).
+  If anyone requires these, please discuss a plan going forward with the ACT
+  maintainers.
 
 ## 2020-Jan-07
 

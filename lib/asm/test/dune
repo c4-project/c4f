@@ -1,9 +1,0 @@
-;; -*- mode: lisp; -*-
-
-(library
- (name act_asm_test)
- (inline_tests)
- (preprocess
-  (pps ppx_jane))
- (libraries ppx_expect.common ppx_expect.config ppx_inline_test.config base
-   stdio act.abstract act.asm act.common act.litmus))

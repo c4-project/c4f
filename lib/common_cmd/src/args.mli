@@ -166,11 +166,6 @@ val aux_file : string option Command.Param.t
 (** [aux_file] defines a parameter for receiving the path of an input litmus
     aux file. *)
 
-val sanitiser_passes :
-  Act_sanitiser.Pass_group.Selector.t Blang.t option Command.Param.t
-(** [sanitiser_passes] defines a parameter for collecting a selector
-    predicate for sanitiser passes. *)
-
 val backend_predicate : Act_backend.Property.t Blang.t option Command.Param.t
 (** [backend_predicate] defines a parameter for collecting a filtering
     predicate for backends. *)

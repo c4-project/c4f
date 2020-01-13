@@ -116,13 +116,6 @@ module Other = struct
         "FILE path to a JSON file containing auxiliary litmus information \
          for this file"
 
-  let sanitiser_passes :
-      Act_sanitiser.Pass_group.Selector.t Blang.t option Command.Param.t =
-    flag "sanitiser-passes"
-      (optional
-         (sexp_conv [%of_sexp: Act_sanitiser.Pass_group.Selector.t Blang.t]))
-      ~doc:"PREDICATE select which sanitiser passes to use"
-
   let backend_predicate =
     flag "filter-backends"
       (optional (sexp_conv [%of_sexp: Act_backend.Property.t Blang.t]))

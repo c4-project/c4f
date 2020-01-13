@@ -8,9 +8,6 @@
 # through `dune exec`.
 declare DUNE_EXEC
 
-# If set, overrides the choice of `act-asm` executable.
-declare ACT_ASM
-
 # If set, overrides the choice of `act-backend` executable.
 declare ACT_BACKEND
 
@@ -131,19 +128,6 @@ act::delitmus() {
 #   *: the arguments to the program.
 act::fuzz() {
   act::exec "${ACT_FUZZ:-"act-fuzz"}" "$@"
-}
-
-
-# Runs the ACT 'litmusify' sub-tool.
-#
-# Globals:
-#   - ACT (read)
-#   - DUNE_EXEC (transitively read)
-#
-# Arguments:
-#   *: the arguments to the program.
-act::litmusify() {
-  act::exec "${ACT_ASM:-"act-asm"}" litmusify "$@"
 }
 
 
