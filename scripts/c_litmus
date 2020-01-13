@@ -70,13 +70,13 @@ make_litmus_harness() {
 }
 
 
-# Runs the obj_splitmus driver once all arguments are parsed.
+# Runs the c_litmus driver once all arguments are parsed.
 #
 # Globals:
 #   - OUTPUT_DIR (read)
 #   - TEST_NAME (read)
 run() {
-  # This done mainly to line up with obj_splitmus.
+  # This done mainly to line up with c_litmus_indirect.
   local litdir="${OUTPUT_DIR}/exec"
   mkdir -p "${litdir}"
 

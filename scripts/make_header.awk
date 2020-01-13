@@ -1,6 +1,6 @@
 #!/usr/bin/awk -f
 #
-# Given an obj_splitmus style delitmusified C file, auto-generate
+# Given a c_litmus_indirect style delitmusified C file, auto-generate
 # a header file.
 # This is heavily dependent on the particular indent style of said files
 # and won't work for C files in general.

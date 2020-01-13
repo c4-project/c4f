@@ -22,15 +22,13 @@ from act_py import act_id, machine_info, str_utils, test, test_common
 # TODO(@MattWindsor91): understand backends other than machine.litmus.
 
 drivers: typing.Mapping[str, typing.List[str]] = {
-    "obj_splitmus":
-      ["-b", '"{backend}"', '-c', '"{compiler}"', '-n', '"{subject_name}"', '-d', "{dir}", "{subject_path}"],
     "c_litmus":
       ["-b", '"{backend}"', '-c', '"{compiler}"', '-d', '"{dir}"', "{subject_path}"],
     "c_litmus_indirect":
       ["-b", '"{backend}"', '-c', '"{compiler}"', '-n', '"{subject_name}"', '-d', "{dir}", "{subject_path}"]
 }
 
-default_driver: str = "obj_splitmus"
+default_driver: str = "c_litmus_indirect"
 
 
 def make_driver(name: str, argv: typing.List[str]) -> str:
@@ -171,7 +169,7 @@ if __name__ == "__main__":
         metavar="NAME",
         type=str,
         default=default_driver,
-        help="The name of the driver (eg 'obj_splitmus', 'c_litmus') to use.",
+        help="The name of the driver (eg 'c_litmus', 'c_litmus_indirect') to use.",
     )
     parser.add_argument(
         "subjects",

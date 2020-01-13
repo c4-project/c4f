@@ -14,4 +14,3 @@ and slot into the test runner.
 
    c_litmus
    c_litmus_indirect
-   obj_splitmus

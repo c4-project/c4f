@@ -21,8 +21,8 @@ source "${SCRIPTDIR}/act_bash/log.sh"
 # litmus-style otherwise) is chosen.
 BACKEND=""
 
-# If nonempty, specifies a compiler to use with `obj_splitmus`: this
-# script will then go through `obj_splitmus` instead of directly running
+# If nonempty, specifies a compiler to use with `c_litmus_indirect`: this
+# script will then go through `c_litmus_indirect` instead of directly running
 # the backend.
 COMPILER=""
 
@@ -39,7 +39,7 @@ usage() {
   echo "Usage: $0 [-b BACKEND] [-c COMPILER] [-qvxh?] C_TEST"
   echo
   echo "-b: ID of backend to use for checking C files"
-  echo "-c: ID of compiler to use (if given, obj_splitmus is used)"
+  echo "-c: ID of compiler to use (if given, c_litmus_indirect is used)"
   echo "-v/-q: verbose/quiet"
   echo "-x: run ACT binaries with \`dune exec\`"
   echo "-h/-?: usage"
@@ -58,11 +58,11 @@ run() {
   local infile="$1"
 
   if [[ -n ${COMPILER} ]]; then
-    act::log "Using obj_splitmus, backend '%s', compiler '%s', target '%s'.\n" "${BACKEND}" "${COMPILER}" "${infile}"
+    act::log "Using c_litmus_indirect, backend '%s', compiler '%s', target '%s'.\n" "${BACKEND}" "${COMPILER}" "${infile}"
     flags="-q"
     if [[ ${VERBOSE} = "true" ]]; then flags="-v"; fi
     if [[ ${DUNE_EXEC} = "true" ]]; then flags="${flags}x"; fi
-    "${SCRIPTDIR}/obj_splitmus" ${flags} -b "${BACKEND}" -c "${COMPILER}" "${infile}"
+    "${SCRIPTDIR}/c_litmus_indirect" ${flags} -b "${BACKEND}" -c "${COMPILER}" "${infile}"
   else
     act::log "Using backend '%s' directly, target '%s'.\n" "${BACKEND}" "${infile}"
     act::backend run -c -backend "${BACKEND}" "${infile}" | act::backend parse -backend "${BACKEND}"

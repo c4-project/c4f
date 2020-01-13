@@ -3,6 +3,10 @@
 Note that these changes are infrequently maintained and may not tell the
 whole story.
 
+## 2020-Jan-13
+
+- `obj_splitmus` has been removed: use `c_litmus_indirect` instead.
+
 ## 2020-Jan-07
 
 - New command `act-config dump`, which emits the current configuration in pretty

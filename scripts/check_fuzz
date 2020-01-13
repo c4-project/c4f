@@ -25,7 +25,7 @@ source "${SCRIPTDIR}/act_bash/log.sh"
 # The backend ID to use to get state sets.
 BACKEND="herd"
 
-# The name of the compiler to compile through (using obj_splitmus).
+# The name of the compiler to compile through (using c_litmus_indirect).
 # If empty, we don't compile, we just run straight through the backend.
 COMPILER=""
 
@@ -44,7 +44,7 @@ usage() {
   echo "Usage: $0 [-b BACKEND] [-c COMPILER] [-qvxh?] ORIGINAL_FILE FUZZED_FILE"
   echo
   echo "-b: ID of backend to use for checking C files"
-  echo "-c: ID of compiler to use (if given, obj_splitmus is used)"
+  echo "-c: ID of compiler to use (if given, c_litmus_indirect is used)"
   echo "-v/-q: verbose/quiet"
   echo "-x: run ACT binaries with \`dune exec\`"
   echo "-h/-?: usage"
