@@ -28,3 +28,7 @@ end
 module Int : Action_types.S with type Payload.t = Random_state.t
 (** [Int] is a fuzzer action that generates a random atomic-int store
     instruction. *)
+
+module Int_dead : Action_types.S with type Payload.t = Random_state.t
+(** [Int_dead] is a variant of [Int] that only targets dead-code, and, in
+    turn, requires and adds fewer constraints on the destination. *)

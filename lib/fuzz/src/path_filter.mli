@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -59,6 +59,8 @@ val update_with_block_metadata : t -> Metadata.t -> t
 
 (** {1 Consuming filters} *)
 
+(** {2 Checking paths} *)
+
 val check : t -> unit Or_error.t
 (** [check filter ~stm] should be applied before constructing a path that
     doesn't have any more specific filter consume function, and checks
@@ -70,3 +72,10 @@ val check_final_statement : t -> stm:Subject.Statement.t -> unit Or_error.t
     a [This_stm] reference to [stm], and checks whether such a final
     statement destination is ok according to the predicates in [filter]. It
     subsumes [check]. *)
+
+(** {2 Checking to see if paths are constructible} *)
+
+val is_constructible : t -> subject:Subject.Test.t -> bool
+(** [is_constructible filter ~subject] checks whether it is possible, in
+    theory, to construct at least one path over [subject] that satisfies
+    [filter]. It returns [true] if so and [false] otherwise. *)

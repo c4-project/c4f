@@ -145,8 +145,12 @@ module Test : sig
       one statement. *)
 
   val has_if_statements : t -> bool
-  (** [has_statements test] is true if, and only if, [test] contains at least
-      one if statement. *)
+  (** [has_if_statements test] is true if, and only if, [test] contains at
+      least one if statement. *)
+
+  val has_while_loops : t -> bool
+  (** [has_while_loops test] is true if, and only if, [test] contains at
+      least one while loop. *)
 
   val has_dead_code_blocks : t -> bool
   (** [has_dead_code_blocks test] is true if, and only if, [test] contains at

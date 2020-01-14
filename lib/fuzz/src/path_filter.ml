@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2012 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -34,6 +34,13 @@ module Flag = struct
   include M
   include Act_utils.Enum.Extend_table (M)
 
+  let is_constructible (flag : t) ~(subject : Subject.Test.t) : bool =
+    match flag with
+    | In_loop ->
+        Subject.Test.has_while_loops subject
+    | In_dead_code ->
+        Subject.Test.has_dead_code_blocks subject
+
   (** Maps a subset of the flags to predicates that toggle whether a piece of
       metadata sets the flag or not. *)
   let metadata_predicates : (t, Metadata.t -> bool) List.Assoc.t =
@@ -60,6 +67,11 @@ module End_check = struct
   let check (check : t) ~(stm : Subject.Statement.t) : unit Or_error.t =
     Tx.Or_error.unless_m (is_ok check ~stm) ~f:(fun () ->
         Or_error.errorf "Statement failed check: %s" (to_string check))
+
+  let is_constructible (flag : t) ~(subject : Subject.Test.t) : bool =
+    match flag with
+    | Is_if_statement ->
+        Subject.Test.has_if_statements subject
 end
 
 type t =
@@ -132,3 +144,19 @@ let check_final_statement (filter : t) ~(stm : Subject.Statement.t) :
     filter.end_checks |> Set.to_list |> List.map ~f:(End_check.check ~stm)
   in
   Or_error.combine_errors_unit (check filter :: end_checks)
+
+module Construct_checks = struct
+  let is_constructible_req (filter : t) ~(subject : Subject.Test.t) : bool =
+    filter.req_flags |> Set.to_list
+    |> List.for_all ~f:(Flag.is_constructible ~subject)
+
+  let is_constructible_end (filter : t) ~(subject : Subject.Test.t) : bool =
+    filter.end_checks |> Set.to_list
+    |> List.for_all ~f:(End_check.is_constructible ~subject)
+
+  let is_constructible (filter : t) ~(subject : Subject.Test.t) : bool =
+    is_constructible_req filter ~subject
+    && is_constructible_end filter ~subject
+end
+
+include Construct_checks

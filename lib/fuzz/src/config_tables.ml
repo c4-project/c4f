@@ -28,6 +28,9 @@ let actions : Action.With_default_weight.t list Lazy.t =
           ~action:(module Store_actions.Int : Action_types.S)
           ~default_weight:30
       ; make
+          ~action:(module Store_actions.Int_dead : Action_types.S)
+          ~default_weight:20
+      ; make
           ~action:(module Program_actions.Make_empty : Action_types.S)
           ~default_weight:10
       ; make ~action:(module If_actions.Invert) ~default_weight:10

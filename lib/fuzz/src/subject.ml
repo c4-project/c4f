@@ -66,6 +66,9 @@ module Thread = struct
 
   let has_statements (p : t) : bool = not (List.is_empty p.stms)
 
+  let has_while_loops (p : t) : bool =
+    List.exists p.stms ~f:Act_c_mini.Statement.has_while_loops
+
   let has_if_statements (p : t) : bool =
     List.exists p.stms ~f:Act_c_mini.Statement.has_if_statements
 
@@ -146,6 +149,9 @@ module Test = struct
 
   let has_if_statements : t -> bool =
     at_least_one_thread_with ~f:Thread.has_if_statements
+
+  let has_while_loops : t -> bool =
+    at_least_one_thread_with ~f:Thread.has_while_loops
 
   let has_dead_code_blocks : t -> bool =
     at_least_one_thread_with ~f:Thread.has_dead_code_blocks
