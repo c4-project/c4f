@@ -14,6 +14,17 @@ open Base
 type t = {src: Expression.t; dst: Address.t; mo: Mem_order.t}
 [@@deriving sexp, fields, make, equal]
 
+let to_tuple ({src; dst; mo} : t) : Expression.t * Address.t * Mem_order.t =
+  (src, dst, mo)
+
+let of_tuple ((src, dst, mo) : Expression.t * Address.t * Mem_order.t) : t =
+  {src; dst; mo}
+
+let quickcheck_observer : t Base_quickcheck.Observer.t =
+  Base_quickcheck.Observer.(
+    unmap [%quickcheck.observer: Expression.t * Address.t * Mem_order.t]
+      ~f:to_tuple)
+
 module Base_map (M : Monad.S) = struct
   module F = Travesty.Traversable.Helpers (M)
 
@@ -64,14 +75,6 @@ module Quickcheck_generic
 
   let sexp_of_t = sexp_of_t
 
-  let to_tuple ({src; dst; mo} : t) : Expression.t * Address.t * Mem_order.t
-      =
-    (src, dst, mo)
-
-  let of_tuple ((src, dst, mo) : Expression.t * Address.t * Mem_order.t) : t
-      =
-    {src; dst; mo}
-
   let quickcheck_generator : t Base_quickcheck.Generator.t =
     Base_quickcheck.Generator.(
       map
@@ -79,8 +82,7 @@ module Quickcheck_generic
           Src.t * Dst.t * [%custom Mem_order.gen_store]] ~f:of_tuple)
 
   let quickcheck_observer : t Base_quickcheck.Observer.t =
-    Base_quickcheck.Observer.(
-      unmap [%quickcheck.observer: Src.t * Dst.t * Mem_order.t] ~f:to_tuple)
+    quickcheck_observer
 
   let quickcheck_shrinker : t Base_quickcheck.Shrinker.t =
     Base_quickcheck.Shrinker.(

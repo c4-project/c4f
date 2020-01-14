@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,7 +10,10 @@
    project root for more information. *)
 
 open Base
-module Ac = Act_common
+
+open struct
+  module Ac = Act_common
+end
 
 let forbid_already_written_flag (param_map : Param_map.t) :
     Flag.t State.Monad.t =
@@ -30,6 +33,8 @@ module Make (B : sig
   val name : Ac.Id.t
 
   val dst_type : Act_c_mini.Type.Basic.t
+
+  val path_filter : Path_filter.t
 
   module Quickcheck
       (Src : Act_c_mini.Env_types.S)
@@ -153,7 +158,8 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
         =
       log o "Generating path" ;
       Payload.Helpers.lift_quickcheck_opt ~random ~action_id:name
-        (Path_producers.Test.try_gen_insert_stm subject)
+        (Path_producers.Test.try_gen_insert_stm subject
+        ~filter:B.path_filter)
 
     let gen' (o : Ac.Output.t) (subject : Subject.Test.t) (vars : Var.Map.t)
         ~(random : Splittable_random.State.t)
@@ -237,9 +243,12 @@ end
 
 module Int : Action_types.S with type Payload.t = Random_state.t =
 Make (struct
-  let name = Ac.Id.of_string "store.make.int.single"
+  let name = Ac.Id.of_string "store.make.int.normal"
+
+  let path_filter = Path_filter.empty
 
   let dst_type = Act_c_mini.Type.Basic.int ~atomic:true ()
 
   module Quickcheck = Act_c_mini.Atomic_store.Quickcheck_ints
 end)
+

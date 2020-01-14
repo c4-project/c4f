@@ -13,7 +13,7 @@
   (payload ((basic_type int) (initial_value (Int -123)) (name BNFKW))))
  ((name (var make global))
   (payload ((basic_type int) (initial_value (Int 13)) (name cP))))
- ((name (store make int single))
+ ((name (store make int normal))
   (payload
    ((store
      ((src (Constant (Int 59774975))) (dst (Lvalue (Variable Is9Qk0n4Rhat)))

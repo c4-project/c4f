@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -40,7 +40,14 @@ module On_addresses :
 module On_lvalues :
   Travesty.Traversable_types.S0 with type t := t and type Elt.t = Lvalue.t
 
-(** {1 Generating and quickchecking} *)
+(** {1 Generating and quickchecking}
+
+    There cannot be one single quickcheck instance for atomic stores, as the
+    generation and shrinking processes are highly dependent on the specific
+    sorts of expression and address that need to be generated. *)
+
+val quickcheck_observer : t Base_quickcheck.Observer.t
+(** [quickcheck_observer] is a generic observer for all atomic stores. *)
 
 (** [Quickcheck_generic (Src) (Dst)] generates random stores, using [Src] to
     generate source expressions and [Dst] to generate destination addresses.

@@ -41,7 +41,7 @@ program.make.empty:
     Generates a new, empty program at one end of the program list. This
     action isn't very useful on its own, but works well in combination with
     other actions that construct statements and control flows.
-store.make.int.single:
+store.make.int.normal:
   Weight: 30x
   Summary:
     Generates a store operation on a randomly selected fuzzer-generated
