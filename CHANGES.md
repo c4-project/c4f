@@ -3,6 +3,13 @@
 Note that these changes are infrequently maintained and may not tell the
 whole story.
 
+## 2020-Jan-14
+
+- Fuzzer action `store.make.int.single` is now `store.make.int.normal`.
+- New fuzzer action `store.make.int.dead`, which behaves as
+  `store.make.int.normal`, but only fires inside dead code blocks and does not
+  respect dependency/known-value information.
+
 ## 2020-Jan-13
 
 - `obj_splitmus` has been removed: use `c_litmus_indirect` instead.
