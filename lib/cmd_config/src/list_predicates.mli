@@ -9,11 +9,8 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Core_kernel
+(** A command for listing information about various predicate languages ACT
+    uses for configuration. *)
 
-let command : Command.t =
-  Command.group ~summary:"commands for dealing with ACT configuration"
-    [ ("dump", Dump.command)
-    ; ("license", Common_cmd.License.command)
-    ; ("list-predicates", List_predicates.command)
-    ; ("probe", Probe.command) ]
+val command : Core_kernel.Command.t
+(** [command] is the list-predicates command. *)
