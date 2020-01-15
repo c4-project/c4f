@@ -76,6 +76,23 @@ store.make.int.normal:
     destination.
     
     This operation generates 'atomic_int's.
+store.make.int.redundant:
+  Weight: 15x
+  Summary:
+    Generates a store operation on a randomly selected fuzzer-generated
+    global variable.
+    
+    If 'store.forbid-already-written' is true, this action will only store to
+    variables that haven't previously been selected for store actions. This
+    makes calculating candidate executions easier, but limits the degree of
+    entropy somewhat. (Note that if the value is stochastic, the action will
+    only fire if such variables exist, but may or may not proceed to select a
+    previously-stored variable. This is a limitation of the flag system.)
+    
+    This variant can insert anywhere, but only stores the known value of a
+    destination back to itself.
+    
+    This operation generates 'atomic_int's.
 var.make.global:
   Weight: 20x
   Summary:

@@ -51,6 +51,11 @@ module Record = struct
   let has_known_value (record : t) : bool =
     Option.is_some (known_value record)
 
+  let try_get_known_value (record : t) : Act_c_mini.Constant.t Or_error.t =
+    Result.of_option
+      (Option.map (known_value record) ~f:Known_value.value)
+      ~error:(Error.of_string "No known value for this record.")
+
   let map_known_value (record : t) ~(f : Known_value.t -> Known_value.t) : t
       =
     {record with known_value= Option.map ~f record.known_value}

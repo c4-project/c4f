@@ -43,21 +43,16 @@ module Random_state = struct
   [@@deriving fields, make, sexp]
 end
 
+let basic_dst_restrictions (dst_type : Act_c_mini.Type.Basic.t) :
+    (Var.Record.t -> bool) list =
+  Var.Record.[is_atomic; was_generated; has_basic_type ~basic:dst_type]
+
 (** Lists the restrictions we put on destination variables. *)
 let dst_restrictions ~(dst_type : Act_c_mini.Type.Basic.t)
-    ~(respect_dependencies : bool) ~(forbid_already_written : bool) :
-    (Var.Record.t -> bool) list =
-  List.filter_opt
-    Var.Record.
-      [ Some is_atomic
-      ; Some was_generated
-      ; Some (has_basic_type ~basic:dst_type)
-        (* This is to make sure that we don't change the observable semantics
-           of the program over its original variables. *)
-      ; Option.some_if respect_dependencies (Fn.non has_dependencies)
-        (* This action changes the value, so we can't do it to variables with
-           depended-upon values. *)
-      ; Option.some_if forbid_already_written (Fn.non has_writes) ]
+    ~(forbid_already_written : bool) : (Var.Record.t -> bool) list =
+  basic_dst_restrictions dst_type
+  @ List.filter_opt
+      [Option.some_if forbid_already_written (Fn.non Var.Record.has_writes)]
 
 let dst_litmus_id (store : Act_c_mini.Atomic_store.t) :
     Act_common.Litmus_id.t =
@@ -86,20 +81,24 @@ module Make (B : sig
   (** [path_filter] is the filter to apply on statement insertion paths
       before considering them for the atomic store. *)
 
+  val extra_dst_restrictions : (Var.Record.t -> bool) list
+  (** [extra_dst_restrictions] is a list of additional restrictions to place
+      on the destination variables (for example, 'must not have
+      dependencies'). *)
+
   val respect_src_dependencies : bool
   (** [respect_src_dependencies] is a flag that, when true, causes the action
       to mark dependencies on source variables when finished. *)
 
-  val respect_dst_dependencies : bool
-  (** [respect_dst_dependencies] is a flag that, when true, causes the action
-      to avoid destinations with a known dependency, and erase the known
-      value when finished. *)
+  val erase_known_values : bool
+  (** [erase_known_values] is a flag that, when true, causes the action to
+      erase the known value when finished. *)
 
   (** A functor that produces a quickcheck instance for atomic stores given
       source and destination variable environments. *)
   module Quickcheck
       (Src : Act_c_mini.Env_types.S)
-      (Dst : Act_c_mini.Env_types.S) :
+      (Dst : Act_c_mini.Env_types.S_with_known_values) :
     Act_utils.My_quickcheck.S_with_sexp
       with type t := Act_c_mini.Atomic_store.t
 end) : Action_types.S with type Payload.t = Random_state.t = struct
@@ -130,15 +129,16 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
     let predicates = Lazy.force src_restrictions in
     Var.Map.env_module_satisfying_all ~predicates ~scope:(Local tid) vars
 
-  let dst_restrictions :
-      forbid_already_written:bool -> (Var.Record.t -> bool) list =
-    dst_restrictions ~dst_type:B.dst_type
-      ~respect_dependencies:B.respect_dst_dependencies
+  let dst_restrictions ~(forbid_already_written : bool) :
+      (Var.Record.t -> bool) list =
+    dst_restrictions ~dst_type:B.dst_type ~forbid_already_written
+    @ B.extra_dst_restrictions
 
   let dst_env (vars : Var.Map.t) ~(tid : int)
-      ~(forbid_already_written : bool) : (module Act_c_mini.Env_types.S) =
+      ~(forbid_already_written : bool) :
+      (module Act_c_mini.Env_types.S_with_known_values) =
     let predicates = dst_restrictions ~forbid_already_written in
-    Var.Map.env_module_satisfying_all ~predicates ~scope:(Local tid) vars
+    Var.Map.env_module_with_known_values ~predicates ~scope:(Local tid) vars
 
   module Payload = struct
     type t = Random_state.t [@@deriving sexp]
@@ -165,8 +165,8 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
       log_environment o "dest" dst_env
 
     let gen_store_with_envs (module Src : Act_c_mini.Env_types.S)
-        (module Dst : Act_c_mini.Env_types.S) (o : Ac.Output.t)
-        ~(random : Splittable_random.State.t) :
+        (module Dst : Act_c_mini.Env_types.S_with_known_values)
+        (o : Ac.Output.t) ~(random : Splittable_random.State.t) :
         Act_c_mini.Atomic_store.t Or_error.t =
       Or_error.Let_syntax.(
         let%bind () = error_if_empty "src" (module Src) in
@@ -246,7 +246,7 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
     State.Monad.Let_syntax.(
       let%bind () = State.Monad.add_write dst_var in
       let%bind () =
-        State.Monad.when_m B.respect_dst_dependencies ~f:(fun () ->
+        State.Monad.when_m B.erase_known_values ~f:(fun () ->
             State.Monad.erase_var_value dst_var)
       in
       State.Monad.when_m B.respect_src_dependencies ~f:(fun () ->
@@ -275,9 +275,11 @@ Make (struct
 
   let path_filter = Path_filter.empty
 
-  let respect_src_dependencies = true
+  let extra_dst_restrictions = [Fn.non Var.Record.has_dependencies]
 
-  let respect_dst_dependencies = true
+  let erase_known_values = true
+
+  let respect_src_dependencies = true
 
   let dst_type = Act_c_mini.Type.Basic.int ~atomic:true ()
 
@@ -295,11 +297,72 @@ Make (struct
 
   let path_filter = Path_filter.(empty |> in_dead_code_only)
 
-  let respect_src_dependencies = false
+  let extra_dst_restrictions = []
 
-  let respect_dst_dependencies = false
+  let erase_known_values = false
+
+  let respect_src_dependencies = false
 
   let dst_type = Act_c_mini.Type.Basic.int ~atomic:true ()
 
   module Quickcheck = Act_c_mini.Atomic_store.Quickcheck_ints
+end)
+
+module Int_redundant : Action_types.S with type Payload.t = Random_state.t =
+Make (struct
+  let name_suffix = Ac.Id.of_string "int.redundant"
+
+  let readme_insert : string =
+    {| This variant can insert anywhere, but only stores the known value of
+       a destination back to itself. |}
+
+  let path_filter = Path_filter.empty
+
+  let extra_dst_restrictions = [Var.Record.has_known_value]
+
+  let erase_known_values = false
+
+  let respect_src_dependencies = true
+
+  let dst_type = Act_c_mini.Type.Basic.int ~atomic:true ()
+
+  (* The quickcheck scheme for redundant stores needs to be very different
+     from the usual scheme, as it must make sure the source is the
+     destination's known value. *)
+  module Quickcheck
+      (Src : Act_c_mini.Env_types.S)
+      (Dst : Act_c_mini.Env_types.S_with_known_values) :
+    Act_utils.My_quickcheck.S_with_sexp
+      with type t = Act_c_mini.Atomic_store.t = struct
+    type t = Act_c_mini.Atomic_store.t [@@deriving sexp]
+
+    module Q_dst = Act_c_mini.Address_gen.Atomic_int_pointers (Dst)
+
+    let quickcheck_observer = Act_c_mini.Atomic_store.quickcheck_observer
+
+    (* TODO(@MattWindsor91): allow shrinking the MO? *)
+    let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
+
+    let known_value_expr_of_dest (dst : Q_dst.t) :
+        Act_c_mini.Expression.t Or_error.t =
+      Or_error.Let_syntax.(
+        let%bind lv = Act_c_mini.Address.as_lvalue dst in
+        let var = Act_c_mini.Lvalue.variable_of lv in
+        let%map kv =
+          Result.of_option (Dst.known_value var)
+            ~error:(Error.of_string "No known value for this record.")
+        in
+        Act_c_mini.Expression.constant kv)
+
+    let quickcheck_generator =
+      (* Deliberately ignore the source environment. TODO(@MattWindsor91):
+         optimise this? *)
+      Base_quickcheck.Generator.map2 [%quickcheck.generator: Q_dst.t]
+        [%quickcheck.generator: Act_c_mini.Mem_order.t] ~f:(fun dst mo ->
+          (* We're really hoping that the availability check over known
+             values works here, because there's no way we can safely return
+             an error if not. *)
+          let src = Or_error.ok_exn (known_value_expr_of_dest dst) in
+          Act_c_mini.Atomic_store.make ~src ~dst ~mo)
+  end
 end)

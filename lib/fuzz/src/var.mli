@@ -74,7 +74,11 @@ module Record : sig
   (** {3 Properties} *)
 
   val ty : t -> Act_c_mini.Type.t
-  (** Gets the type of the variable, if known. *)
+  (** [ty vr] gets the type of [vr], if known. *)
+
+  val try_get_known_value : t -> Act_c_mini.Constant.t Or_error.t
+  (** [try_get_known_value vr] gets the known value of [vr], if one exists.
+      If [vr] doesn't have one, an error occurs. *)
 
   (** {3 Actions} *)
 
