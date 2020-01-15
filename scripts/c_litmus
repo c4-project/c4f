@@ -81,7 +81,7 @@ run() {
   mkdir -p "${litdir}"
 
   make_litmus_harness "${BACKEND}" "${COMPILER}" "${INPUT_FILE}" "${litdir}"
-  "${SCRIPTDIR}/harness/compile_and_run" "${COMPILER}" "${BACKEND}" "${litdir}"
+  act::run_with_bcqvx "${SCRIPTDIR}/harness/compile_and_run" "${litdir}"
 }
 
 
