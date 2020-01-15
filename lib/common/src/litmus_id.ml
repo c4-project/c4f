@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -133,7 +133,7 @@ module Assoc = struct
   type 'a t = (M_sexp.t, 'a) List.Assoc.t
 
   let split_initial (str : string) : string * string option =
-    str |> String.rsplit2 ~on:'='
+    str |> String.lsplit2 ~on:'='
     |> Option.value_map
          ~f:(Tx.Tuple2.map_right ~f:Option.some)
          ~default:(str, None)
@@ -143,23 +143,6 @@ module Assoc = struct
     let name_str = String.strip name_str_unstripped in
     let value_str = Option.map ~f:String.strip value_str_unstripped in
     (name_str, value_str)
-
-  let%expect_test "split_and_strip_initial: present" =
-    Stdio.print_s
-      [%sexp
-        (split_and_strip_initial "foo = barbaz" : string * string option)] ;
-    [%expect {| (foo (barbaz)) |}]
-
-  let%expect_test "split_and_strip_initial: absent" =
-    Stdio.print_s
-      [%sexp (split_and_strip_initial "foobar" : string * string option)] ;
-    [%expect {| (foobar ()) |}]
-
-  let%expect_test "split_and_strip_initial: double equals" =
-    Stdio.print_s
-      [%sexp
-        (split_and_strip_initial "foo=bar=baz" : string * string option)] ;
-    [%expect {| (foo=bar (baz)) |}]
 
   let try_parse_pair ~(value_parser : string option -> 'a Or_error.t)
       (str : string) : (M_sexp.t * 'a) Or_error.t =

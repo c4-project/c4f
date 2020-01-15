@@ -7,6 +7,5 @@
  (modules_without_implementation reader_types instance_types)
  (preprocess
   (pps ppx_deriving.std ppx_yojson_conv ppx_jane))
- (libraries result yojson ppx_expect.common sexplib0 stdio base base.caml
-   core_kernel fmt fpath travesty travesty.base_exts act.common act.state
-   act.utils plumbing))
+ (libraries result yojson sexplib0 stdio base base.caml core_kernel fmt fpath
+   travesty travesty.base_exts act.common act.state act.utils plumbing))

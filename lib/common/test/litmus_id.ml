@@ -80,3 +80,16 @@ let%test_unit "to_memalloy_id doesn't throw when creating local identifiers"
     ~f:(fun (t, id) ->
       let mid = Ac.Litmus_id.(to_memalloy_id (local t id)) in
       ignore (mid : Ac.C_id.t))
+
+let%test_module "Assoc" =
+  ( module struct
+    let%expect_test "try_parse: valid representative example" =
+      let input = ["foo = barbaz"; "foobar"; "foo=bar=baz"] in
+      let output =
+        Ac.Litmus_id.Assoc.try_parse input ~value_parser:(fun xo ->
+            Ok (Option.value xo ~default:"[empty]"))
+      in
+      Stdio.print_s
+        [%sexp (output : (Ac.Litmus_id.t, string) List.Assoc.t Or_error.t)] ;
+      [%expect {| (Ok ((foo barbaz) (foobar [empty]) (foo bar=baz))) |}]
+  end )

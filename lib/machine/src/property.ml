@@ -10,9 +10,12 @@
    project root for more information. *)
 
 open Core_kernel
-module Ac = Act_common
-module Au = Act_utils
-module Pb = Plumbing
+
+open struct
+  module Ac = Act_common
+  module Au = Act_utils
+  module Pb = Plumbing
+end
 
 type t = Id of Ac.Id.Property.t | Is_remote | Is_local
 [@@deriving sexp, variants]
@@ -44,15 +47,5 @@ let tree_docs : Ac.Property.Tree_doc.t =
     , {args= []; details= {| Selects machines that are known to be local. |}}
     ) ]
 
-let property_names : string list = List.map ~f:fst Variants.descriptions
-
-let pp_tree : unit Fmt.t = Ac.Property.Tree_doc.pp tree_docs property_names
-
-let%expect_test "all properties have documentation" =
-  let num_passes =
-    property_names
-    |> List.map ~f:(List.Assoc.mem tree_docs ~equal:String.Caseless.equal)
-    |> List.count ~f:not
-  in
-  Fmt.pr "@[<v>%d@]@." num_passes ;
-  [%expect {| 0 |}]
+let pp_tree : unit Fmt.t =
+  Ac.Property.Tree_doc.pp tree_docs (Lazy.force names)

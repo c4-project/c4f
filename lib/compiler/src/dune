@@ -4,10 +4,9 @@
  (name act_compiler)
  (public_name act.compiler)
  (synopsis "Automagic Compiler Tormentor: compiler specifications")
- (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_jane))
  (modules_without_implementation instance_types)
- (libraries ppx_inline_test.config ppx_expect.config ppx_expect.common base
-   base.caml sexplib sexplib0 fmt fpath travesty travesty.base_exts
-   core_kernel act.common act.utils act.plumbing act.backend))
+ (libraries base base.caml sexplib sexplib0 fmt fpath travesty
+   travesty.base_exts core_kernel act.common act.utils act.plumbing
+   act.backend))
