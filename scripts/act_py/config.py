@@ -23,6 +23,7 @@ class Target(enum.Enum):
 
     X64_ATT = "x64.att"
     X86_ATT = "x86.att"
+    PPC64_LE = "ppc64.le"
 
     @property
     def short_name(self) -> str:

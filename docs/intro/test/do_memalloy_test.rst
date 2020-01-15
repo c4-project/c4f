@@ -12,7 +12,7 @@ this workflow with additional scripting on top of its more low-level testing
 primitives.
 
 ACT comes with a Bash script, `do_memalloy_test <scripts-do-memalloy-test>`,
-which performs a single run of the above cycle automatically.  While the main
+which performs one run of the above cycle automatically.  While the main
 doc page for the script gives full information over the script's usage and
 invocation, this page discusses a typical workflow.
 
