@@ -32,11 +32,9 @@ let run_inner ?(user : string option) ~(host : string) ~(prog : string)
       (host, Option.value ~default:"(default user)" user)
       [%sexp_of: string * string])
 
-let run ?(oc : Out_channel.t option) (ssh : t) ~(prog : string)
+let run ?(out : Runner_output.t = Nowhere) (ssh : t) ~(prog : string)
     ~(argv : string list) : unit Or_error.t =
   let user = user ssh in
   let host = host ssh in
   Or_error.(
-    run_inner ?user ~host ~prog ~argv
-    >>| fun output ->
-    Option.iter ~f:(fun o -> Out_channel.output_lines o output) oc)
+    run_inner ?user ~host ~prog ~argv >>| Runner_output.output_lines out)

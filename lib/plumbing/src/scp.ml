@@ -25,7 +25,7 @@ module Using_runner (R : Runner_types.S) : Scp_types.S = struct
       @ if recurse then ["-r" (* recursive *)] else []
     in
     let argv = flags @ sources @ [target] in
-    R.run ~prog:"scp" argv
+    R.run ~out:Runner_output.stdout ~prog:"scp" argv
 
   let send (ssh : Ssh.t) ~(recurse : bool) ~(locals : Fpath.t list)
       ~(remote : string) =

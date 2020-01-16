@@ -73,7 +73,7 @@ struct
         Ok ()
 
   let compile (mode : Mode.t) ~(infiles : Fpath.t list) ~(outfile : Fpath.t)
-      =
+      : unit Or_error.t =
     let spec = Spec.With_id.spec B.spec in
     Or_error.Let_syntax.(
       let%bind () = check_mode_compatible mode infiles in
@@ -81,5 +81,13 @@ struct
         {input= Pb.Copy_spec.files infiles; output= Pb.Copy_spec.file outfile}
         ~argv_f:(make_argv spec mode))
 
-  let test () = B.Runner.run ~prog:cmd B.test_args
+  let probe () : Act_common.Id.t Or_error.t =
+    let buf = Buffer.create 10 in
+    Or_error.Let_syntax.(
+      let%bind () =
+        B.Runner.run ~out:(Pb.Runner_output.To_buffer buf) ~prog:cmd
+          B.probe_args
+      in
+      let result = Buffer.contents buf in
+      B.emits_of_probe result)
 end

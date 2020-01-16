@@ -101,9 +101,9 @@ end) : Runner_types.S = Runner.Make (struct
       let%bind () = scp_receive output in
       Copy_spec.validate_local (Copy_projection.all_local output))
 
-  let run_batch ?(oc : Out_channel.t option) (argvs : string list list)
+  let run_batch ?(out : Runner_output.t option) (argvs : string list list)
       ~(prog : string) : unit Or_error.t =
     Tx.Or_error.combine_map_unit
-      ~f:(fun argv -> Ssh.run ?oc remote_cfg ~prog ~argv)
+      ~f:(fun argv -> Ssh.run ?out remote_cfg ~prog ~argv)
       argvs
 end)

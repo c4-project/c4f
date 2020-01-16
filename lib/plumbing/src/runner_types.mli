@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -12,7 +12,6 @@
 (** Module types and type synonyms for {!Runner}. *)
 
 open Base
-open Stdio
 
 (** {1 Function type synonyms} *)
 
@@ -45,13 +44,16 @@ module type Basic = sig
       transfer _from_ the runner target. *)
 
   val run_batch :
-    ?oc:Out_channel.t -> string list list -> prog:string -> unit Or_error.t
-  (** [run_batch ?oc argss ~prog] runs [prog] on each argument vector in
+       ?out:Runner_output.t
+    -> string list list
+    -> prog:string
+    -> unit Or_error.t
+  (** [run_batch ?out argss ~prog] runs [prog] on each argument vector in
       [argss], waiting for each invocation to complete in sequence, and
       collecting any errors as [Error.t]s.
 
-      If [oc] is given, each process's standard output will be copied
-      line-by-line to it as it ends. *)
+      If [out] is given, each process's standard output will be copied to it
+      at some stage (not necessarily immediately). *)
 end
 
 (** Outward-facing interface of process runners. *)
@@ -59,13 +61,13 @@ module type S = sig
   include Basic
 
   val run_batch_with_copy :
-       ?oc:Out_channel.t
+       ?out:Runner_output.t
     -> ?prog_f:prog_fun
     -> Fpath.t Copy_spec.Pair.t
     -> argvs_f:string list list argv_fun
     -> prog:string
     -> unit Or_error.t
-  (** [run_batch_with_copy ?oc ?prog_f specs ~argvs_f ~prog] behaves like
+  (** [run_batch_with_copy ?out ?prog_f specs ~argvs_f ~prog] behaves like
       {!run_batch}, but also takes a pair [specs] of copy specs of files that
       should be transferred to and from the target, parametrises the argument
       vectors on the computed local and remote input and output copy specs
@@ -73,21 +75,21 @@ module type S = sig
       [prog] itself through the copy specs. *)
 
   val run :
-    ?oc:Out_channel.t -> string list -> prog:string -> unit Or_error.t
-  (** [run ?oc args ~prog] runs the given program, waits for it to complete,
+    ?out:Runner_output.t -> string list -> prog:string -> unit Or_error.t
+  (** [run ?out args ~prog] runs the given program, waits for it to complete,
       and translates any errors to [Error.t].
 
-      If [oc] is given, the process's standard output will be copied
-      line-by-line to it at the end. *)
+      If [out] is given, each process's standard output will be copied to it
+      at some stage (not necessarily immediately). *)
 
   val run_with_copy :
-       ?oc:Out_channel.t
+       ?out:Runner_output.t
     -> ?prog_f:prog_fun
     -> Fpath.t Copy_spec.Pair.t
     -> argv_f:string list argv_fun
     -> prog:string
     -> unit Or_error.t
-  (** [run_with_copy ?oc ?prog_f specs ~argv_f ~prog] behaves like
+  (** [run_with_copy ?out ?prog_f specs ~argv_f ~prog] behaves like
       [run_batch_with_copy], but over a single invocation and therefore a
       single argument vector. *)
 end

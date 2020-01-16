@@ -55,8 +55,8 @@ let run ?(machine : Ac.Id.t option)
   Or_error.Let_syntax.(
     let%bind (module Runner) = machine_runner ?machine cfg in
     let%bind cs_pair = make_copy_specs prog in
-    Runner.run_with_copy cs_pair ~oc:Stdio.stdout ~prog_f:Pb.Runner.copy_prog
-      ~argv_f ~prog)
+    Runner.run_with_copy cs_pair ~out:Plumbing.Runner_output.stdout
+      ~prog_f:Pb.Runner.copy_prog ~argv_f ~prog)
 
 let readme () : string =
   Act_utils.My_string.format_for_readme

@@ -43,12 +43,12 @@ val user : t -> string option
 (** {2 Running commands} *)
 
 val run :
-     ?oc:Stdio.Out_channel.t
+     ?out:Runner_output.t
   -> t
   -> prog:string
   -> argv:string list
   -> unit Or_error.t
-(** [run ?oc ssh ~prog ~argv] is a wrapper around Jane Street's [Shell]
+(** [run ?out ssh ~prog ~argv] is a wrapper around Jane Street's [Shell]
     library's SSH support. It invokes [prog] with arguments [argv] on the
-    remote host and user given by [ssh]. If [oc] is supplied, the final
+    remote host and user given by [ssh]. If [out] is supplied, the final
     output from the command gets printed to it. *)

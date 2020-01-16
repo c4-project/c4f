@@ -25,37 +25,78 @@ let%test_module "dry runs" =
       prerr
         (Scp.send ssh_with_user ~recurse:false ~locals:[Fpath.v "foo"]
            ~remote:"docs/foo") ;
-      [%expect {| RUN scp -q -B foo piers@spikemuth:docs/foo |}]
+      [%expect
+        {|
+        RUN scp
+        - arg: -q
+        - arg: -B
+        - arg: foo
+        - arg: piers@spikemuth:docs/foo |}]
 
     let%expect_test "multiple send with user" =
       prerr
         (Scp.send ssh_with_user ~recurse:false
            ~locals:Fpath.[v "foo"; v "bar"; v "baz"]
            ~remote:"docs/") ;
-      [%expect {| RUN scp -q -B foo bar baz piers@spikemuth:docs/ |}]
+      [%expect
+        {|
+        RUN scp
+        - arg: -q
+        - arg: -B
+        - arg: foo
+        - arg: bar
+        - arg: baz
+        - arg: piers@spikemuth:docs/ |}]
 
     let%expect_test "recursive send with user" =
       prerr
         (Scp.send ssh_with_user ~recurse:true ~locals:[Fpath.v "bar"]
            ~remote:"docs/bar") ;
-      [%expect {| RUN scp -q -B -r bar piers@spikemuth:docs/bar |}]
+      [%expect
+        {|
+        RUN scp
+        - arg: -q
+        - arg: -B
+        - arg: -r
+        - arg: bar
+        - arg: piers@spikemuth:docs/bar |}]
 
     let%expect_test "single receive with user" =
       prerr
         (Scp.receive ssh_with_user ~recurse:false ~remotes:["foo"]
            ~local:(Fpath.v "docs/foo")) ;
-      [%expect {| RUN scp -q -B piers@spikemuth:foo docs/foo |}]
+      [%expect
+        {|
+        RUN scp
+        - arg: -q
+        - arg: -B
+        - arg: piers@spikemuth:foo
+        - arg: docs/foo |}]
 
     let%expect_test "multiple receive with user" =
       prerr
         (Scp.receive ssh_with_user ~recurse:false
            ~remotes:["foo"; "bar"; "baz"] ~local:(Fpath.v "docs/")) ;
       [%expect
-        {| RUN scp -q -B piers@spikemuth:foo piers@spikemuth:bar piers@spikemuth:baz docs/ |}]
+        {|
+          RUN scp
+          - arg: -q
+          - arg: -B
+          - arg: piers@spikemuth:foo
+          - arg: piers@spikemuth:bar
+          - arg: piers@spikemuth:baz
+          - arg: docs/ |}]
 
     let%expect_test "recursive receive with user" =
       prerr
         (Scp.receive ssh_with_user ~recurse:true ~remotes:["bar"]
            ~local:(Fpath.v "docs/bar")) ;
-      [%expect {| RUN scp -q -B -r piers@spikemuth:bar docs/bar |}]
+      [%expect
+        {|
+        RUN scp
+        - arg: -q
+        - arg: -B
+        - arg: -r
+        - arg: piers@spikemuth:bar
+        - arg: docs/bar |}]
   end )

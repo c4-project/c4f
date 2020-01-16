@@ -138,7 +138,7 @@ Make_in_file_only (struct
       (oc : Stdio.Out_channel.t) : unit Or_error.t =
     let aux = Filter_context.aux ctx in
     let prog = R.prog aux in
-    R.Runner.run_with_copy ~oc ~prog
+    R.Runner.run_with_copy ~out:(To_out_channel oc) ~prog
       {input= Copy_spec.file infile; output= Copy_spec.nothing}
       ~argv_f:(make_argv aux)
 end)
