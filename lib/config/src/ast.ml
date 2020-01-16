@@ -123,7 +123,7 @@ module Ssh = struct
       | Host s ->
           pp_directive pp_qstring f ("host", s)
       | Copy_to s ->
-          pp_directive pp_qstring f ("copy_to", s))
+          pp_directive pp_qstring f ("copy to", s))
 
   let as_user : t -> string option = function
     | User u ->
@@ -151,9 +151,9 @@ module Via = struct
     Pp_helpers.(
       function
       | Local ->
-          Fmt.pf f "local"
+          Fmt.pf f "@[<h>via@ local@]"
       | Ssh s ->
-          pp_simple_stanza Ssh.pp f ("ssh", s))
+          pp_simple_stanza Ssh.pp f ("via ssh", s))
 end
 
 module Compiler = struct
@@ -202,7 +202,7 @@ module Machine = struct
       | Enabled b ->
           pp_enabled f b
       | Via v ->
-          Fmt.(hbox (any "via@ " ++ Via.pp)) f v
+          Via.pp f v
       | Backend (i, ss) ->
           pp_id_stanza Backend.pp f (("backend", i), ss))
 end
