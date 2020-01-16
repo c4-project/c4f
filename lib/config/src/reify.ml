@@ -135,6 +135,9 @@ module Machines = struct
 
   let reify (machines : Act_machine.Spec.t Act_common.Spec.Set.t) : Ast.t =
     machines |> Act_common.Spec.Set.to_list |> List.map ~f:reify_spec_with_id
+
+  let pp : Act_machine.Spec.t Act_common.Spec.Set.t Fmt.t =
+    Fmt.using reify Ast.pp
 end
 
 let reify (config : Global.t) : Ast.t =

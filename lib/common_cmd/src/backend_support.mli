@@ -13,6 +13,13 @@
 
 open Base
 
+(* TODO(@MattWindsor91): find a way to avoid exposing this *)
+
+val style_modules :
+  (Act_common.Id.t, (module Act_backend.Instance_types.Basic)) List.Assoc.t
+(** [style_modules] is the raw set of mappings from backend styles to backend
+    modules. *)
+
 (** {1 Filtered lookup of fully-qualified backend specs} *)
 
 (** [Lookup] permits look-up of backends with, at the moment of writing, no

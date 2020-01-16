@@ -11,6 +11,8 @@
 
 open Base
 
+let binary_names : string list = ["gcc"; "clang"]
+
 let mode_args : Act_compiler.Mode.t -> string list = function
   | Assembly ->
       (* -fno-pic disables position independent code, which is useful in
@@ -32,7 +34,7 @@ let compile_args ~(user_args : string list) ~(arch : Act_common.Id.t)
   ignore arch ;
   List.concat [mode_args mode; user_args; output_args outfile; infiles]
 
-let probe_args = ["--version"]
+let probe_args = ["-dumpmachine"]
 
 let to_target_triplet (s : string) : (string * string * string) Or_error.t =
   match String.split (String.strip s) ~on:'-' with

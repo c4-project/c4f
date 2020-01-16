@@ -11,6 +11,22 @@
 
 (** Reifying a global config structure into an abstract syntax tree. *)
 
+(** {1 Machine config} *)
+
+module Machines : sig
+  val reify : Act_machine.Spec.t Act_common.Spec.Set.t -> Ast.t
+  (** [reify machines] creates an abstract syntax tree that represents a
+      possible configuration file fragment that could be parsed to yield the
+      machine specs [machines]. *)
+
+  include
+    Base.Pretty_printer.S
+      with type t := Act_machine.Spec.t Act_common.Spec.Set.t
+  (** We can pretty-print machine configuration by reifying them. *)
+end
+
+(** {1 The global config}*)
+
 val reify : Global.t -> Ast.t
 (** [reify global] creates an abstract syntax tree that represents a possible
     configuration file that could be parsed to yield [global]. *)

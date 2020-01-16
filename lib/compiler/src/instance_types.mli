@@ -13,13 +13,17 @@ open Base
 
 (** [Basic] is the basic interface compilers must implement. *)
 module type Basic = sig
-  val probe_args : string list
-  (** [probe_args] is the set of arguments sent to the compiler to test that
-      it works, and get information about its target machine. *)
+  val binary_names : string list
+  (** [binary_names] is a list of likely names for compiler binaries of this
+      compiler style, used when probing. *)
 
   val emits_of_probe : string -> Act_common.Id.t Or_error.t
   (** [emits_of_probe probe_results] tries to scrape the target architecture
       of the compiler from the results of probing it. *)
+
+  val probe_args : string list
+  (** [probe_args] is the set of arguments sent to the compiler to test that
+      it works, and get information about its target machine. *)
 
   val compile_args :
        user_args:string list

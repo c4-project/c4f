@@ -11,6 +11,15 @@
 
 (** High-level interface for specifying and invoking compilers. *)
 
+val probe :
+     (module Plumbing.Runner_types.S)
+  -> (module Instance_types.Basic)
+  -> string
+  -> Act_common.Id.t Base.Or_error.t
+(** [probe runner basic_instance cmd] behaves like [probe] in
+    {!Instance_types.S}, but takes the various bits of compiler information
+    directly. This lets one probe compilers before one has a full spec. *)
+
 (** [Make] produces a runnable compiler satisfying [S] from a
     [Basic_with_run_info]. *)
 module Make (B : Instance_types.Basic_with_run_info) : Instance_types.S

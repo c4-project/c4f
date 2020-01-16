@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -18,7 +18,9 @@ end
 (* Re-exported to match interface *)
 module Reader = Reader
 
-let test_args : string list = ["-version"]
+let binary_names : string list = ["litmus7"; "litmus"]
+
+let probe_args : string list = ["-version"]
 
 let capabilities ~(test_stdout : string list) : Bk.Capability.Summary.t =
   ignore (test_stdout : string list) ;

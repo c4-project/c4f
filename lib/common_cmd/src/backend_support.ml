@@ -16,14 +16,14 @@ open struct
   module Tx = Travesty_base_exts
 end
 
-let backends :
+let style_modules :
     (Ac.Id.t, (module Act_backend.Instance_types.Basic)) List.Assoc.t =
   [ (Ac.Id.of_string "herd", (module Act_backend_herd.Instance))
   ; (Ac.Id.of_string "litmus", (module Act_backend_litmus.Instance)) ]
 
 let try_get_backend (style_id : Ac.Id.t) :
     (module Act_backend.Instance_types.Basic) Or_error.t =
-  Ac.Id.try_find_assoc_with_suggestions backends style_id
+  Ac.Id.try_find_assoc_with_suggestions style_modules style_id
     ~id_type:"backend style"
 
 let resolve :

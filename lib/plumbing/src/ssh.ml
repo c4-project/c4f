@@ -18,6 +18,13 @@ let to_string (ssh : t) : string =
   Option.value_map (user ssh) ~default:(host ssh) ~f:(fun u ->
       sprintf "%s@%s" u (host ssh))
 
+let of_string (str : string) : t =
+  match String.lsplit2 str ~on:'@' with
+  | Some (user, host) ->
+      make ~user ~host ()
+  | None ->
+      make ~host:str ()
+
 let pp : t Fmt.t = Fmt.of_to_string to_string
 
 let run_inner ?(user : string option) ~(host : string) ~(prog : string)

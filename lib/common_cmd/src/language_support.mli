@@ -12,12 +12,19 @@
 (** Language lookup and module building support
 
     The various top-level act commands need to invoke the
-    language-independent bits of act (in the [Lib] module) using the
-    appropriate language-dependent bits. This module works out which language
-    is needed by looking at the 'emits' clause of a compiler spec, and hooks
-    up the correct language-dependent modules. *)
+    language-independent bits of act using the appropriate language-dependent
+    bits. This module works out which language is needed by looking at the
+    'emits' clause of a compiler spec, and hooks up the correct
+    language-dependent modules. *)
 
 open Core_kernel
+
+(* TODO(@MattWindsor91): find a way to avoid exposing this *)
+
+val style_modules :
+  (Act_common.Id.t, (module Act_compiler.Instance_types.Basic)) List.Assoc.t
+(** [style_modules] is the raw set of mappings from compiler styles to
+    compiler modules. *)
 
 val resolve :
      Act_machine.Qualified.Compiler.t

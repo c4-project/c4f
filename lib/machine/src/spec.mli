@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -22,8 +22,8 @@ val make :
   -> ?backends:Act_backend.Spec.Set.t
   -> unit
   -> t
-(** [make ?enabled ?via ?sims ()] creates a machine spec with the given
-    fields.
+(** [make ?enabled ?via ?compilers ?backends ()] creates a machine spec with
+    the given fields.
 
     These fields are subject to change, and as such [make] is an unstable
     API. *)

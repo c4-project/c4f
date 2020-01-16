@@ -16,6 +16,10 @@ open struct
   module Tx = Travesty_base_exts
 end
 
+let probe (module Runner : Pb.Runner_types.S)
+    (module B : Instance_types.Basic) (prog : string) : unit Or_error.t =
+  Runner.run ~prog B.probe_args
+
 let no_make_harness (_spec : Spec.t) ~(arch : Arch.t) :
     Capability.Make_harness.t =
   ignore (arch : Arch.t) ;
@@ -86,4 +90,8 @@ struct
           (Pb.Output.of_fpath output_file)
       in
       B.Reader.load (Pb.Input.of_fpath output_file))
+
+  let probe () : unit Or_error.t =
+    let cmd = B.spec |> Act_common.Spec.With_id.spec |> Spec.cmd in
+    probe (module B.Runner) (module B) cmd
 end

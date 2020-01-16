@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,7 +10,10 @@
    project root for more information. *)
 
 open Core
-module Tx = Travesty_base_exts
+
+open struct
+  module Tx = Travesty_base_exts
+end
 
 let id_prog (prog : string) ~(input : Copy_projection.t Copy_spec.t) :
     string Or_error.t =

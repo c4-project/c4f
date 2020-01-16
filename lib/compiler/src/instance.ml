@@ -18,6 +18,17 @@ open struct
   module Tx = Travesty_base_exts
 end
 
+let probe (module Runner : Pb.Runner_types.S)
+    (module B : Instance_types.Basic) (prog : string) :
+    Act_common.Id.t Or_error.t =
+  let buf = Buffer.create 10 in
+  Or_error.Let_syntax.(
+    let%bind () =
+      Runner.run ~out:(Pb.Runner_output.To_buffer buf) ~prog B.probe_args
+    in
+    let result = Buffer.contents buf in
+    B.emits_of_probe result)
+
 module Make (B : Instance_types.Basic_with_run_info) : Instance_types.S =
 struct
   include B
@@ -82,12 +93,5 @@ struct
         ~argv_f:(make_argv spec mode))
 
   let probe () : Act_common.Id.t Or_error.t =
-    let buf = Buffer.create 10 in
-    Or_error.Let_syntax.(
-      let%bind () =
-        B.Runner.run ~out:(Pb.Runner_output.To_buffer buf) ~prog:cmd
-          B.probe_args
-      in
-      let result = Buffer.contents buf in
-      B.emits_of_probe result)
+    probe (module Runner) (module B) cmd
 end

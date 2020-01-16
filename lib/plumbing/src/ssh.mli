@@ -19,9 +19,9 @@ open Base
 type t [@@deriving sexp, equal]
 (** [t] contains a SSH hostname and optional user. *)
 
-val to_string : t -> string
-(** [to_string ssh] converts [ssh] to a string. This string is intended to be
-    suitable for prefixing a SCP remote. *)
+include Stringable.S with type t := t
+(** SSH configuration can be converted to and from a string. This string is
+    intended to be suitable for prefixing a SCP remote. *)
 
 include Pretty_printer.S with type t := t
 (** SSH configuration records can be pretty-printed. *)

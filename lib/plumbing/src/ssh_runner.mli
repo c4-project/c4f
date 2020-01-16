@@ -30,6 +30,10 @@ module Config : sig
   val make : remote:Ssh.t -> copy_dir:string -> t
   (** [make ~remote ~copy_dir] builds a {!t} from the given parameters. *)
 
+  val of_string : string -> t
+  (** [of_string s] parses [s] as a {!t}. The string should be of the form
+      user\@host:copy_dir, where user\@ is optional. *)
+
   (** {2 Accessors} *)
 
   val remote : t -> Ssh.t

@@ -17,9 +17,13 @@ open Base
 
 (** Signature of input to {!Instance.Make}. *)
 module type Basic = sig
-  val test_args : string list
-  (** [test_args] is the set of arguments sent to the backend to test that it
-      works. Usually, this will be some sort of version command. *)
+  val binary_names : string list
+  (** [binary_names] is a list of likely names for backend binaries of this
+      backend style, used when probing. *)
+
+  val probe_args : string list
+  (** [probe_args] is the set of arguments sent to the backend to test that
+      it works. Usually, this will be some sort of version command. *)
 
   val capabilities : test_stdout:string list -> Capability.Summary.t
   (** [capabilities ~test_stdout] gets a broad set of capabilities that this
@@ -53,6 +57,10 @@ module type S = sig
 
   module Filter : Filter.S
   (** Allows running the backend as a filter. *)
+
+  val probe : unit -> unit Or_error.t
+  (** [probe ()] tests that the backend is working. If the backend does not
+      respond correctly, [probe] returns an error. *)
 
   val make_harness :
        Arch.t

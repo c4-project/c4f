@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,7 +10,10 @@
    project root for more information. *)
 
 open Core
-module Tx = Travesty_base_exts
+
+open struct
+  module Tx = Travesty_base_exts
+end
 
 module Config = struct
   type t = {remote: Ssh.t; copy_dir: string}
@@ -24,6 +27,11 @@ module Config = struct
     Fmt.(
       using user (option (string ++ any "@@"))
       ++ using host string ++ any ":" ++ using copy_dir string)
+
+  let of_string (s : string) : t =
+    let ssh_s, copy_dir = String.rsplit2_exn s ~on:':' in
+    let remote = Ssh.of_string ssh_s in
+    make ~remote ~copy_dir
 end
 
 module Make (C : sig
