@@ -3,6 +3,17 @@
 Note that these changes are infrequently maintained and may not tell the
 whole story.
 
+## 2020-Jan-16
+
+- New _experimental_ command `act-config probe`, which probes a machine
+  (local or SSH) for compilers and backends, and emits an `act.conf`
+  fragment.  (Note that this is _not_ yet used by `make_test`; it needs
+  a bit more work first.)
+- New `ppc` (PowerPC) architecture identifier.
+- Architecture identifiers have changed: `x64` is now `x86.64`, and
+  the `.att` prefix to `x86` no longer has any meaning.  You may need to
+  update your `act.conf`.
+
 ## 2020-Jan-14
 
 - Fuzzer action `store.make.int.single` is now `store.make.int.normal`.

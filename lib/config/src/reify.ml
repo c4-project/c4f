@@ -97,9 +97,8 @@ module Machines = struct
       [ Ast.Compiler.Enabled (is_enabled spec)
       ; Style (style spec)
       ; Emits (emits spec)
-      ; Cmd (cmd spec)
-      ] @
-      if List.is_empty argv then [] else [ Argv argv ])
+      ; Cmd (cmd spec) ]
+      @ if List.is_empty argv then [] else [Argv argv])
 
   let reify_compilers :
       Act_compiler.Spec.t Act_common.Spec.Set.t -> Ast.Machine.t list =

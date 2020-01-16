@@ -36,8 +36,7 @@ let arch_map : (Act_common.Id.t, string) List.Assoc.t Lazy.t =
   lazy
     Act_common.Id.
       [ (of_string "x86", "X86")
-      ; (of_string "x64", "X86")
-      ; (of_string "ppc64", "PPC") ]
+      ; (of_string "ppc", "PPC") ]
 
 let lookup_litmus_arch :
     Act_common.Id.t -> (Act_common.Id.t * string) Or_error.t =
