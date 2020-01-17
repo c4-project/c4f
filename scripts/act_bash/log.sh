@@ -20,9 +20,10 @@ act::error() {
 #
 # Arguments:
 #   1: the string to echo.
+#   2: if given, the exit code to use.  Defaults to 1.
 act::fatal() {
   act::error "$1"
-  exit
+  exit "${2:-1}"
 }
 
 # Echoes the argument to stderr, prefixed by the program name, then

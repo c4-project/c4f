@@ -90,7 +90,7 @@ def make_predicate_args(
 def parse_compiler_list(
     lines: typing.Iterable[str]
 ) -> typing.Dict[act_id.Id, typing.Set[act_id.Id]]:
-    """Parses a compiler information list from `act-c list-compilers`.
+    """Parses a compiler information list from `act-compiler list`.
 
     >>> parse_compiler_list([ 'localhost gcc.x86.O0',
     ...                       'localhost gcc.x86.O3',
@@ -106,11 +106,27 @@ def parse_compiler_list(
         act_id.Id, typing.Set[act_id.Id]
     ] = collections.defaultdict(lambda: set())
     for line in lines:
-        if line.isspace():
-            pass
-        [machine, compiler, *_] = line.split()
+        if not line or line.isspace():
+            continue
+        (machine, compiler) = parse_compiler_line(line)
         machines[act_id.Id(machine)].add(act_id.Id(compiler))
     return machines
+
+
+def parse_compiler_line(line: str) -> typing.Tuple[act_id.Id, act_id.Id]:
+    """Parses a compiler line from `act-compiler list`.
+
+    >>> parse_compiler_line('localhost clang.normal gcc x86.64 enabled')
+    ('localhost', 'clang.normal')
+
+    :param line: A compiler list line.
+    :return: A pair of machine ID and compiler ID.
+    """
+    try:
+        [machine, compiler, *_] = line.split()
+    except ValueError as e:
+        raise ActMachineInspectError("Badly formed machine stanza") from e
+    return machine, compiler
 
 
 class ActInspectError(Exception):
