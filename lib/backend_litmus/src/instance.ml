@@ -33,10 +33,7 @@ let capabilities ~(test_stdout : string list) : Bk.Capability.Summary.t =
     ~arches:(Set.of_list (module Bk.Arch) (* for now *) Bk.Arch.[c; asm_x86])
 
 let arch_map : (Act_common.Id.t, string) List.Assoc.t Lazy.t =
-  lazy
-    Act_common.Id.
-      [ (of_string "x86", "X86")
-      ; (of_string "ppc", "PPC") ]
+  lazy Act_common.Id.[(of_string "x86", "X86"); (of_string "ppc", "PPC")]
 
 let lookup_litmus_arch :
     Act_common.Id.t -> (Act_common.Id.t * string) Or_error.t =
