@@ -9,6 +9,7 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
+declare ACT_STANDARD_FLAGS ACT_STANDARD_OPTS
 SCRIPTDIR="${SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"}"
 readonly SCRIPTDIR
 
@@ -46,15 +47,13 @@ VERBOSE="false"
 
 # Prints usage information and exits.
 usage() {
-  echo "Usage: $0 [-b ID] [-m ID] [-s STYLE] [-il] ${ACT_STANDARD_USAGE}"
+  echo "Usage: $0 [-b ID] [-m ID] [-s STYLE] [-l${ACT_STANDARD_FLAGS}]"
   echo
   echo "-b ID: Require that the backend has the given ID"
   echo "-m ID: Require that the machine has the given ID"
   echo "-s: See usage for 'make_backend_predicate'"
   echo "-l: See usage for 'make_machine_predicate'"
-  echo "-v/-q: verbose/quiet"
-  echo "-x: run ACT binaries with \`dune exec\`"
-  echo "-h/-?: usage"
+  act::standard_usage
   exit
 }
 
@@ -65,10 +64,7 @@ main() {
     m) MACHINE_ID="${OPTARG}" ;;
     s) STYLE="${OPTARG}" ;;
     l) REQUIRE_LOCAL="true" ;;
-    q) VERBOSE="false" ;;
-    v) VERBOSE="true" ;;
-    x) DUNE_EXEC="true" ;;
-    h|?) usage ;;
+    ?) act::parse_standard_args "${a}" "${OPTARG:-}" ;;
     esac
   done
 
