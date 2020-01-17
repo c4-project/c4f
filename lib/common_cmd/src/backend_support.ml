@@ -36,7 +36,10 @@ let resolve :
 
 module Lookup = struct
   include Act_machine.Lookup.Backend (struct
-    let test _spec = Or_error.return () (* for now *)
+    let test (spec : Act_machine.Qualified.Backend.t) : unit Or_error.t =
+      Or_error.Let_syntax.(
+        let%bind (module M) = resolve spec in
+        M.probe ())
   end)
 
   (* TODO(@MattWindsor91): this seems exceptionally coupled, but it can't go

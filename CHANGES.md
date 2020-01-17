@@ -3,6 +3,13 @@
 Note that these changes are infrequently maintained and may not tell the
 whole story.
 
+## 2020-Jan-17
+
+- New command `act-backend find`, which takes a style ID and zero or more
+  machines, and returns the first viable backend with that style in the
+  combination of given and default machines (in order of specification).
+  This will eventually replace the `get_a_backend` script.
+
 ## 2020-Jan-16
 
 - New _experimental_ command `act-config probe`, which probes a machine
