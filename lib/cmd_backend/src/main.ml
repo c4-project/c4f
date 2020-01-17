@@ -23,7 +23,8 @@ Litmus7).
 let command : Core_kernel.Command.t =
   Core_kernel.Command.group
     ~summary:"commands for dealing with test backends" ~readme
-    [ ("license", Common_cmd.License.command)
+    [ ("find", Find.command)
+    ; ("license", Common_cmd.License.command)
     ; ("list", List.command)
     ; ("make-harness", Make_harness.command)
     ; ("parse", Parse.command)

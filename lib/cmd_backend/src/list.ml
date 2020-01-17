@@ -10,7 +10,20 @@
    project root for more information. *)
 
 open Core_kernel
-module Ac = Act_common
+
+open struct
+  module Ac = Act_common
+end
+
+let pp_listing (verbose : bool) :
+    Act_backend.Spec.t Act_machine.Qualified.t Act_machine.Lookup_listing.t
+    Fmt.t =
+  if verbose then
+    Act_machine.Lookup_listing.pp_qualified_verbose ~type_str:"backends"
+      Act_backend.Spec.pp
+  else
+    Act_machine.Lookup_listing.pp_qualified_summary
+      Act_backend.Spec.pp_summary
 
 let run ?(backend_predicate : Act_backend.Property.t Blang.t option)
     ?(machine_predicate : Act_machine.Property.t Blang.t option)
@@ -26,15 +39,7 @@ let run ?(backend_predicate : Act_backend.Property.t Blang.t option)
         (Act_config.Global.machines global_cfg)
     in
     let verbose = Common_cmd.Args.Standard.is_verbose standard_args in
-    let pp =
-      if verbose then
-        Act_machine.Lookup_listing.pp_qualified_verbose ~type_str:"backends"
-          Act_backend.Spec.pp
-      else
-        Act_machine.Lookup_listing.pp_qualified_summary
-          Act_backend.Spec.pp_summary
-    in
-    Fmt.(pr "@[<v>%a@]@." pp backend_listing))
+    Fmt.(pr "@[<v>%a@]@." (pp_listing verbose) backend_listing))
 
 let command : Command.t =
   Command.basic
