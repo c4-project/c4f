@@ -3,6 +3,10 @@
 Note that these changes are infrequently maintained and may not tell the
 whole story.
 
+## 2020-Jan-20
+
+- `get_a_backend` has been removed; use `act-backend find` instead.
+
 ## 2020-Jan-17
 
 - New command `act-backend find`, which takes a style ID and zero or more
