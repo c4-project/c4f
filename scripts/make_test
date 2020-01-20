@@ -22,10 +22,26 @@ from act_py import act_id, machine_info, str_utils, test, test_common
 # TODO(@MattWindsor91): understand backends other than machine.litmus.
 
 drivers: typing.Mapping[str, typing.List[str]] = {
-    "c_litmus":
-      ["-b", '"{backend}"', '-c', '"{compiler}"', '-d', '"{dir}"', "{subject_path}"],
-    "c_litmus_indirect":
-      ["-b", '"{backend}"', '-c', '"{compiler}"', '-n', '"{subject_name}"', '-d', "{dir}", "{subject_path}"]
+    "c_litmus": [
+        "-b",
+        '"{backend}"',
+        "-c",
+        '"{compiler}"',
+        "-d",
+        '"{dir}"',
+        "{subject_path}",
+    ],
+    "c_litmus_indirect": [
+        "-b",
+        '"{backend}"',
+        "-c",
+        '"{compiler}"',
+        "-n",
+        '"{subject_name}"',
+        "-d",
+        "{dir}",
+        "{subject_path}",
+    ],
 }
 
 default_driver: str = "c_litmus_indirect"
@@ -41,7 +57,9 @@ def get_driver(name: str) -> str:
     try:
         argv = drivers[name]
     except KeyError:
-        print(f"No such driver: {name}, using {default_driver} instead.", file=sys.stderr)
+        print(
+            f"No such driver: {name}, using {default_driver} instead.", file=sys.stderr
+        )
         argv = drivers[default_driver]
     return make_driver(name, argv)
 
@@ -51,7 +69,7 @@ def make_test(
     subject_paths: typing.List[pathlib.Path],
     machine_predicate: typing.Optional[str],
     compiler_predicate: typing.Optional[str],
-    driver_name: str
+    driver_name: str,
 ) -> test.Test:
     subjects = [inspect_subject(path) for path in subject_paths]
 
@@ -128,7 +146,7 @@ def expand_machine(
     :param compilers: The machine to expand.
     :return: The result of expanding `raw_machine`.
     """
-    backend = machine_info.get_backend_for(machine_id, style_id="litmus")
+    backend = machine_info.get_backend_for("litmus", machine_id)
     return test.MachineTest(list(compilers), backend)
 
 
@@ -185,6 +203,8 @@ if __name__ == "__main__":
         subject_paths=args.subjects,
         compiler_predicate=sanitise_predicate(args.compiler_predicate),
         machine_predicate=sanitise_predicate(args.machine_predicate),
-        driver_name=str_utils.with_default_if_blank(args.driver_name, default=default_driver)
+        driver_name=str_utils.with_default_if_blank(
+            args.driver_name, default=default_driver
+        ),
     )
     result.dump(sys.stdout)

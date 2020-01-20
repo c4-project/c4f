@@ -92,7 +92,7 @@ main() {
     local style="herd"
     if [[ -n "${COMPILER}" ]]; then style="litmus"; fi
 
-    BACKEND="$("${SCRIPTDIR}/get_a_backend" -l -s ${style})"
+    BACKEND="$(act::backend find ${style})"
     act::log "Defaulted to backend %s.\n" "${BACKEND}"
   fi
   readonly BACKEND

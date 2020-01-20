@@ -141,23 +141,18 @@ class ActInspectError(Exception):
         )
 
 
-def get_backend_for(
-    machine_id: typing.Optional[act_id.Id], style_id: typing.Optional[act_id.Id]
-):
-    """Runs the 'get_a_backend' script with the given arguments.
+def get_backend_for(style_id: act_id.Id, *machine_ids: act_id.Id):
+    """Runs the backend getter with the given arguments.
 
-    :param machine_id: The (optional) machine ID to request.
-    :param style_id: The (optional) style ID to request.
+    :param style_id: The style ID to request.
+    :param machine_ids: The chain of machine IDs to request.
     :return:
         The standard output of the process if the lister completed
         successfully.
     :raise: `ActMachineInspectError` if the lister failed.
     """
-    cmd = str(os.path.join(SCRIPT_DIR, "get_a_backend"))
-
-    machine_args = [] if machine_id is None else ["-m", str(machine_id)]
-    style_args = [] if style_id is None else ["-s", str(style_id)]
-    args = [cmd, *machine_args, *style_args]
+    machine_args = [str(m) for m in machine_ids]
+    args = ["act-backend", "find", str(style_id), *machine_args]
 
     proc: subprocess.CompletedProcess = subprocess.run(
         args, capture_output=True, text=True
@@ -167,7 +162,7 @@ def get_backend_for(
     except subprocess.CalledProcessError as e:
         raise ActBackendInspectError(proc.stderr) from e
     stdout: str = proc.stdout
-    return stdout
+    return stdout.strip()
 
 
 class ActMachineInspectError(ActInspectError):
