@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Mini-C: primitive statments.
+(** Mini-C: primitive statements.
 
     A primitive statement is any statement that doesn't contain other
     statements recursively.
@@ -24,7 +24,7 @@
 
 open Base
 
-type 'meta t [@@deriving sexp, equal]
+type 'meta t [@@deriving sexp, compare, equal]
 (** Opaque type of mini-C primitive statements, parametrised by metadata. *)
 
 (** {1 Constructors} *)
@@ -46,14 +46,23 @@ val procedure_call : 'meta Call.t -> 'meta t
 (** [procedure_call a] lifts a procedure (non-value-returning function) call
     [a] to a primitive statement. *)
 
-(** {2 Atomics} *)
+(** {2 Atomics}
 
-val atomic_store : Atomic_store.t -> 'meta t
-(** [atomic_store a] lifts an atomic store [a] to a primitive statement. *)
+    See {!Atomic_statement}. *)
 
-val atomic_cmpxchg : Atomic_cmpxchg.t -> 'meta t
-(** [atomic_cmpxchg a] lifts an atomic compare-exchange [a] to a primitive
-    statement. *)
+val atomic : 'meta -> Atomic_statement.t -> 'meta t
+(** [atomic meta a] lifts an atomic statement [a], with metadata [meta], to a
+    primitive statement. *)
+
+val atomic_cmpxchg : 'meta -> Atomic_cmpxchg.t -> 'meta t
+(** [atomic_cmpxchg meta a] lifts an atomic compare-exchange [a] to a
+    primitive statement. *)
+
+val atomic_fence : 'meta -> Atomic_fence.t -> 'meta t
+(** [atomic_fence meta a] lifts an atomic fence [a] to a primitive statement. *)
+
+val atomic_store : 'meta -> Atomic_store.t -> 'meta t
+(** [atomic_store meta a] lifts an atomic store [a] to a primitive statement. *)
 
 (** {2 Shorthand for early-out statements}
 
@@ -76,35 +85,30 @@ val return : 'meta -> 'meta t
 val reduce :
      'meta t
   -> assign:((* 'meta *) Assign.t -> 'result)
-  -> atomic_store:((* 'meta *) Atomic_store.t -> 'result)
-  -> atomic_cmpxchg:((* 'meta *) Atomic_cmpxchg.t -> 'result)
+  -> atomic:('meta * Atomic_statement.t -> 'result)
   -> early_out:('meta Early_out.t -> 'result)
   -> label:('meta Label.t -> 'result)
   -> goto:('meta Label.t -> 'result)
   -> nop:('meta -> 'result)
   -> procedure_call:('meta Call.t -> 'result)
   -> 'result
-(** [reduce x ~assign ~atomic_store ~atomic_cmpxchg ~early_out ~nop] reduces
-    a primitive statement [x] to a particular result type by applying the
-    appropriate function. *)
+(** [reduce x ~assign ~atomic ~early_out ~nop] reduces a primitive statement
+    [x] to a particular result type by applying the appropriate function. *)
 
 (** Creates a basic monadic map over [M]. *)
 module Base_map (M : Monad.S) : sig
   val bmap :
        'm1 t
     -> assign:((* 'm1 *) Assign.t -> (* 'm2 *) Assign.t M.t)
-    -> atomic_store:
-         ((* 'm1 *) Atomic_store.t -> (* 'm2 *) Atomic_store.t M.t)
-    -> atomic_cmpxchg:
-         ((* 'm1 *) Atomic_cmpxchg.t -> (* 'm2 *) Atomic_cmpxchg.t M.t)
+    -> atomic:('m1 * Atomic_statement.t -> ('m2 * Atomic_statement.t) M.t)
     -> early_out:('m1 Early_out.t -> 'm2 Early_out.t M.t)
     -> label:('m1 Label.t -> 'm2 Label.t M.t)
     -> goto:('m1 Label.t -> 'm2 Label.t M.t)
     -> nop:('m1 -> 'm2 M.t)
     -> procedure_call:('m1 Call.t -> 'm2 Call.t M.t)
     -> 'm2 t M.t
-  (** [bmap x ~assign ~atomic_store ~atomic_cmpxchg ~early_out ~nop] maps the
-      appropriate function over [x]. *)
+  (** [bmap x ~assign ~atomic ~early_out ~nop] maps the appropriate function
+      over [x]. *)
 end
 
 module On_meta : Travesty.Traversable_types.S1 with type 'meta t := 'meta t
@@ -126,10 +130,4 @@ module With_meta (Meta : T) : sig
     Travesty.Traversable_types.S0
       with type t = Meta.t t
        and type Elt.t = Address.t
-
-  (** Traverses over the identifiers of a primitive expression. *)
-  module On_identifiers :
-    Travesty.Traversable_types.S0
-      with type t = Meta.t t
-       and type Elt.t = Act_common.C_id.t
 end

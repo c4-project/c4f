@@ -19,7 +19,7 @@ type 'meta t =
   { arguments: Expression.t list
   ; metadata: 'meta
   ; function_id: Act_common.C_id.t }
-[@@deriving make, fields, sexp, equal]
+[@@deriving make, fields, sexp, compare, equal]
 
 module On_meta : Travesty.Traversable_types.S1 with type 'meta t = 'meta t =
 Travesty.Traversable.Make1 (struct

@@ -70,12 +70,12 @@ let%test_module "make_type_alist" =
     let p1_decls : (Ac.C_id.t, Src.Initialiser.t) List.Assoc.t = []
 
     let p1_stms : unit Src.Statement.t list =
-      [ Src.Statement.atomic_store
+      [ Src.Statement.atomic_store ()
           (Src.Atomic_store.make
              ~src:(Src.Expression.int_lit 1)
              ~dst:(Src.Address.of_variable_str_exn "x")
              ~mo:Src.Mem_order.Relaxed)
-      ; Src.Statement.atomic_store
+      ; Src.Statement.atomic_store ()
           (Src.Atomic_store.make
              ~src:(Src.Expression.int_lit 1)
              ~dst:(Src.Address.of_variable_str_exn "y")

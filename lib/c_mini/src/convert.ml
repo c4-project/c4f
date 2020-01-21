@@ -341,20 +341,6 @@ let rec expr : Ast.Expr.t -> Expression.t Or_error.t =
         Or_error.error_s
           [%message "Unsupported expression" ~got:(e : Ast.Expr.t)])
 
-let model_atomic_store : Ast.Expr.t list -> unit Statement.t Or_error.t =
-  function
-  | [raw_dst; raw_src; raw_mo] ->
-      let open Or_error.Let_syntax in
-      let%map dst = expr_to_address raw_dst
-      and src = expr raw_src
-      and mo = expr_to_memory_order raw_mo in
-      Statement.atomic_store (Atomic_store.make ~dst ~src ~mo)
-  | args ->
-      Or_error.error_s
-        [%message
-          "Invalid arguments to atomic_store_explicit"
-            ~got:(args : Ast.Expr.t list)]
-
 let model_atomic_cmpxchg : Ast.Expr.t list -> unit Statement.t Or_error.t =
   function
   | [raw_obj; raw_expected; raw_desired; raw_succ; raw_fail] ->
@@ -364,12 +350,37 @@ let model_atomic_cmpxchg : Ast.Expr.t list -> unit Statement.t Or_error.t =
       and desired = expr raw_desired (* C *)
       and succ = expr_to_memory_order raw_succ (* memory_order *)
       and fail = expr_to_memory_order raw_fail (* memory_order *) in
-      Statement.atomic_cmpxchg
+      Statement.atomic_cmpxchg ()
         (Atomic_cmpxchg.make ~obj ~expected ~desired ~succ ~fail)
   | args ->
       Or_error.error_s
         [%message
           "Invalid arguments to atomic_compare_exchange_strong_explicit"
+            ~got:(args : Ast.Expr.t list)]
+
+let model_atomic_fence (mode : Atomic_fence.Mode.t) :
+    Ast.Expr.t list -> unit Statement.t Or_error.t = function
+  | [raw_mo] ->
+      Or_error.Let_syntax.(
+        let%map mo = expr_to_memory_order raw_mo (* memory_order *) in
+        Statement.atomic_fence () (Atomic_fence.make ~mode ~mo))
+  | args ->
+      Or_error.error_s
+        [%message
+          "Invalid arguments to atomic fence" ~got:(args : Ast.Expr.t list)]
+
+let model_atomic_store : Ast.Expr.t list -> unit Statement.t Or_error.t =
+  function
+  | [raw_dst; raw_src; raw_mo] ->
+      let open Or_error.Let_syntax in
+      let%map dst = expr_to_address raw_dst
+      and src = expr raw_src
+      and mo = expr_to_memory_order raw_mo in
+      Statement.atomic_store () (Atomic_store.make ~dst ~src ~mo)
+  | args ->
+      Or_error.error_s
+        [%message
+          "Invalid arguments to atomic_store_explicit"
             ~got:(args : Ast.Expr.t list)]
 
 let expr_stm_call_table :
@@ -378,7 +389,11 @@ let expr_stm_call_table :
   lazy
     (Map.of_alist_exn
        (module Ac.C_id)
-       [ (Ac.C_id.of_string "atomic_store_explicit", model_atomic_store)
+       [ ( Ac.C_id.of_string "atomic_signal_fence"
+         , model_atomic_fence Atomic_fence.Mode.Signal )
+       ; ( Ac.C_id.of_string "atomic_thread_fence"
+         , model_atomic_fence Atomic_fence.Mode.Thread )
+       ; (Ac.C_id.of_string "atomic_store_explicit", model_atomic_store)
        ; ( Ac.C_id.of_string "atomic_compare_exchange_strong_explicit"
          , model_atomic_cmpxchg ) ])
 

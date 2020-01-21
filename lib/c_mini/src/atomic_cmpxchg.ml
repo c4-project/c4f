@@ -17,7 +17,7 @@ type t =
   ; desired: Expression.t
   ; succ: Mem_order.t
   ; fail: Mem_order.t }
-[@@deriving sexp, fields, make, equal]
+[@@deriving sexp, fields, make, compare, equal]
 
 module Base_map (M : Monad.S) = struct
   module F = Travesty.Traversable.Helpers (M)

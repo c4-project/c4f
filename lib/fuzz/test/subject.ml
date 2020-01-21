@@ -54,7 +54,7 @@ module Test_data = struct
                ~t_branch:
                  (Src.Subject.Block.make_generated
                     ~statements:
-                      [ atomic_store
+                      [ atomic_store Src.Metadata.generated
                           (Atomic_store.make ~src:(Expression.int_lit 56)
                              ~dst:(Address.of_variable_str_exn "x")
                              ~mo:Mem_order.Seq_cst) ]
@@ -70,7 +70,7 @@ module Test_data = struct
                ~t_branch:
                  (Src.Subject.Block.make_dead_code
                     ~statements:
-                      [ atomic_store
+                      [ atomic_store Src.Metadata.generated
                           (Atomic_store.make ~src:(Expression.int_lit 95)
                              ~dst:(Address.of_variable_str_exn "y")
                              ~mo:Mem_order.Seq_cst) ]
@@ -87,7 +87,7 @@ module Test_data = struct
                ~body:
                  (Src.Subject.Block.make_dead_code
                     ~statements:
-                      [ atomic_store
+                      [ atomic_store Src.Metadata.generated
                           (Atomic_store.make ~src:(Expression.int_lit 44)
                              ~dst:(Address.of_variable_str_exn "x")
                              ~mo:Mem_order.Seq_cst) ]
@@ -101,12 +101,12 @@ module Test_data = struct
       and sample_once_do_while = sample_once_do_while in
       Act_c_mini.(
         Statement.
-          [ atomic_store
+          [ atomic_store Src.Metadata.generated
               (Atomic_store.make ~src:(Expression.int_lit 42)
                  ~dst:(Address.of_variable_str_exn "x")
                  ~mo:Mem_order.Seq_cst)
           ; nop Src.Metadata.generated
-          ; atomic_store
+          ; atomic_store Src.Metadata.generated
               (Atomic_store.make
                  ~src:(Expression.of_variable_str_exn "foo")
                  ~dst:(Address.of_variable_str_exn "y")

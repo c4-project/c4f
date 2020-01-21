@@ -18,7 +18,7 @@ module P_if_statement = struct
     { cond: Expression.t
     ; t_branch: ('meta, 'stm) Block.t
     ; f_branch: ('meta, 'stm) Block.t }
-  [@@deriving sexp, fields, equal]
+  [@@deriving sexp, fields, compare, equal]
 end
 
 (** [P_while_loop] contains a fully type-parametrised while_loop type. *)
@@ -27,7 +27,7 @@ module P_while_loop = struct
     { cond: Expression.t
     ; body: ('meta, 'stm) Block.t
     ; kind: [`While | `Do_while] }
-  [@@deriving sexp, fields, equal]
+  [@@deriving sexp, fields, compare, equal]
 end
 
 (* We can't put this into its own P module because OCaml's type system won't
@@ -38,7 +38,7 @@ type 'meta statement =
   | Prim of 'meta Prim_statement.t
   | If_stm of 'meta if_statement
   | While_loop of 'meta while_loop
-[@@deriving sexp, equal]
+[@@deriving sexp, compare, equal]
 
 and 'meta if_statement = ('meta, 'meta statement) P_if_statement.t
 
@@ -79,12 +79,9 @@ module Main :
      and type 'meta t = 'meta statement
      and type identifier := Act_c_lang.Ast_basic.Identifier.t
      and type lvalue := Lvalue.t
-     and type 'meta assign := Assign.t
-     and type 'meta atomic_cmpxchg := Atomic_cmpxchg.t
-     and type 'meta atomic_store := Atomic_store.t
      and type 'meta if_stm := 'meta if_statement
      and type 'meta while_loop := 'meta while_loop = struct
-  type 'meta t = 'meta statement [@@deriving sexp, equal]
+  type 'meta t = 'meta statement [@@deriving sexp, compare, equal]
 
   module Constructors = struct
     let prim (x : 'meta Prim_statement.t) : 'meta t = Prim x
@@ -92,11 +89,17 @@ module Main :
     let assign (x : (* 'meta *) Assign.t) : 'meta t =
       prim (Prim_statement.assign x)
 
-    let atomic_cmpxchg (x : (* 'meta *) Atomic_cmpxchg.t) : 'meta t =
-      prim (Prim_statement.atomic_cmpxchg x)
+    let atomic (m : 'meta) (x : Atomic_statement.t) : 'meta t =
+      prim (Prim_statement.atomic m x)
 
-    let atomic_store (x : (* 'meta *) Atomic_store.t) : 'meta t =
-      prim (Prim_statement.atomic_store x)
+    let atomic_cmpxchg (m : 'meta) (x : Atomic_cmpxchg.t) : 'meta t =
+      prim (Prim_statement.atomic_cmpxchg m x)
+
+    let atomic_fence (m : 'meta) (x : Atomic_fence.t) : 'meta t =
+      prim (Prim_statement.atomic_fence m x)
+
+    let atomic_store (m : 'meta) (x : Atomic_store.t) : 'meta t =
+      prim (Prim_statement.atomic_store m x)
 
     let break (x : 'meta) : 'meta t = prim (Prim_statement.break x)
 
@@ -294,7 +297,7 @@ module If :
      and type 'meta expr := Expression.t
      and type 'meta stm := 'meta Main.t
      and type 'meta t = 'meta if_statement = struct
-  type 'meta t = 'meta if_statement [@@deriving sexp, equal]
+  type 'meta t = 'meta if_statement [@@deriving sexp, compare, equal]
 
   let cond = P_if_statement.cond
 
@@ -408,7 +411,7 @@ module While :
      and type 'meta expr := Expression.t
      and type 'meta stm := 'meta Main.t
      and type 'meta t = 'meta while_loop = struct
-  type 'meta t = 'meta while_loop [@@deriving sexp, equal]
+  type 'meta t = 'meta while_loop [@@deriving sexp, compare, equal]
 
   let cond = P_while_loop.cond
 

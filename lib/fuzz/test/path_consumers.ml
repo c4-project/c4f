@@ -29,7 +29,7 @@ let%test_module "Statement_list" =
 
         let example_stm : F.Metadata.t Stm.t =
           Act_c_mini.(
-            Stm.atomic_store
+            Stm.atomic_store F.Metadata.generated
               (Atomic_store.make ~mo:Mem_order.Seq_cst
                  ~src:(Expression.int_lit 9001)
                  ~dst:(Address.of_variable_str_exn "y")))

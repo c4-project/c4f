@@ -255,7 +255,9 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
   let run (subject : Subject.Test.t)
       ~payload:({store; path} : Random_state.t) :
       Subject.Test.t State.Monad.t =
-    let store_stm = Act_c_mini.Statement.atomic_store store in
+    let store_stm =
+      Act_c_mini.Statement.atomic_store Metadata.generated store
+    in
     let tid = Path.Program.tid path in
     State.Monad.Let_syntax.(
       let%bind o = State.Monad.output () in

@@ -12,7 +12,7 @@
 open Base
 
 type t = {lvalue: Lvalue.t; rvalue: Expression.t}
-[@@deriving sexp, fields, make, equal]
+[@@deriving sexp, fields, make, compare, equal]
 
 module Base_map (M : Monad.S) = struct
   module F = Travesty.Traversable.Helpers (M)

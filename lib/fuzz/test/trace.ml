@@ -99,14 +99,16 @@ let%test_module "trace playback" =
          (((decls ())
            (stms
             ((Prim
-              (Atomic_store
-               ((src (Constant (Int 42))) (dst (Lvalue (Variable x)))
-                (mo memory_order_seq_cst))))
+              (Atomic ((source Generated) (liveness Normal))
+               (Atomic_store
+                ((src (Constant (Int 42))) (dst (Lvalue (Variable x)))
+                 (mo memory_order_seq_cst)))))
              (Prim (Nop ((source Generated) (liveness Normal))))
              (Prim
-              (Atomic_store
-               ((src (Address (Lvalue (Variable foo)))) (dst (Lvalue (Variable y)))
-                (mo memory_order_relaxed))))
+              (Atomic ((source Generated) (liveness Normal))
+               (Atomic_store
+                ((src (Address (Lvalue (Variable foo))))
+                 (dst (Lvalue (Variable y))) (mo memory_order_relaxed)))))
              (If_stm
               ((cond
                 (Bop Eq (Address (Lvalue (Variable foo)))
@@ -114,9 +116,10 @@ let%test_module "trace playback" =
                (t_branch
                 ((statements
                   ((Prim
-                    (Atomic_store
-                     ((src (Constant (Int 56))) (dst (Lvalue (Variable x)))
-                      (mo memory_order_seq_cst))))))
+                    (Atomic ((source Generated) (liveness Normal))
+                     (Atomic_store
+                      ((src (Constant (Int 56))) (dst (Lvalue (Variable x)))
+                       (mo memory_order_seq_cst)))))))
                  (metadata ((source Generated) (liveness Normal)))))
                (f_branch
                 ((statements ()) (metadata ((source Generated) (liveness Dead)))))))
@@ -125,9 +128,10 @@ let%test_module "trace playback" =
                (t_branch
                 ((statements
                   ((Prim
-                    (Atomic_store
-                     ((src (Constant (Int 95))) (dst (Lvalue (Variable y)))
-                      (mo memory_order_seq_cst))))))
+                    (Atomic ((source Generated) (liveness Normal))
+                     (Atomic_store
+                      ((src (Constant (Int 95))) (dst (Lvalue (Variable y)))
+                       (mo memory_order_seq_cst)))))))
                  (metadata ((source Generated) (liveness Dead)))))
                (f_branch
                 ((statements ()) (metadata ((source Generated) (liveness Normal)))))))
@@ -136,9 +140,10 @@ let%test_module "trace playback" =
                (body
                 ((statements
                   ((Prim
-                    (Atomic_store
-                     ((src (Constant (Int 44))) (dst (Lvalue (Variable x)))
-                      (mo memory_order_seq_cst))))))
+                    (Atomic ((source Generated) (liveness Normal))
+                     (Atomic_store
+                      ((src (Constant (Int 44))) (dst (Lvalue (Variable x)))
+                       (mo memory_order_seq_cst)))))))
                  (metadata ((source Generated) (liveness Dead)))))
                (kind Do_while)))))))))) |}]
   end )

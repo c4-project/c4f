@@ -15,7 +15,7 @@ open Base
 
 (** {1 Type, constructor, and accessors} *)
 
-type ('meta, 'stm) t [@@deriving sexp, equal]
+type ('meta, 'stm) t [@@deriving sexp, compare, equal]
 (** Opaque type of blocks, parametrised over metadata and statement types. *)
 
 (** {2 Constructors} *)

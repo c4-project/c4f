@@ -24,7 +24,8 @@ open Base
 
 module Kind : sig
   (** Type of early-out kinds. *)
-  type t = Break | Continue | Return [@@deriving sexp, equal, quickcheck]
+  type t = Break | Continue | Return
+  [@@deriving sexp, compare, equal, quickcheck]
 
   val in_loop_only : t -> bool
   (** [in_loop_only kind] gets whether [kind] is valid only in loops. *)
@@ -32,7 +33,7 @@ end
 
 (** {1 Early-out statements} *)
 
-type 'meta t [@@deriving sexp, equal]
+type 'meta t [@@deriving sexp, compare, equal]
 (** Opaque type of mini-C early-out statements, parametrised by metadata. *)
 
 (** {2 Constructors} *)

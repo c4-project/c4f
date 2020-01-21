@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -24,12 +24,25 @@ let atomic_cmpxchg (cmpxchg : Atomic_cmpxchg.t) : Ast.Stm.t =
       ; mem_order (Atomic_cmpxchg.succ cmpxchg)
       ; mem_order (Atomic_cmpxchg.fail cmpxchg) ]
 
+let function_of_atomic_fence_mode : Atomic_fence.Mode.t -> string = function
+  | Signal ->
+      "atomic_signal_fence"
+  | Thread ->
+      "atomic_thread_fence"
+
+let atomic_fence (fence : Atomic_fence.t) : Ast.Stm.t =
+  let call = function_of_atomic_fence_mode (Atomic_fence.mode fence) in
+  known_call_stm call Reify_expr.[mem_order (Atomic_fence.mo fence)]
+
 let atomic_store (st : Atomic_store.t) : Ast.Stm.t =
   known_call_stm "atomic_store_explicit"
     Reify_expr.
       [ address (Atomic_store.dst st)
       ; reify (Atomic_store.src st)
       ; mem_order (Atomic_store.mo st) ]
+
+let atomic ((_, a) : _ * Atomic_statement.t) : Ast.Stm.t =
+  Atomic_statement.reduce a ~atomic_cmpxchg ~atomic_fence ~atomic_store
 
 let assign (asn : Assign.t) : Ast.Stm.t =
   let l = Assign.lvalue asn in
@@ -73,8 +86,8 @@ let procedure_call (c : _ Call.t) : Ast.Stm.t =
           ; arguments= List.map ~f:Reify_expr.reify (Call.arguments c) }))
 
 let prim : _ Prim_statement.t -> Ast.Stm.t =
-  Prim_statement.reduce ~assign ~atomic_cmpxchg ~atomic_store ~early_out
-    ~procedure_call ~label ~goto ~nop
+  Prim_statement.reduce ~assign ~atomic ~early_out ~procedure_call ~label
+    ~goto ~nop
 
 let rec reify : _ Statement.t -> Ast.Stm.t =
   Statement.reduce ~prim ~if_stm ~while_loop

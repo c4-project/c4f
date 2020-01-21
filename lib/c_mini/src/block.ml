@@ -13,7 +13,7 @@ open Base
 module Tx = Travesty_base_exts
 
 type ('meta, 'stm) t = {statements: 'stm list; metadata: 'meta}
-[@@deriving sexp, equal, fields, make]
+[@@deriving sexp, compare, equal, fields, make]
 
 let of_statement_list (type stm) (statements : stm list) : (unit, stm) t =
   make ~statements ~metadata:() ()

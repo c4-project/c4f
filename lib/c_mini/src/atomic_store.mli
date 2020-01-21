@@ -11,7 +11,7 @@
 
 (** An atomic store operation. *)
 
-type t [@@deriving sexp, equal]
+type t [@@deriving sexp, compare, equal]
 
 (** {1 Constructors} *)
 

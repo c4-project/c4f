@@ -12,7 +12,7 @@
 open Base
 
 type t = {src: Expression.t; dst: Address.t; mo: Mem_order.t}
-[@@deriving sexp, fields, make, equal]
+[@@deriving sexp, fields, make, compare, equal]
 
 let to_tuple ({src; dst; mo} : t) : Expression.t * Address.t * Mem_order.t =
   (src, dst, mo)

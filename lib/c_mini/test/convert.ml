@@ -57,9 +57,10 @@ let%test_module "stm" =
         {|
       (Ok
        (Prim
-        (Atomic_store
-         ((src (Constant (Int 42))) (dst (Ref (Lvalue (Variable x))))
-          (mo memory_order_relaxed))))) |}]
+        (Atomic ()
+         (Atomic_store
+          ((src (Constant (Int 42))) (dst (Ref (Lvalue (Variable x))))
+           (mo memory_order_relaxed)))))) |}]
 
     let%expect_test "model atomic cmpxchg" =
       Stdio.print_s
@@ -89,10 +90,11 @@ let%test_module "stm" =
         {|
       (Ok
        (Prim
-        (Atomic_cmpxchg
-         ((obj (Ref (Lvalue (Variable x)))) (expected (Ref (Lvalue (Variable y))))
-          (desired (Constant (Int 42))) (succ memory_order_relaxed)
-          (fail memory_order_relaxed))))) |}]
+        (Atomic ()
+         (Atomic_cmpxchg
+          ((obj (Ref (Lvalue (Variable x)))) (expected (Ref (Lvalue (Variable y))))
+           (desired (Constant (Int 42))) (succ memory_order_relaxed)
+           (fail memory_order_relaxed)))))) |}]
   end )
 
 let%test_module "expr" =

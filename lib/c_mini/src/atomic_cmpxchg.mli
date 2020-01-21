@@ -11,7 +11,7 @@
 
 (** A (strong, explicit) atomic compare-exchange operation. *)
 
-type t [@@deriving sexp, equal]
+type t [@@deriving sexp, compare, equal]
 
 (** {3 Constructors} *)
 

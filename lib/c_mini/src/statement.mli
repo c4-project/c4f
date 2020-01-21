@@ -20,9 +20,6 @@ module rec Main :
     with type address := Address.t
      and type identifier := Act_c_lang.Ast_basic.Identifier.t
      and type lvalue := Lvalue.t
-     and type 'meta assign := Assign.t
-     and type 'meta atomic_cmpxchg := Atomic_cmpxchg.t
-     and type 'meta atomic_store := Atomic_store.t
      and type 'meta if_stm := 'meta If.t
      and type 'meta while_loop := 'meta While.t)
 

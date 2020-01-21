@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -25,16 +25,7 @@ open Base
 
     Parametrised signature of statement implementations. *)
 module type S_statement = sig
-  type 'meta t [@@deriving sexp, equal]
-
-  type 'meta assign
-  (** Generally fixed to {!Assign.t}. *)
-
-  type 'meta atomic_cmpxchg
-  (** Generally fixed to {!Atomic_cmpxchg.t}. *)
-
-  type 'meta atomic_store
-  (** Generally fixed to {!Atomic_store.t}. *)
+  type 'meta t [@@deriving sexp, compare, equal]
 
   type 'meta if_stm
   (** Generally fixed to {!Statement.If.t}. *)
@@ -50,19 +41,26 @@ module type S_statement = sig
   val while_loop : 'meta while_loop -> 'meta t
   (** [while_loop loop] lifts a while or do-while loop [loop] to a statement. *)
 
+  val atomic : 'meta -> Atomic_statement.t -> 'meta t
+  (** [atomic meta a] lifts an atomic statement [a] to a statement. *)
+
   val prim : 'meta Prim_statement.t -> 'meta t
   (** [prim p] lifts a primitive statement [p] to a statement. *)
 
   (** {4 Liftings of primitive statements} *)
 
-  val assign : 'meta assign -> 'meta t
+  val assign : Assign.t -> 'meta t
   (** [assign a] lifts an assignment [a] to a statement. *)
 
-  val atomic_cmpxchg : 'meta atomic_cmpxchg -> 'meta t
-  (** [atomic_cmpxchg a] lifts an atomic compare-exchange [a] to a statement. *)
+  val atomic_cmpxchg : 'meta -> Atomic_cmpxchg.t -> 'meta t
+  (** [atomic_cmpxchg meta a] lifts an atomic compare-exchange [a] to a
+      statement. *)
 
-  val atomic_store : 'meta atomic_store -> 'meta t
-  (** [atomic_store a] lifts an atomic store [a] to a statement. *)
+  val atomic_fence : 'meta -> Atomic_fence.t -> 'meta t
+  (** [atomic_fence meta a] lifts an atomic fence [a] to a statement. *)
+
+  val atomic_store : 'meta -> Atomic_store.t -> 'meta t
+  (** [atomic_store meta a] lifts an atomic store [a] to a statement. *)
 
   val nop : 'meta -> 'meta t
   (** [nop meta] is a no-operation statement with metadata [meta]; it
@@ -143,7 +141,7 @@ module type S_if_statement = sig
   type 'meta stm
   (** Generally fixed to {!Statement.t}. *)
 
-  type 'meta t [@@deriving sexp, equal]
+  type 'meta t [@@deriving sexp, compare, equal]
   (** Opaque type of if statements. *)
 
   (** {3 Constructors} *)
@@ -191,7 +189,7 @@ module type S_while_loop = sig
   type 'meta stm
   (** Generally fixed to {!Statement.t}. *)
 
-  type 'meta t [@@deriving sexp, equal]
+  type 'meta t [@@deriving sexp, compare, equal]
   (** Opaque type of while loops. *)
 
   (** {3 Constructors} *)

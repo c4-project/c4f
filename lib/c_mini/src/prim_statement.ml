@@ -16,17 +16,25 @@ open Base
 module P = struct
   type 'meta t =
     | Assign of Assign.t
-    | Atomic_store of Atomic_store.t
-    | Atomic_cmpxchg of Atomic_cmpxchg.t
+    | Atomic of 'meta * Atomic_statement.t
     | Early_out of 'meta Early_out.t
     | Label of 'meta Label.t
     | Goto of 'meta Label.t
     | Nop of 'meta
     | Procedure_call of 'meta Call.t
-  [@@deriving variants, sexp, equal]
+  [@@deriving variants, sexp, compare, equal]
 end
 
 include P
+
+let atomic_cmpxchg (meta : 'meta) (a : Atomic_cmpxchg.t) : 'meta t =
+  atomic meta (Atomic_statement.atomic_cmpxchg a)
+
+let atomic_fence (meta : 'meta) (a : Atomic_fence.t) : 'meta t =
+  atomic meta (Atomic_statement.atomic_fence a)
+
+let atomic_store (meta : 'meta) (a : Atomic_store.t) : 'meta t =
+  atomic meta (Atomic_statement.atomic_store a)
 
 let break (meta : 'meta) : 'meta t = Early_out (Early_out.break meta)
 
@@ -34,26 +42,21 @@ let continue (meta : 'meta) : 'meta t = Early_out (Early_out.continue meta)
 
 let return (meta : 'meta) : 'meta t = Early_out (Early_out.return meta)
 
-let reduce (type meta result) (x : meta t)
-    ~(assign : (* meta *) Assign.t -> result)
-    ~(atomic_store : (* meta *) Atomic_store.t -> result)
-    ~(atomic_cmpxchg : (* meta *) Atomic_cmpxchg.t -> result)
+let reduce (type meta result) (x : meta t) ~(assign : Assign.t -> result)
+    ~(atomic : meta * Atomic_statement.t -> result)
     ~(early_out : meta Early_out.t -> result)
     ~(label : meta Label.t -> result) ~(goto : meta Label.t -> result)
     ~(nop : meta -> result) ~(procedure_call : meta Call.t -> result) :
     result =
   Variants.map x ~assign:(Fn.const assign)
-    ~atomic_store:(Fn.const atomic_store)
-    ~atomic_cmpxchg:(Fn.const atomic_cmpxchg) ~early_out:(Fn.const early_out)
-    ~label:(Fn.const label) ~goto:(Fn.const goto) ~nop:(Fn.const nop)
+    ~atomic:(Fn.const (fun m a -> atomic (m, a)))
+    ~early_out:(Fn.const early_out) ~label:(Fn.const label)
+    ~goto:(Fn.const goto) ~nop:(Fn.const nop)
     ~procedure_call:(Fn.const procedure_call)
 
 module Base_map (M : Monad.S) = struct
-  module F = Travesty.Traversable.Helpers (M)
-
   let bmap (type m1 m2) (x : m1 t) ~(assign : Assign.t -> Assign.t M.t)
-      ~(atomic_store : Atomic_store.t -> Atomic_store.t M.t)
-      ~(atomic_cmpxchg : Atomic_cmpxchg.t -> Atomic_cmpxchg.t M.t)
+      ~(atomic : m1 * Atomic_statement.t -> (m2 * Atomic_statement.t) M.t)
       ~(early_out : m1 Early_out.t -> m2 Early_out.t M.t)
       ~(label : m1 Label.t -> m2 Label.t M.t)
       ~(goto : m1 Label.t -> m2 Label.t M.t) ~(nop : m1 -> m2 M.t)
@@ -61,8 +64,7 @@ module Base_map (M : Monad.S) = struct
     Travesty_base_exts.Fn.Compose_syntax.(
       reduce x
         ~assign:(assign >> M.map ~f:P.assign)
-        ~atomic_store:(atomic_store >> M.map ~f:P.atomic_store)
-        ~atomic_cmpxchg:(atomic_cmpxchg >> M.map ~f:P.atomic_cmpxchg)
+        ~atomic:(atomic >> M.map ~f:(fun (m, a) -> P.atomic m a))
         ~early_out:(early_out >> M.map ~f:P.early_out)
         ~label:(label >> M.map ~f:P.label)
         ~goto:(goto >> M.map ~f:P.goto)
@@ -81,10 +83,10 @@ Travesty.Traversable.Make1 (struct
     module CO = Call.On_meta.On_monad (M)
 
     let map_m (x : 'm1 t) ~(f : 'm1 -> 'm2 M.t) : 'm2 t M.t =
-      B.bmap x ~assign:M.return ~atomic_store:M.return
-        ~atomic_cmpxchg:M.return ~early_out:(EO.map_m ~f)
-        ~label:(LO.map_m ~f) ~goto:(LO.map_m ~f) ~nop:f
-        ~procedure_call:(CO.map_m ~f)
+      B.bmap x ~assign:M.return
+        ~atomic:(fun (m, x) -> M.(m |> f >>| fun m' -> (m', x)))
+        ~early_out:(EO.map_m ~f) ~label:(LO.map_m ~f) ~goto:(LO.map_m ~f)
+        ~nop:f ~procedure_call:(CO.map_m ~f)
   end
 end)
 
@@ -99,19 +101,14 @@ module With_meta (Meta : T) = struct
         with type t := Assign.t
          and module Elt = Elt
 
-    module X :
-      Travesty.Traversable_types.S0
-        with type t := Atomic_cmpxchg.t
-         and module Elt = Elt
-
-    module S :
-      Travesty.Traversable_types.S0
-        with type t := Atomic_store.t
-         and module Elt = Elt
-
     module C :
       Travesty.Traversable_types.S0
         with type t := Meta.t Call.t
+         and module Elt = Elt
+
+    module T :
+      Travesty.Traversable_types.S0
+        with type t := Atomic_statement.t
          and module Elt = Elt
   end) =
   Travesty.Traversable.Make0 (struct
@@ -123,13 +120,16 @@ module With_meta (Meta : T) = struct
       module SBase = Base_map (M)
       module AM = Basic.A.On_monad (M)
       module CM = Basic.C.On_monad (M)
-      module SM = Basic.S.On_monad (M)
-      module XM = Basic.X.On_monad (M)
+      module TM = Basic.T.On_monad (M)
 
-      let map_m x ~f =
-        SBase.bmap x ~assign:(AM.map_m ~f) ~atomic_store:(SM.map_m ~f)
-          ~atomic_cmpxchg:(XM.map_m ~f) ~early_out:M.return ~label:M.return
-          ~goto:M.return ~nop:M.return ~procedure_call:(CM.map_m ~f)
+      let map_atomic ((m, a) : Meta.t * Atomic_statement.t)
+          ~(f : Elt.t -> Elt.t M.t) : (Meta.t * Atomic_statement.t) M.t =
+        M.(a |> TM.map_m ~f >>| fun a' -> (m, a'))
+
+      let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
+        SBase.bmap x ~assign:(AM.map_m ~f) ~atomic:(map_atomic ~f)
+          ~early_out:M.return ~label:M.return ~goto:M.return ~nop:M.return
+          ~procedure_call:(CM.map_m ~f)
     end
   end)
 
@@ -142,8 +142,7 @@ module With_meta (Meta : T) = struct
     module Elt = Lvalue
     module A = Assign.On_lvalues
     module C = Call.On_lvalues
-    module S = Atomic_store.On_lvalues
-    module X = Atomic_cmpxchg.On_lvalues
+    module T = Atomic_statement.On_lvalues
   end)
 
   module On_addresses :
@@ -153,13 +152,6 @@ module With_meta (Meta : T) = struct
     module Elt = Address
     module A = Assign.On_addresses
     module C = Call.On_addresses
-    module S = Atomic_store.On_addresses
-    module X = Atomic_cmpxchg.On_addresses
+    module T = Atomic_statement.On_addresses
   end)
-
-  module On_identifiers :
-    Travesty.Traversable_types.S0
-      with type t = Meta.t t
-       and type Elt.t = Act_common.C_id.t =
-    Travesty.Traversable.Chain0 (On_lvalues) (Lvalue.On_identifiers)
 end

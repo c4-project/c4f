@@ -11,7 +11,8 @@
 
 (** A non-atomic assignment. *)
 
-type t [@@deriving sexp, equal]
+type t [@@deriving sexp, compare, equal]
+(** Opaque type of non-atomic assignments. *)
 
 (** {3 Constructors} *)
 
