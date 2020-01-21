@@ -19,12 +19,9 @@ module Fence_payload : sig
   type t [@@deriving sexp]
   (** Opaque type of fence payloads. *)
 
-  val make :
-       path:Path.Program.t
-    -> fence:Act_c_mini.Atomic_fence.t
-    -> t
-  (** [make ~path ~fence] constructs a fence payload with path [path]
-      and fence [fence]. *)
+  val make : path:Path.Program.t -> fence:Act_c_mini.Atomic_fence.t -> t
+  (** [make ~path ~fence] constructs a fence payload with path [path] and
+      fence [fence]. *)
 end
 
 (** {2 Action} *)

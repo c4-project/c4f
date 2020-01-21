@@ -37,8 +37,8 @@ module Program_path (Basic : sig
 
   val build_filter : Path_filter.t -> Path_filter.t
 
-  val gen : ?filter:Path_filter.t ->
-    Subject.Test.t -> Path.Program.t Opt_gen.t
+  val gen :
+    ?filter:Path_filter.t -> Subject.Test.t -> Path.Program.t Opt_gen.t
 end) : Action_types.S_payload with type t = Path.Program.t = struct
   type t = Path.Program.t [@@deriving sexp]
 
@@ -106,12 +106,13 @@ module Surround = struct
   end) : Action_types.S_payload with type t = Body.t = struct
     include Body
 
-    module PP =
-      Program_path (struct
-        let action_id = Basic.action_id
-        let gen = Path_producers.Test.try_gen_transform_stm_list
-        let build_filter = Fn.id
-      end)
+    module PP = Program_path (struct
+      let action_id = Basic.action_id
+
+      let gen = Path_producers.Test.try_gen_transform_stm_list
+
+      let build_filter = Fn.id
+    end)
 
     let quickcheck_cond (path : Path.Program.t) :
         Act_c_mini.Expression.t Q.Generator.t State.Monad.t =
