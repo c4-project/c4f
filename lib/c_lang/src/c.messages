@@ -1,6 +1,6 @@
 translation_unit: ENUM LBRACE LIT_TRUE COMMA XOR_EQ
 ##
-## Ends in an error in state: 255.
+## Ends in an error in state: 256.
 ##
 ## separated_nonempty_list(COMMA,enumerator) -> enumerator COMMA . separated_nonempty_list(COMMA,enumerator) [ RBRACE ]
 ##
@@ -12,7 +12,7 @@ translation_unit: ENUM LBRACE LIT_TRUE COMMA XOR_EQ
 
 translation_unit: ENUM LBRACE LIT_TRUE EQ STRING XOR_EQ
 ##
-## Ends in an error in state: 254.
+## Ends in an error in state: 255.
 ##
 ## separated_nonempty_list(COMMA,enumerator) -> enumerator . [ RBRACE ]
 ## separated_nonempty_list(COMMA,enumerator) -> enumerator . COMMA separated_nonempty_list(COMMA,enumerator) [ RBRACE ]
@@ -26,20 +26,20 @@ translation_unit: ENUM LBRACE LIT_TRUE EQ STRING XOR_EQ
 ## may provide an INCOMPLETE view of the future (what was expected next).
 ## In state 134, spurious reduction of production unary_expression -> postfix_expression 
 ## In state 132, spurious reduction of production cast_expression -> unary_expression 
-## In state 152, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 146, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 165, spurious reduction of production shift_expression -> additive_expression 
-## In state 142, spurious reduction of production relational_expression -> shift_expression 
-## In state 158, spurious reduction of production equality_expression -> relational_expression 
-## In state 180, spurious reduction of production and_expression -> equality_expression 
-## In state 188, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 189, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 190, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 174, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 172, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 232, spurious reduction of production constant_expression -> conditional_expression 
-## In state 252, spurious reduction of production option(preceded(EQ,constant_expression)) -> EQ constant_expression 
-## In state 253, spurious reduction of production enumerator -> identifier option(preceded(EQ,constant_expression)) 
+## In state 149, spurious reduction of production multiplicative_expression -> cast_expression 
+## In state 140, spurious reduction of production additive_expression -> multiplicative_expression 
+## In state 162, spurious reduction of production shift_expression -> additive_expression 
+## In state 136, spurious reduction of production relational_expression -> shift_expression 
+## In state 155, spurious reduction of production equality_expression -> relational_expression 
+## In state 171, spurious reduction of production and_expression -> equality_expression 
+## In state 179, spurious reduction of production exclusive_or_expression -> and_expression 
+## In state 180, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
+## In state 181, spurious reduction of production logical_and_expression -> inclusive_or_expression 
+## In state 165, spurious reduction of production logical_or_expression -> logical_and_expression 
+## In state 163, spurious reduction of production conditional_expression -> logical_or_expression 
+## In state 233, spurious reduction of production constant_expression -> conditional_expression 
+## In state 253, spurious reduction of production option(preceded(EQ,constant_expression)) -> EQ constant_expression 
+## In state 254, spurious reduction of production enumerator -> identifier option(preceded(EQ,constant_expression)) 
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
@@ -82,7 +82,7 @@ translation_unit: ENUM LBRACE XOR_EQ
 
 translation_unit: ENUM LIT_TRUE XOR_EQ
 ##
-## Ends in an error in state: 257.
+## Ends in an error in state: 258.
 ##
 ## enum_specifier -> ENUM identifier . [ VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF STRUCT STATIC STAR SIGNED SHORT SEMI RPAR REGISTER LPAR LONG LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACK INT IDENTIFIER FLOAT EXTERN ENUM DOUBLE CONST COMMA COLON CHAR AUTO ]
 ## option(identifier) -> identifier . [ LBRACE ]
@@ -108,7 +108,7 @@ translation_unit: ENUM XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE CASE STRING XOR_EQ
 ##
-## Ends in an error in state: 341.
+## Ends in an error in state: 342.
 ##
 ## labelled_statement -> CASE constant_expression . statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -121,25 +121,25 @@ translation_unit: LIT_TRUE LBRACE CASE STRING XOR_EQ
 ## may provide an INCOMPLETE view of the future (what was expected next).
 ## In state 134, spurious reduction of production unary_expression -> postfix_expression 
 ## In state 132, spurious reduction of production cast_expression -> unary_expression 
-## In state 152, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 146, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 165, spurious reduction of production shift_expression -> additive_expression 
-## In state 142, spurious reduction of production relational_expression -> shift_expression 
-## In state 158, spurious reduction of production equality_expression -> relational_expression 
-## In state 180, spurious reduction of production and_expression -> equality_expression 
-## In state 188, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 189, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 190, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 174, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 172, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 232, spurious reduction of production constant_expression -> conditional_expression 
+## In state 149, spurious reduction of production multiplicative_expression -> cast_expression 
+## In state 140, spurious reduction of production additive_expression -> multiplicative_expression 
+## In state 162, spurious reduction of production shift_expression -> additive_expression 
+## In state 136, spurious reduction of production relational_expression -> shift_expression 
+## In state 155, spurious reduction of production equality_expression -> relational_expression 
+## In state 171, spurious reduction of production and_expression -> equality_expression 
+## In state 179, spurious reduction of production exclusive_or_expression -> and_expression 
+## In state 180, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
+## In state 181, spurious reduction of production logical_and_expression -> inclusive_or_expression 
+## In state 165, spurious reduction of production logical_or_expression -> logical_and_expression 
+## In state 163, spurious reduction of production conditional_expression -> logical_or_expression 
+## In state 233, spurious reduction of production constant_expression -> conditional_expression 
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
 translation_unit: LIT_TRUE LBRACE CASE XOR_EQ
 ##
-## Ends in an error in state: 340.
+## Ends in an error in state: 341.
 ##
 ## labelled_statement -> CASE . constant_expression statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -151,7 +151,7 @@ translation_unit: LIT_TRUE LBRACE CASE XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE DEFAULT COLON XOR_EQ
 ##
-## Ends in an error in state: 338.
+## Ends in an error in state: 339.
 ##
 ## labelled_statement -> DEFAULT COLON . statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -163,7 +163,7 @@ translation_unit: LIT_TRUE LBRACE DEFAULT COLON XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE DEFAULT XOR_EQ
 ##
-## Ends in an error in state: 337.
+## Ends in an error in state: 338.
 ##
 ## labelled_statement -> DEFAULT . COLON statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -175,7 +175,7 @@ translation_unit: LIT_TRUE LBRACE DEFAULT XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE DO SEMI WHILE LPAR STRING WHILE
 ##
-## Ends in an error in state: 359.
+## Ends in an error in state: 360.
 ##
 ## expression -> expression . COMMA assignment_expression [ RPAR COMMA ]
 ## iteration_statement -> DO statement WHILE LPAR expression . RPAR [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
@@ -189,26 +189,26 @@ translation_unit: LIT_TRUE LBRACE DO SEMI WHILE LPAR STRING WHILE
 ## may provide an INCOMPLETE view of the future (what was expected next).
 ## In state 134, spurious reduction of production unary_expression -> postfix_expression 
 ## In state 132, spurious reduction of production cast_expression -> unary_expression 
-## In state 152, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 146, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 165, spurious reduction of production shift_expression -> additive_expression 
-## In state 142, spurious reduction of production relational_expression -> shift_expression 
-## In state 158, spurious reduction of production equality_expression -> relational_expression 
-## In state 180, spurious reduction of production and_expression -> equality_expression 
-## In state 188, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 189, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 190, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 174, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 172, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 193, spurious reduction of production assignment_expression -> conditional_expression 
-## In state 210, spurious reduction of production expression -> assignment_expression 
+## In state 149, spurious reduction of production multiplicative_expression -> cast_expression 
+## In state 140, spurious reduction of production additive_expression -> multiplicative_expression 
+## In state 162, spurious reduction of production shift_expression -> additive_expression 
+## In state 136, spurious reduction of production relational_expression -> shift_expression 
+## In state 155, spurious reduction of production equality_expression -> relational_expression 
+## In state 171, spurious reduction of production and_expression -> equality_expression 
+## In state 179, spurious reduction of production exclusive_or_expression -> and_expression 
+## In state 180, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
+## In state 181, spurious reduction of production logical_and_expression -> inclusive_or_expression 
+## In state 165, spurious reduction of production logical_or_expression -> logical_and_expression 
+## In state 163, spurious reduction of production conditional_expression -> logical_or_expression 
+## In state 184, spurious reduction of production assignment_expression -> conditional_expression 
+## In state 201, spurious reduction of production expression -> assignment_expression 
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
 translation_unit: LIT_TRUE LBRACE DO SEMI WHILE LPAR XOR_EQ
 ##
-## Ends in an error in state: 358.
+## Ends in an error in state: 359.
 ##
 ## iteration_statement -> DO statement WHILE LPAR . expression RPAR [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -220,7 +220,7 @@ translation_unit: LIT_TRUE LBRACE DO SEMI WHILE LPAR XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE DO SEMI WHILE XOR_EQ
 ##
-## Ends in an error in state: 357.
+## Ends in an error in state: 358.
 ##
 ## iteration_statement -> DO statement WHILE . LPAR expression RPAR [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -232,7 +232,7 @@ translation_unit: LIT_TRUE LBRACE DO SEMI WHILE XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE DO SEMI XOR_EQ
 ##
-## Ends in an error in state: 356.
+## Ends in an error in state: 357.
 ##
 ## iteration_statement -> DO statement . WHILE LPAR expression RPAR [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -244,7 +244,7 @@ translation_unit: LIT_TRUE LBRACE DO SEMI XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE DO XOR_EQ
 ##
-## Ends in an error in state: 336.
+## Ends in an error in state: 337.
 ##
 ## iteration_statement -> DO . statement WHILE LPAR expression RPAR [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -256,7 +256,7 @@ translation_unit: LIT_TRUE LBRACE DO XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE FOR LPAR SEMI SEMI RPAR XOR_EQ
 ##
-## Ends in an error in state: 335.
+## Ends in an error in state: 336.
 ##
 ## iteration_statement -> FOR LPAR option(expression) SEMI option(expression) SEMI option(expression) RPAR . statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -268,7 +268,7 @@ translation_unit: LIT_TRUE LBRACE FOR LPAR SEMI SEMI RPAR XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE FOR LPAR SEMI SEMI STRING RETURN
 ##
-## Ends in an error in state: 334.
+## Ends in an error in state: 335.
 ##
 ## iteration_statement -> FOR LPAR option(expression) SEMI option(expression) SEMI option(expression) . RPAR statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -281,27 +281,27 @@ translation_unit: LIT_TRUE LBRACE FOR LPAR SEMI SEMI STRING RETURN
 ## may provide an INCOMPLETE view of the future (what was expected next).
 ## In state 134, spurious reduction of production unary_expression -> postfix_expression 
 ## In state 132, spurious reduction of production cast_expression -> unary_expression 
-## In state 152, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 146, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 165, spurious reduction of production shift_expression -> additive_expression 
-## In state 142, spurious reduction of production relational_expression -> shift_expression 
-## In state 158, spurious reduction of production equality_expression -> relational_expression 
-## In state 180, spurious reduction of production and_expression -> equality_expression 
-## In state 188, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 189, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 190, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 174, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 172, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 193, spurious reduction of production assignment_expression -> conditional_expression 
-## In state 210, spurious reduction of production expression -> assignment_expression 
-## In state 321, spurious reduction of production option(expression) -> expression 
+## In state 149, spurious reduction of production multiplicative_expression -> cast_expression 
+## In state 140, spurious reduction of production additive_expression -> multiplicative_expression 
+## In state 162, spurious reduction of production shift_expression -> additive_expression 
+## In state 136, spurious reduction of production relational_expression -> shift_expression 
+## In state 155, spurious reduction of production equality_expression -> relational_expression 
+## In state 171, spurious reduction of production and_expression -> equality_expression 
+## In state 179, spurious reduction of production exclusive_or_expression -> and_expression 
+## In state 180, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
+## In state 181, spurious reduction of production logical_and_expression -> inclusive_or_expression 
+## In state 165, spurious reduction of production logical_or_expression -> logical_and_expression 
+## In state 163, spurious reduction of production conditional_expression -> logical_or_expression 
+## In state 184, spurious reduction of production assignment_expression -> conditional_expression 
+## In state 201, spurious reduction of production expression -> assignment_expression 
+## In state 322, spurious reduction of production option(expression) -> expression 
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
 translation_unit: LIT_TRUE LBRACE FOR LPAR SEMI SEMI XOR_EQ
 ##
-## Ends in an error in state: 333.
+## Ends in an error in state: 334.
 ##
 ## iteration_statement -> FOR LPAR option(expression) SEMI option(expression) SEMI . option(expression) RPAR statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -313,7 +313,7 @@ translation_unit: LIT_TRUE LBRACE FOR LPAR SEMI SEMI XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE FOR LPAR SEMI STRING RPAR
 ##
-## Ends in an error in state: 332.
+## Ends in an error in state: 333.
 ##
 ## iteration_statement -> FOR LPAR option(expression) SEMI option(expression) . SEMI option(expression) RPAR statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -326,27 +326,27 @@ translation_unit: LIT_TRUE LBRACE FOR LPAR SEMI STRING RPAR
 ## may provide an INCOMPLETE view of the future (what was expected next).
 ## In state 134, spurious reduction of production unary_expression -> postfix_expression 
 ## In state 132, spurious reduction of production cast_expression -> unary_expression 
-## In state 152, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 146, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 165, spurious reduction of production shift_expression -> additive_expression 
-## In state 142, spurious reduction of production relational_expression -> shift_expression 
-## In state 158, spurious reduction of production equality_expression -> relational_expression 
-## In state 180, spurious reduction of production and_expression -> equality_expression 
-## In state 188, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 189, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 190, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 174, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 172, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 193, spurious reduction of production assignment_expression -> conditional_expression 
-## In state 210, spurious reduction of production expression -> assignment_expression 
-## In state 321, spurious reduction of production option(expression) -> expression 
+## In state 149, spurious reduction of production multiplicative_expression -> cast_expression 
+## In state 140, spurious reduction of production additive_expression -> multiplicative_expression 
+## In state 162, spurious reduction of production shift_expression -> additive_expression 
+## In state 136, spurious reduction of production relational_expression -> shift_expression 
+## In state 155, spurious reduction of production equality_expression -> relational_expression 
+## In state 171, spurious reduction of production and_expression -> equality_expression 
+## In state 179, spurious reduction of production exclusive_or_expression -> and_expression 
+## In state 180, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
+## In state 181, spurious reduction of production logical_and_expression -> inclusive_or_expression 
+## In state 165, spurious reduction of production logical_or_expression -> logical_and_expression 
+## In state 163, spurious reduction of production conditional_expression -> logical_or_expression 
+## In state 184, spurious reduction of production assignment_expression -> conditional_expression 
+## In state 201, spurious reduction of production expression -> assignment_expression 
+## In state 322, spurious reduction of production option(expression) -> expression 
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
 translation_unit: LIT_TRUE LBRACE FOR LPAR SEMI XOR_EQ
 ##
-## Ends in an error in state: 331.
+## Ends in an error in state: 332.
 ##
 ## iteration_statement -> FOR LPAR option(expression) SEMI . option(expression) SEMI option(expression) RPAR statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -358,7 +358,7 @@ translation_unit: LIT_TRUE LBRACE FOR LPAR SEMI XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE FOR LPAR STRING RPAR
 ##
-## Ends in an error in state: 330.
+## Ends in an error in state: 331.
 ##
 ## iteration_statement -> FOR LPAR option(expression) . SEMI option(expression) SEMI option(expression) RPAR statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -371,27 +371,27 @@ translation_unit: LIT_TRUE LBRACE FOR LPAR STRING RPAR
 ## may provide an INCOMPLETE view of the future (what was expected next).
 ## In state 134, spurious reduction of production unary_expression -> postfix_expression 
 ## In state 132, spurious reduction of production cast_expression -> unary_expression 
-## In state 152, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 146, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 165, spurious reduction of production shift_expression -> additive_expression 
-## In state 142, spurious reduction of production relational_expression -> shift_expression 
-## In state 158, spurious reduction of production equality_expression -> relational_expression 
-## In state 180, spurious reduction of production and_expression -> equality_expression 
-## In state 188, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 189, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 190, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 174, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 172, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 193, spurious reduction of production assignment_expression -> conditional_expression 
-## In state 210, spurious reduction of production expression -> assignment_expression 
-## In state 321, spurious reduction of production option(expression) -> expression 
+## In state 149, spurious reduction of production multiplicative_expression -> cast_expression 
+## In state 140, spurious reduction of production additive_expression -> multiplicative_expression 
+## In state 162, spurious reduction of production shift_expression -> additive_expression 
+## In state 136, spurious reduction of production relational_expression -> shift_expression 
+## In state 155, spurious reduction of production equality_expression -> relational_expression 
+## In state 171, spurious reduction of production and_expression -> equality_expression 
+## In state 179, spurious reduction of production exclusive_or_expression -> and_expression 
+## In state 180, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
+## In state 181, spurious reduction of production logical_and_expression -> inclusive_or_expression 
+## In state 165, spurious reduction of production logical_or_expression -> logical_and_expression 
+## In state 163, spurious reduction of production conditional_expression -> logical_or_expression 
+## In state 184, spurious reduction of production assignment_expression -> conditional_expression 
+## In state 201, spurious reduction of production expression -> assignment_expression 
+## In state 322, spurious reduction of production option(expression) -> expression 
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
 translation_unit: LIT_TRUE LBRACE FOR LPAR XOR_EQ
 ##
-## Ends in an error in state: 329.
+## Ends in an error in state: 330.
 ##
 ## iteration_statement -> FOR LPAR . option(expression) SEMI option(expression) SEMI option(expression) RPAR statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -403,7 +403,7 @@ translation_unit: LIT_TRUE LBRACE FOR LPAR XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE FOR XOR_EQ
 ##
-## Ends in an error in state: 328.
+## Ends in an error in state: 329.
 ##
 ## iteration_statement -> FOR . LPAR option(expression) SEMI option(expression) SEMI option(expression) RPAR statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -415,7 +415,7 @@ translation_unit: LIT_TRUE LBRACE FOR XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE GOTO XOR_EQ
 ##
-## Ends in an error in state: 326.
+## Ends in an error in state: 327.
 ##
 ## jump_statement -> GOTO . identifier [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -427,7 +427,7 @@ translation_unit: LIT_TRUE LBRACE GOTO XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE IF LPAR STRING RPAR SEMI ELSE XOR_EQ
 ##
-## Ends in an error in state: 363.
+## Ends in an error in state: 364.
 ##
 ## option(preceded(ELSE,statement)) -> ELSE . statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -439,7 +439,7 @@ translation_unit: LIT_TRUE LBRACE IF LPAR STRING RPAR SEMI ELSE XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE IF LPAR STRING RPAR SEMI XOR_EQ
 ##
-## Ends in an error in state: 362.
+## Ends in an error in state: 363.
 ##
 ## selection_statement -> IF LPAR expression RPAR statement . option(preceded(ELSE,statement)) [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -451,7 +451,7 @@ translation_unit: LIT_TRUE LBRACE IF LPAR STRING RPAR SEMI XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE IF LPAR STRING RPAR XOR_EQ
 ##
-## Ends in an error in state: 325.
+## Ends in an error in state: 326.
 ##
 ## selection_statement -> IF LPAR expression RPAR . statement option(preceded(ELSE,statement)) [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -463,7 +463,7 @@ translation_unit: LIT_TRUE LBRACE IF LPAR STRING RPAR XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE IF LPAR STRING WHILE
 ##
-## Ends in an error in state: 324.
+## Ends in an error in state: 325.
 ##
 ## expression -> expression . COMMA assignment_expression [ RPAR COMMA ]
 ## selection_statement -> IF LPAR expression . RPAR statement option(preceded(ELSE,statement)) [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
@@ -477,26 +477,26 @@ translation_unit: LIT_TRUE LBRACE IF LPAR STRING WHILE
 ## may provide an INCOMPLETE view of the future (what was expected next).
 ## In state 134, spurious reduction of production unary_expression -> postfix_expression 
 ## In state 132, spurious reduction of production cast_expression -> unary_expression 
-## In state 152, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 146, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 165, spurious reduction of production shift_expression -> additive_expression 
-## In state 142, spurious reduction of production relational_expression -> shift_expression 
-## In state 158, spurious reduction of production equality_expression -> relational_expression 
-## In state 180, spurious reduction of production and_expression -> equality_expression 
-## In state 188, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 189, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 190, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 174, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 172, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 193, spurious reduction of production assignment_expression -> conditional_expression 
-## In state 210, spurious reduction of production expression -> assignment_expression 
+## In state 149, spurious reduction of production multiplicative_expression -> cast_expression 
+## In state 140, spurious reduction of production additive_expression -> multiplicative_expression 
+## In state 162, spurious reduction of production shift_expression -> additive_expression 
+## In state 136, spurious reduction of production relational_expression -> shift_expression 
+## In state 155, spurious reduction of production equality_expression -> relational_expression 
+## In state 171, spurious reduction of production and_expression -> equality_expression 
+## In state 179, spurious reduction of production exclusive_or_expression -> and_expression 
+## In state 180, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
+## In state 181, spurious reduction of production logical_and_expression -> inclusive_or_expression 
+## In state 165, spurious reduction of production logical_or_expression -> logical_and_expression 
+## In state 163, spurious reduction of production conditional_expression -> logical_or_expression 
+## In state 184, spurious reduction of production assignment_expression -> conditional_expression 
+## In state 201, spurious reduction of production expression -> assignment_expression 
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
 translation_unit: LIT_TRUE LBRACE IF LPAR XOR_EQ
 ##
-## Ends in an error in state: 323.
+## Ends in an error in state: 324.
 ##
 ## selection_statement -> IF LPAR . expression RPAR statement option(preceded(ELSE,statement)) [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -508,7 +508,7 @@ translation_unit: LIT_TRUE LBRACE IF LPAR XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE IF XOR_EQ
 ##
-## Ends in an error in state: 322.
+## Ends in an error in state: 323.
 ##
 ## selection_statement -> IF . LPAR expression RPAR statement option(preceded(ELSE,statement)) [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -520,7 +520,7 @@ translation_unit: LIT_TRUE LBRACE IF XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE LIT_TRUE COLON XOR_EQ
 ##
-## Ends in an error in state: 351.
+## Ends in an error in state: 352.
 ##
 ## labelled_statement -> identifier COLON . statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -532,10 +532,10 @@ translation_unit: LIT_TRUE LBRACE LIT_TRUE COLON XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE LIT_TRUE WHILE
 ##
-## Ends in an error in state: 350.
+## Ends in an error in state: 351.
 ##
 ## labelled_statement -> identifier . COLON statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
-## primary_expression -> identifier . [ XOR_EQ XOR SUB_EQ SUBSUB SUB STRING STAR_EQ STAR SIZEOF SHR_EQ SHR SHL_EQ SHL SEMI QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LAND INT_LIT IDENTIFIER GT GE FLOAT_LIT EQ_OP EQ DOT DIV_EQ DIV COMMA CHAR_LIT ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## primary_expression -> identifier . [ XOR_EQ XOR SUB_EQ SUBSUB SUB STAR_EQ STAR SHR_EQ SHR SHL_EQ SHL SEMI QUESTION PIPE_EQ PIPE NEQ_OP MOD_EQ MOD LT LPAR LOR LE LBRACK LAND GT GE EQ_OP EQ DOT DIV_EQ DIV COMMA ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## identifier
@@ -545,7 +545,7 @@ translation_unit: LIT_TRUE LBRACE LIT_TRUE WHILE
 
 translation_unit: LIT_TRUE LBRACE RETURN XOR_EQ
 ##
-## Ends in an error in state: 319.
+## Ends in an error in state: 320.
 ##
 ## jump_statement -> RETURN . option(expression) [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -557,7 +557,7 @@ translation_unit: LIT_TRUE LBRACE RETURN XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE SEMI XOR_EQ
 ##
-## Ends in an error in state: 372.
+## Ends in an error in state: 373.
 ##
 ## list(block_item) -> block_item . list(block_item) [ RBRACE ]
 ##
@@ -569,9 +569,9 @@ translation_unit: LIT_TRUE LBRACE SEMI XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE STRING COMMA XOR_EQ
 ##
-## Ends in an error in state: 192.
+## Ends in an error in state: 183.
 ##
-## expression -> expression COMMA . assignment_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## expression -> expression COMMA . assignment_expression [ XOR_EQ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHORT SHL_EQ SEMI RPAR RETURN REGISTER RBRACK RBRACE PIPE_EQ NOT MOD_EQ LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN EQ ENUM ELSE DOUBLE DO DIV_EQ DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## expression COMMA
@@ -581,7 +581,7 @@ translation_unit: LIT_TRUE LBRACE STRING COMMA XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE STRING RBRACK
 ##
-## Ends in an error in state: 321.
+## Ends in an error in state: 322.
 ##
 ## expression -> expression . COMMA assignment_expression [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RPAR RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST COMMA CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ## option(expression) -> expression . [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RPAR RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
@@ -595,26 +595,26 @@ translation_unit: LIT_TRUE LBRACE STRING RBRACK
 ## may provide an INCOMPLETE view of the future (what was expected next).
 ## In state 134, spurious reduction of production unary_expression -> postfix_expression 
 ## In state 132, spurious reduction of production cast_expression -> unary_expression 
-## In state 152, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 146, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 165, spurious reduction of production shift_expression -> additive_expression 
-## In state 142, spurious reduction of production relational_expression -> shift_expression 
-## In state 158, spurious reduction of production equality_expression -> relational_expression 
-## In state 180, spurious reduction of production and_expression -> equality_expression 
-## In state 188, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 189, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 190, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 174, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 172, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 193, spurious reduction of production assignment_expression -> conditional_expression 
-## In state 210, spurious reduction of production expression -> assignment_expression 
+## In state 149, spurious reduction of production multiplicative_expression -> cast_expression 
+## In state 140, spurious reduction of production additive_expression -> multiplicative_expression 
+## In state 162, spurious reduction of production shift_expression -> additive_expression 
+## In state 136, spurious reduction of production relational_expression -> shift_expression 
+## In state 155, spurious reduction of production equality_expression -> relational_expression 
+## In state 171, spurious reduction of production and_expression -> equality_expression 
+## In state 179, spurious reduction of production exclusive_or_expression -> and_expression 
+## In state 180, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
+## In state 181, spurious reduction of production logical_and_expression -> inclusive_or_expression 
+## In state 165, spurious reduction of production logical_or_expression -> logical_and_expression 
+## In state 163, spurious reduction of production conditional_expression -> logical_or_expression 
+## In state 184, spurious reduction of production assignment_expression -> conditional_expression 
+## In state 201, spurious reduction of production expression -> assignment_expression 
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
 translation_unit: LIT_TRUE LBRACE STRING RPAR
 ##
-## Ends in an error in state: 345.
+## Ends in an error in state: 346.
 ##
 ## expression_statement -> option(expression) . SEMI [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -627,29 +627,29 @@ translation_unit: LIT_TRUE LBRACE STRING RPAR
 ## may provide an INCOMPLETE view of the future (what was expected next).
 ## In state 134, spurious reduction of production unary_expression -> postfix_expression 
 ## In state 132, spurious reduction of production cast_expression -> unary_expression 
-## In state 152, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 146, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 165, spurious reduction of production shift_expression -> additive_expression 
-## In state 142, spurious reduction of production relational_expression -> shift_expression 
-## In state 158, spurious reduction of production equality_expression -> relational_expression 
-## In state 180, spurious reduction of production and_expression -> equality_expression 
-## In state 188, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 189, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 190, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 174, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 172, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 193, spurious reduction of production assignment_expression -> conditional_expression 
-## In state 210, spurious reduction of production expression -> assignment_expression 
-## In state 321, spurious reduction of production option(expression) -> expression 
+## In state 149, spurious reduction of production multiplicative_expression -> cast_expression 
+## In state 140, spurious reduction of production additive_expression -> multiplicative_expression 
+## In state 162, spurious reduction of production shift_expression -> additive_expression 
+## In state 136, spurious reduction of production relational_expression -> shift_expression 
+## In state 155, spurious reduction of production equality_expression -> relational_expression 
+## In state 171, spurious reduction of production and_expression -> equality_expression 
+## In state 179, spurious reduction of production exclusive_or_expression -> and_expression 
+## In state 180, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
+## In state 181, spurious reduction of production logical_and_expression -> inclusive_or_expression 
+## In state 165, spurious reduction of production logical_or_expression -> logical_and_expression 
+## In state 163, spurious reduction of production conditional_expression -> logical_or_expression 
+## In state 184, spurious reduction of production assignment_expression -> conditional_expression 
+## In state 201, spurious reduction of production expression -> assignment_expression 
+## In state 322, spurious reduction of production option(expression) -> expression 
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
 translation_unit: LIT_TRUE LBRACE STRING XOR_EQ XOR_EQ
 ##
-## Ends in an error in state: 205.
+## Ends in an error in state: 196.
 ##
-## assignment_expression -> conditional_expression assignment_operator . assignment_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## assignment_expression -> conditional_expression assignment_operator . assignment_expression [ XOR_EQ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHORT SHL_EQ SEMI RPAR RETURN REGISTER RBRACK RBRACE PIPE_EQ NOT MOD_EQ LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN EQ ENUM ELSE DOUBLE DO DIV_EQ DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## conditional_expression assignment_operator
@@ -659,7 +659,7 @@ translation_unit: LIT_TRUE LBRACE STRING XOR_EQ XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE SWITCH LPAR STRING RPAR XOR_EQ
 ##
-## Ends in an error in state: 318.
+## Ends in an error in state: 319.
 ##
 ## selection_statement -> SWITCH LPAR expression RPAR . statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -671,7 +671,7 @@ translation_unit: LIT_TRUE LBRACE SWITCH LPAR STRING RPAR XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE SWITCH LPAR STRING WHILE
 ##
-## Ends in an error in state: 317.
+## Ends in an error in state: 318.
 ##
 ## expression -> expression . COMMA assignment_expression [ RPAR COMMA ]
 ## selection_statement -> SWITCH LPAR expression . RPAR statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
@@ -685,26 +685,26 @@ translation_unit: LIT_TRUE LBRACE SWITCH LPAR STRING WHILE
 ## may provide an INCOMPLETE view of the future (what was expected next).
 ## In state 134, spurious reduction of production unary_expression -> postfix_expression 
 ## In state 132, spurious reduction of production cast_expression -> unary_expression 
-## In state 152, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 146, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 165, spurious reduction of production shift_expression -> additive_expression 
-## In state 142, spurious reduction of production relational_expression -> shift_expression 
-## In state 158, spurious reduction of production equality_expression -> relational_expression 
-## In state 180, spurious reduction of production and_expression -> equality_expression 
-## In state 188, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 189, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 190, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 174, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 172, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 193, spurious reduction of production assignment_expression -> conditional_expression 
-## In state 210, spurious reduction of production expression -> assignment_expression 
+## In state 149, spurious reduction of production multiplicative_expression -> cast_expression 
+## In state 140, spurious reduction of production additive_expression -> multiplicative_expression 
+## In state 162, spurious reduction of production shift_expression -> additive_expression 
+## In state 136, spurious reduction of production relational_expression -> shift_expression 
+## In state 155, spurious reduction of production equality_expression -> relational_expression 
+## In state 171, spurious reduction of production and_expression -> equality_expression 
+## In state 179, spurious reduction of production exclusive_or_expression -> and_expression 
+## In state 180, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
+## In state 181, spurious reduction of production logical_and_expression -> inclusive_or_expression 
+## In state 165, spurious reduction of production logical_or_expression -> logical_and_expression 
+## In state 163, spurious reduction of production conditional_expression -> logical_or_expression 
+## In state 184, spurious reduction of production assignment_expression -> conditional_expression 
+## In state 201, spurious reduction of production expression -> assignment_expression 
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
 translation_unit: LIT_TRUE LBRACE SWITCH LPAR XOR_EQ
 ##
-## Ends in an error in state: 316.
+## Ends in an error in state: 317.
 ##
 ## selection_statement -> SWITCH LPAR . expression RPAR statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -716,7 +716,7 @@ translation_unit: LIT_TRUE LBRACE SWITCH LPAR XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE SWITCH XOR_EQ
 ##
-## Ends in an error in state: 315.
+## Ends in an error in state: 316.
 ##
 ## selection_statement -> SWITCH . LPAR expression RPAR statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -728,7 +728,7 @@ translation_unit: LIT_TRUE LBRACE SWITCH XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE WHILE LPAR STRING RPAR XOR_EQ
 ##
-## Ends in an error in state: 314.
+## Ends in an error in state: 315.
 ##
 ## iteration_statement -> WHILE LPAR expression RPAR . statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -740,7 +740,7 @@ translation_unit: LIT_TRUE LBRACE WHILE LPAR STRING RPAR XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE WHILE LPAR STRING WHILE
 ##
-## Ends in an error in state: 313.
+## Ends in an error in state: 314.
 ##
 ## expression -> expression . COMMA assignment_expression [ RPAR COMMA ]
 ## iteration_statement -> WHILE LPAR expression . RPAR statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
@@ -754,26 +754,26 @@ translation_unit: LIT_TRUE LBRACE WHILE LPAR STRING WHILE
 ## may provide an INCOMPLETE view of the future (what was expected next).
 ## In state 134, spurious reduction of production unary_expression -> postfix_expression 
 ## In state 132, spurious reduction of production cast_expression -> unary_expression 
-## In state 152, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 146, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 165, spurious reduction of production shift_expression -> additive_expression 
-## In state 142, spurious reduction of production relational_expression -> shift_expression 
-## In state 158, spurious reduction of production equality_expression -> relational_expression 
-## In state 180, spurious reduction of production and_expression -> equality_expression 
-## In state 188, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 189, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 190, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 174, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 172, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 193, spurious reduction of production assignment_expression -> conditional_expression 
-## In state 210, spurious reduction of production expression -> assignment_expression 
+## In state 149, spurious reduction of production multiplicative_expression -> cast_expression 
+## In state 140, spurious reduction of production additive_expression -> multiplicative_expression 
+## In state 162, spurious reduction of production shift_expression -> additive_expression 
+## In state 136, spurious reduction of production relational_expression -> shift_expression 
+## In state 155, spurious reduction of production equality_expression -> relational_expression 
+## In state 171, spurious reduction of production and_expression -> equality_expression 
+## In state 179, spurious reduction of production exclusive_or_expression -> and_expression 
+## In state 180, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
+## In state 181, spurious reduction of production logical_and_expression -> inclusive_or_expression 
+## In state 165, spurious reduction of production logical_or_expression -> logical_and_expression 
+## In state 163, spurious reduction of production conditional_expression -> logical_or_expression 
+## In state 184, spurious reduction of production assignment_expression -> conditional_expression 
+## In state 201, spurious reduction of production expression -> assignment_expression 
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
 translation_unit: LIT_TRUE LBRACE WHILE LPAR XOR_EQ
 ##
-## Ends in an error in state: 312.
+## Ends in an error in state: 313.
 ##
 ## iteration_statement -> WHILE LPAR . expression RPAR statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -785,7 +785,7 @@ translation_unit: LIT_TRUE LBRACE WHILE LPAR XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE WHILE XOR_EQ
 ##
-## Ends in an error in state: 311.
+## Ends in an error in state: 312.
 ##
 ## iteration_statement -> WHILE . LPAR expression RPAR statement [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -797,7 +797,7 @@ translation_unit: LIT_TRUE LBRACE WHILE XOR_EQ
 
 translation_unit: LIT_TRUE LBRACE XOR_EQ
 ##
-## Ends in an error in state: 310.
+## Ends in an error in state: 311.
 ##
 ## compound_statement -> LBRACE . list(block_item) RBRACE [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN EOF ENUM ELSE DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -809,10 +809,10 @@ translation_unit: LIT_TRUE LBRACE XOR_EQ
 
 translation_unit: LIT_TRUE LBRACK LPAR STRING WHILE
 ##
-## Ends in an error in state: 213.
+## Ends in an error in state: 218.
 ##
 ## expression -> expression . COMMA assignment_expression [ RPAR COMMA ]
-## primary_expression -> LPAR expression . RPAR [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## primary_expression -> LPAR expression . RPAR [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACK LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## LPAR expression
@@ -823,26 +823,26 @@ translation_unit: LIT_TRUE LBRACK LPAR STRING WHILE
 ## may provide an INCOMPLETE view of the future (what was expected next).
 ## In state 134, spurious reduction of production unary_expression -> postfix_expression 
 ## In state 132, spurious reduction of production cast_expression -> unary_expression 
-## In state 152, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 146, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 165, spurious reduction of production shift_expression -> additive_expression 
-## In state 142, spurious reduction of production relational_expression -> shift_expression 
-## In state 158, spurious reduction of production equality_expression -> relational_expression 
-## In state 180, spurious reduction of production and_expression -> equality_expression 
-## In state 188, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 189, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 190, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 174, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 172, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 193, spurious reduction of production assignment_expression -> conditional_expression 
-## In state 210, spurious reduction of production expression -> assignment_expression 
+## In state 149, spurious reduction of production multiplicative_expression -> cast_expression 
+## In state 140, spurious reduction of production additive_expression -> multiplicative_expression 
+## In state 162, spurious reduction of production shift_expression -> additive_expression 
+## In state 136, spurious reduction of production relational_expression -> shift_expression 
+## In state 155, spurious reduction of production equality_expression -> relational_expression 
+## In state 171, spurious reduction of production and_expression -> equality_expression 
+## In state 179, spurious reduction of production exclusive_or_expression -> and_expression 
+## In state 180, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
+## In state 181, spurious reduction of production logical_and_expression -> inclusive_or_expression 
+## In state 165, spurious reduction of production logical_or_expression -> logical_and_expression 
+## In state 163, spurious reduction of production conditional_expression -> logical_or_expression 
+## In state 184, spurious reduction of production assignment_expression -> conditional_expression 
+## In state 201, spurious reduction of production expression -> assignment_expression 
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
 translation_unit: LIT_TRUE LBRACK LPAR VOLATILE LIT_TRUE
 ##
-## Ends in an error in state: 166.
+## Ends in an error in state: 224.
 ##
 ## type_name -> nonempty_list(specifier_qualifier) . option(abstract_declarator) [ RPAR ]
 ##
@@ -860,7 +860,7 @@ translation_unit: LIT_TRUE LBRACK LPAR VOLATILE LIT_TRUE
 
 translation_unit: LIT_TRUE LBRACK LPAR VOLATILE LPAR XOR_EQ
 ##
-## Ends in an error in state: 168.
+## Ends in an error in state: 226.
 ##
 ## direct_abstract_declarator -> LPAR . abstract_declarator RPAR [ RPAR LPAR LBRACK ]
 ##
@@ -872,9 +872,9 @@ translation_unit: LIT_TRUE LBRACK LPAR VOLATILE LPAR XOR_EQ
 
 translation_unit: LIT_TRUE LBRACK LPAR VOLATILE RPAR XOR_EQ
 ##
-## Ends in an error in state: 137.
+## Ends in an error in state: 222.
 ##
-## cast_expression -> LPAR type_name RPAR . cast_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## cast_expression -> LPAR type_name RPAR . cast_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## LPAR type_name RPAR
@@ -884,9 +884,9 @@ translation_unit: LIT_TRUE LBRACK LPAR VOLATILE RPAR XOR_EQ
 
 translation_unit: LIT_TRUE LBRACK LPAR VOLATILE STAR COMMA
 ##
-## Ends in an error in state: 136.
+## Ends in an error in state: 221.
 ##
-## cast_expression -> LPAR type_name . RPAR cast_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## cast_expression -> LPAR type_name . RPAR cast_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## LPAR type_name
@@ -899,15 +899,15 @@ translation_unit: LIT_TRUE LBRACK LPAR VOLATILE STAR COMMA
 ## In state 80, spurious reduction of production nonempty_list(preceded(STAR,list(type_qualifier))) -> STAR list(type_qualifier) 
 ## In state 88, spurious reduction of production pointer -> nonempty_list(preceded(STAR,list(type_qualifier))) 
 ## In state 109, spurious reduction of production abstract_declarator -> pointer 
-## In state 171, spurious reduction of production option(abstract_declarator) -> abstract_declarator 
-## In state 170, spurious reduction of production type_name -> nonempty_list(specifier_qualifier) option(abstract_declarator) 
+## In state 229, spurious reduction of production option(abstract_declarator) -> abstract_declarator 
+## In state 228, spurious reduction of production type_name -> nonempty_list(specifier_qualifier) option(abstract_declarator) 
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
 translation_unit: LIT_TRUE LBRACK LPAR VOLATILE STAR IDENTIFIER
 ##
-## Ends in an error in state: 167.
+## Ends in an error in state: 225.
 ##
 ## abstract_declarator -> option(pointer) . direct_abstract_declarator [ RPAR ]
 ##
@@ -930,8 +930,8 @@ translation_unit: LIT_TRUE LBRACK LPAR XOR_EQ
 ##
 ## Ends in an error in state: 124.
 ##
-## cast_expression -> LPAR . type_name RPAR cast_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
-## primary_expression -> LPAR . expression RPAR [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## cast_expression -> LPAR . type_name RPAR cast_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
+## primary_expression -> LPAR . expression RPAR [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACK LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## LPAR
@@ -939,52 +939,15 @@ translation_unit: LIT_TRUE LBRACK LPAR XOR_EQ
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
-translation_unit: LIT_TRUE LBRACK SIZEOF LPAR CHAR RPAR AND XOR_EQ
-##
-## Ends in an error in state: 186.
-##
-## and_expression -> and_expression AND . equality_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
-##
-## The known suffix of the stack is as follows:
-## and_expression AND
-##
-
-<YOUR SYNTAX ERROR MESSAGE HERE>
-
 translation_unit: LIT_TRUE LBRACK SIZEOF LPAR CHAR RPAR LIT_OR
 ##
-## Ends in an error in state: 146.
+## Ends in an error in state: 140.
 ##
-## additive_expression -> multiplicative_expression . [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
-## multiplicative_expression -> multiplicative_expression . multiplicative_operator cast_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## additive_expression -> multiplicative_expression . [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DO DIV_EQ DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
+## multiplicative_expression -> multiplicative_expression . multiplicative_operator cast_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## multiplicative_expression
-##
-
-<YOUR SYNTAX ERROR MESSAGE HERE>
-
-translation_unit: LIT_TRUE LBRACK SIZEOF LPAR CHAR RPAR SUB SIZEOF LPAR CHAR RPAR LIT_OR
-##
-## Ends in an error in state: 157.
-##
-## additive_expression -> additive_expression additive_operator multiplicative_expression . [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
-## multiplicative_expression -> multiplicative_expression . multiplicative_operator cast_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
-##
-## The known suffix of the stack is as follows:
-## additive_expression additive_operator multiplicative_expression
-##
-
-<YOUR SYNTAX ERROR MESSAGE HERE>
-
-translation_unit: LIT_TRUE LBRACK SIZEOF LPAR CHAR RPAR SUB XOR_EQ
-##
-## Ends in an error in state: 156.
-##
-## additive_expression -> additive_expression additive_operator . multiplicative_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
-##
-## The known suffix of the stack is as follows:
-## additive_expression additive_operator
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
@@ -993,7 +956,7 @@ translation_unit: LIT_TRUE LBRACK SIZEOF LPAR VOLATILE STAR COMMA
 ##
 ## Ends in an error in state: 65.
 ##
-## unary_expression -> SIZEOF LPAR type_name . RPAR [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## unary_expression -> SIZEOF LPAR type_name . RPAR [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## SIZEOF LPAR type_name
@@ -1006,8 +969,8 @@ translation_unit: LIT_TRUE LBRACK SIZEOF LPAR VOLATILE STAR COMMA
 ## In state 80, spurious reduction of production nonempty_list(preceded(STAR,list(type_qualifier))) -> STAR list(type_qualifier) 
 ## In state 88, spurious reduction of production pointer -> nonempty_list(preceded(STAR,list(type_qualifier))) 
 ## In state 109, spurious reduction of production abstract_declarator -> pointer 
-## In state 171, spurious reduction of production option(abstract_declarator) -> abstract_declarator 
-## In state 170, spurious reduction of production type_name -> nonempty_list(specifier_qualifier) option(abstract_declarator) 
+## In state 229, spurious reduction of production option(abstract_declarator) -> abstract_declarator 
+## In state 228, spurious reduction of production type_name -> nonempty_list(specifier_qualifier) option(abstract_declarator) 
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
@@ -1016,7 +979,7 @@ translation_unit: LIT_TRUE LBRACK SIZEOF LPAR XOR_EQ
 ##
 ## Ends in an error in state: 59.
 ##
-## unary_expression -> SIZEOF LPAR . type_name RPAR [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## unary_expression -> SIZEOF LPAR . type_name RPAR [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## SIZEOF LPAR
@@ -1028,7 +991,7 @@ translation_unit: LIT_TRUE LBRACK SIZEOF XOR_EQ
 ##
 ## Ends in an error in state: 58.
 ##
-## unary_expression -> SIZEOF . LPAR type_name RPAR [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## unary_expression -> SIZEOF . LPAR type_name RPAR [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ## unary_operator_unary -> SIZEOF . [ SUBSUB SUB STRING STAR SIZEOF NOT LPAR LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS INT_LIT IDENTIFIER FLOAT_LIT CHAR_LIT AND ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
@@ -1037,11 +1000,23 @@ translation_unit: LIT_TRUE LBRACK SIZEOF XOR_EQ
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
+translation_unit: LIT_TRUE LBRACK STRING AND XOR_EQ
+##
+## Ends in an error in state: 177.
+##
+## and_expression -> and_expression AND . equality_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHORT SHL_EQ SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT MOD_EQ LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE LAND INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN EQ ENUM ELSE DOUBLE DO DIV_EQ DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
+##
+## The known suffix of the stack is as follows:
+## and_expression AND
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
 translation_unit: LIT_TRUE LBRACK STRING DOT XOR_EQ
 ##
-## Ends in an error in state: 224.
+## Ends in an error in state: 215.
 ##
-## postfix_expression -> postfix_expression field_access . identifier [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## postfix_expression -> postfix_expression field_access . identifier [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACK LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## postfix_expression field_access
@@ -1051,12 +1026,57 @@ translation_unit: LIT_TRUE LBRACK STRING DOT XOR_EQ
 
 translation_unit: LIT_TRUE LBRACK STRING LAND XOR_EQ
 ##
-## Ends in an error in state: 175.
+## Ends in an error in state: 166.
 ##
-## logical_and_expression -> logical_and_expression LAND . inclusive_or_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## logical_and_expression -> logical_and_expression LAND . inclusive_or_expression [ XOR_EQ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHORT SHL_EQ SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ NOT MOD_EQ LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE LAND INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN EQ ENUM ELSE DOUBLE DO DIV_EQ DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## logical_and_expression LAND
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+translation_unit: LIT_TRUE LBRACK STRING LBRACK STRING WHILE
+##
+## Ends in an error in state: 210.
+##
+## expression -> expression . COMMA assignment_expression [ RBRACK COMMA ]
+## postfix_expression -> postfix_expression LBRACK expression . RBRACK [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACK LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+##
+## The known suffix of the stack is as follows:
+## postfix_expression LBRACK expression
+##
+## WARNING: This example involves spurious reductions.
+## This implies that, although the LR(1) items shown above provide an
+## accurate view of the past (what has been recognized so far), they
+## may provide an INCOMPLETE view of the future (what was expected next).
+## In state 134, spurious reduction of production unary_expression -> postfix_expression 
+## In state 132, spurious reduction of production cast_expression -> unary_expression 
+## In state 149, spurious reduction of production multiplicative_expression -> cast_expression 
+## In state 140, spurious reduction of production additive_expression -> multiplicative_expression 
+## In state 162, spurious reduction of production shift_expression -> additive_expression 
+## In state 136, spurious reduction of production relational_expression -> shift_expression 
+## In state 155, spurious reduction of production equality_expression -> relational_expression 
+## In state 171, spurious reduction of production and_expression -> equality_expression 
+## In state 179, spurious reduction of production exclusive_or_expression -> and_expression 
+## In state 180, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
+## In state 181, spurious reduction of production logical_and_expression -> inclusive_or_expression 
+## In state 165, spurious reduction of production logical_or_expression -> logical_and_expression 
+## In state 163, spurious reduction of production conditional_expression -> logical_or_expression 
+## In state 184, spurious reduction of production assignment_expression -> conditional_expression 
+## In state 201, spurious reduction of production expression -> assignment_expression 
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+translation_unit: LIT_TRUE LBRACK STRING LBRACK XOR_EQ
+##
+## Ends in an error in state: 209.
+##
+## postfix_expression -> postfix_expression LBRACK . expression RBRACK [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACK LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+##
+## The known suffix of the stack is as follows:
+## postfix_expression LBRACK
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
@@ -1065,11 +1085,11 @@ translation_unit: LIT_TRUE LBRACK STRING LIT_OR
 ##
 ## Ends in an error in state: 134.
 ##
-## postfix_expression -> postfix_expression . expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
-## postfix_expression -> postfix_expression . LPAR argument_expression_list RPAR [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
-## postfix_expression -> postfix_expression . field_access identifier [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
-## postfix_expression -> postfix_expression . inc_or_dec_operator [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
-## unary_expression -> postfix_expression . [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## postfix_expression -> postfix_expression . LBRACK expression RBRACK [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACK LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## postfix_expression -> postfix_expression . LPAR argument_expression_list RPAR [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACK LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## postfix_expression -> postfix_expression . field_access identifier [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACK LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## postfix_expression -> postfix_expression . inc_or_dec_operator [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACK LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## unary_expression -> postfix_expression . [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## postfix_expression
@@ -1079,9 +1099,9 @@ translation_unit: LIT_TRUE LBRACK STRING LIT_OR
 
 translation_unit: LIT_TRUE LBRACK STRING LOR XOR_EQ
 ##
-## Ends in an error in state: 211.
+## Ends in an error in state: 202.
 ##
-## logical_or_expression -> logical_or_expression LOR . logical_and_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## logical_or_expression -> logical_or_expression LOR . logical_and_expression [ XOR_EQ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHORT SHL_EQ SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ NOT MOD_EQ LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN EQ ENUM ELSE DOUBLE DO DIV_EQ DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## logical_or_expression LOR
@@ -1089,41 +1109,9 @@ translation_unit: LIT_TRUE LBRACK STRING LOR XOR_EQ
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
-translation_unit: LIT_TRUE LBRACK STRING LPAR STRING COMMA STRING WHILE
-##
-## Ends in an error in state: 217.
-##
-## argument_expression_list -> assignment_expression . [ RPAR ]
-## argument_expression_list -> assignment_expression . COMMA argument_expression_list [ RPAR ]
-##
-## The known suffix of the stack is as follows:
-## assignment_expression
-##
-## WARNING: This example involves spurious reductions.
-## This implies that, although the LR(1) items shown above provide an
-## accurate view of the past (what has been recognized so far), they
-## may provide an INCOMPLETE view of the future (what was expected next).
-## In state 134, spurious reduction of production unary_expression -> postfix_expression 
-## In state 132, spurious reduction of production cast_expression -> unary_expression 
-## In state 152, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 146, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 165, spurious reduction of production shift_expression -> additive_expression 
-## In state 142, spurious reduction of production relational_expression -> shift_expression 
-## In state 158, spurious reduction of production equality_expression -> relational_expression 
-## In state 180, spurious reduction of production and_expression -> equality_expression 
-## In state 188, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 189, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 190, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 174, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 172, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 193, spurious reduction of production assignment_expression -> conditional_expression 
-##
-
-<YOUR SYNTAX ERROR MESSAGE HERE>
-
 translation_unit: LIT_TRUE LBRACK STRING LPAR STRING COMMA XOR_EQ
 ##
-## Ends in an error in state: 216.
+## Ends in an error in state: 205.
 ##
 ## argument_expression_list -> assignment_expression COMMA . argument_expression_list [ RPAR ]
 ##
@@ -1135,11 +1123,10 @@ translation_unit: LIT_TRUE LBRACK STRING LPAR STRING COMMA XOR_EQ
 
 translation_unit: LIT_TRUE LBRACK STRING LPAR STRING WHILE
 ##
-## Ends in an error in state: 215.
+## Ends in an error in state: 204.
 ##
 ## argument_expression_list -> assignment_expression . [ RPAR ]
 ## argument_expression_list -> assignment_expression . COMMA argument_expression_list [ RPAR ]
-## expression -> assignment_expression . [ RPAR COMMA ]
 ##
 ## The known suffix of the stack is as follows:
 ## assignment_expression
@@ -1150,18 +1137,18 @@ translation_unit: LIT_TRUE LBRACK STRING LPAR STRING WHILE
 ## may provide an INCOMPLETE view of the future (what was expected next).
 ## In state 134, spurious reduction of production unary_expression -> postfix_expression 
 ## In state 132, spurious reduction of production cast_expression -> unary_expression 
-## In state 152, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 146, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 165, spurious reduction of production shift_expression -> additive_expression 
-## In state 142, spurious reduction of production relational_expression -> shift_expression 
-## In state 158, spurious reduction of production equality_expression -> relational_expression 
-## In state 180, spurious reduction of production and_expression -> equality_expression 
-## In state 188, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 189, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 190, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 174, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 172, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 193, spurious reduction of production assignment_expression -> conditional_expression 
+## In state 149, spurious reduction of production multiplicative_expression -> cast_expression 
+## In state 140, spurious reduction of production additive_expression -> multiplicative_expression 
+## In state 162, spurious reduction of production shift_expression -> additive_expression 
+## In state 136, spurious reduction of production relational_expression -> shift_expression 
+## In state 155, spurious reduction of production equality_expression -> relational_expression 
+## In state 171, spurious reduction of production and_expression -> equality_expression 
+## In state 179, spurious reduction of production exclusive_or_expression -> and_expression 
+## In state 180, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
+## In state 181, spurious reduction of production logical_and_expression -> inclusive_or_expression 
+## In state 165, spurious reduction of production logical_or_expression -> logical_and_expression 
+## In state 163, spurious reduction of production conditional_expression -> logical_or_expression 
+## In state 184, spurious reduction of production assignment_expression -> conditional_expression 
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
@@ -1170,9 +1157,7 @@ translation_unit: LIT_TRUE LBRACK STRING LPAR XOR_EQ
 ##
 ## Ends in an error in state: 135.
 ##
-## cast_expression -> LPAR . type_name RPAR cast_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
-## postfix_expression -> postfix_expression LPAR . argument_expression_list RPAR [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
-## primary_expression -> LPAR . expression RPAR [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## postfix_expression -> postfix_expression LPAR . argument_expression_list RPAR [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACK LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## postfix_expression LPAR
@@ -1182,9 +1167,9 @@ translation_unit: LIT_TRUE LBRACK STRING LPAR XOR_EQ
 
 translation_unit: LIT_TRUE LBRACK STRING LT XOR_EQ
 ##
-## Ends in an error in state: 163.
+## Ends in an error in state: 160.
 ##
-## relational_expression -> relational_expression relational_operator . shift_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## relational_expression -> relational_expression relational_operator . shift_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHORT SHL_EQ SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DO DIV_EQ DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## relational_expression relational_operator
@@ -1192,23 +1177,11 @@ translation_unit: LIT_TRUE LBRACK STRING LT XOR_EQ
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
-translation_unit: LIT_TRUE LBRACK STRING MOD XOR_EQ
-##
-## Ends in an error in state: 150.
-##
-## multiplicative_expression -> multiplicative_expression multiplicative_operator . cast_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
-##
-## The known suffix of the stack is as follows:
-## multiplicative_expression multiplicative_operator
-##
-
-<YOUR SYNTAX ERROR MESSAGE HERE>
-
 translation_unit: LIT_TRUE LBRACK STRING NEQ_OP XOR_EQ
 ##
-## Ends in an error in state: 183.
+## Ends in an error in state: 174.
 ##
-## equality_expression -> equality_expression equality_operator . relational_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## equality_expression -> equality_expression equality_operator . relational_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHORT SHL_EQ SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE LAND INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DO DIV_EQ DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## equality_expression equality_operator
@@ -1218,9 +1191,9 @@ translation_unit: LIT_TRUE LBRACK STRING NEQ_OP XOR_EQ
 
 translation_unit: LIT_TRUE LBRACK STRING PIPE XOR_EQ
 ##
-## Ends in an error in state: 177.
+## Ends in an error in state: 168.
 ##
-## inclusive_or_expression -> inclusive_or_expression PIPE . exclusive_or_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## inclusive_or_expression -> inclusive_or_expression PIPE . exclusive_or_expression [ XOR_EQ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHORT SHL_EQ SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT MOD_EQ LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE LAND INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN EQ ENUM ELSE DOUBLE DO DIV_EQ DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## inclusive_or_expression PIPE
@@ -1230,9 +1203,9 @@ translation_unit: LIT_TRUE LBRACK STRING PIPE XOR_EQ
 
 translation_unit: LIT_TRUE LBRACK STRING QUESTION STRING COLON XOR_EQ
 ##
-## Ends in an error in state: 208.
+## Ends in an error in state: 199.
 ##
-## conditional_expression -> logical_or_expression QUESTION expression COLON . expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## conditional_expression -> logical_or_expression QUESTION expression COLON . expression [ XOR_EQ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHORT SHL_EQ SEMI RPAR RETURN REGISTER RBRACK RBRACE PIPE_EQ NOT MOD_EQ LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN EQ ENUM ELSE DOUBLE DO DIV_EQ DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## logical_or_expression QUESTION expression COLON
@@ -1242,9 +1215,9 @@ translation_unit: LIT_TRUE LBRACK STRING QUESTION STRING COLON XOR_EQ
 
 translation_unit: LIT_TRUE LBRACK STRING QUESTION STRING WHILE
 ##
-## Ends in an error in state: 191.
+## Ends in an error in state: 182.
 ##
-## conditional_expression -> logical_or_expression QUESTION expression . COLON expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## conditional_expression -> logical_or_expression QUESTION expression . COLON expression [ XOR_EQ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHORT SHL_EQ SEMI RPAR RETURN REGISTER RBRACK RBRACE PIPE_EQ NOT MOD_EQ LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN EQ ENUM ELSE DOUBLE DO DIV_EQ DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ## expression -> expression . COMMA assignment_expression [ COMMA COLON ]
 ##
 ## The known suffix of the stack is as follows:
@@ -1256,28 +1229,28 @@ translation_unit: LIT_TRUE LBRACK STRING QUESTION STRING WHILE
 ## may provide an INCOMPLETE view of the future (what was expected next).
 ## In state 134, spurious reduction of production unary_expression -> postfix_expression 
 ## In state 132, spurious reduction of production cast_expression -> unary_expression 
-## In state 152, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 146, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 165, spurious reduction of production shift_expression -> additive_expression 
-## In state 142, spurious reduction of production relational_expression -> shift_expression 
-## In state 158, spurious reduction of production equality_expression -> relational_expression 
-## In state 180, spurious reduction of production and_expression -> equality_expression 
-## In state 188, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 189, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 190, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 174, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 172, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 193, spurious reduction of production assignment_expression -> conditional_expression 
-## In state 210, spurious reduction of production expression -> assignment_expression 
+## In state 149, spurious reduction of production multiplicative_expression -> cast_expression 
+## In state 140, spurious reduction of production additive_expression -> multiplicative_expression 
+## In state 162, spurious reduction of production shift_expression -> additive_expression 
+## In state 136, spurious reduction of production relational_expression -> shift_expression 
+## In state 155, spurious reduction of production equality_expression -> relational_expression 
+## In state 171, spurious reduction of production and_expression -> equality_expression 
+## In state 179, spurious reduction of production exclusive_or_expression -> and_expression 
+## In state 180, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
+## In state 181, spurious reduction of production logical_and_expression -> inclusive_or_expression 
+## In state 165, spurious reduction of production logical_or_expression -> logical_and_expression 
+## In state 163, spurious reduction of production conditional_expression -> logical_or_expression 
+## In state 184, spurious reduction of production assignment_expression -> conditional_expression 
+## In state 201, spurious reduction of production expression -> assignment_expression 
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
 translation_unit: LIT_TRUE LBRACK STRING QUESTION XOR_EQ
 ##
-## Ends in an error in state: 173.
+## Ends in an error in state: 164.
 ##
-## conditional_expression -> logical_or_expression QUESTION . expression COLON expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## conditional_expression -> logical_or_expression QUESTION . expression COLON expression [ XOR_EQ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHORT SHL_EQ SEMI RPAR RETURN REGISTER RBRACK RBRACE PIPE_EQ NOT MOD_EQ LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN EQ ENUM ELSE DOUBLE DO DIV_EQ DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## logical_or_expression QUESTION
@@ -1287,7 +1260,7 @@ translation_unit: LIT_TRUE LBRACK STRING QUESTION XOR_EQ
 
 translation_unit: LIT_TRUE LBRACK STRING RBRACE
 ##
-## Ends in an error in state: 241.
+## Ends in an error in state: 242.
 ##
 ## direct_declarator -> direct_declarator LBRACK option(constant_expression) . RBRACK [ VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF STRUCT STATIC SIGNED SHORT SEMI RPAR REGISTER LPAR LONG LBRACK LBRACE INT FLOAT EXTERN EQ ENUM DOUBLE CONST COMMA COLON CHAR AUTO ]
 ##
@@ -1300,28 +1273,28 @@ translation_unit: LIT_TRUE LBRACK STRING RBRACE
 ## may provide an INCOMPLETE view of the future (what was expected next).
 ## In state 134, spurious reduction of production unary_expression -> postfix_expression 
 ## In state 132, spurious reduction of production cast_expression -> unary_expression 
-## In state 152, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 146, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 165, spurious reduction of production shift_expression -> additive_expression 
-## In state 142, spurious reduction of production relational_expression -> shift_expression 
-## In state 158, spurious reduction of production equality_expression -> relational_expression 
-## In state 180, spurious reduction of production and_expression -> equality_expression 
-## In state 188, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 189, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 190, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 174, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 172, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 232, spurious reduction of production constant_expression -> conditional_expression 
-## In state 231, spurious reduction of production option(constant_expression) -> constant_expression 
+## In state 149, spurious reduction of production multiplicative_expression -> cast_expression 
+## In state 140, spurious reduction of production additive_expression -> multiplicative_expression 
+## In state 162, spurious reduction of production shift_expression -> additive_expression 
+## In state 136, spurious reduction of production relational_expression -> shift_expression 
+## In state 155, spurious reduction of production equality_expression -> relational_expression 
+## In state 171, spurious reduction of production and_expression -> equality_expression 
+## In state 179, spurious reduction of production exclusive_or_expression -> and_expression 
+## In state 180, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
+## In state 181, spurious reduction of production logical_and_expression -> inclusive_or_expression 
+## In state 165, spurious reduction of production logical_or_expression -> logical_and_expression 
+## In state 163, spurious reduction of production conditional_expression -> logical_or_expression 
+## In state 233, spurious reduction of production constant_expression -> conditional_expression 
+## In state 232, spurious reduction of production option(constant_expression) -> constant_expression 
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
 translation_unit: LIT_TRUE LBRACK STRING SHR XOR_EQ
 ##
-## Ends in an error in state: 145.
+## Ends in an error in state: 139.
 ##
-## shift_expression -> shift_expression shift_operator . additive_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## shift_expression -> shift_expression shift_operator . additive_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DO DIV_EQ DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## shift_expression shift_operator
@@ -1329,24 +1302,48 @@ translation_unit: LIT_TRUE LBRACK STRING SHR XOR_EQ
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
-translation_unit: LIT_TRUE LBRACK STRING SUBSUB LIT_OR
+translation_unit: LIT_TRUE LBRACK STRING STAR XOR_EQ
 ##
-## Ends in an error in state: 223.
+## Ends in an error in state: 144.
 ##
-## postfix_expression -> postfix_expression inc_or_dec_operator . [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
-## unary_operator_unary -> inc_or_dec_operator . [ SUBSUB SUB STRING STAR SIZEOF NOT LPAR LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS INT_LIT IDENTIFIER FLOAT_LIT CHAR_LIT AND ADDADD ADD ]
+## multiplicative_expression -> multiplicative_expression multiplicative_operator . cast_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
-## postfix_expression inc_or_dec_operator
+## multiplicative_expression multiplicative_operator
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+translation_unit: LIT_TRUE LBRACK STRING SUB SIZEOF LPAR CHAR RPAR LIT_OR
+##
+## Ends in an error in state: 154.
+##
+## additive_expression -> additive_expression additive_operator multiplicative_expression . [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DO DIV_EQ DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
+## multiplicative_expression -> multiplicative_expression . multiplicative_operator cast_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
+##
+## The known suffix of the stack is as follows:
+## additive_expression additive_operator multiplicative_expression
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE>
+
+translation_unit: LIT_TRUE LBRACK STRING SUB XOR_EQ
+##
+## Ends in an error in state: 153.
+##
+## additive_expression -> additive_expression additive_operator . multiplicative_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DO DIV_EQ DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
+##
+## The known suffix of the stack is as follows:
+## additive_expression additive_operator
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
 translation_unit: LIT_TRUE LBRACK STRING XOR XOR_EQ
 ##
-## Ends in an error in state: 179.
+## Ends in an error in state: 170.
 ##
-## exclusive_or_expression -> exclusive_or_expression XOR . and_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## exclusive_or_expression -> exclusive_or_expression XOR . and_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHORT SHL_EQ SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT MOD_EQ LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE LAND INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN EQ ENUM ELSE DOUBLE DO DIV_EQ DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## exclusive_or_expression XOR
@@ -1358,7 +1355,7 @@ translation_unit: LIT_TRUE LBRACK SUB XOR_EQ
 ##
 ## Ends in an error in state: 131.
 ##
-## unary_expression -> unary_operator_cast . cast_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## unary_expression -> unary_operator_cast . cast_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## unary_operator_cast
@@ -1370,7 +1367,7 @@ translation_unit: LIT_TRUE LBRACK SUBSUB LPAR XOR_EQ
 ##
 ## Ends in an error in state: 130.
 ##
-## primary_expression -> LPAR . expression RPAR [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## primary_expression -> LPAR . expression RPAR [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACK LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## LPAR
@@ -1382,7 +1379,7 @@ translation_unit: LIT_TRUE LBRACK SUBSUB XOR_EQ
 ##
 ## Ends in an error in state: 129.
 ##
-## unary_expression -> unary_operator_unary . unary_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## unary_expression -> unary_operator_unary . unary_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO AND_EQ AND ADD_EQ ADDADD ADD ]
 ##
 ## The known suffix of the stack is as follows:
 ## unary_operator_unary
@@ -1392,7 +1389,7 @@ translation_unit: LIT_TRUE LBRACK SUBSUB XOR_EQ
 
 translation_unit: LIT_TRUE LBRACK XOR_EQ
 ##
-## Ends in an error in state: 240.
+## Ends in an error in state: 241.
 ##
 ## direct_declarator -> direct_declarator LBRACK . option(constant_expression) RBRACK [ VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF STRUCT STATIC SIGNED SHORT SEMI RPAR REGISTER LPAR LONG LBRACK LBRACE INT FLOAT EXTERN EQ ENUM DOUBLE CONST COMMA COLON CHAR AUTO ]
 ##
@@ -1404,7 +1401,7 @@ translation_unit: LIT_TRUE LBRACK XOR_EQ
 
 translation_unit: LIT_TRUE LPAR LIT_TRUE COMMA XOR_EQ
 ##
-## Ends in an error in state: 238.
+## Ends in an error in state: 239.
 ##
 ## separated_nonempty_list(COMMA,identifier) -> identifier COMMA . separated_nonempty_list(COMMA,identifier) [ RPAR ]
 ##
@@ -1416,7 +1413,7 @@ translation_unit: LIT_TRUE LPAR LIT_TRUE COMMA XOR_EQ
 
 translation_unit: LIT_TRUE LPAR LIT_TRUE XOR_EQ
 ##
-## Ends in an error in state: 237.
+## Ends in an error in state: 238.
 ##
 ## separated_nonempty_list(COMMA,identifier) -> identifier . [ RPAR ]
 ## separated_nonempty_list(COMMA,identifier) -> identifier . COMMA separated_nonempty_list(COMMA,identifier) [ RPAR ]
@@ -1454,7 +1451,7 @@ translation_unit: LIT_TRUE LPAR VOLATILE IDENTIFIER VOLATILE
 ## accurate view of the past (what has been recognized so far), they
 ## may provide an INCOMPLETE view of the future (what was expected next).
 ## In state 92, spurious reduction of production declarator -> option(pointer) direct_declarator 
-## In state 234, spurious reduction of production parameter_declarator -> declarator 
+## In state 235, spurious reduction of production parameter_declarator -> declarator 
 ## In state 110, spurious reduction of production parameter_declaration -> nonempty_list(declaration_specifier) parameter_declarator 
 ##
 
@@ -1474,7 +1471,7 @@ translation_unit: LIT_TRUE LPAR VOLATILE LBRACK RBRACK LPAR XOR_EQ
 
 translation_unit: LIT_TRUE LPAR VOLATILE LBRACK RBRACK XOR_EQ
 ##
-## Ends in an error in state: 169.
+## Ends in an error in state: 227.
 ##
 ## abstract_declarator -> option(pointer) direct_abstract_declarator . [ RPAR COMMA ]
 ## option(direct_abstract_declarator) -> direct_abstract_declarator . [ LPAR LBRACK ]
@@ -1487,7 +1484,7 @@ translation_unit: LIT_TRUE LPAR VOLATILE LBRACK RBRACK XOR_EQ
 
 translation_unit: LIT_TRUE LPAR VOLATILE LBRACK STRING RBRACE
 ##
-## Ends in an error in state: 229.
+## Ends in an error in state: 230.
 ##
 ## direct_abstract_declarator -> option(direct_abstract_declarator) LBRACK option(constant_expression) . RBRACK [ RPAR LPAR LBRACK COMMA ]
 ##
@@ -1500,19 +1497,19 @@ translation_unit: LIT_TRUE LPAR VOLATILE LBRACK STRING RBRACE
 ## may provide an INCOMPLETE view of the future (what was expected next).
 ## In state 134, spurious reduction of production unary_expression -> postfix_expression 
 ## In state 132, spurious reduction of production cast_expression -> unary_expression 
-## In state 152, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 146, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 165, spurious reduction of production shift_expression -> additive_expression 
-## In state 142, spurious reduction of production relational_expression -> shift_expression 
-## In state 158, spurious reduction of production equality_expression -> relational_expression 
-## In state 180, spurious reduction of production and_expression -> equality_expression 
-## In state 188, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 189, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 190, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 174, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 172, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 232, spurious reduction of production constant_expression -> conditional_expression 
-## In state 231, spurious reduction of production option(constant_expression) -> constant_expression 
+## In state 149, spurious reduction of production multiplicative_expression -> cast_expression 
+## In state 140, spurious reduction of production additive_expression -> multiplicative_expression 
+## In state 162, spurious reduction of production shift_expression -> additive_expression 
+## In state 136, spurious reduction of production relational_expression -> shift_expression 
+## In state 155, spurious reduction of production equality_expression -> relational_expression 
+## In state 171, spurious reduction of production and_expression -> equality_expression 
+## In state 179, spurious reduction of production exclusive_or_expression -> and_expression 
+## In state 180, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
+## In state 181, spurious reduction of production logical_and_expression -> inclusive_or_expression 
+## In state 165, spurious reduction of production logical_or_expression -> logical_and_expression 
+## In state 163, spurious reduction of production conditional_expression -> logical_or_expression 
+## In state 233, spurious reduction of production constant_expression -> conditional_expression 
+## In state 232, spurious reduction of production option(constant_expression) -> constant_expression 
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
@@ -1596,7 +1593,7 @@ translation_unit: LIT_TRUE LPAR XOR_EQ
 
 translation_unit: LIT_TRUE SEMI
 ##
-## Ends in an error in state: 288.
+## Ends in an error in state: 289.
 ##
 ## function_definition -> list(declaration_specifier) declarator . list(declaration) compound_statement [ VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF STRUCT STATIC STAR SIGNED SHORT REGISTER LPAR LONG LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT IDENTIFIER FLOAT EXTERN EOF ENUM DOUBLE CONST CHAR AUTO ]
 ##
@@ -1614,7 +1611,7 @@ translation_unit: LIT_TRUE SEMI
 
 translation_unit: LIT_TRUE VOLATILE LIT_TRUE COMMA XOR_EQ
 ##
-## Ends in an error in state: 294.
+## Ends in an error in state: 295.
 ##
 ## separated_nonempty_list(COMMA,init_declarator) -> init_declarator COMMA . separated_nonempty_list(COMMA,init_declarator) [ SEMI ]
 ##
@@ -1626,7 +1623,7 @@ translation_unit: LIT_TRUE VOLATILE LIT_TRUE COMMA XOR_EQ
 
 translation_unit: LIT_TRUE VOLATILE LIT_TRUE EQ LBRACE STRING COMMA XOR_EQ
 ##
-## Ends in an error in state: 304.
+## Ends in an error in state: 305.
 ##
 ## separated_nonempty_list(COMMA,initialiser) -> initialiser COMMA . separated_nonempty_list(COMMA,initialiser) [ RBRACE COMMA ]
 ##
@@ -1638,7 +1635,7 @@ translation_unit: LIT_TRUE VOLATILE LIT_TRUE EQ LBRACE STRING COMMA XOR_EQ
 
 translation_unit: LIT_TRUE VOLATILE LIT_TRUE EQ LBRACE STRING WHILE
 ##
-## Ends in an error in state: 303.
+## Ends in an error in state: 304.
 ##
 ## separated_nonempty_list(COMMA,initialiser) -> initialiser . [ RBRACE COMMA ]
 ## separated_nonempty_list(COMMA,initialiser) -> initialiser . COMMA separated_nonempty_list(COMMA,initialiser) [ RBRACE COMMA ]
@@ -1652,26 +1649,26 @@ translation_unit: LIT_TRUE VOLATILE LIT_TRUE EQ LBRACE STRING WHILE
 ## may provide an INCOMPLETE view of the future (what was expected next).
 ## In state 134, spurious reduction of production unary_expression -> postfix_expression 
 ## In state 132, spurious reduction of production cast_expression -> unary_expression 
-## In state 152, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 146, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 165, spurious reduction of production shift_expression -> additive_expression 
-## In state 142, spurious reduction of production relational_expression -> shift_expression 
-## In state 158, spurious reduction of production equality_expression -> relational_expression 
-## In state 180, spurious reduction of production and_expression -> equality_expression 
-## In state 188, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 189, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 190, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 174, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 172, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 193, spurious reduction of production assignment_expression -> conditional_expression 
-## In state 306, spurious reduction of production initialiser -> assignment_expression 
+## In state 149, spurious reduction of production multiplicative_expression -> cast_expression 
+## In state 140, spurious reduction of production additive_expression -> multiplicative_expression 
+## In state 162, spurious reduction of production shift_expression -> additive_expression 
+## In state 136, spurious reduction of production relational_expression -> shift_expression 
+## In state 155, spurious reduction of production equality_expression -> relational_expression 
+## In state 171, spurious reduction of production and_expression -> equality_expression 
+## In state 179, spurious reduction of production exclusive_or_expression -> and_expression 
+## In state 180, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
+## In state 181, spurious reduction of production logical_and_expression -> inclusive_or_expression 
+## In state 165, spurious reduction of production logical_or_expression -> logical_and_expression 
+## In state 163, spurious reduction of production conditional_expression -> logical_or_expression 
+## In state 184, spurious reduction of production assignment_expression -> conditional_expression 
+## In state 307, spurious reduction of production initialiser -> assignment_expression 
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
 translation_unit: LIT_TRUE VOLATILE LIT_TRUE EQ LBRACE XOR_EQ
 ##
-## Ends in an error in state: 298.
+## Ends in an error in state: 299.
 ##
 ## initialiser -> LBRACE . separated_nonempty_list(COMMA,initialiser) option(COMMA) RBRACE [ SEMI RBRACE COMMA ]
 ##
@@ -1683,7 +1680,7 @@ translation_unit: LIT_TRUE VOLATILE LIT_TRUE EQ LBRACE XOR_EQ
 
 translation_unit: LIT_TRUE VOLATILE LIT_TRUE EQ STRING WHILE
 ##
-## Ends in an error in state: 293.
+## Ends in an error in state: 294.
 ##
 ## separated_nonempty_list(COMMA,init_declarator) -> init_declarator . [ SEMI ]
 ## separated_nonempty_list(COMMA,init_declarator) -> init_declarator . COMMA separated_nonempty_list(COMMA,init_declarator) [ SEMI ]
@@ -1697,28 +1694,28 @@ translation_unit: LIT_TRUE VOLATILE LIT_TRUE EQ STRING WHILE
 ## may provide an INCOMPLETE view of the future (what was expected next).
 ## In state 134, spurious reduction of production unary_expression -> postfix_expression 
 ## In state 132, spurious reduction of production cast_expression -> unary_expression 
-## In state 152, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 146, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 165, spurious reduction of production shift_expression -> additive_expression 
-## In state 142, spurious reduction of production relational_expression -> shift_expression 
-## In state 158, spurious reduction of production equality_expression -> relational_expression 
-## In state 180, spurious reduction of production and_expression -> equality_expression 
-## In state 188, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 189, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 190, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 174, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 172, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 193, spurious reduction of production assignment_expression -> conditional_expression 
-## In state 306, spurious reduction of production initialiser -> assignment_expression 
-## In state 307, spurious reduction of production option(preceded(EQ,initialiser)) -> EQ initialiser 
-## In state 308, spurious reduction of production init_declarator -> declarator option(preceded(EQ,initialiser)) 
+## In state 149, spurious reduction of production multiplicative_expression -> cast_expression 
+## In state 140, spurious reduction of production additive_expression -> multiplicative_expression 
+## In state 162, spurious reduction of production shift_expression -> additive_expression 
+## In state 136, spurious reduction of production relational_expression -> shift_expression 
+## In state 155, spurious reduction of production equality_expression -> relational_expression 
+## In state 171, spurious reduction of production and_expression -> equality_expression 
+## In state 179, spurious reduction of production exclusive_or_expression -> and_expression 
+## In state 180, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
+## In state 181, spurious reduction of production logical_and_expression -> inclusive_or_expression 
+## In state 165, spurious reduction of production logical_or_expression -> logical_and_expression 
+## In state 163, spurious reduction of production conditional_expression -> logical_or_expression 
+## In state 184, spurious reduction of production assignment_expression -> conditional_expression 
+## In state 307, spurious reduction of production initialiser -> assignment_expression 
+## In state 308, spurious reduction of production option(preceded(EQ,initialiser)) -> EQ initialiser 
+## In state 309, spurious reduction of production init_declarator -> declarator option(preceded(EQ,initialiser)) 
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
 translation_unit: LIT_TRUE VOLATILE LIT_TRUE EQ XOR_EQ
 ##
-## Ends in an error in state: 297.
+## Ends in an error in state: 298.
 ##
 ## option(preceded(EQ,initialiser)) -> EQ . initialiser [ SEMI COMMA ]
 ##
@@ -1730,7 +1727,7 @@ translation_unit: LIT_TRUE VOLATILE LIT_TRUE EQ XOR_EQ
 
 translation_unit: LIT_TRUE VOLATILE LIT_TRUE VOLATILE
 ##
-## Ends in an error in state: 296.
+## Ends in an error in state: 297.
 ##
 ## init_declarator -> declarator . option(preceded(EQ,initialiser)) [ SEMI COMMA ]
 ##
@@ -1748,7 +1745,7 @@ translation_unit: LIT_TRUE VOLATILE LIT_TRUE VOLATILE
 
 translation_unit: LIT_TRUE VOLATILE RPAR
 ##
-## Ends in an error in state: 289.
+## Ends in an error in state: 290.
 ##
 ## declaration -> nonempty_list(declaration_specifier) . loption(separated_nonempty_list(COMMA,init_declarator)) SEMI [ WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUBSUB SUB STRUCT STRING STATIC STAR SIZEOF SIGNED SHORT SEMI RETURN REGISTER RBRACE NOT LPAR LONG LNOT LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT_LIT INT IF IDENTIFIER GOTO FOR FLOAT_LIT FLOAT EXTERN EOF ENUM DOUBLE DO DEFAULT CONTINUE CONST CHAR_LIT CHAR CASE BREAK AUTO AND ADDADD ADD ]
 ##
@@ -1766,7 +1763,7 @@ translation_unit: LIT_TRUE VOLATILE RPAR
 
 translation_unit: LIT_TRUE VOLATILE SEMI XOR_EQ
 ##
-## Ends in an error in state: 375.
+## Ends in an error in state: 376.
 ##
 ## list(declaration) -> declaration . list(declaration) [ LBRACE ]
 ##
@@ -1882,7 +1879,7 @@ translation_unit: STAR XOR_EQ
 
 translation_unit: UNION LBRACE VOLATILE COLON STRING WHILE
 ##
-## Ends in an error in state: 245.
+## Ends in an error in state: 246.
 ##
 ## expression -> expression . COMMA assignment_expression [ SEMI COMMA ]
 ## struct_declarator -> option(declarator) COLON expression . [ SEMI COMMA ]
@@ -1896,26 +1893,26 @@ translation_unit: UNION LBRACE VOLATILE COLON STRING WHILE
 ## may provide an INCOMPLETE view of the future (what was expected next).
 ## In state 134, spurious reduction of production unary_expression -> postfix_expression 
 ## In state 132, spurious reduction of production cast_expression -> unary_expression 
-## In state 152, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 146, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 165, spurious reduction of production shift_expression -> additive_expression 
-## In state 142, spurious reduction of production relational_expression -> shift_expression 
-## In state 158, spurious reduction of production equality_expression -> relational_expression 
-## In state 180, spurious reduction of production and_expression -> equality_expression 
-## In state 188, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 189, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 190, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 174, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 172, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 193, spurious reduction of production assignment_expression -> conditional_expression 
-## In state 210, spurious reduction of production expression -> assignment_expression 
+## In state 149, spurious reduction of production multiplicative_expression -> cast_expression 
+## In state 140, spurious reduction of production additive_expression -> multiplicative_expression 
+## In state 162, spurious reduction of production shift_expression -> additive_expression 
+## In state 136, spurious reduction of production relational_expression -> shift_expression 
+## In state 155, spurious reduction of production equality_expression -> relational_expression 
+## In state 171, spurious reduction of production and_expression -> equality_expression 
+## In state 179, spurious reduction of production exclusive_or_expression -> and_expression 
+## In state 180, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
+## In state 181, spurious reduction of production logical_and_expression -> inclusive_or_expression 
+## In state 165, spurious reduction of production logical_or_expression -> logical_and_expression 
+## In state 163, spurious reduction of production conditional_expression -> logical_or_expression 
+## In state 184, spurious reduction of production assignment_expression -> conditional_expression 
+## In state 201, spurious reduction of production expression -> assignment_expression 
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE>
 
 translation_unit: UNION LBRACE VOLATILE COLON XOR_EQ
 ##
-## Ends in an error in state: 244.
+## Ends in an error in state: 245.
 ##
 ## struct_declarator -> option(declarator) COLON . expression [ SEMI COMMA ]
 ##
@@ -1952,7 +1949,7 @@ translation_unit: UNION LBRACE VOLATILE LIT_TRUE COMMA XOR_EQ
 
 translation_unit: UNION LBRACE VOLATILE LIT_TRUE VOLATILE
 ##
-## Ends in an error in state: 246.
+## Ends in an error in state: 247.
 ##
 ## option(declarator) -> declarator . [ COLON ]
 ## struct_declarator -> declarator . [ SEMI COMMA ]
@@ -2014,7 +2011,7 @@ translation_unit: UNION LBRACE XOR_EQ
 
 translation_unit: UNION LIT_TRUE XOR_EQ
 ##
-## Ends in an error in state: 251.
+## Ends in an error in state: 252.
 ##
 ## option(identifier) -> identifier . [ LBRACE ]
 ## struct_or_union_specifier -> struct_or_union identifier . [ VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF STRUCT STATIC STAR SIGNED SHORT SEMI RPAR REGISTER LPAR LONG LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACK INT IDENTIFIER FLOAT EXTERN ENUM DOUBLE CONST COMMA COLON CHAR AUTO ]
@@ -2040,7 +2037,7 @@ translation_unit: UNION XOR_EQ
 
 translation_unit: VOLATILE SEMI XOR_EQ
 ##
-## Ends in an error in state: 392.
+## Ends in an error in state: 393.
 ##
 ## nonempty_list(external_declaration) -> external_declaration . [ EOF ]
 ## nonempty_list(external_declaration) -> external_declaration . nonempty_list(external_declaration) [ EOF ]
@@ -2053,7 +2050,7 @@ translation_unit: VOLATILE SEMI XOR_EQ
 
 translation_unit: VOLATILE XOR_EQ
 ##
-## Ends in an error in state: 394.
+## Ends in an error in state: 395.
 ##
 ## list(declaration_specifier) -> declaration_specifier . list(declaration_specifier) [ STAR LPAR LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS IDENTIFIER ]
 ## nonempty_list(declaration_specifier) -> declaration_specifier . [ STAR SEMI LPAR LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS IDENTIFIER ]
@@ -2067,7 +2064,7 @@ translation_unit: VOLATILE XOR_EQ
 
 translation_unit: XOR_EQ
 ##
-## Ends in an error in state: 387.
+## Ends in an error in state: 388.
 ##
 ## translation_unit' -> . translation_unit [ # ]
 ##
@@ -2079,7 +2076,7 @@ translation_unit: XOR_EQ
 
 litmus_postcondition: LIT_FORALL LPAR IDENTIFIER EQ_OP XOR_EQ
 ##
-## Ends in an error in state: 271.
+## Ends in an error in state: 272.
 ##
 ## litmus_primitive -> litmus_identifier EQ_OP . constant [ RPAR LIT_OR LIT_AND ]
 ##
@@ -2091,7 +2088,7 @@ litmus_postcondition: LIT_FORALL LPAR IDENTIFIER EQ_OP XOR_EQ
 
 litmus_postcondition: LIT_FORALL LPAR IDENTIFIER XOR_EQ
 ##
-## Ends in an error in state: 270.
+## Ends in an error in state: 271.
 ##
 ## litmus_primitive -> litmus_identifier . EQ_OP constant [ RPAR LIT_OR LIT_AND ]
 ##
@@ -2103,7 +2100,7 @@ litmus_postcondition: LIT_FORALL LPAR IDENTIFIER XOR_EQ
 
 litmus_postcondition: LIT_FORALL LPAR INT_LIT COLON XOR_EQ
 ##
-## Ends in an error in state: 266.
+## Ends in an error in state: 267.
 ##
 ## litmus_identifier -> INT_LIT COLON . IDENTIFIER [ EQ_OP ]
 ##
@@ -2115,7 +2112,7 @@ litmus_postcondition: LIT_FORALL LPAR INT_LIT COLON XOR_EQ
 
 litmus_postcondition: LIT_FORALL LPAR INT_LIT XOR_EQ
 ##
-## Ends in an error in state: 265.
+## Ends in an error in state: 266.
 ##
 ## litmus_identifier -> INT_LIT . COLON IDENTIFIER [ EQ_OP ]
 ##
@@ -2127,7 +2124,7 @@ litmus_postcondition: LIT_FORALL LPAR INT_LIT XOR_EQ
 
 litmus_postcondition: LIT_FORALL LPAR LIT_TRUE LIT_AND XOR_EQ
 ##
-## Ends in an error in state: 277.
+## Ends in an error in state: 278.
 ##
 ## litmus_conjunct -> litmus_conjunct LIT_AND . litmus_primitive [ RPAR LIT_OR LIT_AND ]
 ##
@@ -2139,7 +2136,7 @@ litmus_postcondition: LIT_FORALL LPAR LIT_TRUE LIT_AND XOR_EQ
 
 litmus_postcondition: LIT_FORALL LPAR LIT_TRUE LIT_OR LIT_TRUE XOR_EQ
 ##
-## Ends in an error in state: 276.
+## Ends in an error in state: 277.
 ##
 ## litmus_conjunct -> litmus_conjunct . LIT_AND litmus_primitive [ RPAR LIT_OR LIT_AND ]
 ## litmus_disjunct -> litmus_disjunct LIT_OR litmus_conjunct . [ RPAR LIT_OR ]
@@ -2152,7 +2149,7 @@ litmus_postcondition: LIT_FORALL LPAR LIT_TRUE LIT_OR LIT_TRUE XOR_EQ
 
 litmus_postcondition: LIT_FORALL LPAR LIT_TRUE LIT_OR XOR_EQ
 ##
-## Ends in an error in state: 275.
+## Ends in an error in state: 276.
 ##
 ## litmus_disjunct -> litmus_disjunct LIT_OR . litmus_conjunct [ RPAR LIT_OR ]
 ##
@@ -2164,7 +2161,7 @@ litmus_postcondition: LIT_FORALL LPAR LIT_TRUE LIT_OR XOR_EQ
 
 litmus_postcondition: LIT_FORALL LPAR LIT_TRUE XOR_EQ
 ##
-## Ends in an error in state: 279.
+## Ends in an error in state: 280.
 ##
 ## litmus_conjunct -> litmus_conjunct . LIT_AND litmus_primitive [ RPAR LIT_OR LIT_AND ]
 ## litmus_disjunct -> litmus_conjunct . [ RPAR LIT_OR ]
@@ -2177,7 +2174,7 @@ litmus_postcondition: LIT_FORALL LPAR LIT_TRUE XOR_EQ
 
 litmus_postcondition: LIT_FORALL LPAR LPAR XOR_EQ
 ##
-## Ends in an error in state: 262.
+## Ends in an error in state: 263.
 ##
 ## litmus_primitive -> LPAR . litmus_disjunct RPAR [ RPAR LIT_OR LIT_AND ]
 ##
@@ -2189,7 +2186,7 @@ litmus_postcondition: LIT_FORALL LPAR LPAR XOR_EQ
 
 litmus_postcondition: LIT_FORALL LPAR XOR_EQ
 ##
-## Ends in an error in state: 383.
+## Ends in an error in state: 384.
 ##
 ## litmus_postcondition -> litmus_quantifier LPAR . litmus_disjunct RPAR [ # ]
 ##
@@ -2201,7 +2198,7 @@ litmus_postcondition: LIT_FORALL LPAR XOR_EQ
 
 litmus_postcondition: LIT_FORALL XOR_EQ
 ##
-## Ends in an error in state: 382.
+## Ends in an error in state: 383.
 ##
 ## litmus_postcondition -> litmus_quantifier . LPAR litmus_disjunct RPAR [ # ]
 ##
@@ -2213,7 +2210,7 @@ litmus_postcondition: LIT_FORALL XOR_EQ
 
 litmus_postcondition: XOR_EQ
 ##
-## Ends in an error in state: 381.
+## Ends in an error in state: 382.
 ##
 ## litmus_postcondition' -> . litmus_postcondition [ # ]
 ##
@@ -2273,7 +2270,7 @@ litmus: IDENTIFIER IDENTIFIER LBRACE LIT_TRUE XOR_EQ
 
 litmus: IDENTIFIER IDENTIFIER LBRACE RBRACE XOR_EQ
 ##
-## Ends in an error in state: 285.
+## Ends in an error in state: 286.
 ##
 ## nonempty_list(litmus_declaration) -> litmus_declaration . [ EOF ]
 ## nonempty_list(litmus_declaration) -> litmus_declaration . nonempty_list(litmus_declaration) [ EOF ]
@@ -2298,7 +2295,7 @@ litmus: IDENTIFIER IDENTIFIER LBRACE XOR_EQ
 
 litmus: IDENTIFIER IDENTIFIER LIT_FORALL LPAR XOR_EQ
 ##
-## Ends in an error in state: 261.
+## Ends in an error in state: 262.
 ##
 ## litmus_postcondition -> litmus_quantifier LPAR . litmus_disjunct RPAR [ VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF STRUCT STATIC STAR SIGNED SHORT REGISTER LPAR LONG LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT IDENTIFIER FLOAT EXTERN EOF ENUM DOUBLE CONST CHAR AUTO ]
 ##
@@ -2310,7 +2307,7 @@ litmus: IDENTIFIER IDENTIFIER LIT_FORALL LPAR XOR_EQ
 
 litmus: IDENTIFIER IDENTIFIER LIT_FORALL XOR_EQ
 ##
-## Ends in an error in state: 260.
+## Ends in an error in state: 261.
 ##
 ## litmus_postcondition -> litmus_quantifier . LPAR litmus_disjunct RPAR [ VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF STRUCT STATIC STAR SIGNED SHORT REGISTER LPAR LONG LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS LBRACE INT IDENTIFIER FLOAT EXTERN EOF ENUM DOUBLE CONST CHAR AUTO ]
 ##
@@ -2371,7 +2368,7 @@ litmus: IDENTIFIER IDENTIFIER LIT_LOCATIONS XOR_EQ
 
 litmus: IDENTIFIER IDENTIFIER VOLATILE XOR_EQ
 ##
-## Ends in an error in state: 378.
+## Ends in an error in state: 379.
 ##
 ## list(declaration_specifier) -> declaration_specifier . list(declaration_specifier) [ STAR LPAR LIT_TRUE LIT_LOCATIONS LIT_FORALL LIT_FALSE LIT_EXISTS IDENTIFIER ]
 ##
