@@ -3,6 +3,10 @@
 Note that these changes are infrequently maintained and may not tell the
 whole story.
 
+## 2020-Jan-21
+
+- New action `mem.fence`, which adds random memory fences.
+
 ## 2020-Jan-20
 
 - `get_a_backend` has been removed; use `act-backend find` instead.

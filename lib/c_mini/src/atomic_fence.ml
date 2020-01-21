@@ -10,8 +10,8 @@
    project root for more information. *)
 
 module Mode = struct
-  type t = Thread | Signal [@@deriving sexp, compare, equal]
+  type t = Thread | Signal [@@deriving sexp, compare, equal, quickcheck]
 end
 
 type t = {mode: Mode.t; mo: Mem_order.t}
-[@@deriving sexp, compare, equal, fields, make]
+[@@deriving sexp, compare, equal, quickcheck, fields, make]

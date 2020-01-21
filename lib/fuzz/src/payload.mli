@@ -61,7 +61,7 @@ module Program_path (Basic : sig
       the payload generator to [flt]. *)
 
   val gen :
-    Subject.Test.t -> filter:Path_filter.t -> Path.Program.t Opt_gen.t
+    ?filter:Path_filter.t -> Subject.Test.t -> Path.Program.t Opt_gen.t
   (** [gen] should be a path shape generator. *)
 end) : Action_types.S_payload with type t = Path.Program.t
 

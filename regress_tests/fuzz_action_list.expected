@@ -35,6 +35,9 @@ flow.loop.surround:
     
     The condition of the `do... while` loop is statically guaranteed to be
     false.
+mem.fence:
+  Weight: 10x
+  Summary: Inserts a randomly generated memory fence into the test.
 program.make.empty:
   Weight: 10x
   Summary:

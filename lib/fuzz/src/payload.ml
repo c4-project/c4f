@@ -32,6 +32,27 @@ module Helpers = struct
       lift_quickcheck gen ~random)
 end
 
+module Program_path (Basic : sig
+  val action_id : Act_common.Id.t
+
+  val build_filter : Path_filter.t -> Path_filter.t
+
+  val gen : ?filter:Path_filter.t ->
+    Subject.Test.t -> Path.Program.t Opt_gen.t
+end) : Action_types.S_payload with type t = Path.Program.t = struct
+  type t = Path.Program.t [@@deriving sexp]
+
+  let quickcheck_path (test : Subject.Test.t) : Path.Program.t Opt_gen.t =
+    let filter = Basic.build_filter Path_filter.empty in
+    Basic.gen ~filter test
+
+  let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
+      ~(param_map : Param_map.t) : Path.Program.t State.Monad.t =
+    ignore (param_map : Param_map.t) ;
+    Helpers.lift_quickcheck_opt (quickcheck_path test) ~random
+      ~action_id:Basic.action_id
+end
+
 module Surround = struct
   module Body = struct
     type t = {cond: Act_c_mini.Expression.t; path: Path.Program.t}
@@ -67,16 +88,6 @@ module Surround = struct
           (Path_consumers.Test.transform_stm_list path ~target:test
              ~f:(fun test -> Or_error.return [f cond test]))))
 
-  (* These bits of the generator are the same regardless of conditional
-     generator. *)
-
-  let quickcheck_path (test : Subject.Test.t) : Path.Program.t Opt_gen.t =
-    Path_producers.Test.try_gen_transform_stm_list test
-
-  let gen_path (test : Subject.Test.t) ~(random : Splittable_random.State.t)
-      ~(action_id : Act_common.Id.t) : Path.Program.t State.Monad.t =
-    Helpers.lift_quickcheck_opt (quickcheck_path test) ~random ~action_id
-
   let cond_env (vars : Var.Map.t) ~(tid : int) :
       (module Act_c_mini.Env_types.S_with_known_values) =
     Var.Map.env_module_with_known_values ~scope:(Local tid) ~predicates:[]
@@ -95,6 +106,13 @@ module Surround = struct
   end) : Action_types.S_payload with type t = Body.t = struct
     include Body
 
+    module PP =
+      Program_path (struct
+        let action_id = Basic.action_id
+        let gen = Path_producers.Test.try_gen_transform_stm_list
+        let build_filter = Fn.id
+      end)
+
     let quickcheck_cond (path : Path.Program.t) :
         Act_c_mini.Expression.t Q.Generator.t State.Monad.t =
       let tid = Path.Program.tid path in
@@ -111,33 +129,11 @@ module Surround = struct
 
     let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
         ~(param_map : Param_map.t) : Body.t State.Monad.t =
-      ignore (param_map : Param_map.t) ;
       State.Monad.Let_syntax.(
-        let%bind path = gen_path test ~random ~action_id:Basic.action_id in
+        let%bind path = PP.gen test ~random ~param_map in
         let%map cond = gen_cond path ~random in
         Body.make ~cond ~path)
   end
-end
-
-module Program_path (Basic : sig
-  val action_id : Act_common.Id.t
-
-  val build_filter : Path_filter.t -> Path_filter.t
-
-  val gen :
-    Subject.Test.t -> filter:Path_filter.t -> Path.Program.t Opt_gen.t
-end) : Action_types.S_payload with type t = Path.Program.t = struct
-  type t = Path.Program.t [@@deriving sexp]
-
-  let quickcheck_path (test : Subject.Test.t) : Path.Program.t Opt_gen.t =
-    let filter = Basic.build_filter Path_filter.empty in
-    Basic.gen ~filter test
-
-  let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
-      ~(param_map : Param_map.t) : Path.Program.t State.Monad.t =
-    ignore (param_map : Param_map.t) ;
-    Helpers.lift_quickcheck_opt (quickcheck_path test) ~random
-      ~action_id:Basic.action_id
 end
 
 module None : Action_types.S_payload with type t = unit = struct

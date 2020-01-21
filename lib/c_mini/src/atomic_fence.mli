@@ -18,12 +18,12 @@ module Mode : sig
   type t =
     | Thread  (** 'atomic_thread_fence' *)
     | Signal  (** 'atomic_signal_fence' *)
-  [@@deriving sexp, compare, equal]
+  [@@deriving sexp, compare, equal, quickcheck]
 end
 
 (** {1 Fences themselves} *)
 
-type t [@@deriving sexp, compare, equal]
+type t [@@deriving sexp, compare, equal, quickcheck]
 (** Opaque type of atomic fences. *)
 
 (** {2 Constructors} *)
