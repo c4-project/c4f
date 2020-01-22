@@ -100,13 +100,13 @@
 
 %%
 
-%inline left_binop(this_level, next_level, op):
-  | e = next_level { e }
-  | l = this_level; o = op; r = next_level { Expr.Binary (l, o, r) }
+let left_binop(this_level, next_level, op) ==
+  | next_level
+  | ~ = this_level; ~ = op; ~ = next_level; < Expr.Binary >
 
-%inline right_binop(this_level, next_level, op):
-  | e = next_level { e }
-  | l = next_level; o = op; r = this_level { Expr.Binary (l, o, r) }
+let right_binop(this_level, next_level, op) ==
+  | next_level
+  | ~ = next_level; ~ = op; ~ = this_level; < Expr.Binary >
 
 let clist(x) == separated_list(",", x)
 let nclist(x) == separated_nonempty_list(",", x)
@@ -165,16 +165,16 @@ let litmus_identifier :=
 
 let translation_unit := ~ = external_declaration+; EOF; <>
 
-external_declaration:
-  | func = function_definition { `Fun  func }
-  | decl = declaration         { `Decl decl }
+let external_declaration :=
+  | ~ = function_definition; < `Fun  >
+  | ~ = declaration        ; < `Decl >
 
-function_definition:
-  | decl_specs = declaration_specifier*; signature = declarator; decls = declaration*; body = compound_statement
+let function_definition :=
+  | decl_specs = declaration_specifier*; signature = declarator; decls = declaration*; body = compound_statement;
     { { Function_def.decl_specs; signature; decls; body } }
 
-declaration:
-  | qualifiers = declaration_specifier+; declarator = endsemi(clist(init_declarator))
+let declaration :=
+  | qualifiers = declaration_specifier+; declarator = endsemi(clist(init_declarator));
     { { Decl.qualifiers; declarator } }
 
 let declaration_specifier :=
