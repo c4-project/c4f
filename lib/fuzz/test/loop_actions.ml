@@ -21,7 +21,7 @@ let%test_module "Surround" =
 
     let state : Src.State.t =
       Src.State.make
-        ~labels:(Set.empty (module Src.Subject.Label))
+        ~labels:(Set.empty (module Src.Label))
         ~vars:(Lazy.force Var.Test_data.test_map)
         ()
 

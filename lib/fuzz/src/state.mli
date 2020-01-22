@@ -20,7 +20,7 @@ type t
 
 val make :
      ?o:Act_common.Output.t
-  -> labels:Set.M(Subject.Label).t
+  -> labels:Set.M(Label).t
   -> vars:Var.Map.t
   -> unit
   -> t
@@ -38,7 +38,7 @@ val of_litmus :
 
 (** {2 Directly accessing a fuzzer state} *)
 
-val labels : t -> Set.M(Subject.Label).t
+val labels : t -> Set.M(Label).t
 (** [labels state] gets the set of labels that are known to [state]. *)
 
 val vars : t -> Var.Map.t

@@ -28,7 +28,7 @@ module Test_data = struct
 
   let state : Act_fuzz.State.t Lazy.t =
     (* TODO(@MattWindsor91): labels? *)
-    let labels = Set.empty (module Src.Subject.Label) in
+    let labels = Set.empty (module Src.Label) in
     Lazy.Let_syntax.(
       let%map globals_alist = globals in
       let vars =

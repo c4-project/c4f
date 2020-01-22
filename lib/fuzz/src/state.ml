@@ -16,14 +16,13 @@ module Tx = Travesty_base_exts
 type t =
   { (* Optionals to the top, to make sure [make] derives correctly. *)
     o: Ac.Output.t [@default Ac.Output.silent ()]
-  ; labels: Set.M(Subject.Label).t
+  ; labels: Set.M(Label).t
   ; vars: Var.Map.t }
 [@@deriving fields, make]
 
 let of_litmus ?(o : Ac.Output.t option) (lt : Act_c_mini.Litmus.Test.t) :
     t Or_error.t =
-  (* TODO(@MattWindsor91): add label scan *)
-  let labels = Set.empty (module Subject.Label) in
+  let labels = Label.labels_of_test lt in
   Or_error.Let_syntax.(
     let%map vars = Var.Map.make_existing_var_map lt in
     make ?o ~vars ~labels ())

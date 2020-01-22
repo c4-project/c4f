@@ -16,17 +16,6 @@ open struct
   module Tx = Travesty_base_exts
 end
 
-module Label = struct
-  module M = struct
-    (* As is oft the case in ACT, this weird 'module M' wrapper serves to set
-       up the Comparable functor call later. *)
-    type t = Metadata.t Act_c_mini.Label.t [@@deriving compare, equal, sexp]
-  end
-
-  include M
-  include Comparable.Make (M)
-end
-
 module Statement = struct
   type t = Metadata.t Act_c_mini.Statement.t [@@deriving sexp]
 

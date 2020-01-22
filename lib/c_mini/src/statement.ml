@@ -284,6 +284,36 @@ module Main :
         with type t = t
          and type Elt.t = Act_common.C_id.t =
       Travesty.Traversable.Chain0 (On_lvalues) (Lvalue.On_identifiers)
+
+(* TODO(@MattWindsor91): needs some refactoring
+    module On_primitives : Travesty.Traversable_types.S0
+      with type t = t
+      and type Elt.t = Meta.t Prim_statement.t =
+      Travesty.Traversable.Make0 (struct
+        type nonrec t = t
+        module Elt = struct
+          type t = Meta.t Prim_statement.t
+        end
+
+        module On_monad (M : Monad.S) = struct
+          module SBase = Base_map (M)
+          module IBase = Ifs_base_map (M)
+          module WBase = Whiles_base_map (M)
+
+          module Bk = Block_stms.On_monad (M)
+          let rec map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
+            SBase.bmap x ~prim:f ~if_stm:(map_m_ifs ~f)
+              ~while_loop:(map_m_whiles ~f)
+
+        and map_m_ifs x ~f =
+          IBase.bmap x ~cond:M.return
+            ~t_branch:(Bk.map_m ~f:(map_m ~f))
+            ~f_branch:(Bk.map_m ~f:(map_m ~f))
+
+        and map_m_whiles x ~f =
+          WBase.bmap x ~cond:M.return ~body:(Bk.map_m ~f:(map_m ~f))
+        end
+      end) *)
   end
 end
 
