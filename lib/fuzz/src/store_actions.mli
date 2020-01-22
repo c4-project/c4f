@@ -11,9 +11,9 @@
 
 (** Actions that generate store instructions. *)
 
-(** {1 Random state} *)
+(** {1 Payload} *)
 
-module Random_state : sig
+module Store_payload : sig
   type t
 
   val make : store:Act_c_mini.Atomic_store.t -> path:Path.Program.t -> t
@@ -25,14 +25,14 @@ end
 
 (** {1 Action modules} *)
 
-module Int : Action_types.S with type Payload.t = Random_state.t
+module Int : Action_types.S with type Payload.t = Store_payload.t
 (** [Int] is a fuzzer action that generates a random atomic-int store
     instruction. *)
 
-module Int_dead : Action_types.S with type Payload.t = Random_state.t
+module Int_dead : Action_types.S with type Payload.t = Store_payload.t
 (** [Int_dead] is a variant of [Int] that only targets dead-code, and, in
     turn, requires and adds fewer constraints on the destination. *)
 
-module Int_redundant : Action_types.S with type Payload.t = Random_state.t
+module Int_redundant : Action_types.S with type Payload.t = Store_payload.t
 (** [Int_redundant] is a variant of [Int] that only stores a destination's
     known value back to itself. *)

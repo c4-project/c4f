@@ -35,7 +35,7 @@ let forbid_already_written_flag (param_map : Param_map.t) :
     (Param_map.get_flag param_map
        ~id:(Ac.Id.of_string_list ["store"; "forbid-already-written"]))
 
-module Random_state = struct
+module Store_payload = struct
   (* We don't give [gen] here, because it depends quite a lot on the functor
      arguments of [Make]. *)
 
@@ -101,7 +101,7 @@ module Make (B : sig
       (Dst : Act_c_mini.Env_types.S_with_known_values) :
     Act_utils.My_quickcheck.S_with_sexp
       with type t := Act_c_mini.Atomic_store.t
-end) : Action_types.S with type Payload.t = Random_state.t = struct
+end) : Action_types.S with type Payload.t = Store_payload.t = struct
   module Name = struct
     let name = Act_common.Id.("store" @: "make" @: B.name_suffix)
   end
@@ -141,7 +141,7 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
     Var.Map.env_module_with_known_values ~predicates ~scope:(Local tid) vars
 
   module Payload = struct
-    type t = Random_state.t [@@deriving sexp]
+    type t = Store_payload.t [@@deriving sexp]
 
     module G = Base_quickcheck.Generator
 
@@ -206,7 +206,7 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
           State.Monad.Monadic.return
             (gen_store o vars ~tid ~random ~forbid_already_written)
         in
-        Random_state.make ~store ~path)
+        Store_payload.make ~store ~path)
 
     let gen (subject : Subject.Test.t) ~(random : Splittable_random.State.t)
         ~(param_map : Param_map.t) : t State.Monad.t =
@@ -253,7 +253,7 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
           add_dependencies_to_store_src store ~tid))
 
   let run (subject : Subject.Test.t)
-      ~payload:({store; path} : Random_state.t) :
+      ~payload:({store; path} : Store_payload.t) :
       Subject.Test.t State.Monad.t =
     let store_stm =
       Act_c_mini.Statement.atomic_store Metadata.generated store
@@ -268,7 +268,7 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
            ~target:subject))
 end
 
-module Int : Action_types.S with type Payload.t = Random_state.t =
+module Int : Action_types.S with type Payload.t = Store_payload.t =
 Make (struct
   let name_suffix = Ac.Id.of_string "int.normal"
 
@@ -288,7 +288,7 @@ Make (struct
   module Quickcheck = Act_c_mini.Atomic_store.Quickcheck_ints
 end)
 
-module Int_dead : Action_types.S with type Payload.t = Random_state.t =
+module Int_dead : Action_types.S with type Payload.t = Store_payload.t =
 Make (struct
   let name_suffix = Ac.Id.of_string "int.dead"
 
@@ -310,7 +310,7 @@ Make (struct
   module Quickcheck = Act_c_mini.Atomic_store.Quickcheck_ints
 end)
 
-module Int_redundant : Action_types.S with type Payload.t = Random_state.t =
+module Int_redundant : Action_types.S with type Payload.t = Store_payload.t =
 Make (struct
   let name_suffix = Ac.Id.of_string "int.redundant"
 

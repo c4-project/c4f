@@ -126,6 +126,25 @@ module Test_data = struct
       let%map threads = threads in
       let header = Act_litmus.Header.make ~name:"example" ~init () in
       Act_litmus.Test.Raw.make ~header ~threads)
+
+  module Path = struct
+    (* These will need manually synchronising with the statements above. *)
+
+    let thread_0_stms (path : Src.Path.Stms.t) : Src.Path.Program.t Lazy.t =
+      lazy Src.Path.(Program.in_thread 0 @@ Thread.in_stms @@ path)
+
+    let insert_live : Src.Path.Program.t Lazy.t =
+      Src.Path.(thread_0_stms @@ Stms.insert 2)
+
+    let known_true_if (path : Src.Path.If.t) : Src.Path.Program.t Lazy.t =
+      Src.Path.(thread_0_stms @@ Stms.in_stm 3 @@ Stm.in_if @@ path)
+
+    let dead_else (path : Src.Path.Stms.t) : Src.Path.Program.t Lazy.t =
+      Src.Path.(known_true_if @@ If.in_branch false @@ path)
+
+    let insert_dead : Src.Path.Program.t Lazy.t =
+      Src.Path.(dead_else @@ Stms.insert 0)
+  end
 end
 
 let%test_module "using sample environment" =
