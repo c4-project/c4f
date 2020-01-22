@@ -403,7 +403,7 @@ module If :
 
     module On_lvalues :
       Travesty.Traversable_types.S0
-        with type t := t
+        with type t = t
          and type Elt.t = Lvalue.t = Make_traversal (struct
       module Elt = Lvalue
       module E = Expression.On_lvalues
@@ -412,24 +412,12 @@ module If :
 
     module On_addresses :
       Travesty.Traversable_types.S0
-        with type t := t
+        with type t = t
          and type Elt.t = Address.t = Make_traversal (struct
       module Elt = Address
       module E = Expression.On_addresses
       module S = Sm.On_addresses
     end)
-
-    module On_identifiers :
-      Travesty.Traversable_types.S0
-        with type t := t
-         and type Elt.t = Act_common.C_id.t =
-      Travesty.Traversable.Chain0
-        (struct
-          type nonrec t = t
-
-          include On_lvalues
-        end)
-        (Lvalue.On_identifiers)
   end
 end
 
@@ -511,7 +499,7 @@ module While :
 
     module On_lvalues :
       Travesty.Traversable_types.S0
-        with type t := t
+        with type t = t
          and type Elt.t = Lvalue.t = Make_traversal (struct
       module Elt = Lvalue
       module E = Expression.On_lvalues
@@ -520,23 +508,11 @@ module While :
 
     module On_addresses :
       Travesty.Traversable_types.S0
-        with type t := t
+        with type t = t
          and type Elt.t = Address.t = Make_traversal (struct
       module Elt = Address
       module E = Expression.On_addresses
       module S = Sm.On_addresses
     end)
-
-    module On_identifiers :
-      Travesty.Traversable_types.S0
-        with type t := t
-         and type Elt.t = Act_common.C_id.t =
-      Travesty.Traversable.Chain0
-        (struct
-          type nonrec t = t
-
-          include On_lvalues
-        end)
-        (Lvalue.On_identifiers)
   end
 end

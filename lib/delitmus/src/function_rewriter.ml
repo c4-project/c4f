@@ -69,8 +69,11 @@ struct
 
     module C_stm_meta = C.Statement.With_meta (Unit)
 
+    module On_ids =
+      Travesty.Traversable.Chain0 (C_stm_meta.On_lvalues) (Act_c_mini.Lvalue.On_identifiers)
+
     let rewrite_ids : unit C.Statement.t -> unit C.Statement.t Or_error.t =
-      C_stm_meta.On_identifiers.With_errors.map_m ~f:rewrite_id_if_local
+      On_ids.With_errors.map_m ~f:rewrite_id_if_local
 
     (* When rewriting global lvalues (as part of a var-as-global run), we do
        it _after_ address rewriting, as the address rewriting will
