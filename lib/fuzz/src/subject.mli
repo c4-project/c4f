@@ -27,8 +27,7 @@ open Base
     contain any accessors/constructors/traversals, but do group useful
     functionality that depends on knowing the metadata type.
 
-    See also {!Label}.
-*)
+    See also {!Label}. *)
 
 (** {2 Subject statements} *)
 

@@ -27,14 +27,15 @@ let mkwhile (xs : unit Src.Statement.t list) : unit Src.Statement.t =
     while_loop
       (While.make ~cond ~kind:`While ~body:(Src.Block.of_statement_list xs)))
 
+let nop : unit Src.Statement.t =
+  Src.Statement.prim (Src.Prim_statement.nop ())
+
 let%test_module "has_if_statements" =
   ( module struct
     let test (s : unit Src.Statement.t) : unit =
       Act_utils.Io.print_bool (Src.Statement.has_if_statements s)
 
-    let%expect_test "nop" =
-      test (Src.Statement.nop ()) ;
-      [%expect {| false |}]
+    let%expect_test "nop" = test nop ; [%expect {| false |}]
 
     let%expect_test "naked if statement" =
       test (mkif [] []) ;
@@ -45,7 +46,7 @@ let%test_module "has_if_statements" =
       [%expect {| false |}]
 
     let%expect_test "while loop with an if statement" =
-      test (mkwhile [Src.Statement.nop (); mkif [] []; Src.Statement.nop ()]) ;
+      test (mkwhile [nop; mkif [] []; nop]) ;
       [%expect {| true |}]
   end )
 
@@ -54,9 +55,7 @@ let%test_module "has_while_loops" =
     let test (s : unit Src.Statement.t) : unit =
       Act_utils.Io.print_bool (Src.Statement.has_while_loops s)
 
-    let%expect_test "nop" =
-      test (Src.Statement.nop ()) ;
-      [%expect {| false |}]
+    let%expect_test "nop" = test nop ; [%expect {| false |}]
 
     let%expect_test "naked while loop" =
       test (mkwhile []) ;
@@ -67,10 +66,10 @@ let%test_module "has_while_loops" =
       [%expect {| false |}]
 
     let%expect_test "if statement with while loop in true branch" =
-      test (mkif [Src.Statement.nop (); mkwhile []; Src.Statement.nop ()] []) ;
+      test (mkif [nop; mkwhile []; nop] []) ;
       [%expect {| true |}]
 
     let%expect_test "if statement with while loop in false branch" =
-      test (mkif [] [Src.Statement.nop (); mkwhile []; Src.Statement.nop ()]) ;
+      test (mkif [] [nop; mkwhile []; nop]) ;
       [%expect {| true |}]
   end )

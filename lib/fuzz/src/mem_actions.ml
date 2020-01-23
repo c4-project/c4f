@@ -56,7 +56,9 @@ module Fence : Action_types.S with type Payload.t = Fence_payload.t = struct
       ~payload:({path; fence} : Fence_payload.t) :
       Subject.Test.t State.Monad.t =
     let fence_stm =
-      Act_c_mini.Statement.atomic_fence Metadata.generated fence
+      fence
+      |> Act_c_mini.Prim_statement.atomic_fence Metadata.generated
+      |> Act_c_mini.Statement.prim
     in
     (* We don't need to do any bookkeeping on fences. *)
     State.Monad.Monadic.return

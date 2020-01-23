@@ -25,19 +25,17 @@ module Label = struct
   include M
   include Comparable.Make (M)
 end
+
 include Label
 
-let labels_of_thread (thread : unit Act_c_mini.Function.t Ac.C_named.t)
-  : t list =
-  ignore thread;
-  (*|> C_named.value
-  |> Act_c_mini.Function.body_stms
-  |> List.filter *)
+let labels_of_thread (thread : unit Act_c_mini.Function.t Ac.C_named.t) :
+    t list =
+  ignore thread ;
+  (*|> C_named.value |> Act_c_mini.Function.body_stms |> List.filter *)
   []
 
 let labels_of_test (test : Act_c_mini.Litmus.Test.t) :
     (t, comparator_witness) Set.t =
-  test
-  |> Act_c_mini.Litmus.Test.threads
+  test |> Act_c_mini.Litmus.Test.threads
   |> List.concat_map ~f:labels_of_thread
   |> Set.of_list (module Label)

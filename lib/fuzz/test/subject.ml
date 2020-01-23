@@ -41,6 +41,12 @@ module Test_data = struct
       in
       Act_fuzz.State.make ~vars ~labels ())
 
+  let mk_store (a : Act_c_mini.Atomic_store.t) : Src.Subject.Statement.t =
+    Act_c_mini.(
+      Statement.prim
+      @@ Prim_statement.atomic_store Src.Metadata.generated
+      @@ a)
+
   let sample_known_true_if : Src.Subject.Statement.t Lazy.t =
     lazy
       Act_c_mini.(
@@ -54,7 +60,7 @@ module Test_data = struct
                ~t_branch:
                  (Src.Subject.Block.make_generated
                     ~statements:
-                      [ atomic_store Src.Metadata.generated
+                      [ mk_store
                           (Atomic_store.make ~src:(Expression.int_lit 56)
                              ~dst:(Address.of_variable_str_exn "x")
                              ~mo:Mem_order.Seq_cst) ]
@@ -70,7 +76,7 @@ module Test_data = struct
                ~t_branch:
                  (Src.Subject.Block.make_dead_code
                     ~statements:
-                      [ atomic_store Src.Metadata.generated
+                      [ mk_store
                           (Atomic_store.make ~src:(Expression.int_lit 95)
                              ~dst:(Address.of_variable_str_exn "y")
                              ~mo:Mem_order.Seq_cst) ]
@@ -87,7 +93,7 @@ module Test_data = struct
                ~body:
                  (Src.Subject.Block.make_dead_code
                     ~statements:
-                      [ atomic_store Src.Metadata.generated
+                      [ mk_store
                           (Atomic_store.make ~src:(Expression.int_lit 44)
                              ~dst:(Address.of_variable_str_exn "x")
                              ~mo:Mem_order.Seq_cst) ]
@@ -101,12 +107,12 @@ module Test_data = struct
       and sample_once_do_while = sample_once_do_while in
       Act_c_mini.(
         Statement.
-          [ atomic_store Src.Metadata.generated
+          [ mk_store
               (Atomic_store.make ~src:(Expression.int_lit 42)
                  ~dst:(Address.of_variable_str_exn "x")
                  ~mo:Mem_order.Seq_cst)
-          ; nop Src.Metadata.generated
-          ; atomic_store Src.Metadata.generated
+          ; prim (Prim_statement.nop Src.Metadata.generated)
+          ; mk_store
               (Atomic_store.make
                  ~src:(Expression.of_variable_str_exn "foo")
                  ~dst:(Address.of_variable_str_exn "y")

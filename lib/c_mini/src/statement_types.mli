@@ -41,49 +41,8 @@ module type S_statement = sig
   val while_loop : 'meta while_loop -> 'meta t
   (** [while_loop loop] lifts a while or do-while loop [loop] to a statement. *)
 
-  val atomic : 'meta -> Atomic_statement.t -> 'meta t
-  (** [atomic meta a] lifts an atomic statement [a] to a statement. *)
-
   val prim : 'meta Prim_statement.t -> 'meta t
   (** [prim p] lifts a primitive statement [p] to a statement. *)
-
-  (** {4 Liftings of primitive statements} *)
-
-  val assign : Assign.t -> 'meta t
-  (** [assign a] lifts an assignment [a] to a statement. *)
-
-  val atomic_cmpxchg : 'meta -> Atomic_cmpxchg.t -> 'meta t
-  (** [atomic_cmpxchg meta a] lifts an atomic compare-exchange [a] to a
-      statement. *)
-
-  val atomic_fence : 'meta -> Atomic_fence.t -> 'meta t
-  (** [atomic_fence meta a] lifts an atomic fence [a] to a statement. *)
-
-  val atomic_store : 'meta -> Atomic_store.t -> 'meta t
-  (** [atomic_store meta a] lifts an atomic store [a] to a statement. *)
-
-  val nop : 'meta -> 'meta t
-  (** [nop meta] is a no-operation statement with metadata [meta]; it
-      corresponds to C's empty expression statement. *)
-
-  val label : 'meta Label.t -> 'meta t
-  (** [label label] is a label statement with label [label]. *)
-
-  val goto : 'meta Label.t -> 'meta t
-  (** [goto label] is a GOTO statement with label [label]. *)
-
-  val break : 'meta -> 'meta t
-  (** [break meta] is a break statement with metadata [meta]. *)
-
-  val continue : 'meta -> 'meta t
-  (** [continue meta] is a continue statement with metadata [meta]. *)
-
-  val return : 'meta -> 'meta t
-  (** [return meta] is a return statement with metadata [meta]. *)
-
-  val procedure_call : 'meta Call.t -> 'meta t
-  (** [procedure_call a] lifts a procedure (non-value-returning function)
-      call [a] to a statement. *)
 
   (** {3 Accessors} *)
 

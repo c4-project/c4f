@@ -46,22 +46,24 @@ let%test_module "make_type_alist" =
       ; (Ac.C_id.of_string "r0", Src.Initialiser.of_int 0) ]
 
     let p0_stms : unit Src.Statement.t list =
-      [ Src.Statement.assign
-          (Src.Assign.make
-             ~lvalue:(Src.Lvalue.of_variable_str_exn "r0")
-             ~rvalue:
-               (Src.Expression.atomic_load
-                  (Src.Atomic_load.make
-                     ~src:(Src.Address.of_variable_str_exn "y")
-                     ~mo:Src.Mem_order.Acquire)))
-      ; Src.Statement.assign
-          (Src.Assign.make
-             ~lvalue:(Src.Lvalue.of_variable_str_exn "r1")
-             ~rvalue:
-               (Src.Expression.atomic_load
-                  (Src.Atomic_load.make
-                     ~src:(Src.Address.of_variable_str_exn "x")
-                     ~mo:Src.Mem_order.Relaxed))) ]
+      [ Src.Statement.prim
+          (Src.Prim_statement.assign
+             (Src.Assign.make
+                ~lvalue:(Src.Lvalue.of_variable_str_exn "r0")
+                ~rvalue:
+                  (Src.Expression.atomic_load
+                     (Src.Atomic_load.make
+                        ~src:(Src.Address.of_variable_str_exn "y")
+                        ~mo:Src.Mem_order.Acquire))))
+      ; Src.Statement.prim
+          (Src.Prim_statement.assign
+             (Src.Assign.make
+                ~lvalue:(Src.Lvalue.of_variable_str_exn "r1")
+                ~rvalue:
+                  (Src.Expression.atomic_load
+                     (Src.Atomic_load.make
+                        ~src:(Src.Address.of_variable_str_exn "x")
+                        ~mo:Src.Mem_order.Relaxed)))) ]
 
     let p0 : unit Src.Function.t =
       Src.Function.make ~body_decls:p0_decls ~body_stms:p0_stms ~parameters
@@ -70,16 +72,18 @@ let%test_module "make_type_alist" =
     let p1_decls : (Ac.C_id.t, Src.Initialiser.t) List.Assoc.t = []
 
     let p1_stms : unit Src.Statement.t list =
-      [ Src.Statement.atomic_store ()
-          (Src.Atomic_store.make
-             ~src:(Src.Expression.int_lit 1)
-             ~dst:(Src.Address.of_variable_str_exn "x")
-             ~mo:Src.Mem_order.Relaxed)
-      ; Src.Statement.atomic_store ()
-          (Src.Atomic_store.make
-             ~src:(Src.Expression.int_lit 1)
-             ~dst:(Src.Address.of_variable_str_exn "y")
-             ~mo:Src.Mem_order.Release) ]
+      [ Src.Statement.prim
+          (Src.Prim_statement.atomic_store ()
+             (Src.Atomic_store.make
+                ~src:(Src.Expression.int_lit 1)
+                ~dst:(Src.Address.of_variable_str_exn "x")
+                ~mo:Src.Mem_order.Relaxed))
+      ; Src.Statement.prim
+          (Src.Prim_statement.atomic_store ()
+             (Src.Atomic_store.make
+                ~src:(Src.Expression.int_lit 1)
+                ~dst:(Src.Address.of_variable_str_exn "y")
+                ~mo:Src.Mem_order.Release)) ]
 
     let p1 : unit Src.Function.t =
       Src.Function.make ~body_decls:p1_decls ~body_stms:p1_stms ~parameters

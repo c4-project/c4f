@@ -341,17 +341,27 @@ let rec expr : Ast.Expr.t -> Expression.t Or_error.t =
         Or_error.error_s
           [%message "Unsupported expression" ~got:(e : Ast.Expr.t)])
 
+let model_atomic_cmpxchg_with_args ~(raw_obj : Ast.Expr.t)
+    ~(raw_expected : Ast.Expr.t) ~(raw_desired : Ast.Expr.t)
+    ~(raw_succ : Ast.Expr.t) ~(raw_fail : Ast.Expr.t) :
+    unit Statement.t Or_error.t =
+  Or_error.Let_syntax.(
+    let%map obj = expr_to_address raw_obj (* volatile A* *)
+    and expected = expr_to_address raw_expected (* C* *)
+    and desired = expr raw_desired (* C *)
+    and succ = expr_to_memory_order raw_succ (* memory_order *)
+    and fail = expr_to_memory_order raw_fail (* memory_order *) in
+    let cmpxchg =
+      Prim_statement.atomic_cmpxchg ()
+        (Atomic_cmpxchg.make ~obj ~expected ~desired ~succ ~fail)
+    in
+    Statement.prim cmpxchg)
+
 let model_atomic_cmpxchg : Ast.Expr.t list -> unit Statement.t Or_error.t =
   function
   | [raw_obj; raw_expected; raw_desired; raw_succ; raw_fail] ->
-      let open Or_error.Let_syntax in
-      let%map obj = expr_to_address raw_obj (* volatile A* *)
-      and expected = expr_to_address raw_expected (* C* *)
-      and desired = expr raw_desired (* C *)
-      and succ = expr_to_memory_order raw_succ (* memory_order *)
-      and fail = expr_to_memory_order raw_fail (* memory_order *) in
-      Statement.atomic_cmpxchg ()
-        (Atomic_cmpxchg.make ~obj ~expected ~desired ~succ ~fail)
+      model_atomic_cmpxchg_with_args ~raw_obj ~raw_expected ~raw_desired
+        ~raw_succ ~raw_fail
   | args ->
       Or_error.error_s
         [%message
@@ -363,7 +373,8 @@ let model_atomic_fence (mode : Atomic_fence.Mode.t) :
   | [raw_mo] ->
       Or_error.Let_syntax.(
         let%map mo = expr_to_memory_order raw_mo (* memory_order *) in
-        Statement.atomic_fence () (Atomic_fence.make ~mode ~mo))
+        let fence = Atomic_fence.make ~mode ~mo in
+        fence |> Prim_statement.atomic_fence () |> Statement.prim)
   | args ->
       Or_error.error_s
         [%message
@@ -372,11 +383,12 @@ let model_atomic_fence (mode : Atomic_fence.Mode.t) :
 let model_atomic_store : Ast.Expr.t list -> unit Statement.t Or_error.t =
   function
   | [raw_dst; raw_src; raw_mo] ->
-      let open Or_error.Let_syntax in
-      let%map dst = expr_to_address raw_dst
-      and src = expr raw_src
-      and mo = expr_to_memory_order raw_mo in
-      Statement.atomic_store () (Atomic_store.make ~dst ~src ~mo)
+      Or_error.Let_syntax.(
+        let%map dst = expr_to_address raw_dst
+        and src = expr raw_src
+        and mo = expr_to_memory_order raw_mo in
+        let store = Atomic_store.make ~dst ~src ~mo in
+        store |> Prim_statement.atomic_store () |> Statement.prim)
   | args ->
       Or_error.error_s
         [%message
@@ -401,8 +413,8 @@ let arbitrary_procedure_call (function_id : Ac.C_id.t)
     (raw_arguments : Ast.Expr.t list) : unit Statement.t Or_error.t =
   Or_error.Let_syntax.(
     let%map arguments = Tx.Or_error.combine_map ~f:expr raw_arguments in
-    Statement.procedure_call
-      (Call.make ~metadata:() ~arguments ~function_id ()))
+    let call = Call.make ~metadata:() ~arguments ~function_id () in
+    call |> Prim_statement.procedure_call |> Statement.prim)
 
 let procedure_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list) :
     unit Statement.t Or_error.t =
@@ -416,9 +428,10 @@ let procedure_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list) :
 
 let expr_stm : Ast.Expr.t -> unit Statement.t Or_error.t = function
   | Binary (l, `Assign, r) ->
-      let open Or_error.Let_syntax in
-      let%map lvalue = expr_to_lvalue l and rvalue = expr r in
-      Statement.assign (Assign.make ~lvalue ~rvalue)
+      Or_error.Let_syntax.(
+        let%map lvalue = expr_to_lvalue l and rvalue = expr r in
+        let assign = Assign.make ~lvalue ~rvalue in
+        assign |> Prim_statement.assign |> Statement.prim)
   | Call {func; arguments} ->
       procedure_call func arguments
   | ( Brackets _
@@ -476,17 +489,17 @@ let loop (model_stm : Ast.Stm.t -> unit Statement.t Or_error.t)
 
 let rec stm : Ast.Stm.t -> unit Statement.t Or_error.t = function
   | Expr None ->
-      Or_error.return (Statement.nop ())
+      Or_error.return (Statement.prim (Prim_statement.nop ()))
   | Expr (Some e) ->
       expr_stm e
   | If {cond; t_branch; f_branch} ->
       model_if stm cond t_branch f_branch
   | Continue ->
-      Or_error.return (Statement.continue ())
+      Or_error.return (Statement.prim (Prim_statement.continue ()))
   | Break ->
-      Or_error.return (Statement.break ())
+      Or_error.return (Statement.prim (Prim_statement.break ()))
   | Return None ->
-      Or_error.return (Statement.return ())
+      Or_error.return (Statement.prim (Prim_statement.return ()))
   | Return (Some _) as s ->
       Or_error.error_s
         [%message
@@ -498,9 +511,11 @@ let rec stm : Ast.Stm.t -> unit Statement.t Or_error.t = function
   | Label (Normal l, Expr None) ->
       (* This is a particularly weird subset of the labels, but I'm not sure
          how best to expand it. *)
-      Or_error.return (Statement.label (Label.of_c_id l))
+      Or_error.return
+        (Statement.prim (Prim_statement.label (Label.of_c_id l)))
   | Goto l ->
-      Or_error.return (Statement.goto (Label.of_c_id l))
+      Or_error.return
+        (Statement.prim (Prim_statement.goto (Label.of_c_id l)))
   | (Label _ | Compound _ | Switch _ | For _) as s ->
       Or_error.error_s
         [%message "Unsupported statement" ~got:(s : Ast.Stm.t)]

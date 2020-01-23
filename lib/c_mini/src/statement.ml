@@ -86,36 +86,6 @@ module Main :
   module Constructors = struct
     let prim (x : 'meta Prim_statement.t) : 'meta t = Prim x
 
-    let assign (x : (* 'meta *) Assign.t) : 'meta t =
-      prim (Prim_statement.assign x)
-
-    let atomic (m : 'meta) (x : Atomic_statement.t) : 'meta t =
-      prim (Prim_statement.atomic m x)
-
-    let atomic_cmpxchg (m : 'meta) (x : Atomic_cmpxchg.t) : 'meta t =
-      prim (Prim_statement.atomic_cmpxchg m x)
-
-    let atomic_fence (m : 'meta) (x : Atomic_fence.t) : 'meta t =
-      prim (Prim_statement.atomic_fence m x)
-
-    let atomic_store (m : 'meta) (x : Atomic_store.t) : 'meta t =
-      prim (Prim_statement.atomic_store m x)
-
-    let break (x : 'meta) : 'meta t = prim (Prim_statement.break x)
-
-    let continue (x : 'meta) : 'meta t = prim (Prim_statement.continue x)
-
-    let return (x : 'meta) : 'meta t = prim (Prim_statement.return x)
-
-    let label (x : 'meta Label.t) : 'meta t = prim (Prim_statement.label x)
-
-    let goto (x : 'meta Label.t) : 'meta t = prim (Prim_statement.goto x)
-
-    let nop (x : 'meta) : 'meta t = prim (Prim_statement.nop x)
-
-    let procedure_call (x : 'meta Call.t) : 'meta t =
-      prim (Prim_statement.procedure_call x)
-
     let if_stm (x : 'meta if_statement) : 'meta t = If_stm x
 
     let while_loop (x : 'meta while_loop) : 'meta t = While_loop x
@@ -285,35 +255,23 @@ module Main :
          and type Elt.t = Act_common.C_id.t =
       Travesty.Traversable.Chain0 (On_lvalues) (Lvalue.On_identifiers)
 
-(* TODO(@MattWindsor91): needs some refactoring
-    module On_primitives : Travesty.Traversable_types.S0
-      with type t = t
-      and type Elt.t = Meta.t Prim_statement.t =
-      Travesty.Traversable.Make0 (struct
-        type nonrec t = t
-        module Elt = struct
-          type t = Meta.t Prim_statement.t
-        end
+    (* TODO(@MattWindsor91): needs some refactoring module On_primitives :
+       Travesty.Traversable_types.S0 with type t = t and type Elt.t = Meta.t
+       Prim_statement.t = Travesty.Traversable.Make0 (struct type nonrec t =
+       t module Elt = struct type t = Meta.t Prim_statement.t end
 
-        module On_monad (M : Monad.S) = struct
-          module SBase = Base_map (M)
-          module IBase = Ifs_base_map (M)
-          module WBase = Whiles_base_map (M)
+       module On_monad (M : Monad.S) = struct module SBase = Base_map (M)
+       module IBase = Ifs_base_map (M) module WBase = Whiles_base_map (M)
 
-          module Bk = Block_stms.On_monad (M)
-          let rec map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
-            SBase.bmap x ~prim:f ~if_stm:(map_m_ifs ~f)
-              ~while_loop:(map_m_whiles ~f)
+       module Bk = Block_stms.On_monad (M) let rec map_m (x : t) ~(f : Elt.t
+       -> Elt.t M.t) : t M.t = SBase.bmap x ~prim:f ~if_stm:(map_m_ifs ~f)
+       ~while_loop:(map_m_whiles ~f)
 
-        and map_m_ifs x ~f =
-          IBase.bmap x ~cond:M.return
-            ~t_branch:(Bk.map_m ~f:(map_m ~f))
-            ~f_branch:(Bk.map_m ~f:(map_m ~f))
+       and map_m_ifs x ~f = IBase.bmap x ~cond:M.return ~t_branch:(Bk.map_m
+       ~f:(map_m ~f)) ~f_branch:(Bk.map_m ~f:(map_m ~f))
 
-        and map_m_whiles x ~f =
-          WBase.bmap x ~cond:M.return ~body:(Bk.map_m ~f:(map_m ~f))
-        end
-      end) *)
+       and map_m_whiles x ~f = WBase.bmap x ~cond:M.return ~body:(Bk.map_m
+       ~f:(map_m ~f)) end end) *)
   end
 end
 
@@ -402,9 +360,8 @@ module If :
     end)
 
     module On_lvalues :
-      Travesty.Traversable_types.S0
-        with type t = t
-         and type Elt.t = Lvalue.t = Make_traversal (struct
+      Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
+    Make_traversal (struct
       module Elt = Lvalue
       module E = Expression.On_lvalues
       module S = Sm.On_lvalues
@@ -498,9 +455,8 @@ module While :
     end)
 
     module On_lvalues :
-      Travesty.Traversable_types.S0
-        with type t = t
-         and type Elt.t = Lvalue.t = Make_traversal (struct
+      Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
+    Make_traversal (struct
       module Elt = Lvalue
       module E = Expression.On_lvalues
       module S = Sm.On_lvalues

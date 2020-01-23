@@ -256,7 +256,10 @@ end) : Action_types.S with type Payload.t = Store_payload.t = struct
       ~payload:({store; path} : Store_payload.t) :
       Subject.Test.t State.Monad.t =
     let store_stm =
-      Act_c_mini.Statement.atomic_store Metadata.generated store
+      Act_c_mini.(
+        store
+        |> Prim_statement.atomic_store Metadata.generated
+        |> Statement.prim)
     in
     let tid = Path.Program.tid path in
     State.Monad.Let_syntax.(

@@ -38,7 +38,7 @@ module Lang :
     let pp : t Fmt.t =
       Fmt.using reify Act_c_lang.Ast.Litmus_lang.Statement.pp
 
-    let empty () : t = `Stm (Statement.nop ())
+    let empty () : t = `Stm (Statement.prim (Prim_statement.nop ()))
 
     let make_uniform = Tx.List.right_pad ~padding:(empty ())
   end

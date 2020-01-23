@@ -26,5 +26,6 @@ include Comparable.S with type t := t
 
 (** {1 Probing Litmus tests for labels} *)
 
-val labels_of_test : Act_c_mini.Litmus.Test.t -> (t, comparator_witness) Set.t
+val labels_of_test :
+  Act_c_mini.Litmus.Test.t -> (t, comparator_witness) Set.t
 (** [labels_of_test test] extracts the labels from [test]. *)
