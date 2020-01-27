@@ -46,6 +46,18 @@ and 'meta while_loop = ('meta, 'meta statement) P_while_loop.t
 
 type 'meta block = ('meta, 'meta statement) Block.t
 
+(* TODO(@MattWindsor91): travesty *)
+module Ignore_exprs = Travesty.Traversable.Make0 (struct
+  type t = Expression.t
+
+  module Elt = Prim_statement
+
+  module On_monad (M : Monad.S) = struct
+    let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
+      ignore f ; M.return x
+  end
+end)
+
 module Ifs_base_map (M : Monad.S) = struct
   module F = Travesty.Traversable.Helpers (M)
   module O = Tx.Option.On_monad (M)
@@ -75,10 +87,7 @@ end
 
 module Main :
   Statement_types.S_statement
-    with type address := Address.t
-     and type 'meta t = 'meta statement
-     and type identifier := Act_c_lang.Ast_basic.Identifier.t
-     and type lvalue := Lvalue.t
+    with type 'meta t = 'meta statement
      and type 'meta if_stm := 'meta if_statement
      and type 'meta while_loop := 'meta while_loop = struct
   type 'meta t = 'meta statement [@@deriving sexp, compare, equal]
@@ -153,6 +162,26 @@ module Main :
           ~prim:(prim >> M.map ~f:(fun (m, x) -> Constructors.prim m x))
           ~if_stm:(if_stm >> M.map ~f:Constructors.if_stm)
           ~while_loop:(while_loop >> M.map ~f:Constructors.while_loop))
+
+    module IB = Ifs_base_map (M)
+    module WB = Whiles_base_map (M)
+    module Bk = Block.On_monad (M)
+
+    let bmap_flat (type m1 m2) (x : m1 t)
+        ~(prim : m1 * Prim_statement.t -> (m2 * Prim_statement.t) M.t)
+        ~(cond : Expression.t -> Expression.t M.t)
+        ~(block_meta : m1 -> m2 M.t) : m2 t M.t =
+      let rec mu x =
+        bmap x ~prim
+          ~if_stm:
+            (IB.bmap ~cond
+               ~t_branch:(Bk.bi_map_m ~left:block_meta ~right:mu)
+               ~f_branch:(Bk.bi_map_m ~left:block_meta ~right:mu))
+          ~while_loop:
+            (WB.bmap ~cond:M.return
+               ~body:(Bk.bi_map_m ~left:block_meta ~right:mu))
+      in
+      mu x
   end
 
   module On_meta :
@@ -166,19 +195,10 @@ module Main :
       module WB = Whiles_base_map (M)
       module Bk = Block.On_monad (M)
 
-      (* We have to unroll the map over if/while here, because otherwise we
-         end up with unsafe module recursion. *)
-
-      let rec map_m (x : 'm1 t) ~(f : 'm1 -> 'm2 M.t) : 'm2 t M.t =
-        B.bmap x
+      let map_m (x : 'm1 t) ~(f : 'm1 -> 'm2 M.t) : 'm2 t M.t =
+        B.bmap_flat x
           ~prim:(fun (m, p) -> M.(m |> f >>| fun m' -> (m', p)))
-          ~if_stm:
-            (IB.bmap ~cond:M.return
-               ~t_branch:(Bk.bi_map_m ~left:f ~right:(map_m ~f))
-               ~f_branch:(Bk.bi_map_m ~left:f ~right:(map_m ~f)))
-          ~while_loop:
-            (WB.bmap ~cond:M.return
-               ~body:(Bk.bi_map_m ~left:f ~right:(map_m ~f)))
+          ~cond:M.return ~block_meta:f
     end
   end)
 
@@ -212,26 +232,13 @@ module Main :
 
       module On_monad (M : Monad.S) = struct
         module SBase = Base_map (M)
-        module IBase = Ifs_base_map (M)
-        module WBase = Whiles_base_map (M)
-        module Bk = Block_stms.On_monad (M)
         module PM = Basic.P.On_monad (M)
         module EM = Basic.E.On_monad (M)
 
-        (* We also have to unroll the map over if/while here. *)
-
-        let rec map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
-          SBase.bmap x
+        let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
+          SBase.bmap_flat x
             ~prim:(fun (m, p) -> M.(p |> PM.map_m ~f >>| fun p' -> (m, p')))
-            ~if_stm:(map_m_ifs ~f) ~while_loop:(map_m_whiles ~f)
-
-        and map_m_ifs x ~f =
-          IBase.bmap x ~cond:(EM.map_m ~f)
-            ~t_branch:(Bk.map_m ~f:(map_m ~f))
-            ~f_branch:(Bk.map_m ~f:(map_m ~f))
-
-        and map_m_whiles x ~f =
-          WBase.bmap x ~cond:(EM.map_m ~f) ~body:(Bk.map_m ~f:(map_m ~f))
+            ~cond:(EM.map_m ~f) ~block_meta:M.return
       end
     end)
 
@@ -252,23 +259,17 @@ module Main :
       module P = Prim_statement.On_addresses
     end)
 
-    (* TODO(@MattWindsor91): needs some refactoring module On_primitives :
-       Travesty.Traversable_types.S0 with type t = t and type Elt.t = Meta.t
-       Prim_statement.t = Travesty.Traversable.Make0 (struct type nonrec t =
-       t module Elt = struct type t = Prim_statement.t end
-
-       module On_monad (M : Monad.S) = struct module SBase = Base_map (M)
-       module IBase = Ifs_base_map (M) module WBase = Whiles_base_map (M)
-
-       module Bk = Block_stms.On_monad (M) let rec map_m (x : t) ~(f : Elt.t
-       -> Elt.t M.t) : t M.t = SBase.bmap x ~prim:f ~if_stm:(map_m_ifs ~f)
-       ~while_loop:(map_m_whiles ~f)
-
-       and map_m_ifs x ~f = IBase.bmap x ~cond:M.return ~t_branch:(Bk.map_m
-       ~f:(map_m ~f)) ~f_branch:(Bk.map_m ~f:(map_m ~f))
-
-       and map_m_whiles x ~f = WBase.bmap x ~cond:M.return ~body:(Bk.map_m
-       ~f:(map_m ~f)) end end) *)
+    module On_primitives :
+      Travesty.Traversable_types.S0
+        with type t = t
+         and type Elt.t = Prim_statement.t = Make_traversal (struct
+      module Elt = Prim_statement
+      module E = Ignore_exprs
+      module P =
+        Travesty.Traversable.Fix_elt
+          (Travesty_containers.Singleton)
+          (Prim_statement)
+    end)
   end
 end
 
@@ -276,10 +277,7 @@ include Main
 
 module If :
   Statement_types.S_if_statement
-    with type address := Address.t
-     and type identifier := Act_common.C_id.t
-     and type lvalue := Lvalue.t
-     and type 'meta expr := Expression.t
+    with type 'meta expr := Expression.t
      and type 'meta stm := 'meta Main.t
      and type 'meta t = 'meta if_statement = struct
   type 'meta t = 'meta if_statement [@@deriving sexp, compare, equal]
@@ -303,9 +301,6 @@ module If :
       module B = Base_map (M)
       module Mn = On_meta.On_monad (M)
       module Bk = Block.On_monad (M)
-
-      (* We have to unroll the map over if statements here, because otherwise
-         we end up with unsafe module recursion. *)
 
       let map_m (x : 'm1 t) ~(f : 'm1 -> 'm2 M.t) : 'm2 t M.t =
         B.bmap x ~cond:M.return
@@ -372,15 +367,21 @@ module If :
       module E = Expression.On_addresses
       module S = Sm.On_addresses
     end)
+
+    module On_primitives :
+      Travesty.Traversable_types.S0
+        with type t = t
+         and type Elt.t = Prim_statement.t = Make_traversal (struct
+      module Elt = Prim_statement
+      module E = Ignore_exprs
+      module S = Sm.On_primitives
+    end)
   end
 end
 
 module While :
   Statement_types.S_while_loop
-    with type address := Address.t
-     and type identifier := Act_common.C_id.t
-     and type lvalue := Lvalue.t
-     and type 'meta expr := Expression.t
+    with type 'meta expr := Expression.t
      and type 'meta stm := 'meta Main.t
      and type 'meta t = 'meta while_loop = struct
   type 'meta t = 'meta while_loop [@@deriving sexp, compare, equal]
@@ -466,6 +467,15 @@ module While :
       module Elt = Address
       module E = Expression.On_addresses
       module S = Sm.On_addresses
+    end)
+
+    module On_primitives :
+      Travesty.Traversable_types.S0
+        with type t = t
+         and type Elt.t = Prim_statement.t = Make_traversal (struct
+      module Elt = Prim_statement
+      module E = Ignore_exprs
+      module S = Sm.On_primitives
     end)
   end
 end

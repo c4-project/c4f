@@ -13,6 +13,39 @@
 
 open Base
 
+(** Common functionality of statement components. *)
+module type S_common = sig
+  type 'meta t
+
+  module On_meta : Travesty.Traversable_types.S1 with type 'meta t := 'meta t
+  (** We can traverse over the metadata. *)
+
+  val erase_meta : 'meta t -> unit t
+  (** [erase_meta x] deletes all of [x]'s metadata. *)
+
+  (** By fixing the metadata type, we can perform various forms of standard
+      traversal. *)
+  module With_meta (Meta : T) : sig
+    type nonrec t = Meta.t t
+
+    (** Traversing over atomic-action addresses. *)
+    module On_addresses :
+      Travesty.Traversable_types.S0
+        with type t = t
+         and type Elt.t = Address.t
+
+    (** Traversing over lvalues. *)
+    module On_lvalues :
+      Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t
+
+    (** Traversing over primitive statements. *)
+    module On_primitives :
+      Travesty.Traversable_types.S0
+        with type t = t
+         and type Elt.t = Prim_statement.t
+  end
+end
+
 (** {1 Parametrised statement signatures}
 
     These two signatures exist because their implementing modules are
@@ -88,7 +121,7 @@ module type S_statement = sig
       -> 'm2 t M.t
   end
 
-  include Types.S_with_meta with type 'meta t := 'meta t
+  include S_common with type 'meta t := 'meta t
 end
 
 (** {2 If statements}
@@ -136,7 +169,7 @@ module type S_if_statement = sig
       -> 'm2 t M.t
   end
 
-  include Types.S_with_meta with type 'meta t := 'meta t
+  include S_common with type 'meta t := 'meta t
 end
 
 (** {2 While loops}
@@ -184,5 +217,5 @@ module type S_while_loop = sig
       -> 'm2 t M.t
   end
 
-  include Types.S_with_meta with type 'meta t := 'meta t
+  include S_common with type 'meta t := 'meta t
 end

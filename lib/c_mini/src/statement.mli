@@ -17,26 +17,17 @@
     for simplicity. *)
 module rec Main :
   (Statement_types.S_statement
-    with type address := Address.t
-     and type identifier := Act_c_lang.Ast_basic.Identifier.t
-     and type lvalue := Lvalue.t
-     and type 'meta if_stm := 'meta If.t
+    with type 'meta if_stm := 'meta If.t
      and type 'meta while_loop := 'meta While.t)
 
 and If :
   (Statement_types.S_if_statement
-    with type address := Address.t
-     and type identifier := Act_c_lang.Ast_basic.Identifier.t
-     and type lvalue := Lvalue.t
-     and type 'meta expr := Expression.t
+    with type 'meta expr := Expression.t
      and type 'meta stm := 'meta Main.t)
 
 and While :
   (Statement_types.S_while_loop
-    with type address := Address.t
-     and type identifier := Act_c_lang.Ast_basic.Identifier.t
-     and type lvalue := Lvalue.t
-     and type 'meta expr := Expression.t
+    with type 'meta expr := Expression.t
      and type 'meta stm := 'meta Main.t)
 
 include module type of Main with type 'meta t = 'meta Main.t
