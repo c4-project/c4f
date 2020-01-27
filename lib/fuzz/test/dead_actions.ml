@@ -64,7 +64,7 @@ let%test_module "Early_out" =
           ;
           atomic_store_explicit(y, foo, memory_order_relaxed);
           if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
-          else { return ; }
+          else { return; }
           if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
           5);

@@ -443,7 +443,9 @@ module Parametric = struct
         | Goto label ->
             Fmt.pf f "goto@ %a;" Ac.C_id.pp label
         | Return expr ->
-            Fmt.(pf f "return@ %a;" (option B.Expr.pp) expr)
+            (* The space should be surpressed when there is no return value,
+               hence the somewhat odd formulation. *)
+            Fmt.(pf f "return%a;" (option (prefix sp B.Expr.pp)) expr)
     end
   end
 

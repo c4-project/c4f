@@ -72,3 +72,39 @@ let%test_module "has_while_loops" =
       test (mkif [] [nop; mkwhile []; nop]) ;
       [%expect {| true |}]
   end )
+
+let%test_module "On_primitives" =
+  ( module struct
+    module M = Src.Statement.With_meta (Unit)
+
+    let%expect_test "replace all primitives" =
+      let stm =
+        Src.(
+          Statement.(
+            mkwhile
+              [ mkif
+                  [ prim ()
+                      (Prim_statement.label
+                         (Act_common.C_id.of_string "kappa")) ]
+                  []
+              ; mkif
+                  [ prim ()
+                      (Prim_statement.label
+                         (Act_common.C_id.of_string "keepo")) ]
+                  [ prim ()
+                      (Prim_statement.atomic_fence
+                         (Src.Atomic_fence.make ~mode:Thread ~mo:Seq_cst)) ]
+              ; prim ()
+                  (Prim_statement.goto (Act_common.C_id.of_string "kappa"))
+              ]))
+      in
+      let stm' =
+        M.On_primitives.map stm ~f:(fun _ -> Src.Prim_statement.return)
+      in
+      let rp = Src.Reify_stm.reify stm' in
+      Fmt.pr "@[%a@]@." Act_c_lang.Ast.Stm.pp rp ;
+      [%expect
+        {|
+        while (true)
+        { if (true) { return; } if (true) { return; } else { return; } return; } |}]
+  end )
