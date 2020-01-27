@@ -35,7 +35,7 @@ end
    abbreviation. However, declaring statement inline _also_ means we can't
    use ppx. Hopefully I picked the right one out of Scylla and Charybdis. *)
 type 'meta statement =
-  | Prim of 'meta Prim_statement.t
+  | Prim of 'meta * Prim_statement.t
   | If_stm of 'meta if_statement
   | While_loop of 'meta while_loop
 [@@deriving sexp, compare, equal]
@@ -84,7 +84,7 @@ module Main :
   type 'meta t = 'meta statement [@@deriving sexp, compare, equal]
 
   module Constructors = struct
-    let prim (x : 'meta Prim_statement.t) : 'meta t = Prim x
+    let prim (m : 'meta) (x : Prim_statement.t) : 'meta t = Prim (m, x)
 
     let if_stm (x : 'meta if_statement) : 'meta t = If_stm x
 
@@ -94,12 +94,12 @@ module Main :
   include Constructors
 
   let reduce (type meta result) (x : meta t)
-      ~(prim : meta Prim_statement.t -> result)
+      ~(prim : meta * Prim_statement.t -> result)
       ~(if_stm : meta if_statement -> result)
       ~(while_loop : meta while_loop -> result) : result =
     match x with
-    | Prim x ->
-        prim x
+    | Prim (m, x) ->
+        prim (m, x)
     | If_stm x ->
         if_stm x
     | While_loop x ->
@@ -144,10 +144,13 @@ module Main :
   module Base_map (M : Monad.S) = struct
     module F = Travesty.Traversable.Helpers (M)
 
-    let bmap (type m1 m2) (x : m1 t) ~prim ~if_stm ~while_loop : m2 t M.t =
+    let bmap (type m1 m2) (x : m1 t)
+        ~(prim : m1 * Prim_statement.t -> (m2 * Prim_statement.t) M.t)
+        ~(if_stm : m1 if_statement -> m2 if_statement M.t)
+        ~(while_loop : m1 while_loop -> m2 while_loop M.t) : m2 t M.t =
       Travesty_base_exts.Fn.Compose_syntax.(
         reduce x
-          ~prim:(prim >> M.map ~f:Constructors.prim)
+          ~prim:(prim >> M.map ~f:(fun (m, x) -> Constructors.prim m x))
           ~if_stm:(if_stm >> M.map ~f:Constructors.if_stm)
           ~while_loop:(while_loop >> M.map ~f:Constructors.while_loop))
   end
@@ -162,13 +165,13 @@ module Main :
       module IB = Ifs_base_map (M)
       module WB = Whiles_base_map (M)
       module Bk = Block.On_monad (M)
-      module PM = Prim_statement.On_meta.On_monad (M)
 
       (* We have to unroll the map over if/while here, because otherwise we
          end up with unsafe module recursion. *)
 
       let rec map_m (x : 'm1 t) ~(f : 'm1 -> 'm2 M.t) : 'm2 t M.t =
-        B.bmap x ~prim:(PM.map_m ~f)
+        B.bmap x
+          ~prim:(fun (m, p) -> M.(m |> f >>| fun m' -> (m', p)))
           ~if_stm:
             (IB.bmap ~cond:M.return
                ~t_branch:(Bk.bi_map_m ~left:f ~right:(map_m ~f))
@@ -185,7 +188,6 @@ module Main :
   module With_meta (Meta : T) = struct
     type nonrec t = Meta.t t
 
-    module Prim_meta = Prim_statement.With_meta (Meta)
     module Block_stms = Block.On_statements (Meta)
 
     (** Does the legwork of implementing a particular type of traversal over
@@ -195,7 +197,7 @@ module Main :
 
       module P :
         Travesty.Traversable_types.S0
-          with type t := Meta.t Prim_statement.t
+          with type t := Prim_statement.t
            and module Elt = Elt
 
       module E :
@@ -218,9 +220,10 @@ module Main :
 
         (* We also have to unroll the map over if/while here. *)
 
-        let rec map_m x ~f =
-          SBase.bmap x ~prim:(PM.map_m ~f) ~if_stm:(map_m_ifs ~f)
-            ~while_loop:(map_m_whiles ~f)
+        let rec map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
+          SBase.bmap x
+            ~prim:(fun (m, p) -> M.(p |> PM.map_m ~f >>| fun p' -> (m, p')))
+            ~if_stm:(map_m_ifs ~f) ~while_loop:(map_m_whiles ~f)
 
         and map_m_ifs x ~f =
           IBase.bmap x ~cond:(EM.map_m ~f)
@@ -237,7 +240,7 @@ module Main :
     Make_traversal (struct
       module Elt = Lvalue
       module E = Expression.On_lvalues
-      module P = Prim_meta.On_lvalues
+      module P = Prim_statement.On_lvalues
     end)
 
     module On_addresses :
@@ -246,19 +249,13 @@ module Main :
          and type Elt.t = Address.t = Make_traversal (struct
       module Elt = Address
       module E = Expression.On_addresses
-      module P = Prim_meta.On_addresses
+      module P = Prim_statement.On_addresses
     end)
-
-    module On_identifiers :
-      Travesty.Traversable_types.S0
-        with type t = t
-         and type Elt.t = Act_common.C_id.t =
-      Travesty.Traversable.Chain0 (On_lvalues) (Lvalue.On_identifiers)
 
     (* TODO(@MattWindsor91): needs some refactoring module On_primitives :
        Travesty.Traversable_types.S0 with type t = t and type Elt.t = Meta.t
        Prim_statement.t = Travesty.Traversable.Make0 (struct type nonrec t =
-       t module Elt = struct type t = Meta.t Prim_statement.t end
+       t module Elt = struct type t = Prim_statement.t end
 
        module On_monad (M : Monad.S) = struct module SBase = Base_map (M)
        module IBase = Ifs_base_map (M) module WBase = Whiles_base_map (M)

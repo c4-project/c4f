@@ -27,8 +27,7 @@ let mkwhile (xs : unit Src.Statement.t list) : unit Src.Statement.t =
     while_loop
       (While.make ~cond ~kind:`While ~body:(Src.Block.of_statement_list xs)))
 
-let nop : unit Src.Statement.t =
-  Src.Statement.prim (Src.Prim_statement.nop ())
+let nop : unit Src.Statement.t = Src.Statement.prim () Src.Prim_statement.nop
 
 let%test_module "has_if_statements" =
   ( module struct

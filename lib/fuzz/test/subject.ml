@@ -28,7 +28,6 @@ module Test_data = struct
 
   let state : Act_fuzz.State.t Lazy.t =
     (* TODO(@MattWindsor91): labels? *)
-    let labels = Set.empty (module Src.Label) in
     Lazy.Let_syntax.(
       let%map globals_alist = globals in
       let vars =
@@ -39,13 +38,12 @@ module Test_data = struct
         |> Map.of_alist_exn (module Act_common.Litmus_id)
         |> Act_common.Scoped_map.of_litmus_id_map
       in
-      Act_fuzz.State.make ~vars ~labels ())
+      Act_fuzz.State.make ~vars ())
 
   let mk_store (a : Act_c_mini.Atomic_store.t) : Src.Subject.Statement.t =
     Act_c_mini.(
-      Statement.prim
-      @@ Prim_statement.atomic_store Src.Metadata.generated
-      @@ a)
+      Statement.prim Src.Metadata.generated
+      @@ Prim_statement.atomic_store @@ a)
 
   let sample_known_true_if : Src.Subject.Statement.t Lazy.t =
     lazy
@@ -111,7 +109,7 @@ module Test_data = struct
               (Atomic_store.make ~src:(Expression.int_lit 42)
                  ~dst:(Address.of_variable_str_exn "x")
                  ~mo:Mem_order.Seq_cst)
-          ; prim (Prim_statement.nop Src.Metadata.generated)
+          ; prim Src.Metadata.generated Prim_statement.nop
           ; mk_store
               (Atomic_store.make
                  ~src:(Expression.of_variable_str_exn "foo")

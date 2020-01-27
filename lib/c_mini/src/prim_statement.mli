@@ -24,25 +24,24 @@
 
 open Base
 
-type 'meta t [@@deriving sexp, compare, equal]
-(** Opaque type of mini-C primitive statements, parametrised by metadata. *)
+type t [@@deriving sexp, compare, equal]
+(** Opaque type of mini-C primitive statements. *)
 
 (** {1 Constructors} *)
 
-val assign : Assign.t -> 'meta t
+val assign : Assign.t -> t
 (** [assign a] lifts an assignment [a] to a primitive statement. *)
 
-val label : 'meta Label.t -> 'meta t
+val label : Act_common.C_id.t -> t
 (** [label l] lifts a label [l] to a primitive statement. *)
 
-val goto : 'meta Label.t -> 'meta t
+val goto : Act_common.C_id.t -> t
 (** [goto l] lifts a goto to label [l] to a primitive statement. *)
 
-val nop : 'meta -> 'meta t
-(** [nop m] creates a no-op (semicolon) primitive statement with metadata
-    [m]. *)
+val nop : t
+(** [nop] is a no-op (semicolon) primitive statement. *)
 
-val procedure_call : 'meta Call.t -> 'meta t
+val procedure_call : Call.t -> t
 (** [procedure_call a] lifts a procedure (non-value-returning function) call
     [a] to a primitive statement. *)
 
@@ -50,84 +49,71 @@ val procedure_call : 'meta Call.t -> 'meta t
 
     See {!Atomic_statement}. *)
 
-val atomic : 'meta -> Atomic_statement.t -> 'meta t
-(** [atomic meta a] lifts an atomic statement [a], with metadata [meta], to a
+val atomic : Atomic_statement.t -> t
+(** [atomic a] lifts an atomic statement [a], with metadata [meta], to a
     primitive statement. *)
 
-val atomic_cmpxchg : 'meta -> Atomic_cmpxchg.t -> 'meta t
-(** [atomic_cmpxchg meta a] lifts an atomic compare-exchange [a] to a
-    primitive statement. *)
+val atomic_cmpxchg : Atomic_cmpxchg.t -> t
+(** [atomic_cmpxchg a] lifts an atomic compare-exchange [a] to a primitive
+    statement. *)
 
-val atomic_fence : 'meta -> Atomic_fence.t -> 'meta t
-(** [atomic_fence meta a] lifts an atomic fence [a] to a primitive statement. *)
+val atomic_fence : Atomic_fence.t -> t
+(** [atomic_fence a] lifts an atomic fence [a] to a primitive statement. *)
 
-val atomic_store : 'meta -> Atomic_store.t -> 'meta t
-(** [atomic_store meta a] lifts an atomic store [a] to a primitive statement. *)
+val atomic_store : Atomic_store.t -> t
+(** [atomic_store a] lifts an atomic store [a] to a primitive statement. *)
 
 (** {2 Shorthand for early-out statements}
 
     See {!Early_out}. *)
 
-val early_out : 'meta Early_out.t -> 'meta t
+val early_out : Early_out.t -> t
 (** [early_out e] lifts an early-out statement [e] to a primitive statement. *)
 
-val break : 'meta -> 'meta t
-(** [break m] creates a break statement with metadata [m]. *)
+val break : t
+(** [break] is a break statement. *)
 
-val continue : 'meta -> 'meta t
-(** [continue m] creates a continue statement with metadata [m]. *)
+val continue : t
+(** [continue] is a continue statement. *)
 
-val return : 'meta -> 'meta t
-(** [return m] creates a return statement with metadata [m]. *)
+val return : t
+(** [return] is a return statement. *)
 
 (** {1 Traversals} *)
 
 val reduce :
-     'meta t
-  -> assign:((* 'meta *) Assign.t -> 'result)
-  -> atomic:('meta * Atomic_statement.t -> 'result)
-  -> early_out:('meta Early_out.t -> 'result)
-  -> label:('meta Label.t -> 'result)
-  -> goto:('meta Label.t -> 'result)
-  -> nop:('meta -> 'result)
-  -> procedure_call:('meta Call.t -> 'result)
+     t
+  -> assign:(Assign.t -> 'result)
+  -> atomic:(Atomic_statement.t -> 'result)
+  -> early_out:(Early_out.t -> 'result)
+  -> label:(Act_common.C_id.t -> 'result)
+  -> goto:(Act_common.C_id.t -> 'result)
+  -> nop:(unit -> 'result)
+  -> procedure_call:(Call.t -> 'result)
   -> 'result
-(** [reduce x ~assign ~atomic ~early_out ~nop] reduces a primitive statement
-    [x] to a particular result type by applying the appropriate function. *)
+(** [reduce x ~assign ~atomic ~early_out ~label ~goto ~nop ~procedure_call]
+    reduces a primitive statement [x] to a particular result type by applying
+    the appropriate function. *)
 
 (** Creates a basic monadic map over [M]. *)
 module Base_map (M : Monad.S) : sig
   val bmap :
-       'm1 t
-    -> assign:((* 'm1 *) Assign.t -> (* 'm2 *) Assign.t M.t)
-    -> atomic:('m1 * Atomic_statement.t -> ('m2 * Atomic_statement.t) M.t)
-    -> early_out:('m1 Early_out.t -> 'm2 Early_out.t M.t)
-    -> label:('m1 Label.t -> 'm2 Label.t M.t)
-    -> goto:('m1 Label.t -> 'm2 Label.t M.t)
-    -> nop:('m1 -> 'm2 M.t)
-    -> procedure_call:('m1 Call.t -> 'm2 Call.t M.t)
-    -> 'm2 t M.t
-  (** [bmap x ~assign ~atomic ~early_out ~nop] maps the appropriate function
-      over [x]. *)
+       t
+    -> assign:(Assign.t -> Assign.t M.t)
+    -> atomic:(Atomic_statement.t -> Atomic_statement.t M.t)
+    -> early_out:(Early_out.t -> Early_out.t M.t)
+    -> label:(Act_common.C_id.t -> Act_common.C_id.t M.t)
+    -> goto:(Act_common.C_id.t -> Act_common.C_id.t M.t)
+    -> procedure_call:(Call.t -> Call.t M.t)
+    -> t M.t
+  (** [bmap x ~assign ~atomic ~early_out ~label ~goto ~procedure_call] maps
+      the appropriate function over [x]. *)
 end
 
-module On_meta : Travesty.Traversable_types.S1 with type 'meta t := 'meta t
-(** A traversal over the metadata in a primitive statement. *)
+(** Traverses over the lvalues of a primitive expression. *)
+module On_lvalues :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t
 
-(** {2 Traversals with a fixed metadata type}
-
-    To do traversals over parts of a primitive statement that aren't the
-    metadata, we must fix the metadata in a functor. *)
-module With_meta (Meta : T) : sig
-  (** Traverses over the lvalues of a primitive expression. *)
-  module On_lvalues :
-    Travesty.Traversable_types.S0
-      with type t = Meta.t t
-       and type Elt.t = Lvalue.t
-
-  (** Traverses over the addresses of a primitive expression. *)
-  module On_addresses :
-    Travesty.Traversable_types.S0
-      with type t = Meta.t t
-       and type Elt.t = Address.t
-end
+(** Traverses over the addresses of a primitive expression. *)
+module On_addresses :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t

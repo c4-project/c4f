@@ -98,14 +98,14 @@ let%test_module "trace playback" =
         (threads
          (((decls ())
            (stms
-            ((Prim
-              (Atomic ((source Generated) (liveness Normal))
+            ((Prim ((source Generated) (liveness Normal))
+              (Atomic
                (Atomic_store
                 ((src (Constant (Int 42))) (dst (Lvalue (Variable x)))
                  (mo memory_order_seq_cst)))))
-             (Prim (Nop ((source Generated) (liveness Normal))))
-             (Prim
-              (Atomic ((source Generated) (liveness Normal))
+             (Prim ((source Generated) (liveness Normal)) Nop)
+             (Prim ((source Generated) (liveness Normal))
+              (Atomic
                (Atomic_store
                 ((src (Address (Lvalue (Variable foo))))
                  (dst (Lvalue (Variable y))) (mo memory_order_relaxed)))))
@@ -115,8 +115,8 @@ let%test_module "trace playback" =
                  (Address (Lvalue (Variable y)))))
                (t_branch
                 ((statements
-                  ((Prim
-                    (Atomic ((source Generated) (liveness Normal))
+                  ((Prim ((source Generated) (liveness Normal))
+                    (Atomic
                      (Atomic_store
                       ((src (Constant (Int 56))) (dst (Lvalue (Variable x)))
                        (mo memory_order_seq_cst)))))))
@@ -127,8 +127,8 @@ let%test_module "trace playback" =
               ((cond (Constant (Bool false)))
                (t_branch
                 ((statements
-                  ((Prim
-                    (Atomic ((source Generated) (liveness Normal))
+                  ((Prim ((source Generated) (liveness Normal))
+                    (Atomic
                      (Atomic_store
                       ((src (Constant (Int 95))) (dst (Lvalue (Variable y)))
                        (mo memory_order_seq_cst)))))))
@@ -139,8 +139,8 @@ let%test_module "trace playback" =
               ((cond (Bop Eq (Constant (Int 4)) (Constant (Int 5))))
                (body
                 ((statements
-                  ((Prim
-                    (Atomic ((source Generated) (liveness Normal))
+                  ((Prim ((source Generated) (liveness Normal))
+                    (Atomic
                      (Atomic_store
                       ((src (Constant (Int 44))) (dst (Lvalue (Variable x)))
                        (mo memory_order_seq_cst)))))))

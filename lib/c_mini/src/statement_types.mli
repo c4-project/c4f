@@ -41,14 +41,15 @@ module type S_statement = sig
   val while_loop : 'meta while_loop -> 'meta t
   (** [while_loop loop] lifts a while or do-while loop [loop] to a statement. *)
 
-  val prim : 'meta Prim_statement.t -> 'meta t
-  (** [prim p] lifts a primitive statement [p] to a statement. *)
+  val prim : 'meta -> Prim_statement.t -> 'meta t
+  (** [prim meta p] lifts a primitive statement [p] to a statement, with
+      metadata [meta]. *)
 
   (** {3 Accessors} *)
 
   val reduce :
        'meta t
-    -> prim:('meta Prim_statement.t -> 'result)
+    -> prim:('meta * Prim_statement.t -> 'result)
     -> if_stm:('meta if_stm -> 'result)
     -> while_loop:('meta while_loop -> 'result)
     -> 'result
@@ -81,7 +82,7 @@ module type S_statement = sig
   module Base_map (M : Monad.S) : sig
     val bmap :
          'm1 t
-      -> prim:('m1 Prim_statement.t -> 'm2 Prim_statement.t M.t)
+      -> prim:('m1 * Prim_statement.t -> ('m2 * Prim_statement.t) M.t)
       -> if_stm:('m1 if_stm -> 'm2 if_stm M.t)
       -> while_loop:('m1 while_loop -> 'm2 while_loop M.t)
       -> 'm2 t M.t

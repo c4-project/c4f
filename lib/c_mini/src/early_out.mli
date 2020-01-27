@@ -20,46 +20,11 @@
 
 open Base
 
-(** {1 Kinds of early-out} *)
+(** Type of early-out statements. *)
+type t = Break | Continue | Return
+[@@deriving sexp, compare, equal, quickcheck]
 
-module Kind : sig
-  (** Type of early-out kinds. *)
-  type t = Break | Continue | Return
-  [@@deriving sexp, compare, equal, quickcheck]
+(** {1 Accessors} *)
 
-  val in_loop_only : t -> bool
-  (** [in_loop_only kind] gets whether [kind] is valid only in loops. *)
-end
-
-(** {1 Early-out statements} *)
-
-type 'meta t [@@deriving sexp, compare, equal]
-(** Opaque type of mini-C early-out statements, parametrised by metadata. *)
-
-(** {2 Constructors} *)
-
-val make : meta:'meta -> kind:Kind.t -> 'meta t
-(** [make ~meta ~kind] creates an early-out statement with kind [kind] and
-    metadata [meta]. *)
-
-val break : 'meta -> 'meta t
-(** [break m] creates a break early-out with metadata [m]. *)
-
-val continue : 'meta -> 'meta t
-(** [continue m] creates a continue early-out with metadata [m]. *)
-
-val return : 'meta -> 'meta t
-(** [return m] creates a return early-out with metadata [m]. *)
-
-(** {2 Accessors} *)
-
-val meta : 'meta t -> 'meta
-(** [kind x] gets [x]'s metadata. *)
-
-val kind : 'meta t -> Kind.t
-(** [kind x] gets the kind of early-out that [x] is. *)
-
-(** {2 Traversals} *)
-
-module On_meta : Travesty.Traversable_types.S1 with type 'meta t := 'meta t
-(** A traversal over the metadata in a primitive statement. *)
+val in_loop_only : t -> bool
+(** [in_loop_only kind] gets whether [kind] is valid only in loops. *)

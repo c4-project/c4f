@@ -98,8 +98,8 @@ let inner_call_stm (tid : int) (function_id : Ac.C_id.t)
     (all_params : (Ac.Litmus_id.t, Act_c_mini.Type.t) List.Assoc.t) :
     unit Act_c_mini.Statement.t =
   let arguments = inner_call_arguments tid all_params in
-  let call = Act_c_mini.Call.make ~function_id ~metadata:() ~arguments () in
-  Act_c_mini.(Statement.prim (Prim_statement.procedure_call call))
+  let call = Act_c_mini.Call.make ~function_id ~arguments () in
+  Act_c_mini.(Statement.prim () (Prim_statement.procedure_call call))
 
 let make_function_stub (vars : Var_map.t) ~(old_id : Ac.C_id.t)
     ~(new_id : Ac.C_id.t) :

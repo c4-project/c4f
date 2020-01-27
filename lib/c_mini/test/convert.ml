@@ -56,8 +56,8 @@ let%test_module "stm" =
       [%expect
         {|
       (Ok
-       (Prim
-        (Atomic ()
+       (Prim ()
+        (Atomic
          (Atomic_store
           ((src (Constant (Int 42))) (dst (Ref (Lvalue (Variable x))))
            (mo memory_order_relaxed)))))) |}]
@@ -89,8 +89,8 @@ let%test_module "stm" =
       [%expect
         {|
       (Ok
-       (Prim
-        (Atomic ()
+       (Prim ()
+        (Atomic
          (Atomic_cmpxchg
           ((obj (Ref (Lvalue (Variable x)))) (expected (Ref (Lvalue (Variable y))))
            (desired (Constant (Int 42))) (succ memory_order_relaxed)

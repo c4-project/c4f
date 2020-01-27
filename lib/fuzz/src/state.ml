@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,13 +10,16 @@
    project root for more information. *)
 
 open Base
-module Ac = Act_common
-module Tx = Travesty_base_exts
+
+open struct
+  module Ac = Act_common
+  module Tx = Travesty_base_exts
+end
 
 type t =
   { (* Optionals to the top, to make sure [make] derives correctly. *)
     o: Ac.Output.t [@default Ac.Output.silent ()]
-  ; labels: Set.M(Label).t
+  ; labels: Set.M(Ac.Litmus_id).t [@default Set.empty (module Ac.Litmus_id)]
   ; vars: Var.Map.t }
 [@@deriving fields, make]
 

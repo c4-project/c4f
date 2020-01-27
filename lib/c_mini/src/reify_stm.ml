@@ -41,8 +41,8 @@ let atomic_store (st : Atomic_store.t) : Ast.Stm.t =
       ; reify (Atomic_store.src st)
       ; mem_order (Atomic_store.mo st) ]
 
-let atomic ((_, a) : _ * Atomic_statement.t) : Ast.Stm.t =
-  Atomic_statement.reduce a ~atomic_cmpxchg ~atomic_fence ~atomic_store
+let atomic : Atomic_statement.t -> Ast.Stm.t =
+  Atomic_statement.reduce ~atomic_cmpxchg ~atomic_fence ~atomic_store
 
 let assign (asn : Assign.t) : Ast.Stm.t =
   let l = Assign.lvalue asn in
@@ -63,8 +63,7 @@ let ne_block (type meta stm) (stm : stm -> Ast.Stm.t)
 
 let nop (_ : 'meta) : Ast.Stm.t = Ast.Stm.Expr None
 
-let early_out (e : _ Early_out.t) : Ast.Stm.t =
-  match Early_out.kind e with
+let early_out : Early_out.t -> Ast.Stm.t = function
   | Break ->
       Ast.Stm.Break
   | Continue ->
@@ -72,21 +71,21 @@ let early_out (e : _ Early_out.t) : Ast.Stm.t =
   | Return ->
       Ast.Stm.Return None
 
-let label (l : _ Label.t) : Ast.Stm.t =
+let label (l : Act_common.C_id.t) : Ast.Stm.t =
   (* This might need revisiting later. *)
-  Label (Normal (Label.name l), Expr None)
+  Label (Normal l, Expr None)
 
-let goto (l : _ Label.t) : Ast.Stm.t = Goto (Label.name l)
+let goto (l : Act_common.C_id.t) : Ast.Stm.t = Goto l
 
-let procedure_call (c : _ Call.t) : Ast.Stm.t =
+let procedure_call (c : Call.t) : Ast.Stm.t =
   Ast.Stm.Expr
     (Some
        (Ast.Expr.Call
           { func= Identifier (Call.function_id c)
           ; arguments= List.map ~f:Reify_expr.reify (Call.arguments c) }))
 
-let prim : _ Prim_statement.t -> Ast.Stm.t =
-  Prim_statement.reduce ~assign ~atomic ~early_out ~procedure_call ~label
+let prim ((_, p) : _ * Prim_statement.t) : Ast.Stm.t =
+  Prim_statement.reduce p ~assign ~atomic ~early_out ~procedure_call ~label
     ~goto ~nop
 
 let rec reify : _ Statement.t -> Ast.Stm.t =
