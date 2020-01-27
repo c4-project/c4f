@@ -37,6 +37,9 @@ let try_map_vars (s : t) ~(f : Var.Map.t -> Var.Map.t Or_error.t) :
 let map_vars (s : t) ~(f : Var.Map.t -> Var.Map.t) : t =
   {s with vars= f s.vars}
 
+let register_label (s : t) ~(label : Ac.Litmus_id.t) : t =
+  {s with labels= Set.add s.labels label}
+
 let register_global ?(initial_value : Act_c_mini.Constant.t option) (s : t)
     (var : Ac.C_id.t) (ty : Act_c_mini.Type.t) : t =
   map_vars s ~f:(fun v -> Var.Map.register_global v ?initial_value var ty)
@@ -67,12 +70,21 @@ module Monad = struct
 
   let with_vars (f : Var.Map.t -> 'a) : 'a t = peek vars >>| f
 
+  let with_labels_m (f : Set.M(Ac.Litmus_id).t -> 'a t) : 'a t =
+    peek labels >>= f
+
+  let with_labels (f : Set.M(Ac.Litmus_id).t -> 'a) : 'a t =
+    peek labels >>| f
+
   let resolve (id : Ac.C_id.t) ~(scope : Ac.Scope.t) : Ac.Litmus_id.t t =
     with_vars (Ac.Scoped_map.resolve ~id ~scope)
 
   let register_global ?(initial_value : Act_c_mini.Constant.t option)
       (ty : Act_c_mini.Type.t) (var : Ac.C_id.t) : unit t =
     modify (fun s -> register_global ?initial_value s var ty)
+
+  let register_label (label : Ac.Litmus_id.t) : unit t =
+    modify (register_label ~label)
 
   let add_dependency (id : Ac.Litmus_id.t) : unit t =
     modify (add_dependency ~id)

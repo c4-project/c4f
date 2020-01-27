@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,9 +10,11 @@
    project root for more information. *)
 
 open Core_kernel
-module Tx = Travesty_base_exts
-module Qc = Base_quickcheck
-open Act_utils
+
+open struct
+  module Tx = Travesty_base_exts
+  module Qc = Base_quickcheck
+end
 
 let validate_initial_char : char Validate.check =
   Validate.booltest
@@ -95,7 +97,7 @@ module Q : Quickcheck.S with type t := t = struct
        no-program-ids. *)
     Qc.Generator.filter_map
       ~f:(Fn.compose Result.ok create)
-      (My_quickcheck.gen_string_initial ~initial:gen_initial_char
+      (Act_utils.My_quickcheck.gen_string_initial ~initial:gen_initial_char
          ~rest:gen_non_initial_char)
 
   let quickcheck_observer : t Quickcheck.Observer.t =

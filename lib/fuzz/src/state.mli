@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -62,13 +62,21 @@ module Monad : sig
 
   (** {2 Liftings} *)
 
+  val with_labels_m : (Set.M(Act_common.Litmus_id).t -> 'a t) -> 'a t
+  (** [with_labels_m f] is a stateful action that binds the stateful action
+      [f] over the current label set. *)
+
+  val with_labels : (Set.M(Act_common.Litmus_id).t -> 'a) -> 'a t
+  (** [with_labels f] is a variant of {!with_labels_m} which maps across [f]
+      rather than binding. *)
+
   val with_vars_m : (Var.Map.t -> 'a t) -> 'a t
   (** [with_vars_m f] is a stateful action that binds the stateful action [f]
       over the current variable map. *)
 
   val with_vars : (Var.Map.t -> 'a) -> 'a t
-  (** [with_vars f] is a variant of {{!with_vars_m} with_vars_m} which maps
-      across [f] rather than binding. *)
+  (** [with_vars f] is a variant of {!with_vars_m} which maps across [f]
+      rather than binding. *)
 
   (** {2 Queries} *)
 
@@ -91,6 +99,11 @@ module Monad : sig
       registers a generated variable [var] of type [ty] and optional known
       value [value] into the state, overwriting any existing variable of the
       same name. *)
+
+  val register_label : Act_common.Litmus_id.t -> unit t
+  (** [register_label label] is a stateful action that registers a label
+      [label], given as a Litmus ID (pair of label name and thread ID), as
+      in-use in the test subject. *)
 
   val add_write : Act_common.Litmus_id.t -> unit t
   (** [add_write var] is a stateful action that adds a write flag to variable
