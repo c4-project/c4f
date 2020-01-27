@@ -57,6 +57,12 @@ let reduce (type result) (x : t) ~(assign : Assign.t -> result)
     ~nop:(fun _ -> nop ())
     ~procedure_call:(Fn.const procedure_call)
 
+let as_label : t -> Act_common.C_id.t option = function
+  | Label l ->
+      Some l
+  | Assign _ | Atomic _ | Early_out _ | Goto _ | Nop | Procedure_call _ ->
+      None
+
 module Base_map (M : Monad.S) = struct
   let bmap (x : t) ~(assign : Assign.t -> Assign.t M.t)
       ~(atomic : Atomic_statement.t -> Atomic_statement.t M.t)

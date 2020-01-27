@@ -15,14 +15,18 @@ open struct
   module Ac = Act_common
 end
 
-let labels_of_thread (thread : unit Act_c_mini.Function.t Ac.C_named.t) :
+module Stm = Act_c_mini.Statement.With_meta (Unit)
+
+let labels_of_thread (tid : int)
+    (thread : unit Act_c_mini.Function.t Ac.C_named.t) :
     Act_common.Litmus_id.t list =
-  ignore thread ;
-  (*|> C_named.value |> Act_c_mini.Function.body_stms |> List.filter *)
-  []
+  thread |> Ac.C_named.value |> Act_c_mini.Function.body_stms
+  |> List.concat_map ~f:Stm.On_primitives.to_list
+  |> List.filter_map ~f:Act_c_mini.Prim_statement.as_label
+  |> List.map ~f:(Act_common.Litmus_id.local tid)
 
 let labels_of_test (test : Act_c_mini.Litmus.Test.t) :
     Set.M(Act_common.Litmus_id).t =
   test |> Act_c_mini.Litmus.Test.threads
-  |> List.concat_map ~f:labels_of_thread
+  |> List.concat_mapi ~f:labels_of_thread
   |> Set.of_list (module Act_common.Litmus_id)
