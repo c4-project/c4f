@@ -30,3 +30,12 @@ let labels_of_test (test : Act_c_mini.Litmus.Test.t) :
   test |> Act_c_mini.Litmus.Test.threads
   |> List.concat_mapi ~f:labels_of_thread
   |> Set.of_list (module Act_common.Litmus_id)
+
+let gen_fresh (set : Set.M(Ac.Litmus_id).t) :
+  Ac.C_id.t Base_quickcheck.Generator.t =
+  let flat_set = Set.map (module Ac.C_id) ~f:Ac.Litmus_id.variable_name set in
+
+  Base_quickcheck.Generator.(
+    Ac.C_id.Human.quickcheck_generator
+    |> filter ~f:(Fn.non (Set.mem flat_set))
+  )

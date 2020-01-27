@@ -217,3 +217,81 @@ module Alist = struct
       Yojson.Safe.t -> (r t, string) Result.t =
     Plumbing.Jsonable.Alist.alist_of_yojson' of_string rhs
 end
+
+module Human = struct
+  let adjectives : string list =
+    [ "asinine"
+    ; "brutal"
+    ; "clumsy"
+    ; "daring"
+    ; "extravagant"
+    ; "foolish"
+    ; "gentle"
+    ; "humble"
+    ; "intriguing"
+    ; "jocular"
+    ; "kind"
+    ; "loud"
+    ; "modest"
+    ; "noble"
+    ; "opulent"
+    ; "poor"
+    ; "quick"
+    ; "robust"
+    ; "strong"
+    ; "tall"
+    ; "useless"
+    ; "virtuous"
+    ; "wise"
+    ; "xenophilic"
+    ; "yellow"
+    ; "zonal"]
+
+  let nouns : string list =
+    [ "aardvark"
+    ; "bandage"
+    ; "cucumber"
+    ; "door"
+    ; "easel"
+    ; "entrance"
+    ; "fox"
+    ; "gopher"
+    ; "house"
+    ; "intern"
+    ; "jam"
+    ; "knife"
+    ; "llama"
+    ; "mouse"
+    ; "orb"
+    ; "phone"
+    ; "queue"
+    ; "roost"
+    ; "staple"
+    ; "television"
+    ; "toaster"
+    ; "unicorn"
+    ; "vice"
+    ; "volcano"
+    ; "warden"
+    ; "winter"
+    ; "xylophone"
+    ; "yam"
+    ; "yurt"
+    ; "zebra"
+    ; "zodiac"
+    ]
+
+  type t = C.t [@@deriving sexp, quickcheck]
+
+  let quickcheck_generator : t Base_quickcheck.Generator.t =
+    Base_quickcheck.Generator.(
+      Let_syntax.(
+        let%map adj = option (of_list adjectives)
+        and noun = of_list nouns
+        and nums = option small_positive_or_zero_int in
+        let num = Option.map ~f:Int.to_string nums in
+        let str = String.concat ~sep:"_" (List.filter_opt [adj; Some noun; num]) in
+        of_string str
+      )
+    )
+end

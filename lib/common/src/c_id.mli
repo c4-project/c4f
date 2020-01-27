@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -17,6 +17,8 @@
 (* The actual implementation depends on Core_kernel, for now, but we only
    expose the part of it that adheres to the Base interfaces. *)
 open Base
+
+(** {1 Regular C identifiers} *)
 
 type t [@@deriving compare, hash, sexp, quickcheck]
 (** Opaque type of C identifier strings. *)
@@ -41,6 +43,14 @@ include Stringable.S with type t := t
 val is_string_safe : string -> bool
 (** [is_string_safe str] checks whether [str] is C-safe, but doesn't return
     the constructed identifier. *)
+
+(** {1 Restricted generators and special forms} *)
+
+(** {2 Human-readable generator} *)
+
+module Human : Act_utils.My_quickcheck.S_with_sexp with type t = t
+
+(** {2 Herd-safe identifiers} *)
 
 (** A restricted form of C identifiers that represents identifiers that Herd
     can safely lex. *)
