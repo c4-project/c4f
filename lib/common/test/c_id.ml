@@ -38,6 +38,33 @@ let%expect_test "generator sample" =
     x_vx__m_kA
     yoU_2 |}]
 
+let%expect_test "human generator sample" =
+  My_quickcheck.print_sample
+    ~printer:(Fmt.pr "@[%a@]@." Act_common.C_id.pp)
+    (module Act_common.C_id.Human) ;
+  [%expect
+    {|
+    easel_14
+    foolish_asymptote_2
+    foolish_heap
+    fox_13
+    game
+    humble_television
+    ibex
+    jocular_easel
+    llama
+    llama_1
+    llama_16
+    loud_mouse
+    modest_yurt
+    opulent_yurt_0
+    phone_16
+    tall_house_2
+    virtuous_aardvark_0
+    virtuous_yurt
+    xylophone
+    zonal_juniper |}]
+
 let%test_unit "conversion to/from JSON is the identity" =
   Base_quickcheck.Test.run_exn
     (module Act_common.C_id)
@@ -61,25 +88,4 @@ let%test_module "is_string_safe (standard)" =
     let%expect_test "Herd program ID" = test "P45" ; [%expect {| true |}]
 
     let%expect_test "negative example" = test "0r0" ; [%expect {| false |}]
-  end )
-
-let%test_module "is_string_safe (Herd-safe)" =
-  ( module struct
-    open Act_common.C_id.Herd_safe
-
-    let test (candidate : string) : unit =
-      Io.print_bool (is_string_safe candidate)
-
-    let%expect_test "positive example" = test "t0r0" ; [%expect {| true |}]
-
-    let%expect_test "negative example" = test "_t0r0" ; [%expect {| false |}]
-
-    let%expect_test "program ID (negative)" =
-      test "P45" ; [%expect {| false |}]
-
-    (* This particular candidate Herd identifier has been the bane of the ACT
-       fuzzer for a little while. It clashes with an innocuous macro of the
-       same name in Litmus-generated harness C files. *)
-    let%expect_test "clashing 'N' (negative)" =
-      test "N" ; [%expect {| false |}]
   end )

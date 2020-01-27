@@ -169,8 +169,6 @@ module Map = struct
     not (Map.is_empty (records_satisfying_all vars ~scope ~predicates))
 
   let gen_fresh_var (map : t) : Ac.C_id.t Base_quickcheck.Generator.t =
-    Base_quickcheck.Generator.filter_map
-      [%quickcheck.generator: Ac.C_id.Herd_safe.t] ~f:(fun hid ->
-        let id = Ac.C_id.Herd_safe.to_c_identifier hid in
-        Option.some_if (not (Ac.Scoped_map.c_id_mem map ~id)) id)
+    Base_quickcheck.Generator.filter [%quickcheck.generator: Ac.C_id.Human.t]
+      ~f:(fun id -> not (Ac.Scoped_map.c_id_mem map ~id))
 end
