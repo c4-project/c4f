@@ -45,6 +45,11 @@ val in_loop_only : t -> t
 (** [in_loop_only filter] adds to [filter] the restriction that any path must
     travel through at least one loop. *)
 
+val in_threads_only : t -> threads:Set.M(Int).t -> t
+(** [in_threads_only filter ~threads] adds to [filter] the restriction that
+    any path must travel through at least one of the threads in [threads].
+    Such restrictions are cumulative. *)
+
 (** {1 Callbacks for the path producers} *)
 
 val update_with_loop : t -> t
@@ -60,6 +65,11 @@ val update_with_block_metadata : t -> Metadata.t -> t
 (** {1 Consuming filters} *)
 
 (** {2 Checking paths} *)
+
+val is_thread_ok : t -> thread:int -> bool
+(** [is_thread_ok filter ~thread] checks whether paths may descend through
+    thread [thread]. This check is done early in the path production process,
+    to avoid spurious generation of large amounts of dead paths. *)
 
 val check : t -> unit Or_error.t
 (** [check filter ~stm] should be applied before constructing a path that

@@ -77,12 +77,14 @@ end
 type t =
   { obs_flags: Set.M(Flag).t
   ; req_flags: Set.M(Flag).t
-  ; end_checks: Set.M(End_check).t }
+  ; end_checks: Set.M(End_check).t
+  ; threads: Set.M(Int).t option }
 
 let empty : t =
   { obs_flags= Set.empty (module Flag)
   ; req_flags= Set.empty (module Flag)
-  ; end_checks= Set.empty (module End_check) }
+  ; end_checks= Set.empty (module End_check)
+  ; threads= None }
 
 module Obs_flags = struct
   let observe_flag (existing : t) ~(flag : Flag.t) : t =
@@ -128,11 +130,20 @@ end
 
 include End_checks
 
+let in_threads_only (filter : t) ~(threads : Set.M(Int).t) : t =
+  let threads' =
+    Option.value_map filter.threads ~f:(Set.inter threads) ~default:threads
+  in
+  {filter with threads= Some threads'}
+
 let unmet_flags (filter : t) : Set.M(Flag).t =
   Set.diff filter.req_flags filter.obs_flags
 
 let error_of_flag (flag : Flag.t) : unit Or_error.t =
   Or_error.errorf "Unmet flag condition: %s" (Flag.to_string flag)
+
+let is_thread_ok (filter : t) ~(thread : int) : bool =
+  Option.for_all ~f:(fun t -> Set.mem t thread) filter.threads
 
 let check (filter : t) : unit Or_error.t =
   filter |> unmet_flags |> Set.to_list
@@ -154,7 +165,38 @@ module Construct_checks = struct
     filter.end_checks |> Set.to_list
     |> List.for_all ~f:(End_check.is_constructible ~subject)
 
+  let threads_to_remove (threads_to_keep : Set.M(Int).t)
+      ~(subject : Subject.Test.t) : Set.M(Int).t =
+    let num_all_threads =
+      List.length (Act_litmus.Test.Raw.threads subject)
+    in
+    let all_threads =
+      Set.of_increasing_iterator_unchecked
+        (module Int)
+        ~len:num_all_threads ~f:Fn.id
+    in
+    Set.diff all_threads threads_to_keep
+
+  let filter_to_threads (threads : Set.M(Int).t) ~(subject : Subject.Test.t)
+      : Subject.Test.t =
+    (* Decreasing order to avoid downwards thread ID changes rippling through
+       as we try to remove threads. *)
+    (* TODO(@MattWindsor91): this is a little heavyweight!! *)
+    threads
+    |> threads_to_remove ~subject
+    |> Set.to_sequence ~order:`Decreasing
+    |> Sequence.fold ~init:subject ~f:(fun subject' index ->
+           subject'
+           |> Act_litmus.Test.Raw.remove_thread ~index
+           |> Result.ok
+           |> Option.value ~default:subject')
+
   let is_constructible (filter : t) ~(subject : Subject.Test.t) : bool =
+    let subject =
+      Option.value_map filter.threads
+        ~f:(filter_to_threads ~subject)
+        ~default:subject
+    in
     is_constructible_req filter ~subject
     && is_constructible_end filter ~subject
 end

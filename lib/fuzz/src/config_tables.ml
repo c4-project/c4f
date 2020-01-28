@@ -21,7 +21,8 @@ end
 let actions : Action.With_default_weight.t list Lazy.t =
   lazy
     Action.With_default_weight.
-      [ make ~action:(module Dead_actions.Early_out) ~default_weight:15
+      [ make ~action:(module Dead_actions.Early_out) ~default_weight:20
+      ; make ~action:(module Dead_actions.Goto) ~default_weight:20
       ; make ~action:(module If_actions.Invert) ~default_weight:10
       ; make
           ~action:(module If_actions.Surround.Tautology)
@@ -32,7 +33,7 @@ let actions : Action.With_default_weight.t list Lazy.t =
       ; make ~action:(module Loop_actions.Surround) ~default_weight:20
       ; make ~action:(module Mem_actions.Fence) ~default_weight:15
       ; make ~action:(module Program_actions.Make_empty) ~default_weight:10
-      ; make ~action:(module Program_actions.Label) ~default_weight:10
+      ; make ~action:(module Program_actions.Label) ~default_weight:15
       ; make ~action:(module Store_actions.Int) ~default_weight:30
       ; make ~action:(module Store_actions.Int_dead) ~default_weight:20
       ; make ~action:(module Store_actions.Int_redundant) ~default_weight:15

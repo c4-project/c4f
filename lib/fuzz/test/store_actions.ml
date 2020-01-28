@@ -91,7 +91,8 @@ let%test_module "store.make.int.normal" =
           if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
           5);
-      } |}]
+      }void P1(atomic_int *gen1, atomic_int *gen2, atomic_int *x, atomic_int *y)
+      { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "test int store: global variables" =
       run_and_dump_vars test_action
@@ -151,7 +152,8 @@ let%test_module "store.make.int.dead" =
           if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
           5);
-      } |}]
+      }void P1(atomic_int *gen1, atomic_int *gen2, atomic_int *x, atomic_int *y)
+      { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "test int store: global variables" =
       run_and_dump_vars test_action
@@ -214,7 +216,8 @@ let%test_module "store.make.int.redundant" =
           if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
           5);
-      } |}]
+      }void P1(atomic_int *gen1, atomic_int *gen2, atomic_int *x, atomic_int *y)
+      { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "test int store: global variables" =
       run_and_dump_vars test_action

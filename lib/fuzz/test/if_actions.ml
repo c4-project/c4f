@@ -58,7 +58,11 @@ let%test_module "Surround" =
             if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
             do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
             5);
-        } |}]
+        }void
+        P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+           bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
+           atomic_int y)
+        { loop: ; if (true) {  } else { goto loop; } } |}]
 
         let%expect_test "global dependencies after running" =
           Action.Test_utils.run_and_dump_global_deps action
@@ -89,7 +93,11 @@ let%test_module "Surround" =
             if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
             do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
             5);
-        } |}]
+        }void
+        P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+           bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
+           atomic_int y)
+        { loop: ; if (true) {  } else { goto loop; } } |}]
 
         let%expect_test "global dependencies after running" =
           Action.Test_utils.run_and_dump_global_deps action
@@ -127,5 +135,6 @@ let%test_module "Invert" =
             if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
             do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
             5);
-        } |}]
+        }void P1(atomic_int *x, atomic_int *y)
+        { loop: ; if (true) {  } else { goto loop; } } |}]
   end )

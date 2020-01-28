@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -11,8 +11,14 @@
 
 open Base
 
-let early_out_name =
-  Act_common.Id.of_string_list ["flow"; "dead"; "early-out"]
+open struct
+  module Ac = Act_common
+  module Tx = Travesty_base_exts
+end
+
+let early_out_name = Ac.Id.of_string_list ["flow"; "dead"; "early-out"]
+
+let goto_name = Ac.Id.of_string_list ["flow"; "dead"; "goto"]
 
 module Early_out_payload = struct
   type t = {path: Path.Program.t; kind: Act_c_mini.Early_out.t}
@@ -100,4 +106,80 @@ struct
       Subject.Test.t State.Monad.t =
     let {Early_out_payload.path; kind} = payload in
     State.Monad.Monadic.return (run_inner test path kind)
+end
+
+module Goto_payload = struct
+  type t = {path: Path.Program.t; label: Ac.C_id.t} [@@deriving sexp, make]
+
+  let build_filter (labels : Set.M(Ac.Litmus_id).t) :
+      Path_filter.t -> Path_filter.t =
+    let threads_with_labels =
+      Set.filter_map (module Int) ~f:Ac.Litmus_id.tid labels
+    in
+    Tx.Fn.Compose_syntax.(
+      Path_filter.in_dead_code_only
+      >> Path_filter.in_threads_only ~threads:threads_with_labels)
+
+  let gen (subject : Subject.Test.t) ~(random : Splittable_random.State.t)
+      ~(param_map : Param_map.t) : t State.Monad.t =
+    State.Monad.with_labels_m (fun labels ->
+        let module PP = Payload.Program_path (struct
+          let action_id = goto_name
+
+          let gen = Path_producers.Test.try_gen_insert_stm
+
+          let build_filter = build_filter labels
+        end) in
+        State.Monad.Let_syntax.(
+          let%bind path = PP.gen subject ~random ~param_map in
+          let tid = Path.Program.tid path in
+          let labels_in_tid =
+            labels
+            |> Set.filter_map
+                 (module Ac.C_id)
+                 ~f:(fun x ->
+                   Option.some_if
+                     ([%equal: int option] (Ac.Litmus_id.tid x) (Some tid))
+                     (Ac.Litmus_id.variable_name x))
+            |> Set.to_list
+          in
+          let%map label =
+            Payload.Helpers.lift_quickcheck
+              (Base_quickcheck.Generator.of_list labels_in_tid)
+              ~random
+          in
+          make ~path ~label))
+end
+
+module Goto : Action_types.S with type Payload.t = Goto_payload.t = struct
+  let name = goto_name
+
+  let readme () : string =
+    Act_utils.My_string.format_for_readme
+      {|
+        Inserts a jump to a random thread-local label inside a dead-code block.
+
+        This action only fires in dead-code blocks for which there are available
+        labels in the same thread; it does not jump outside the thread.
+      |}
+
+  module Payload = Goto_payload
+
+  let available (subject : Subject.Test.t) ~(param_map : Param_map.t) :
+      bool State.Monad.t =
+    ignore param_map ;
+    State.Monad.with_labels (fun labels ->
+        Path_filter.is_constructible ~subject
+          (Goto_payload.build_filter labels Path_filter.empty))
+
+  let run (subject : Subject.Test.t) ~(payload : Payload.t) :
+      Subject.Test.t State.Monad.t =
+    let {Goto_payload.path; label} = payload in
+    let goto_stm =
+      Act_c_mini.(
+        label |> Prim_statement.goto |> Statement.prim Metadata.generated)
+    in
+    State.Monad.Monadic.return
+      (Path_consumers.Test.insert_stm path ~to_insert:goto_stm
+         ~target:subject)
 end

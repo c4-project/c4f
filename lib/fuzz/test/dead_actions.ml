@@ -47,7 +47,8 @@ let%test_module "Early_out" =
           if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
           do { break; atomic_store_explicit(x, 44, memory_order_seq_cst); } while
           (4 == 5);
-      } |}]
+      }void P1(atomic_int *x, atomic_int *y)
+      { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "invalid break on example program" =
       test_on_example_program if_path Break ;
@@ -68,5 +69,6 @@ let%test_module "Early_out" =
           if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
           5);
-      } |}]
+      }void P1(atomic_int *x, atomic_int *y)
+      { loop: ; if (true) {  } else { goto loop; } } |}]
   end )

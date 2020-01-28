@@ -45,25 +45,27 @@ module Test_data = struct
       Statement.prim Src.Metadata.generated
       @@ Prim_statement.atomic_store @@ a)
 
+  let mk_always_true_if (cond : Act_c_mini.Expression.t)
+      (t : Src.Subject.Statement.t list) (f : Src.Subject.Statement.t list) :
+      Src.Subject.Statement.t =
+    Act_c_mini.(
+      Statement.(
+        if_stm
+          (If.make ~cond
+             ~t_branch:(Src.Subject.Block.make_generated ~statements:t ())
+             ~f_branch:(Src.Subject.Block.make_dead_code ~statements:f ()))))
+
   let sample_known_true_if : Src.Subject.Statement.t Lazy.t =
     lazy
       Act_c_mini.(
-        Statement.(
-          if_stm
-            (If.make
-               ~cond:
-                 Expression.(
-                   Infix.(
-                     of_variable_str_exn "foo" == of_variable_str_exn "y"))
-               ~t_branch:
-                 (Src.Subject.Block.make_generated
-                    ~statements:
-                      [ mk_store
-                          (Atomic_store.make ~src:(Expression.int_lit 56)
-                             ~dst:(Address.of_variable_str_exn "x")
-                             ~mo:Mem_order.Seq_cst) ]
-                    ())
-               ~f_branch:(Src.Subject.Block.make_dead_code ()))))
+        mk_always_true_if
+          Expression.(
+            Infix.(of_variable_str_exn "foo" == of_variable_str_exn "y"))
+          [ mk_store
+              (Atomic_store.make ~src:(Expression.int_lit 56)
+                 ~dst:(Address.of_variable_str_exn "x")
+                 ~mo:Mem_order.Seq_cst) ]
+          [])
 
   let sample_known_false_if : Src.Subject.Statement.t Lazy.t =
     lazy
@@ -119,10 +121,27 @@ module Test_data = struct
           ; sample_known_false_if
           ; sample_once_do_while ]))
 
+  let thread0 : Src.Subject.Thread.t Lazy.t =
+    Lazy.map ~f:(fun stms -> Src.Subject.Thread.make ~stms ()) body_stms
+
+  let thread1_stms : Src.Subject.Statement.t list Lazy.t =
+    lazy
+      Act_c_mini.(
+        Statement.
+          [ prim Src.Metadata.generated
+              (Prim_statement.label (Act_common.C_id.of_string "loop"))
+          ; mk_always_true_if Act_c_mini.Expression.truth []
+              [ prim Src.Metadata.generated
+                  (Prim_statement.goto (Act_common.C_id.of_string "loop")) ]
+          ])
+
+  let thread1 : Src.Subject.Thread.t Lazy.t =
+    Lazy.map ~f:(fun stms -> Src.Subject.Thread.make ~stms ()) thread1_stms
+
   let threads : Src.Subject.Thread.t list Lazy.t =
     Lazy.Let_syntax.(
-      let%map stms = body_stms in
-      [Src.Subject.Thread.make ~stms ()])
+      let%map t0 = thread0 and t1 = thread1 in
+      [t0; t1])
 
   let test : Src.Subject.Test.t Lazy.t =
     Lazy.Let_syntax.(
@@ -192,7 +211,11 @@ let%test_module "using sample environment" =
             if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
             do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
             5);
-        } |}]
+        }
+        void
+        P1(atomic_int *bar, bool barbaz, int *blep, int foo, atomic_bool *foobaz,
+           atomic_int x, atomic_int y, atomic_bool z)
+        { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "list_to_litmus: sample threads with interspersed \
                      emptiness" =
@@ -214,5 +237,9 @@ let%test_module "using sample environment" =
             if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
             do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
             5);
-        } |}]
+        }
+        void
+        P1(atomic_int *bar, bool barbaz, int *blep, int foo, atomic_bool *foobaz,
+           atomic_int x, atomic_int y, atomic_bool z)
+        { loop: ; if (true) {  } else { goto loop; } } |}]
   end )

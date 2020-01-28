@@ -145,5 +145,16 @@ let%test_module "trace playback" =
                       ((src (Constant (Int 44))) (dst (Lvalue (Variable x)))
                        (mo memory_order_seq_cst)))))))
                  (metadata ((source Generated) (liveness Dead)))))
-               (kind Do_while)))))))))) |}]
+               (kind Do_while))))))
+          ((decls ())
+           (stms
+            ((Prim ((source Generated) (liveness Normal)) (Label loop))
+             (If_stm
+              ((cond (Constant (Bool true)))
+               (t_branch
+                ((statements ()) (metadata ((source Generated) (liveness Normal)))))
+               (f_branch
+                ((statements
+                  ((Prim ((source Generated) (liveness Normal)) (Goto loop))))
+                 (metadata ((source Generated) (liveness Dead)))))))))))))) |}]
   end )

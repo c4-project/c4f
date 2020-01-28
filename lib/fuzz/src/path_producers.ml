@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -286,27 +286,33 @@ module Test :
 
   type target = Subject.Test.t
 
-  let map_threads (test : target) ~(f : int -> Subject.Thread.t -> 'a) :
-      'a list =
-    List.mapi (Act_litmus.Test.Raw.threads test) ~f
+  let map_threads (test : target) ~(f : int -> Subject.Thread.t -> 'a option)
+      : 'a list =
+    List.filter_mapi (Act_litmus.Test.Raw.threads test) ~f
 
-  let gen_opt_over_threads (test : target)
-      ~(f : Subject.Thread.t -> Path.Thread.t Opt_gen.t) :
-      Path.Program.t Opt_gen.t =
+  let gen_opt_over_threads ?(filter : Path_filter.t = Path_filter.empty)
+      (test : target)
+      ~(f :
+         ?filter:Path_filter.t -> Subject.Thread.t -> Path.Thread.t Opt_gen.t)
+      : Path.Program.t Opt_gen.t =
     test
-    |> map_threads ~f:(fun index prog ->
-           Opt_gen.map (f prog) ~f:(Path.Program.in_thread index))
+    |> map_threads ~f:(fun thread prog ->
+           if Path_filter.is_thread_ok filter ~thread then
+             Some
+               (Opt_gen.map (f ~filter prog)
+                  ~f:(Path.Program.in_thread thread))
+           else None)
     |> Opt_gen.union
 
   let try_gen_insert_stm ?(filter : Path_filter.t option) :
       target -> Path.Program.t Opt_gen.t =
-    gen_opt_over_threads ~f:(Thread.try_gen_insert_stm ?filter)
+    gen_opt_over_threads ?filter ~f:Thread.try_gen_insert_stm
 
   let try_gen_transform_stm ?(filter : Path_filter.t option) :
       target -> Path.Program.t Opt_gen.t =
-    gen_opt_over_threads ~f:(Thread.try_gen_transform_stm ?filter)
+    gen_opt_over_threads ?filter ~f:Thread.try_gen_transform_stm
 
   let try_gen_transform_stm_list ?(filter : Path_filter.t option) :
       target -> Path.Program.t Opt_gen.t =
-    gen_opt_over_threads ~f:(Thread.try_gen_transform_stm_list ?filter)
+    gen_opt_over_threads ?filter ~f:Thread.try_gen_transform_stm_list
 end

@@ -160,3 +160,60 @@ let%test_module "Block" =
               Range[6, 0] |}]
       end )
   end )
+
+let%test_module "Program" =
+  ( module struct
+    let%test_module "sample path output on example code" =
+      ( module struct
+        let print_sample (generator : Act_fuzz.Path.Program.t Generator.t) :
+            unit =
+          Act_utils.My_quickcheck.print_sample
+            ~printer:(Fmt.pr "@[%a@]@." Act_fuzz.Path.Program.pp)
+            ( module struct
+              type t = Act_fuzz.Path.Program.t [@@deriving compare, sexp]
+
+              let quickcheck_generator = generator
+
+              let quickcheck_observer = Observer.opaque
+
+              let quickcheck_shrinker = Shrinker.atomic
+            end )
+
+        let test
+            (gen :
+                 Act_fuzz.Subject.Test.t
+              -> Act_fuzz.Path.Program.t Act_fuzz.Opt_gen.t) : unit =
+          let test = Lazy.force Subject.Test_data.test in
+          print_sample (Or_error.ok_exn (gen test))
+
+        let%expect_test "try_gen_insert_stm with no filtering" =
+          test Act_fuzz.Path_producers.Test.try_gen_insert_stm ;
+          [%expect
+            {|
+              P0!Stms!Insert[4]
+              P0!Stms!Insert[6]
+              P0!Stms!Stm[3]!If!True!Insert[1]
+              P0!Stms!Stm[5]!Loop!Body!Insert[1]
+              P1!Stms!Insert[0]
+              P1!Stms!Insert[1]
+              P1!Stms!Insert[2]
+              P1!Stms!Stm[1]!If!False!Insert[0]
+              P1!Stms!Stm[1]!If!False!Insert[1]
+              P1!Stms!Stm[1]!If!True!Insert[0] |}]
+
+        let%expect_test "try_gen_insert_stm with thread filtering" =
+          test
+            (Act_fuzz.Path_producers.Test.try_gen_insert_stm
+               ~filter:
+                 Act_fuzz.Path_filter.(
+                   empty
+                   |> in_threads_only ~threads:(Set.singleton (module Int) 1))) ;
+          [%expect
+            {|
+              P1!Stms!Insert[0]
+              P1!Stms!Insert[1]
+              P1!Stms!Insert[2]
+              P1!Stms!Stm[1]!If!False!Insert[1]
+              P1!Stms!Stm[1]!If!True!Insert[0] |}]
+      end )
+  end )
