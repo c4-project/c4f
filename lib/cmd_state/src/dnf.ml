@@ -13,7 +13,7 @@ open Core
 open Act_common
 
 let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t)
-    (_o : Output.t) (_cfg : Act_config.Global.t) : unit Or_error.t =
+    (_o : Output.t) : unit Or_error.t =
   Common_cmd.Args.With_files.run_filter
     (module Act_state.Dnf.Filter)
     args ~aux_in:()
@@ -34,6 +34,6 @@ let command : Command.t =
         Common_cmd.Args.With_files.get Common_cmd.Args.Standard.get
       in
       fun () ->
-        Common_cmd.Common.lift_command
+        Common_cmd.Args.Standard.lift_command
           (Common_cmd.Args.With_files.rest args)
           ~f:(run args))

@@ -19,7 +19,7 @@ let write_aux (output : Act_delitmus.Output.t) (oc : Stdio.Out_channel.t) :
 
 let run ?(aux_output : Plumbing.Output.t option)
     ?(impl_suffix : string option)
-    (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o _cfg
+    (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o
     ~(style : Act_delitmus.Config.Style.t) ~(no_qualify_locals : bool) =
   let qualify_locals = not no_qualify_locals in
   let config =
@@ -60,7 +60,7 @@ let command : Command.t =
           ~doc:"if given, don't thread-ID-qualify local variable names"
       in
       fun () ->
-        Common_cmd.Common.lift_command
+        Common_cmd.Args.Standard.lift_command
           (Common_cmd.Args.With_files.rest standard_args)
           ~f:
             (run standard_args ~style ~no_qualify_locals ?impl_suffix

@@ -34,8 +34,7 @@ let pp_predicate_list :
     list ~sep:(any "@,@,")
       (vbox ~indent:2 (pair ~sep:sp (string ++ any ":") pp_tree_module)))
 
-let run_list_predicates (_o : Ac.Output.t) (_cfg : Act_config.Global.t) :
-    unit Or_error.t =
+let run_list_predicates (_o : Ac.Output.t) : unit Or_error.t =
   Fmt.pr "@[<v>%a@]@." pp_predicate_list predicate_lists ;
   Ok ()
 
@@ -44,4 +43,5 @@ let command : Command.t =
     Command.Let_syntax.(
       let%map standard_args = Common_cmd.Args.Standard.get in
       fun () ->
-        Common_cmd.Common.lift_command standard_args ~f:run_list_predicates)
+        Common_cmd.Args.Standard.lift_command standard_args
+          ~f:run_list_predicates)

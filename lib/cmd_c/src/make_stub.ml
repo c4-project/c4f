@@ -11,8 +11,8 @@
 
 open Core
 
-let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o
-    _cfg : unit Or_error.t =
+let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o :
+    unit Or_error.t =
   Common_cmd.Args.With_files.run_filter
     (module Act_delitmus.Stub.Filter)
     args ~aux_in:()
@@ -31,6 +31,6 @@ let command : Command.t =
         Common_cmd.Args.(With_files.get Standard.get)
       in
       fun () ->
-        Common_cmd.Common.lift_command
+        Common_cmd.Args.Standard.lift_command
           (Common_cmd.Args.With_files.rest standard_args)
           ~f:(run standard_args))

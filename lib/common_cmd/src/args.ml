@@ -11,10 +11,9 @@
 
 open Core
 open Act_common
-open Act_utils
 module Tx = Travesty_base_exts
 
-module Colour_table = String_table.Make (struct
+module Colour_table = Act_utils.String_table.Make (struct
   let equal_style_renderer (x : Fmt.style_renderer) (y : Fmt.style_renderer)
       : bool =
     match (x, y) with
@@ -148,6 +147,11 @@ module Standard = struct
 
   let default_config_file = "act.conf"
 
+  let load_config (x : t) : Act_config.Global.t Or_error.t =
+    Or_error.(
+      x.config_file |> Plumbing.Input.of_string
+      >>= Act_config.Global.Load.load)
+
   let get =
     Command.Let_syntax.(
       let%map_open verbose =
@@ -163,6 +167,28 @@ module Standard = struct
           ~default:None ~doc:"MODE force a particular colouring mode"
       in
       {verbose; no_warnings; config_file; colour})
+
+  let make_output (args : t) : Act_common.Output.t =
+    Act_common.Output.make ~verbose:(is_verbose args)
+      ~warnings:(are_warnings_enabled args)
+
+  let setup_colour (args : t) : unit =
+    let style_renderer = colour args in
+    Fmt_tty.setup_std_outputs ?style_renderer ()
+
+  let lift_command (args : t) ~(f : Act_common.Output.t -> unit Or_error.t) :
+      unit =
+    setup_colour args ;
+    let o = make_output args in
+    let result = f o in
+    if Or_error.is_error result then (
+      Act_common.Output.print_error o result ;
+      exit 1 )
+
+  let lift_command_with_config (args : t)
+      ~(f : Act_common.Output.t -> Act_config.Global.t -> unit Or_error.t) :
+      unit =
+    lift_command args ~f:(fun o -> Or_error.(args |> load_config >>= f o))
 end
 
 module With_files = struct

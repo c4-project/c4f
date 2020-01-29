@@ -64,5 +64,5 @@ let command : Command.t =
                 ("FIELD" %: Command.Arg_type.of_alist_exn Field.alist)))
       in
       fun () ->
-        Common_cmd.Common.lift_command standard_args
+        Common_cmd.Args.Standard.lift_command_with_config standard_args
           ~f:(run standard_args ~compiler_id ~fields))

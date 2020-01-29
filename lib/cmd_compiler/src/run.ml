@@ -119,6 +119,6 @@ let command : Command.t =
           (listed string)
       in
       fun () ->
-        Common_cmd.Common.lift_command
+        Common_cmd.Args.Standard.lift_command_with_config
           (Common_cmd.Args.With_files.rest standard_args)
           ~f:(run standard_args ~raw_target ~mode ~user_flags))

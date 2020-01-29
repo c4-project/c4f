@@ -33,5 +33,5 @@ let command : Command.t =
     Command.Let_syntax.(
       let%map standard_args = Common_cmd.Args.Standard.get in
       fun () ->
-        Common_cmd.Common.lift_command standard_args
+        Common_cmd.Args.Standard.lift_command_with_config standard_args
           ~f:run_list_fuzzer_actions)

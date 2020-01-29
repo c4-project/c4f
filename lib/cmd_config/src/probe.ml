@@ -28,8 +28,7 @@ let output_spec ?(ssh : Plumbing.Ssh_runner.Config.t option)
   Fmt.pr "@[<v>%a@]@." Act_config.Reify.Machines.pp specs
 
 let run ?(ssh : Plumbing.Ssh_runner.Config.t option)
-    (_o : Act_common.Output.t) (_cfg : Act_config.Global.t) : unit Or_error.t
-    =
+    (_o : Act_common.Output.t) : unit Or_error.t =
   let via =
     Option.value_map ssh ~f:Act_machine.Via.ssh
       ~default:Act_machine.Via.local
@@ -56,4 +55,5 @@ let command : Core_kernel.Command.t =
         flag "-ssh" (optional ssh_type)
           ~doc:"SSH_SPEC host@port:directory if probing remotely"
       in
-      fun () -> Common_cmd.Common.lift_command standard_args ~f:(run ?ssh))
+      fun () ->
+        Common_cmd.Args.Standard.lift_command standard_args ~f:(run ?ssh))

@@ -12,7 +12,7 @@
 open Core
 
 let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o
-    _cfg ~(header_file : string) : unit Or_error.t =
+    ~(header_file : string) : unit Or_error.t =
   Or_error.Let_syntax.(
     let%bind header_input = Plumbing.Input.of_string header_file in
     let%bind header = Act_c_mini.Litmus_header.load header_input in
@@ -42,6 +42,6 @@ let command : Command.t =
           ~doc:"FILE a file containing the new header"
       in
       fun () ->
-        Common_cmd.Common.lift_command
+        Common_cmd.Args.Standard.lift_command
           (Common_cmd.Args.With_files.rest standard_args)
           ~f:(run standard_args ~header_file))

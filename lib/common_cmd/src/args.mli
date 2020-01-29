@@ -39,6 +39,25 @@ module Standard : sig
 
   val config_file : t -> string
   (** [config_file t] gets the configuration file according to [t]. *)
+
+  val load_config : t -> Act_config.Global.t Or_error.t
+  (** [load_config t] loads the config at [config_file t]. *)
+
+  (** {2 Lifting commands over standard arguments} *)
+
+  val lift_command : t -> f:(Output.t -> unit Or_error.t) -> unit
+  (** [lift_command standard_args ~f] lifts a command body [f], performing
+      common book-keeping such as colourising, creating an {!Output.t}, and
+      printing top-level errors.
+
+      It does not load the configuration file, even if one is given; use
+      {!lift_command_with_config} instead. (The two functions are separate to
+      allow for commands that need to operate without configuration present.) *)
+
+  val lift_command_with_config :
+    t -> f:(Output.t -> Act_config.Global.t -> unit Or_error.t) -> unit
+  (** [lift_command_with_config standard_args ~f] acts like [lift_command],
+      but also loads and tests the configuration. *)
 end
 
 (** Wrapper of {!Standard} (etc) including arguments for (optional) input and

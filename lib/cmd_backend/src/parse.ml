@@ -33,6 +33,6 @@ let command : Command.t =
       let%map standard_args = Common_cmd.Args.(With_files.get Standard.get)
       and backend = Common_cmd.Args.backend () in
       fun () ->
-        Common_cmd.Common.lift_command
+        Common_cmd.Args.Standard.lift_command_with_config
           (Common_cmd.Args.With_files.rest standard_args)
           ~f:(run standard_args ?fqid:backend))

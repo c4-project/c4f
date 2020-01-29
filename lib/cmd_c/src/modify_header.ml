@@ -13,8 +13,8 @@ open Core
 
 let run ?(name : [< `Keep | `Replace_with of string] option)
     ?(postcondition : [< `Keep | `Clear | `Replace_with of string] option)
-    (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o _cfg
-    : unit Or_error.t =
+    (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o :
+    unit Or_error.t =
   Or_error.Let_syntax.(
     let%bind changes =
       Act_c_mini.Litmus_header.Change_set.of_args ?name ?postcondition ()
@@ -50,6 +50,6 @@ let command : Command.t =
         |> map ~f:(Option.map ~f:(fun n -> `Replace_with n))
       in
       fun () ->
-        Common_cmd.Common.lift_command
+        Common_cmd.Args.Standard.lift_command
           (Common_cmd.Args.With_files.rest standard_args)
           ~f:(run standard_args ?name ~postcondition))

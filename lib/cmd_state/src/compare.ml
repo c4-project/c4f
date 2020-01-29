@@ -20,8 +20,8 @@ let output (result : Act_state.Compare.Result.t) ~(human_readable : bool) :
   in
   pp Fmt.stdout result
 
-let run (_o : Output.t) (_cfg : Act_config.Global.t) ~(oracle_raw : string)
-    ~(subject_raw : string) ~(human_readable : bool) : unit Or_error.t =
+let run (_o : Output.t) ~(oracle_raw : string) ~(subject_raw : string)
+    ~(human_readable : bool) : unit Or_error.t =
   Or_error.Let_syntax.(
     let%bind oracle_in = Plumbing.Input.of_string oracle_raw in
     let%bind oracle = Act_state.Observation.load oracle_in in
@@ -54,5 +54,5 @@ let command : Command.t =
       and oracle_raw = anon ("ORACLE_NAME" %: Filename.arg_type)
       and subject_raw = anon ("SUBJECT_NAME" %: Filename.arg_type) in
       fun () ->
-        Common_cmd.Common.lift_command standard_args
+        Common_cmd.Args.Standard.lift_command standard_args
           ~f:(run ~oracle_raw ~subject_raw ~human_readable))

@@ -55,7 +55,7 @@ let command : Command.t =
              backends that pass"
       in
       fun () ->
-        Common_cmd.Common.lift_command standard_args
+        Common_cmd.Args.Standard.lift_command_with_config standard_args
           ~f:
             (run standard_args ?backend_predicate ?machine_predicate
                ~with_backend_tests))
