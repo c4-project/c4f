@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -24,7 +24,7 @@
 
 (** {1 Functors} *)
 
-(** Makes a {{!S} S} from a {{!Basic} Basic}. *)
+(** Makes a {!S} from a {!Basic}. *)
 module Make (B : Runner_types.Basic) : Runner_types.S
 
 (** {1 Basic runners}

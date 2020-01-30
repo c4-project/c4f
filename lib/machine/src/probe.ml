@@ -43,17 +43,18 @@ let probe_alist (type m s) (xs : (Act_common.Id.t, m) List.Assoc.t)
   |> Act_common.Spec.Set.of_list
 
 module On_runner (R : Plumbing.Runner_types.S) = struct
-  let probe_backend (instance : (module Act_backend.Instance_types.Basic))
+  let probe_backend ?(c_model : string option)
+      (instance : (module Act_backend.Instance_types.Basic))
       (style : Act_common.Id.t) (cmd : string) :
       Act_backend.Spec.t Or_error.t =
     Or_error.Let_syntax.(
       let%map () = Act_backend.Instance.probe (module R) instance cmd in
       (* TODO(@MattWindsor91): C model, asm models *)
-      Act_backend.Spec.make ~cmd ~style ~argv:[] ())
+      Act_backend.Spec.make ?c_model ~cmd ~style ~argv:[] ())
 
-  let probe_backends :
+  let probe_backends ?(c_model : string option) :
       b_style_map -> Act_backend.Spec.t Act_common.Spec.Set.t Or_error.t =
-    probe_alist ~f:probe_backend
+    probe_alist ~f:(probe_backend ?c_model)
       ~binary_names:(fun (module I : Act_backend.Instance_types.Basic) ->
         I.binary_names)
 
@@ -71,11 +72,12 @@ module On_runner (R : Plumbing.Runner_types.S) = struct
         I.binary_names)
 end
 
-let probe (via : Via.t) ~(compiler_styles : c_style_map)
-    ~(backend_styles : b_style_map) : Spec.t Or_error.t =
+let probe ?(c_model : string option) (via : Via.t)
+    ~(compiler_styles : c_style_map) ~(backend_styles : b_style_map) :
+    Spec.t Or_error.t =
   let (module R) = Via.to_runner via in
   let module P = On_runner (R) in
   Or_error.Let_syntax.(
-    let%map backends = P.probe_backends backend_styles
+    let%map backends = P.probe_backends ?c_model backend_styles
     and compilers = P.probe_compilers compiler_styles in
     Spec.make ~enabled:true ~via ~compilers ~backends ())

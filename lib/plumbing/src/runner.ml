@@ -33,6 +33,13 @@ module Make (B : Runner_types.Basic) : Runner_types.S = struct
       ~(prog : string) : unit Or_error.t =
     run_batch ?out ~prog [args]
 
+  let run_to_string (args : string list) ~(prog : string) : string Or_error.t
+      =
+    let buf = Buffer.create 10 in
+    Or_error.Let_syntax.(
+      let%map () = run ~out:(Runner_output.To_buffer buf) ~prog args in
+      Buffer.contents buf)
+
   let run_batch_with_copy ?(out : Runner_output.t option)
       ?(prog_f : Runner_types.prog_fun = id_prog)
       (cs_pair : Fpath.t Copy_spec.Pair.t)

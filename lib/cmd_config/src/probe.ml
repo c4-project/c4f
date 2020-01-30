@@ -27,15 +27,16 @@ let output_spec ?(ssh : Plumbing.Ssh_runner.Config.t option)
   let specs = Act_common.Spec.Set.of_map map in
   Fmt.pr "@[<v>%a@]@." Act_config.Reify.Machines.pp specs
 
-let run ?(ssh : Plumbing.Ssh_runner.Config.t option)
-    (_o : Act_common.Output.t) : unit Or_error.t =
+let run ?(c_model : string option)
+    ?(ssh : Plumbing.Ssh_runner.Config.t option) (_o : Act_common.Output.t) :
+    unit Or_error.t =
   let via =
     Option.value_map ssh ~f:Act_machine.Via.ssh
       ~default:Act_machine.Via.local
   in
   Or_error.Let_syntax.(
     let%map mspec =
-      Act_machine.Probe.probe via
+      Act_machine.Probe.probe via ?c_model
         ~backend_styles:Common_cmd.Backend_support.style_modules
         ~compiler_styles:Common_cmd.Language_support.style_modules
     in
@@ -54,6 +55,10 @@ let command : Core_kernel.Command.t =
       and ssh =
         flag "-ssh" (optional ssh_type)
           ~doc:"SSH_SPEC host@port:directory if probing remotely"
+      and c_model =
+        flag "-c-model" (optional string)
+          ~doc:"PATH path on machine to C model used by backends"
       in
       fun () ->
-        Common_cmd.Args.Standard.lift_command standard_args ~f:(run ?ssh))
+        Common_cmd.Args.Standard.lift_command standard_args
+          ~f:(run ?ssh ?c_model))

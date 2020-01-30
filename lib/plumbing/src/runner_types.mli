@@ -82,6 +82,10 @@ module type S = sig
       If [out] is given, each process's standard output will be copied to it
       at some stage (not necessarily immediately). *)
 
+  val run_to_string : string list -> prog:string -> string Or_error.t
+  (** [run_to_string args ~prog] behaves as {!run}, but returns stdout as a
+      string instead of emitting it according to a {!Runner_output}. *)
+
   val run_with_copy :
        ?out:Runner_output.t
     -> ?prog_f:prog_fun
