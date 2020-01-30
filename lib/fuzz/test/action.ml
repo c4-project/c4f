@@ -28,8 +28,8 @@ module Test_utils = struct
       ~(initial_state : Src.State.t) : unit =
     let r = Src.State.Monad.(run (action >>= reify_test) initial_state) in
     Fmt.(
-      pr "%a@."
-        (result ~ok:(list Act_c_lang.Ast.External_decl.pp) ~error:Error.pp))
+      pr "@[<v>%a@]@."
+        (result ~ok:(list ~sep:(sp ++ sp) Act_c_lang.Ast.External_decl.pp) ~error:Error.pp))
       r
 
   let run_and_dump_global_deps
