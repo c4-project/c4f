@@ -21,12 +21,8 @@ end
 let probe (module Runner : Pb.Runner_types.S)
     (module B : Instance_types.Basic) (prog : string) :
     Act_common.Id.t Or_error.t =
-  let buf = Buffer.create 10 in
   Or_error.Let_syntax.(
-    let%bind () =
-      Runner.run ~out:(Pb.Runner_output.To_buffer buf) ~prog B.probe_args
-    in
-    let result = Buffer.contents buf in
+    let%bind result = Runner.run_to_string ~prog B.probe_args in
     B.emits_of_probe result)
 
 module Make (B : Instance_types.Basic_with_run_info) : Instance_types.S =
