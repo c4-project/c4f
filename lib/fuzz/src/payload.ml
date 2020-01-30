@@ -103,6 +103,8 @@ module Surround = struct
         capturing the variables in scope at the point where the if statement
         is appearing, return a Quickcheck generator generating expressions
         over those variables. *)
+    
+    val build_filter : Path_filter.t -> Path_filter.t
   end) : Action_types.S_payload with type t = Body.t = struct
     include Body
 
@@ -111,7 +113,7 @@ module Surround = struct
 
       let gen = Path_producers.Test.try_gen_transform_stm_list
 
-      let build_filter = Fn.id
+      let build_filter = Basic.build_filter
     end)
 
     let quickcheck_cond (path : Path.Program.t) :

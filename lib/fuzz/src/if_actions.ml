@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -45,6 +45,10 @@ module Surround = struct
         capturing the variables in scope at the point where the if statement
         is appearing, return a Quickcheck generator generating expressions
         over those variables. *)
+    
+    val build_filter : Path_filter.t -> Path_filter.t
+    (** [build_filter pf] should apply any extra requirements on path filters
+        to [pf]. *)
   end) : S = struct
     include Basic
 
@@ -86,7 +90,8 @@ module Surround = struct
     let readme_suffix : string =
       {| This version of the action generates an arbitrary condition,
           and initialises both branches of the `if` statement with the
-          original statements. |}
+          original statements.  It cannot fire if the statements contain
+          any labels, to avoid duplicating them. |}
 
     let cond_gen (module Env : Act_c_mini.Env_types.S_with_known_values) :
         Act_c_mini.Expression.t Base_quickcheck.Generator.t =
@@ -100,6 +105,8 @@ module Surround = struct
     let f_branch_of_statements : Subject.Statement.t list -> Subject.Block.t
         =
       t_branch_of_statements
+    
+    let build_filter : Path_filter.t -> Path_filter.t = (* for now *) Fn.id
   end)
 
   module Tautology : S = Make (struct
@@ -122,6 +129,8 @@ module Surround = struct
     let f_branch_of_statements (_statements : Subject.Statement.t list) :
         Subject.Block.t =
       Act_c_mini.Block.make ~metadata:Metadata.dead_code ()
+
+    let build_filter : Path_filter.t -> Path_filter.t = Fn.id
   end)
 end
 
