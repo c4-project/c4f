@@ -15,20 +15,43 @@ open struct
   module Src = Act_compiler_gcc
 end
 
-let%test_module "emits_of_probe" =
+let%test_module "info_of_probe" =
   ( module struct
-    let test (input : string) : unit =
-      Fmt.(pr "@[%a@]@." (result ~error:Error.pp ~ok:Act_common.Id.pp))
-        (Src.Instance.emits_of_probe input)
+    let test (input : string list) : unit =
+      Fmt.(
+        pr "@[%a@]@." (result ~error:Error.pp ~ok:Act_compiler.Probe_info.pp))
+        (Src.Instance.info_of_probe input)
 
     let%expect_test "valid x86_64 triplet" =
-      test "x86_64-apple-darwin" ;
-      [%expect {| x86.64 |}]
+      test
+        [ "Apple clang version 11.0.0 (clang-1100.0.33.17\n\
+           Target: x86_64-apple-darwin19.2.0\n\
+           Thread model: posix\n\
+           InstalledDir: /blah"
+        ; "4.9.0"
+        ; "x86_64-apple-darwin" ] ;
+      [%expect
+        {|
+        emits: x86.64
+        version: 4.9.0
+        name: AppleClang |}]
 
     let%expect_test "valid ppc64 triplet" =
-      test "powerpc64le-linux-gnu" ;
-      [%expect {| ppc.64.le |}]
+      test
+        [ "gcc-7 (Ubuntu 7.4.0-1ubuntu1~18.04.1) 7.4.0\nblah\nblah"
+        ; "7.4.0"
+        ; "powerpc64le-linux-gnu" ] ;
+      [%expect
+        {|
+        emits: ppc.64.le
+        version: 7.4.0
+        name: gcc |}]
 
-    let%expect_test "malformed triplet (empty string)" =
-      test "" ; [%expect {| malformed target triplet: |}]
+    let%expect_test "malformed (empty version string)" =
+      test [""; "4.9.2"; "i686-linux-gnu"] ;
+      [%expect {| no output from --version |}]
+
+    let%expect_test "malformed (empty triplet string)" =
+      test ["gcc 4.9.2"; "4.9.2"; ""] ;
+      [%expect {| malformed target triplet: |}]
   end )

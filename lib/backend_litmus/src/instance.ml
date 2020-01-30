@@ -18,9 +18,9 @@ end
 (* Re-exported to match interface *)
 module Reader = Reader
 
-let binary_names : string list = ["litmus7"; "litmus"]
+let binary_names : string Sequence.t = Sequence.of_list ["litmus7"; "litmus"]
 
-let probe_args : string list = ["-version"]
+let probe_args : string array array = [|[|"-version"|]|]
 
 let capabilities ~(test_stdout : string list) : Bk.Capability.Summary.t =
   ignore (test_stdout : string list) ;

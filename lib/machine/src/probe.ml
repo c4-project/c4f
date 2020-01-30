@@ -23,51 +23,75 @@ open struct
     List.Assoc.t
 end
 
-let probe_style (type m s) (instance : m) (style : Act_common.Id.t)
-    ~(binary_names : m -> string list)
-    ~(f : m -> Act_common.Id.t -> string -> s Or_error.t) :
-    s Act_common.Spec.With_id.t list =
+let probe_style (type m s i) (module Info : Comparable.S with type t = i)
+    (instance : m) (style : Act_common.Id.t)
+    ~(binary_names : m -> string Sequence.t)
+    ~(f : m -> Act_common.Id.t -> string -> (i * s) Or_error.t) :
+    (i * s Act_common.Spec.With_id.t) Sequence.t =
   (* TODO(@MattWindsor91): keep hold of errors? *)
-  List.filter_map (binary_names instance) ~f:(fun cmd ->
+  Sequence.filter_map (binary_names instance) ~f:(fun cmd ->
       Option.Let_syntax.(
-        let%map spec = Result.ok (f instance style cmd) in
-        Act_common.Spec.With_id.make ~id:(Act_common.Id.of_string cmd) ~spec))
+        let%map i, spec = Result.ok (f instance style cmd) in
+        ( i
+        , Act_common.Spec.With_id.make
+            ~id:(Act_common.Id.of_string cmd)
+            ~spec )))
 
-let probe_alist (type m s) (xs : (Act_common.Id.t, m) List.Assoc.t)
-    ~(binary_names : m -> string list)
-    ~(f : m -> Act_common.Id.t -> string -> s Or_error.t) :
+(* [info_specs_to_set] converts a list of pairs of probe-info hash and spec
+   to a set of specs, keeping only one instance of each hash (and thereby
+   making sure that we don't spec the same compiler twice). *)
+let info_specs_to_set (type s i) (module Info : Comparable.S with type t = i)
+    (specs : (i * s Act_common.Spec.With_id.t) list) :
     s Act_common.Spec.Set.t Or_error.t =
-  xs
-  |> List.concat_map ~f:(fun (style, instance) ->
-         probe_style instance style ~binary_names ~f)
-  |> Act_common.Spec.Set.of_list
+  specs
+  |> List.dedup_and_sort ~compare:(Comparable.lift ~f:fst Info.compare)
+  |> List.map ~f:snd |> Act_common.Spec.Set.of_list
+
+let probe_alist (type m s i) (module Info : Comparable.S with type t = i)
+    (xs : (Act_common.Id.t, m) List.Assoc.t)
+    ~(binary_names : m -> string Sequence.t)
+    ~(f : m -> Act_common.Id.t -> string -> (i * s) Or_error.t) :
+    s Act_common.Spec.Set.t Or_error.t =
+  xs |> Sequence.of_list
+  |> Sequence.concat_map ~f:(fun (style, instance) ->
+         probe_style (module Info) instance style ~binary_names ~f)
+  |> Sequence.to_list
+  |> info_specs_to_set (module Info)
 
 module On_runner (R : Plumbing.Runner_types.S) = struct
   let probe_backend ?(c_model : string option)
       (instance : (module Act_backend.Instance_types.Basic))
       (style : Act_common.Id.t) (cmd : string) :
-      Act_backend.Spec.t Or_error.t =
+      (string * Act_backend.Spec.t) Or_error.t =
+    (* TODO(@MattWindsor91): get information from the backend itself *)
     Or_error.Let_syntax.(
       let%map () = Act_backend.Instance.probe (module R) instance cmd in
-      (* TODO(@MattWindsor91): C model, asm models *)
-      Act_backend.Spec.make ?c_model ~cmd ~style ~argv:[] ())
+      (* TODO(@MattWindsor91): asm models *)
+      (cmd, Act_backend.Spec.make ?c_model ~cmd ~style ~argv:[] ()))
 
   let probe_backends ?(c_model : string option) :
       b_style_map -> Act_backend.Spec.t Act_common.Spec.Set.t Or_error.t =
-    probe_alist ~f:(probe_backend ?c_model)
+    probe_alist
+      (module String)
+      ~f:(probe_backend ?c_model)
       ~binary_names:(fun (module I : Act_backend.Instance_types.Basic) ->
         I.binary_names)
 
   let probe_compiler (instance : (module Act_compiler.Instance_types.Basic))
       (style : Act_common.Id.t) (cmd : string) :
-      Act_compiler.Spec.t Or_error.t =
+      (Act_compiler.Probe_info.t * Act_compiler.Spec.t) Or_error.t =
     Or_error.Let_syntax.(
-      let%map emits = Act_compiler.Instance.probe (module R) instance cmd in
-      Act_compiler.Spec.make ~cmd ~enabled:true ~emits ~style ~argv:[] ())
+      let%map info = Act_compiler.Instance.probe (module R) instance cmd in
+      let emits = info.emits in
+      ( info
+      , Act_compiler.Spec.make ~cmd ~enabled:true ~emits ~style ~argv:[] ()
+      ))
 
   let probe_compilers :
       c_style_map -> Act_compiler.Spec.t Act_common.Spec.Set.t Or_error.t =
-    probe_alist ~f:probe_compiler
+    probe_alist
+      (module Act_compiler.Probe_info)
+      ~f:probe_compiler
       ~binary_names:(fun (module I : Act_compiler.Instance_types.Basic) ->
         I.binary_names)
 end

@@ -38,8 +38,9 @@ let resolve :
       try_get_style_module style)
 
 module Lookup = struct
-  let check_compiler_emits (expected : Ac.Id.t)
+  let check_compiler_info (info : Act_compiler.Probe_info.t)
       (spec : Act_machine.Qualified.Compiler.t) : unit Or_error.t =
+    let expected = info.emits in
     let actual =
       spec |> Act_machine.Qualified.spec_without_id
       |> Act_compiler.Spec.emits
@@ -57,8 +58,8 @@ module Lookup = struct
     let test (spec : Act_machine.Qualified.Compiler.t) : unit Or_error.t =
       Or_error.Let_syntax.(
         let%bind (module Compiler) = resolve spec in
-        let%bind emits = Compiler.probe () in
-        check_compiler_emits emits spec)
+        let%bind info = Compiler.probe () in
+        check_compiler_info info spec)
   end)
 
   (* TODO(@MattWindsor91): this seems exceptionally coupled, but it can't go

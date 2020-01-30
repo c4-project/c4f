@@ -18,7 +18,9 @@ end
 
 let probe (module Runner : Pb.Runner_types.S)
     (module B : Instance_types.Basic) (prog : string) : unit Or_error.t =
-  Runner.run ~prog B.probe_args
+  (* TODO(@MattWindsor91): don't convert from array here! *)
+  let args = List.map (Array.to_list B.probe_args) ~f:Array.to_list in
+  Runner.run_batch ~prog args
 
 let no_make_harness (_spec : Spec.t) ~(arch : Arch.t) :
     Capability.Make_harness.t =

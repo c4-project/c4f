@@ -20,10 +20,12 @@ end
 
 let probe (module Runner : Pb.Runner_types.S)
     (module B : Instance_types.Basic) (prog : string) :
-    Act_common.Id.t Or_error.t =
-  Or_error.Let_syntax.(
-    let%bind result = Runner.run_to_string ~prog B.probe_args in
-    B.emits_of_probe result)
+    Probe_info.t Or_error.t =
+  Or_error.(
+    B.probe_args |> Array.to_list
+    |> Tx.Or_error.combine_map ~f:(fun args ->
+           Runner.run_to_string ~prog (Array.to_list args))
+    >>= B.info_of_probe)
 
 module Make (B : Instance_types.Basic_with_run_info) : Instance_types.S =
 struct
@@ -88,6 +90,6 @@ struct
         {input= Pb.Copy_spec.files infiles; output= Pb.Copy_spec.file outfile}
         ~argv_f:(make_argv spec mode))
 
-  let probe () : Act_common.Id.t Or_error.t =
+  let probe () : Probe_info.t Or_error.t =
     probe (module Runner) (module B) cmd
 end

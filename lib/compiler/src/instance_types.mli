@@ -13,17 +13,19 @@ open Base
 
 (** [Basic] is the basic interface compilers must implement. *)
 module type Basic = sig
-  val binary_names : string list
+  val binary_names : string Sequence.t
   (** [binary_names] is a list of likely names for compiler binaries of this
       compiler style, used when probing. *)
 
-  val emits_of_probe : string -> Act_common.Id.t Or_error.t
-  (** [emits_of_probe probe_results] tries to scrape the target architecture
-      of the compiler from the results of probing it. *)
+  val info_of_probe : string list -> Probe_info.t Or_error.t
+  (** [info_of_probe probe_results] tries to scrape the target architecture
+      of the compiler from the results of probing it. The [probe_results]
+      list contains a *)
 
-  val probe_args : string list
+  val probe_args : string array array
   (** [probe_args] is the set of arguments sent to the compiler to test that
-      it works, and get information about its target machine. *)
+      it works, and get information about its target machine. Each inner
+      array represents a separate invocation of the compiler. *)
 
   val compile_args :
        user_args:string list
@@ -41,10 +43,10 @@ end
 
 (** [S] is the outward-facing interface of compiler modules. *)
 module type S = sig
-  val probe : unit -> Act_common.Id.t Or_error.t
-  (** [probe ()] tests that the compiler is working, and checks its target
-      architecture. If the compiler does not respond correctly, [probe]
-      returns an error. *)
+  val probe : unit -> Probe_info.t Or_error.t
+  (** [probe ()] tests that the compiler is working, and checks its vital
+      statistics. If the compiler does not respond correctly, [probe] returns
+      an error. *)
 
   val compile :
     Mode.t -> infiles:Fpath.t list -> outfile:Fpath.t -> unit Or_error.t

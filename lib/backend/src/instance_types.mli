@@ -17,12 +17,12 @@ open Base
 
 (** Signature of input to {!Instance.Make}. *)
 module type Basic = sig
-  val binary_names : string list
-  (** [binary_names] is a list of likely names for backend binaries of this
-      backend style, used when probing. *)
+  val binary_names : string Sequence.t
+  (** [binary_names] is a sequence of likely names for backend binaries of
+      this backend style, used when probing. *)
 
-  val probe_args : string list
-  (** [probe_args] is the set of arguments sent to the backend to test that
+  val probe_args : string array array
+  (** [probe_args] is the array of arguments sent to the backend to test that
       it works. Usually, this will be some sort of version command. *)
 
   val capabilities : test_stdout:string list -> Capability.Summary.t

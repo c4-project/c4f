@@ -18,13 +18,13 @@ end
 (* Re-exported to match interface *)
 module Reader = Reader
 
-let binary_names : string list = ["herd7"; "herd"]
+let binary_names : string Sequence.t = Sequence.of_list ["herd7"; "herd"]
 
 let make_harness :
     Bk.Spec.t -> arch:Bk.Arch.t -> Bk.Capability.Make_harness.t =
   Bk.Instance.no_make_harness
 
-let probe_args : string list = ["-version"]
+let probe_args : string array array = [|[|"-version"|]|]
 
 let model_for_arch (config : Act_backend.Spec.t) :
     Act_backend.Arch.t -> string option Or_error.t = function
