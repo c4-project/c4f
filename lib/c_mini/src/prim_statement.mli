@@ -98,6 +98,9 @@ val reduce :
 val as_label : t -> Act_common.C_id.t option
 (** [as_label x] is [Some l] if [x] is [label l], and [None] otherwise. *)
 
+val is_label : t -> bool
+(** [is_label x] is [true] if [x] is [label l], and [false] otherwise. *)
+
 (** Creates a basic monadic map over [M]. *)
 module Base_map (M : Monad.S) : sig
   val bmap :

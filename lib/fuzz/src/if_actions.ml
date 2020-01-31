@@ -45,7 +45,7 @@ module Surround = struct
         capturing the variables in scope at the point where the if statement
         is appearing, return a Quickcheck generator generating expressions
         over those variables. *)
-    
+
     val build_filter : Path_filter.t -> Path_filter.t
     (** [build_filter pf] should apply any extra requirements on path filters
         to [pf]. *)
@@ -105,8 +105,9 @@ module Surround = struct
     let f_branch_of_statements : Subject.Statement.t list -> Subject.Block.t
         =
       t_branch_of_statements
-    
-    let build_filter : Path_filter.t -> Path_filter.t = (* for now *) Fn.id
+
+    let build_filter : Path_filter.t -> Path_filter.t =
+      Path_filter.require_end_check ~check:Has_no_labels
   end)
 
   module Tautology : S = Make (struct
@@ -150,7 +151,9 @@ module Invert : Action_types.S with type Payload.t = Path.Program.t = struct
     type t = Path.Program.t [@@deriving sexp]
 
     let quickcheck_path (test : Subject.Test.t) : Path.Program.t Opt_gen.t =
-      let filter = Path_filter.(empty |> final_if_statements_only) in
+      let filter =
+        Path_filter.(empty |> require_end_check ~check:Is_if_statement)
+      in
       Path_producers.Test.try_gen_transform_stm ~filter test
 
     let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)

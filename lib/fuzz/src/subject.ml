@@ -30,6 +30,14 @@ module Statement = struct
   let has_dead_code_blocks : t -> bool =
     Act_c_mini.Statement.has_blocks_with_metadata
       ~predicate:Metadata.is_dead_code
+
+  module Wm = Act_c_mini.Statement.With_meta (Metadata)
+
+  let has_labels : t -> bool =
+    Wm.On_primitives.exists ~f:Act_c_mini.Prim_statement.is_label
+
+  let has_non_label_prims : t -> bool =
+    Wm.On_primitives.exists ~f:(Fn.non Act_c_mini.Prim_statement.is_label)
 end
 
 module Block = struct
@@ -54,6 +62,9 @@ module Thread = struct
   let empty : t = {decls= []; stms= []}
 
   let has_statements (p : t) : bool = not (List.is_empty p.stms)
+
+  let has_non_label_prims (p : t) : bool =
+    List.exists p.stms ~f:Statement.has_non_label_prims
 
   let has_while_loops (p : t) : bool =
     List.exists p.stms ~f:Act_c_mini.Statement.has_while_loops
@@ -138,6 +149,9 @@ module Test = struct
 
   let has_if_statements : t -> bool =
     at_least_one_thread_with ~f:Thread.has_if_statements
+
+  let has_non_label_prims : t -> bool =
+    at_least_one_thread_with ~f:Thread.has_non_label_prims
 
   let has_while_loops : t -> bool =
     at_least_one_thread_with ~f:Thread.has_while_loops

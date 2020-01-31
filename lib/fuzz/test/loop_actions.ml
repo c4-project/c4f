@@ -52,11 +52,14 @@ let%test_module "Surround" =
               do { atomic_store_explicit(x, 42, memory_order_seq_cst); ; } while (y ==
               27 && a);
               atomic_store_explicit(y, foo, memory_order_relaxed);
-              if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
+              if (foo == y)
+              { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
               if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
               do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
               5);
-          }void
+          }
+
+          void
           P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
              bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
              atomic_int y)
@@ -86,16 +89,20 @@ let%test_module "Invert" =
         ~initial_state ;
       [%expect
         {|
-        void P0(atomic_int *x, atomic_int *y)
+        void
+        P0(atomic_int *x, atomic_int *y)
         {
             atomic_store_explicit(x, 42, memory_order_seq_cst);
             ;
             atomic_store_explicit(y, foo, memory_order_relaxed);
             if (!(foo == y)) {  } else
-            { atomic_store_explicit(x, 56, memory_order_seq_cst); }
+            { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
             if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
             do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
             5);
-        }void P1(atomic_int *x, atomic_int *y)
+        }
+
+        void
+        P1(atomic_int *x, atomic_int *y)
         { loop: ; if (true) {  } else { goto loop; } } |}]
   end )

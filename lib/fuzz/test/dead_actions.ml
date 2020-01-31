@@ -38,16 +38,21 @@ let%test_module "Early_out" =
       test_on_example_program loop_path Break ;
       [%expect
         {|
-      void P0(atomic_int *x, atomic_int *y)
+      void
+      P0(atomic_int *x, atomic_int *y)
       {
           atomic_store_explicit(x, 42, memory_order_seq_cst);
           ;
           atomic_store_explicit(y, foo, memory_order_relaxed);
-          if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
+          if (foo == y)
+          { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
           if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
           do { break; atomic_store_explicit(x, 44, memory_order_seq_cst); } while
           (4 == 5);
-      }void P1(atomic_int *x, atomic_int *y)
+      }
+
+      void
+      P1(atomic_int *x, atomic_int *y)
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "invalid break on example program" =
@@ -59,16 +64,21 @@ let%test_module "Early_out" =
       test_on_example_program if_path Return ;
       [%expect
         {|
-      void P0(atomic_int *x, atomic_int *y)
+      void
+      P0(atomic_int *x, atomic_int *y)
       {
           atomic_store_explicit(x, 42, memory_order_seq_cst);
           ;
           atomic_store_explicit(y, foo, memory_order_relaxed);
-          if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
+          if (foo == y)
+          { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
           else { return; }
           if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
           5);
-      }void P1(atomic_int *x, atomic_int *y)
+      }
+
+      void
+      P1(atomic_int *x, atomic_int *y)
       { loop: ; if (true) {  } else { goto loop; } } |}]
   end )

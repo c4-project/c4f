@@ -41,6 +41,19 @@ module Statement : sig
   module Loop : sig
     type t = Metadata.t Act_c_mini.Statement.While.t [@@deriving sexp]
   end
+
+  (** {3 Statement predicates}
+
+      If a predicate exists here instead of on {!Act_c_mini.Statement}, it
+      depends on having fixed metadata in some way. *)
+
+  val has_labels : t -> bool
+  (** [has_labels stm] is true if there are labels in [stm], looking
+      recursively. *)
+
+  val has_non_label_prims : t -> bool
+  (** [has_non_label_prims stm] is true if there is at least one primitive in
+      [stm] that is not a label. *)
 end
 
 (** {2 Subject blocks} *)
@@ -147,6 +160,10 @@ module Test : sig
   val has_dead_code_blocks : t -> bool
   (** [has_dead_code_blocks test] is true if, and only if, [test] contains at
       least one dead code block. *)
+
+  val has_non_label_prims : t -> bool
+  (** [has_non_label_prims test] is true if there is at least one primitive
+      statement in [test] that is not a label. *)
 
   (** {3 Helpers for mutating tests} *)
 

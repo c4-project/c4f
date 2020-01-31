@@ -20,7 +20,8 @@ flow.if.duplicate:
     
     This version of the action generates an arbitrary condition, and
     initialises both branches of the `if` statement with the original
-    statements.
+    statements. It cannot fire if the statements contain any labels, to avoid
+    duplicating them.
 flow.if.tautology:
   Weight: 25x
   Summary:

@@ -38,7 +38,7 @@ struct
         Act_c_mini.Expression.t Base_quickcheck.Generator.t =
       let module B = Act_c_mini.Expression_gen.Bool_known (Env) in
       B.Falsehoods.quickcheck_generator
-    
+
     let build_filter : Path_filter.t -> Path_filter.t = Fn.id
   end)
 

@@ -32,11 +32,6 @@ val empty : t
     These consume a path filter and return a path filter with the given
     predicate switched on. *)
 
-val final_if_statements_only : t -> t
-(** [final_if_statements_only filter] adds to [filter] the restriction that
-    any statement that is the final destination of the generated path must be
-    an if statement. *)
-
 val in_dead_code_only : t -> t
 (** [in_dead_code_only filter] adds to [filter] the restriction that any path
     must travel through at least one dead-code block. *)
@@ -49,6 +44,15 @@ val in_threads_only : t -> threads:Set.M(Int).t -> t
 (** [in_threads_only filter ~threads] adds to [filter] the restriction that
     any path must travel through at least one of the threads in [threads].
     Such restrictions are cumulative. *)
+
+module End_check : sig
+  (** Type of end checks. *)
+  type t = Is_if_statement | Has_no_labels
+end
+
+val require_end_check : t -> check:End_check.t -> t
+(** [require_end_check filter ~check] adds the check expression [check] to
+    the set of things to be checked on statements reached by this path. *)
 
 (** {1 Callbacks for the path producers} *)
 
@@ -78,10 +82,18 @@ val check : t -> unit Or_error.t
     predicates in [filter]. *)
 
 val check_final_statement : t -> stm:Subject.Statement.t -> unit Or_error.t
-(** [is_final_statement_ok filter ~stm] should be applied before constructing
+(** [check_final_statement filter ~stm] should be applied before constructing
     a [This_stm] reference to [stm], and checks whether such a final
     statement destination is ok according to the predicates in [filter]. It
     subsumes [check]. *)
+
+val are_final_statements_ok :
+  t -> all_stms:Subject.Statement.t list -> pos:int -> len:int -> bool
+(** [are_final_statements_ok filter ~all_stms ~pos ~len] should be used to
+    filter all statement-list paths with position [pos] and length [len] with
+    respect to statements [all_stms]. It checks whether every statement in
+    the given subrange meets the statement predicates in [filter] (as per
+    {!check_final_statement}).) *)
 
 (** {2 Checking to see if paths are constructible} *)
 

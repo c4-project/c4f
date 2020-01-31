@@ -50,10 +50,11 @@ end
 (** Checks that can only be carried out at the end of a statement path. *)
 module End_check = struct
   module M = struct
-    type t = Is_if_statement [@@deriving enum]
+    type t = Is_if_statement | Has_no_labels [@@deriving enum]
 
     let table : (t, string) List.Assoc.t =
-      [(Is_if_statement, "if statements only")]
+      [ (Is_if_statement, "if statements only")
+      ; (Has_no_labels, "does not contain any labels") ]
   end
 
   include M
@@ -63,15 +64,20 @@ module End_check = struct
     match check with
     | Is_if_statement ->
         Act_c_mini.Statement.is_if_statement stm
-
-  let check (check : t) ~(stm : Subject.Statement.t) : unit Or_error.t =
-    Tx.Or_error.unless_m (is_ok check ~stm) ~f:(fun () ->
-        Or_error.errorf "Statement failed check: %s" (to_string check))
+    | Has_no_labels ->
+        not (Subject.Statement.has_labels stm)
 
   let is_constructible (flag : t) ~(subject : Subject.Test.t) : bool =
     match flag with
     | Is_if_statement ->
         Subject.Test.has_if_statements subject
+    | Has_no_labels ->
+        Subject.Test.has_non_label_prims subject
+
+  let check (check : t) ~(stm : Subject.Statement.t) : unit Or_error.t =
+    Tx.Or_error.unless_m (is_ok check ~stm) ~f:(fun () ->
+        Or_error.error_s
+          [%message "Statement failed check" ~check:(check : t)])
 end
 
 type t =
@@ -120,15 +126,8 @@ end
 
 include Req_flags
 
-module End_checks = struct
-  let require_end_check (existing : t) ~(check : End_check.t) : t =
-    {existing with end_checks= Set.add existing.end_checks check}
-
-  let final_if_statements_only : t -> t =
-    require_end_check ~check:Is_if_statement
-end
-
-include End_checks
+let require_end_check (existing : t) ~(check : End_check.t) : t =
+  {existing with end_checks= Set.add existing.end_checks check}
 
 let in_threads_only (filter : t) ~(threads : Set.M(Int).t) : t =
   let threads' =
@@ -149,12 +148,22 @@ let check (filter : t) : unit Or_error.t =
   filter |> unmet_flags |> Set.to_list
   |> Tx.Or_error.combine_map_unit ~f:error_of_flag
 
+let end_checks_for_statement (filter : t) (stm : Subject.Statement.t) :
+    unit Or_error.t list =
+  filter.end_checks |> Set.to_list |> List.map ~f:(End_check.check ~stm)
+
 let check_final_statement (filter : t) ~(stm : Subject.Statement.t) :
     unit Or_error.t =
-  let end_checks =
-    filter.end_checks |> Set.to_list |> List.map ~f:(End_check.check ~stm)
-  in
+  let end_checks = end_checks_for_statement filter stm in
   Or_error.combine_errors_unit (check filter :: end_checks)
+
+let are_final_statements_ok (filter : t)
+    ~(all_stms : Subject.Statement.t list) ~(pos : int) ~(len : int) : bool =
+  Set.is_empty filter.end_checks
+  ||
+  let stms' = Sequence.(sub (of_list all_stms) ~pos ~len) in
+  Sequence.for_all stms' ~f:(fun stm ->
+      Set.for_all filter.end_checks ~f:(End_check.is_ok ~stm))
 
 module Construct_checks = struct
   let is_constructible_req (filter : t) ~(subject : Subject.Test.t) : bool =

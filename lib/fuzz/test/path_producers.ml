@@ -56,7 +56,7 @@ let%test_module "Block" =
 
         let print_sample (generator : Act_fuzz.Path.Stms.t Generator.t) :
             unit =
-          Act_utils.My_quickcheck.print_sample
+          Act_utils.My_quickcheck.print_sample ~test_count:25
             ~printer:(Fmt.pr "@[%a@]@." Act_fuzz.Path.Stms.pp)
             ( module struct
               type t = Act_fuzz.Path.stm_list [@@deriving compare, sexp]
@@ -87,6 +87,8 @@ let%test_module "Block" =
               Insert[4]
               Insert[5]
               Insert[6]
+              Stm[3]!If!False!Insert[0]
+              Stm[3]!If!True!Insert[0]
               Stm[3]!If!True!Insert[1]
               Stm[4]!If!False!Insert[0]
               Stm[4]!If!True!Insert[0]
@@ -113,8 +115,10 @@ let%test_module "Block" =
             Stm[1]!This
             Stm[2]!This
             Stm[3]!If!True!Stm[0]!This
+            Stm[3]!If!True!Stm[1]!This
             Stm[3]!This
             Stm[4]!If!True!Stm[0]!This
+            Stm[4]!This
             Stm[5]!Loop!Body!Stm[0]!This
             Stm[5]!This |}]
 
@@ -123,7 +127,8 @@ let%test_module "Block" =
           test
             (Act_fuzz.Path_producers.Block.try_gen_transform_stm
                ~filter:
-                 Act_fuzz.Path_filter.(empty |> final_if_statements_only)) ;
+                 Act_fuzz.Path_filter.(
+                   empty |> require_end_check ~check:Is_if_statement)) ;
           [%expect {|
             Stm[3]!This
             Stm[4]!This |}]
@@ -148,15 +153,77 @@ let%test_module "Block" =
           [%expect
             {|
               Stm[3]!If!False!Range[0, 0]
-              Stm[3]!If!True!Range[0, 0]
+              Stm[3]!If!True!Range[0, 1]
+              Stm[3]!If!True!Range[0, 2]
               Stm[3]!If!True!Range[1, 0]
+              Stm[3]!If!True!Range[2, 0]
               Stm[4]!If!False!Range[0, 0]
               Stm[4]!If!True!Range[0, 0]
               Stm[4]!If!True!Range[1, 0]
               Stm[5]!Loop!Body!Range[0, 0]
+              Stm[5]!Loop!Body!Range[0, 1]
+              Range[2, 0]
+              Range[3, 0]
+              Range[3, 1]
+              Range[5, 1]
+              Range[6, 0] |}]
+
+        let%expect_test "try_gen_transform_stm_list with filtering to dead \
+                         code" =
+          test
+            (Act_fuzz.Path_producers.Block.try_gen_transform_stm_list
+               ~filter:Act_fuzz.Path_filter.(empty |> in_dead_code_only)) ;
+          [%expect
+            {|
+              Stm[3]!If!False!Range[0, 0]
+              Stm[4]!If!True!Range[0, 0]
+              Stm[4]!If!True!Range[0, 1]
+              Stm[4]!If!True!Range[1, 0]
+              Stm[5]!Loop!Body!Range[0, 0]
+              Stm[5]!Loop!Body!Range[0, 1]
+              Stm[5]!Loop!Body!Range[1, 0] |}]
+
+        let%expect_test "try_gen_transform_stm_list with filtering to if \
+                         statements" =
+          test
+            (Act_fuzz.Path_producers.Block.try_gen_transform_stm_list
+               ~filter:
+                 Act_fuzz.Path_filter.(
+                   empty |> require_end_check ~check:Is_if_statement)) ;
+          [%expect
+            {|
+              Stm[3]!If!False!Range[0, 0]
+              Stm[3]!If!True!Range[1, 0]
+              Stm[3]!If!True!Range[2, 0]
+              Stm[4]!If!False!Range[0, 0]
+              Stm[4]!If!True!Range[1, 0]
+              Stm[5]!Loop!Body!Range[0, 0]
+              Stm[5]!Loop!Body!Range[1, 0]
+              Range[2, 0]
               Range[3, 0]
               Range[3, 1]
               Range[5, 0]
+              Range[6, 0] |}]
+
+        let%expect_test "try_gen_transform_stm_list with filtering to \
+                         non-labels" =
+          test
+            (Act_fuzz.Path_producers.Block.try_gen_transform_stm_list
+               ~filter:
+                 Act_fuzz.Path_filter.(
+                   empty |> require_end_check ~check:Has_no_labels)) ;
+          [%expect
+            {|
+              Stm[3]!If!False!Range[0, 0]
+              Stm[3]!If!True!Range[1, 0]
+              Stm[3]!If!True!Range[2, 0]
+              Stm[4]!If!False!Range[0, 0]
+              Stm[4]!If!True!Range[0, 0]
+              Stm[4]!If!True!Range[1, 0]
+              Stm[5]!Loop!Body!Range[0, 0]
+              Stm[5]!Loop!Body!Range[0, 1]
+              Range[2, 0]
+              Range[5, 1]
               Range[6, 0] |}]
       end )
   end )
@@ -192,6 +259,7 @@ let%test_module "Program" =
             {|
               P0!Stms!Insert[4]
               P0!Stms!Insert[6]
+              P0!Stms!Stm[3]!If!True!Insert[0]
               P0!Stms!Stm[3]!If!True!Insert[1]
               P0!Stms!Stm[5]!Loop!Body!Insert[1]
               P1!Stms!Insert[0]

@@ -121,10 +121,10 @@ module Surround : sig
         capturing the variables in scope at the point where the if statement
         is appearing, return a Quickcheck generator generating expressions
         over those variables. *)
-    
+
     val build_filter : Path_filter.t -> Path_filter.t
     (** [build_filter pf] should apply any additional path filter conditions
-        needed for the action to [pf]; for example, requiring that the scooped
-        statement list must have no labels. *)
+        needed for the action to [pf]; for example, requiring that the
+        scooped statement list must have no labels. *)
   end) : Action_types.S_payload with type t = t
 end

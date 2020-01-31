@@ -63,6 +63,8 @@ let as_label : t -> Act_common.C_id.t option = function
   | Assign _ | Atomic _ | Early_out _ | Goto _ | Nop | Procedure_call _ ->
       None
 
+let is_label (p : t) : bool = Option.is_some (as_label p)
+
 module Base_map (M : Monad.S) = struct
   let bmap (x : t) ~(assign : Assign.t -> Assign.t M.t)
       ~(atomic : Atomic_statement.t -> Atomic_statement.t M.t)

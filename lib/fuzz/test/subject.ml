@@ -64,7 +64,11 @@ module Test_data = struct
           [ mk_store
               (Atomic_store.make ~src:(Expression.int_lit 56)
                  ~dst:(Address.of_variable_str_exn "x")
-                 ~mo:Mem_order.Seq_cst) ]
+                 ~mo:Mem_order.Seq_cst)
+          ; Act_c_mini.Statement.prim Src.Metadata.generated
+              Act_c_mini.(
+                Prim_statement.label
+                  (Act_common.C_id.of_string "kappa_kappa")) ]
           [])
 
   let sample_known_false_if : Src.Subject.Statement.t Lazy.t =
@@ -207,7 +211,8 @@ let%test_module "using sample environment" =
             atomic_store_explicit(x, 42, memory_order_seq_cst);
             ;
             atomic_store_explicit(y, foo, memory_order_relaxed);
-            if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
+            if (foo == y)
+            { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
             if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
             do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
             5);
@@ -233,7 +238,8 @@ let%test_module "using sample environment" =
             atomic_store_explicit(x, 42, memory_order_seq_cst);
             ;
             atomic_store_explicit(y, foo, memory_order_relaxed);
-            if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
+            if (foo == y)
+            { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
             if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
             do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
             5);

@@ -88,7 +88,8 @@ let%test_module "Statement_list" =
           ;
           atomic_store_explicit(y, 9001, memory_order_seq_cst);
           atomic_store_explicit(y, foo, memory_order_relaxed);
-          if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
+          if (foo == y)
+          { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
           if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 == 5); |}]
 
@@ -100,7 +101,8 @@ let%test_module "Statement_list" =
           ;
           atomic_store_explicit(y, foo, memory_order_relaxed);
           atomic_store_explicit(y, 9001, memory_order_seq_cst);
-          if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
+          if (foo == y)
+          { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
           if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 == 5); |}]
           end )
@@ -120,7 +122,8 @@ let%test_module "Statement_list" =
                   atomic_store_explicit(x, 42, memory_order_seq_cst);
                   ;
                   atomic_store_explicit(y, 9001, memory_order_seq_cst);
-                  if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
+                  if (foo == y)
+                  { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
                   if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
                   do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 == 5); |}]
 
@@ -131,7 +134,8 @@ let%test_module "Statement_list" =
           atomic_store_explicit(x, 42, memory_order_seq_cst);
           atomic_store_explicit(y, 9001, memory_order_seq_cst);
           atomic_store_explicit(y, 9001, memory_order_seq_cst);
-          if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
+          if (foo == y)
+          { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
           if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 == 5); |}]
 
@@ -172,7 +176,8 @@ let%test_module "Statement_list" =
                 {|
                   atomic_store_explicit(x, 42, memory_order_seq_cst);
                   if (true) { ; atomic_store_explicit(y, foo, memory_order_relaxed); }
-                  if (foo == y) { atomic_store_explicit(x, 56, memory_order_seq_cst); }
+                  if (foo == y)
+                  { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
                   if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
                   do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 == 5); |}]
 
