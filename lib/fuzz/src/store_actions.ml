@@ -362,7 +362,7 @@ Make (struct
       (* Deliberately ignore the source environment. TODO(@MattWindsor91):
          optimise this? *)
       Base_quickcheck.Generator.map2 [%quickcheck.generator: Q_dst.t]
-        [%quickcheck.generator: Act_c_mini.Mem_order.t] ~f:(fun dst mo ->
+        Act_c_mini.Mem_order.gen_store ~f:(fun dst mo ->
           (* We're really hoping that the availability check over known
              values works here, because there's no way we can safely return
              an error if not. *)
