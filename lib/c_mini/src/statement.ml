@@ -178,7 +178,7 @@ module Main :
                ~t_branch:(Bk.bi_map_m ~left:block_meta ~right:mu)
                ~f_branch:(Bk.bi_map_m ~left:block_meta ~right:mu))
           ~while_loop:
-            (WB.bmap ~cond:M.return
+            (WB.bmap ~cond
                ~body:(Bk.bi_map_m ~left:block_meta ~right:mu))
       in
       mu x

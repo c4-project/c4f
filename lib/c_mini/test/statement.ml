@@ -14,7 +14,7 @@ module Src = Act_c_mini
 
 let cond : Src.Expression.t = Src.Expression.bool_lit true
 
-let mkif (ts : unit Src.Statement.t list) (fs : unit Src.Statement.t list) :
+let mkif ?(cond: Src.Expression.t = cond) (ts : unit Src.Statement.t list) (fs : unit Src.Statement.t list) :
     unit Src.Statement.t =
   Src.Statement.(
     if_stm
@@ -22,7 +22,7 @@ let mkif (ts : unit Src.Statement.t list) (fs : unit Src.Statement.t list) :
          ~t_branch:(Src.Block.of_statement_list ts)
          ~f_branch:(Src.Block.of_statement_list fs)))
 
-let mkwhile (xs : unit Src.Statement.t list) : unit Src.Statement.t =
+let mkwhile ?(cond: Src.Expression.t = cond) (xs : unit Src.Statement.t list) : unit Src.Statement.t =
   Src.Statement.(
     while_loop
       (While.make ~cond ~kind:`While ~body:(Src.Block.of_statement_list xs)))
@@ -72,6 +72,67 @@ let%test_module "has_while_loops" =
       test (mkif [] [nop; mkwhile []; nop]) ;
       [%expect {| true |}]
   end )
+
+let%test_module "On_lvalues and On_addresses" =
+  ( module struct 
+    module M = Src.Statement.With_meta (Unit)
+
+    let stm =
+      Src.(
+        Statement.(
+          mkwhile ~cond:(Expression.of_variable_str_exn "so")
+            [ mkif ~cond:(Expression.lvalue Lvalue.(deref (of_variable_str_exn "i")))
+                [ prim ()
+                    (Prim_statement.atomic_store
+                      (Src.Atomic_store.make ~mo:Relaxed ~src:(Expression.of_variable_str_exn "herd")
+                       ~dst:(Address.(ref (of_variable_str_exn "u")))))
+                ]
+                [ prim ()
+                    (Prim_statement.goto
+                      (Act_common.C_id.of_string "not_you"))
+                ]
+            ; mkif ~cond:(Expression.(Infix.(
+              (of_variable_str_exn "liek") && (of_variable_str_exn "mudkipz")
+                )))
+              [ prim ()
+                  (Prim_statement.label (Act_common.C_id.of_string "not_you"))
+              ]
+              [
+              ]
+            ]))
+
+    let print_exprs : Act_c_lang.Ast.Expr.t list -> unit =
+      Fmt.(pr "@[<v>%a@]@." (list ~sep:sp Act_c_lang.Ast.Expr.pp))
+
+    let%expect_test "coalesce lvalues to list" =
+      stm
+      |> M.On_lvalues.to_list
+      |> List.map ~f:Src.Reify_expr.lvalue
+      |> print_exprs;
+      [%expect{|
+        so
+        *i
+        herd
+        u
+        liek
+        mudkipz |}]
+
+    let%expect_test "coalesce addresses to list" =
+      stm
+      |> M.On_addresses.to_list
+      |> List.map ~f:Src.Reify_expr.address
+      |> print_exprs;
+      [%expect{|
+        so
+        *i
+        herd
+        &u
+        liek
+        mudkipz |}]
+
+    end)
+
+
 
 let%test_module "On_primitives" =
   ( module struct
