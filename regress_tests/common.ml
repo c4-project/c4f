@@ -50,7 +50,7 @@ let regress_on_files (bin_name : string) ~(dir : Fpath.t) ~(ext : string)
     =
   Or_error.Let_syntax.(
     printf "# %s tests\n\n" bin_name ;
-    let%bind test_files = Au.Fs.Unix.get_files ~ext dir in
+    let%bind test_files = Au.Fs.Unix.get_files ~predicate:(Fpath.has_ext ext) dir in
     let results = List.map test_files ~f:(regress_on_file ~dir ~f) in
     let%map () = Or_error.combine_errors_unit results in
     printf "\nRan %d test(s).\n" (List.length test_files))

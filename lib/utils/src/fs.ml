@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -99,21 +99,24 @@ module Unix : Fs_types.S = struct
   let mkdir_p (path : Fpath.t) =
     Or_error.all_unit (List.map ~f:mkdir (subpaths path))
 
-  let readdir path =
+  let ls_raw (path : string) : string list Or_error.t =
     Or_error.(
       tag_arg
-        (try_with (fun () -> Sys.readdir path))
+        (try_with (fun () -> Sys.ls_dir path))
         "Couldn't read directory" path [%sexp_of: string])
+  
+  let ls (path : Fpath.t) : Fpath.t list Or_error.t =
+    Or_error.(
+      path
+      |> Fpath.to_string
+      |> ls_raw
+      >>= Tx.Or_error.combine_map ~f:Pb.Fpath_helpers.of_string
+    )
 
-  let map_combine (xs : 'a list) ~(f : 'a -> 'b Or_error.t) :
-      'b list Or_error.t =
-    Or_error.combine_errors (List.map ~f xs)
-
-  let get_files ?(compare = default_sort_compare) ?ext (path : Fpath.t) =
-    let open Or_error.Let_syntax in
-    let%bind file_str_array = readdir (Fpath.to_string path) in
-    let file_strs = Array.to_list file_str_array in
-    let%map files = map_combine ~f:Pb.Fpath_helpers.of_string file_strs in
-    let with_ext = filter_files ?ext files in
-    List.sort ~compare with_ext
+  let get_files ?(compare : (Fpath.t -> Fpath.t -> int) = default_sort_compare) ?(predicate : (Fpath.t -> bool) option) (path : Fpath.t) : Fpath.t list Or_error.t =
+    Or_error.Let_syntax.(
+      let%map all = ls path in
+      let matching = Option.value_map predicate ~f:(fun f -> List.filter all ~f) ~default:all in
+      List.sort ~compare matching
+    )
 end
