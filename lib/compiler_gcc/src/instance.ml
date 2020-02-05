@@ -78,6 +78,7 @@ let cpu_map : Act_common.Id.t Map.M(String).t Lazy.t =
        Act_common.Id.
          [ ("i686", of_string "x86.32")
          ; ("x86_64", of_string "x86.64")
+         ; ("arm", of_string "arm")
          ; ("powerpc64le", of_string "ppc.64.le") ])
 
 let name_of_version (version : string) : string Or_error.t =
