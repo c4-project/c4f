@@ -27,7 +27,8 @@ end
 include M
 include Act_utils.Enum.Extend_table (M)
 
-(* Make doubly sure that we don't degrade memory orders to invalid equivalents. *)
+(* Make doubly sure that we don't degrade memory orders to invalid
+   equivalents. *)
 let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
 
 let is_load_compatible : t -> bool = function

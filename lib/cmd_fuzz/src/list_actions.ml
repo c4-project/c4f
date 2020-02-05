@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -9,9 +9,11 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Core (* for Filename.arg_type *)
+open Core_kernel
 
-open Act_common
+open struct
+  module Ac = Act_common
+end
 
 let list_fuzzer_actions_readme () : string =
   Act_utils.My_string.format_for_readme
@@ -19,13 +21,27 @@ let list_fuzzer_actions_readme () : string =
       Reads the current config file, and outputs information about each
       fuzzer action, including its computed weight after taking the config
       into consideration.
+
+      If verbose mode is enabled, the information is a detailed summary of the
+      action, including its documentation; otherwise, this command prints
+      only the name and current weight.
     |}
 
-let run_list_fuzzer_actions (_o : Output.t) (cfg : Act_config.Global.t) :
+let summaries_of_config (cfg : Act_config.Global.t) :
+    Act_fuzz.Action.Summary.t Map.M(Ac.Id).t Or_error.t =
+  cfg |> Act_config.Global.fuzz |> Act_fuzz.Config.summarise
+
+let print (o : Ac.Output.t) (map : Act_fuzz.Action.Summary.t Map.M(Ac.Id).t)
+    : unit =
+  let pp =
+    if Ac.Output.is_verbose o then Act_fuzz.Action.Summary.pp_map
+    else Act_fuzz.Action.Summary.pp_map_terse
+  in
+  Fmt.pr "@[<v>%a@]@." pp map
+
+let run_list_fuzzer_actions (o : Ac.Output.t) (cfg : Act_config.Global.t) :
     unit Or_error.t =
-  Or_error.(
-    cfg |> Act_config.Global.fuzz |> Act_fuzz.Config.summarise
-    >>| Fmt.pr "@[<v>%a@]@." Act_fuzz.Action.Summary.pp_map)
+  Or_error.(cfg |> summaries_of_config >>| print o)
 
 let command : Command.t =
   Command.basic ~summary:"output the current fuzzer weight table"

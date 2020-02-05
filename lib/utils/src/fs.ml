@@ -104,19 +104,21 @@ module Unix : Fs_types.S = struct
       tag_arg
         (try_with (fun () -> Sys.ls_dir path))
         "Couldn't read directory" path [%sexp_of: string])
-  
+
   let ls (path : Fpath.t) : Fpath.t list Or_error.t =
     Or_error.(
-      path
-      |> Fpath.to_string
-      |> ls_raw
-      >>= Tx.Or_error.combine_map ~f:Pb.Fpath_helpers.of_string
-    )
+      path |> Fpath.to_string |> ls_raw
+      >>= Tx.Or_error.combine_map ~f:Pb.Fpath_helpers.of_string)
 
-  let get_files ?(compare : (Fpath.t -> Fpath.t -> int) = default_sort_compare) ?(predicate : (Fpath.t -> bool) option) (path : Fpath.t) : Fpath.t list Or_error.t =
+  let get_files ?(compare : Fpath.t -> Fpath.t -> int = default_sort_compare)
+      ?(predicate : (Fpath.t -> bool) option) (path : Fpath.t) :
+      Fpath.t list Or_error.t =
     Or_error.Let_syntax.(
       let%map all = ls path in
-      let matching = Option.value_map predicate ~f:(fun f -> List.filter all ~f) ~default:all in
-      List.sort ~compare matching
-    )
+      let matching =
+        Option.value_map predicate
+          ~f:(fun f -> List.filter all ~f)
+          ~default:all
+      in
+      List.sort ~compare matching)
 end

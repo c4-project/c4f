@@ -25,8 +25,8 @@ module type S = sig
     -> Fpath.t
     -> Fpath.t list Or_error.t
   (** [get_files ?compare ?filtering path] wraps [Sys.readfiles] with error
-      handling, filtering, and path sorting using
-      [compare] (which, by default, is ascending collation). *)
+      handling, filtering, and path sorting using [compare] (which, by
+      default, is ascending collation). *)
 
   val check_is_dir :
     ?on_absent:(Fpath.t -> unit Or_error.t) -> Fpath.t -> unit Or_error.t

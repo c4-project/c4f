@@ -1,34 +1,23 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the "Software"),
-   to deal in the Software without restriction, including without limitation
-   the rights to use, copy, modify, merge, publish, distribute, sublicense,
-   and/or sell copies of the Software, and to permit persons to whom the
-   Software is furnished to do so, subject to the following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included in
-   all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-   DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 (** Bundle of formatters used to output information in the middle of act
-    execution *)
+    execution. *)
 
 open Base
 
 type t
 (** Opaque type of output contexts. *)
 
-(** {2 Constructors} *)
+(** {1 Constructors} *)
 
 val make : verbose:bool -> warnings:bool -> t
 (** [make ~verbose ~warnings] makes a [t] from various reporting flags. *)
@@ -36,7 +25,11 @@ val make : verbose:bool -> warnings:bool -> t
 val silent : unit -> t
 (** [silent ()] makes a [t] that ignores anything sent to it. *)
 
-(** {2 Usage} *)
+(** {1 Usage} *)
+
+val is_verbose : t -> bool
+(** [is_verbose o] gets whether [o] is in verbose mode; this can affect the
+    choice of pretty-printers, for instance. *)
 
 val pv : t -> ('a, Formatter.t, unit) format -> 'a
 (** [pv output fmt] prints onto [output]'s 'verbose' output. *)
@@ -47,7 +40,7 @@ val pw : t -> ('a, Formatter.t, unit) format -> 'a
 val pe : t -> ('a, Formatter.t, unit) format -> 'a
 (** [pe output fmt] prints onto [output]'s 'error' output (usually stderr). *)
 
-(** {2 Common output forms} *)
+(** {1 Common output forms} *)
 
 val print_error : t -> unit Or_error.t -> unit
 (** [print_error o u] prints any top-level errors represented by [u] to [o]'s

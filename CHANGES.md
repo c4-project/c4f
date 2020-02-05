@@ -3,6 +3,13 @@
 Note that these changes are infrequently maintained and may not tell the
 whole story.
 
+## 2020-Feb-05
+
+- New actions `program.label` (tentative title), which adds random labels, and
+  `flow.dead.goto`, which adds deadcode GOTOs to them.
+- `act-fuzz list-actions` now prints only the names and weights by default;
+  pass `-v` to get the original behaviour.
+
 ## 2020-Jan-21
 
 - New action `mem.fence`, which adds random memory fences.

@@ -75,6 +75,14 @@ module Summary = struct
       Adjusted_weight.pp weight Fmt.paragraphs readme
 
   let pp_map : t Map.M(Act_common.Id).t Fmt.t = Act_common.Id.pp_map pp
+
+  let pp_map_terse : t Map.M(Act_common.Id).t Fmt.t =
+    Fmt.(
+      using Map.to_alist
+        (list ~sep:sp
+           (hbox
+              (pair ~sep:(any ":@ ") Act_common.Id.pp
+                 (using (fun x -> x.weight) Adjusted_weight.pp)))))
 end
 
 module Pool = struct

@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -12,7 +12,7 @@
 (** Fuzzer: high-level actions *)
 
 open Base
-open Act_common
+module Ac := Act_common
 
 (** {1 Types} *)
 
@@ -41,7 +41,7 @@ module With_default_weight : sig
   val default_weight : t -> int
   (** [default_weight a] gets [a]'s default weight. *)
 
-  val name : t -> Act_common.Id.t
+  val name : t -> Ac.Id.t
   (** [name a] is shorthand for [A.name], where [A] is [action a]. *)
 end
 
@@ -83,8 +83,12 @@ module Summary : sig
   include Pretty_printer.S with type t := t
   (** Summaries may be pretty-printed. *)
 
-  val pp_map : t Map.M(Act_common.Id).t Fmt.t
+  val pp_map : t Map.M(Ac.Id).t Fmt.t
   (** [pp_map f map] pretty-prints a map of summaries [map] on formatter [f]. *)
+
+  val pp_map_terse : t Map.M(Ac.Id).t Fmt.t
+  (** [pp_map_terse f map] is like {!pp_map}, but only prints names and
+      weights. *)
 end
 
 (** A weighted pool of fuzzer actions. *)
@@ -97,7 +101,7 @@ module Pool : sig
   (** [of_weighted_actions actions] tries to make a weighted action pool from
       the action-to-weight association given in [actions]. *)
 
-  val summarise : t -> Summary.t Id.Map.t
+  val summarise : t -> Summary.t Map.M(Ac.Id).t
   (** [summarise pool] generates a mapping from action names to summaries of
       each action, including its adjusted weight in the pool. *)
 
@@ -121,7 +125,7 @@ val always : Subject.Test.t -> param_map:Param_map.t -> bool State.Monad.t
 
 (** Makes a basic logging function for an action. *)
 module Make_log (B : sig
-  val name : Act_common.Id.t
+  val name : Ac.Id.t
 end) : sig
-  val log : Act_common.Output.t -> ('a, Formatter.t, unit) format -> 'a
+  val log : Ac.Output.t -> ('a, Formatter.t, unit) format -> 'a
 end
