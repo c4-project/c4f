@@ -9,6 +9,8 @@ whole story.
   `flow.dead.goto`, which adds deadcode GOTOs to them.
 - `act-fuzz list-actions` now prints only the names and weights by default;
   pass `-v` to get the original behaviour.
+- Added an example set of Memalloy outputs, mainly for use on systems
+  (cough cough Raspberry Pi) where Memalloy can't run.
 
 ## 2020-Jan-21
 

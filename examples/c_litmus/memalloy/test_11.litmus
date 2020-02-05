@@ -1,0 +1,24 @@
+C test_11
+
+{ y = 0; x = 0; }
+
+void
+P0(atomic_int *y, atomic_int *x)
+{
+    int r0 = 0;
+    atomic_store_explicit(x, 1, memory_order_seq_cst);
+    r0 = atomic_load_explicit(y, memory_order_seq_cst);
+}
+
+void
+P1(atomic_int *y, atomic_int *x)
+{
+    int r0 = 0;
+    atomic_store_explicit(y, 1, memory_order_seq_cst);
+    r0 = atomic_load_explicit(x, memory_order_seq_cst);
+}
+
+forall
+((x == 1 /\ (y == 1 /\ 0:r0 == 0 /\ 1:r0 == 1)) \/
+ ((x == 1 /\ (y == 1 /\ 0:r0 == 1 /\ 1:r0 == 0)) \/
+  (x == 1 /\ (y == 1 /\ 0:r0 == 1 /\ 1:r0 == 1))))
