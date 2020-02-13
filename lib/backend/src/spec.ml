@@ -14,10 +14,10 @@ module Ac = Act_common
 
 module M = struct
   type t =
-    { cmd: string [@default "herd7"] [@drop_if_default]
-    ; argv: string list [@sexp.list]
+    { argv: string list [@sexp.list]
     ; c_model: string option [@sexp.option]
     ; asm_models: (Ac.Id.t * string) list [@default []] [@drop_if_default]
+    ; cmd: string
     ; style: Ac.Id.t }
   [@@deriving sexp, fields, make, equal]
 

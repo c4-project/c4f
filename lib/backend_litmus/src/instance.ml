@@ -56,33 +56,34 @@ let make_arch_args : Bk.Arch.t -> string list Or_error.t = function
       (* for now *)
       ignore id ; Or_error.return []
 
-let make_harness_argv (arch : Bk.Arch.t) :
+let make_harness_argv (spec : Bk.Spec.t) (arch : Bk.Arch.t) :
     (input_file:string -> output_dir:string -> string list Or_error.t)
     Staged.t
     Or_error.t =
   Or_error.Let_syntax.(
     let%map arch_args = make_arch_args arch in
     Staged.stage (fun ~input_file ~output_dir ->
-        Or_error.return ([input_file; "-o"; output_dir] @ arch_args)))
+        Or_error.return
+          ([input_file; "-o"; output_dir] @ arch_args @ Bk.Spec.argv spec)))
 
-let make_harness (_spec : Bk.Spec.t) ~(arch : Bk.Arch.t) :
+let make_harness (spec : Bk.Spec.t) ~(arch : Bk.Arch.t) :
     Bk.Capability.Make_harness.t =
-  match make_harness_argv arch with
+  match make_harness_argv spec arch with
   | Ok argv_f ->
       Can_make_harness
         {argv_f= Staged.unstage argv_f; run_as= ["make"; "sh ./run.sh"]}
   | Error why ->
       Cannot_make_harness {why}
 
-let make_run_argv (arch : Bk.Arch.t) :
+let make_run_argv (spec : Bk.Spec.t) (arch : Bk.Arch.t) :
     (input_file:string -> string list Or_error.t) Staged.t Or_error.t =
   Or_error.Let_syntax.(
     let%map arch_args = make_arch_args arch in
     Staged.stage (fun ~input_file ->
-        Or_error.return ([input_file] @ arch_args)))
+        Or_error.return ([input_file] @ arch_args @ Bk.Spec.argv spec)))
 
-let run (_spec : Bk.Spec.t) ~(arch : Bk.Arch.t) : Bk.Capability.Run.t =
-  match make_run_argv arch with
+let run (spec : Bk.Spec.t) ~(arch : Bk.Arch.t) : Bk.Capability.Run.t =
+  match make_run_argv spec arch with
   | Ok argv_f ->
       Can_run {argv_f= Staged.unstage argv_f}
   | Error why ->

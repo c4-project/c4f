@@ -57,11 +57,15 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
         =
       Or_error.Let_syntax.(
         let%map cmd =
-          Au.My_list.find_one_opt items ~item_name:"cmd" ~f:(function
+          Au.My_list.find_one items ~item_name:"cmd" ~f:(function
             | Cmd c ->
                 Some c
             | _ ->
                 None)
+        and argv =
+          Au.My_list.find_at_most_one items ~item_name:"argv"
+            ~f:(function Argv v -> Some v | _ -> None)
+            ~on_empty:(return [])
         and c_model =
           Au.My_list.find_one_opt items ~item_name:"c_model" ~f:(function
             | C_model c ->
@@ -82,7 +86,7 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
             | _ ->
                 None)
         in
-        Act_backend.Spec.make ?cmd ?c_model ~asm_models ~style ())
+        Act_backend.Spec.make ~cmd ?c_model ~argv ~asm_models ~style ())
 
     let compiler (items : Ast.Compiler.t list) : C_spec.t Or_error.t =
       Or_error.Let_syntax.(

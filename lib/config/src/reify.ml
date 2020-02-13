@@ -78,6 +78,8 @@ module Machines = struct
     List.concat
       Act_backend.Spec.
         [ [Ast.Backend.Style (style spec); Cmd (cmd spec)]
+        ; (let a = argv spec in
+           if List.is_empty a then [] else [Ast.Backend.Argv a])
         ; List.map
             ~f:(fun str -> Ast.Backend.C_model str)
             (Option.to_list (c_model spec))

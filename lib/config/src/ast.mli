@@ -47,6 +47,7 @@ end
 module Backend : sig
   type t =
     | Cmd of string
+    | Argv of string list
     | Style of Act_common.Id.t
     | C_model of string
     | Asm_model of Act_common.Id.t * string

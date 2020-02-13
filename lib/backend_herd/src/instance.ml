@@ -51,7 +51,7 @@ let make_argv_from_spec (spec : Act_backend.Spec.t)
     string list Or_error.t =
   Or_error.Let_syntax.(
     let%map model = model_for_arch spec arch in
-    make_argv_head ?model () @ [input_file])
+    make_argv_head ?model () @ Act_backend.Spec.argv spec @ [input_file])
 
 let run (spec : Bk.Spec.t) ~(arch : Bk.Arch.t) : Bk.Capability.Run.t =
   let argv_f = make_argv_from_spec spec arch in

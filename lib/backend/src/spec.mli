@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -12,11 +12,11 @@
 open Base
 open Act_common
 
-(** Configuration needed to find and execute Herd. *)
+(** Configuration needed to find and execute backends. *)
 
 type t
 
-(** Simulator specifications are specifications. *)
+(** Backend specifications are specifications. *)
 include
   Act_common.Spec.S
     with type t := t
@@ -25,10 +25,10 @@ include
 (** {2 Constructors} *)
 
 val make :
-     ?cmd:string
-  -> ?argv:string list
+     ?argv:string list
   -> ?c_model:string
   -> ?asm_models:(Id.t, string) List.Assoc.t
+  -> cmd:string
   -> style:Id.t
   -> unit
   -> t

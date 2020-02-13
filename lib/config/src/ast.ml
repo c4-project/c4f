@@ -90,6 +90,7 @@ end
 module Backend = struct
   type t =
     | Cmd of string
+    | Argv of string list [@sexp.list]
     | Style of Id.t
     | C_model of string
     | Asm_model of Id.t * string
@@ -100,6 +101,8 @@ module Backend = struct
       function
       | Cmd c ->
           pp_cmd f c
+      | Argv xs ->
+          pp_argv f xs
       | Style s ->
           pp_id_directive f ("style", s)
       | C_model c ->
