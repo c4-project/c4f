@@ -87,6 +87,7 @@ let backend_stanza := id_stanza(BACKEND, backend_item)
 
 let backend_item :=
   | ~ = cmd                               ; < Ast.Backend.Cmd       >
+  | ~ = argv                              ; < Ast.Backend.Argv      >
   | ~ = id_directive(STYLE)               ; < Ast.Backend.Style     >
   | C_MODEL;   ~ = STRING                 ; < Ast.Backend.C_model   >
   | ASM_MODEL; ~ = IDENTIFIER; s = STRING ; < Ast.Backend.Asm_model >

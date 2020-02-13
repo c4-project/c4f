@@ -30,7 +30,7 @@ main: MACHINE IDENTIFIER LBRACE COMPILER IDENTIFIER LBRACE STYLE VIA
 ##
 main: DEFAULT LBRACE TRY BACKEND WEIGHT
 ##
-## Ends in an error in state: 113.
+## Ends in an error in state: 114.
 ##
 ## default_item -> TRY try_category . IDENTIFIER [ RBRACE EOL ]
 ##
@@ -97,7 +97,7 @@ Expected a valid compiler configuration item; for example:
 
 main: DEFAULT LBRACE WEIGHT
 ##
-## Ends in an error in state: 107.
+## Ends in an error in state: 108.
 ##
 ## simple_stanza(DEFAULT,default_item) -> DEFAULT LBRACE . separated_nonempty_list(EOL,option(default_item)) RBRACE [ EOL EOF ]
 ##
@@ -106,7 +106,7 @@ main: DEFAULT LBRACE WEIGHT
 ##
 main: DEFAULT LBRACE EOL WEIGHT
 ##
-## Ends in an error in state: 118.
+## Ends in an error in state: 119.
 ##
 ## separated_nonempty_list(EOL,option(default_item)) -> option(default_item) EOL . separated_nonempty_list(EOL,option(default_item)) [ RBRACE ]
 ##
@@ -118,7 +118,7 @@ Expected a valid default item (`try CATEGORY ID`)
 
 main: DEFAULT LBRACE TRY WEIGHT
 ##
-## Ends in an error in state: 108.
+## Ends in an error in state: 109.
 ##
 ## default_item -> TRY . try_category IDENTIFIER [ RBRACE EOL ]
 ##
@@ -134,7 +134,7 @@ Expected a category after `try`; for example:
 
 main: FUZZ LBRACE WEIGHT
 ##
-## Ends in an error in state: 78.
+## Ends in an error in state: 79.
 ##
 ## simple_stanza(FUZZ,fuzz_item) -> FUZZ LBRACE . separated_nonempty_list(EOL,option(fuzz_item)) RBRACE [ EOL EOF ]
 ##
@@ -143,7 +143,7 @@ main: FUZZ LBRACE WEIGHT
 ##
 main: FUZZ LBRACE EOL WEIGHT
 ##
-## Ends in an error in state: 103.
+## Ends in an error in state: 104.
 ##
 ## separated_nonempty_list(EOL,option(fuzz_item)) -> option(fuzz_item) EOL . separated_nonempty_list(EOL,option(fuzz_item)) [ RBRACE ]
 ##
@@ -157,7 +157,7 @@ Expected a valid fuzz configuration item; for example:
 
 main: FUZZ LBRACE ACTION WEIGHT
 ##
-## Ends in an error in state: 94.
+## Ends in an error in state: 95.
 ##
 ## fuzz_item -> ACTION . IDENTIFIER option(fuzz_weight) [ RBRACE EOL ]
 ##
@@ -169,7 +169,7 @@ Expected an action identifier after `action`
 
 main: FUZZ LBRACE ACTION IDENTIFIER VIA
 ##
-## Ends in an error in state: 95.
+## Ends in an error in state: 96.
 ##
 ## fuzz_item -> ACTION IDENTIFIER . option(fuzz_weight) [ RBRACE EOL ]
 ##
@@ -181,7 +181,7 @@ Expected `weight NUMBER`, or a newline, after the action identifier
 
 main: FUZZ LBRACE ACTION IDENTIFIER WEIGHT WEIGHT
 ##
-## Ends in an error in state: 96.
+## Ends in an error in state: 97.
 ##
 ## fuzz_weight -> WEIGHT . INTEGER [ RBRACE EOL ]
 ##
@@ -193,7 +193,7 @@ Expected an integer weight after `weight`
 
 main: FUZZ LBRACE SET WEIGHT
 ##
-## Ends in an error in state: 79.
+## Ends in an error in state: 80.
 ##
 ## fuzz_item -> SET . fuzz_setter [ RBRACE EOL ]
 ##
@@ -205,7 +205,7 @@ Expected `flag` or `param`, followed by an identifier and value assignment
 
 main: FUZZ LBRACE SET PARAM WEIGHT
 ##
-## Ends in an error in state: 80.
+## Ends in an error in state: 81.
 ##
 ## fuzz_setter -> PARAM . IDENTIFIER option(TO) INTEGER [ RBRACE EOL ]
 ##
@@ -214,7 +214,7 @@ main: FUZZ LBRACE SET PARAM WEIGHT
 ##
 main: FUZZ LBRACE SET FLAG WEIGHT
 ##
-## Ends in an error in state: 84.
+## Ends in an error in state: 85.
 ##
 ## fuzz_setter -> FLAG . IDENTIFIER option(TO) fuzz_flag_value [ RBRACE EOL ]
 ##
@@ -226,7 +226,7 @@ Expected an identifier naming the fuzzer tunable to be set
 
 main: FUZZ LBRACE SET PARAM IDENTIFIER TO IDENTIFIER
 ##
-## Ends in an error in state: 82.
+## Ends in an error in state: 83.
 ##
 ## fuzz_setter -> PARAM IDENTIFIER option(TO) . INTEGER [ RBRACE EOL ]
 ##
@@ -238,7 +238,7 @@ Expected an integer value for this flag, optionally preceded by `to`
 
 main: FUZZ LBRACE SET PARAM IDENTIFIER WEIGHT
 ##
-## Ends in an error in state: 81.
+## Ends in an error in state: 82.
 ##
 ## fuzz_setter -> PARAM IDENTIFIER . option(TO) INTEGER [ RBRACE EOL ]
 ##
@@ -250,7 +250,7 @@ Expected an integer value for this flag
 
 main: FUZZ LBRACE SET FLAG IDENTIFIER WEIGHT
 ##
-## Ends in an error in state: 85.
+## Ends in an error in state: 86.
 ##
 ## fuzz_setter -> FLAG IDENTIFIER . option(TO) fuzz_flag_value [ RBRACE EOL ]
 ##
@@ -263,7 +263,7 @@ preceded by `to`
 
 main: FUZZ LBRACE SET FLAG IDENTIFIER TO BACKEND
 ##
-## Ends in an error in state: 86.
+## Ends in an error in state: 87.
 ##
 ## fuzz_setter -> FLAG IDENTIFIER option(TO) . fuzz_flag_value [ RBRACE EOL ]
 ##
@@ -275,7 +275,7 @@ Expected a Boolean, or `ratio NUMBER : NUMBER`, value for this flag
 
 main: FUZZ LBRACE SET FLAG IDENTIFIER RATIO WEIGHT
 ##
-## Ends in an error in state: 87.
+## Ends in an error in state: 88.
 ##
 ## fuzz_flag_value -> RATIO . INTEGER COLON INTEGER [ RBRACE EOL ]
 ##
@@ -287,7 +287,7 @@ Expected a ratio (`NUMBER : NUMBER`) after `ratio`
 
 main: FUZZ LBRACE SET FLAG IDENTIFIER RATIO INTEGER WEIGHT
 ##
-## Ends in an error in state: 88.
+## Ends in an error in state: 89.
 ##
 ## fuzz_flag_value -> RATIO INTEGER . COLON INTEGER [ RBRACE EOL ]
 ##
@@ -299,7 +299,7 @@ Expected `: NUMBER` after the denominator of a ratio
 
 main: FUZZ LBRACE SET FLAG IDENTIFIER RATIO INTEGER COLON WEIGHT
 ##
-## Ends in an error in state: 89.
+## Ends in an error in state: 90.
 ##
 ## fuzz_flag_value -> RATIO INTEGER COLON . INTEGER [ RBRACE EOL ]
 ##
@@ -320,7 +320,7 @@ main: MACHINE IDENTIFIER LBRACE VIA SSH VIA
 ##
 main: FUZZ WEIGHT
 ##
-## Ends in an error in state: 77.
+## Ends in an error in state: 78.
 ##
 ## simple_stanza(FUZZ,fuzz_item) -> FUZZ . LBRACE separated_nonempty_list(EOL,option(fuzz_item)) RBRACE [ EOL EOF ]
 ##
@@ -329,7 +329,7 @@ main: FUZZ WEIGHT
 ##
 main: DEFAULT WEIGHT
 ##
-## Ends in an error in state: 106.
+## Ends in an error in state: 107.
 ##
 ## simple_stanza(DEFAULT,default_item) -> DEFAULT . LBRACE separated_nonempty_list(EOL,option(default_item)) RBRACE [ EOL EOF ]
 ##
@@ -427,7 +427,7 @@ main: MACHINE IDENTIFIER LBRACE COMPILER IDENTIFIER LBRACE STYLE IDENTIFIER VIA
 ##
 main: MACHINE IDENTIFIER LBRACE VIA LOCAL VIA
 ##
-## Ends in an error in state: 68.
+## Ends in an error in state: 69.
 ##
 ## separated_nonempty_list(EOL,option(machine_item)) -> option(machine_item) . [ RBRACE ]
 ## separated_nonempty_list(EOL,option(machine_item)) -> option(machine_item) . EOL separated_nonempty_list(EOL,option(machine_item)) [ RBRACE ]
@@ -447,7 +447,7 @@ main: MACHINE IDENTIFIER LBRACE VIA SSH LBRACE USER STRING VIA
 ##
 main: FUZZ LBRACE ACTION IDENTIFIER WEIGHT INTEGER WEIGHT
 ##
-## Ends in an error in state: 102.
+## Ends in an error in state: 103.
 ##
 ## separated_nonempty_list(EOL,option(fuzz_item)) -> option(fuzz_item) . [ RBRACE ]
 ## separated_nonempty_list(EOL,option(fuzz_item)) -> option(fuzz_item) . EOL separated_nonempty_list(EOL,option(fuzz_item)) [ RBRACE ]
@@ -457,7 +457,7 @@ main: FUZZ LBRACE ACTION IDENTIFIER WEIGHT INTEGER WEIGHT
 ##
 main: DEFAULT LBRACE TRY BACKEND IDENTIFIER EOF
 ##
-## Ends in an error in state: 117.
+## Ends in an error in state: 118.
 ##
 ## separated_nonempty_list(EOL,option(default_item)) -> option(default_item) . [ RBRACE ]
 ## separated_nonempty_list(EOL,option(default_item)) -> option(default_item) . EOL separated_nonempty_list(EOL,option(default_item)) [ RBRACE ]
@@ -483,7 +483,7 @@ Expected a closing brace (to terminate this block), another string, or a newline
 
 main: MACHINE IDENTIFIER LBRACE RBRACE VIA
 ##
-## Ends in an error in state: 126.
+## Ends in an error in state: 127.
 ##
 ## separated_nonempty_list(EOL,option(top_stanza)) -> option(top_stanza) . [ EOF ]
 ## separated_nonempty_list(EOL,option(top_stanza)) -> option(top_stanza) . EOL separated_nonempty_list(EOL,option(top_stanza)) [ EOF ]
@@ -553,7 +553,7 @@ main: MACHINE IDENTIFIER LBRACE USER
 ##
 main: MACHINE IDENTIFIER LBRACE VIA LOCAL EOL USER
 ##
-## Ends in an error in state: 69.
+## Ends in an error in state: 70.
 ##
 ## separated_nonempty_list(EOL,option(machine_item)) -> option(machine_item) EOL . separated_nonempty_list(EOL,option(machine_item)) [ RBRACE ]
 ##
@@ -674,7 +674,7 @@ main: VIA
 ##
 main: DEFAULT LBRACE RBRACE EOL TO
 ##
-## Ends in an error in state: 127.
+## Ends in an error in state: 128.
 ##
 ## separated_nonempty_list(EOL,option(top_stanza)) -> option(top_stanza) EOL . separated_nonempty_list(EOL,option(top_stanza)) [ EOF ]
 ##
