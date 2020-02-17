@@ -43,10 +43,14 @@ val reduce :
     statement [x] to a particular result type by applying the appropriate
     function. *)
 
-(** Traverses over the lvalues of a primitive expression. *)
-module On_lvalues :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t
-
-(** Traverses over the addresses of a primitive expression. *)
+(** Traverses over the addresses of an atomic statement. *)
 module On_addresses :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t
+
+(** Traverses over the expressions of an atomic statement. *)
+module On_expressions :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Expression.t
+
+(** Traverses over the lvalues of an atomic statement. *)
+module On_lvalues :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t

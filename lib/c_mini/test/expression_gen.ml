@@ -41,6 +41,11 @@ let test_all_expressions_have_type
         ~equal:[%compare.equal: Src.Type.t Or_error.t]
         ~expect:(Or_error.return ty))
 
+module Exp_idents =
+  Travesty.Traversable.Chain0
+    (Act_c_mini.Expression.On_lvalues)
+    (Act_c_mini.Lvalue.On_identifiers)
+
 let test_all_expressions_in_env
     (f :
          (module Src.Env_types.S_with_known_values)
@@ -51,7 +56,7 @@ let test_all_expressions_in_env
     (module Q)
     ~f:
       ([%test_pred: Src.Expression.t]
-         (Src.Expression.On_identifiers.for_all ~f:(Map.mem E.env))
+         (Exp_idents.for_all ~f:(Map.mem E.env))
          ~here:[[%here]])
 
 let test_all_expressions_evaluate

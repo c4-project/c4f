@@ -89,11 +89,15 @@ module Monad = struct
   let add_dependency (id : Ac.Litmus_id.t) : unit t =
     modify (add_dependency ~id)
 
-  module Exp_idents = Act_c_mini.Expression.On_identifiers.On_monad (M)
+  module Exp_idents =
+    Travesty.Traversable.Chain0
+      (Act_c_mini.Expression.On_lvalues)
+      (Act_c_mini.Lvalue.On_identifiers)
+  module Exp_identsM = Exp_idents.On_monad (M)
 
   let add_expression_dependencies (expr : Act_c_mini.Expression.t)
       ~(scope : Ac.Scope.t) : unit t =
-    Exp_idents.iter_m expr ~f:(fun c_id ->
+    Exp_identsM.iter_m expr ~f:(fun c_id ->
         c_id |> resolve ~scope >>= add_dependency)
 
   let add_write (id : Ac.Litmus_id.t) : unit t = modify (add_write ~id)

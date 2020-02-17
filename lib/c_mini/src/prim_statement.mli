@@ -95,6 +95,10 @@ val reduce :
     reduces a primitive statement [x] to a particular result type by applying
     the appropriate function. *)
 
+val as_early_out : t -> Early_out.t option
+(** [as_early_out x] is [Some e] if [x] is [early_out e], and [None]
+    otherwise. *)
+
 val as_label : t -> Act_common.C_id.t option
 (** [as_label x] is [Some l] if [x] is [label l], and [None] otherwise. *)
 
@@ -116,10 +120,14 @@ module Base_map (M : Monad.S) : sig
       the appropriate function over [x]. *)
 end
 
-(** Traverses over the lvalues of a primitive expression. *)
+(** Traverses over the lvalues of a primitive statement. *)
 module On_lvalues :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t
 
-(** Traverses over the addresses of a primitive expression. *)
+(** Traverses over the addresses of a primitive statement. *)
 module On_addresses :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t
+
+(** Traverses over the expressions of a primitive statement. *)
+module On_expressions :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Expression.t

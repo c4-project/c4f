@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -22,6 +22,7 @@ let command : Command.t =
   Command.group ~summary:"commands for dealing with C files" ~readme
     [ ("delitmus", Delitmus.command)
     ; ("dump-header", Dump_header.command)
+    ; ("dump-stats", Dump_stats.command)
     ; ("license", Common_cmd.License.command)
     ; ("make-stub", Make_stub.command)
     ; ("modify-header", Modify_header.command)

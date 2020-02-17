@@ -47,10 +47,10 @@ and 'meta while_loop = ('meta, 'meta statement) P_while_loop.t
 type 'meta block = ('meta, 'meta statement) Block.t
 
 (* TODO(@MattWindsor91): travesty *)
-module Ignore_exprs = Travesty.Traversable.Make0 (struct
-  type t = Expression.t
+module Ignore (T : T) (Elt : Equal.S) = Travesty.Traversable.Make0 (struct
+  type t = T.t
 
-  module Elt = Prim_statement
+  module Elt = Elt
 
   module On_monad (M : Monad.S) = struct
     let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
@@ -258,12 +258,24 @@ module Main :
       module P = Prim_statement.On_addresses
     end)
 
+    module On_expressions :
+      Travesty.Traversable_types.S0
+        with type t = t
+         and type Elt.t = Expression.t = Make_traversal (struct
+      module Elt = Expression
+      module E =
+        Travesty.Traversable.Fix_elt
+          (Travesty_containers.Singleton)
+          (Expression)
+      module P = Prim_statement.On_expressions
+    end)
+
     module On_primitives :
       Travesty.Traversable_types.S0
         with type t = t
          and type Elt.t = Prim_statement.t = Make_traversal (struct
       module Elt = Prim_statement
-      module E = Ignore_exprs
+      module E = Ignore (Expression) (Prim_statement)
       module P =
         Travesty.Traversable.Fix_elt
           (Travesty_containers.Singleton)
@@ -367,12 +379,24 @@ module If :
       module S = Sm.On_addresses
     end)
 
+    module On_expressions :
+      Travesty.Traversable_types.S0
+        with type t = t
+         and type Elt.t = Expression.t = Make_traversal (struct
+      module Elt = Expression
+      module E =
+        Travesty.Traversable.Fix_elt
+          (Travesty_containers.Singleton)
+          (Expression)
+      module S = Sm.On_expressions
+    end)
+
     module On_primitives :
       Travesty.Traversable_types.S0
         with type t = t
          and type Elt.t = Prim_statement.t = Make_traversal (struct
       module Elt = Prim_statement
-      module E = Ignore_exprs
+      module E = Ignore (Expression) (Prim_statement)
       module S = Sm.On_primitives
     end)
   end
@@ -468,12 +492,24 @@ module While :
       module S = Sm.On_addresses
     end)
 
+    module On_expressions :
+      Travesty.Traversable_types.S0
+        with type t = t
+         and type Elt.t = Expression.t = Make_traversal (struct
+      module Elt = Expression
+      module E =
+        Travesty.Traversable.Fix_elt
+          (Travesty_containers.Singleton)
+          (Expression)
+      module S = Sm.On_expressions
+    end)
+
     module On_primitives :
       Travesty.Traversable_types.S0
         with type t = t
          and type Elt.t = Prim_statement.t = Make_traversal (struct
       module Elt = Prim_statement
-      module E = Ignore_exprs
+      module E = Ignore (Expression) (Prim_statement)
       module S = Sm.On_primitives
     end)
   end

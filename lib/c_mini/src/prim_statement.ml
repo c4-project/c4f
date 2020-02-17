@@ -57,6 +57,12 @@ let reduce (type result) (x : t) ~(assign : Assign.t -> result)
     ~nop:(fun _ -> nop ())
     ~procedure_call:(Fn.const procedure_call)
 
+let as_early_out : t -> Early_out.t option = function
+  | Early_out e ->
+      Some e
+  | Assign _ | Atomic _ | Label _ | Goto _ | Nop | Procedure_call _ ->
+      None
+
 let as_label : t -> Act_common.C_id.t option = function
   | Label l ->
       Some l
@@ -135,4 +141,13 @@ Make_traversal (struct
   module A = Assign.On_addresses
   module C = Call.On_addresses
   module T = Atomic_statement.On_addresses
+end)
+
+module On_expressions :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Expression.t =
+Make_traversal (struct
+  module Elt = Expression
+  module A = Assign.On_expressions
+  module C = Call.On_expressions
+  module T = Atomic_statement.On_expressions
 end)

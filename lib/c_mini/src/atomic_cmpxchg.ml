@@ -31,6 +31,39 @@ module Base_map (M : Monad.S) = struct
       ~succ:(F.proc_field succ) ~fail:(F.proc_field fail)
 end
 
+module On_addresses :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t =
+Travesty.Traversable.Make0 (struct
+  type nonrec t = t
+
+  module Elt = Address
+
+  module On_monad (M : Monad.S) = struct
+    module B = Base_map (M)
+    module E = Expression.On_addresses.On_monad (M)
+
+    let map_m x ~f =
+      B.bmap x ~obj:f ~expected:f ~desired:(E.map_m ~f) ~succ:M.return
+        ~fail:M.return
+  end
+end)
+
+module On_expressions :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Expression.t =
+Travesty.Traversable.Make0 (struct
+  type nonrec t = t
+
+  module Elt = Expression
+
+  module On_monad (M : Monad.S) = struct
+    module B = Base_map (M)
+
+    let map_m x ~f =
+      B.bmap x ~obj:M.return ~expected:M.return ~desired:f ~succ:M.return
+        ~fail:M.return
+  end
+end)
+
 module On_lvalues :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
 Travesty.Traversable.Make0 (struct
@@ -46,22 +79,5 @@ Travesty.Traversable.Make0 (struct
     let map_m x ~f =
       B.bmap x ~obj:(A.map_m ~f) ~expected:(A.map_m ~f) ~desired:(E.map_m ~f)
         ~succ:M.return ~fail:M.return
-  end
-end)
-
-module On_addresses :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t =
-Travesty.Traversable.Make0 (struct
-  type nonrec t = t
-
-  module Elt = Address
-
-  module On_monad (M : Monad.S) = struct
-    module B = Base_map (M)
-    module E = Expression.On_addresses.On_monad (M)
-
-    let map_m x ~f =
-      B.bmap x ~obj:f ~expected:f ~desired:(E.map_m ~f) ~succ:M.return
-        ~fail:M.return
   end
 end)

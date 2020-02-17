@@ -3,6 +3,11 @@
 Note that these changes are infrequently maintained and may not tell the
 whole story.
 
+## 2020-Feb-17
+
+- New command `act-c dump-stats`, which dumps some integer statistics about a
+  Litmus test.
+
 ## 2020-Feb-05
 
 - New actions `program.label` (tentative title), which adds random labels, and

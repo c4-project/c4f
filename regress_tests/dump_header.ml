@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -23,7 +23,7 @@ let dump_header_of_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t
 
 let run (test_dir : Fpath.t) : unit Or_error.t =
   let full_dir = Fpath.(test_dir / "litmus" / "") in
-  Common.regress_on_files "Delitmus" ~dir:full_dir ~ext:"litmus"
+  Common.regress_on_files "Dump-header" ~dir:full_dir ~ext:"litmus"
     ~f:dump_header_of_file
 
 let command =

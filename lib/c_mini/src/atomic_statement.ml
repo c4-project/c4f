@@ -93,3 +93,11 @@ Make_traversal (struct
   module S = Atomic_store.On_addresses
   module X = Atomic_cmpxchg.On_addresses
 end)
+
+module On_expressions :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Expression.t =
+Make_traversal (struct
+  module Elt = Expression
+  module S = Atomic_store.On_expressions
+  module X = Atomic_cmpxchg.On_expressions
+end)

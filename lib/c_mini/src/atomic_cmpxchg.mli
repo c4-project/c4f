@@ -53,6 +53,10 @@ val fail : t -> Mem_order.t
 module On_addresses :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t
 
+(** Traversing over expressions in atomic compare-exchanges. *)
+module On_expressions :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Expression.t
+
 (** Traversing over lvalues in atomic compare-exchanges. *)
 module On_lvalues :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t

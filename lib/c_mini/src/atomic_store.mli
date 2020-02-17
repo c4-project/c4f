@@ -36,6 +36,12 @@ val mo : t -> Mem_order.t
 module On_addresses :
   Travesty.Traversable_types.S0 with type t := t and type Elt.t = Address.t
 
+(** Traversing over atomic-action expressions in atomic stores. *)
+module On_expressions :
+  Travesty.Traversable_types.S0
+    with type t := t
+     and type Elt.t = Expression.t
+
 (** Traversing over lvalues in atomic stores. *)
 module On_lvalues :
   Travesty.Traversable_types.S0 with type t := t and type Elt.t = Lvalue.t

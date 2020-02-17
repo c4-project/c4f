@@ -1,12 +1,24 @@
-(executables
- (names config config_failures delitmus dump_header fuzz_replays
-   fuzz_action_list herd_observations litmus_observations)
+(library
+ (name common)
+ (modules common)
  (preprocess
   (pps ppx_jane))
  (libraries result yojson ppx_yojson_conv_lib sexplib0 base.caml core_kernel
    core stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
    act.backend act.backend_herd act.backend_litmus act.c_mini act.common
    act.config act.delitmus act.fuzz act.litmus act.state act.utils))
+
+(executables
+ (names config config_failures delitmus dump_header fuzz_replays
+   fuzz_action_list herd_observations litmus_observations)
+ (modules config config_failures delitmus dump_header fuzz_replays
+   fuzz_action_list herd_observations litmus_observations)
+ (preprocess
+  (pps ppx_jane))
+ (libraries result yojson ppx_yojson_conv_lib sexplib0 base.caml core_kernel
+   core stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
+   act.backend act.backend_herd act.backend_litmus act.c_mini act.common
+   act.config act.delitmus act.fuzz act.litmus act.state act.utils common))
 
 (rule
  (deps
@@ -110,3 +122,16 @@
  (alias runtest)
  (action
   (diff litmus_observations.expected litmus_observations.output)))
+
+(test
+ (name dump_stats)
+ (modules dump_stats)
+ (preprocess
+  (pps ppx_jane))
+ (libraries result yojson ppx_yojson_conv_lib sexplib0 base.caml core_kernel
+   core stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
+   act.c_mini act.common act.config act.litmus act.utils common)
+ (action
+  (run %{test} input))
+ (deps
+  (glob_files "input/litmus/*.litmus")))

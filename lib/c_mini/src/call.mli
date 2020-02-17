@@ -37,10 +37,14 @@ val arguments : t -> Expression.t list
 
 (** {1 Traversals} *)
 
-(** Traverses over the lvalues of a function call. *)
-module On_lvalues :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t
-
 (** Traverses over the addresses of a function call. *)
 module On_addresses :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t
+
+(** Traverses over the expressions of a function call. *)
+module On_expressions :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Expression.t
+
+(** Traverses over the lvalues of a function call. *)
+module On_lvalues :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t

@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -140,11 +140,9 @@ val reduce :
 module On_addresses :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t
 
-(** Traversing over identifiers in expressions. *)
-module On_identifiers :
-  Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Act_common.C_id.t
+(** Traversing over constants in expressions. *)
+module On_constants :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Constant.t
 
 (** Traversing over lvalues in expressions. *)
 module On_lvalues :

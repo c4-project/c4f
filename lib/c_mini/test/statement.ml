@@ -136,6 +136,49 @@ let%test_module "On_lvalues and On_addresses" =
         mudkipz |}]
   end )
 
+let%test_module "On_expressions" =
+  ( module struct
+    module M = Src.Statement.With_meta (Unit)
+
+    let%expect_test "replace all expressions" =
+      let stm =
+        Src.(
+          Statement.(
+            mkwhile
+              [ mkif ~cond:Src.Expression.falsehood
+                  [ prim ()
+                      (Prim_statement.assign
+                         (Assign.make
+                            ~lvalue:(Lvalue.of_variable_str_exn "r0")
+                            ~rvalue:(Expression.int_lit 1))) ]
+                  []
+              ; mkif
+                  [ prim ()
+                      (Prim_statement.atomic_store
+                         (Atomic_store.make ~mo:Seq_cst
+                            ~src:(Expression.int_lit 27)
+                            ~dst:(Address.of_variable_str_exn "x"))) ]
+                  [ prim ()
+                      (Prim_statement.atomic_store
+                         (Atomic_store.make ~mo:Seq_cst
+                            ~src:(Expression.int_lit 53)
+                            ~dst:(Address.of_variable_str_exn "x"))) ] ]))
+      in
+      let stm' =
+        M.On_expressions.map stm ~f:(fun _ -> Src.Expression.int_lit 2)
+      in
+      let rp = Src.Reify_stm.reify stm' in
+      Fmt.pr "@[%a@]@." Act_c_lang.Ast.Stm.pp rp ;
+      [%expect
+        {|
+        while (2)
+        {
+            if (2) { r0 = 2; }
+            if (2) { atomic_store_explicit(x, 2, memory_order_seq_cst); } else
+            { atomic_store_explicit(x, 2, memory_order_seq_cst); }
+        } |}]
+  end )
+
 let%test_module "On_primitives" =
   ( module struct
     module M = Src.Statement.With_meta (Unit)
