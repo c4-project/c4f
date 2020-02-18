@@ -64,7 +64,7 @@ let make_harness_argv (spec : Bk.Spec.t) (arch : Bk.Arch.t) :
     let%map arch_args = make_arch_args arch in
     Staged.stage (fun ~input_file ~output_dir ->
         Or_error.return
-          ([input_file; "-o"; output_dir] @ arch_args @ Bk.Spec.argv spec)))
+          (["-o"; output_dir] @ arch_args @ (input_file :: Bk.Spec.argv spec))))
 
 let make_harness (spec : Bk.Spec.t) ~(arch : Bk.Arch.t) :
     Bk.Capability.Make_harness.t =
