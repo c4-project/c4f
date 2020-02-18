@@ -1,0 +1,39 @@
+# Dump-stats tests
+
+## iriw.c.litmus
+
+```
+threads 4
+returns 0
+literal-bools 0
+```
+## iriw_fuzz_redundant.c.litmus
+
+```
+threads 5
+returns 0
+literal-bools 0
+```
+## memalloy_cmpxchg.c.litmus
+
+```
+threads 2
+returns 0
+literal-bools 0
+```
+## memalloy_na_int.c.litmus
+
+```
+threads 1
+returns 0
+literal-bools 0
+```
+## rwc.c.litmus
+
+```
+threads 3
+returns 0
+literal-bools 0
+```
+
+Ran 5 test(s).
