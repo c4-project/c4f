@@ -18,7 +18,7 @@
   (synopsis "Automagic compiler tormentor")
   (description "'act' is a toolkit for testing memory-model behaviour of compilers.")
   (depends
-    (ocaml (and (>= 4.08) (< 4.10)))
+    (ocaml (and (>= 4.09) (< 4.11)))
     (dune (and (>= 2.0) (< 3)))
     ppx_deriving
     ppx_jane
