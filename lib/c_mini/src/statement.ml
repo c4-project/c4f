@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -113,6 +113,11 @@ module Main :
         if_stm x
     | While_loop x ->
         while_loop x
+
+  (** Shorthand for lifting a predicate on primitives. *)
+  let is_prim_and (t : 'meta t) ~(f : Prim_statement.t -> bool) : bool =
+    reduce t ~while_loop:(Fn.const false) ~if_stm:(Fn.const false)
+      ~prim:(fun (_, p) -> f p)
 
   (** Shorthand for writing a predicate that is [false] on primitives. *)
   let is_not_prim_and (type meta) ~(while_loop : meta while_loop -> bool)
@@ -341,7 +346,7 @@ module If :
 
       module S :
         Travesty.Traversable_types.S0
-          with type t := Sm.t
+          with type t := Meta.t Main.t
            and module Elt = Elt
     end) =
     Travesty.Traversable.Make0 (struct
@@ -456,7 +461,7 @@ module While :
 
       module S :
         Travesty.Traversable_types.S0
-          with type t := Sm.t
+          with type t := Meta.t Main.t
            and module Elt = Elt
     end) =
     Travesty.Traversable.Make0 (struct

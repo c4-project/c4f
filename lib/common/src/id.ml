@@ -31,6 +31,8 @@ include Identifiable.Make (T)
 
 let of_string_list : string list -> t = Fn.id
 
+let empty : t = []
+
 let ( @: ) : string -> t -> t = List.cons
 
 let ( @. ) : t -> t -> t = ( @ )

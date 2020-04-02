@@ -42,10 +42,22 @@ module Statement : sig
     type t = Metadata.t Act_c_mini.Statement.While.t [@@deriving sexp]
   end
 
+  include Act_c_mini.Statement_types.S_with_meta with type t := t
+
+  (** {3 Constructors} *)
+
+  val make_generated_prim : Act_c_mini.Prim_statement.t -> t
+  (** [make_generated_prim prim] lifts a primitive statement to a generated
+      subject statement. *)
+
   (** {3 Statement predicates}
 
       If a predicate exists here instead of on {!Act_c_mini.Statement}, it
       depends on having fixed metadata in some way. *)
+
+  val has_atomic_statements : t -> bool
+  (** [has_atomic_statements stm] is true if there are atomic statements in
+      [stm], looking recursively. *)
 
   val has_labels : t -> bool
   (** [has_labels stm] is true if there are labels in [stm], looking
@@ -144,6 +156,10 @@ module Test : sig
       invalid---generally, this signifies an internal error. *)
 
   (** {3 Availability queries} *)
+
+  val has_atomic_statements : t -> bool
+  (** [has_atomic_statements test] is true if, and only if, [test] contains
+      at least one atomic statement. *)
 
   val has_statements : t -> bool
   (** [has_statements test] is true if, and only if, [test] contains at least

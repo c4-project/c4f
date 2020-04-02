@@ -13,6 +13,33 @@
 
 open Base
 
+(** Module type defining various traversals over statements that depend on
+    knowing the metadata of a statement. *)
+module type S_with_meta = sig
+  (* Type of resolved statement metadata. *)
+  type t
+
+  (** Traversing over atomic-action addresses. *)
+  module On_addresses :
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t
+
+  (** Traversing over expressions. *)
+  module On_expressions :
+    Travesty.Traversable_types.S0
+      with type t = t
+       and type Elt.t = Expression.t
+
+  (** Traversing over lvalues. *)
+  module On_lvalues :
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t
+
+  (** Traversing over primitive statements. *)
+  module On_primitives :
+    Travesty.Traversable_types.S0
+      with type t = t
+       and type Elt.t = Prim_statement.t
+end
+
 (** Common functionality of statement components. *)
 module type S_common = sig
   type 'meta t
@@ -25,31 +52,7 @@ module type S_common = sig
 
   (** By fixing the metadata type, we can perform various forms of standard
       traversal. *)
-  module With_meta (Meta : T) : sig
-    type nonrec t = Meta.t t
-
-    (** Traversing over atomic-action addresses. *)
-    module On_addresses :
-      Travesty.Traversable_types.S0
-        with type t = t
-         and type Elt.t = Address.t
-
-    (** Traversing over expressions. *)
-    module On_expressions :
-      Travesty.Traversable_types.S0
-        with type t = t
-         and type Elt.t = Expression.t
-
-    (** Traversing over lvalues. *)
-    module On_lvalues :
-      Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t
-
-    (** Traversing over primitive statements. *)
-    module On_primitives :
-      Travesty.Traversable_types.S0
-        with type t = t
-         and type Elt.t = Prim_statement.t
-  end
+  module With_meta (Meta : T) : S_with_meta with type t := Meta.t t
 end
 
 (** {1 Parametrised statement signatures}
@@ -95,6 +98,12 @@ module type S_statement = sig
   (** [reduce stm ~prim ~if_stm ~while_loop] applies the appropriate function
       of those given to [stm]. It does _not_ recursively reduce statements
       inside blocks. *)
+
+  val is_prim_and : 'meta t -> f:(Prim_statement.t -> bool) -> bool
+  (** [is_prim_and x ~f] lifts the predicate [f] over primitive statements to
+      one over statements, being [false] over any non-primitive statement
+      (including those that contain primitive statements for which [f] is
+      true). *)
 
   val is_if_statement : 'meta t -> bool
   (** [is_if_statement stm] is true provided that [stm] is an if statement. *)

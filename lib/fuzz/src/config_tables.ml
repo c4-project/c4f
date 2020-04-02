@@ -32,6 +32,7 @@ let actions : Action.With_default_weight.t list Lazy.t =
           ~default_weight:15
       ; make ~action:(module Loop_actions.Surround) ~default_weight:20
       ; make ~action:(module Mem_actions.Fence) ~default_weight:15
+      ; make ~action:(module Mem_actions.Strengthen) ~default_weight:15
       ; make ~action:(module Program_actions.Make_empty) ~default_weight:10
       ; make ~action:(module Program_actions.Label) ~default_weight:15
       ; make ~action:(module Store_actions.Int) ~default_weight:30

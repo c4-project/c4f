@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2012 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -50,10 +50,12 @@ end
 (** Checks that can only be carried out at the end of a statement path. *)
 module End_check = struct
   module M = struct
-    type t = Is_if_statement | Has_no_labels [@@deriving enum]
+    type t = Is_atomic_statement | Is_if_statement | Has_no_labels
+    [@@deriving enum]
 
     let table : (t, string) List.Assoc.t =
-      [ (Is_if_statement, "if statements only")
+      [ (Is_atomic_statement, "atomic actions only")
+      ; (Is_if_statement, "if statements only")
       ; (Has_no_labels, "does not contain any labels") ]
   end
 
@@ -62,6 +64,8 @@ module End_check = struct
 
   let is_ok (check : t) ~(stm : Subject.Statement.t) : bool =
     match check with
+    | Is_atomic_statement ->
+        Act_c_mini.(Statement.is_prim_and ~f:Prim_statement.is_atomic stm)
     | Is_if_statement ->
         Act_c_mini.Statement.is_if_statement stm
     | Has_no_labels ->
@@ -69,6 +73,8 @@ module End_check = struct
 
   let is_constructible (flag : t) ~(subject : Subject.Test.t) : bool =
     match flag with
+    | Is_atomic_statement ->
+        Subject.Test.has_atomic_statements subject
     | Is_if_statement ->
         Subject.Test.has_if_statements subject
     | Has_no_labels ->

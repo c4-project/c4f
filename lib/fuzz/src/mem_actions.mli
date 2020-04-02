@@ -28,3 +28,23 @@ end
 
 module Fence : Action_types.S with type Payload.t = Fence_payload.t
 (** [Fence] is an action that inserts random memory fences. *)
+
+(** {1 Memory order strengthening} *)
+
+(** {2 Payload} *)
+
+module Strengthen_payload : sig
+  type t [@@deriving sexp]
+  (** Opaque type of MO-strengthening payloads. *)
+
+  val make :
+    path:Path.Program.t -> mo:Act_c_mini.Mem_order.t -> can_weaken:bool -> t
+  (** [make ~path ~mo ~can_weaken] constructs a strengthening payload with
+      path [path], memory order [mo], and whether or not weakening is
+      allowed. *)
+end
+
+(** {2 Action} *)
+
+module Strengthen : Action_types.S with type Payload.t = Strengthen_payload.t
+(** [Strengthen] is an action that tries to strengthen payloads. *)

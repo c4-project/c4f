@@ -32,8 +32,6 @@ let reduce (type result) (x : t)
     ~atomic_cmpxchg:(Fn.const atomic_cmpxchg)
 
 module Base_map (M : Monad.S) = struct
-  module F = Travesty.Traversable.Helpers (M)
-
   let bmap (x : t)
       ~(atomic_cmpxchg : Atomic_cmpxchg.t -> Atomic_cmpxchg.t M.t)
       ~(atomic_fence : Atomic_fence.t -> Atomic_fence.t M.t)

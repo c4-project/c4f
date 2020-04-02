@@ -43,6 +43,18 @@ val reduce :
     statement [x] to a particular result type by applying the appropriate
     function. *)
 
+(** [Base_map] is the base form of a monadic traversal. *)
+module Base_map (M : Monad.S) : sig
+  val bmap :
+       t
+    -> atomic_cmpxchg:(Atomic_cmpxchg.t -> Atomic_cmpxchg.t M.t)
+    -> atomic_fence:(Atomic_fence.t -> Atomic_fence.t M.t)
+    -> atomic_store:(Atomic_store.t -> Atomic_store.t M.t)
+    -> t M.t
+  (** [bmap t ~atomic_cmpxchg ~atomic_fence ~atomic_store] traverses over [t]
+      monadically with the appropriate traversal function. *)
+end
+
 (** Traverses over the addresses of an atomic statement. *)
 module On_addresses :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t

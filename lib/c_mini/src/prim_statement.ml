@@ -57,6 +57,14 @@ let reduce (type result) (x : t) ~(assign : Assign.t -> result)
     ~nop:(fun _ -> nop ())
     ~procedure_call:(Fn.const procedure_call)
 
+let as_atomic : t -> Atomic_statement.t option = function
+  | Atomic a ->
+      Some a
+  | Assign _ | Label _ | Early_out _ | Goto _ | Nop | Procedure_call _ ->
+      None
+
+let is_atomic (p : t) : bool = Option.is_some (as_atomic p)
+
 let as_early_out : t -> Early_out.t option = function
   | Early_out e ->
       Some e
@@ -150,4 +158,17 @@ Make_traversal (struct
   module A = Assign.On_expressions
   module C = Call.On_expressions
   module T = Atomic_statement.On_expressions
+end)
+
+module On_atomics :
+  Travesty.Traversable_types.S0
+    with type t = t
+     and type Elt.t = Atomic_statement.t = Make_traversal (struct
+  module Elt = Atomic_statement
+  module A = Travesty.Traversable.Const (Assign) (Atomic_statement)
+  module C = Travesty.Traversable.Const (Call) (Atomic_statement)
+  module T =
+    Travesty.Traversable.Fix_elt
+      (Travesty_containers.Singleton)
+      (Atomic_statement)
 end)

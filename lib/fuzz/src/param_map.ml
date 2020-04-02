@@ -30,6 +30,9 @@ let get_param (pmap : t) ~(id : Act_common.Id.t) : int Or_error.t =
 let get_flag (pmap : t) ~(id : Act_common.Id.t) : Flag.t Or_error.t =
   find (flags pmap) ~id ~map_name:"flag map"
 
+let get_flag_m (pmap : t) ~(id : Act_common.Id.t) : Flag.t State.Monad.t =
+  State.Monad.Monadic.return (get_flag pmap ~id)
+
 let get_action_cap : t -> int Or_error.t =
   get_param ~id:(Act_common.Id.of_string "cap.actions")
 

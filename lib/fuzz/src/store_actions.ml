@@ -31,9 +31,8 @@ let readme_preamble : string =
 
 let forbid_already_written_flag (param_map : Param_map.t) :
     Flag.t State.Monad.t =
-  State.Monad.Monadic.return
-    (Param_map.get_flag param_map
-       ~id:(Ac.Id.of_string_list ["store"; "forbid-already-written"]))
+  Param_map.get_flag_m param_map
+    ~id:(Ac.Id.of_string_list ["store"; "forbid-already-written"])
 
 module Store_payload = struct
   (* We don't give [gen] here, because it depends quite a lot on the functor

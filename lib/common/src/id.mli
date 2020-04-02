@@ -72,6 +72,9 @@ include Identifiable.S with type t := t
 
 (** {2 Operators for building identifiers} *)
 
+val empty : t
+(** [empty] is the empty identifier. *)
+
 val ( @: ) : string -> t -> t
 (** [x @: y] pushes a tag [x] onto identifier [y]. *)
 

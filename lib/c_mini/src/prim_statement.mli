@@ -95,6 +95,12 @@ val reduce :
     reduces a primitive statement [x] to a particular result type by applying
     the appropriate function. *)
 
+val as_atomic : t -> Atomic_statement.t option
+(** [as_atomic x] is [Some a] if [x] is [atomic a], and [None] otherwise. *)
+
+val is_atomic : t -> bool
+(** [is_atomic x] is [true] if [x] is [atomic a], and [false] otherwise. *)
+
 val as_early_out : t -> Early_out.t option
 (** [as_early_out x] is [Some e] if [x] is [early_out e], and [None]
     otherwise. *)
@@ -131,3 +137,9 @@ module On_addresses :
 (** Traverses over the expressions of a primitive statement. *)
 module On_expressions :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Expression.t
+
+(** Traverses over the atomic actions of a primitive statement. *)
+module On_atomics :
+  Travesty.Traversable_types.S0
+    with type t = t
+     and type Elt.t = Atomic_statement.t

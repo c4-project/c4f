@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -14,12 +14,12 @@
 open Base
 
 type t =
-  | Seq_cst  (** [memory_order_seq_cst] *)
-  | Release  (** [memory_order_release] *)
-  | Acquire  (** [memory_order_acquire] *)
-  | Acq_rel  (** [memory_order_acq_rel] *)
   | Relaxed  (** [memory_order_relaxed] *)
   | Consume  (** [memory_order_consume] *)
+  | Acquire  (** [memory_order_acquire] *)
+  | Release  (** [memory_order_release] *)
+  | Acq_rel  (** [memory_order_acq_rel] *)
+  | Seq_cst  (** [memory_order_seq_cst] *)
 
 include Act_utils.Enum_types.S_table with type t := t
 
@@ -38,6 +38,28 @@ val is_store_compatible : t -> bool
 val is_rmw_compatible : t -> bool
 (** [is_rmw_compatible mo] returns whether [mo] is compatible with
     read-modify-writes. *)
+
+(** {2 Helpers for strengthening and weakening memory orders} *)
+
+val can_change :
+     t
+  -> replacement:t
+  -> is_compatible:(t -> bool)
+  -> direction:[< `Strengthen | `Weaken | `Any]
+  -> bool
+(** [can_change current ~replacement ~is_compatible ~direction] gets whether
+    the memory order can be changed from [current] to [replacement] in the
+    direction described by [direction]; it also checks that [replacement] is
+    compatible with [is_compatible]. *)
+
+val try_change :
+     t
+  -> replacement:t
+  -> is_compatible:(t -> bool)
+  -> direction:[< `Strengthen | `Weaken | `Any]
+  -> t
+(** [try_change current ~replacement ~is_compatible ~direction] returns
+    [replacment] if [can_change] is true, and [current] otherwise. *)
 
 (** {2 Quickcheck support} *)
 

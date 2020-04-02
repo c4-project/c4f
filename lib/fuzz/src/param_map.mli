@@ -38,6 +38,10 @@ val get_flag : t -> id:Act_common.Id.t -> Flag.t Or_error.t
     fails if no such flag exists. The flag returned will need a random number
     generator to evaluate into a boolean. *)
 
+val get_flag_m : t -> id:Act_common.Id.t -> Flag.t State.Monad.t
+(** [get_flag_m map ~id] behaves as [get_flag], but wraps it inside a state
+    monad.. *)
+
 (** {2 Well-known parameters and flags} *)
 
 val get_action_cap : t -> int Or_error.t

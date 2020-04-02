@@ -31,13 +31,19 @@ module Statement = struct
     Act_c_mini.Statement.has_blocks_with_metadata
       ~predicate:Metadata.is_dead_code
 
-  module Wm = Act_c_mini.Statement.With_meta (Metadata)
+  include Act_c_mini.Statement.With_meta (Metadata)
+
+  let has_atomic_statements : t -> bool =
+    On_primitives.exists ~f:Act_c_mini.Prim_statement.is_atomic
 
   let has_labels : t -> bool =
-    Wm.On_primitives.exists ~f:Act_c_mini.Prim_statement.is_label
+    On_primitives.exists ~f:Act_c_mini.Prim_statement.is_label
 
   let has_non_label_prims : t -> bool =
-    Wm.On_primitives.exists ~f:(Fn.non Act_c_mini.Prim_statement.is_label)
+    On_primitives.exists ~f:(Fn.non Act_c_mini.Prim_statement.is_label)
+
+  let make_generated_prim : Act_c_mini.Prim_statement.t -> t =
+    Act_c_mini.Statement.prim Metadata.generated
 end
 
 module Block = struct
@@ -62,6 +68,9 @@ module Thread = struct
   let empty : t = {decls= []; stms= []}
 
   let has_statements (p : t) : bool = not (List.is_empty p.stms)
+
+  let has_atomic_statements (p : t) : bool =
+    List.exists p.stms ~f:Statement.has_atomic_statements
 
   let has_non_label_prims (p : t) : bool =
     List.exists p.stms ~f:Statement.has_non_label_prims
@@ -143,6 +152,9 @@ module Test = struct
 
   let at_least_one_thread_with (p : t) ~(f : Thread.t -> bool) : bool =
     List.exists (Act_litmus.Test.Raw.threads p) ~f
+
+  let has_atomic_statements : t -> bool =
+    at_least_one_thread_with ~f:Thread.has_atomic_statements
 
   let has_statements : t -> bool =
     at_least_one_thread_with ~f:Thread.has_statements
