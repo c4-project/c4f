@@ -11,6 +11,12 @@
 
 (** Actions that generate store instructions. *)
 
+(** {1 Keys of relevant parameters and flags} *)
+
+val forbid_already_written_flag_key : Act_common.Id.t
+(** [forbid_already_written_flag_key] is the key used to look-up the
+    forbid-already-written flag. *)
+
 (** {1 Payload} *)
 
 module Store_payload : sig

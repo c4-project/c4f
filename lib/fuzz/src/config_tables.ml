@@ -46,23 +46,22 @@ let action_map : Action.With_default_weight.t Map.M(Act_common.Id).t Lazy.t =
     >>| List.map ~f:(fun a -> (Action.With_default_weight.name a, a))
     >>| Map.of_alist_exn (module Act_common.Id))
 
-let make_param_spec_map (xs : (string, 'a Param_spec.t) List.Assoc.t) :
+let make_param_spec_map
+    (xs : (Act_common.Id.t, 'a Param_spec.t) List.Assoc.t) :
     'a Param_spec.t Map.M(Act_common.Id).t =
-  xs
-  |> Tx.Alist.map_left ~f:Act_common.Id.of_string
-  |> Map.of_alist_exn (module Act_common.Id)
+  xs |> Map.of_alist_exn (module Act_common.Id)
 
 let param_map : Param_spec.Int.t Map.M(Act_common.Id).t Lazy.t =
   lazy
     (make_param_spec_map
-       [ ( "cap.actions"
+       [ ( Act_common.Id.("cap" @: "actions" @: empty)
          , Param_spec.make ~default:30
              ~description:
                {|
               Caps the number of action passes that the fuzzer will run.
             |}
          )
-       ; ( "cap.threads"
+       ; ( Act_common.Id.("cap" @: "threads" @: empty)
          , Param_spec.make ~default:16
              ~description:
                {|
@@ -82,7 +81,7 @@ let flag_map : Param_spec.Bool.t Map.M(Act_common.Id).t Lazy.t =
   (* Space for rent. *)
   lazy
     (make_param_spec_map
-       [ ( "store.forbid-already-written"
+       [ ( Store_actions.forbid_already_written_flag_key
          , Param_spec.make ~default:(Flag.exact false)
              ~description:
                {|
@@ -94,5 +93,14 @@ let flag_map : Param_spec.Bool.t Map.M(Act_common.Id).t Lazy.t =
               firing when no non-written variables exist (but, once the action
               fires, it can decide with the given probability to restrict
               itself to already-written variables).
+            |}
+         )
+       ; ( Mem_actions.unsafe_weaken_orders_flag_key
+         , Param_spec.make ~default:(Flag.exact false)
+             ~description:
+               {|
+              If 'true', lets actions that would normally strengthen memory
+              orders weaken them too (possibly changing semantics in undesirable
+              ways).
             |}
          ) ])

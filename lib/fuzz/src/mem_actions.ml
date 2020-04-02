@@ -65,10 +65,12 @@ module Fence : Action_types.S with type Payload.t = Fence_payload.t = struct
          ~target:subject)
 end
 
+let unsafe_weaken_orders_flag_key : Ac.Id.t =
+  Ac.Id.("mem" @: "unsafe-weaken-orders" @: empty)
+
 let unsafe_weaken_orders_flag (param_map : Param_map.t) :
     Flag.t State.Monad.t =
-  Param_map.get_flag_m param_map
-    ~id:(Ac.Id.of_string_list ["mem"; "unsafe-weaken-orders"])
+  Param_map.get_flag_m param_map ~id:unsafe_weaken_orders_flag_key
 
 module Strengthen_payload = struct
   type t = {path: Path.Program.t; mo: Cm.Mem_order.t; can_weaken: bool}

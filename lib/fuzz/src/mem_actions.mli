@@ -11,6 +11,12 @@
 
 (** Actions relating to memory operations and changes to memory order. *)
 
+(** {1 Keys of relevant parameters and flags} *)
+
+val unsafe_weaken_orders_flag_key : Act_common.Id.t
+(** [unsafe_weaken_orders_flag_key] is the key used to look-up the unsafe
+    'weaken orders' flag. *)
+
 (** {1 Fence insertion} *)
 
 (** {2 Payload} *)
