@@ -150,25 +150,13 @@ Travesty.Traversable.Make0 (struct
   end
 end)
 
-(* TODO(@MattWindsor91): travesty *)
-module Ignore (T : T) (Elt : Equal.S) = Travesty.Traversable.Make0 (struct
-  type t = T.t
-
-  module Elt = Elt
-
-  module On_monad (M : Monad.S) = struct
-    let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
-      ignore f ; M.return x
-  end
-end)
-
 module On_addresses :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t =
 Make_traversal (struct
   module Elt = Address
   module A =
     Travesty.Traversable.Fix_elt (Travesty_containers.Singleton) (Address)
-  module C = Ignore (Constant) (Address)
+  module C = Travesty.Traversable.Const (Constant) (Address)
   module L = Atomic_load.On_addresses
 end)
 
@@ -176,10 +164,10 @@ module On_constants :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Constant.t =
 Make_traversal (struct
   module Elt = Constant
-  module A = Ignore (Address) (Constant)
+  module A = Travesty.Traversable.Const (Address) (Constant)
   module C =
     Travesty.Traversable.Fix_elt (Travesty_containers.Singleton) (Constant)
-  module L = Ignore (Atomic_load) (Constant)
+  module L = Travesty.Traversable.Const (Atomic_load) (Constant)
 end)
 
 module On_lvalues :
@@ -187,7 +175,7 @@ module On_lvalues :
 Make_traversal (struct
   module Elt = Lvalue
   module A = Address.On_lvalues
-  module C = Ignore (Constant) (Lvalue)
+  module C = Travesty.Traversable.Const (Constant) (Lvalue)
   module L = Atomic_load.On_lvalues
 end)
 

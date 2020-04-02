@@ -46,18 +46,6 @@ and 'meta while_loop = ('meta, 'meta statement) P_while_loop.t
 
 type 'meta block = ('meta, 'meta statement) Block.t
 
-(* TODO(@MattWindsor91): travesty *)
-module Ignore (T : T) (Elt : Equal.S) = Travesty.Traversable.Make0 (struct
-  type t = T.t
-
-  module Elt = Elt
-
-  module On_monad (M : Monad.S) = struct
-    let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
-      ignore f ; M.return x
-  end
-end)
-
 module Ifs_base_map (M : Monad.S) = struct
   module F = Travesty.Traversable.Helpers (M)
   module O = Tx.Option.On_monad (M)
@@ -280,7 +268,7 @@ module Main :
         with type t = t
          and type Elt.t = Prim_statement.t = Make_traversal (struct
       module Elt = Prim_statement
-      module E = Ignore (Expression) (Prim_statement)
+      module E = Travesty.Traversable.Const (Expression) (Prim_statement)
       module P =
         Travesty.Traversable.Fix_elt
           (Travesty_containers.Singleton)
@@ -401,7 +389,7 @@ module If :
         with type t = t
          and type Elt.t = Prim_statement.t = Make_traversal (struct
       module Elt = Prim_statement
-      module E = Ignore (Expression) (Prim_statement)
+      module E = Travesty.Traversable.Const (Expression) (Prim_statement)
       module S = Sm.On_primitives
     end)
   end
@@ -514,7 +502,7 @@ module While :
         with type t = t
          and type Elt.t = Prim_statement.t = Make_traversal (struct
       module Elt = Prim_statement
-      module E = Ignore (Expression) (Prim_statement)
+      module E = Travesty.Traversable.Const (Expression) (Prim_statement)
       module S = Sm.On_primitives
     end)
   end
