@@ -88,7 +88,7 @@ let%test_module "Int_values" =
       -186
       foo
       *blep
-      atomic_load_explicit(bar, memory_order_seq_cst) |}]
+      atomic_load_explicit(bar, memory_order_relaxed) |}]
 
     let%expect_test "sample (environment has only atomic_int*)" =
       print_sample (Lazy.force Env.test_env_atomic_ptrs_only_mod) ;
@@ -96,8 +96,8 @@ let%test_module "Int_values" =
         {|
       -112015996
       -1
-      atomic_load_explicit(bar, memory_order_seq_cst)
-      atomic_load_explicit(bar, memory_order_consume) |}]
+      atomic_load_explicit(bar, memory_order_relaxed)
+      atomic_load_explicit(bar, memory_order_seq_cst) |}]
 
     let%expect_test "sample (environment is empty)" =
       print_sample (Lazy.force Env.empty_env_mod) ;
@@ -128,9 +128,9 @@ let%test_module "Bool_values" =
       print_sample (Lazy.force Env.test_env_mod) ;
       [%expect
         {|
-      18 == atomic_load_explicit(bar, memory_order_seq_cst)
+      18 == atomic_load_explicit(bar, memory_order_relaxed)
       barbaz && !(470264907 == -879720314)
-      (barbaz && atomic_load_explicit(bar, memory_order_consume) == 1234853 ||
+      (barbaz && atomic_load_explicit(bar, memory_order_seq_cst) == 1234853 ||
        barbaz)
       && true
       *blep == *blep || -38250 == foo
@@ -143,15 +143,15 @@ let%test_module "Bool_values" =
       atomic_load_explicit(bar, memory_order_acquire) ==
       atomic_load_explicit(bar, memory_order_acquire)
       -15623063 == 2147483647 && (false || 6126 == -360539 || 10703535 == -4713)
-      -326 == atomic_load_explicit(bar, memory_order_seq_cst) &&
+      -326 == atomic_load_explicit(bar, memory_order_relaxed) &&
       (-149248401 == atomic_load_explicit(bar, memory_order_acquire) || true)
       !((-2147483648 == -52859389 && false) &&
-        !(-9790791 == atomic_load_explicit(bar, memory_order_consume)))
+        !(-9790791 == atomic_load_explicit(bar, memory_order_seq_cst)))
       &&
-      !(atomic_load_explicit(bar, memory_order_relaxed) ==
-        atomic_load_explicit(bar, memory_order_relaxed) &&
-        atomic_load_explicit(bar, memory_order_seq_cst) == -1315491)
-      atomic_load_explicit(bar, memory_order_consume) == -112015996 || 22551631 ==
+      !(atomic_load_explicit(bar, memory_order_consume) == 20 &&
+        (atomic_load_explicit(bar, memory_order_relaxed) == -1315491 || -4 ==
+         -2147483648))
+      atomic_load_explicit(bar, memory_order_seq_cst) == -112015996 || 22551631 ==
       33417 |}]
 
     let%expect_test "sample (environment is empty)" =
@@ -192,12 +192,15 @@ let%test_module "Bool falsehoods" =
         {|
           false
           false && barbaz
-          ((barbaz || foo == atomic_load_explicit(bar, memory_order_seq_cst)) &&
-           atomic_load_explicit(&y, memory_order_relaxed) == *blep && 470264907 ==
-           -879720314)
-          && (false && barbaz) && atomic_load_explicit(bar, memory_order_consume) ==
-          1234853
-          false || false |}]
+          (((false || false) && !true) && barbaz &&
+           (atomic_load_explicit(&y, memory_order_consume) ==
+            atomic_load_explicit(&y, memory_order_relaxed) || true))
+          &&
+          (false || (barbaz || barbaz) || -50348097 == 10703535 ||
+           atomic_load_explicit(&x, memory_order_seq_cst) == 12062)
+          ((barbaz || foo == atomic_load_explicit(bar, memory_order_consume)) &&
+           barbaz)
+          && (barbaz && false || 470264907 == -879720314 && false) |}]
 
     let test_fun (module E : Src.Env_types.S_with_known_values) :
         (module Q.Test.S with type t = Src.Expression.t) =
@@ -229,8 +232,8 @@ let%test_module "Bool tautologies" =
           true
           atomic_load_explicit(&z, memory_order_seq_cst) == false
           ((atomic_load_explicit(foobaz, memory_order_seq_cst) || barbaz) &&
-           (barbaz == true || barbaz) || atomic_load_explicit(&x, memory_order_acquire)
-           == 7627)
+           (barbaz == true || barbaz) || atomic_load_explicit(&y, memory_order_consume)
+           == atomic_load_explicit(&y, memory_order_relaxed))
           && true
           true || barbaz
           (*blep == *blep || -38250 == foo) || !false || !(470264907 == -879720314) |}]
