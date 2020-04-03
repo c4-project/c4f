@@ -74,3 +74,23 @@ let run (trace : t) (test : Subject.Test.t)
               mu (next_trace, next_test))
     in
     test')
+
+let length : t -> int = Fqueue.length
+
+let take (trace : t) (n : int) : t =
+  let s = Fqueue.to_sequence trace in
+  Fqueue.of_sequence (Sequence.take s n)
+
+let bisect_segment (trace : t) ~(f : t -> [`Bad | `Good]) : [`Left | `Right]
+    =
+  match f trace with `Bad -> `Right | `Good -> `Left
+
+let bisect_index (trace : t) ~(f : t -> [`Bad | `Good]) : int option =
+  Binary_search.binary_search_segmented trace `Last_on_left ~length
+    ~get:(fun t n -> take t (n + 1))
+    ~segment_of:(bisect_segment ~f)
+
+let bisect (trace : t) ~(f : t -> [`Bad | `Good]) : t =
+  trace |> bisect_index ~f
+  |> Option.map ~f:(fun n -> take trace (n + 1))
+  |> Option.value ~default:empty

@@ -14,62 +14,62 @@ open Base_quickcheck
 open Stdio
 module Src = Act_fuzz
 
+module Dummy_payload = struct
+  type t = {foo: int; bar: bool; baz: string} [@@deriving sexp, quickcheck]
+end
+
+module Dummy_action :
+  Src.Action_types.S with type Payload.t = Dummy_payload.t = struct
+  let name = Act_common.Id.of_string "dummy.action"
+
+  let available = Src.Action.always
+
+  let readme () =
+    {| This is a module that is almost, but not quite, entirely unlike a fuzzer action. |}
+
+  module Payload = Src.Payload.Pure (Dummy_payload)
+
+  let run subject ~(payload : Dummy_payload.t) =
+    ignore payload ;
+    Src.State.Monad.return subject
+end
+
+module Another_dummy_action : Src.Action_types.S with type Payload.t = unit =
+struct
+  let name = Act_common.Id.of_string "another.dummy.action"
+
+  let available = Src.Action.always
+
+  let readme () =
+    {| This is also a module that is almost, but not quite, entirely unlike a fuzzer action. |}
+
+  module Payload = Src.Payload.None
+
+  let run subject ~(payload : unit) =
+    ignore payload ;
+    Src.State.Monad.return subject
+end
+
+let example_trace : Src.Trace.t Lazy.t =
+  lazy
+    Src.Trace.(
+      empty
+      |> add
+           ~action:(module Dummy_action)
+           ~payload:{foo= 27; bar= true; baz= "hello"}
+      |> add ~action:(module Another_dummy_action) ~payload:()
+      |> add
+           ~action:(module Dummy_action)
+           ~payload:{foo= 53; bar= false; baz= "world"})
+
 let%test_module "S-expression representation" =
   ( module struct
-    module Dummy_payload = struct
-      type t = {foo: int; bar: bool; baz: string}
-      [@@deriving sexp, quickcheck]
-    end
-
-    module Dummy_action :
-      Src.Action_types.S with type Payload.t = Dummy_payload.t = struct
-      let name = Act_common.Id.of_string "dummy.action"
-
-      let available = Src.Action.always
-
-      let readme () =
-        {| This is a module that is almost, but not quite, entirely unlike a fuzzer action. |}
-
-      module Payload = Src.Payload.Pure (Dummy_payload)
-
-      let run subject ~(payload : Dummy_payload.t) =
-        ignore payload ;
-        Src.State.Monad.return subject
-    end
-
-    module Another_dummy_action :
-      Src.Action_types.S with type Payload.t = unit = struct
-      let name = Act_common.Id.of_string "another.dummy.action"
-
-      let available = Src.Action.always
-
-      let readme () =
-        {| This is also a module that is almost, but not quite, entirely unlike a fuzzer action. |}
-
-      module Payload = Src.Payload.None
-
-      let run subject ~(payload : unit) =
-        ignore payload ;
-        Src.State.Monad.return subject
-    end
-
     let%expect_test "empty trace" =
       print_s [%sexp (Src.Trace.empty : Src.Trace.t)] ;
       [%expect {| () |}]
 
     let%expect_test "example trace" =
-      let trace =
-        Src.Trace.(
-          empty
-          |> add
-               ~action:(module Dummy_action)
-               ~payload:{foo= 27; bar= true; baz= "hello"}
-          |> add ~action:(module Another_dummy_action) ~payload:()
-          |> add
-               ~action:(module Dummy_action)
-               ~payload:{foo= 53; bar= false; baz= "world"})
-      in
-      print_s [%sexp (trace : Src.Trace.t)] ;
+      print_s [%sexp (Lazy.force example_trace : Src.Trace.t)] ;
       [%expect
         {|
       (((name (dummy action)) (payload ((foo 27) (bar true) (baz hello))))
@@ -81,82 +81,84 @@ let%test_module "trace playback" =
   ( module struct
     let%expect_test "empty trace does nothing" =
       let test = Lazy.force Subject.Test_data.test in
-      let state = Lazy.force Subject.Test_data.state in
+      let initial_state = Lazy.force Subject.Test_data.state in
       let computation =
         Src.Trace.(
           run empty test ~resolve:(fun _ ->
               Or_error.unimplemented "shouldn't run this"))
       in
-      let result = Src.State.Monad.run computation state in
-      print_s [%sexp (result : Src.Subject.Test.t Or_error.t)] ;
+      Action.Test_utils.run_and_dump_test computation ~initial_state ;
       [%expect
         {|
-      (Ok
-       ((header
-         ((locations ()) (init ((x (Int 27)) (y (Int 53)))) (postcondition ())
-          (name example)))
-        (threads
-         (((decls ())
-           (stms
-            ((Prim ((source Generated) (liveness Normal))
-              (Atomic
-               (Atomic_store
-                ((src (Constant (Int 42))) (dst (Lvalue (Variable x)))
-                 (mo memory_order_seq_cst)))))
-             (Prim ((source Generated) (liveness Normal)) Nop)
-             (Prim ((source Generated) (liveness Normal))
-              (Atomic
-               (Atomic_store
-                ((src (Address (Lvalue (Variable foo))))
-                 (dst (Lvalue (Variable y))) (mo memory_order_relaxed)))))
-             (If_stm
-              ((cond
-                (Bop Eq (Address (Lvalue (Variable foo)))
-                 (Address (Lvalue (Variable y)))))
-               (t_branch
-                ((statements
-                  ((Prim ((source Generated) (liveness Normal))
-                    (Atomic
-                     (Atomic_store
-                      ((src (Constant (Int 56))) (dst (Lvalue (Variable x)))
-                       (mo memory_order_seq_cst)))))
-                   (Prim ((source Generated) (liveness Normal))
-                    (Label kappa_kappa))))
-                 (metadata ((source Generated) (liveness Normal)))))
-               (f_branch
-                ((statements ()) (metadata ((source Generated) (liveness Dead)))))))
-             (If_stm
-              ((cond (Constant (Bool false)))
-               (t_branch
-                ((statements
-                  ((Prim ((source Generated) (liveness Normal))
-                    (Atomic
-                     (Atomic_store
-                      ((src (Constant (Int 95))) (dst (Lvalue (Variable y)))
-                       (mo memory_order_seq_cst)))))))
-                 (metadata ((source Generated) (liveness Dead)))))
-               (f_branch
-                ((statements ()) (metadata ((source Generated) (liveness Normal)))))))
-             (While_loop
-              ((cond (Bop Eq (Constant (Int 4)) (Constant (Int 5))))
-               (body
-                ((statements
-                  ((Prim ((source Generated) (liveness Normal))
-                    (Atomic
-                     (Atomic_store
-                      ((src (Constant (Int 44))) (dst (Lvalue (Variable x)))
-                       (mo memory_order_seq_cst)))))))
-                 (metadata ((source Generated) (liveness Dead)))))
-               (kind Do_while))))))
-          ((decls ())
-           (stms
-            ((Prim ((source Generated) (liveness Normal)) (Label loop))
-             (If_stm
-              ((cond (Constant (Bool true)))
-               (t_branch
-                ((statements ()) (metadata ((source Generated) (liveness Normal)))))
-               (f_branch
-                ((statements
-                  ((Prim ((source Generated) (liveness Normal)) (Goto loop))))
-                 (metadata ((source Generated) (liveness Dead)))))))))))))) |}]
+      void
+      P0(atomic_int *x, atomic_int *y)
+      {
+          atomic_store_explicit(x, 42, memory_order_seq_cst);
+          ;
+          atomic_store_explicit(y, foo, memory_order_relaxed);
+          if (foo == y)
+          { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
+          if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
+          do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
+          5);
+      }
+
+      void
+      P1(atomic_int *x, atomic_int *y)
+      { loop: ; if (true) {  } else { goto loop; } } |}]
+  end )
+
+let%test_module "trace bisection" =
+  ( module struct
+    let test ~(f : Src.Trace.t -> [`Bad | `Good]) : unit =
+      print_s
+        [%sexp
+          (Src.Trace.bisect ~f (Lazy.force example_trace) : Src.Trace.t)]
+
+    let%expect_test "bisection always returning bad returns empty trace" =
+      test ~f:(Fn.const `Bad) ;
+      [%expect {| () |}]
+
+    let%expect_test "bisection always returning good returns full trace" =
+      test ~f:(Fn.const `Good) ;
+      [%expect
+        {|
+        (((name (dummy action)) (payload ((foo 27) (bar true) (baz hello))))
+         ((name (another dummy action)) (payload ()))
+         ((name (dummy action)) (payload ((foo 53) (bar false) (baz world))))) |}]
+
+    let towards_length (n : int) (t : Src.Trace.t) : [`Bad | `Good] =
+      if n < Src.Trace.length t then `Bad else `Good
+
+    let%expect_test "bisection towards length 0 returns trace of length 0" =
+      test ~f:(towards_length 0) ;
+      [%expect {| () |}]
+
+    let%expect_test "bisection towards length 1 returns trace of length 1" =
+      test ~f:(towards_length 1) ;
+      [%expect
+        {| (((name (dummy action)) (payload ((foo 27) (bar true) (baz hello))))) |}]
+
+    let%expect_test "bisection towards length 2 returns trace of length 2" =
+      test ~f:(towards_length 2) ;
+      [%expect
+        {|
+        (((name (dummy action)) (payload ((foo 27) (bar true) (baz hello))))
+         ((name (another dummy action)) (payload ()))) |}]
+
+    let%expect_test "bisection towards length 3 returns trace of length 3" =
+      test ~f:(towards_length 3) ;
+      [%expect
+        {|
+        (((name (dummy action)) (payload ((foo 27) (bar true) (baz hello))))
+         ((name (another dummy action)) (payload ()))
+         ((name (dummy action)) (payload ((foo 53) (bar false) (baz world))))) |}]
+
+    let%expect_test "bisection towards length 4 returns full trace" =
+      test ~f:(towards_length 4) ;
+      [%expect
+        {|
+        (((name (dummy action)) (payload ((foo 27) (bar true) (baz hello))))
+         ((name (another dummy action)) (payload ()))
+         ((name (dummy action)) (payload ((foo 53) (bar false) (baz world))))) |}]
   end )

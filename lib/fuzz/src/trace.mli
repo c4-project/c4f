@@ -34,6 +34,9 @@ val add :
 (** [add t ~action ~state] appends action [action], with name [id] and
     payload [payload], to the trace. *)
 
+val take : t -> int -> t
+(** [take t n] truncates [t] to its first [n] items. *)
+
 (** {2 From files} *)
 
 (** We can load traces (from S-expressions). *)
@@ -48,3 +51,13 @@ val run :
   -> Subject.Test.t State.Monad.t
 (** [run t subject ~resolve] applies a trace [t] to test subject [subject],
     using [resolve] to resolve action IDs to their modules. *)
+
+(** {1 Investigating traces} *)
+
+val length : t -> int
+(** [length t] gets the number of actions in [t]. *)
+
+val bisect : t -> f:(t -> [`Bad | `Good]) -> t
+(** [bisect t ~f] reduces [t] by binary search, repeatedly invoking [f] on
+    various truncations of [t] as a heuristic, and attempting to return the
+    last 'good' trace. *)
