@@ -47,6 +47,16 @@ flow.loop.surround:
 mem.fence:
   Weight: 15x
   Summary: Inserts a randomly generated memory fence into the test.
+mem.strengthen:
+  Weight: 15x
+  Summary:
+    Replaces the memory order of a random atomic statement (not an atomic
+    expression) with another memory order.
+    
+    Usually, this will only perform the replacement when the new memory order
+    is compatible with the atomic action and also stronger than the old one.
+    If 'mem.unsafe-weaken-orders' is true, this action will permit weakening
+    of memory orders, likely resulting in a loss of semantics preservation.
 program.label:
   Weight: 15x
   Summary: Inserts a new, random label into the program.
