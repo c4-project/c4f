@@ -31,6 +31,10 @@ val file : Fpath.t -> t
 val stdout : t
 (** [stdout] is the standard output sink. *)
 
+val temp_file : prefix:string -> ext:string -> Fpath.t
+(** [temp_file ~prefix ~ext] creates a path for a temporary file with the
+    given prefix and extension. *)
+
 val temp : prefix:string -> ext:string -> t
 (** [temp ~prefix ~ext] creates an output sink for a temporary file with the
     given prefix and extension. *)
