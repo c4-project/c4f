@@ -22,7 +22,7 @@ depends: [
   "sedlex" {>= "2.1" & < "3"}
   "shell" {>= "v0.13" & < "v0.14"}
   "textutils_kernel" {>= "v0.13" & < "v0.14"}
-  "travesty" {>= "0.6.1" & < "0.7"}
+  "travesty" {>= "0.6.2" & < "0.7"}
   "yojson" {>= "1.7" & < "2"}
 ]
 build: [
