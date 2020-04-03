@@ -31,21 +31,28 @@ let run_with_trace (trace : Af.Trace.t) ~(cmd : string) ~(argv : string list)
     Stdio.eprint_s (Error.sexp_of_t e);
     false
 
-let bisector (trace : Af.Trace.t) ~(cmd : string) ~(argv : string list) :
+let bisector (o: Act_common.Output.t) (trace : Af.Trace.t) ~(cmd : string) ~(argv : string list) :
     [`Bad | `Good] =
-  if run_with_trace trace ~cmd ~argv then `Good else `Bad
+  if run_with_trace trace ~cmd ~argv
+  then (
+    Act_common.Output.pv o "%d GOOD\n" (Af.Trace.length trace);
+    `Good
+  ) else (
+    Act_common.Output.pv o "%d BAD\n" (Af.Trace.length trace);
+    `Bad
+  )
 
-let bisect (trace : Af.Trace.t) ~(cmd : string) ~(argv : string list) :
+let bisect (o : Act_common.Output.t) (trace : Af.Trace.t) ~(cmd : string) ~(argv : string list) :
     Af.Trace.t =
-  Act_fuzz.Trace.bisect trace ~f:(bisector ~cmd ~argv)
+  Act_fuzz.Trace.bisect trace ~f:(bisector o ~cmd ~argv)
 
 let run ~(cmd : string) ~(argv : string list)
-    (args : _ Common_cmd.Args.With_files.t) (_ : Act_common.Output.t) :
+    (args : _ Common_cmd.Args.With_files.t) (o : Act_common.Output.t) :
     unit Or_error.t =
   Or_error.Let_syntax.(
     let%bind trace_in = Common_cmd.Args.With_files.infile_source args in
     let%map trace = Act_fuzz.Trace.load trace_in in
-    let trace' = bisect trace ~cmd ~argv in
+    let trace' = bisect o trace ~cmd ~argv in
     Stdio.print_s (Af.Trace.sexp_of_t trace'))
 
 let readme () : string =

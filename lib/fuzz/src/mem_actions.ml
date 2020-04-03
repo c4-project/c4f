@@ -192,7 +192,7 @@ module Strengthen :
 
   let change_mo (stm : Subject.Statement.t) ~(mo : Act_c_mini.Mem_order.t)
       ~(can_weaken : bool) : Subject.Statement.t Or_error.t =
-    let direction = if can_weaken then `Strengthen else `Any in
+    let direction = if can_weaken then `Any else `Strengthen in
     On_atomics.With_errors.map_m stm ~f:(change_mo_atomic ~mo ~direction)
 
   let run (subject : Subject.Test.t)
