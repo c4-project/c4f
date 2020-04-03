@@ -25,11 +25,11 @@
 (** [S] describes a parent type [t], a component type [c], and a function
     [component] for getting the [c] of a [t]. *)
 module type S = sig
-  type t
   (** The main type. *)
+  type t
 
-  type c
   (** Type of inner components. *)
+  type c
 
   val component : t -> c
   (** [component x] gets the [c]-typed component of [x]. *)
@@ -39,11 +39,11 @@ end
     and a function [component_opt] for getting the [c] of a [t], if one
     exists. *)
 module type S_partial = sig
-  type t
   (** The main type. *)
+  type t
 
-  type c
   (** Type of inner components. *)
+  type c
 
   val component_opt : t -> c option
   (** [component_opt x] tries to get the [c]-typed component of [x]. *)

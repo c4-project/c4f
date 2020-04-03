@@ -24,8 +24,8 @@
 
 open Base
 
-type t [@@deriving sexp, compare, equal]
 (** Opaque type of mini-C primitive statements. *)
+type t [@@deriving sexp, compare, equal]
 
 (** {1 Constructors} *)
 

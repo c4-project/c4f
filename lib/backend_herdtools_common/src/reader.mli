@@ -29,10 +29,10 @@ end
     also relies on the tool-specific parser sending it a semi-parsed state
     line using the same structure. *)
 module State_line : sig
-  type 'a t
   (** Opaque type of state lines. The type parameter refers to the part of
       the line containing the state entries, which the common reader logic
       parses; usually it'll be [string] outside of the module boundary. *)
+  type 'a t
 
   val make :
     ?occurrences:int -> ?tag:Act_state.Observation.Entry_tag.t -> 'a -> 'a t

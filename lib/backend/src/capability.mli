@@ -33,8 +33,8 @@ module Flag : sig
 end
 
 module Summary : sig
-  type t
   (** Opaque type of capability summaries. *)
+  type t
 
   (** {2 Constructors} *)
 

@@ -16,15 +16,15 @@ open Base
 
 (** {1 SSH configuration records} *)
 
-type t [@@deriving sexp, equal]
 (** [t] contains a SSH hostname and optional user. *)
+type t [@@deriving sexp, equal]
 
-include Stringable.S with type t := t
 (** SSH configuration can be converted to and from a string. This string is
     intended to be suitable for prefixing a SCP remote. *)
+include Stringable.S with type t := t
 
-include Pretty_printer.S with type t := t
 (** SSH configuration records can be pretty-printed. *)
+include Pretty_printer.S with type t := t
 
 (** {2 Constructors} *)
 

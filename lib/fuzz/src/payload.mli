@@ -39,8 +39,8 @@ end
 
 (** {1 Stock payloads and functors for building them} *)
 
-module None : Action_types.S_payload with type t = unit
 (** Dummy payload module for actions that take no payload. *)
+module None : Action_types.S_payload with type t = unit
 
 (** Adapts payload generators that don't depend on the state of the program. *)
 module Pure (Basic : sig
@@ -76,8 +76,8 @@ end) : Action_types.S_payload with type t = Path.Program.t
    path to the statements to remove, pass through the if statement block
    generators, and replace with the statement. *)
 module Surround : sig
-  type t
   (** Opaque type of payloads. *)
+  type t
 
   (** {3 Constructors} *)
 

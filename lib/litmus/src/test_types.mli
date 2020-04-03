@@ -69,14 +69,14 @@ end
     language, exactly one init block, at most one postcondition block, and a
     set of appropriately named programs. *)
 module type S = sig
-  type raw
   (** Type of unvalidated litmus tests. *)
+  type raw
 
-  module Lang : Basic
   (** The subset of the Litmus language used to define this module. *)
+  module Lang : Basic
 
-  type t [@@deriving sexp_of]
   (** The abstract type of a validated litmus AST. *)
+  type t [@@deriving sexp_of]
 
   (** For pretty-printing, use one of the functors in [Pp]. *)
 
@@ -142,11 +142,11 @@ end
 
 (** Signature of inputs to the [Convert] functor. *)
 module type Basic_convert = sig
-  module From : Basic
   (** The Litmus language from which we're converting. *)
+  module From : Basic
 
-  module To : Basic
   (** The Litmus language to which we're converting. *)
+  module To : Basic
 
   val constant : From.Constant.t -> To.Constant.t Or_error.t
   (** [constant k] tries to convert [k] to the new language. *)

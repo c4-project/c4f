@@ -16,15 +16,15 @@
 
 open Base
 
-type t [@@deriving sexp]
 (** Opaque type of flag values. *)
+type t [@@deriving sexp]
 
 (** {1 Interface implementations} *)
 
-include Pretty_printer.S with type t := t
 (** One can pretty-print a flag value [f]. The pretty-printed representation
     is [Bool.pp b] when [f] is an exact [b], and 'W:L odds on' (where W is
     [wins f] and L is [losses f]) otherwise. *)
+include Pretty_printer.S with type t := t
 
 (** {1 Constructors} *)
 

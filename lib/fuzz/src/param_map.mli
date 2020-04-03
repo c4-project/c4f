@@ -13,8 +13,8 @@ open Base
 
 (** A map containing fuzzer parameters (other than actions). *)
 
-type t [@@deriving sexp]
 (** Opaque type of parameter maps. *)
+type t [@@deriving sexp]
 
 (** {1 Constructors} *)
 

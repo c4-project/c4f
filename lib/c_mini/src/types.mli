@@ -25,8 +25,8 @@ end
 
 (** Signature of abstract data types that wrap some C variable name. *)
 module type S_has_underlying_variable = sig
-  type t
   (** The type that contains underlying variables. *)
+  type t
 
   val variable_of : t -> Act_common.C_id.t
   (** [variable_of x] is the underlying variable of [x]. *)
@@ -38,8 +38,8 @@ end
 
 (** Signature of parts of the mini-model that implement type checking. *)
 module type S_type_checkable = sig
-  type t
   (** The type being checked. *)
+  type t
 
   module Type_check (E : Env_types.S) : sig
     val type_of : t -> Type.t Or_error.t

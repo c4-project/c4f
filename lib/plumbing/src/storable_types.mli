@@ -16,8 +16,8 @@ open Stdio
 
 (** [Basic] is an interface to be implemented by anything using [Make]. *)
 module type Basic = sig
-  type t
   (** The type to load. *)
+  type t
 
   val store_to_oc :
     ?path:string -> t -> dest:Out_channel.t -> unit Or_error.t

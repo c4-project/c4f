@@ -15,15 +15,15 @@ open Base
 
 (** {1 Function type synonyms} *)
 
-type prog_fun =
-  string -> input:Copy_projection.t Copy_spec.t -> string Or_error.t
 (** Type of functions that transform programs according to an input copy
     specification. This lets runner users handle the possibility of the
     program itself being copied. *)
+type prog_fun =
+  string -> input:Copy_projection.t Copy_spec.t -> string Or_error.t
 
-type 'a argv_fun = Copy_projection.t Copy_spec.Pair.t -> 'a Or_error.t
 (** Type of functions that return argument vectors given manifests of the
     input and output being copied by the runner. *)
+type 'a argv_fun = Copy_projection.t Copy_spec.Pair.t -> 'a Or_error.t
 
 (** {1 Module types} *)
 

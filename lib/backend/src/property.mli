@@ -11,8 +11,8 @@
 
 (** [Blang]-based property interface for filtering compilers. *)
 
-type t [@@deriving sexp]
 (** [t] is the opaque type of property queries. *)
+type t [@@deriving sexp]
 
 (** {1 Constructors} *)
 

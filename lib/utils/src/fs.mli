@@ -18,8 +18,8 @@ val subpaths : Fpath.t -> Fpath.t list
 (** [subpaths path] gets all of the syntactic subpaths of [path], according
     to [Fpath]. *)
 
-module Unix : Fs_types.S
 (** [Unix] implements {{!S} S} using Core's Unix support. *)
+module Unix : Fs_types.S
 
 (* soon (** [Mock] mocks {{!S}S}, containing a mutable dummy filesystem that
    can be set up by tests. *) module Mock : sig include S end *)

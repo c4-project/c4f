@@ -11,13 +11,13 @@
 
 open Base
 
+(** Record containing information about the result of a compiler probe. *)
 type t = {emits: Act_common.Id.t; version: string; name: string}
 [@@deriving compare, equal, sexp]
-(** Record containing information about the result of a compiler probe. *)
 
-include Comparable.S with type t := t
 (** We can compare records; the main use for this is to keep a set of 'known'
     compilers to avoid duplication. *)
+include Comparable.S with type t := t
 
-include Pretty_printer.S with type t := t
 (** We can also pretty-print info records. *)
+include Pretty_printer.S with type t := t

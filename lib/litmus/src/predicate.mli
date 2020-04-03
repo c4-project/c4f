@@ -53,8 +53,8 @@ end
 
 (** {1 Predicates} *)
 
-type 'const t [@@deriving sexp, compare, equal, quickcheck]
 (** Type of Litmus predicates. *)
+type 'const t [@@deriving sexp, compare, equal, quickcheck]
 
 (** {2 Constructors} *)
 

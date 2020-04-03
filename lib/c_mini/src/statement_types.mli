@@ -44,8 +44,8 @@ end
 module type S_common = sig
   type 'meta t
 
-  module On_meta : Travesty.Traversable_types.S1 with type 'meta t := 'meta t
   (** We can traverse over the metadata. *)
+  module On_meta : Travesty.Traversable_types.S1 with type 'meta t := 'meta t
 
   val erase_meta : 'meta t -> unit t
   (** [erase_meta x] deletes all of [x]'s metadata. *)
@@ -69,11 +69,11 @@ end
 module type S_statement = sig
   type 'meta t [@@deriving sexp, compare, equal]
 
-  type 'meta if_stm
   (** Generally fixed to {!Statement.If.t}. *)
+  type 'meta if_stm
 
-  type 'meta while_loop
   (** Generally fixed to {!Statement.While.t}. *)
+  type 'meta while_loop
 
   (** {3 Constructors} *)
 
@@ -143,14 +143,14 @@ end
 
     Parametrised signature of if-statement implementations. *)
 module type S_if_statement = sig
-  type 'meta expr
   (** Generally fixed to {!Expression.t}. *)
+  type 'meta expr
 
-  type 'meta stm
   (** Generally fixed to {!Statement.t}. *)
+  type 'meta stm
 
-  type 'meta t [@@deriving sexp, compare, equal]
   (** Opaque type of if statements. *)
+  type 'meta t [@@deriving sexp, compare, equal]
 
   (** {3 Constructors} *)
 
@@ -191,14 +191,14 @@ end
 
     Parametrised signature of while-loop implementations. *)
 module type S_while_loop = sig
-  type 'meta expr
   (** Generally fixed to {!Expression.t}. *)
+  type 'meta expr
 
-  type 'meta stm
   (** Generally fixed to {!Statement.t}. *)
+  type 'meta stm
 
-  type 'meta t [@@deriving sexp, compare, equal]
   (** Opaque type of while loops. *)
+  type 'meta t [@@deriving sexp, compare, equal]
 
   (** {3 Constructors} *)
 

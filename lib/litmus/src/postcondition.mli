@@ -30,8 +30,8 @@ end
 
 (** {1 Postconditions proper} *)
 
-type 'const t [@@deriving sexp, compare, equal, quickcheck]
 (** Type of Litmus postconditions. *)
+type 'const t [@@deriving sexp, compare, equal, quickcheck]
 
 (** {2 Constructors} *)
 

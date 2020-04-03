@@ -32,8 +32,8 @@ module With_id : sig
 
   (** {2 Traversals} *)
 
-  include Travesty.Traversable_types.S1 with type 'spec t := 'spec t
   (** We can traverse over the specification inside a with-ID pair. *)
+  include Travesty.Traversable_types.S1 with type 'spec t := 'spec t
 end
 
 (** Specification tables, parametrised directly on the spec type.
@@ -43,8 +43,8 @@ end
     See the [Set] module constructed on specification types for more useful
     functionality. *)
 module Set : sig
-  type 'spec t [@@deriving equal, sexp]
   (** Opaque type of specification sets. *)
+  type 'spec t [@@deriving equal, sexp]
 
   val empty : 'spec t
   (** [empty] is the empty specification set. *)
@@ -89,8 +89,8 @@ module Set : sig
       specifications in [specs], returning those marked [`Fst] in the first
       bucket and those marked [`Snd] in the second. *)
 
-  module On_specs : Travesty.Traversable_types.S1 with type 'a t = 'a t
   (** We can monadically traverse the specifications in a set. *)
+  module On_specs : Travesty.Traversable_types.S1 with type 'a t = 'a t
 end
 
 module type S = sig

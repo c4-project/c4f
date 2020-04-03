@@ -13,8 +13,8 @@ open Core_kernel
 
 (** Signature of Blang-compatible property enumerations. *)
 module type S = sig
-  type t [@@deriving sexp]
   (** Type of individual property elements. *)
+  type t [@@deriving sexp]
 
   (** {2 Documentation} *)
 

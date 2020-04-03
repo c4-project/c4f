@@ -11,8 +11,8 @@
 
 (** The output from a de-litmusification round. *)
 
-type t
 (** Opaque type of de-litmusification output. *)
+type t
 
 (** {2 Constructors} *)
 

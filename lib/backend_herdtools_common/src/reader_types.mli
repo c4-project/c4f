@@ -15,11 +15,11 @@ open Base
 
 (** Signature over the tool-specific parts of a Herdtools output scraper. *)
 module type Basic = sig
-  type test_type
   (** Filled in with {!Reader.Test_type}. *)
+  type test_type
 
-  type state_line
   (** Filled in with {!Reader.State_line}. *)
+  type state_line
 
   val try_parse_state_count : string -> int option
   (** [try_parse_state_count line] should return [Some k] if preamble line

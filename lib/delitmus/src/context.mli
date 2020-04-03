@@ -11,8 +11,8 @@
 
 open Base
 
-type t
 (** Opaque type of delitmus context. *)
+type t
 
 (** {2 Constructors} *)
 

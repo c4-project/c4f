@@ -14,8 +14,8 @@
 
 open Core_kernel
 
-type t [@@deriving sexp]
 (** [t] is the opaque type of property queries. *)
+type t [@@deriving sexp]
 
 val id : Act_common.Id.Property.t -> t
 (** [id] constructs a query over a machine's ID. *)

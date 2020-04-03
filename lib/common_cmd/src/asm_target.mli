@@ -13,8 +13,8 @@
 
 open Base
 
-type t = Act_common.Id.t Act_machine.Target.t
 (** Type of top-level command targets, as taken from the command line. *)
+type t = Act_common.Id.t Act_machine.Target.t
 
 val resolve :
      t

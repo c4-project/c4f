@@ -16,11 +16,11 @@ open Base
 
 (** Types and values common to both the basic and full filter signatures. *)
 module type Common = sig
-  type aux_i
   (** Type of any auxiliary state consumed by this filter. *)
+  type aux_i
 
-  type aux_o
   (** Type of any auxiliary state built by this filter. *)
+  type aux_o
 
   val name : string
   (** [name] is the name of this filter. *)
@@ -67,14 +67,14 @@ end
 
 (** Signature of inputs needed to adapt a filter. *)
 module type Basic_adapt = sig
-  module Original : S
   (** The original filter. *)
+  module Original : S
 
-  type aux_i
   (** The new input type. *)
+  type aux_i
 
-  type aux_o
   (** The new output type. *)
+  type aux_o
 
   val adapt_i : aux_i -> Original.aux_i Or_error.t
   (** [adapt_i aux] tries to adapt the new input type to the old one. *)
@@ -88,8 +88,8 @@ end
 module type Basic_on_runner = sig
   include Common with type aux_o := unit
 
-  module Runner : Runner_types.S
   (** The runner to use to run the program. *)
+  module Runner : Runner_types.S
 
   val prog : aux_i -> string
   (** [prog aux] gets the name of the program to run, given the auxiliary

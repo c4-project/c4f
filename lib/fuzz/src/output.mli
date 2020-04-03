@@ -11,8 +11,8 @@
 
 (** The raw output of a fuzzer runner. *)
 
-type 'm t
 (** Opaque type of fuzzer output, parametrised on the metadata attached. *)
+type 'm t
 
 (** {1 Constructing a fuzzer output} *)
 

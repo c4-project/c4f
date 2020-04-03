@@ -17,8 +17,8 @@ open Base
 
 (** {2 Constructing a fuzzer configuration} *)
 
-type t [@@deriving sexp]
 (** Opaque type of fuzzer configurations. *)
+type t [@@deriving sexp]
 
 (** {2 Constructors} *)
 

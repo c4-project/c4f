@@ -37,8 +37,8 @@ module Disable : sig
       | Failed_test of Error.t  (** This spec failed its self-test. *)
   end
 
-  type t
   (** Opaque type of disable records. *)
+  type t
 
   (** {2 Constructors} *)
 
@@ -54,8 +54,8 @@ end
 
 (** {1 Listings themselves} *)
 
-type 'spec t
 (** Opaque type of listings. *)
+type 'spec t
 
 (** {2 Constructors} *)
 

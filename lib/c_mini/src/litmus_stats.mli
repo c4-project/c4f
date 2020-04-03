@@ -13,11 +13,11 @@
 
 open Base
 
-type t = {threads: int; returns: int; literal_bools: int}
 (** Type of statistic outputs. *)
+type t = {threads: int; returns: int; literal_bools: int}
 
-include Pretty_printer.S with type t := t
 (** We can pretty-print statistic outputs. *)
+include Pretty_printer.S with type t := t
 
 val scrape : Litmus.Test.t -> t
 (** [scrape test] extracts statistics from [test]. *)

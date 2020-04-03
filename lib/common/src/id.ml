@@ -14,8 +14,8 @@ module Sx = String_extended
 module Tx = Travesty_base_exts
 
 module T = struct
-  type t = String.Caseless.t list [@@deriving compare, hash, sexp, bin_io]
   (** [t] is the type of compiler IDs. *)
+  type t = String.Caseless.t list [@@deriving compare, hash, sexp, bin_io]
 
   let allowed_id_splits : char list = ['.'; ' '; '/'; '\\']
 

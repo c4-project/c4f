@@ -113,11 +113,11 @@ module Array = struct
         (pair ~sep:nop ppa (brackets ppi)))
 
   module type S = sig
-    type arr
     (** Type of arrays. *)
+    type arr
 
-    type idx
     (** Type of indices. *)
+    type idx
 
     type nonrec t = (arr, idx) t
 

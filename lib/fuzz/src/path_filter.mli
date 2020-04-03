@@ -21,8 +21,8 @@
 
 open Base
 
-type t
 (** Opaque type of path filters. *)
+type t
 
 val empty : t
 (** [empty] is the empty path filter, which has no filtering predicates. *)

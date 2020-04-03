@@ -95,11 +95,11 @@ end
 
 (** {1 Fuzzable representation of a thread} *)
 module Thread : sig
+  (** Transparent type of fuzzable programs. *)
   type t =
     { decls: Act_c_mini.Initialiser.t Act_common.C_named.Alist.t
     ; stms: Statement.t list }
   [@@deriving sexp]
-  (** Transparent type of fuzzable programs. *)
 
   (** {2 Constructors} *)
 
@@ -137,9 +137,9 @@ end
 
 (** Fuzzable representation of a litmus test. *)
 module Test : sig
+  (** Transparent type of fuzzable litmus tests. *)
   type t = (Act_c_mini.Constant.t, Thread.t) Act_litmus.Test.Raw.t
   [@@deriving sexp]
-  (** Transparent type of fuzzable litmus tests. *)
 
   val add_new_thread : t -> t
   (** [add_new_thread test] appends a new, empty thread onto [test]'s threads

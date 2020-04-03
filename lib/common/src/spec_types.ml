@@ -3,8 +3,8 @@ open Base
 (** [Common] contains the signature common both to plain specification
     modules ([Basic]) and the with-ID forms ([S_with_id]). *)
 module type Common = sig
-  type t [@@deriving equal]
   (** [t] is the opaque type of specifications. *)
+  type t [@@deriving equal]
 
   val is_enabled : t -> bool
   (** [is_enabled spec] returns true if [spec] is enabled. *)
@@ -17,11 +17,11 @@ end
 
 (** [S_with_id] is a signature for types bundling a spec ID and a type. *)
 module type S_with_id = sig
-  type elt
   (** [elt] is the type of elements inside the bundle. *)
+  type elt
 
-  type t
   (** [t] is the opaque type of specification-ID bundles. *)
+  type t
 
   include Common with type t := t
 
@@ -38,16 +38,16 @@ end
 (** [Basic] is the basic interface of both compiler and machine
     specifications. *)
 module type Basic = sig
-  type t
   (** [t] is the opaque type of specifications. *)
+  type t
 
   val type_name : string
 
   include Common with type t := t
 
-  module With_id : S_with_id with type elt := t
   (** [With_id] contains types and functions for handling bundles of spec ID
       and spec. *)
+  module With_id : S_with_id with type elt := t
 end
 
 (** [S] is the top-level, outward-facing interface of both compiler and
@@ -58,9 +58,9 @@ module type S = sig
   (** [Set] is the interface of modules for dealing with sets of compiler
       specs. *)
   module Set : sig
-    type t [@@deriving equal]
     (** Opaque (here, at least) type of compiler spec sets. This gets fixed
         through a type alias in {{!Spec} Spec}. *)
+    type t [@@deriving equal]
 
     val group : t -> f:(With_id.t -> Id.t) -> t Id.Map.t
     (** [group specs ~f] groups [specs] into buckets according to some

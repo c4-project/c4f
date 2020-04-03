@@ -16,8 +16,8 @@ open Base
     Note that many things that appear in a C AST as function calls actually
     map to primitives: for example, atomic stores become {!Atomic_store.t}. *)
 
-type t [@@deriving sexp, compare, equal]
 (** Opaque type of function calls. *)
+type t [@@deriving sexp, compare, equal]
 
 (** {1 Constructors} *)
 

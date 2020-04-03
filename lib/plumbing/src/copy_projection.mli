@@ -13,8 +13,8 @@
     to a remote file. Combined with copy specs, they track the mapping of a
     working set between machines. *)
 
-type t [@@deriving sexp]
 (** Type of projections. *)
+type t [@@deriving sexp]
 
 (** {1 Constructors} *)
 

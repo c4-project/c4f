@@ -26,7 +26,7 @@
     (core (and (>= v0.13) (< v0.14)))
     (fmt (and (>= 0.8.7) (< 0.9)))
     (fpath (and (>= 0.7.2) (< 0.8)))
-    (menhir (>= 20181113))
+    (menhir (>= 20200211))
     (sedlex (and (>= 2.1) (< 3)))
     (shell (and (>= v0.13) (< v0.14)))
     (textutils_kernel (and (>= v0.13) (< v0.14)))

@@ -66,8 +66,8 @@ module Record : sig
       parameter. *)
 end
 
-type t = Record.t Act_common.Scoped_map.t [@@deriving equal]
 (** Delitmus variable maps are a specific case of scoped map. *)
+type t = Record.t Act_common.Scoped_map.t [@@deriving equal]
 
 (** {1 Projections specific to delitmus variable maps} *)
 
@@ -101,5 +101,5 @@ val lookup_and_require_param :
 
 (** {2 Interface implementations} *)
 
-include Plumbing.Jsonable_types.S with type t := t
 (** A var map can be serialised to, and deserialised from, (Yo)JSON. *)
+include Plumbing.Jsonable_types.S with type t := t

@@ -20,16 +20,16 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE. *)
 
-open Base
 (** Helpers for properties and property trees. *)
+open Base
 
 (** Helpers for documenting property trees. *)
 module Tree_doc : sig
-  type elt = {args: string list; details: string}
   (** Type of elements in a property tree documentation list. *)
+  type elt = {args: string list; details: string}
 
-  type t = (string, elt) List.Assoc.t
   (** A property tree documentation list. *)
+  type t = (string, elt) List.Assoc.t
 
   val pp : t -> string list -> unit Fmt.t
   (** [pp_variants tree_docs variants f ()] prints the tree documentation for

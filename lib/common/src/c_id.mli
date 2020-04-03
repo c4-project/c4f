@@ -20,8 +20,8 @@ open Base
 
 (** {1 Regular C identifiers} *)
 
-type t [@@deriving compare, hash, sexp, quickcheck]
 (** Opaque type of C identifier strings. *)
+type t [@@deriving compare, hash, sexp, quickcheck]
 
 val create : string -> t Or_error.t
 (** [create str] creates a C identifier string from [str]. It returns an
@@ -37,8 +37,8 @@ include Pretty_printer.S with type t := t
 
 include Plumbing.Jsonable_types.S with type t := t
 
-include Stringable.S with type t := t
 (** Note that [of_string] is [create_exn]; ie, it can fail. *)
+include Stringable.S with type t := t
 
 val is_string_safe : string -> bool
 (** [is_string_safe str] checks whether [str] is C-safe, but doesn't return

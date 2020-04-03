@@ -16,9 +16,9 @@ open Base
 
 (** {1 Basic shape of qualified specifications} *)
 
-type 'qual t [@@deriving equal]
 (** Opaque type of qualified specifications, parametrised over the type of
     the inner (non-machine) specification. *)
+type 'qual t [@@deriving equal]
 
 (** {2 Constructing a qualified specification} *)
 
@@ -62,8 +62,8 @@ module On_specs :
 
 (** {1 Qualified compiler specifications} *)
 module Compiler : sig
-  type nonrec t = Act_compiler.Spec.t t [@@deriving equal]
   (** Shorthand for a qualified compiler specification. *)
+  type nonrec t = Act_compiler.Spec.t t [@@deriving equal]
 
   (** {2 Resolving fully qualified IDs to compilers} *)
 
@@ -80,8 +80,8 @@ end
 
 (** {1 Qualified backend specifications} *)
 module Backend : sig
-  type nonrec t = Act_backend.Spec.t t [@@deriving equal]
   (** Shorthand for a qualified backend specification. *)
+  type nonrec t = Act_backend.Spec.t t [@@deriving equal]
 
   (** {2 Resolving fully qualified IDs to compilers} *)
 

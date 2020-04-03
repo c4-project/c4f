@@ -19,8 +19,8 @@ open Base
 (** {2 Unvalidated tests} *)
 
 module Raw : sig
-  type ('const, 'prog) t [@@deriving sexp]
   (** Opaque type of unvalidated tests. *)
+  type ('const, 'prog) t [@@deriving sexp]
 
   (** Convenience functor for building raw test types based on a language
       module. *)

@@ -13,8 +13,8 @@
 
 open Base
 
-type t
 (** Opaque type of states. *)
+type t
 
 (** {2 Constructing an initial fuzzer state} *)
 

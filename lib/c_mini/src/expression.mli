@@ -13,8 +13,8 @@
 
 open Base
 
-type t [@@deriving sexp, compare, equal]
 (** Opaque type of expressions. *)
+type t [@@deriving sexp, compare, equal]
 
 (** {1 Operators} *)
 
@@ -157,8 +157,8 @@ val quickcheck_observer : t Base_quickcheck.Observer.t
 
 (** {1 Type checking} *)
 
-include Types.S_type_checkable with type t := t
 (** Type-checking for expressions. *)
+include Types.S_type_checkable with type t := t
 
 (** {1 Evaluating expressions} *)
 

@@ -41,9 +41,9 @@ module Result : sig
   (** [to_string result] returns a human-readable string representing
       [result]. *)
 
-  include Pretty_printer.S with type t := t
   (** We can also pretty-print diff results, with similar results to running
       [to_string]. *)
+  include Pretty_printer.S with type t := t
 
   val pp_json : t Fmt.t
   (** [dump_as_json f r] is a convenience function that outputs [r] on

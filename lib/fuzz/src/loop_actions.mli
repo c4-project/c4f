@@ -11,7 +11,6 @@
 
 (** Actions that introduce, or rearrange, loops. *)
 
-module Surround : Action_types.S with type Payload.t = Payload.Surround.t
 (** {1 Surround statements in do-while loops}
 
     This action removes a sublist of statements from the program, replacing
@@ -19,3 +18,4 @@ module Surround : Action_types.S with type Payload.t = Payload.Surround.t
     removed statements.
 
     See also {!If_actions.Surround}. *)
+module Surround : Action_types.S with type Payload.t = Payload.Surround.t

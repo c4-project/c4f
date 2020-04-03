@@ -13,8 +13,8 @@
 
 open Base
 
-type 'a t [@@deriving equal]
 (** Opaque type of scoped maps. *)
+type 'a t [@@deriving equal]
 
 (** {1 Constructing a scoped map} *)
 

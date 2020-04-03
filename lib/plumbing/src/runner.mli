@@ -31,12 +31,12 @@ module Make (B : Runner_types.Basic) : Runner_types.S
 
     See also {!Ssh_runner}. *)
 
-module Local : Runner_types.S
 (** [Local] just runs commands on the local machine. *)
+module Local : Runner_types.S
 
-module Dry_run : Runner_types.S
 (** [Dry_run] outputs each requested command to the supplied output channel
     rather than running it. *)
+module Dry_run : Runner_types.S
 
 (** {1 Helpers for using runners} *)
 

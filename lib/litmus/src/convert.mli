@@ -14,11 +14,11 @@ open Base
 (** A functor that constructs a partial conversion function from one Litmus
     AST to another. *)
 module Make (B : sig
-  module From : Test_types.S
   (** The Litmus language from which we're converting. *)
+  module From : Test_types.S
 
-  module To : Test_types.S
   (** The Litmus language to which we're converting. *)
+  module To : Test_types.S
 
   val constant : From.Lang.Constant.t -> To.Lang.Constant.t Or_error.t
   (** [constant k] tries to convert [k] to the new language. *)

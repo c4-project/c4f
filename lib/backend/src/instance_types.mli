@@ -29,8 +29,8 @@ module type Basic = sig
   (** [capabilities ~test_stdout] gets a broad set of capabilities that this
       backend has, given the output of running the backend with [test_args]. *)
 
-  module Reader : Reader_types.S
   (** The reader module for this backend. *)
+  module Reader : Reader_types.S
 
   val run : Spec.t -> arch:Arch.t -> Capability.Run.t
   (** [run spec ~arch] asks this backend if it can run directly as a filter
@@ -52,11 +52,11 @@ end
 
 (** Interface for runnable instances of a backend. *)
 module type S = sig
-  module Reader : Reader_types.S
   (** Allows reading in this backend's output. *)
+  module Reader : Reader_types.S
 
-  module Filter : Filter.S
   (** Allows running the backend as a filter. *)
+  module Filter : Filter.S
 
   val probe : unit -> unit Or_error.t
   (** [probe ()] tests that the backend is working. If the backend does not
@@ -91,6 +91,6 @@ module type Basic_with_run_info = sig
   val spec : Spec.t Act_common.Spec.With_id.t
   (** The full name-qualified backend spec. *)
 
-  module Runner : Plumbing.Runner_types.S
   (** The runner on which the backend will run. *)
+  module Runner : Plumbing.Runner_types.S
 end

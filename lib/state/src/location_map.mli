@@ -13,8 +13,8 @@
 
 open Base
 
-type t = Act_common.Litmus_id.t option Map.M(Act_common.Litmus_id).t
 (** Location maps are just partial Base-maps from litmus IDs to litmus IDs. *)
+type t = Act_common.Litmus_id.t option Map.M(Act_common.Litmus_id).t
 
 include Plumbing.Jsonable_types.S with type t := t
 

@@ -11,13 +11,13 @@
 
 open Base
 
+(** Opaque type of parameter maps. *)
 type t =
   { params: int Map.M(Act_common.Id).t
         [@default Map.empty (module Act_common.Id)]
   ; flags: Flag.t Map.M(Act_common.Id).t
         [@default Map.empty (module Act_common.Id)] }
 [@@deriving sexp, fields, make]
-(** Opaque type of parameter maps. *)
 
 let find (m : 'a Map.M(Act_common.Id).t) ~(map_name : string)
     ~(id : Act_common.Id.t) : 'a Or_error.t =

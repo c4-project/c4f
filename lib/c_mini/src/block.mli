@@ -15,8 +15,8 @@ open Base
 
 (** {1 Type, constructor, and accessors} *)
 
-type ('meta, 'stm) t [@@deriving sexp, compare, equal]
 (** Opaque type of blocks, parametrised over metadata and statement types. *)
+type ('meta, 'stm) t [@@deriving sexp, compare, equal]
 
 (** {2 Constructors} *)
 
@@ -42,11 +42,11 @@ val is_empty : (_, _) t -> bool
 
 (** {1 Traversability} *)
 
+(** We can traverse directly over the metadata and statement types of a
+    block. *)
 include
   Travesty.Bi_traversable_types.S2
     with type ('meta, 'stm) t := ('meta, 'stm) t
-(** We can traverse directly over the metadata and statement types of a
-    block. *)
 
 (** [On_statements] fixes the type of metadata and permits direct traversal
     over the statements of a block. *)

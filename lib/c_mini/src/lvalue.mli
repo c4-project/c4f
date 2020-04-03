@@ -21,8 +21,8 @@
 
 open Base
 
-type t [@@deriving sexp, compare, equal, quickcheck]
 (** Opaque type of lvalues. *)
+type t [@@deriving sexp, compare, equal, quickcheck]
 
 (** Note that the default quickcheck instance generates random lvalues
     without constraint. *)
@@ -73,11 +73,11 @@ module On_identifiers :
     with type t := t
      and type Elt.t = Act_common.C_id.t
 
-include Types.S_has_underlying_variable with type t := t
 (** We can get to the variable name inside an lvalue. *)
+include Types.S_has_underlying_variable with type t := t
 
-include Types.S_type_checkable with type t := t
 (** Type-checking for lvalues. *)
+include Types.S_type_checkable with type t := t
 
 (** {3 Safe accessors}
 

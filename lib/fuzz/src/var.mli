@@ -105,8 +105,8 @@ end
 
 (** {2 Variable maps} *)
 module Map : sig
-  type t = Record.t Act_common.Scoped_map.t
   (** Fuzzer variable maps are a specific kind of scoped map. *)
+  type t = Record.t Act_common.Scoped_map.t
 
   (** {3 Constructors} *)
 

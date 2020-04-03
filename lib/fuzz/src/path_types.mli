@@ -17,11 +17,11 @@ open Base
 
     This signature is that common to both producers and consumers. *)
 module type S_base = sig
-  type t
   (** Type of paths. *)
+  type t
 
-  type target
   (** Type of path targets. *)
+  type target
 end
 
 (** {1 Path producers}

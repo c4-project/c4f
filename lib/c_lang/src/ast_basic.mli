@@ -125,8 +125,8 @@ module Identifier : sig
   include Ast_basic_types.Ast_node_with_identifier with type t := t
 end
 
-module Pointer : Ast_basic_types.Ast_node with type t = Type_qual.t list list
 (** Ast node for pointers *)
+module Pointer : Ast_basic_types.Ast_node with type t = Type_qual.t list list
 
 (** Reusable AST building block for array subscripts *)
 module Array : sig
@@ -135,11 +135,11 @@ module Array : sig
   val pp : 'a Fmt.t -> 'i Fmt.t -> ('a, 'i) t Fmt.t
 
   module type S = sig
-    type arr
     (** Type of arrays. *)
+    type arr
 
-    type idx
     (** Type of indices. *)
+    type idx
 
     type nonrec t = (arr, idx) t [@@deriving sexp]
 

@@ -19,10 +19,10 @@ module Machines : sig
       possible configuration file fragment that could be parsed to yield the
       machine specs [machines]. *)
 
+  (** We can pretty-print machine configuration by reifying them. *)
   include
     Base.Pretty_printer.S
       with type t := Act_machine.Spec.t Act_common.Spec.Set.t
-  (** We can pretty-print machine configuration by reifying them. *)
 end
 
 (** {1 The global config}*)
@@ -31,5 +31,5 @@ val reify : Global.t -> Ast.t
 (** [reify global] creates an abstract syntax tree that represents a possible
     configuration file that could be parsed to yield [global]. *)
 
-include Base.Pretty_printer.S with type t := Global.t
 (** We can pretty-print global config structures by reifying them. *)
+include Base.Pretty_printer.S with type t := Global.t

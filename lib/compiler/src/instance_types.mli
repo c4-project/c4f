@@ -63,6 +63,6 @@ module type Basic_with_run_info = sig
   val spec : Spec.t Act_common.Spec.With_id.t
   (** The full name-qualified compiler spec. *)
 
-  module Runner : Plumbing.Runner_types.S
   (** The runner on which the compiler will run. *)
+  module Runner : Plumbing.Runner_types.S
 end

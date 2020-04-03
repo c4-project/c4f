@@ -16,8 +16,8 @@ module Ac := Act_common
 
 (** {1 Types} *)
 
-type t = (module Action_types.S)
 (** An action as a first-class module. *)
+type t = (module Action_types.S)
 
 (** {2 Actions with default weights}
 
@@ -26,8 +26,8 @@ type t = (module Action_types.S)
     don't keep default weights in the actual action modules to avoid them
     being scattered over various files. *)
 module With_default_weight : sig
-  type t
   (** Opaque type of actions-with-default-weight. *)
+  type t
 
   val make : action:(module Action_types.S) -> default_weight:int -> t
   (** [make ~action ~default_weight] constructs an action-with-default-weight
@@ -57,14 +57,14 @@ module Adjusted_weight : sig
     | Adjusted of {original: int; actual: int}
         (** The weight has changed from [original] to [actual]. *)
 
-  include Pretty_printer.S with type t := t
   (** Adjusted weights may be pretty-printed. *)
+  include Pretty_printer.S with type t := t
 end
 
 (** A summary of a fuzzer action after weight adjustment. *)
 module Summary : sig
-  type t
   (** Opaque type of summaries. *)
+  type t
 
   val make : weight:Adjusted_weight.t -> readme:string -> t
   (** [make ~weight ~summary] makes a fuzzer action summary. *)
@@ -80,8 +80,8 @@ module Summary : sig
   val readme : t -> string
   (** [readme summary] gets the README of the action described by [summary]. *)
 
-  include Pretty_printer.S with type t := t
   (** Summaries may be pretty-printed. *)
+  include Pretty_printer.S with type t := t
 
   val pp_map : t Map.M(Ac.Id).t Fmt.t
   (** [pp_map f map] pretty-prints a map of summaries [map] on formatter [f]. *)
@@ -93,8 +93,8 @@ end
 
 (** A weighted pool of fuzzer actions. *)
 module Pool : sig
-  type t
   (** Action lists are just weighted lists of first-class action modules. *)
+  type t
 
   val of_weighted_actions :
     (With_default_weight.t, int option) List.Assoc.t -> t Or_error.t

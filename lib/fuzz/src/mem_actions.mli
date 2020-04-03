@@ -22,8 +22,8 @@ val unsafe_weaken_orders_flag_key : Act_common.Id.t
 (** {2 Payload} *)
 
 module Fence_payload : sig
-  type t [@@deriving sexp]
   (** Opaque type of fence payloads. *)
+  type t [@@deriving sexp]
 
   val make : path:Path.Program.t -> fence:Act_c_mini.Atomic_fence.t -> t
   (** [make ~path ~fence] constructs a fence payload with path [path] and
@@ -32,16 +32,16 @@ end
 
 (** {2 Action} *)
 
-module Fence : Action_types.S with type Payload.t = Fence_payload.t
 (** [Fence] is an action that inserts random memory fences. *)
+module Fence : Action_types.S with type Payload.t = Fence_payload.t
 
 (** {1 Memory order strengthening} *)
 
 (** {2 Payload} *)
 
 module Strengthen_payload : sig
-  type t [@@deriving sexp]
   (** Opaque type of MO-strengthening payloads. *)
+  type t [@@deriving sexp]
 
   val make :
     path:Path.Program.t -> mo:Act_c_mini.Mem_order.t -> can_weaken:bool -> t
@@ -52,5 +52,5 @@ end
 
 (** {2 Action} *)
 
-module Strengthen : Action_types.S with type Payload.t = Strengthen_payload.t
 (** [Strengthen] is an action that tries to strengthen payloads. *)
+module Strengthen : Action_types.S with type Payload.t = Strengthen_payload.t

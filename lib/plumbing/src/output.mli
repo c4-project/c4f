@@ -17,11 +17,11 @@
 open Base
 open Stdio
 
-type t
 (** Opaque type of outputs. *)
+type t
 
-include Io_types.Common with type t := t
 (** @inline *)
+include Io_types.Common with type t := t
 
 (** {1 Constructing an output} *)
 

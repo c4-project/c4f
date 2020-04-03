@@ -11,8 +11,8 @@
 
 (** Mini-model: initialisers. *)
 
-type t [@@deriving sexp, equal, quickcheck]
 (** Opaque type of initialisers. *)
+type t [@@deriving sexp, equal, quickcheck]
 
 (** {1 Constructors} *)
 

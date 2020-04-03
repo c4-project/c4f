@@ -16,8 +16,8 @@
 
 open Base
 
-type t [@@deriving sexp]
 (** Opaque type of traces. *)
+type t [@@deriving sexp]
 
 (** {1 Building traces} *)
 
@@ -36,8 +36,8 @@ val add :
 
 (** {2 From files} *)
 
-include Plumbing.Loadable_types.S with type t := t
 (** We can load traces (from S-expressions). *)
+include Plumbing.Loadable_types.S with type t := t
 
 (** {1 Replaying traces} *)
 

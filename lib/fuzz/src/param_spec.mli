@@ -15,8 +15,8 @@ open Base
 
 (** {1 The parameter spec record} *)
 
-type 'a t
 (** Opaque type of parameter specs, parametrised by the default value. *)
+type 'a t
 
 (** {2 Constructors} *)
 
@@ -37,18 +37,18 @@ val default : 'a t -> 'a
 
 (** Integer parameter specs. *)
 module Int : sig
-  type nonrec t = int t
   (** Specialised type of flag specs. *)
+  type nonrec t = int t
 
-  include Pretty_printer.S with type t := t
   (** Flag specs can be pretty-printed. *)
+  include Pretty_printer.S with type t := t
 end
 
 (** Boolean parameter ('flag') specs. *)
 module Bool : sig
-  type nonrec t = Flag.t t
   (** Specialised type of flag specs. *)
+  type nonrec t = Flag.t t
 
-  include Pretty_printer.S with type t := t
   (** Flag specs can be pretty-printed. *)
+  include Pretty_printer.S with type t := t
 end

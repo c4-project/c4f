@@ -15,11 +15,11 @@ open Base
 
 (** Conversion with possible failure. *)
 module type S_with_failure = sig
-  type src
   (** Source type of the conversion. *)
+  type src
 
-  type dst
   (** Destination type of the conversion. *)
+  type dst
 
   val f : src -> dst Or_error.t
   (** [f s] tries to convert [s]. *)

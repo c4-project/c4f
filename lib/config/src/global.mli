@@ -14,8 +14,8 @@
     This is the processed form of the configuration that ACT loads from
     act.conf (or other such files). *)
 
-type t
 (** Opaque type of global configuration records. *)
+type t
 
 (** {2 Construction and loading} *)
 
@@ -28,8 +28,8 @@ val make :
 (** [make ?defaults ?fuzz ~machines ()] constructs a global configuration
     record from the given pieces of configuration. *)
 
-module Load : Plumbing.Loadable_types.S with type t = t
 (** Module for loading the global configuration from an act.conf file. *)
+module Load : Plumbing.Loadable_types.S with type t = t
 
 (** {2 Projections} *)
 

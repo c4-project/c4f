@@ -31,5 +31,5 @@ module Test :
     with module Lang = Lang
      and type raw = Act_litmus.Test.Raw.M(Lang).t
 
-module Pp : Act_litmus.Pp_intf.S with module Test = Test
 (** Pretty-printing for the mini-model's litmus AST. *)
+module Pp : Act_litmus.Pp_intf.S with module Test = Test

@@ -19,8 +19,8 @@ open Act_common
 (** Module implementing a common way to retrieve and work with the act
     standard argument set. *)
 module Standard : sig
-  type t
   (** Opaque type of processed argument records. *)
+  type t
 
   val get : t Command.Param.t
   (** [get] is a [Command.Param.t] that describes how to get the standard
@@ -67,8 +67,8 @@ end
     single-output commands such as filters, and multi-input, single-output
     commands. *)
 module With_files : sig
-  type 'a t
   (** Opaque type of processed argument records. *)
+  type 'a t
 
   val rest : 'a t -> 'a
   (** [rest args] retrieves the argument record wrapped by [args]. *)

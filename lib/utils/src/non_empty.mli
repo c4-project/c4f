@@ -13,8 +13,8 @@
 
 open Base
 
-type 'a t
 (** Type of non-empty lists. *)
+type 'a t
 
 (** {1 Constructors} *)
 

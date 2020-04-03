@@ -20,17 +20,17 @@
       statement generator;
     - a similar mapping to the 'false' block. *)
 module Surround : sig
-  module type S = Action_types.S with type Payload.t = Payload.Surround.t
   (** Each if statement generator has this type. *)
+  module type S = Action_types.S with type Payload.t = Payload.Surround.t
 
-  module Duplicate : S
   (** Generates if statements where the expression is arbitrary and both
       blocks contain the original statement span. *)
+  module Duplicate : S
 
-  module Tautology : S
   (** Generates if statements where the expression is a tautology, the first
       block contains the original statement span, and the second block is an
       empty dead-code block. *)
+  module Tautology : S
 end
 
 (** {1 Inverting existing if statements} *)

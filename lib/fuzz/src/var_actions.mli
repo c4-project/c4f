@@ -24,5 +24,5 @@ module Global_payload : sig
       the variable map [map]. *)
 end
 
-module Make_global : Action_types.S with type Payload.t = Global_payload.t
 (** Fuzzer action that generates a new global variable. *)
+module Make_global : Action_types.S with type Payload.t = Global_payload.t

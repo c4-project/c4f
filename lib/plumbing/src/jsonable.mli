@@ -89,8 +89,8 @@ end)
     strings. *)
 module Of_stringable (E : Stringable.S) : Jsonable_types.S with type t = E.t
 
-module String : Jsonable_types.S with type t = string
 (** Strings packaged up as a json-able type. *)
+module String : Jsonable_types.S with type t = string
 
 (** Lifts a json-able type over options. *)
 module Option (B : Jsonable_types.S) :

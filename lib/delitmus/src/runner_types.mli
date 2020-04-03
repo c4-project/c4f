@@ -32,8 +32,8 @@ module type Basic = sig
   (** [qualify_locals] is [true] if local variable references should be
       qualified with their thread ID, and [false] otherwise. *)
 
-  module Function : Function_rewriter.S
   (** [Function] is a function rewriter. *)
+  module Function : Function_rewriter.S
 end
 
 (** Main signature for delitmus runners. *)

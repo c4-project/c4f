@@ -1,3 +1,4 @@
+version = 0.14.0
 profile = ocamlformat
 margin = 77
 parse-docstrings = true

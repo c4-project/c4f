@@ -38,8 +38,8 @@ end
 
 (** {1 Config records} *)
 
-type t
 (** Opaque type of config records. *)
+type t
 
 (** {2 Constructors} *)
 

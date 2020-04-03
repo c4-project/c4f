@@ -51,11 +51,11 @@ open Ast_basic
 
 (** Signature of general declaration nodes. *)
 module type S_g_decl = sig
-  type qual
   (** Type of qualifiers. *)
+  type qual
 
-  type decl
   (** Type of declarators. *)
+  type decl
 
   type t = {qualifiers: qual list; declarator: decl}
 
@@ -64,11 +64,11 @@ end
 
 (** Signature of general composite (enum, struct, union) specifiers. *)
 module type S_composite_spec = sig
-  type kind
   (** Type of kind of composite spec (eg. 'enum'). *)
+  type kind
 
-  type decl
   (** Type of internal declarations. *)
+  type decl
 
   type t =
     | Literal of {kind: kind; name_opt: Identifier.t option; decls: decl list}
@@ -81,14 +81,14 @@ end
 
 (** Signature of direct declarators. *)
 module type S_direct_declarator = sig
-  type dec
   (** Type of declarators. *)
+  type dec
 
-  type par
   (** Type of parameters. *)
+  type par
 
-  type expr
   (** Type of expressions. *)
+  type expr
 
   type t =
     | Id of Identifier.t
@@ -102,8 +102,8 @@ end
 
 (** Signature of declarators. *)
 module type S_declarator = sig
-  type ddec
   (** Type of direct declarators. *)
+  type ddec
 
   type t = {pointer: Pointer.t option; direct: ddec}
 
@@ -112,14 +112,14 @@ end
 
 (** Signature of direct abstract declarators. *)
 module type S_direct_abs_declarator = sig
-  type dec
   (** Type of abstract declarators. *)
+  type dec
 
-  type par
   (** Type of parameters. *)
+  type par
 
-  type expr
   (** Type of expressions. *)
+  type expr
 
   type t =
     | Bracket of dec
@@ -131,8 +131,8 @@ end
 
 (** Signature of abstract declarators. *)
 module type S_abs_declarator = sig
-  type ddec
   (** Type of direct abstract declarators. *)
+  type ddec
 
   type t = Pointer of Pointer.t | Direct of Pointer.t option * ddec
 
@@ -141,11 +141,11 @@ end
 
 (** Signature of struct declarators. *)
 module type S_struct_declarator = sig
-  type dec
   (** Type of declarations. *)
+  type dec
 
-  type expr
   (** Type of expressions. *)
+  type expr
 
   type t = Regular of dec | Bitfield of dec option * expr
 
@@ -156,8 +156,8 @@ end
 
 (** Signature of expression nodes. *)
 module type S_expr = sig
-  module Ty : Ast_basic_types.Ast_node
   (** Type of type names. *)
+  module Ty : Ast_basic_types.Ast_node
 
   type t =
     | Prefix of Operators.Pre.t * t
@@ -182,8 +182,8 @@ end
 
 (** Signature of labels *)
 module type S_label = sig
-  type expr
   (** Type of expressions used in case labels. *)
+  type expr
 
   type t = Normal of Identifier.t | Case of expr | Default
 
@@ -192,11 +192,11 @@ end
 
 (** Signature of compound statements *)
 module type S_compound_stm = sig
-  type decl
   (** Type of declarations. *)
+  type decl
 
-  type stm
   (** Type of statements. *)
+  type stm
 
   module Elt :
     Ast_basic_types.Ast_node with type t = [`Stm of stm | `Decl of decl]
@@ -210,14 +210,14 @@ end
 
 (** Signature of statements *)
 module type S_stm = sig
-  type com
   (** Type of compound statements. *)
+  type com
 
-  type expr
   (** Type of expressions. *)
+  type expr
 
-  type lbl
   (** Type of labels. *)
+  type lbl
 
   type t =
     | Label of lbl * t
@@ -239,11 +239,11 @@ end
 
 (** Signature of type specifiers *)
 module type S_type_spec = sig
-  type su
   (** Type of struct-or-union specifiers. *)
+  type su
 
-  type en
   (** Type of enum specifiers. *)
+  type en
 
   type t =
     [ Prim_type.t
@@ -256,8 +256,8 @@ end
 
 (** Signature of parameter type lists *)
 module type S_param_type_list = sig
-  type pdecl
   (** Type of parameter declarations. *)
+  type pdecl
 
   type t = {params: pdecl list; style: [`Normal | `Variadic]}
 

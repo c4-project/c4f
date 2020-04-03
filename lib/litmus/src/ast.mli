@@ -48,12 +48,12 @@ end
 
 (** {2 Top-level AST} *)
 
+(** The type of litmus ASTs. *)
 type ('const, 'prog) t =
   { language: Act_common.C_id.t
   ; name: string
   ; decls: ('const, 'prog) Decl.t list }
 [@@deriving sexp]
-(** The type of litmus ASTs. *)
 
 (** [M] allows AST type creation through referring to an existing language
     module. *)

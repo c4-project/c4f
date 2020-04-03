@@ -20,14 +20,14 @@ open Base
 
 (** {1 Path components} *)
 
-type index = int [@@deriving sexp, compare, equal]
 (** An index in a list selector. *)
+type index = int [@@deriving sexp, compare, equal]
 
-type length = int [@@deriving sexp, compare, equal]
 (** A length in a list selector. *)
+type length = int [@@deriving sexp, compare, equal]
 
-type branch = bool [@@deriving sexp, compare, equal]
 (** A branch in an if-statement selector. *)
+type branch = bool [@@deriving sexp, compare, equal]
 
 (** {1 Path shapes} *)
 

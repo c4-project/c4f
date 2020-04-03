@@ -24,11 +24,11 @@
 
 open Base
 
-type 'a t = 'a Base_quickcheck.Generator.t Or_error.t
 (** The type of partial generators. *)
+type 'a t = 'a Base_quickcheck.Generator.t Or_error.t
 
-include Applicative.S with type 'a t := 'a t
 (** Partial generators are an applicative functor. *)
+include Applicative.S with type 'a t := 'a t
 
 (** {1 Helpers} *)
 

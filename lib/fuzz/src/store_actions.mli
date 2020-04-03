@@ -31,14 +31,14 @@ end
 
 (** {1 Action modules} *)
 
-module Int : Action_types.S with type Payload.t = Store_payload.t
 (** [Int] is a fuzzer action that generates a random atomic-int store
     instruction. *)
+module Int : Action_types.S with type Payload.t = Store_payload.t
 
-module Int_dead : Action_types.S with type Payload.t = Store_payload.t
 (** [Int_dead] is a variant of [Int] that only targets dead-code, and, in
     turn, requires and adds fewer constraints on the destination. *)
+module Int_dead : Action_types.S with type Payload.t = Store_payload.t
 
-module Int_redundant : Action_types.S with type Payload.t = Store_payload.t
 (** [Int_redundant] is a variant of [Int] that only stores a destination's
     known value back to itself. *)
+module Int_redundant : Action_types.S with type Payload.t = Store_payload.t

@@ -23,8 +23,8 @@ end
 
 (** {1 Fences themselves} *)
 
-type t [@@deriving sexp, compare, equal, quickcheck]
 (** Opaque type of atomic fences. *)
+type t [@@deriving sexp, compare, equal, quickcheck]
 
 (** {2 Constructors} *)
 

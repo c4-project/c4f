@@ -13,8 +13,8 @@
 
 open Base
 
-type 'a t [@@deriving sexp, equal]
 (** Opaque type of named elements. *)
+type 'a t [@@deriving sexp, equal]
 
 (** {2 Constructors} *)
 

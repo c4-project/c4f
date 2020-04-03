@@ -13,11 +13,11 @@
 
 open Base
 
-type t [@@deriving sexp, compare, equal]
 (** Opaque type of atomic statements.
 
     These don't carry metadata, as it's assumed that they'll be nested in a
     carrier type that does. *)
+type t [@@deriving sexp, compare, equal]
 
 (** {1 Constructors} *)
 

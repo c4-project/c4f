@@ -21,8 +21,8 @@ open Act_common
     - converted to and from S-expressions;
     - generated, in the context of a fuzzer state, subject, and RNG. *)
 module type S_payload = sig
-  type t [@@deriving sexp]
   (** The type of the payload. *)
+  type t [@@deriving sexp]
 
   val gen :
        Subject.Test.t
@@ -42,8 +42,8 @@ module type S = sig
   val readme : unit -> string
   (** [readme ()] builds a long synopsis of this action. *)
 
-  module Payload : S_payload
   (** The type of any payload on which this action depends. *)
+  module Payload : S_payload
 
   val available :
     Subject.Test.t -> param_map:Param_map.t -> bool State.Monad.t

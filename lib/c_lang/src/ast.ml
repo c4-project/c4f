@@ -71,11 +71,11 @@ module Parametric = struct
     module type S = Ast_types.S_g_decl
 
     module type Basic = sig
-      module Qual : Ast_basic_types.Ast_node
       (** Type of qualifiers. *)
+      module Qual : Ast_basic_types.Ast_node
 
-      module Decl : Ast_basic_types.Ast_node
       (** Type of declarators. *)
+      module Decl : Ast_basic_types.Ast_node
     end
 
     module Make (B : Basic) :

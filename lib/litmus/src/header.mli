@@ -17,8 +17,8 @@
 
 open Base
 
-type 'const t [@@deriving equal, sexp]
 (** Opaque type of Litmus headers. *)
+type 'const t [@@deriving equal, sexp]
 
 (** {1 Constructors} *)
 
@@ -94,12 +94,12 @@ end) : Plumbing.Jsonable_types.S with type t = Const.t t
     modifications to the header of a Litmus test. *)
 
 module Change_set : sig
-  type 'const hdr = 'const t
   (** Do not use; should be [:=], but at time of writing PPXes refuse to let
       us use 4.08 syntax. *)
+  type 'const hdr = 'const t
 
-  type 'const t
   (** Opaque type of individual changes. *)
+  type 'const t
 
   val make :
        ?name:[`Keep | `Replace_with of string]

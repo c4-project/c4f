@@ -18,8 +18,8 @@
 (** {1 Abstract data type of postcondition results} *)
 
 module Result : sig
-  type 'a t [@@deriving yojson]
   (** Opaque type of postcondition evaluations. *)
+  type 'a t [@@deriving yojson]
 
   val truth : 'a t -> bool
   (** [truth e] gets [e]'s truth value. *)

@@ -16,8 +16,8 @@
 
 open Base
 
-type t [@@deriving compare, equal, sexp, quickcheck]
 (** Opaque type of constants. *)
+type t [@@deriving compare, equal, sexp, quickcheck]
 
 include Comparable.S with type t := t
 

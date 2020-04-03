@@ -22,9 +22,9 @@
 
 (** Language frontends for C *)
 
+(** Frontend for 'normal' C (C89 at time of writing). *)
 module Normal :
   Plumbing.Loadable_types.S with type t = Ast.Translation_unit.t
-(** Frontend for 'normal' C (C89 at time of writing). *)
 
 module Litmus :
   Plumbing.Loadable_types.S
@@ -35,8 +35,8 @@ module Litmus :
 
 (** Frontend for C-based litmus tests. *)
 
+(** Frontend for postconditions; used specifically for parsing auxiliary JSON
+    files. *)
 module Litmus_post :
   Plumbing.Loadable_types.S
     with type t = Ast_basic.Constant.t Act_litmus.Postcondition.t
-(** Frontend for postconditions; used specifically for parsing auxiliary JSON
-    files. *)
