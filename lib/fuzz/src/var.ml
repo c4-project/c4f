@@ -83,7 +83,7 @@ module Map = struct
 
   let make_existing_record (id : Ac.Litmus_id.t) (ty : Act_c_mini.Type.t) :
       Record.t =
-    Record.make_existing (Ac.Scope.of_litmus_id id) ty
+    Record.make_existing (Ac.Litmus_id.scope id) ty
 
   let make_existing_var_map (test : Act_c_mini.Litmus.Test.t) : t Or_error.t
       =
@@ -94,7 +94,7 @@ module Map = struct
 
   let register_var ?(initial_value : Act_c_mini.Constant.t option) (map : t)
       (id : Ac.Litmus_id.t) (ty : Act_c_mini.Type.t) : t =
-    let scope = Ac.Scope.of_litmus_id id in
+    let scope = Ac.Litmus_id.scope id in
     let record = Record.make_generated ?initial_value scope ty in
     Ac.Scoped_map.set map ~id ~record
 

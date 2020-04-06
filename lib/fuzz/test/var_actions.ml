@@ -13,24 +13,27 @@ open Base
 open Base_quickcheck
 module Src = Act_fuzz
 
-let%test_module "Make_global" =
+let%test_module "Make" =
   ( module struct
     let%test_module "Payload" =
       ( module struct
         let%test_unit "constant is the right type" =
           Test.run_exn
             ( module struct
-              type t = Src.Var_actions.Global_payload.t [@@deriving sexp]
+              type t = Src.Var_actions.Make_payload.t [@@deriving sexp]
 
               let quickcheck_generator =
-                Src.Var_actions.Global_payload.generator
+                Src.Var_actions.Make_payload.generator
                   (Lazy.force Var.Test_data.test_map)
+                  ~gen_scope:
+                    (Base_quickcheck.Generator.return
+                       Act_common.Scope.Global)
 
               let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
             end )
             ~f:
-              (fun Src.Var_actions.Global_payload.
-                     {basic_type; initial_value; _} ->
+              (fun Src.Var_actions.Make_payload.{basic_type; initial_value; _}
+                   ->
               let (_ : Act_c_mini.Type.t) =
                 Or_error.ok_exn
                   Act_c_mini.(

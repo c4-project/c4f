@@ -38,7 +38,7 @@ let actions : Action.With_default_weight.t list Lazy.t =
       ; make ~action:(module Store_actions.Int) ~default_weight:30
       ; make ~action:(module Store_actions.Int_dead) ~default_weight:20
       ; make ~action:(module Store_actions.Int_redundant) ~default_weight:15
-      ; make ~action:(module Var_actions.Make_global) ~default_weight:20 ]
+      ; make ~action:(module Var_actions.Make) ~default_weight:20 ]
 
 let action_map : Action.With_default_weight.t Map.M(Act_common.Id).t Lazy.t =
   Lazy.(
@@ -103,4 +103,15 @@ let flag_map : Param_spec.Bool.t Map.M(Act_common.Id).t Lazy.t =
               orders weaken them too (possibly changing semantics in undesirable
               ways).
             |}
+         )
+       ; ( Var_actions.make_global_flag_key
+         , Param_spec.make
+             ~default:(Or_error.ok_exn (Flag.try_make ~wins:1 ~losses:1))
+             ~description:
+               {|
+               If 'true', the Make action generates global variables; if not, it
+               generates local variables over the range of current threads.
+
+               To permit both global and local variable generation, this should be an inexact flag.
+|}
          ) ])

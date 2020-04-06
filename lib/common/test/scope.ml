@@ -11,33 +11,6 @@
 
 module Src = Act_common
 
-let%test_module "is_in_scope" =
-  ( module struct
-    let test (id_str : string) (scope : Src.Scope.t) : unit =
-      let id = Src.Litmus_id.of_string id_str in
-      Act_utils.Io.print_bool (Src.Scope.id_in_scope ~id scope)
-
-    let%expect_test "global in global scope" =
-      test "foo" Src.Scope.Global ;
-      [%expect {| true |}]
-
-    let%expect_test "global in local scope" =
-      test "foo" (Src.Scope.Local 0) ;
-      [%expect {| true |}]
-
-    let%expect_test "local in global scope" =
-      test "0:foo" Src.Scope.Global ;
-      [%expect {| false |}]
-
-    let%expect_test "local in same local scope" =
-      test "0:foo" (Src.Scope.Local 0) ;
-      [%expect {| true |}]
-
-    let%expect_test "local in different local scope" =
-      test "0:foo" (Src.Scope.Local 1) ;
-      [%expect {| false |}]
-  end )
-
 let%test_module "reduce" =
   ( module struct
     let test (l_scope : Src.Scope.t) (r_scope : Src.Scope.t) : unit =

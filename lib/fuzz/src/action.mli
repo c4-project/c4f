@@ -119,9 +119,17 @@ end
 
 (** {1 Helpers for building actions} *)
 
-val always : Subject.Test.t -> param_map:Param_map.t -> bool State.Monad.t
-(** [always test ~param_map] always returns [true] without modifying or
-    inspecting the fuzzer state. *)
+(** [availability_check] is the type of availability checks. *)
+type availability_check =
+  Subject.Test.t -> param_map:Param_map.t -> bool State.Monad.t
+
+val always : availability_check
+(** [always] always returns [true] without modifying or inspecting the fuzzer
+    state. *)
+
+val has_threads : availability_check
+(** [has_threads] returns [true] if there is at least one thread in the
+    program. *)
 
 (** Makes a basic logging function for an action. *)
 module Make_log (B : sig

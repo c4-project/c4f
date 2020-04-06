@@ -1,17 +1,17 @@
-(((name (var make global))
+(((name (var make))
   (payload
    ((basic_type atomic_bool) (initial_value (Int -2147483648))
     (var cQHO4Qc5Vo4))))
- ((name (var make global))
+ ((name (var make))
   (payload
    ((basic_type bool) (initial_value (Int -42175)) (var kx0hFmyY7lL6))))
- ((name (var make global))
+ ((name (var make))
   (payload
    ((basic_type atomic_int) (initial_value (Int 1720645492))
     (var Is9Qk0n4Rhat))))
- ((name (var make global))
+ ((name (var make))
   (payload ((basic_type int) (initial_value (Int -123)) (var BNFKW))))
- ((name (var make global))
+ ((name (var make))
   (payload ((basic_type int) (initial_value (Int 13)) (var cP))))
  ((name (store make int normal))
   (payload
@@ -19,16 +19,16 @@
      ((src (Constant (Int 59774975))) (dst (Lvalue (Variable Is9Qk0n4Rhat)))
       (mo memory_order_relaxed)))
     (path (In_thread 1 (In_stms (Insert 2)))))))
- ((name (var make global))
+ ((name (var make))
   (payload ((basic_type int) (initial_value (Int -29491608)) (var u))))
- ((name (var make global))
+ ((name (var make))
   (payload
    ((basic_type atomic_int) (initial_value (Int 203657823))
     (var UcoE3gzvYko))))
- ((name (var make global))
+ ((name (var make))
   (payload
    ((basic_type atomic_bool) (initial_value (Int -521)) (var cQpyaUbj5gR))))
- ((name (var make global))
+ ((name (var make))
   (payload
    ((basic_type atomic_int) (initial_value (Int 2147483647))
     (var Xv8jOk6fGbC)))))

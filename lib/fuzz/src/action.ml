@@ -32,10 +32,19 @@ module With_default_weight = struct
       if%map available action subject ~param_map then weight else 0)
 end
 
+type availability_check =
+  Subject.Test.t -> param_map:Param_map.t -> bool State.Monad.t
+
 let always (_ : Subject.Test.t) ~(param_map : Param_map.t) :
     bool State.Monad.t =
   ignore (param_map : Param_map.t) ;
   State.Monad.return true
+
+let has_threads (subject : Subject.Test.t) ~(param_map : Param_map.t) :
+    bool State.Monad.t =
+  ignore (param_map : Param_map.t) ;
+  State.Monad.return
+    (not (List.is_empty (Act_litmus.Test.Raw.threads subject)))
 
 module Adjusted_weight = struct
   type t = Not_adjusted of int | Adjusted of {original: int; actual: int}

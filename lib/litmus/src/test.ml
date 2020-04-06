@@ -37,6 +37,12 @@ module Raw = struct
     Header.map_tids header ~f:(fun tid ->
         if from <= tid then tid + delta else tid)
 
+  let has_threads (type const prog) (test : (const, prog) t) : bool =
+    not (List.is_empty (threads test))
+
+  let num_threads (type const prog) (test : (const, prog) t) : int =
+    List.length (threads test)
+
   let add_thread (type const prog) (test : (const, prog) t) ~(thread : prog)
       ~(index : int) : (const, prog) t Or_error.t =
     let threads = threads test in

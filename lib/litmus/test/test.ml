@@ -20,6 +20,14 @@ let%test_module "SBSC example" =
   ( module struct
     let test : (int, string) Test.Raw.t = Lazy.force Examples.Sbsc.test
 
+    let%expect_test "number of threads" =
+      Stdio.printf "%d" (Test.Raw.num_threads test) ;
+      [%expect {| 2 |}]
+
+    let%expect_test "has threads" =
+      Stdio.printf "%b" (Test.Raw.has_threads test) ;
+      [%expect {| true |}]
+
     let%expect_test "witness example before modifications" =
       dump_test (Or_error.return test) ;
       [%expect

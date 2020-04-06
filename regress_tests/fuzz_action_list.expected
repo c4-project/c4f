@@ -118,8 +118,11 @@ store.make.int.redundant:
     destination back to itself.
     
     This operation generates 'atomic_int's.
-var.make.global:
+var.make:
   Weight: 20x
   Summary:
-    Generates a new global variable, with a random name, initial value, and
+    Generates a new variable, with a random name, initial value, and
     primitive type.
+    
+    If the 'var.make.global' flag is set, the variable will be global; else,
+    it'll be a local variable assigned to a random thread.

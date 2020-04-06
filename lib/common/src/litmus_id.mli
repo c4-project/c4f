@@ -20,11 +20,15 @@ open Base
 (** Opaque type of litmus-style identifiers. *)
 type t [@@deriving compare, sexp, quickcheck]
 
-(** {2 Constructors} *)
+(** {1 Constructors} *)
+
+val make : scope:Scope.t -> id:C_id.t -> t
+(** [make ~scope ~id] constructs a Litmus-style identifier from the given
+    [scope] and [id]. *)
 
 val try_parse : string -> t Or_error.t
 (** [try_parse str] tries to parse [str] as a Litmus identifier. For an
-    exception-based alternative, use {{!of_string} of_string}. *)
+    exception-based alternative, use {!of_string}. *)
 
 (** {3 Global identifiers} *)
 
@@ -65,6 +69,9 @@ val variable_name : t -> C_id.t
 val tid : t -> int option
 (** [tid id] gets [id]'s thread identifier, if it has one. *)
 
+val scope : t -> Scope.t
+(** [scope id] extracts the scope information from [id]. *)
+
 val to_memalloy_id : t -> C_id.t
 (** [to_memalloy_id id] converts [id] to the corresponding memalloy
     executable-C global variable name.
@@ -81,10 +88,16 @@ val is_local : t -> bool
 (** [is_local id] is [true] if [id] is a local identifier, or [false]
     otherwise. *)
 
-val is_in_scope : t -> from:int -> bool
-(** [is_in_scope id ~from] asks whether [id] is in scope from the point of
-    view of the thread with ID [from]. This is true if, and only if, [id] is
-    global or is a local with ID [from]. *)
+val is_in_local_scope : t -> from:int -> bool
+(** [is_in_local_scope id ~from] asks whether [id] is in scope from the point
+    of view of the thread with ID [from]. This is true if, and only if, [id]
+    is global or is a local with ID [from]. *)
+
+val is_in_scope : t -> scope:Scope.t -> bool
+(** [is_in_scope id ~scope] asks whether [id] is in scope from the point of
+    view of the scope [scope]. If [scope] is global, [id] must be global;
+    else, [id] must either be global, or a local with the same ID as that of
+    the scope. *)
 
 (** {2 Interface implementations} *)
 

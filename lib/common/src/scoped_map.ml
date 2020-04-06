@@ -74,8 +74,8 @@ let to_litmus_id_map (type a) : a t -> a Map.M(Litmus_id).t = Fn.id
 let filter_in_scope (type a) ~(scope : Scope.t) ~(key : Litmus_id.t)
     ~(data : a) : (Scope.t * a) option =
   Option.some_if
-    (Scope.id_in_scope scope ~id:key)
-    (Scope.of_litmus_id key, data)
+    (Litmus_id.is_in_scope ~scope key)
+    (Litmus_id.scope key, data)
 
 let to_c_id_map (type a) (map : a t) ~(scope : Scope.t) : a Map.M(C_id).t =
   map

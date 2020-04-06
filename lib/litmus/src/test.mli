@@ -48,6 +48,12 @@ module Raw : sig
   (** [threads test] gets the program listings in [test], in left-right or
       top-bottom order. *)
 
+  val has_threads : (_, _) t -> bool
+  (** [has_threads test] asks whether [test] has at least one thread. *)
+
+  val num_threads : (_, _) t -> int
+  (** [has_threads test] asks how many threads [test] has. *)
+
   (** {3 Manipulating raw tests}
 
       Raw tests can be modified in various ways. These modifications needn't

@@ -10,13 +10,16 @@
    project root for more information. *)
 
 open Base
-module Ac = Act_common
+
+open struct
+  module Src = Act_common
+end
 
 let%test_module "try_parse" =
   ( module struct
     let test (input : string) : unit =
       Stdio.print_s
-        [%sexp (Ac.Litmus_id.try_parse input : Ac.Litmus_id.t Or_error.t)]
+        [%sexp (Src.Litmus_id.try_parse input : Src.Litmus_id.t Or_error.t)]
 
     let%expect_test "example local identifier" =
       test "0:r1" ; [%expect {| (Ok 0:r1) |}]
@@ -39,34 +42,34 @@ let%test_module "Id tests" =
   ( module struct
     let%test_unit "to_string->of_string is identity" =
       Base_quickcheck.Test.run_exn
-        (module Ac.Litmus_id)
+        (module Src.Litmus_id)
         ~f:(fun ident ->
-          [%test_eq: Ac.Litmus_id.t] ~here:[[%here]] ident
-            Ac.Litmus_id.(of_string (to_string ident)))
+          [%test_eq: Src.Litmus_id.t] ~here:[[%here]] ident
+            Src.Litmus_id.(of_string (to_string ident)))
 
     let%test_unit "to_memalloy_id is identity on globals" =
       Base_quickcheck.Test.run_exn
-        (module Ac.C_id)
+        (module Src.C_id)
         ~f:(fun ident ->
-          [%test_eq: Ac.C_id.t] ~here:[[%here]] ident
-            Ac.Litmus_id.(to_memalloy_id (global ident)))
+          [%test_eq: Src.C_id.t] ~here:[[%here]] ident
+            Src.Litmus_id.(to_memalloy_id (global ident)))
   end )
 
-let%test_module "is_in_scope" =
+let%test_module "is_in_local_scope" =
   ( module struct
-    let test (id : Ac.Litmus_id.t) : unit =
-      Act_utils.Io.print_bool (Ac.Litmus_id.is_in_scope id ~from:42)
+    let test (id : Src.Litmus_id.t) : unit =
+      Act_utils.Io.print_bool (Src.Litmus_id.is_in_local_scope id ~from:42)
 
     let%expect_test "global" =
-      test (Ac.Litmus_id.global (Ac.C_id.of_string "foo")) ;
+      test (Src.Litmus_id.global (Src.C_id.of_string "foo")) ;
       [%expect {| true |}]
 
     let%expect_test "local: same thread ID" =
-      test (Ac.Litmus_id.local 42 (Ac.C_id.of_string "foo")) ;
+      test (Src.Litmus_id.local 42 (Src.C_id.of_string "foo")) ;
       [%expect {| true |}]
 
     let%expect_test "local: different thread ID" =
-      test (Ac.Litmus_id.local 9 (Ac.C_id.of_string "foo")) ;
+      test (Src.Litmus_id.local 9 (Src.C_id.of_string "foo")) ;
       [%expect {| false |}]
   end )
 
@@ -74,22 +77,49 @@ let%test_unit "to_memalloy_id doesn't throw when creating local identifiers"
     =
   Base_quickcheck.Test.run_exn
     ( module struct
-      type t = Act_utils.My_quickcheck.Small_non_negative_int.t * Ac.C_id.t
+      type t = Act_utils.My_quickcheck.Small_non_negative_int.t * Src.C_id.t
       [@@deriving sexp, quickcheck]
     end )
     ~f:(fun (t, id) ->
-      let mid = Ac.Litmus_id.(to_memalloy_id (local t id)) in
-      ignore (mid : Ac.C_id.t))
+      let mid = Src.Litmus_id.(to_memalloy_id (local t id)) in
+      ignore (mid : Src.C_id.t))
 
 let%test_module "Assoc" =
   ( module struct
     let%expect_test "try_parse: valid representative example" =
       let input = ["foo = barbaz"; "foobar"; "foo=bar=baz"] in
       let output =
-        Ac.Litmus_id.Assoc.try_parse input ~value_parser:(fun xo ->
+        Src.Litmus_id.Assoc.try_parse input ~value_parser:(fun xo ->
             Ok (Option.value xo ~default:"[empty]"))
       in
       Stdio.print_s
-        [%sexp (output : (Ac.Litmus_id.t, string) List.Assoc.t Or_error.t)] ;
+        [%sexp (output : (Src.Litmus_id.t, string) List.Assoc.t Or_error.t)] ;
       [%expect {| (Ok ((foo barbaz) (foobar [empty]) (foo bar=baz))) |}]
+  end )
+
+let%test_module "is_in_scope" =
+  ( module struct
+    let test (id_str : string) (scope : Src.Scope.t) : unit =
+      let id = Src.Litmus_id.of_string id_str in
+      Act_utils.Io.print_bool (Src.Litmus_id.is_in_scope id ~scope)
+
+    let%expect_test "global in global scope" =
+      test "foo" Src.Scope.Global ;
+      [%expect {| true |}]
+
+    let%expect_test "global in local scope" =
+      test "foo" (Src.Scope.Local 0) ;
+      [%expect {| true |}]
+
+    let%expect_test "local in global scope" =
+      test "0:foo" Src.Scope.Global ;
+      [%expect {| false |}]
+
+    let%expect_test "local in same local scope" =
+      test "0:foo" (Src.Scope.Local 0) ;
+      [%expect {| true |}]
+
+    let%expect_test "local in different local scope" =
+      test "0:foo" (Src.Scope.Local 1) ;
+      [%expect {| false |}]
   end )

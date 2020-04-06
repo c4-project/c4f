@@ -18,10 +18,15 @@ module Tx = Travesty_base_exts
    together increasingly elaborate modules, adding Base extensions as we go. *)
 
 module M_str = struct
+  (* TODO(@MattWindsor91): rebase in terms of Scope.t? *)
+
   type t =
     | Local of Au.My_quickcheck.Small_non_negative_int.t * C_id.t
     | Global of C_id.t
   [@@deriving equal, variants, quickcheck]
+
+  let make ~(scope : Scope.t) ~(id : C_id.t) : t =
+    match scope with Local x -> Local (x, id) | Global -> Global id
 
   let compare (x : t) (y : t) =
     match (x, y) with
@@ -113,6 +118,19 @@ let as_global : t -> C_id.t option = function
   | Local _ ->
       None
 
+let scope (id : t) : Scope.t =
+  match id with Global _ -> Global | Local (tid, _) -> Local tid
+
+let is_in_local_scope (id : t) ~(from : int) : bool =
+  match id with Global _ -> true | Local (tid, _) -> Int.equal tid from
+
+let is_in_scope (id : t) ~(scope : Scope.t) : bool =
+  match scope with
+  | Global ->
+      is_global id
+  | Local from ->
+      is_in_local_scope id ~from
+
 let to_memalloy_id_inner (t : int) (id : C_id.t) : string =
   Printf.sprintf "t%d%s" t (C_id.to_string id)
 
@@ -158,6 +176,3 @@ module Assoc = struct
     |> List.map ~f:(try_parse_pair ~value_parser)
     |> Or_error.combine_errors
 end
-
-let is_in_scope (id : t) ~(from : int) : bool =
-  match id with Global _ -> true | Local (tid, _) -> Int.equal tid from

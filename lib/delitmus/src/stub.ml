@@ -90,7 +90,7 @@ let inner_call_arguments (tid : int) :
        (Ac.Litmus_id.t, Act_c_mini.Type.t) List.Assoc.t
     -> Act_c_mini.Expression.t list =
   List.filter_map ~f:(fun (lid, ty) ->
-      if Ac.Litmus_id.is_in_scope ~from:tid lid then
+      if Ac.Litmus_id.is_in_local_scope ~from:tid lid then
         Some (inner_call_argument lid ty)
       else None)
 
