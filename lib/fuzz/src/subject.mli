@@ -183,8 +183,13 @@ module Test : sig
 
   (** {3 Helpers for mutating tests} *)
 
-  val add_var_to_init :
-    t -> Act_common.C_id.t -> Act_c_mini.Constant.t -> t Or_error.t
-  (** [add_var_to_init subject var initial_value] adds [var] to [subject]'s
-      init block with the initial value [initial_value]. *)
+  val declare_var :
+       t
+    -> Act_c_mini.Type.t
+    -> Act_common.Litmus_id.t
+    -> Act_c_mini.Constant.t
+    -> t Or_error.t
+  (** [declare_var subject ty var initial_value] adds [var], typed [ty], to
+      [subject]'s init block or thread initialisers with the initial value
+      [initial_value]. *)
 end

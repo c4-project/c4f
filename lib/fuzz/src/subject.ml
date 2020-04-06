@@ -67,6 +67,12 @@ module Thread = struct
 
   let empty : t = {decls= []; stms= []}
 
+  let add_decl ?(value : Act_c_mini.Constant.t option) (thread : t)
+      ~(ty : Act_c_mini.Type.t) ~(name : Ac.C_id.t) : t =
+    let decl = Act_c_mini.Initialiser.make ~ty ?value () in
+    let decls' = (name, decl) :: thread.decls in
+    {thread with decls= decls'}
+
   let has_statements (p : t) : bool = not (List.is_empty p.stms)
 
   let has_atomic_statements (p : t) : bool =
@@ -171,8 +177,23 @@ module Test = struct
   let has_dead_code_blocks : t -> bool =
     at_least_one_thread_with ~f:Thread.has_dead_code_blocks
 
-  let add_var_to_init (subject : t) (var : Ac.C_id.t)
+  let add_var_to_init (subject : t) (name : Ac.C_id.t)
       (initial_value : Act_c_mini.Constant.t) : t Or_error.t =
     Act_litmus.Test.Raw.try_map_header subject
-      ~f:(Act_litmus.Header.add_global ~name:var ~initial_value)
+      ~f:(Act_litmus.Header.add_global ~name ~initial_value)
+
+  let add_var_to_thread (subject : t) (ty : Act_c_mini.Type.t) (index : int)
+      (name : Ac.C_id.t) (value : Act_c_mini.Constant.t) : t Or_error.t =
+    Act_litmus.Test.Raw.try_map_thread subject ~index ~f:(fun thread ->
+        Ok (Thread.add_decl thread ~ty ~name ~value))
+
+  let declare_var (subject : t) (ty : Act_c_mini.Type.t)
+      (var : Ac.Litmus_id.t) (initial_value : Act_c_mini.Constant.t) :
+      t Or_error.t =
+    let name = Ac.Litmus_id.variable_name var in
+    match Ac.Litmus_id.tid var with
+    | None ->
+        add_var_to_init subject name initial_value
+    | Some i ->
+        add_var_to_thread subject ty i name initial_value
 end

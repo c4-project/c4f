@@ -87,21 +87,15 @@ module Make : Action_types.S with type Payload.t = Make_payload.t = struct
           Base_quickcheck.Generator.generate generator ~random ~size:10))
   end
 
-  let available = Action.always
-
-  let add_to_init (subject : Subject.Test.t) (var : Act_common.Litmus_id.t)
-      (initial_value : Act_c_mini.Constant.t) : Subject.Test.t Or_error.t =
-    var |> Act_common.Litmus_id.as_global
-    |> Option.value_map
-         ~f:(fun name ->
-           Subject.Test.add_var_to_init subject name initial_value)
-         ~default:(Ok subject)
+  let available = Action.has_threads
 
   let run (subject : Subject.Test.t)
       ~payload:({basic_type; initial_value; var} : Payload.t) :
       Subject.Test.t State.Monad.t =
-    let ty = Act_c_mini.Type.of_basic basic_type ~pointer:true in
+    let pointer = Act_common.Litmus_id.is_global var in
+    let ty = Act_c_mini.Type.of_basic basic_type ~pointer in
     let open State.Monad.Let_syntax in
     let%bind () = State.Monad.register_var ty var ~initial_value in
-    State.Monad.Monadic.return (add_to_init subject var initial_value)
+    State.Monad.Monadic.return
+      (Subject.Test.declare_var subject ty var initial_value)
 end
