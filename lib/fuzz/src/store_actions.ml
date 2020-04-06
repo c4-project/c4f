@@ -351,8 +351,7 @@ Make (struct
     let known_value_expr_of_dest (dst : Q_dst.t) :
         Act_c_mini.Expression.t Or_error.t =
       Or_error.Let_syntax.(
-        let%bind lv = Act_c_mini.Address.as_lvalue dst in
-        let var = Act_c_mini.Lvalue.variable_of lv in
+        let var = Act_c_mini.Address.variable_of dst in
         let%map kv =
           Result.of_option (Dst.known_value var)
             ~error:(Error.of_string "No known value for this record.")
