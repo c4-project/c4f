@@ -1,18 +1,18 @@
 (((name (var make global))
   (payload
    ((basic_type atomic_bool) (initial_value (Int -2147483648))
-    (name cQHO4Qc5Vo4))))
+    (var cQHO4Qc5Vo4))))
  ((name (var make global))
   (payload
-   ((basic_type bool) (initial_value (Int -42175)) (name kx0hFmyY7lL6))))
+   ((basic_type bool) (initial_value (Int -42175)) (var kx0hFmyY7lL6))))
  ((name (var make global))
   (payload
    ((basic_type atomic_int) (initial_value (Int 1720645492))
-    (name Is9Qk0n4Rhat))))
+    (var Is9Qk0n4Rhat))))
  ((name (var make global))
-  (payload ((basic_type int) (initial_value (Int -123)) (name BNFKW))))
+  (payload ((basic_type int) (initial_value (Int -123)) (var BNFKW))))
  ((name (var make global))
-  (payload ((basic_type int) (initial_value (Int 13)) (name cP))))
+  (payload ((basic_type int) (initial_value (Int 13)) (var cP))))
  ((name (store make int normal))
   (payload
    ((store
@@ -20,15 +20,15 @@
       (mo memory_order_relaxed)))
     (path (In_thread 1 (In_stms (Insert 2)))))))
  ((name (var make global))
-  (payload ((basic_type int) (initial_value (Int -29491608)) (name u))))
+  (payload ((basic_type int) (initial_value (Int -29491608)) (var u))))
  ((name (var make global))
   (payload
    ((basic_type atomic_int) (initial_value (Int 203657823))
-    (name UcoE3gzvYko))))
+    (var UcoE3gzvYko))))
  ((name (var make global))
   (payload
-   ((basic_type atomic_bool) (initial_value (Int -521)) (name cQpyaUbj5gR))))
+   ((basic_type atomic_bool) (initial_value (Int -521)) (var cQpyaUbj5gR))))
  ((name (var make global))
   (payload
    ((basic_type atomic_int) (initial_value (Int 2147483647))
-    (name Xv8jOk6fGbC)))))
+    (var Xv8jOk6fGbC)))))

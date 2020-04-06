@@ -31,14 +31,14 @@ module Test_data = struct
 
   let prepare_fuzzer_state () : unit Src.State.Monad.t =
     Src.State.Monad.(
-      register_global
+      register_var
         Act_c_mini.Type.(int ~pointer:true ~atomic:true ())
-        (Act_common.C_id.of_string "gen1")
+        (Act_common.Litmus_id.of_string "gen1")
         ~initial_value:(Act_c_mini.Constant.int 1337)
       >>= fun () ->
-      register_global
+      register_var
         Act_c_mini.Type.(int ~pointer:true ~atomic:true ())
-        (Act_common.C_id.of_string "gen2")
+        (Act_common.Litmus_id.of_string "gen2")
         ~initial_value:(Act_c_mini.Constant.int (-55)))
 end
 

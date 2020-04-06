@@ -16,7 +16,7 @@ module Global_payload : sig
   type t =
     { basic_type: Act_c_mini.Type.Basic.t
     ; initial_value: Act_c_mini.Constant.t
-    ; name: Act_common.C_id.t }
+    ; var: Act_common.Litmus_id.t }
   [@@deriving sexp]
 
   val generator : Var.Map.t -> t Base_quickcheck.Generator.t

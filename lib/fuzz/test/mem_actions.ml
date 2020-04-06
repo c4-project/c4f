@@ -13,36 +13,36 @@ open struct
   module Src = Act_fuzz
 end
 
-let%test_module "running payloads on test subject" = (module struct
-  let test_action (payload: Src.Mem_actions.Strengthen_payload.t)
-    : Src.Subject.Test.t Src.State.Monad.t =
-    Src.Mem_actions.Strengthen.run
-      (Lazy.force Subject.Test_data.test)
-      ~payload
+let%test_module "running payloads on test subject" =
+  ( module struct
+    let test_action (payload : Src.Mem_actions.Strengthen_payload.t) :
+        Src.Subject.Test.t Src.State.Monad.t =
+      Src.Mem_actions.Strengthen.run
+        (Lazy.force Subject.Test_data.test)
+        ~payload
 
+    let test (lpath : Src.Path.Program.t Lazy.t)
+        (mo : Act_c_mini.Mem_order.t) (can_weaken : bool) : unit =
+      let path = Lazy.force lpath in
+      let pld =
+        Src.Mem_actions.Strengthen_payload.make ~path ~mo ~can_weaken
+      in
+      let action = test_action pld in
+      Action.Test_utils.run_and_dump_test action
+        ~initial_state:(Lazy.force Subject.Test_data.state)
 
-  let test (lpath: Src.Path.Program.t Lazy.t) (mo: Act_c_mini.Mem_order.t) (can_weaken: bool) : unit =
-    let path = Lazy.force lpath in
-    let pld = Src.Mem_actions.Strengthen_payload.make ~path ~mo ~can_weaken in
-    let action = test_action pld in
-    Action.Test_utils.run_and_dump_test action
-      ~initial_state:(Lazy.force Subject.Test_data.state)
+    let sc_action : Src.Path.Program.t Lazy.t =
+      Src.Path.(
+        Subject.Test_data.Path.thread_0_stms @@ Stms.in_stm 0 @@ Stm.this_stm)
 
-  let sc_action : Src.Path.Program.t Lazy.t =
-    Src.Path.(
-      Subject.Test_data.Path.thread_0_stms
-        @@ Stms.in_stm 0 @@ Stm.this_stm
-      )
+    let rlx_action : Src.Path.Program.t Lazy.t =
+      Src.Path.(
+        Subject.Test_data.Path.thread_0_stms @@ Stms.in_stm 2 @@ Stm.this_stm)
 
-  let rlx_action : Src.Path.Program.t Lazy.t =
-    Src.Path.(
-      Subject.Test_data.Path.thread_0_stms
-        @@ Stms.in_stm 2 @@ Stm.this_stm
-      )
-
-  let%expect_test "failed SC->RLX" =
-    test sc_action Act_c_mini.Mem_order.Relaxed false;
-    [%expect {|
+    let%expect_test "failed SC->RLX" =
+      test sc_action Act_c_mini.Mem_order.Relaxed false ;
+      [%expect
+        {|
       void
       P0(atomic_int *x, atomic_int *y)
       {
@@ -60,9 +60,10 @@ let%test_module "running payloads on test subject" = (module struct
       P1(atomic_int *x, atomic_int *y)
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
-  let%expect_test "forced SC->RLX" =
-    test sc_action Act_c_mini.Mem_order.Relaxed true;
-    [%expect {|
+    let%expect_test "forced SC->RLX" =
+      test sc_action Act_c_mini.Mem_order.Relaxed true ;
+      [%expect
+        {|
       void
       P0(atomic_int *x, atomic_int *y)
       {
@@ -80,9 +81,10 @@ let%test_module "running payloads on test subject" = (module struct
       P1(atomic_int *x, atomic_int *y)
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
-  let%expect_test "successful RLX->SC" =
-    test rlx_action Act_c_mini.Mem_order.Seq_cst false;
-    [%expect {|
+    let%expect_test "successful RLX->SC" =
+      test rlx_action Act_c_mini.Mem_order.Seq_cst false ;
+      [%expect
+        {|
       void
       P0(atomic_int *x, atomic_int *y)
       {
@@ -99,4 +101,4 @@ let%test_module "running payloads on test subject" = (module struct
       void
       P1(atomic_int *x, atomic_int *y)
       { loop: ; if (true) {  } else { goto loop; } } |}]
-end)
+  end )

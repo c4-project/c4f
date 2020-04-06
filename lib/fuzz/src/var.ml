@@ -69,13 +69,13 @@ module Record = struct
   let make_existing (scope : Ac.Scope.t) (ty : Act_c_mini.Type.t) : t =
     make ~source:`Existing ~scope ~ty ()
 
-  let make_generated_global ?(initial_value : Act_c_mini.Constant.t option)
-      (ty : Act_c_mini.Type.t) : t =
+  let make_generated ?(initial_value : Act_c_mini.Constant.t option)
+      (scope : Ac.Scope.t) (ty : Act_c_mini.Type.t) : t =
     let known_value =
       Option.map initial_value ~f:(fun value ->
           Known_value.make ~value ~has_dependencies:false)
     in
-    make ~ty ~source:`Generated ~scope:Ac.Scope.Global ?known_value ()
+    make ~ty ~source:`Generated ~scope ?known_value ()
 end
 
 module Map = struct
@@ -92,10 +92,10 @@ module Map = struct
       >>| List.map ~f:(fun (id, ty) -> (id, make_existing_record id ty))
       >>= Act_common.Scoped_map.of_litmus_id_alist)
 
-  let register_global ?(initial_value : Act_c_mini.Constant.t option)
-      (map : t) (id : Ac.C_id.t) (ty : Act_c_mini.Type.t) : t =
-    let record = Record.make_generated_global ?initial_value ty in
-    let id = Ac.Litmus_id.global id in
+  let register_var ?(initial_value : Act_c_mini.Constant.t option) (map : t)
+      (id : Ac.Litmus_id.t) (ty : Act_c_mini.Type.t) : t =
+    let scope = Ac.Scope.of_litmus_id id in
+    let record = Record.make_generated ?initial_value scope ty in
     Ac.Scoped_map.set map ~id ~record
 
   let add_write : t -> id:Ac.Litmus_id.t -> t =

@@ -18,32 +18,29 @@ open Core_kernel
 let store_trace (trace : Af.Trace.t) : Fpath.t Or_error.t =
   let tmpfile = Plumbing.Output.temp_file ~prefix:"trace" ~ext:"txt" in
   Plumbing.Output.with_output (Plumbing.Output.file tmpfile) ~f:(fun f ->
-      Sexp.output_mach f (Af.Trace.sexp_of_t trace);
-      Ok tmpfile
-    )
+      Sexp.output_mach f (Af.Trace.sexp_of_t trace) ;
+      Ok tmpfile)
 
 let run_with_trace (trace : Af.Trace.t) ~(cmd : string) ~(argv : string list)
     : bool =
   match store_trace trace with
   | Ok name ->
-    Shell.test cmd (Fpath.to_string name :: argv)
+      Shell.test cmd (Fpath.to_string name :: argv)
   | Error e ->
-    Stdio.eprint_s (Error.sexp_of_t e);
-    false
+      Stdio.eprint_s (Error.sexp_of_t e) ;
+      false
 
-let bisector (o: Act_common.Output.t) (trace : Af.Trace.t) ~(cmd : string) ~(argv : string list) :
-    [`Bad | `Good] =
-  if run_with_trace trace ~cmd ~argv
-  then (
-    Act_common.Output.pv o "%d GOOD\n" (Af.Trace.length trace);
-    `Good
-  ) else (
-    Act_common.Output.pv o "%d BAD\n" (Af.Trace.length trace);
-    `Bad
-  )
+let bisector (o : Act_common.Output.t) (trace : Af.Trace.t) ~(cmd : string)
+    ~(argv : string list) : [`Bad | `Good] =
+  if run_with_trace trace ~cmd ~argv then (
+    Act_common.Output.pv o "%d GOOD\n" (Af.Trace.length trace) ;
+    `Good )
+  else (
+    Act_common.Output.pv o "%d BAD\n" (Af.Trace.length trace) ;
+    `Bad )
 
-let bisect (o : Act_common.Output.t) (trace : Af.Trace.t) ~(cmd : string) ~(argv : string list) :
-    Af.Trace.t =
+let bisect (o : Act_common.Output.t) (trace : Af.Trace.t) ~(cmd : string)
+    ~(argv : string list) : Af.Trace.t =
   Act_fuzz.Trace.bisect trace ~f:(bisector o ~cmd ~argv)
 
 let run ~(cmd : string) ~(argv : string list)
@@ -68,9 +65,11 @@ let command : Command.t =
     Command.Let_syntax.(
       let%map_open standard_args =
         Common_cmd.Args.(With_files.get Standard.get)
-      and cmd = flag "command" (required string)
+      and cmd =
+        flag "command" (required string)
           ~doc:"NAME the name of the command to run on intermediate traces"
-      and argv = flag "arg" (listed string)
+      and argv =
+        flag "arg" (listed string)
           ~doc:"ARG an argument to pass to the named command"
       in
       fun () ->

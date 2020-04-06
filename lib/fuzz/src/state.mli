@@ -90,12 +90,12 @@ module Monad : sig
 
   (** {2 Commands} *)
 
-  val register_global :
+  val register_var :
        ?initial_value:Act_c_mini.Constant.t
     -> Act_c_mini.Type.t
-    -> Act_common.C_id.t
+    -> Act_common.Litmus_id.t
     -> unit t
-  (** [register_global ?initial_value ty var] is a stateful action that
+  (** [register_var ?initial_value ty var] is a stateful action that
       registers a generated variable [var] of type [ty] and optional known
       value [value] into the state, overwriting any existing variable of the
       same name. *)

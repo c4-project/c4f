@@ -15,7 +15,7 @@ open Stdio
 type t = File of Fpath.t | Stdout [@@deriving variants]
 
 let temp_file ~(prefix : string) ~(ext : string) : Fpath.t =
- Fpath.v (Filename.temp_file prefix ("." ^ ext))
+  Fpath.v (Filename.temp_file prefix ("." ^ ext))
 
 let temp ~(prefix : string) ~(ext : string) : t =
   file (temp_file ~prefix ~ext)

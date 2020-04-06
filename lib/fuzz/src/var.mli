@@ -40,11 +40,14 @@ module Record : sig
   (** [make_existing scope ty] makes a variable record for a
       non-fuzzer-generated variable of type [ty] and scope [scope]. *)
 
-  val make_generated_global :
-    ?initial_value:Act_c_mini.Constant.t -> Act_c_mini.Type.t -> t
-  (** [make_generated_global ?initial_value ty] makes a variable record for a
-      fuzzer-generated global variable of type [ty] and with initial value
-      [value]. *)
+  val make_generated :
+       ?initial_value:Act_c_mini.Constant.t
+    -> Act_common.Scope.t
+    -> Act_c_mini.Type.t
+    -> t
+  (** [make_generated_global ?initial_value scope ty] makes a variable record
+      for a fuzzer-generated variable of scope [scope] and type [ty], with
+      initial value [value]. *)
 
   (** {3 Predicates} *)
 
@@ -164,14 +167,14 @@ module Map : sig
 
   (** {3 Actions} *)
 
-  val register_global :
+  val register_var :
        ?initial_value:Act_c_mini.Constant.t
     -> t
-    -> Act_common.C_id.t
+    -> Act_common.Litmus_id.t
     -> Act_c_mini.Type.t
     -> t
   (** [register_global ?initial_value map var ty] registers a generated
-      global variable with name [var], type [ty], and optional known initial
+      variable with scoped name [var], type [ty], and optional known initial
       value [initial_value] in [map], returning the resulting new map. *)
 
   val gen_fresh_var : t -> Act_common.C_id.t Base_quickcheck.Generator.t

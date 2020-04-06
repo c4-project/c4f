@@ -21,6 +21,10 @@ module Test_data = struct
   let existing_global : Ty.t -> Src.Var.Record.t =
     Src.Var.Record.make_existing Ac.Scope.Global
 
+  let generated_global ?(initial_value : Con.t option) :
+      Ty.t -> Src.Var.Record.t =
+    Src.Var.Record.make_generated ?initial_value Ac.Scope.Global
+
   let existing_local (tid : int) : Ty.t -> Src.Var.Record.t =
     Src.Var.Record.make_existing (Ac.Scope.Local tid)
 
@@ -31,20 +35,18 @@ module Test_data = struct
         ; ("baz", existing_global (Ty.int ~atomic:true ~pointer:true ()))
         ; ("foobar", existing_global (Ty.bool ~atomic:true ()))
         ; ("barbaz", existing_global (Ty.bool ()))
-        ; ( "a"
-          , Src.Var.Record.make_generated_global ~initial_value:Con.falsehood
-              (Ty.bool ()) )
+        ; ("a", generated_global ~initial_value:Con.falsehood (Ty.bool ()))
         ; ( "b"
-          , Src.Var.Record.make_generated_global ~initial_value:Con.truth
+          , generated_global ~initial_value:Con.truth
               (Ty.bool ~atomic:true ()) )
-        ; ("c", Src.Var.Record.make_generated_global (Ty.bool ()))
+        ; ("c", generated_global (Ty.bool ()))
         ; ("d", existing_global (Ty.int ()))
-        ; ("e", Src.Var.Record.make_generated_global (Ty.int ()))
+        ; ("e", generated_global (Ty.int ()))
         ; ( "x"
-          , Src.Var.Record.make_generated_global ~initial_value:(Con.int 27)
+          , generated_global ~initial_value:(Con.int 27)
               (Ty.int ~atomic:true ()) )
         ; ( "y"
-          , Src.Var.Record.make_generated_global ~initial_value:(Con.int 53)
+          , generated_global ~initial_value:(Con.int 53)
               (Ty.int ~atomic:true ()) )
         ; ("1:r0", existing_local 1 (Ty.bool ()))
         ; ("1:r1", existing_local 1 (Ty.int ()))

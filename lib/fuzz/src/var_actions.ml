@@ -15,7 +15,7 @@ module Global_payload = struct
   type t =
     { basic_type: Act_c_mini.Type.Basic.t
     ; initial_value: Act_c_mini.Constant.t
-    ; name: Act_common.C_id.t }
+    ; var: Act_common.Litmus_id.t }
   [@@deriving sexp]
 
   module G = Base_quickcheck.Generator
@@ -37,7 +37,8 @@ module Global_payload = struct
       let%bind initial_value = Act_c_mini.Constant.gen_int32 in
       let%bind basic_type = gen_type_from_constant initial_value in
       let%map name = Var.Map.gen_fresh_var vars in
-      {basic_type; initial_value; name})
+      let var = Act_common.Litmus_id.global name (* for now *) in
+      {basic_type; initial_value; var})
 end
 
 module Make_global : Action_types.S with type Payload.t = Global_payload.t =
@@ -65,12 +66,19 @@ struct
 
   let available = Action.always
 
+  let add_to_init (subject : Subject.Test.t) (var : Act_common.Litmus_id.t)
+      (initial_value : Act_c_mini.Constant.t) : Subject.Test.t Or_error.t =
+    var |> Act_common.Litmus_id.as_global
+    |> Option.value_map
+         ~f:(fun name ->
+           Subject.Test.add_var_to_init subject name initial_value)
+         ~default:(Ok subject)
+
   let run (subject : Subject.Test.t)
-      ~payload:({basic_type; initial_value; name} : Payload.t) :
+      ~payload:({basic_type; initial_value; var} : Payload.t) :
       Subject.Test.t State.Monad.t =
     let ty = Act_c_mini.Type.of_basic basic_type ~pointer:true in
     let open State.Monad.Let_syntax in
-    let%bind () = State.Monad.register_global ty name ~initial_value in
-    State.Monad.Monadic.return
-      (Subject.Test.add_var_to_init subject name initial_value)
+    let%bind () = State.Monad.register_var ty var ~initial_value in
+    State.Monad.Monadic.return (add_to_init subject var initial_value)
 end
