@@ -186,9 +186,9 @@ module Strengthen :
       ~(mo : Act_c_mini.Mem_order.t) ~(direction : [< `Strengthen | `Any]) :
       Act_c_mini.Atomic_statement.t Or_error.t =
     Bm.bmap atom
-      ~atomic_cmpxchg:(change_mo_atomic_cmpxchg ~mo ~direction)
-      ~atomic_fence:(change_mo_atomic_fence ~mo ~direction)
-      ~atomic_store:(change_mo_atomic_store ~mo ~direction)
+      ~cmpxchg:(change_mo_atomic_cmpxchg ~mo ~direction)
+      ~fence:(change_mo_atomic_fence ~mo ~direction)
+      ~store:(change_mo_atomic_store ~mo ~direction)
 
   let change_mo (stm : Subject.Statement.t) ~(mo : Act_c_mini.Mem_order.t)
       ~(can_weaken : bool) : Subject.Statement.t Or_error.t =

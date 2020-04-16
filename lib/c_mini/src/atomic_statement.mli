@@ -21,23 +21,23 @@ type t [@@deriving sexp, compare, equal]
 
 (** {1 Constructors} *)
 
-val atomic_fence : Atomic_fence.t -> t
-(** [atomic_fence a] lifts an atomic fence [a] to an atomic statement. *)
+val cmpxchg : Atomic_cmpxchg.t -> t
+(** [cmpxchg a] lifts an atomic compare-exchange [a] to an atomic statement,
+    discarding the boolean output. *)
 
-val atomic_store : Atomic_store.t -> t
-(** [atomic_store a] lifts an atomic store [a] to an atomic statement. *)
+val fence : Atomic_fence.t -> t
+(** [fence a] lifts an atomic fence [a] to an atomic statement. *)
 
-val atomic_cmpxchg : Atomic_cmpxchg.t -> t
-(** [atomic_cmpxchg a] lifts an atomic compare-exchange [a] to an atomic
-    statement. *)
+val store : Atomic_store.t -> t
+(** [store a] lifts an atomic store [a] to an atomic statement. *)
 
 (** {1 Traversals} *)
 
 val reduce :
      t
-  -> atomic_cmpxchg:(Atomic_cmpxchg.t -> 'result)
-  -> atomic_fence:(Atomic_fence.t -> 'result)
-  -> atomic_store:(Atomic_store.t -> 'result)
+  -> cmpxchg:(Atomic_cmpxchg.t -> 'result)
+  -> fence:(Atomic_fence.t -> 'result)
+  -> store:(Atomic_store.t -> 'result)
   -> 'result
 (** [reduce x ~atomic_cmpxchg ~atomic_fence ~atomic_store] reduces an atomic
     statement [x] to a particular result type by applying the appropriate
@@ -47,12 +47,12 @@ val reduce :
 module Base_map (M : Monad.S) : sig
   val bmap :
        t
-    -> atomic_cmpxchg:(Atomic_cmpxchg.t -> Atomic_cmpxchg.t M.t)
-    -> atomic_fence:(Atomic_fence.t -> Atomic_fence.t M.t)
-    -> atomic_store:(Atomic_store.t -> Atomic_store.t M.t)
+    -> cmpxchg:(Atomic_cmpxchg.t -> Atomic_cmpxchg.t M.t)
+    -> fence:(Atomic_fence.t -> Atomic_fence.t M.t)
+    -> store:(Atomic_store.t -> Atomic_store.t M.t)
     -> t M.t
-  (** [bmap t ~atomic_cmpxchg ~atomic_fence ~atomic_store] traverses over [t]
-      monadically with the appropriate traversal function. *)
+  (** [bmap t ~cmpxchg ~fence ~store] traverses over [t] monadically with the
+      appropriate traversal function. *)
 end
 
 (** Traverses over the addresses of an atomic statement. *)

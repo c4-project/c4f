@@ -15,32 +15,29 @@ open Base
    constructors in Base_map. *)
 module P = struct
   type t =
-    | Atomic_cmpxchg of Atomic_cmpxchg.t
-    | Atomic_fence of Atomic_fence.t
-    | Atomic_store of Atomic_store.t
+    | Cmpxchg of Atomic_cmpxchg.t
+    | Fence of Atomic_fence.t
+    | Store of Atomic_store.t
   [@@deriving variants, sexp, compare, equal]
 end
 
 include P
 
-let reduce (type result) (x : t)
-    ~(atomic_cmpxchg : Atomic_cmpxchg.t -> result)
-    ~(atomic_fence : Atomic_fence.t -> result)
-    ~(atomic_store : Atomic_store.t -> result) : result =
-  Variants.map x ~atomic_fence:(Fn.const atomic_fence)
-    ~atomic_store:(Fn.const atomic_store)
-    ~atomic_cmpxchg:(Fn.const atomic_cmpxchg)
+let reduce (type result) (x : t) ~(cmpxchg : Atomic_cmpxchg.t -> result)
+    ~(fence : Atomic_fence.t -> result) ~(store : Atomic_store.t -> result) :
+    result =
+  Variants.map x ~cmpxchg:(Fn.const cmpxchg) ~fence:(Fn.const fence)
+    ~store:(Fn.const store)
 
 module Base_map (M : Monad.S) = struct
-  let bmap (x : t)
-      ~(atomic_cmpxchg : Atomic_cmpxchg.t -> Atomic_cmpxchg.t M.t)
-      ~(atomic_fence : Atomic_fence.t -> Atomic_fence.t M.t)
-      ~(atomic_store : Atomic_store.t -> Atomic_store.t M.t) : t M.t =
+  let bmap (x : t) ~(cmpxchg : Atomic_cmpxchg.t -> Atomic_cmpxchg.t M.t)
+      ~(fence : Atomic_fence.t -> Atomic_fence.t M.t)
+      ~(store : Atomic_store.t -> Atomic_store.t M.t) : t M.t =
     Travesty_base_exts.Fn.Compose_syntax.(
       reduce x
-        ~atomic_cmpxchg:(atomic_cmpxchg >> M.map ~f:P.atomic_cmpxchg)
-        ~atomic_fence:(atomic_fence >> M.map ~f:P.atomic_fence)
-        ~atomic_store:(atomic_store >> M.map ~f:P.atomic_store))
+        ~cmpxchg:(cmpxchg >> M.map ~f:P.cmpxchg)
+        ~fence:(fence >> M.map ~f:P.fence)
+        ~store:(store >> M.map ~f:P.store))
 end
 
 (** Does the legwork of implementing a particular type of traversal over
@@ -71,8 +68,8 @@ Travesty.Traversable.Make0 (struct
     module XM = Basic.X.On_monad (M)
 
     let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
-      SBase.bmap x ~atomic_fence:M.return ~atomic_store:(SM.map_m ~f)
-        ~atomic_cmpxchg:(XM.map_m ~f)
+      SBase.bmap x ~cmpxchg:(XM.map_m ~f) ~fence:M.return
+        ~store:(SM.map_m ~f)
   end
 end)
 

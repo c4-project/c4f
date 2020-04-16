@@ -15,7 +15,7 @@ module Ast = Act_c_lang.Ast
 let known_call_stm (name : string) (args : Ast.Expr.t list) : Ast.Stm.t =
   Expr (Some (Reify_expr.known_call name args))
 
-let atomic_cmpxchg (cmpxchg : Atomic_cmpxchg.t) : Ast.Stm.t =
+let cmpxchg (cmpxchg : Atomic_cmpxchg.t) : Ast.Stm.t =
   known_call_stm "atomic_compare_exchange_strong_explicit"
     Reify_expr.
       [ address (Atomic_cmpxchg.obj cmpxchg)
@@ -24,17 +24,17 @@ let atomic_cmpxchg (cmpxchg : Atomic_cmpxchg.t) : Ast.Stm.t =
       ; mem_order (Atomic_cmpxchg.succ cmpxchg)
       ; mem_order (Atomic_cmpxchg.fail cmpxchg) ]
 
-let function_of_atomic_fence_mode : Atomic_fence.Mode.t -> string = function
+let function_of_fence_mode : Atomic_fence.Mode.t -> string = function
   | Signal ->
       "atomic_signal_fence"
   | Thread ->
       "atomic_thread_fence"
 
-let atomic_fence (fence : Atomic_fence.t) : Ast.Stm.t =
-  let call = function_of_atomic_fence_mode (Atomic_fence.mode fence) in
+let fence (fence : Atomic_fence.t) : Ast.Stm.t =
+  let call = function_of_fence_mode (Atomic_fence.mode fence) in
   known_call_stm call Reify_expr.[mem_order (Atomic_fence.mo fence)]
 
-let atomic_store (st : Atomic_store.t) : Ast.Stm.t =
+let store (st : Atomic_store.t) : Ast.Stm.t =
   known_call_stm "atomic_store_explicit"
     Reify_expr.
       [ address (Atomic_store.dst st)
@@ -42,7 +42,7 @@ let atomic_store (st : Atomic_store.t) : Ast.Stm.t =
       ; mem_order (Atomic_store.mo st) ]
 
 let atomic : Atomic_statement.t -> Ast.Stm.t =
-  Atomic_statement.reduce ~atomic_cmpxchg ~atomic_fence ~atomic_store
+  Atomic_statement.reduce ~cmpxchg ~fence ~store
 
 let assign (asn : Assign.t) : Ast.Stm.t =
   let l = Assign.lvalue asn in

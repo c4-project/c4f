@@ -32,13 +32,11 @@ end
 include P
 
 let atomic_cmpxchg (a : Atomic_cmpxchg.t) : t =
-  atomic (Atomic_statement.atomic_cmpxchg a)
+  atomic (Atomic_statement.cmpxchg a)
 
-let atomic_fence (a : Atomic_fence.t) : t =
-  atomic (Atomic_statement.atomic_fence a)
+let atomic_fence (a : Atomic_fence.t) : t = atomic (Atomic_statement.fence a)
 
-let atomic_store (a : Atomic_store.t) : t =
-  atomic (Atomic_statement.atomic_store a)
+let atomic_store (a : Atomic_store.t) : t = atomic (Atomic_statement.store a)
 
 let break : t = Early_out Break
 
