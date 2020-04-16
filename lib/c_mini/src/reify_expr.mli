@@ -34,3 +34,10 @@ val known_call :
 
 val constant : Constant.t -> Act_c_lang.Ast.Expr.t
 (** [constant k] reifies the constant [k] into the C AST. *)
+
+(** {1 Atomic expressions} *)
+
+module Atomic : sig
+  val cmpxchg : Atomic_cmpxchg.t -> Act_c_lang.Ast.Expr.t
+  (** [cmpxchg x] reifies a compare-exchange in expression position. *)
+end

@@ -35,9 +35,21 @@ let mem_order (mo : Mem_order.t) : Ast.Expr.t =
 let known_call (name : string) (args : Ast.Expr.t list) : Ast.Expr.t =
   Call {func= Identifier (Act_common.C_id.of_string name); arguments= args}
 
-let atomic_load (ld : Atomic_load.t) : Ast.Expr.t =
-  known_call "atomic_load_explicit"
-    [address (Atomic_load.src ld); mem_order (Atomic_load.mo ld)]
+module Atomic_pre (M : sig
+    val reify : Expression.t -> Ast.Expr.t
+  end)= struct
+  let cmpxchg (cmpxchg : Atomic_cmpxchg.t) : Ast.Expr.t =
+    known_call "atomic_compare_exchange_strong_explicit"
+        [ address (Atomic_cmpxchg.obj cmpxchg)
+        ; address (Atomic_cmpxchg.expected cmpxchg)
+        ; M.reify (Atomic_cmpxchg.desired cmpxchg)
+        ; mem_order (Atomic_cmpxchg.succ cmpxchg)
+        ; mem_order (Atomic_cmpxchg.fail cmpxchg) ]
+
+  let load (ld : Atomic_load.t) : Ast.Expr.t =
+    known_call "atomic_load_explicit"
+      [address (Atomic_load.src ld); mem_order (Atomic_load.mo ld)]
+end
 
 let bop : Expression.Bop.t -> Act_c_lang.Operators.Bin.t = function
   | Expression.Bop.Eq ->
@@ -137,5 +149,13 @@ let uop (op : Expression.Uop.t) (x : Ast.Expr.t) : Ast.Expr.t =
   let x' = Needs_brackets.(maybe_bracket ~f:uop_pre) x in
   Ast.Expr.Prefix (op', x')
 
-let reify : Expression.t -> Ast.Expr.t =
-  Expression.reduce ~constant ~address ~atomic_load ~bop ~uop
+let rec reify (x : Expression.t) : Ast.Expr.t =
+  let module A = Atomic_pre (struct
+      let reify = reify
+    end)
+  in
+  Expression.reduce x ~constant ~address ~atomic_load:A.load ~bop ~uop
+
+module Atomic = Atomic_pre (struct
+    let reify = reify
+  end)
