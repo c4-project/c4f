@@ -16,45 +16,28 @@ open Base
 (** Opaque type of expressions. *)
 type t [@@deriving sexp, compare, equal]
 
-(** {1 Operators} *)
-
-(** {2 Unary operators} *)
-
-module Uop : sig
-  (** Enumeration of unary operators. *)
-  type t = L_not [@@deriving sexp, compare, equal]
-
-  val l_not : t
-  (** [l_not] is the logical negation operator. *)
-end
-
-(** {2 Binary operators} *)
-
-module Bop : sig
-  (** Enumeration of binary operators. *)
-  type t = Eq | L_and | L_or [@@deriving sexp, compare, equal]
-
-  val eq : t
-  (** [eq] is the equality operator. *)
-
-  val l_and : t
-  (** [l_and] is the logical AND operator. *)
-
-  val l_or : t
-  (** [l_or] is the logical OR operator. *)
-end
-
 (** {1 Constructors} *)
 
-val atomic_load : Atomic_load.t -> t
-(** [atomic_load a] lifts an atomic load [a] to an expression. *)
+val address : Address.t -> t
+(** [address ad] lifts an address [ad] to an expression. *)
 
-val bop : Bop.t -> t -> t -> t
+val atomic : t Atomic_expression.t -> t
+(** [atomic a] lifts an atomic expression [a] to an expression. *)
+
+val constant : Constant.t -> t
+(** [constant k] lifts a constant [k] to an expression. *)
+
+val bop : Op.Binary.t -> t -> t -> t
 (** [bop operator l_operand r_operand] builds an arbitrary binary operator
     expression. *)
 
-val uop : Uop.t -> t -> t
+val uop : Op.Unary.t -> t -> t
 (** [uop operator operand] builds an arbitrary unary operator expression. *)
+
+(** {2 Convenience constructors} *)
+
+val atomic_load : Atomic_load.t -> t
+(** [atomic_load a] lifts an atomic load [a] to an expression. *)
 
 val eq : t -> t -> t
 (** [eq l r] builds an equality expression. *)
@@ -70,10 +53,9 @@ val l_or : t -> t -> t
 val l_not : t -> t
 (** [l_not x] builds a logical NOT over [x]. It does not simplify. *)
 
-(** {2 Addresses, lvalues, and variables} *)
+(** {2 lvalues, and variables}
 
-val address : Address.t -> t
-(** [address ad] lifts an address [ad] to an expression. *)
+    Also see [address] in {!Expression_types.S}. *)
 
 val lvalue : Lvalue.t -> t
 (** [lvalue lv] lifts a lvalue [lv] to an expression. *)
@@ -87,10 +69,9 @@ val of_variable_str_exn : string -> t
     invalid C identifier. This function is for use mainly in testing, and
     shouldn't be used on user-supplied C code. *)
 
-(** {2 Literals} *)
+(** {2 Literals}
 
-val constant : Constant.t -> t
-(** [constant k] lifts a constant [k] to an expression. *)
+    Also see [constant] in {!Expression_types.S}. *)
 
 val bool_lit : bool -> t
 (** [bool_lit b] lifts a Boolean literal [b] to an expression. *)
@@ -122,35 +103,45 @@ end
 
 (** {1 Accessors} *)
 
+val reduce_step :
+     t
+  -> constant:(Constant.t -> 'a)
+  -> address:(Address.t -> 'a)
+  -> atomic:(t Atomic_expression.t -> 'a)
+  -> bop:(Op.Binary.t -> t -> t -> 'a)
+  -> uop:(Op.Unary.t -> t -> 'a)
+  -> 'a
+(** [reduce_step expr ~constant ~lvalue ~atomic ~bop ~uop] reduces [expr] to
+    a single value, using the given functions at each corresponding stage of
+    the expression tree. *)
+
 val reduce :
      t
   -> constant:(Constant.t -> 'a)
   -> address:(Address.t -> 'a)
-  -> atomic_load:(Atomic_load.t -> 'a)
-  -> bop:(Bop.t -> 'a -> 'a -> 'a)
-  -> uop:(Uop.t -> 'a -> 'a)
+  -> atomic:('a Atomic_expression.t -> 'a)
+  -> bop:(Op.Binary.t -> 'a -> 'a -> 'a)
+  -> uop:(Op.Unary.t -> 'a -> 'a)
   -> 'a
-(** [reduce expr ~constant ~lvalue ~atomic_load ~bop ~uop] recursively
-    reduces [expr] to a single value, using the given functions at each
-    corresponding stage of the expression tree. *)
+(** [reduce expr ~constant ~address ~atomic ~bop ~uop] recursively reduces
+    [expr] to a single value, using the given functions at each corresponding
+    stage of the expression tree. *)
 
-(** {1 Traversals} *)
-
-(** Traversing over atomic-action addresses in expressions. *)
-module On_addresses :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t
-
-(** Traversing over constants in expressions. *)
-module On_constants :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Constant.t
-
-(** Traversing over lvalues in expressions. *)
-module On_lvalues :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t
+(** Primitive map for applicative traversal of expressions. *)
+module Base_map (Ap : Applicative.S) : sig
+  val bmap :
+       t
+    -> constant:(Constant.t -> Constant.t Ap.t)
+    -> address:(Address.t -> Address.t Ap.t)
+    -> atomic:(t Atomic_expression.t -> t Atomic_expression.t Ap.t)
+    -> bop:(Op.Binary.t * t * t -> (Op.Binary.t * t * t) Ap.t)
+    -> uop:(Op.Unary.t * t -> (Op.Unary.t * t) Ap.t)
+    -> t Ap.t
+end
 
 (** {1 Generation and quickchecking}
 
-    See {{!Expression_gen} Expression_gen}. *)
+    See {!Expression_gen}. *)
 
 val quickcheck_observer : t Base_quickcheck.Observer.t
 (** Blanket observer for all expression generators. *)
@@ -159,16 +150,3 @@ val quickcheck_observer : t Base_quickcheck.Observer.t
 
 (** Type-checking for expressions. *)
 include Types.S_type_checkable with type t := t
-
-(** {1 Evaluating expressions} *)
-
-module Eval : sig
-  val as_constant :
-    t -> env:(Address.t -> Constant.t Or_error.t) -> Constant.t Or_error.t
-  (** [as_constant expr ~env] evaluates expression [expr] in the context of
-      the abstract environment (store/heap) model [env], returning a constant
-      if the evaluation succeeded or an error otherwise. *)
-
-  val empty_env : Address.t -> Constant.t Or_error.t
-  (** [empty_env] maps all lvalues to errors. *)
-end

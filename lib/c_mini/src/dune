@@ -4,7 +4,8 @@
  (name act_c_mini)
  (public_name act.c_mini)
  (synopsis "Automagic Compiler Tormentor: C mini-model")
- (modules_without_implementation env_types types statement_types)
+ (modules_without_implementation env_types expression_types types
+   statement_types)
  (preprocess
   (pps ppx_deriving.std ppx_yojson_conv ppx_jane))
  (libraries splittable_random sexplib0 stdio base.caml core_kernel fmt

@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,8 +10,11 @@
    project root for more information. *)
 
 open Base
-module Ac = Act_common
-module Au = Act_utils
+
+open struct
+  module Ac = Act_common
+  module Au = Act_utils
+end
 
 module Prim = struct
   type t = Int | Bool [@@deriving variants, equal, enumerate]
@@ -151,8 +154,18 @@ module Json : Plumbing.Jsonable_types.S with type t := t =
 include Json
 
 let check (t1 : t) (t2 : t) : t Or_error.t =
-  if equal t1 t2 then Result.return t1
+  if equal t1 t2 then Ok t1
   else Or_error.error_s [%message "Type mismatch" ~t1:(t1 : t) ~t2:(t2 : t)]
 
 let check_modulo_atomicity (t1 : t) (t2 : t) : t Or_error.t =
   check (strip_atomic t1) (strip_atomic t2)
+
+let check_atomic_non ~(atomic : t) ~(non : t) : t Or_error.t =
+  Or_error.Let_syntax.(
+    let%bind natomic = to_non_atomic atomic in
+    check natomic non)
+
+let check_pointer_non ~(pointer : t) ~(non : t) : t Or_error.t =
+  Or_error.Let_syntax.(
+    let%bind npointer = deref pointer in
+    check npointer non)

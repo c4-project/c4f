@@ -12,6 +12,22 @@
 open Base
 module Src = Act_c_mini
 
+let%test_module "examples" =
+  ( module struct
+    let test (x : Src.Expression.t) : unit =
+      let rx = Src.Reify_expr.reify x in
+      Fmt.pr "@[%a@]@." Act_c_lang.Ast.Expr.pp rx
+
+    let%expect_test "atomic_load of referenced variable" =
+      test
+        Src.(
+          Expression.atomic_load
+            (Atomic_load.make
+               ~src:(Address.of_variable_ref (Act_common.C_id.of_string "x"))
+               ~mo:Mem_order.Seq_cst)) ;
+      [%expect {| atomic_load_explicit(&x, memory_order_seq_cst) |}]
+  end )
+
 let%test_module "round trips" =
   ( module struct
     let test_round_trip

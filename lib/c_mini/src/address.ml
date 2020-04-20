@@ -12,8 +12,13 @@
 open Base
 module Ac = Act_common
 
-type t = Lvalue of Lvalue.t | Ref of t
-[@@deriving sexp, variants, compare, equal]
+module M = struct
+  type t = Lvalue of Lvalue.t | Ref of t
+  [@@deriving sexp, variants, compare, equal]
+end
+
+include M
+include Comparable.Make (M)
 
 let of_variable (v : Ac.C_id.t) : t = Lvalue (Lvalue.variable v)
 

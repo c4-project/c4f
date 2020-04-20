@@ -113,7 +113,7 @@ end = struct
     (* TODO(@MattWindsor91): do more here? *)
     Q.Generator.Let_syntax.(
       let%map op =
-        Q.Generator.of_list Expression.Bop.[Eq]
+        Q.Generator.of_list Op.Binary.[Eq]
         (* TODO(@MattWindsor91): inequalities *)
       in
       Expression.(bop op var_ref (int_lit value)))
@@ -166,7 +166,7 @@ module Bool_known (Env : Env_types.S_with_known_values) = struct
       The [bop] should be an operator where giving the intended known truth
       value on both sides yields that truth value. For tautologies, [bop]
       will usually be [l_and]; for falsehoods, [l_or]. *)
-  let gen_bop_both (bop : Expression.Bop.t) (mu : t Q.Generator.t) :
+  let gen_bop_both (bop : Op.Binary.t) (mu : t Q.Generator.t) :
       t Q.Generator.t =
     Q.Generator.map2 mu mu ~f:(Expression.bop bop)
 
@@ -177,7 +177,7 @@ module Bool_known (Env : Env_types.S_with_known_values) = struct
       The [bop] should be an operator where giving the intended known truth
       value on at least one side yields that truth value. For tautologies,
       [bop] will usually be [l_or]; for falsehoods, [l_and]. *)
-  let gen_bop_short (bop : Expression.Bop.t) (mu : t Q.Generator.t) :
+  let gen_bop_short (bop : Op.Binary.t) (mu : t Q.Generator.t) :
       t Q.Generator.t =
     (* Ensuring short-circuit by using tautological generator first. *)
     Q.Generator.map2 mu BV.quickcheck_generator ~f:(Expression.bop bop)
@@ -189,7 +189,7 @@ module Bool_known (Env : Env_types.S_with_known_values) = struct
       The [bop] should be an operator where giving the intended known truth
       value on at least one side yields that truth value. For tautologies,
       [bop] will usually be [l_or]; for falsehoods, [l_and]. *)
-  let gen_bop_long (bop : Expression.Bop.t) (mu : t Q.Generator.t) :
+  let gen_bop_long (bop : Op.Binary.t) (mu : t Q.Generator.t) :
       t Q.Generator.t =
     (* We need at least one of the terms to be tautological; this is the
        'long' version that only guarantees the RHS is. *)
@@ -220,9 +220,9 @@ module Bool_known (Env : Env_types.S_with_known_values) = struct
     (* TODO(@MattWindsor91): known-value false comparisons *)
     eval_guards [(true, fun () -> Q.Generator.return Expression.falsehood)]
 
-  let mk_recursive_generator (mu : t Q.Generator.t)
-      ~(both_bop : Expression.Bop.t) ~(circuiting_bop : Expression.Bop.t)
-      ~(negated_gen : t Q.Generator.t Lazy.t) : t Q.Generator.t list =
+  let mk_recursive_generator (mu : t Q.Generator.t) ~(both_bop : Op.Binary.t)
+      ~(circuiting_bop : Op.Binary.t) ~(negated_gen : t Q.Generator.t Lazy.t)
+      : t Q.Generator.t list =
     eval_guards
       [ (true, fun () -> gen_not (Q.Generator.of_lazy negated_gen))
       ; (true, fun () -> gen_bop_both both_bop mu)
@@ -231,13 +231,13 @@ module Bool_known (Env : Env_types.S_with_known_values) = struct
 
   let tt_recursive_generators (mu : t Q.Generator.t)
       ~(negated_gen : t Q.Generator.t Lazy.t) : t Q.Generator.t list =
-    mk_recursive_generator mu ~both_bop:Expression.Bop.l_and
-      ~circuiting_bop:Expression.Bop.l_or ~negated_gen
+    mk_recursive_generator mu ~both_bop:Op.Binary.l_and
+      ~circuiting_bop:Op.Binary.l_or ~negated_gen
 
   let ff_recursive_generators (mu : t Q.Generator.t)
       ~(negated_gen : t Q.Generator.t Lazy.t) : t Q.Generator.t list =
-    mk_recursive_generator mu ~both_bop:Expression.Bop.l_or
-      ~circuiting_bop:Expression.Bop.l_and ~negated_gen
+    mk_recursive_generator mu ~both_bop:Op.Binary.l_or
+      ~circuiting_bop:Op.Binary.l_and ~negated_gen
 
   let rec tt_generator : t Q.Generator.t Lazy.t =
     lazy

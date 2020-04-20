@@ -15,29 +15,37 @@ open Base
    constructors in Base_map. *)
 module P = struct
   type t =
-    | Cmpxchg of Atomic_cmpxchg.t
+    | Cmpxchg of Expression.t Atomic_cmpxchg.t
     | Fence of Atomic_fence.t
+    | Fetch of Expression.t Atomic_fetch.t
     | Store of Atomic_store.t
   [@@deriving variants, sexp, compare, equal]
 end
 
 include P
 
-let reduce (type result) (x : t) ~(cmpxchg : Atomic_cmpxchg.t -> result)
-    ~(fence : Atomic_fence.t -> result) ~(store : Atomic_store.t -> result) :
-    result =
+let reduce (type result) (x : t)
+    ~(cmpxchg : Expression.t Atomic_cmpxchg.t -> result)
+    ~(fence : Atomic_fence.t -> result)
+    ~(fetch : Expression.t Atomic_fetch.t -> result)
+    ~(store : Atomic_store.t -> result) : result =
   Variants.map x ~cmpxchg:(Fn.const cmpxchg) ~fence:(Fn.const fence)
-    ~store:(Fn.const store)
+    ~fetch:(Fn.const fetch) ~store:(Fn.const store)
 
-module Base_map (M : Monad.S) = struct
-  let bmap (x : t) ~(cmpxchg : Atomic_cmpxchg.t -> Atomic_cmpxchg.t M.t)
-      ~(fence : Atomic_fence.t -> Atomic_fence.t M.t)
-      ~(store : Atomic_store.t -> Atomic_store.t M.t) : t M.t =
+module Base_map (Ap : Applicative.S) = struct
+  let bmap (x : t)
+      ~(cmpxchg :
+         Expression.t Atomic_cmpxchg.t -> Expression.t Atomic_cmpxchg.t Ap.t)
+      ~(fence : Atomic_fence.t -> Atomic_fence.t Ap.t)
+      ~(fetch :
+         Expression.t Atomic_fetch.t -> Expression.t Atomic_fetch.t Ap.t)
+      ~(store : Atomic_store.t -> Atomic_store.t Ap.t) : t Ap.t =
     Travesty_base_exts.Fn.Compose_syntax.(
       reduce x
-        ~cmpxchg:(cmpxchg >> M.map ~f:P.cmpxchg)
-        ~fence:(fence >> M.map ~f:P.fence)
-        ~store:(store >> M.map ~f:P.store))
+        ~cmpxchg:(cmpxchg >> Ap.map ~f:P.cmpxchg)
+        ~fence:(fence >> Ap.map ~f:P.fence)
+        ~fetch:(fetch >> Ap.map ~f:P.fetch)
+        ~store:(store >> Ap.map ~f:P.store))
 end
 
 (** Does the legwork of implementing a particular type of traversal over
@@ -47,9 +55,14 @@ module Make_traversal (Basic : sig
 
   (* There is no traversal over fences, as fences only have memory orders and
      nothing that we actually want to traverse here! *)
-  module X :
+  module C :
     Travesty.Traversable_types.S0
-      with type t := Atomic_cmpxchg.t
+      with type t := Expression.t Atomic_cmpxchg.t
+       and module Elt = Elt
+
+  module F :
+    Travesty.Traversable_types.S0
+      with type t := Expression.t Atomic_fetch.t
        and module Elt = Elt
 
   module S :
@@ -63,13 +76,19 @@ Travesty.Traversable.Make0 (struct
   module Elt = Basic.Elt
 
   module On_monad (M : Monad.S) = struct
-    module SBase = Base_map (M)
-    module SM = Basic.S.On_monad (M)
-    module XM = Basic.X.On_monad (M)
+    module SBase = Base_map (struct
+      type 'a t = 'a M.t
+
+      include Applicative.Of_monad (M)
+    end)
+
+    module C = Basic.C.On_monad (M)
+    module F = Basic.F.On_monad (M)
+    module S = Basic.S.On_monad (M)
 
     let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
-      SBase.bmap x ~cmpxchg:(XM.map_m ~f) ~fence:M.return
-        ~store:(SM.map_m ~f)
+      SBase.bmap x ~cmpxchg:(C.map_m ~f) ~fence:M.return ~fetch:(F.map_m ~f)
+        ~store:(S.map_m ~f)
   end
 end)
 
@@ -77,22 +96,27 @@ module On_lvalues :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
 Make_traversal (struct
   module Elt = Lvalue
+  module C = Expression_traverse.Cmpxchg.On_lvalues
+  module F = Expression_traverse.Fetch.On_lvalues
   module S = Atomic_store.On_lvalues
-  module X = Atomic_cmpxchg.On_lvalues
 end)
 
 module On_addresses :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t =
 Make_traversal (struct
   module Elt = Address
+  module C = Expression_traverse.Cmpxchg.On_addresses
+  module F = Expression_traverse.Fetch.On_addresses
   module S = Atomic_store.On_addresses
-  module X = Atomic_cmpxchg.On_addresses
 end)
 
 module On_expressions :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Expression.t =
 Make_traversal (struct
   module Elt = Expression
+  module C =
+    Travesty.Traversable.Fix_elt (Atomic_cmpxchg.On_expressions) (Expression)
+  module F =
+    Travesty.Traversable.Fix_elt (Atomic_fetch.On_expressions) (Expression)
   module S = Atomic_store.On_expressions
-  module X = Atomic_cmpxchg.On_expressions
 end)

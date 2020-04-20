@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -43,7 +43,7 @@ let test_all_expressions_have_type
 
 module Exp_idents =
   Travesty.Traversable.Chain0
-    (Act_c_mini.Expression.On_lvalues)
+    (Act_c_mini.Expression_traverse.On_lvalues)
     (Act_c_mini.Lvalue.On_identifiers)
 
 let test_all_expressions_in_env
@@ -65,13 +65,13 @@ let test_all_expressions_evaluate
       -> (module Q.Test.S with type t = Src.Expression.t))
     ~(pred : Src.Constant.t -> bool) : unit =
   let env_mod = Lazy.force Env.det_known_value_mod in
-  let env = Src.Address.eval_on_env env_mod in
+  let env = Src.Heap.make (Src.Address.eval_on_env env_mod) in
   let (module Qc) = f env_mod in
   Q.Test.run_exn
     (module Qc)
     ~f:(fun e ->
       [%test_result: bool Or_error.t]
-        (let k_result = Src.Expression.Eval.as_constant ~env e in
+        (let k_result = Src.Expression_eval.as_constant ~env e in
          Or_error.map ~f:pred k_result)
         ~expect:(Or_error.return true)
         ~equal:[%compare.equal: bool Or_error.t] ~here:[[%here]])

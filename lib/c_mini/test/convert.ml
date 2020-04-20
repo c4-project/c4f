@@ -58,7 +58,7 @@ let%test_module "stm" =
       (Ok
        (Prim ()
         (Atomic
-         (Atomic_store
+         (Store
           ((src (Constant (Int 42))) (dst (Ref (Lvalue (Variable x))))
            (mo memory_order_relaxed)))))) |}]
 
@@ -91,7 +91,7 @@ let%test_module "stm" =
       (Ok
        (Prim ()
         (Atomic
-         (Atomic_cmpxchg
+         (Cmpxchg
           ((obj (Ref (Lvalue (Variable x)))) (expected (Ref (Lvalue (Variable y))))
            (desired (Constant (Int 42))) (succ memory_order_relaxed)
            (fail memory_order_relaxed)))))) |}]
@@ -117,8 +117,9 @@ let%test_module "expr" =
       [%expect
         {|
           (Ok
-           (Bop L_and (Constant (Bool true))
-            (Bop L_or (Constant (Bool false)) (Address (Lvalue (Variable foo)))))) |}]
+           (Bop (Logical And) (Constant (Bool true))
+            (Bop (Logical Or) (Constant (Bool false))
+             (Address (Lvalue (Variable foo)))))) |}]
 
     let%expect_test "model atomic_load_explicit" =
       test
@@ -131,5 +132,6 @@ let%test_module "expr" =
       [%expect
         {|
       (Ok
-       (Atomic_load ((src (Ref (Lvalue (Variable x)))) (mo memory_order_seq_cst)))) |}]
+       (Atomic
+        (Load ((src (Ref (Lvalue (Variable x)))) (mo memory_order_seq_cst))))) |}]
   end )

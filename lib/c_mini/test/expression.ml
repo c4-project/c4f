@@ -15,17 +15,18 @@ module Src = Act_c_mini
 
 let%test_module "Eval" =
   ( module struct
-    let test (e : Src.Expression.t)
-        ~(env : Src.Address.t -> Src.Constant.t Or_error.t) : unit =
-      let k = Src.Expression.Eval.as_constant e ~env in
+    let test (e : Src.Expression.t) ~(env : Src.Heap.t) : unit =
+      let k = Src.Expression_eval.as_constant e ~env in
       print_s [%sexp (k : Src.Constant.t Or_error.t)]
 
-    let test_pure : Src.Expression.t -> unit =
-      test ~env:Src.Expression.Eval.empty_env
+    let test_pure : Src.Expression.t -> unit = test ~env:(Src.Heap.empty ())
 
     let test_mod (e : Src.Expression.t) : unit =
-      test e
-        ~env:(Src.Address.eval_on_env (Lazy.force Env.det_known_value_mod))
+      let src =
+        Src.Address.eval_on_env (Lazy.force Env.det_known_value_mod)
+      in
+      let env = Src.Heap.make src in
+      test e ~env
 
     let invalid_expr : Src.Expression.t =
       Src.Expression.(eq (int_lit 27) falsehood)

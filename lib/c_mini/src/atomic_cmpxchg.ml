@@ -11,73 +11,72 @@
 
 open Base
 
-type t =
+type 'e t =
   { obj: Address.t
   ; expected: Address.t
-  ; desired: Expression.t
-  ; succ: Mem_order.t
-  ; fail: Mem_order.t }
-[@@deriving sexp, fields, make, compare, equal]
+  ; desired: 'e
+  ; succ: Mem_order.t [@quickcheck.generator Mem_order.gen_rmw]
+  ; fail: Mem_order.t [@quickcheck.generator Mem_order.gen_rmw] }
+[@@deriving sexp, fields, make, compare, equal, quickcheck]
 
-module Base_map (M : Monad.S) = struct
-  module F = Travesty.Traversable.Helpers (M)
-
-  let bmap (cmpxchg : t) ~(obj : Address.t F.traversal)
-      ~(expected : Address.t F.traversal)
-      ~(desired : Expression.t F.traversal) ~(succ : Mem_order.t F.traversal)
-      ~(fail : Mem_order.t F.traversal) : t M.t =
-    Fields.fold ~init:(M.return cmpxchg) ~obj:(F.proc_field obj)
-      ~expected:(F.proc_field expected) ~desired:(F.proc_field desired)
-      ~succ:(F.proc_field succ) ~fail:(F.proc_field fail)
+module Base_map (Ap : Applicative.S) = struct
+  let bmap (x : 'a t) ~(obj : Address.t -> Address.t Ap.t)
+      ~(expected : Address.t -> Address.t Ap.t) ~(desired : 'a -> 'b Ap.t)
+      ~(succ : Mem_order.t -> Mem_order.t Ap.t)
+      ~(fail : Mem_order.t -> Mem_order.t Ap.t) : 'b t Ap.t =
+    Ap.(
+      let m obj expected desired succ fail =
+        make ~obj ~expected ~desired ~succ ~fail
+      in
+      return m <*> obj x.obj <*> expected x.expected <*> desired x.desired
+      <*> succ x.succ <*> fail x.fail)
 end
 
-module On_addresses :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t =
-Travesty.Traversable.Make0 (struct
-  type nonrec t = t
-
-  module Elt = Address
+module On_expressions : Travesty.Traversable_types.S1 with type 'e t = 'e t =
+Travesty.Traversable.Make1 (struct
+  type nonrec 'e t = 'e t
 
   module On_monad (M : Monad.S) = struct
-    module B = Base_map (M)
-    module E = Expression.On_addresses.On_monad (M)
+    module B = Base_map (struct
+      type 'a t = 'a M.t
 
-    let map_m x ~f =
-      B.bmap x ~obj:f ~expected:f ~desired:(E.map_m ~f) ~succ:M.return
-        ~fail:M.return
-  end
-end)
+      include Applicative.Of_monad (M)
+    end)
 
-module On_expressions :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Expression.t =
-Travesty.Traversable.Make0 (struct
-  type nonrec t = t
-
-  module Elt = Expression
-
-  module On_monad (M : Monad.S) = struct
-    module B = Base_map (M)
-
-    let map_m x ~f =
+    let map_m (x : 'a t) ~(f : 'a -> 'b M.t) : 'b t M.t =
       B.bmap x ~obj:M.return ~expected:M.return ~desired:f ~succ:M.return
         ~fail:M.return
   end
 end)
 
-module On_lvalues :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
-Travesty.Traversable.Make0 (struct
-  type nonrec t = t
+module Type_check (Env : Env_types.S) = struct
+  type nonrec t = Type.t t
 
-  module Elt = Lvalue
+  module Ad = Address.Type_check (Env)
 
-  module On_monad (M : Monad.S) = struct
-    module B = Base_map (M)
-    module E = Expression.On_lvalues.On_monad (M)
-    module A = Address.On_lvalues.On_monad (M)
+  let check_expected_desired ~(expected : Type.t) ~(desired : Type.t) :
+      Type.t Or_error.t =
+    Or_error.tag
+      (Type.check_pointer_non ~pointer:expected ~non:desired)
+      ~tag:"'expected' type must be same as pointer to 'desired' type"
 
-    let map_m x ~f =
-      B.bmap x ~obj:(A.map_m ~f) ~expected:(A.map_m ~f) ~desired:(E.map_m ~f)
-        ~succ:M.return ~fail:M.return
-  end
-end)
+  let check_expected_obj ~(expected : Type.t) ~(obj : Type.t) :
+      Type.t Or_error.t =
+    Or_error.tag
+      (Type.check_atomic_non ~atomic:expected ~non:obj)
+      ~tag:"'obj' type must be atomic version of 'expected' type"
+
+  let type_of (c : t) : Type.t Or_error.t =
+    Or_error.Let_syntax.(
+      (* A* *)
+      let%bind obj = Ad.type_of (obj c) in
+      (* C* *)
+      let%bind expected = Ad.type_of (expected c) in
+      (* C *)
+      let desired = desired c in
+      let%bind _ = check_expected_desired ~expected ~desired in
+      let%map _ = check_expected_obj ~expected ~obj in
+      (* Compare-exchanges return a boolean: whether or not they were
+         successful. *)
+      Type.bool ())
+end

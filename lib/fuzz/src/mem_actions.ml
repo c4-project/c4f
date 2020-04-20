@@ -139,9 +139,10 @@ module Strengthen :
       (Subject.Statement.On_primitives)
       (Act_c_mini.Prim_statement.On_atomics)
 
-  let change_mo_atomic_cmpxchg (atom : Act_c_mini.Atomic_cmpxchg.t)
+  let change_mo_atomic_cmpxchg
+      (atom : Act_c_mini.Expression.t Act_c_mini.Atomic_cmpxchg.t)
       ~(mo : Act_c_mini.Mem_order.t) ~(direction : [< `Strengthen | `Any]) :
-      Act_c_mini.Atomic_cmpxchg.t Or_error.t =
+      Act_c_mini.Expression.t Act_c_mini.Atomic_cmpxchg.t Or_error.t =
     (* TODO(@MattWindsor91): don't change both succ and fail every time *)
     Or_error.return
       Act_c_mini.(
@@ -168,6 +169,19 @@ module Strengthen :
               try_change (Atomic_fence.mo atom) ~replacement:mo
                 ~is_compatible:(Fn.const true) ~direction))
 
+  let change_mo_atomic_fetch
+      (atom : Act_c_mini.Expression.t Act_c_mini.Atomic_fetch.t)
+      ~(mo : Act_c_mini.Mem_order.t) ~(direction : [< `Strengthen | `Any]) :
+      Act_c_mini.Expression.t Act_c_mini.Atomic_fetch.t Or_error.t =
+    Or_error.return
+      Act_c_mini.(
+        Atomic_fetch.make ~obj:(Atomic_fetch.obj atom)
+          ~arg:(Atomic_fetch.arg atom) ~op:(Atomic_fetch.op atom)
+          ~mo:
+            Mem_order.(
+              try_change (Atomic_fetch.mo atom) ~replacement:mo
+                ~is_compatible:(Fn.const true) ~direction))
+
   let change_mo_atomic_store (atom : Act_c_mini.Atomic_store.t)
       ~(mo : Act_c_mini.Mem_order.t) ~(direction : [< `Strengthen | `Any]) :
       Act_c_mini.Atomic_store.t Or_error.t =
@@ -188,6 +202,7 @@ module Strengthen :
     Bm.bmap atom
       ~cmpxchg:(change_mo_atomic_cmpxchg ~mo ~direction)
       ~fence:(change_mo_atomic_fence ~mo ~direction)
+      ~fetch:(change_mo_atomic_fetch ~mo ~direction)
       ~store:(change_mo_atomic_store ~mo ~direction)
 
   let change_mo (stm : Subject.Statement.t) ~(mo : Act_c_mini.Mem_order.t)

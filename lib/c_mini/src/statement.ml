@@ -238,7 +238,7 @@ module Main :
       Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
     Make_traversal (struct
       module Elt = Lvalue
-      module E = Expression.On_lvalues
+      module E = Expression_traverse.On_lvalues
       module P = Prim_statement.On_lvalues
     end)
 
@@ -247,7 +247,7 @@ module Main :
         with type t = t
          and type Elt.t = Address.t = Make_traversal (struct
       module Elt = Address
-      module E = Expression.On_addresses
+      module E = Expression_traverse.On_addresses
       module P = Prim_statement.On_addresses
     end)
 
@@ -359,7 +359,7 @@ module If :
       Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
     Make_traversal (struct
       module Elt = Lvalue
-      module E = Expression.On_lvalues
+      module E = Expression_traverse.On_lvalues
       module S = Sm.On_lvalues
     end)
 
@@ -368,7 +368,7 @@ module If :
         with type t = t
          and type Elt.t = Address.t = Make_traversal (struct
       module Elt = Address
-      module E = Expression.On_addresses
+      module E = Expression_traverse.On_addresses
       module S = Sm.On_addresses
     end)
 
@@ -472,7 +472,7 @@ module While :
       Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
     Make_traversal (struct
       module Elt = Lvalue
-      module E = Expression.On_lvalues
+      module E = Expression_traverse.On_lvalues
       module S = Sm.On_lvalues
     end)
 
@@ -481,7 +481,7 @@ module While :
         with type t = t
          and type Elt.t = Address.t = Make_traversal (struct
       module Elt = Address
-      module E = Expression.On_addresses
+      module E = Expression_traverse.On_addresses
       module S = Sm.On_addresses
     end)
 

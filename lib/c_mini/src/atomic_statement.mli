@@ -21,12 +21,15 @@ type t [@@deriving sexp, compare, equal]
 
 (** {1 Constructors} *)
 
-val cmpxchg : Atomic_cmpxchg.t -> t
+val cmpxchg : Expression.t Atomic_cmpxchg.t -> t
 (** [cmpxchg a] lifts an atomic compare-exchange [a] to an atomic statement,
     discarding the boolean output. *)
 
 val fence : Atomic_fence.t -> t
 (** [fence a] lifts an atomic fence [a] to an atomic statement. *)
+
+val fetch : Expression.t Atomic_fetch.t -> t
+(** [fetch a] lifts an atomic fetch [a] to an atomic statement. *)
 
 val store : Atomic_store.t -> t
 (** [store a] lifts an atomic store [a] to an atomic statement. *)
@@ -35,24 +38,29 @@ val store : Atomic_store.t -> t
 
 val reduce :
      t
-  -> cmpxchg:(Atomic_cmpxchg.t -> 'result)
+  -> cmpxchg:(Expression.t Atomic_cmpxchg.t -> 'result)
   -> fence:(Atomic_fence.t -> 'result)
+  -> fetch:(Expression.t Atomic_fetch.t -> 'result)
   -> store:(Atomic_store.t -> 'result)
   -> 'result
 (** [reduce x ~atomic_cmpxchg ~atomic_fence ~atomic_store] reduces an atomic
     statement [x] to a particular result type by applying the appropriate
     function. *)
 
-(** [Base_map] is the base form of a monadic traversal. *)
-module Base_map (M : Monad.S) : sig
+(** [Base_map] is the base form of an applicative traversal. *)
+module Base_map (Ap : Applicative.S) : sig
   val bmap :
        t
-    -> cmpxchg:(Atomic_cmpxchg.t -> Atomic_cmpxchg.t M.t)
-    -> fence:(Atomic_fence.t -> Atomic_fence.t M.t)
-    -> store:(Atomic_store.t -> Atomic_store.t M.t)
-    -> t M.t
-  (** [bmap t ~cmpxchg ~fence ~store] traverses over [t] monadically with the
-      appropriate traversal function. *)
+    -> cmpxchg:
+         (   Expression.t Atomic_cmpxchg.t
+          -> Expression.t Atomic_cmpxchg.t Ap.t)
+    -> fence:(Atomic_fence.t -> Atomic_fence.t Ap.t)
+    -> fetch:
+         (Expression.t Atomic_fetch.t -> Expression.t Atomic_fetch.t Ap.t)
+    -> store:(Atomic_store.t -> Atomic_store.t Ap.t)
+    -> t Ap.t
+  (** [bmap t ~cmpxchg ~fence ~store] traverses over [t] applicatively with
+      the appropriate traversal function. *)
 end
 
 (** Traverses over the addresses of an atomic statement. *)

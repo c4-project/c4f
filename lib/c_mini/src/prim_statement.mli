@@ -53,7 +53,7 @@ val atomic : Atomic_statement.t -> t
 (** [atomic a] lifts an atomic statement [a], with metadata [meta], to a
     primitive statement. *)
 
-val atomic_cmpxchg : Atomic_cmpxchg.t -> t
+val atomic_cmpxchg : Expression.t Atomic_cmpxchg.t -> t
 (** [atomic_cmpxchg a] lifts an atomic compare-exchange [a] to a primitive
     statement. *)
 

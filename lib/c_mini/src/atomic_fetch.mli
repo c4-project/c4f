@@ -9,57 +9,58 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+open Base
+
 (** Fetch-style read-modify-write operations. *)
 
-
-(** {1 Fetch postfix operations}
-
-    The c-mini representation of fetch-and-X instructions treats each a
-    variant of the same 'fetch' instruction, with the X disambiguated by
-    an extra [Post_op.t] parameter. *)
-module Post_op : sig
-
-  (** The enumeration of fetch postfix operations. *)
-  type t =
-    | Add (** Fetch and add. *)
-    | Sub (** Fetch and subtract. *)
-
-  include Act_utils.Enum_types.S_table with type t := t
-
-  include Act_utils.Enum_types.Extension_table with type t := t
-
-end
-
-(** {1 Fetches proper} *)
-
-type 'e t [@@deriving sexp, compare, equal]
 (** Opaque type of fetches.
 
-    Fetches take as a type parameter the expression type.  This is necessary to
-    bust a dependency cycle when fetches appear in expression position. *)
+    Fetches take the expression type as a type parameter. This is necessary
+    to bust a dependency cycle when fetches appear in expression position.
 
-    (** {2 Constructors} *)
+    Fetches can be quickchecked, given appropriate expression endpoints.
+    While this quickcheck generates appropriate memory orders, it will use
+    random addresses, and is unsuitable for type-safe/environment-safe
+    generation. *)
+type 'e t [@@deriving sexp, compare, equal, quickcheck]
 
-val make :
-     obj: Address.t
-  -> arg: 'e
-  -> mo: Mem_order.t
-  -> op: Post_op.t
-  -> 'e t
+(** {1 Constructors} *)
+
+val make : obj:Address.t -> arg:'e -> mo:Mem_order.t -> op:Op.Fetch.t -> 'e t
 (** [make ~obj ~arg ~mo ~op] makes a fetch-and-X operation, whereby X is
-    given by [op]; [obj] is the address of the atomic object to fetch;
-    [arg] is the argument to [op]; and [mo] the memory order. *)
+    given by [op]; [obj] is the address of the atomic object to fetch; [arg]
+    is the argument to [op]; and [mo] the memory order. *)
 
-    (** {2 Accessors} *)
+(** {1 Accessors} *)
 
-val obj: _ t -> Address.t
+val obj : _ t -> Address.t
 (** [obj f] gets the address of the atomic object [f] is fetching. *)
 
-val arg: 'e t -> 'e
+val arg : 'e t -> 'e
 (** [arg f] gets the argument to [f]'s operation. *)
 
-val mo: _ t -> Mem_order.t
+val mo : _ t -> Mem_order.t
 (** [mo f] gets [f]'s memory order. *)
 
-val op: _ t -> Post_op.t
+val op : _ t -> Op.Fetch.t
 (** [op f] gets [f]'s postfix operation. *)
+
+(** {1 Traversal primitives} *)
+
+(** Primitive building block for producing traversals over atomic fetches.
+
+    For module recursion reasons, we don't provide actual traversals here;
+    see {!Expression}. *)
+module Base_map (Ap : Applicative.S) : sig
+  val bmap :
+       'a t
+    -> obj:(Address.t -> Address.t Ap.t)
+    -> arg:('a -> 'b Ap.t)
+    -> mo:(Mem_order.t -> Mem_order.t Ap.t)
+    -> op:(Op.Fetch.t -> Op.Fetch.t Ap.t)
+    -> 'b t Ap.t
+end
+
+(** {1 Interface implementations} *)
+
+include Expression_types.S_atomic with type 'e t := 'e t

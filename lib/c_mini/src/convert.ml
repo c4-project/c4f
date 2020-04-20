@@ -279,26 +279,26 @@ let identifier_to_expr (id : Ac.C_id.t) : Expression.t =
   | _ ->
       Expression.lvalue (Lvalue.variable id)
 
-let bop : Act_c_lang.Operators.Bin.t -> Expression.Bop.t Or_error.t =
+let bop : Act_c_lang.Operators.Bin.t -> Op.Binary.t Or_error.t =
   Or_error.(
     function
     | `Eq ->
-        return Expression.Bop.eq
+        return Op.Binary.eq
     | `Land ->
-        return Expression.Bop.l_and
+        return Op.Binary.l_and
     | `Lor ->
-        return Expression.Bop.l_or
+        return Op.Binary.l_or
     | op ->
         error_s
           [%message
             "Unsupported binary operator"
               ~got:(op : Act_c_lang.Operators.Bin.t)])
 
-let prefix_op : Act_c_lang.Operators.Pre.t -> Expression.Uop.t Or_error.t =
+let prefix_op : Act_c_lang.Operators.Pre.t -> Op.Unary.t Or_error.t =
   Or_error.(
     function
     | `Lnot ->
-        return Expression.Uop.l_not
+        return Op.Unary.l_not
     | op ->
         error_s
           [%message

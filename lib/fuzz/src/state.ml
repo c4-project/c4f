@@ -91,7 +91,7 @@ module Monad = struct
 
   module Exp_idents =
     Travesty.Traversable.Chain0
-      (Act_c_mini.Expression.On_lvalues)
+      (Act_c_mini.Expression_traverse.On_lvalues)
       (Act_c_mini.Lvalue.On_identifiers)
   module Exp_identsM = Exp_idents.On_monad (M)
 

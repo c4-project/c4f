@@ -22,8 +22,11 @@ let function_of_fence_mode : Atomic_fence.Mode.t -> string = function
       "atomic_thread_fence"
 
 module Atomic = struct
-  let cmpxchg (c : Atomic_cmpxchg.t) : Ast.Stm.t =
+  let cmpxchg (c : Expression.t Atomic_cmpxchg.t) : Ast.Stm.t =
     Expr (Some (Reify_expr.Atomic.cmpxchg c))
+
+  let fetch (f : Expression.t Atomic_fetch.t) : Ast.Stm.t =
+    Expr (Some (Reify_expr.Atomic.fetch f))
 
   let fence (fence : Atomic_fence.t) : Ast.Stm.t =
     let call = function_of_fence_mode (Atomic_fence.mode fence) in
@@ -35,10 +38,12 @@ module Atomic = struct
         [ address (Atomic_store.dst st)
         ; reify (Atomic_store.src st)
         ; mem_order (Atomic_store.mo st) ]
+
+  let reify : Atomic_statement.t -> Ast.Stm.t =
+    Atomic_statement.reduce ~cmpxchg ~fetch ~fence ~store
 end
 
-let atomic : Atomic_statement.t -> Ast.Stm.t =
-  Atomic.(Atomic_statement.reduce ~cmpxchg ~fence ~store)
+let atomic = Atomic.reify
 
 let assign (asn : Assign.t) : Ast.Stm.t =
   let l = Assign.lvalue asn in

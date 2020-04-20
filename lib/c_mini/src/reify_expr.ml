@@ -36,31 +36,54 @@ let known_call (name : string) (args : Ast.Expr.t list) : Ast.Expr.t =
   Call {func= Identifier (Act_common.C_id.of_string name); arguments= args}
 
 module Atomic_pre (M : sig
-    val reify : Expression.t -> Ast.Expr.t
-  end)= struct
-  let cmpxchg (cmpxchg : Atomic_cmpxchg.t) : Ast.Expr.t =
+  type expr
+
+  val reify : expr -> Ast.Expr.t
+end) =
+struct
+  let cmpxchg (cmpxchg : M.expr Atomic_cmpxchg.t) : Ast.Expr.t =
     known_call "atomic_compare_exchange_strong_explicit"
-        [ address (Atomic_cmpxchg.obj cmpxchg)
-        ; address (Atomic_cmpxchg.expected cmpxchg)
-        ; M.reify (Atomic_cmpxchg.desired cmpxchg)
-        ; mem_order (Atomic_cmpxchg.succ cmpxchg)
-        ; mem_order (Atomic_cmpxchg.fail cmpxchg) ]
+      [ address (Atomic_cmpxchg.obj cmpxchg)
+      ; address (Atomic_cmpxchg.expected cmpxchg)
+      ; M.reify (Atomic_cmpxchg.desired cmpxchg)
+      ; mem_order (Atomic_cmpxchg.succ cmpxchg)
+      ; mem_order (Atomic_cmpxchg.fail cmpxchg) ]
+
+  let name_of_fetch : Op.Fetch.t -> string = function
+    | Add ->
+        "fetch_and_add_explicit"
+    | Sub ->
+        "fetch_and_sub_explicit"
+
+  let fetch (f : M.expr Atomic_fetch.t) : Ast.Expr.t =
+    known_call
+      (name_of_fetch (Atomic_fetch.op f))
+      [ address (Atomic_fetch.obj f)
+      ; M.reify (Atomic_fetch.arg f)
+      ; mem_order (Atomic_fetch.mo f) ]
 
   let load (ld : Atomic_load.t) : Ast.Expr.t =
     known_call "atomic_load_explicit"
       [address (Atomic_load.src ld); mem_order (Atomic_load.mo ld)]
+
+  let reify : M.expr Atomic_expression.t -> Ast.Expr.t =
+    Atomic_expression.reduce ~cmpxchg ~fetch ~load
 end
 
-let bop : Expression.Bop.t -> Act_c_lang.Operators.Bin.t = function
-  | Expression.Bop.Eq ->
+let bop : Op.Binary.t -> Act_c_lang.Operators.Bin.t = function
+  | Eq ->
       `Eq
-  | L_and ->
+  | Arith Add ->
+      `Add
+  | Arith Sub ->
+      `Sub
+  | Logical And ->
       `Land
-  | L_or ->
+  | Logical Or ->
       `Lor
 
-let uop_pre : Expression.Uop.t -> Act_c_lang.Operators.Pre.t = function
-  | Expression.Uop.L_not ->
+let uop_pre : Op.Unary.t -> Act_c_lang.Operators.Pre.t = function
+  | L_not ->
       `Lnot
 
 (** This module contains functions that try to calculate when brackets need
@@ -136,26 +159,28 @@ module Needs_brackets = struct
     if f expr then Ast.Expr.Brackets expr else expr
 end
 
-let bop (op : Expression.Bop.t) (l : Ast.Expr.t) (r : Ast.Expr.t) :
-    Ast.Expr.t =
+let bop (op : Op.Binary.t) (l : Ast.Expr.t) (r : Ast.Expr.t) : Ast.Expr.t =
   let op' = bop op in
   let l' = Needs_brackets.(maybe_bracket ~f:(bop op' ~is_left:true)) l in
   let r' = Needs_brackets.(maybe_bracket ~f:(bop op' ~is_left:false)) r in
   Ast.Expr.Binary (l', op', r')
 
-let uop (op : Expression.Uop.t) (x : Ast.Expr.t) : Ast.Expr.t =
+let uop (op : Op.Unary.t) (x : Ast.Expr.t) : Ast.Expr.t =
   (* We don't have any postfix operators in mini-C yet. *)
   let op' = uop_pre op in
   let x' = Needs_brackets.(maybe_bracket ~f:uop_pre) x in
   Ast.Expr.Prefix (op', x')
 
-let rec reify (x : Expression.t) : Ast.Expr.t =
+let reify (x : Expression.t) : Ast.Expr.t =
   let module A = Atomic_pre (struct
-      let reify = reify
-    end)
-  in
-  Expression.reduce x ~constant ~address ~atomic_load:A.load ~bop ~uop
+    type expr = Ast.Expr.t
+
+    let reify = Fn.id
+  end) in
+  Expression.reduce x ~constant ~address ~atomic:A.reify ~bop ~uop
 
 module Atomic = Atomic_pre (struct
-    let reify = reify
-  end)
+  type expr = Expression.t
+
+  let reify = reify
+end)

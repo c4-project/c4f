@@ -31,7 +31,7 @@ end
 
 include P
 
-let atomic_cmpxchg (a : Atomic_cmpxchg.t) : t =
+let atomic_cmpxchg (a : Expression.t Atomic_cmpxchg.t) : t =
   atomic (Atomic_statement.cmpxchg a)
 
 let atomic_fence (a : Atomic_fence.t) : t = atomic (Atomic_statement.fence a)

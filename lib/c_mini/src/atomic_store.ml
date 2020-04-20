@@ -44,7 +44,7 @@ Travesty.Traversable.Make0 (struct
 
   module On_monad (M : Monad.S) = struct
     module B = Base_map (M)
-    module E = Expression.On_addresses.On_monad (M)
+    module E = Expression_traverse.On_addresses.On_monad (M)
 
     let map_m x ~f = B.bmap x ~src:(E.map_m ~f) ~dst:f ~mo:M.return
   end
@@ -73,7 +73,7 @@ Travesty.Traversable.Make0 (struct
 
   module On_monad (M : Monad.S) = struct
     module B = Base_map (M)
-    module E = Expression.On_lvalues.On_monad (M)
+    module E = Expression_traverse.On_lvalues.On_monad (M)
     module A = Address.On_lvalues.On_monad (M)
 
     let map_m x ~f =

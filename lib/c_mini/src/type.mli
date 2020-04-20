@@ -117,6 +117,8 @@ val is_atomic : t -> bool
 val is_pointer : t -> bool
 (** [is_pointer ty] returns whether [ty] is a pointer type. *)
 
+(** {2 Type checker building blocks} *)
+
 val check : t -> t -> t Or_error.t
 (** [check t1 t2] raises an error if [t1] is not equal to [t2]. It returns
     [t1] on success. *)
@@ -125,3 +127,13 @@ val check_modulo_atomicity : t -> t -> t Or_error.t
 (** [check_modulo_atomicity t1 t2] raises an error if [t1] is not equal to
     [t2], modulo [t1] and [t2]'s atomicity. It returns [strip_atomic t1] on
     success. *)
+
+val check_atomic_non : atomic:t -> non:t -> t Or_error.t
+(** [check_atomic_non ~atomic ~non] checks that [atomic] is an atomic type,
+    and its non-atomic equivalent is equal to [non]. It returns the
+    non-atomic form of [atomic] on success. *)
+
+val check_pointer_non : pointer:t -> non:t -> t Or_error.t
+(** [check_pointer_non ~atomic ~non] checks that [pointer] is a pointer type,
+    and its dereferenced equivalent is equal to [non]. It returns the
+    deferenced form of [pointer] on success. *)

@@ -36,14 +36,20 @@ module type S_has_underlying_variable = sig
       a key in an environment [env]. *)
 end
 
+module type S_type_checker = sig
+  (** The type being checked. *)
+  type t
+
+  val type_of : t -> Type.t Or_error.t
+  (** [type_of x] tries to get the type of [x] given the variable typing
+      environment [E.env]. It fails if the type is inconsistent. *)
+end
+
 (** Signature of parts of the mini-model that implement type checking. *)
 module type S_type_checkable = sig
   (** The type being checked. *)
   type t
 
-  module Type_check (E : Env_types.S) : sig
-    val type_of : t -> Type.t Or_error.t
-    (** [type_of x] tries to get the type of [x] given the variable typing
-        environment [E.env]. It fails if the type is inconsistent. *)
-  end
+  (** Type checking for [t]. *)
+  module Type_check (E : Env_types.S) : S_type_checker with type t := t
 end

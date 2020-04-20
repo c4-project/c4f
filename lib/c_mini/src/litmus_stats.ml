@@ -15,7 +15,9 @@ type t = {threads: int; returns: int; literal_bools: int} [@@deriving fields]
 
 module Stm = Statement.With_meta (Unit)
 module K =
-  Travesty.Traversable.Chain0 (Stm.On_expressions) (Expression.On_constants)
+  Travesty.Traversable.Chain0
+    (Stm.On_expressions)
+    (Expression_traverse.On_constants)
 
 let is_return (stm : Prim_statement.t) : bool =
   Option.exists (Prim_statement.as_early_out stm) ~f:(function

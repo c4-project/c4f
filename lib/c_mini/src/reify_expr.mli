@@ -38,6 +38,12 @@ val constant : Constant.t -> Act_c_lang.Ast.Expr.t
 (** {1 Atomic expressions} *)
 
 module Atomic : sig
-  val cmpxchg : Atomic_cmpxchg.t -> Act_c_lang.Ast.Expr.t
+  val cmpxchg : Expression.t Atomic_cmpxchg.t -> Act_c_lang.Ast.Expr.t
   (** [cmpxchg x] reifies a compare-exchange in expression position. *)
+
+  val fetch : Expression.t Atomic_fetch.t -> Act_c_lang.Ast.Expr.t
+  (** [fetch x] reifies a fetch in expression position. *)
+
+  val reify : Expression.t Atomic_expression.t -> Act_c_lang.Ast.Expr.t
+  (** [reify x] reifies an atomic expression. *)
 end
