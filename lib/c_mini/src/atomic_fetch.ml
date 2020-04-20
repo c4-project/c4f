@@ -39,15 +39,53 @@ Travesty.Traversable.Make1 (struct
   end
 end)
 
+let of_tuple
+  ((obj : Address.t), (arg : 'e), (mo : Mem_order.t), (op: Op.Fetch.t)) : 'e t =
+  make ~obj ~arg ~mo ~op
+
+let to_tuple (x : 'e t) :
+  (Address.t * 'e * Mem_order.t * Op.Fetch.t) =
+  x.obj, x.arg, x.mo, x.op
+
+
+module Quickcheck_generic
+    (A : Act_utils.My_quickcheck.S_with_sexp with type t := Address.t)
+    (O : Act_utils.My_quickcheck.S_with_sexp with type t := Op.Fetch.t)
+    (E : Act_utils.My_quickcheck.S_with_sexp) : sig
+  type nonrec t = E.t t [@@deriving sexp_of, quickcheck]
+end = struct
+  type nonrec t = E.t t
+
+  let sexp_of_t = sexp_of_t E.sexp_of_t
+
+  let quickcheck_generator : t Base_quickcheck.Generator.t =
+    Base_quickcheck.Generator.map ~f:of_tuple
+      [%quickcheck.generator: A.t * E.t * [%custom Mem_order.gen_rmw] * O.t]
+
+  let quickcheck_observer : t Base_quickcheck.Observer.t =
+    Base_quickcheck.Observer.unmap ~f:to_tuple
+      [%quickcheck.observer: A.t * E.t * Mem_order.t * O.t]
+
+  let quickcheck_shrinker : t Base_quickcheck.Shrinker.t =
+    Base_quickcheck.Shrinker.map ~f:of_tuple ~f_inverse:to_tuple
+      [%quickcheck.shrinker: A.t * E.t * Mem_order.t * O.t]
+end
+
 module Type_check (Env : Env_types.S) = struct
   type nonrec t = Type.t t
 
   module Ad = Address.Type_check (Env)
 
   let check_arg_obj ~(arg : Type.t) ~(obj : Type.t) : Type.t Or_error.t =
-    Or_error.tag
-      (Type.check_atomic_non ~atomic:arg ~non:obj)
-      ~tag:"'obj' type must be atomic version of 'expected' type"
+    Or_error.(
+      tag_s
+      (bind (Type.ref arg)
+         ~f:(fun argp -> Type.check_atomic_non ~atomic:obj ~non:argp))
+      ~tag:[%message
+        "'obj' type must be atomic version of 'expected' type"
+          ~arg:(arg : Type.t)
+          ~obj:(obj : Type.t)]
+    )
 
   let type_of (c : t) : Type.t Or_error.t =
     Or_error.Let_syntax.(

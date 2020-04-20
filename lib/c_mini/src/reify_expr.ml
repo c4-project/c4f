@@ -51,9 +51,9 @@ struct
 
   let name_of_fetch : Op.Fetch.t -> string = function
     | Add ->
-        "fetch_and_add_explicit"
+        "atomic_fetch_add_explicit"
     | Sub ->
-        "fetch_and_sub_explicit"
+        "atomic_fetch_sub_explicit"
 
   let fetch (f : M.expr Atomic_fetch.t) : Ast.Expr.t =
     known_call

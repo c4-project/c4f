@@ -34,6 +34,8 @@ include P
 let atomic_cmpxchg (a : Expression.t Atomic_cmpxchg.t) : t =
   atomic (Atomic_statement.cmpxchg a)
 
+let atomic_fetch (a : Expression.t Atomic_fetch.t) : t = atomic (Atomic_statement.fetch a)
+
 let atomic_fence (a : Atomic_fence.t) : t = atomic (Atomic_statement.fence a)
 
 let atomic_store (a : Atomic_store.t) : t = atomic (Atomic_statement.store a)

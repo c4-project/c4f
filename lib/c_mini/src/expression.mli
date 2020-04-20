@@ -36,6 +36,9 @@ val uop : Op.Unary.t -> t -> t
 
 (** {2 Convenience constructors} *)
 
+val atomic_cmpxchg : t Atomic_cmpxchg.t -> t
+(** [atomic_cmpxchg a] lifts an atomic compare-exchange [a] to an expression. *)
+
 val atomic_fetch : t Atomic_fetch.t -> t
 (** [atomic_fetch a] lifts an atomic fetch [a] to an expression. *)
 

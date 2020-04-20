@@ -57,6 +57,10 @@ val atomic_cmpxchg : Expression.t Atomic_cmpxchg.t -> t
 (** [atomic_cmpxchg a] lifts an atomic compare-exchange [a] to a primitive
     statement. *)
 
+val atomic_fetch : Expression.t Atomic_fetch.t -> t
+(** [atomic_fetch a] lifts an atomic fetch [a] to a primitive
+    statement. *)
+
 val atomic_fence : Atomic_fence.t -> t
 (** [atomic_fence a] lifts an atomic fence [a] to a primitive statement. *)
 

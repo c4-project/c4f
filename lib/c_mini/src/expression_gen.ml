@@ -18,13 +18,44 @@ module type S =
 let eval_guards : (bool * (unit -> 'a)) list -> 'a list =
   List.filter_map ~f:(fun (g, f) -> if g then Some (f ()) else None)
 
-module Int_values (E : Env_types.S) :
-  Act_utils.My_quickcheck.S_with_sexp with type t = Expression.t = struct
+module Int_values (E : Env_types.S) = struct
   type t = Expression.t [@@deriving sexp]
+
+  let gen_cancel (gen_norm : t Q.Generator.t) : t Q.Generator.t =
+    Q.Generator.map gen_norm
+      ~f:(fun exp -> Expression.sub exp exp)
+
+  (** Generates terminal zero integer expressions. *)
+  let zero_base_generators ?(gen_norm : t Q.Generator.t option) () : t Q.Generator.t list =
+    eval_guards
+      [ (true
+         , fun () -> Q.Generator.return (Expression.int_lit 0))
+      ; (Option.is_some gen_norm
+         , fun () -> gen_cancel (Option.value_exn gen_norm))
+      ]
+
+  let zero_generators ?(gen_norm : t Q.Generator.t option) () : t Q.Generator.t =
+    Q.Generator.union
+      (zero_base_generators ?gen_norm ())
 
   let gen_atomic_int_load () : t Q.Generator.t =
     let module A = Atomic_load.Quickcheck_atomic_ints (E) in
     Q.Generator.map ~f:Expression.atomic_load [%quickcheck.generator: A.t]
+
+  (* TODO(@MattWindsor91): pull this out somehow. *)
+  let gen_atomic_int_fetch_nop ?(gen_norm : t Q.Generator.t option) () : t Q.Generator.t =
+    let module A = Atomic_fetch.Quickcheck_generic
+      (Address_gen.Atomic_int_pointers (E))
+      (Op.Fetch)
+      (struct
+        type t = Expression.t [@@deriving sexp]
+        let quickcheck_observer = Expression.quickcheck_observer
+        let quickcheck_shrinker = Q.Shrinker.atomic
+        let quickcheck_generator =
+          zero_generators ?gen_norm ()
+      end)
+    in
+    Q.Generator.map ~f:Expression.atomic_fetch [%quickcheck.generator: A.t]
 
   let gen_int_lvalue () : t Q.Generator.t =
     let module L = Lvalue_gen.Int_values (E) in
@@ -44,11 +75,16 @@ module Int_values (E : Env_types.S) :
       ; (E.has_variables_of_basic_type Type.Basic.(int ()), gen_int_lvalue)
       ]
 
-  (* let recursive_generators (_mu : t Gen.t) : t Gen.t list = [] (* No
-     useful recursive expression types yet. *) ;; *)
+  let recursive_generators (mu : t Q.Generator.t) : t Q.Generator.t list =
+    eval_guards
+    [ (true, zero_generators ~gen_norm:mu)
+    (* TODO(@MattWindsor91): find some other 'safe' recursive zeroes. *)
+    ; ( E.has_variables_of_basic_type Type.Basic.(int ~atomic:true ())
+      , gen_atomic_int_fetch_nop ~gen_norm:mu )
+    ]
 
   let quickcheck_generator : t Q.Generator.t =
-    Q.Generator.union base_generators
+    Q.Generator.recursive_union base_generators ~f:recursive_generators
 
   (* ~f:recursive_generators *)
 

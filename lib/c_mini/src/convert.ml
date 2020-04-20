@@ -55,90 +55,6 @@ let ensure_statements :
         Or_error.error_s
           [%message "Expected a statement" ~got:(d : Ast.Compound_stm.Elt.t)])
 
-let defined_types : (Ac.C_id.t, Type.Basic.t) List.Assoc.t Lazy.t =
-  lazy
-    Type.Basic.
-      [ (Ac.C_id.of_string "atomic_bool", bool ~atomic:true ())
-      ; (Ac.C_id.of_string "atomic_int", int ~atomic:true ())
-      ; (Ac.C_id.of_string "bool", bool ()) ]
-
-let qualifiers_to_basic_type (quals : [> Ast.Decl_spec.t] list) :
-    Type.Basic.t Or_error.t =
-  let open Or_error.Let_syntax in
-  match%bind Tx.List.one quals with
-  | `Int ->
-      return (Type.Basic.int ())
-  | `Defined_type t ->
-      t
-      |> List.Assoc.find ~equal:Ac.C_id.equal (Lazy.force defined_types)
-      |> Result.of_option
-           ~error:
-             (Error.create_s
-                [%message "Unknown defined type" ~got:(t : Ac.C_id.t)])
-  | #Ast.Type_spec.t as spec ->
-      Or_error.error_s
-        [%message
-          "This type isn't supported (yet)" ~got:(spec : Ast.Type_spec.t)]
-  | #Act_c_lang.Ast_basic.Type_qual.t as qual ->
-      Or_error.error_s
-        [%message
-          "This type qualifier isn't supported (yet)"
-            ~got:(qual : Act_c_lang.Ast_basic.Type_qual.t)]
-  | #Act_c_lang.Ast_basic.Storage_class_spec.t as spec ->
-      Or_error.error_s
-        [%message
-          "This storage-class specifier isn't supported (yet)"
-            ~got:(spec : Act_c_lang.Ast_basic.Storage_class_spec.t)]
-
-let declarator_to_id :
-    Ast.Declarator.t -> (Act_common.C_id.t * bool) Or_error.t = function
-  | {pointer= Some [[]]; direct= Id id} ->
-      Or_error.return (id, true)
-  | {pointer= Some _; _} as decl ->
-      Or_error.error_s
-        [%message
-          "Complex pointers not supported yet"
-            ~declarator:(decl : Ast.Declarator.t)]
-  | {pointer= None; direct= Id id} ->
-      Or_error.return (id, false)
-  | x ->
-      Or_error.error_s
-        [%message
-          "Unsupported direct declarator"
-            ~got:(x.direct : Ast.Direct_declarator.t)]
-
-let constant : Act_c_lang.Ast_basic.Constant.t -> Constant.t Or_error.t =
-  function
-  | Integer k ->
-      Or_error.return (Constant.int k)
-  | Char _ | Float _ ->
-      Or_error.error_string "Unsupported constant type"
-
-let value_of_initialiser : Ast.Initialiser.t -> Constant.t Or_error.t =
-  function
-  | Assign (Constant v) ->
-      (* TODO(@MattWindsor91): Boolean initialisers aren't covered by this
-         case, as C99 Boolean 'constant's are identifiers. *)
-      constant v
-  | Assign x ->
-      Or_error.error_s
-        [%message
-          "Expression not supported (must be constant)" (x : Ast.Expr.t)]
-  | List _ ->
-      Or_error.error_string "List initialisers not supported"
-
-(** [decl d] translates a declaration into an identifier-initialiser pair. *)
-let decl (d : Ast.Decl.t) : (Act_common.C_id.t * Initialiser.t) Or_error.t =
-  Or_error.Let_syntax.(
-    let%bind basic_type = qualifiers_to_basic_type d.qualifiers in
-    let%bind idecl = Tx.List.one d.declarator in
-    let%bind name, pointer = declarator_to_id idecl.declarator in
-    let%map value =
-      Tx.Option.With_errors.map_m idecl.initialiser ~f:value_of_initialiser
-    in
-    let ty = Type.of_basic ~pointer basic_type in
-    (name, Initialiser.make ~ty ?value ()))
-
 let validate_func_void_type (f : Ast.Function_def.t) : Validate.t =
   match f.decl_specs with
   | [`Void] ->
@@ -155,16 +71,6 @@ let validate_func_no_knr : Ast.Function_def.t Validate.check =
 let validate_func : Ast.Function_def.t Validate.check =
   Validate.all [validate_func_void_type; validate_func_no_knr]
 
-let param_decl : Ast.Param_decl.t -> Type.t Named.t Or_error.t = function
-  | {declarator= `Abstract _; _} ->
-      Or_error.error_string "Abstract parameter declarators not supported"
-  | {qualifiers; declarator= `Concrete declarator} ->
-      let open Or_error.Let_syntax in
-      let%map basic_type = qualifiers_to_basic_type qualifiers
-      and name, pointer = declarator_to_id declarator in
-      let value = Type.of_basic ~pointer basic_type in
-      Named.make value ~name
-
 let param_type_list :
     Ast.Param_type_list.t -> Type.t Named.Alist.t Or_error.t = function
   | {style= `Variadic; _} ->
@@ -172,7 +78,7 @@ let param_type_list :
   | {style= `Normal; params} ->
       Or_error.(
         params
-        |> Tx.Or_error.combine_map ~f:param_decl
+        |> Tx.Or_error.combine_map ~f:Convert_prim.param_decl
         >>| Named.alist_of_list)
 
 let func_signature :
@@ -188,77 +94,34 @@ let func_signature :
           "Unsupported function declarator"
             ~got:(x.direct : Ast.Direct_declarator.t)]
 
-let rec expr_to_lvalue : Ast.Expr.t -> Lvalue.t Or_error.t = function
-  | Identifier id ->
-      Or_error.return (Lvalue.variable id)
-  | Brackets expr ->
-      expr_to_lvalue expr
-  | Prefix (`Deref, expr) ->
-      Or_error.(expr |> expr_to_lvalue >>| Lvalue.deref)
-  | ( Prefix _
-    | Postfix _
-    | Binary _
-    | Ternary _
-    | Cast _
-    | Call _
-    | Subscript _
-    | Field _
-    | Sizeof_type _
-    | String _
-    | Constant _ ) as e ->
-      Or_error.error_s
-        [%message "Expected an lvalue here" ~got:(e : Ast.Expr.t)]
 
-let rec expr_to_address : Ast.Expr.t -> Address.t Or_error.t = function
-  | Prefix (`Ref, expr) ->
-      Or_error.(expr |> expr_to_address >>| Address.ref)
-  | expr ->
-      Or_error.(expr |> expr_to_lvalue >>| Address.lvalue)
+let model_atomic_cmpxchg_expr (args : Ast.Expr.t list) ~(expr : Ast.Expr.t -> Expression.t Or_error.t) : Expression.t Or_error.t =
+  Or_error.(args |> Convert_atomic.model_cmpxchg ~expr >>| Expression.atomic_cmpxchg)
 
-let lvalue_to_identifier (lv : Lvalue.t) : Act_common.C_id.t Or_error.t =
-  if Lvalue.is_deref lv then
-    Or_error.error_s [%message "Expected identifier" ~got:(lv : Lvalue.t)]
-  else Or_error.return (Lvalue.variable_of lv)
+let model_atomic_fetch_expr (args : Ast.Expr.t list) ~(op: Op.Fetch.t) ~(expr : Ast.Expr.t -> Expression.t Or_error.t) : Expression.t Or_error.t =
+  Or_error.(args |> Convert_atomic.model_fetch ~expr ~op >>| Expression.atomic_fetch)
 
-let expr_to_identifier (expr : Ast.Expr.t) : Act_common.C_id.t Or_error.t =
-  Or_error.(expr |> expr_to_lvalue >>= lvalue_to_identifier)
-
-let expr_to_memory_order (expr : Ast.Expr.t) : Mem_order.t Or_error.t =
-  let open Or_error.Let_syntax in
-  let%bind id = expr_to_identifier expr in
-  id |> Ac.C_id.to_string |> Mem_order.of_string_option
-  |> Result.of_option
-       ~error:
-         (Error.create_s
-            [%message
-              "Unsupported memory order" ~got:(id : Act_common.C_id.t)])
-
-let model_atomic_load_explicit : Ast.Expr.t list -> Expression.t Or_error.t =
-  function
-  | [raw_src; raw_mo] ->
-      let open Or_error.Let_syntax in
-      let%map src = expr_to_address raw_src
-      and mo = expr_to_memory_order raw_mo in
-      Expression.atomic_load (Atomic_load.make ~src ~mo)
-  | args ->
-      Or_error.error_s
-        [%message
-          "Invalid arguments to atomic_load_explicit"
-            ~got:(args : Ast.Expr.t list)]
+let model_atomic_load_expr (args : Ast.Expr.t list) ~(expr : Ast.Expr.t -> Expression.t Or_error.t) : Expression.t Or_error.t =
+  ignore expr;
+  Or_error.(args |> Convert_atomic.model_load >>| Expression.atomic_load)
 
 let expr_call_table :
-    (Ast.Expr.t list -> Expression.t Or_error.t) Map.M(Ac.C_id).t Lazy.t =
+    (Ast.Expr.t list -> expr:(Ast.Expr.t -> Expression.t Or_error.t) -> Expression.t Or_error.t) Map.M(Ac.C_id).t Lazy.t =
   lazy
     (Map.of_alist_exn
        (module Ac.C_id)
-       [ ( Ac.C_id.of_string "atomic_load_explicit"
-         , model_atomic_load_explicit ) ])
+       [ ( Ac.C_id.of_string Convert_atomic.cmpxchg_name
+         , model_atomic_cmpxchg_expr )
+       ; ( Ac.C_id.of_string Convert_atomic.fetch_add_name
+         , model_atomic_fetch_expr ~op:Op.Fetch.Add )
+       ; ( Ac.C_id.of_string Convert_atomic.fetch_sub_name
+         , model_atomic_fetch_expr ~op:Op.Fetch.Sub )
+       ; ( Ac.C_id.of_string Convert_atomic.load_name
+         , model_atomic_load_expr ) 
+       ])
 
-let function_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list) :
-    Expression.t Or_error.t =
-  Or_error.Let_syntax.(
-    let%bind func_name = expr_to_identifier func in
-    let%bind call_handler =
+let expr_call_handler (func_name : Ac.C_id.t) :
+    (Ast.Expr.t list -> expr:(Ast.Expr.t -> Expression.t Or_error.t) -> Expression.t Or_error.t) Or_error.t =
       func_name
       |> Map.find (Lazy.force expr_call_table)
       |> Result.of_option
@@ -267,8 +130,14 @@ let function_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list) :
                 [%message
                   "Unsupported function in expression position"
                     ~got:(func_name : Ac.C_id.t)])
-    in
-    call_handler arguments)
+
+let function_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list) 
+    ~(expr : Ast.Expr.t -> Expression.t Or_error.t)
+  : Expression.t Or_error.t =
+  Or_error.Let_syntax.(
+    let%bind func_name = Convert_prim.expr_to_identifier func in
+    let%bind call_handler = expr_call_handler func_name in
+    call_handler arguments ~expr)
 
 let identifier_to_expr (id : Ac.C_id.t) : Expression.t =
   match Ac.C_id.to_string id with
@@ -282,12 +151,16 @@ let identifier_to_expr (id : Ac.C_id.t) : Expression.t =
 let bop : Act_c_lang.Operators.Bin.t -> Op.Binary.t Or_error.t =
   Or_error.(
     function
+    | `Add ->
+      return Op.Binary.add
     | `Eq ->
         return Op.Binary.eq
     | `Land ->
         return Op.Binary.l_and
     | `Lor ->
         return Op.Binary.l_or
+    | `Sub ->
+      return Op.Binary.sub
     | op ->
         error_s
           [%message
@@ -321,16 +194,16 @@ let rec expr : Ast.Expr.t -> Expression.t Or_error.t =
     | Binary (l, op, r) ->
         model_binary l op r
     | Constant k ->
-        Or_error.map ~f:Expression.constant (constant k)
+        Or_error.map ~f:Expression.constant (Convert_prim.constant k)
     | Identifier id ->
         Or_error.return (identifier_to_expr id)
     | Prefix (`Deref, expr) ->
         Or_error.(
-          expr |> expr_to_lvalue >>| Lvalue.deref >>| Expression.lvalue)
+          expr |> Convert_prim.expr_to_lvalue >>| Lvalue.deref >>| Expression.lvalue)
     | Prefix (op, expr) ->
         model_prefix op expr
     | Call {func; arguments} ->
-        function_call func arguments
+        function_call func arguments ~expr
     | ( Postfix _
       | Ternary _
       | Cast _
@@ -341,56 +214,19 @@ let rec expr : Ast.Expr.t -> Expression.t Or_error.t =
         Or_error.error_s
           [%message "Unsupported expression" ~got:(e : Ast.Expr.t)])
 
-let model_atomic_cmpxchg_with_args ~(raw_obj : Ast.Expr.t)
-    ~(raw_expected : Ast.Expr.t) ~(raw_desired : Ast.Expr.t)
-    ~(raw_succ : Ast.Expr.t) ~(raw_fail : Ast.Expr.t) :
-    unit Statement.t Or_error.t =
-  Or_error.Let_syntax.(
-    let%map obj = expr_to_address raw_obj (* volatile A* *)
-    and expected = expr_to_address raw_expected (* C* *)
-    and desired = expr raw_desired (* C *)
-    and succ = expr_to_memory_order raw_succ (* memory_order *)
-    and fail = expr_to_memory_order raw_fail (* memory_order *) in
-    let cmpxchg = Atomic_cmpxchg.make ~obj ~expected ~desired ~succ ~fail in
-    cmpxchg |> Prim_statement.atomic_cmpxchg |> Statement.prim ())
 
-let model_atomic_cmpxchg : Ast.Expr.t list -> unit Statement.t Or_error.t =
-  function
-  | [raw_obj; raw_expected; raw_desired; raw_succ; raw_fail] ->
-      model_atomic_cmpxchg_with_args ~raw_obj ~raw_expected ~raw_desired
-        ~raw_succ ~raw_fail
-  | args ->
-      Or_error.error_s
-        [%message
-          "Invalid arguments to atomic_compare_exchange_strong_explicit"
-            ~got:(args : Ast.Expr.t list)]
 
-let model_atomic_fence (mode : Atomic_fence.Mode.t) :
-    Ast.Expr.t list -> unit Statement.t Or_error.t = function
-  | [raw_mo] ->
-      Or_error.Let_syntax.(
-        let%map mo = expr_to_memory_order raw_mo (* memory_order *) in
-        let fence = Atomic_fence.make ~mode ~mo in
-        fence |> Prim_statement.atomic_fence |> Statement.prim ())
-  | args ->
-      Or_error.error_s
-        [%message
-          "Invalid arguments to atomic fence" ~got:(args : Ast.Expr.t list)]
+let model_atomic_cmpxchg_stm (args : Ast.Expr.t list) : unit Statement.t Or_error.t =
+  Or_error.(args |> Convert_atomic.model_cmpxchg ~expr >>| Prim_statement.atomic_cmpxchg >>| Statement.prim ())
 
-let model_atomic_store : Ast.Expr.t list -> unit Statement.t Or_error.t =
-  function
-  | [raw_dst; raw_src; raw_mo] ->
-      Or_error.Let_syntax.(
-        let%map dst = expr_to_address raw_dst
-        and src = expr raw_src
-        and mo = expr_to_memory_order raw_mo in
-        let store = Atomic_store.make ~dst ~src ~mo in
-        store |> Prim_statement.atomic_store |> Statement.prim ())
-  | args ->
-      Or_error.error_s
-        [%message
-          "Invalid arguments to atomic_store_explicit"
-            ~got:(args : Ast.Expr.t list)]
+let model_atomic_fence_stm (args : Ast.Expr.t list) ~(mode: Atomic_fence.Mode.t) : unit Statement.t Or_error.t =
+  Or_error.(args |> Convert_atomic.model_fence ~mode >>| Prim_statement.atomic_fence >>| Statement.prim ())
+
+let model_atomic_fetch_stm (args : Ast.Expr.t list) ~(op: Op.Fetch.t) : unit Statement.t Or_error.t =
+  Or_error.(args |> Convert_atomic.model_fetch ~expr ~op >>| Prim_statement.atomic_fetch >>| Statement.prim ())
+
+let model_atomic_store_stm (args : Ast.Expr.t list) : unit Statement.t Or_error.t =
+  Or_error.(args |> Convert_atomic.model_store ~expr >>| Prim_statement.atomic_store >>| Statement.prim ())
 
 let expr_stm_call_table :
     (Ast.Expr.t list -> unit Statement.t Or_error.t) Map.M(Ac.C_id).t Lazy.t
@@ -398,13 +234,17 @@ let expr_stm_call_table :
   lazy
     (Map.of_alist_exn
        (module Ac.C_id)
-       [ ( Ac.C_id.of_string "atomic_signal_fence"
-         , model_atomic_fence Atomic_fence.Mode.Signal )
-       ; ( Ac.C_id.of_string "atomic_thread_fence"
-         , model_atomic_fence Atomic_fence.Mode.Thread )
-       ; (Ac.C_id.of_string "atomic_store_explicit", model_atomic_store)
-       ; ( Ac.C_id.of_string "atomic_compare_exchange_strong_explicit"
-         , model_atomic_cmpxchg ) ])
+       [ ( Ac.C_id.of_string Convert_atomic.cmpxchg_name
+         , model_atomic_cmpxchg_stm)
+       ; ( Ac.C_id.of_string Convert_atomic.fence_signal_name
+         , model_atomic_fence_stm ~mode:Atomic_fence.Mode.Signal )
+       ; ( Ac.C_id.of_string Convert_atomic.fence_thread_name
+         , model_atomic_fence_stm ~mode:Atomic_fence.Mode.Thread )
+       ; ( Ac.C_id.of_string Convert_atomic.fetch_add_name
+         , model_atomic_fetch_stm ~op:Op.Fetch.Add )
+       ; ( Ac.C_id.of_string Convert_atomic.fetch_sub_name
+         , model_atomic_fetch_stm ~op:Op.Fetch.Sub )
+       ; (Ac.C_id.of_string Convert_atomic.store_name, model_atomic_store_stm) ])
 
 let arbitrary_procedure_call (function_id : Ac.C_id.t)
     (raw_arguments : Ast.Expr.t list) : unit Statement.t Or_error.t =
@@ -416,7 +256,7 @@ let arbitrary_procedure_call (function_id : Ac.C_id.t)
 let procedure_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list) :
     unit Statement.t Or_error.t =
   Or_error.Let_syntax.(
-    let%bind function_id = expr_to_identifier func in
+    let%bind function_id = Convert_prim.expr_to_identifier func in
     match Map.find (Lazy.force expr_stm_call_table) function_id with
     | Some call_handler ->
         call_handler arguments
@@ -426,7 +266,7 @@ let procedure_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list) :
 let expr_stm : Ast.Expr.t -> unit Statement.t Or_error.t = function
   | Binary (l, `Assign, r) ->
       Or_error.Let_syntax.(
-        let%map lvalue = expr_to_lvalue l and rvalue = expr r in
+        let%map lvalue = Convert_prim.expr_to_lvalue l and rvalue = expr r in
         let assign = Assign.make ~lvalue ~rvalue in
         assign |> Prim_statement.assign |> Statement.prim ())
   | Call {func; arguments} ->
@@ -517,12 +357,12 @@ let rec stm : Ast.Stm.t -> unit Statement.t Or_error.t = function
 
 let func_body (body : Ast.Compound_stm.t) :
     (Initialiser.t Named.Alist.t * unit Statement.t list) Or_error.t =
-  let open Or_error.Let_syntax in
+  Or_error.Let_syntax.(
   let%bind ast_decls, ast_nondecls = sift_decls body in
   let%bind ast_stms = ensure_statements ast_nondecls in
-  let%map decls = Tx.Or_error.combine_map ~f:decl ast_decls
+  let%map decls = Tx.Or_error.combine_map ~f:Convert_prim.decl ast_decls
   and stms = Tx.Or_error.combine_map ~f:stm ast_stms in
-  (decls, stms)
+  (Named.alist_of_list decls, stms))
 
 let func (f : Ast.Function_def.t) : unit Function.t Named.t Or_error.t =
   Or_error.Let_syntax.(
@@ -536,8 +376,9 @@ let translation_unit (prog : Ast.Translation_unit.t) :
   Or_error.Let_syntax.(
     let%bind ast_decls, ast_nondecls = sift_decls prog in
     let%bind ast_funs = ensure_functions ast_nondecls in
-    let%map globals = Tx.Or_error.combine_map ~f:decl ast_decls
+    let%map global_list = Tx.Or_error.combine_map ~f:Convert_prim.decl ast_decls
     and function_list = Tx.Or_error.combine_map ~f:func ast_funs in
+    let globals = Named.alist_of_list global_list in
     let functions = Named.alist_of_list function_list in
     Program.make ~globals ~functions)
 
@@ -552,7 +393,7 @@ module Litmus_conv = Act_litmus.Convert.Make (struct
   let program : From.Lang.Program.t -> To.Lang.Program.t Or_error.t = func
 
   let constant : From.Lang.Constant.t -> To.Lang.Constant.t Or_error.t =
-    constant
+    Convert_prim.constant
 end)
 
 let litmus_post :

@@ -45,6 +45,14 @@ val mo : _ t -> Mem_order.t
 val op : _ t -> Op.Fetch.t
 (** [op f] gets [f]'s postfix operation. *)
 
+module Quickcheck_generic
+    (A : Act_utils.My_quickcheck.S_with_sexp with type t := Address.t)
+    (O : Act_utils.My_quickcheck.S_with_sexp with type t := Op.Fetch.t)
+    (E : Act_utils.My_quickcheck.S_with_sexp) : sig
+  type nonrec t = E.t t [@@deriving sexp_of, quickcheck]
+end
+(** Primitive building block for atomic-fetch quickchecks. *)
+
 (** {1 Traversal primitives} *)
 
 (** Primitive building block for producing traversals over atomic fetches.

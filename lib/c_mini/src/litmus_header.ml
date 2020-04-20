@@ -22,7 +22,7 @@ Act_litmus.Header.Json (struct
     Or_error.(
       s |> Act_c_lang.Frontend.Litmus_post.load_from_string
       >>= Act_litmus.Postcondition.With_errors.map_right_m
-            ~f:Convert.constant)
+            ~f:Convert_prim.constant)
 end)
 
 include J
