@@ -90,6 +90,11 @@ let%test_module "Eval" =
       [%expect
         {| (Error ("Variable not found in typing environment." (id a))) |}]
 
+    let var_addr (e: (module Src.Env_types.S)) (x: string): Src.Address.t =
+      (Or_error.ok_exn
+         (Src.Address.of_id_in_env e
+            ~id:(Act_common.C_id.of_string x)))
+
     let%expect_test "example atomic load" =
       let e = Lazy.force Env.test_env_mod in
       test_mod
@@ -97,10 +102,39 @@ let%test_module "Eval" =
           Expression.(
             atomic_load
               (Atomic_load.make
-                 ~src:
-                   (Or_error.ok_exn
-                      (Address.of_id_in_env e
-                         ~id:(Act_common.C_id.of_string "y")))
+                 ~src:(var_addr e "y")
                  ~mo:Act_c_mini.Mem_order.Seq_cst))) ;
       [%expect {| (Ok (Int 53)) |}]
+
+    let%expect_test "example atomic load" =
+      let e = Lazy.force Env.test_env_mod in
+      test_mod
+        Src.(
+          Expression.(
+            atomic_load
+              (Atomic_load.make
+                 ~src:(var_addr e "y")
+                 ~mo:Act_c_mini.Mem_order.Seq_cst))) ;
+      [%expect {| (Ok (Int 53)) |}]
+
+    let%expect_test "example atomic fetches" =
+      let e = Lazy.force Env.test_env_mod in
+      test_mod
+        Src.(
+          Expression.(
+            sub
+              (atomic_fetch
+                 (Atomic_fetch.make
+                    ~obj:(var_addr e "y")
+                    ~arg:(int_lit 1)
+                    ~mo:Act_c_mini.Mem_order.Seq_cst
+                    ~op:Op.Fetch.Sub))
+              (atomic_fetch
+                 (Atomic_fetch.make
+                    ~obj:(var_addr e "y")
+                    ~arg:(int_lit 1)
+                 ~mo:Act_c_mini.Mem_order.Seq_cst
+                    ~op:Op.Fetch.Add)))) ;
+      [%expect {| (Ok (Int 1)) |}]
+
   end )

@@ -88,8 +88,8 @@ let eval_uop (mu : mu) : Op.Unary.t -> expr -> Constant.t Heap.Monad.t =
 let eval_atomic_cmpxchg (c : Expression.t Atomic_cmpxchg.t) ~(mu : mu) :
     Constant.t Heap.Monad.t =
   Heap.Monad.Let_syntax.(
-    let obj = Atomic_cmpxchg.obj c in
-    let expected = Atomic_cmpxchg.expected c in
+    let obj = Address.deref (Atomic_cmpxchg.obj c) in
+    let expected = Address.deref (Atomic_cmpxchg.expected c) in
     let desired = Atomic_cmpxchg.desired c in
     let%bind obj_c = Heap.Monad.load obj in
     let%bind exp_c = Heap.Monad.load expected in
@@ -107,7 +107,7 @@ let atomic_fetch_op ~(op : Op.Fetch.t) ~(obj_old : Constant.t)
 let eval_atomic_fetch (f : Expression.t Atomic_fetch.t) ~(mu : mu) :
     Constant.t Heap.Monad.t =
   Heap.Monad.Let_syntax.(
-    let obj = Atomic_fetch.obj f in
+    let obj = Address.deref (Atomic_fetch.obj f) in
     let arg = Atomic_fetch.arg f in
     let op = Atomic_fetch.op f in
     let%bind obj_old = Heap.Monad.load obj in

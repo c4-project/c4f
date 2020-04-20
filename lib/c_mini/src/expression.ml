@@ -77,6 +77,10 @@ let falsehood : t = bool_lit false
 
 let eq : t -> t -> t = bop Op.Binary.Eq
 
+let add : t -> t -> t = bop Op.Binary.add
+
+let sub : t -> t -> t = bop Op.Binary.sub
+
 let l_and : t -> t -> t = bop Op.Binary.l_and
 
 let l_or : t -> t -> t = bop Op.Binary.l_or
@@ -85,6 +89,10 @@ let l_not : t -> t = uop Op.Unary.L_not
 
 module Infix = struct
   let ( == ) : t -> t -> t = eq
+
+  let ( + ) : t -> t -> t = add
+
+  let ( - ) : t -> t -> t = sub
 
   let ( && ) : t -> t -> t = l_and
 
@@ -121,6 +129,7 @@ module Base_map (Ap : Applicative.S) = struct
       ~uop:(fun o x -> Ap.map ~f:(fun (o', x') -> P.uop o' x') (uop (o, x)))
 end
 
+let atomic_fetch (f : t Atomic_fetch.t) : t = atomic (Atomic_expression.fetch f)
 let atomic_load (l : Atomic_load.t) : t = atomic (Atomic_expression.load l)
 
 module Type_check (E : Env_types.S) = struct

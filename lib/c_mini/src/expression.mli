@@ -36,6 +36,9 @@ val uop : Op.Unary.t -> t -> t
 
 (** {2 Convenience constructors} *)
 
+val atomic_fetch : t Atomic_fetch.t -> t
+(** [atomic_fetch a] lifts an atomic fetch [a] to an expression. *)
+
 val atomic_load : Atomic_load.t -> t
 (** [atomic_load a] lifts an atomic load [a] to an expression. *)
 
@@ -52,6 +55,15 @@ val l_or : t -> t -> t
 
 val l_not : t -> t
 (** [l_not x] builds a logical NOT over [x]. It does not simplify. *)
+
+(** {2 Arithmetic operations} *)
+
+val add : t -> t -> t
+(** [add l r] builds an addition. It does not simplify. *)
+
+val sub : t -> t -> t
+(** [sub l r] builds a subtraction. It does not simplify. *)
+
 
 (** {2 lvalues, and variables}
 
@@ -90,6 +102,12 @@ val falsehood : t
 module Infix : sig
   val ( == ) : t -> t -> t
   (** [x == y] is [eq x y]. *)
+
+  val ( + ) : t -> t -> t
+  (** [x + y] is [add x y]. *)
+
+  val ( - ) : t -> t -> t
+  (** [x - y] is [sub x y]. *)
 
   val ( && ) : t -> t -> t
   (** [x && y] is [l_and x y]. *)
