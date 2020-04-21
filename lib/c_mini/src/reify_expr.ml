@@ -152,7 +152,7 @@ module Needs_brackets = struct
            left-associative, if the inner binary is appearing on the LHS of
            the outer binary. *)
         Act_c_lang.Operators.Bin.(
-          binds_tighter o ~than:o' || (binds_same o o' && is_left))
+          binds_tighter o ~than:o' || (binds_same o o' && not is_left))
 
   let maybe_bracket (expr : Ast.Expr.t) ~(f : Ast.Expr.t -> bool) :
       Ast.Expr.t =

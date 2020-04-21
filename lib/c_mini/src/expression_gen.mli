@@ -19,6 +19,9 @@ module type S =
     environment, with type 'int'. *)
 module Int_values (E : Env_types.S) : S
 
+(** Generates random integer expressions that always evaluate to 0. *)
+module Int_zeroes (Env : Env_types.S_with_known_values) : S
+
 (** {1 Booleans} *)
 
 (** Generates random, type-safe expressions over the given variable typing

@@ -190,6 +190,21 @@ end = struct
   let quickcheck_shrinker : t Q.Shrinker.t = Q.Shrinker.atomic
 end
 
+module Int_zeroes (Env : Env_types.S_with_known_values) = struct
+  module Iv = Int_values (Env)
+
+  type t = Expression.t [@@deriving sexp]
+
+  let quickcheck_generator : t Q.Generator.t =
+    Iv.zero_generators ~gen_norm:Iv.quickcheck_generator ()
+
+  let quickcheck_observer : t Q.Observer.t =
+    [%quickcheck.observer: Expression.t]
+
+  (* TODO(@MattWindsor91): implement this *)
+  let quickcheck_shrinker : t Q.Shrinker.t = Q.Shrinker.atomic
+end
+
 module Bool_known (Env : Env_types.S_with_known_values) = struct
   module BV = Bool_values (Env)
 

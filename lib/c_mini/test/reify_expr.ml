@@ -18,6 +18,36 @@ let%test_module "examples" =
       let rx = Src.Reify_expr.reify x in
       Fmt.pr "@[%a@]@." Act_c_lang.Ast.Expr.pp rx
 
+    let%expect_test "subtract bracketing 1" =
+      test
+        Src.Expression.(
+          sub (sub (int_lit 1) (int_lit 1))
+            (sub (int_lit 1) (int_lit 1))
+        );
+      [%expect {| 1 - 1 - (1 - 1) |}]
+
+    let%expect_test "subtract bracketing 2" =
+      test
+        Src.Expression.(
+          sub (sub (sub (int_lit 1) (int_lit 1)) (int_lit 1)) (int_lit 1)
+        );
+      [%expect {| 1 - 1 - 1 - 1 |}]
+
+    let%expect_test "subtract bracketing 3" =
+      test
+        Src.Expression.(
+          sub (int_lit 1) (sub (int_lit 1) (sub (int_lit 1) (int_lit 1)))
+        );
+      [%expect {| 1 - (1 - (1 - 1)) |}]
+
+    let%expect_test "add-subtract bracketing" =
+      test
+        Src.Expression.(
+          sub (add (sub (int_lit 1) (int_lit 2)) (int_lit 3)) (int_lit 4)
+        );
+      [%expect {| 1 - 2 + 3 - 4 |}]
+
+
     let%expect_test "atomic_load of referenced variable" =
       test
         Src.(
@@ -37,7 +67,7 @@ let%test_module "round trips" =
         (module Qc)
         ~f:(fun exp ->
           [%test_result: Src.Expression.t Or_error.t] ~here:[[%here]]
-            ~expect:(Or_error.return exp)
+            ~expect:(Ok exp)
             (Src.Convert.expr (Src.Reify_expr.reify exp)))
 
     module Make (F : functor (A : Src.Env_types.S) ->
@@ -62,6 +92,11 @@ let%test_module "round trips" =
 
     let%test_unit "round-trip on integer expressions" =
       Int_values.run_round_trip ()
+
+    module Int_zeroes = Make_kv (Src.Expression_gen.Int_zeroes)
+
+    let%test_unit "round-trip on integer zeroes" =
+      Int_zeroes.run_round_trip ()
 
     module Bool_values = Make (Src.Expression_gen.Bool_values)
 
