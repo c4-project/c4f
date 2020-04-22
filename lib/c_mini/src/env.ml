@@ -81,4 +81,12 @@ end) : Env_types.S_with_known_values = struct
 
   let type_of_known_value (id : Ac.C_id.t) : Type.t Or_error.t =
     Or_error.(id |> type_of >>| Type.basic_type >>| Type.of_basic)
+
+  let known_value_env : (module Env_types.S) Lazy.t =
+    Lazy.map variables_with_known_values
+      ~f:(fun map ->
+          let tmap = Map.map ~f:fst map in
+          (module Make (struct
+               let env = tmap
+             end) : Env_types.S))
 end

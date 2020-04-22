@@ -28,7 +28,7 @@ module Make (E : sig
   val env : Type.t Map.M(Act_common.C_id).t
 end) : Env_types.S
 
-(** [Make (E)] extends a basic environment module with various functions and
+(** [Make_with_known_values (E)] extends a basic environment module with various functions and
     generators. *)
 module Make_with_known_values (E : sig
   val env : Type.t Map.M(Act_common.C_id).t

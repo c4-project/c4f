@@ -60,4 +60,10 @@ module type S_with_known_values = sig
       type associated with any known-value information stored for [id]. This
       is [type_of id] for non-pointer-typed variables, and the non-pointer
       equivalent otherwise. *)
+
+  val known_value_env : (module S) Lazy.t
+  (** [known_value_env] is a lazy computation that produces a typing map only
+      containing the values in this environment for which there exist known
+      values. *)
+
 end
