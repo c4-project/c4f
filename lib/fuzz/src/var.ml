@@ -16,19 +16,13 @@ open struct
   module Tx = Travesty_base_exts
 end
 
-module Known_value = struct
-  type t = {value: Act_c_mini.Constant.t; has_dependencies: bool}
-  [@@deriving fields, make, equal]
-
-  let add_dependency (kv : t) : t = {kv with has_dependencies= true}
-end
-
 module Record = struct
   type t =
     { ty: Act_c_mini.Type.t
     ; source: [`Existing | `Generated]
     ; scope: Ac.Scope.t
-    ; known_value: Known_value.t option
+    ; known_value: Act_c_mini.Constant.t option
+    ; has_dependencies: bool [@default false]
     ; has_writes: bool [@default false] }
   [@@deriving fields, make, equal]
 
@@ -45,22 +39,15 @@ module Record = struct
     | {source= `Existing; _} ->
         false
 
-  let has_dependencies (record : t) : bool =
-    Option.exists (known_value record) ~f:Known_value.has_dependencies
-
   let has_known_value (record : t) : bool =
     Option.is_some (known_value record)
 
   let try_get_known_value (record : t) : Act_c_mini.Constant.t Or_error.t =
     Result.of_option
-      (Option.map (known_value record) ~f:Known_value.value)
+      (known_value record)
       ~error:(Error.of_string "No known value for this record.")
 
-  let map_known_value (record : t) ~(f : Known_value.t -> Known_value.t) : t
-      =
-    {record with known_value= Option.map ~f record.known_value}
-
-  let add_dependency : t -> t = map_known_value ~f:Known_value.add_dependency
+  let add_dependency (record : t) : t = {record with has_dependencies= true}
 
   let add_write (record : t) : t = {record with has_writes= true}
 
@@ -71,11 +58,7 @@ module Record = struct
 
   let make_generated ?(initial_value : Act_c_mini.Constant.t option)
       (scope : Ac.Scope.t) (ty : Act_c_mini.Type.t) : t =
-    let known_value =
-      Option.map initial_value ~f:(fun value ->
-          Known_value.make ~value ~has_dependencies:false)
-    in
-    make ~ty ~source:`Generated ~scope ?known_value ()
+    make ~ty ~source:`Generated ~scope ?known_value:initial_value ()
 end
 
 module Map = struct
@@ -138,9 +121,6 @@ module Map = struct
       ~(predicates : (Record.t -> bool) list) =
     vars |> records_satisfying_all ~scope ~predicates |> Map.map ~f:Record.ty
 
-  let kv (r : Record.t) : Act_c_mini.Constant.t option =
-    Option.(r |> Record.known_value >>| Known_value.value)
-
   let env_module_satisfying_all
       ?(predicates : (Record.t -> bool) list = []) (vars : t)
       ~(scope : Ac.Scope.t) :
@@ -150,7 +130,7 @@ module Map = struct
 
       let env = Map.map ~f:Record.ty records
 
-      let known_values = Map.filter_map ~f:kv records
+      let known_values = Map.filter_map ~f:Record.known_value records
     end) )
 
   let satisfying_all (vars : t) ~(scope : Ac.Scope.t)
