@@ -133,7 +133,7 @@ let on_address_of_typed_id ~(id : Ac.C_id.t) ~(ty : Type.t) : t =
   let lv = of_variable id in
   if Type.is_pointer ty then lv else ref lv
 
-let of_id_in_env (module E : Env_types.S) ~(id : Ac.C_id.t) : t Or_error.t =
+let of_id_in_env (module E : Env_types.S_with_known_values) ~(id : Ac.C_id.t) : t Or_error.t =
   Or_error.Let_syntax.(
     let%map ty = E.type_of id in
     on_address_of_typed_id ~id ~ty)

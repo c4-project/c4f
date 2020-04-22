@@ -56,7 +56,7 @@ val deref : t -> t
 val on_address_of_typed_id : id:Act_common.C_id.t -> ty:Type.t -> t
 
 val of_id_in_env :
-  (module Env_types.S) -> id:Act_common.C_id.t -> t Or_error.t
+  (module Env_types.S_with_known_values) -> id:Act_common.C_id.t -> t Or_error.t
 
 (** {2 Of variables} *)
 

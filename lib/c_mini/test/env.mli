@@ -32,25 +32,21 @@ val test_env_scalars_only : Act_c_mini.Type.t Map.M(Act_common.C_id).t Lazy.t
 (** [test_env_atomic_ptrs_only] is a typing environment that contains only
     variables of scalar (but possibly atomic) type. *)
 
-(** {3 Test typing environment modules} *)
+(** {3 Test typing environment modules}
 
-val test_env_mod : (module Act_c_mini.Env_types.S) Lazy.t
-(** {{!test_env} test_env} packaged as a first-class module. *)
+    Each of these contain deterministic singleton known values for all
+   non-pointer variables.  *)
 
-val test_env_atomic_ptrs_only_mod : (module Act_c_mini.Env_types.S) Lazy.t
-(** {{!test_env_atomic_ptrs_only} test_env_atomic_ptrs_only} packaged as a
+val test_env_mod : (module Act_c_mini.Env_types.S_with_known_values) Lazy.t
+(** {!test_env} packaged as a first-class module. *)
+
+val test_env_atomic_ptrs_only_mod : (module Act_c_mini.Env_types.S_with_known_values) Lazy.t
+(** {!test_env_atomic_ptrs_only} packaged as a
     first-class module. *)
 
-val test_env_scalars_only_mod : (module Act_c_mini.Env_types.S) Lazy.t
-(** {{!test_env_scalars_only} test_env_scalars_only} packaged as a
+val test_env_scalars_only_mod : (module Act_c_mini.Env_types.S_with_known_values) Lazy.t
+(** {!test_env_scalars_only} packaged as a
     first-class module. *)
 
-val empty_env_mod : (module Act_c_mini.Env_types.S) Lazy.t
+val empty_env_mod : (module Act_c_mini.Env_types.S_with_known_values) Lazy.t
 (** A first-class module containing a completely empty environment. *)
-
-(** {2 Test known-value environment modules} *)
-
-val det_known_value_mod :
-  (module Act_c_mini.Env_types.S_with_known_values) Lazy.t
-(** [det_known_value_mod] expands {{!test_env_mod} test_env_mod} to contain
-    singleton known values for all non-pointer variables. *)

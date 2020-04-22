@@ -18,7 +18,7 @@ module type S =
 let eval_guards : (bool * (unit -> 'a)) list -> 'a list =
   List.filter_map ~f:(fun (g, f) -> if g then Some (f ()) else None)
 
-module Int_values (E : Env_types.S) = struct
+module Int_values (E : Env_types.S_with_known_values) = struct
   type t = Expression.t [@@deriving sexp]
 
   let gen_cancel (gen_norm : t Q.Generator.t) : t Q.Generator.t =
@@ -95,7 +95,7 @@ module Int_values (E : Env_types.S) = struct
   let quickcheck_shrinker : t Q.Shrinker.t = Q.Shrinker.atomic
 end
 
-module Bool_values (E : Env_types.S) : sig
+module Bool_values (E : Env_types.S_with_known_values) : sig
   type t = Expression.t [@@deriving sexp_of, quickcheck]
 end = struct
   type t = Expression.t [@@deriving sexp]

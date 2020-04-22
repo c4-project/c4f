@@ -28,33 +28,6 @@ let test_env : Src.Type.t Map.M(Ac.C_id).t Lazy.t =
          ; (Ac.C_id.of_string "z", bool ~atomic:true ())
          ; (Ac.C_id.of_string "blep", int ~pointer:true ()) ])
 
-let lift_to_lazy_mod (e : Src.Type.t Map.M(Ac.C_id).t Lazy.t) :
-    (module Src.Env_types.S) Lazy.t =
-  Lazy.(
-    e
-    >>| fun env ->
-    ( module Src.Env.Make (struct
-      let env = env
-    end) : Src.Env_types.S ))
-
-let test_env_mod : (module Src.Env_types.S) Lazy.t =
-  lift_to_lazy_mod test_env
-
-let test_env_atomic_ptrs_only : Src.Type.t Map.M(Ac.C_id).t Lazy.t =
-  Lazy.(
-    test_env >>| Map.filter ~f:Src.Type.(Tx.Fn.(is_pointer &&& is_atomic)))
-
-let test_env_atomic_ptrs_only_mod : (module Src.Env_types.S) Lazy.t =
-  lift_to_lazy_mod test_env_atomic_ptrs_only
-
-let test_env_scalars_only : Src.Type.t Map.M(Ac.C_id).t Lazy.t =
-  Lazy.(test_env >>| Map.filter ~f:Src.Type.(Fn.(non is_pointer)))
-
-let test_env_scalars_only_mod : (module Src.Env_types.S) Lazy.t =
-  lift_to_lazy_mod test_env_scalars_only
-
-let empty_env_mod = lift_to_lazy_mod (lazy (Map.empty (module Ac.C_id)))
-
 let det_known_values : Src.Constant.t Map.M(Ac.C_id).t Lazy.t =
   lazy
     (Map.of_alist_exn
@@ -69,12 +42,31 @@ let det_known_values : Src.Constant.t Map.M(Ac.C_id).t Lazy.t =
          ; (Ac.C_id.of_string "z", bool false)
          ; (Ac.C_id.of_string "blep", int 99) ])
 
-let det_known_value_mod : (module Src.Env_types.S_with_known_values) Lazy.t =
+let lift_to_lazy_mod (e : Src.Type.t Map.M(Ac.C_id).t Lazy.t) :
+    (module Src.Env_types.S_with_known_values) Lazy.t =
   Lazy.Let_syntax.(
-    let%bind (module Env) = test_env_mod in
-    let%map known_values = det_known_values in
+    let%map env = e
+    and known_values = det_known_values
+    in
     ( module Src.Env.Make_with_known_values (struct
-      include Env
-
+      let env = env
       let known_values = known_values
     end) : Src.Env_types.S_with_known_values ))
+
+let test_env_mod : (module Src.Env_types.S_with_known_values) Lazy.t =
+  lift_to_lazy_mod test_env
+
+let test_env_atomic_ptrs_only : Src.Type.t Map.M(Ac.C_id).t Lazy.t =
+  Lazy.(
+    test_env >>| Map.filter ~f:Src.Type.(Tx.Fn.(is_pointer &&& is_atomic)))
+
+let test_env_atomic_ptrs_only_mod : (module Src.Env_types.S_with_known_values) Lazy.t =
+  lift_to_lazy_mod test_env_atomic_ptrs_only
+
+let test_env_scalars_only : Src.Type.t Map.M(Ac.C_id).t Lazy.t =
+  Lazy.(test_env >>| Map.filter ~f:Src.Type.(Fn.(non is_pointer)))
+
+let test_env_scalars_only_mod : (module Src.Env_types.S_with_known_values) Lazy.t =
+  lift_to_lazy_mod test_env_scalars_only
+
+let empty_env_mod = lift_to_lazy_mod (lazy (Map.empty (module Ac.C_id)))

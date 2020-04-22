@@ -131,21 +131,13 @@ module Map : sig
       are true. *)
 
   val env_module_satisfying_all :
-       t
-    -> scope:Act_common.Scope.t
-    -> predicates:(Record.t -> bool) list
-    -> (module Act_c_mini.Env_types.S)
-  (** [env_module_satisfying_all map ~scope ~predicates] behaves as
-      {!env_satisfying_all}, but wraps the results in a first-class env
-      module. *)
-
-  val env_module_with_known_values :
-       ?predicates:(Record.t -> bool) list
+    ?predicates:(Record.t -> bool) list
     -> t
     -> scope:Act_common.Scope.t
     -> (module Act_c_mini.Env_types.S_with_known_values)
-  (** [env_module_with_known_values ?predicates map ~scope] behaves like
-      {!env_module_satisfying_all}, but also adds in known-value information. *)
+  (** [env_module_satisfying_all map ~scope ~predicates] behaves as
+      {!env_satisfying_all}, but wraps the results in a first-class env
+      module. *)
 
   val satisfying_all :
        t

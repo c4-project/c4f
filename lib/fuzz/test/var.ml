@@ -63,7 +63,7 @@ let%test_module "environment modules in a test map" =
     let test_variables_of_basic_type (scope : Ac.Scope.t) (ty : Ty.Basic.t) :
         unit =
       let (module Env) =
-        Src.Var.Map.env_module_with_known_values
+        Src.Var.Map.env_module_satisfying_all
           (Lazy.force Test_data.test_map)
           ~scope
       in
@@ -80,7 +80,7 @@ let%test_module "environment modules in a test map" =
 
     let%expect_test "known values in environment form" =
       let (module Env) =
-        Src.Var.Map.env_module_with_known_values
+        Src.Var.Map.env_module_satisfying_all
           (Lazy.force Test_data.test_map)
           ~scope:Ac.Scope.Global
       in

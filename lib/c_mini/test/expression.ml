@@ -23,7 +23,7 @@ let%test_module "Eval" =
 
     let test_mod (e : Src.Expression.t) : unit =
       let src =
-        Src.Address.eval_on_env (Lazy.force Env.det_known_value_mod)
+        Src.Address.eval_on_env (Lazy.force Env.test_env_mod)
       in
       let env = Src.Heap.make src in
       test e ~env
@@ -90,7 +90,7 @@ let%test_module "Eval" =
       [%expect
         {| (Error ("Variable not found in typing environment." (id a))) |}]
 
-    let var_addr (e: (module Src.Env_types.S)) (x: string): Src.Address.t =
+    let var_addr (e: (module Src.Env_types.S_with_known_values)) (x: string): Src.Address.t =
       (Or_error.ok_exn
          (Src.Address.of_id_in_env e
             ~id:(Act_common.C_id.of_string x)))

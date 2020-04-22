@@ -70,5 +70,5 @@ module Quickcheck_generic
 (** [Quickcheck_ints (E)] generates random stores from atomic integers to
     non-atomic integers, using [Src] as the variable typing environment for
     sources and [Dst] as the environment for destinations. *)
-module Quickcheck_ints (Src : Env_types.S) (Dst : Env_types.S) :
+module Quickcheck_ints (Src : Env_types.S_with_known_values) (Dst : Env_types.S_with_known_values) :
   Act_utils.My_quickcheck.S_with_sexp with type t = t

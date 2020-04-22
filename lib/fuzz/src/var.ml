@@ -138,17 +138,10 @@ module Map = struct
       ~(predicates : (Record.t -> bool) list) =
     vars |> records_satisfying_all ~scope ~predicates |> Map.map ~f:Record.ty
 
-  let env_module_satisfying_all (vars : t) ~(scope : Ac.Scope.t)
-      ~(predicates : (Record.t -> bool) list) :
-      (module Act_c_mini.Env_types.S) =
-    ( module Act_c_mini.Env.Make (struct
-      let env = env_satisfying_all vars ~scope ~predicates
-    end) )
-
   let kv (r : Record.t) : Act_c_mini.Constant.t option =
     Option.(r |> Record.known_value >>| Known_value.value)
 
-  let env_module_with_known_values
+  let env_module_satisfying_all
       ?(predicates : (Record.t -> bool) list = []) (vars : t)
       ~(scope : Ac.Scope.t) :
       (module Act_c_mini.Env_types.S_with_known_values) =

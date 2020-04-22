@@ -31,7 +31,7 @@ let test_all_expressions_have_type
          (module Src.Env_types.S_with_known_values)
       -> (module Q.Test.S with type t = Src.Expression.t)) (ty : Src.Type.t)
     : unit =
-  let env = Lazy.force Env.det_known_value_mod in
+  let env = Lazy.force Env.test_env_mod in
   let (module Qc) = f env in
   let module Ty = Src.Expression.Type_check ((val env)) in
   Q.Test.run_exn
@@ -50,7 +50,7 @@ let test_all_expressions_in_env
     (f :
          (module Src.Env_types.S_with_known_values)
       -> (module Q.Test.S with type t = Src.Expression.t)) : unit =
-  let (module E) = Lazy.force Env.det_known_value_mod in
+  let (module E) = Lazy.force Env.test_env_mod in
   let (module Q) = f (module E) in
   Base_quickcheck.Test.run_exn
     (module Q)
@@ -64,7 +64,7 @@ let test_all_expressions_evaluate
          (module Src.Env_types.S_with_known_values)
       -> (module Q.Test.S with type t = Src.Expression.t))
     ~(pred : Src.Constant.t -> bool) : unit =
-  let env_mod = Lazy.force Env.det_known_value_mod in
+  let env_mod = Lazy.force Env.test_env_mod in
   let env = Src.Heap.make (Src.Address.eval_on_env env_mod) in
   let (module Qc) = f env_mod in
   Q.Test.run_exn
@@ -78,7 +78,7 @@ let test_all_expressions_evaluate
 
 let%test_module "Int_values" =
   ( module struct
-    let print_sample (module E : Src.Env_types.S) =
+    let print_sample (module E : Src.Env_types.S_with_known_values) =
       print_sample (module Src.Expression_gen.Int_values (E))
 
     let%expect_test "sample" =
@@ -131,7 +131,7 @@ let%test_module "Int zeroes" =
       print_sample (module Src.Expression_gen.Int_zeroes (E))
 
     let%expect_test "sample" =
-      print_sample (Lazy.force Env.det_known_value_mod) ;
+      print_sample (Lazy.force Env.test_env_mod) ;
       [%expect
         {|
           0
@@ -157,7 +157,7 @@ let%test_module "Int zeroes" =
 
 let%test_module "Bool_values" =
   ( module struct
-    let print_sample (module E : Src.Env_types.S) =
+    let print_sample (module E : Src.Env_types.S_with_known_values) =
       print_sample (module Src.Expression_gen.Bool_values (E))
 
     let%expect_test "sample" =
@@ -243,7 +243,7 @@ let%test_module "Bool falsehoods" =
       print_sample (module B.Falsehoods)
 
     let%expect_test "sample" =
-      print_sample (Lazy.force Env.det_known_value_mod) ;
+      print_sample (Lazy.force Env.test_env_mod) ;
       [%expect
         {|
           false
@@ -279,7 +279,7 @@ let%test_module "Bool tautologies" =
       print_sample (module B.Tautologies)
 
     let%expect_test "sample" =
-      print_sample (Lazy.force Env.det_known_value_mod) ;
+      print_sample (Lazy.force Env.test_env_mod) ;
       [%expect
         {|
           true

@@ -90,7 +90,7 @@ module Surround = struct
 
   let cond_env (vars : Var.Map.t) ~(tid : int) :
       (module Act_c_mini.Env_types.S_with_known_values) =
-    Var.Map.env_module_with_known_values ~scope:(Local tid) ~predicates:[]
+    Var.Map.env_module_satisfying_all ~scope:(Local tid) ~predicates:[]
       vars
 
   module Make (Basic : sig

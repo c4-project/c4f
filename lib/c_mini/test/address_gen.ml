@@ -14,16 +14,16 @@ module Src = Act_c_mini
 module Q = Base_quickcheck
 module Qx = Act_utils.My_quickcheck
 
-let variable_in (module E : Src.Env_types.S) (l : Src.Address.t) : bool =
+let variable_in (module E : Src.Env_types.S_with_known_values) (l : Src.Address.t) : bool =
   Map.mem E.env (Src.Address.variable_of l)
 
-let test_in_env (module E : Src.Env_types.S)
+let test_in_env (module E : Src.Env_types.S_with_known_values)
     (module Qc : Qx.S_with_sexp with type t = Src.Address.t) : unit =
   Q.Test.run_exn
     (module Qc)
     ~f:([%test_pred: Src.Address.t] ~here:[[%here]] (variable_in (module E)))
 
-let test_type (module E : Src.Env_types.S)
+let test_type (module E : Src.Env_types.S_with_known_values)
     (module Qc : Qx.S_with_sexp with type t = Src.Address.t)
     (expected : Src.Type.t) : unit =
   let module Tc = Src.Address.Type_check (E) in

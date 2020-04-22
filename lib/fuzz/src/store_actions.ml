@@ -98,7 +98,7 @@ module Make (B : sig
   (** A functor that produces a quickcheck instance for atomic stores given
       source and destination variable environments. *)
   module Quickcheck
-      (Src : Act_c_mini.Env_types.S)
+      (Src : Act_c_mini.Env_types.S_with_known_values)
       (Dst : Act_c_mini.Env_types.S_with_known_values) :
     Act_utils.My_quickcheck.S_with_sexp
       with type t := Act_c_mini.Atomic_store.t
@@ -126,7 +126,7 @@ end) : Action_types.S with type Payload.t = Store_payload.t = struct
   let src_restrictions : (Var.Record.t -> bool) list Lazy.t = lazy []
 
   let src_env (vars : Var.Map.t) ~(tid : int) :
-      (module Act_c_mini.Env_types.S) =
+      (module Act_c_mini.Env_types.S_with_known_values) =
     let predicates = Lazy.force src_restrictions in
     Var.Map.env_module_satisfying_all ~predicates ~scope:(Local tid) vars
 
@@ -139,7 +139,7 @@ end) : Action_types.S with type Payload.t = Store_payload.t = struct
       ~(forbid_already_written : bool) :
       (module Act_c_mini.Env_types.S_with_known_values) =
     let predicates = dst_restrictions ~forbid_already_written in
-    Var.Map.env_module_with_known_values ~predicates ~scope:(Local tid) vars
+    Var.Map.env_module_satisfying_all ~predicates ~scope:(Local tid) vars
 
   module Payload = struct
     type t = Store_payload.t [@@deriving sexp]
@@ -165,7 +165,7 @@ end) : Action_types.S with type Payload.t = Store_payload.t = struct
       log_environment o "source" src_env ;
       log_environment o "dest" dst_env
 
-    let gen_store_with_envs (module Src : Act_c_mini.Env_types.S)
+    let gen_store_with_envs (module Src : Act_c_mini.Env_types.S_with_known_values)
         (module Dst : Act_c_mini.Env_types.S_with_known_values)
         (o : Ac.Output.t) ~(random : Splittable_random.State.t) :
         Act_c_mini.Atomic_store.t Or_error.t =

@@ -13,19 +13,19 @@ open Base
 module Q = Base_quickcheck
 module Src = Act_c_mini
 
-let variable_in (module E : Src.Env_types.S) (l : Src.Lvalue.t) : bool =
+let variable_in (module E : Src.Env_types.S_with_known_values) (l : Src.Lvalue.t) : bool =
   Map.mem E.env (Src.Lvalue.variable_of l)
 
 let print_sample = Act_utils.My_quickcheck.print_sample
 
-let test_in_env (module E : Src.Env_types.S)
+let test_in_env (module E : Src.Env_types.S_with_known_values)
     (module Qc : Act_utils.My_quickcheck.S_with_sexp
       with type t = Src.Lvalue.t) : unit =
   Q.Test.run_exn
     (module Qc)
     ~f:([%test_pred: Src.Lvalue.t] ~here:[[%here]] (variable_in (module E)))
 
-let test_type (module E : Src.Env_types.S)
+let test_type (module E : Src.Env_types.S_with_known_values)
     (module Qc : Act_utils.My_quickcheck.S_with_sexp
       with type t = Src.Lvalue.t) (expected : Src.Type.t) : unit =
   let module Tc = Src.Lvalue.Type_check (E) in
@@ -75,7 +75,7 @@ let%test_module "Int_values" =
 
     module Qc = Src.Lvalue_gen.Int_values ((val e))
 
-    let print_sample (module E : Src.Env_types.S) =
+    let print_sample (module E : Src.Env_types.S_with_known_values) =
       print_sample
         ( module struct
           include Src.Lvalue
@@ -100,7 +100,7 @@ let%test_module "Bool_values" =
   ( module struct
     let e = Lazy.force Env.test_env_mod
 
-    let print_sample (module E : Src.Env_types.S) =
+    let print_sample (module E : Src.Env_types.S_with_known_values) =
       print_sample
         ( module struct
           include Src.Lvalue
