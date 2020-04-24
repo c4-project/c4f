@@ -83,8 +83,9 @@ let local_decls (tid : int) :
 let inner_call_argument (lid : Ac.Litmus_id.t) (ty : Act_c_mini.Type.t) :
     Act_c_mini.Expression.t =
   let id = Ac.Litmus_id.variable_name lid in
+  let tid = Ac.C_named.make ~name:id ty in
   Act_c_mini.Expression.address
-    (Act_c_mini.Address.on_address_of_typed_id ~id ~ty)
+    (Act_c_mini.Address.on_address_of_typed_id tid)
 
 let inner_call_arguments (tid : int) :
        (Ac.Litmus_id.t, Act_c_mini.Type.t) List.Assoc.t

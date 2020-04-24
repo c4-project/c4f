@@ -53,7 +53,7 @@ val deref : t -> t
     normalised form of [addr] is an lvalue, it returns the result of directly
     dereferencing from that lvalue instead. *)
 
-val on_address_of_typed_id : id:Act_common.C_id.t -> ty:Type.t -> t
+val on_address_of_typed_id : Type.t Act_common.C_named.t -> t
 
 val of_id_in_env : Env.t -> id:Act_common.C_id.t -> t Or_error.t
 

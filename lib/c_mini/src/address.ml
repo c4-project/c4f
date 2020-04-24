@@ -129,14 +129,16 @@ module Quickcheck_main = Quickcheck_generic (Lvalue)
 
 include (Quickcheck_main : module type of Quickcheck_main with type t := t)
 
-let on_address_of_typed_id ~(id : Ac.C_id.t) ~(ty : Type.t) : t =
+let on_address_of_typed_id (tid : Type.t Ac.C_named.t) : t =
+  let id = Ac.C_named.name tid in
+  let ty = Ac.C_named.value tid in
   let lv = of_variable id in
   if Type.is_pointer ty then lv else ref lv
 
 let of_id_in_env (env : Env.t) ~(id : Ac.C_id.t) : t Or_error.t =
   Or_error.Let_syntax.(
     let%map ty = Env.type_of env ~id in
-    on_address_of_typed_id ~id ~ty)
+    on_address_of_typed_id (Ac.C_named.make ~name:id ty))
 
 let variable_of (addr : t) : Ac.C_id.t = Lvalue.variable_of (lvalue_of addr)
 

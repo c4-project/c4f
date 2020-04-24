@@ -30,11 +30,10 @@ end = struct
 
   let quickcheck_generator : t Generator.t =
     Generator.filter_map Gen.quickcheck_generator ~f:(fun r ->
-        let id = Act_common.C_named.name r in
         let ty = Act_common.C_named.value r in
         Option.some_if
           (Type.basic_type_is ~basic:T.basic_type ty)
-          (A.on_address_of_typed_id ~id ~ty))
+          (A.on_address_of_typed_id r))
 end
 
 module Atomic_int_pointers (E : Env_types.S) : sig

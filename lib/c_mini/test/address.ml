@@ -90,9 +90,8 @@ let%test_unit "on_address_of_typed_id: always takes pointer type" =
       let env = env
     end) )
     ~f:(fun r ->
-      let id = Act_common.C_named.name r in
       let ty = Act_common.C_named.value r in
       [%test_result: Act_c_mini.Type.t Or_error.t] ~here:[[%here]]
-        (Tc.type_of (on_address_of_typed_id ~id ~ty))
+        (Tc.type_of (on_address_of_typed_id r))
         ~expect:
           (Or_error.return Act_c_mini.Type.(pointer_to (basic_type ty))))
