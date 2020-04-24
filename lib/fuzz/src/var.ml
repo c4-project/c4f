@@ -28,7 +28,8 @@ module Record = struct
 
   let env_record (r : t) : Act_c_mini.Env.Record.t =
     (* TODO(@MattWindsor91): nest this directly instead *)
-    Act_c_mini.Env.Record.make ~type_of:(ty r) ?known_value:(known_value r) ()
+    Act_c_mini.Env.Record.make ~type_of:(ty r) ?known_value:(known_value r)
+      ()
 
   let is_global (r : t) : bool = Ac.Scope.is_global (scope r)
 
@@ -47,8 +48,7 @@ module Record = struct
     Option.is_some (known_value record)
 
   let try_get_known_value (record : t) : Act_c_mini.Constant.t Or_error.t =
-    Result.of_option
-      (known_value record)
+    Result.of_option (known_value record)
       ~error:(Error.of_string "No known value for this record.")
 
   let add_dependency (record : t) : t = {record with has_dependencies= true}
@@ -123,7 +123,9 @@ module Map = struct
 
   let env_satisfying_all (vars : t) ~(scope : Ac.Scope.t)
       ~(predicates : (Record.t -> bool) list) : Act_c_mini.Env.t =
-    vars |> records_satisfying_all ~scope ~predicates |> Map.map ~f:Record.env_record
+    vars
+    |> records_satisfying_all ~scope ~predicates
+    |> Map.map ~f:Record.env_record
 
   let satisfying_all (vars : t) ~(scope : Ac.Scope.t)
       ~(predicates : (Record.t -> bool) list) : Ac.C_id.t list =

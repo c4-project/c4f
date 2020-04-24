@@ -53,13 +53,13 @@ let%test_unit "basic_type_is compatibility with basic_type" =
         [%test_pred: t] ~here:[[%here]] (fun t ->
             basic_type_is t ~basic:(basic_type t)))
 
-let%test_module "check_atomic_non" = (module struct
-  let test (atomic : Act_c_mini.Type.t) (non : Act_c_mini.Type.t) : unit =
-    let result = Act_c_mini.Type.check_atomic_non ~atomic ~non in
-    Stdio.print_s
-      [%sexp (result : Act_c_mini.Type.t Or_error.t)]
+let%test_module "check_atomic_non" =
+  ( module struct
+    let test (atomic : Act_c_mini.Type.t) (non : Act_c_mini.Type.t) : unit =
+      let result = Act_c_mini.Type.check_atomic_non ~atomic ~non in
+      Stdio.print_s [%sexp (result : Act_c_mini.Type.t Or_error.t)]
 
-  let%expect_test "valid: atomic_int to int" =
-    Act_c_mini.Type.(test (int ~atomic:true ()) (int ()));
-    [%expect {| (Ok int) |}]
-end)
+    let%expect_test "valid: atomic_int to int" =
+      Act_c_mini.Type.(test (int ~atomic:true ()) (int ())) ;
+      [%expect {| (Ok int) |}]
+  end )

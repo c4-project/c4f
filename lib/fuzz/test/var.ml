@@ -60,17 +60,18 @@ end
 
 let%test_module "environment modules in a test map" =
   ( module struct
-    let test_variables_of_basic_type (scope : Ac.Scope.t) (basic : Ty.Basic.t) :
-        unit =
+    let test_variables_of_basic_type (scope : Ac.Scope.t)
+        (basic : Ty.Basic.t) : unit =
       let env =
         Src.Var.Map.env_satisfying_all
           (Lazy.force Test_data.test_map)
-          ~scope
-          ~predicates:[]
+          ~scope ~predicates:[]
       in
-      let vals = env |>
-      Act_c_mini.Env.variables_of_basic_type ~basic |>
-      Act_c_mini.Env.typing |> Map.to_alist in
+      let vals =
+        env
+        |> Act_c_mini.Env.variables_of_basic_type ~basic
+        |> Act_c_mini.Env.typing |> Map.to_alist
+      in
       print_s [%sexp (vals : (Ac.C_id.t, Ty.t) List.Assoc.t)]
 
     let%expect_test "all integer variables from thread 1" =
@@ -85,8 +86,7 @@ let%test_module "environment modules in a test map" =
       let env =
         Src.Var.Map.env_satisfying_all
           (Lazy.force Test_data.test_map)
-          ~scope:Ac.Scope.Global
-          ~predicates:[]
+          ~scope:Ac.Scope.Global ~predicates:[]
       in
       let vals =
         env |> Act_c_mini.Env.variables_with_known_values |> Map.to_alist

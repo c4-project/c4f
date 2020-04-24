@@ -22,9 +22,7 @@ let%test_module "Eval" =
     let test_pure : Src.Expression.t -> unit = test ~env:(Src.Heap.empty ())
 
     let test_mod (e : Src.Expression.t) : unit =
-      let src =
-        Src.Address.eval_on_env ~env:(Lazy.force Env.test_env)
-      in
+      let src = Src.Address.eval_on_env ~env:(Lazy.force Env.test_env) in
       let env = Src.Heap.make src in
       test e ~env
 
@@ -90,10 +88,9 @@ let%test_module "Eval" =
       [%expect
         {| (Error ("Variable not found in typing environment." (id a))) |}]
 
-    let var_addr (env: Src.Env.t) (x: string): Src.Address.t =
-      (Or_error.ok_exn
-         (Src.Address.of_id_in_env env
-            ~id:(Act_common.C_id.of_string x)))
+    let var_addr (env : Src.Env.t) (x : string) : Src.Address.t =
+      Or_error.ok_exn
+        (Src.Address.of_id_in_env env ~id:(Act_common.C_id.of_string x))
 
     let%expect_test "example atomic load" =
       let e = Lazy.force Env.test_env in
@@ -101,8 +98,7 @@ let%test_module "Eval" =
         Src.(
           Expression.(
             atomic_load
-              (Atomic_load.make
-                 ~src:(var_addr e "y")
+              (Atomic_load.make ~src:(var_addr e "y")
                  ~mo:Act_c_mini.Mem_order.Seq_cst))) ;
       [%expect {| (Ok (Int 53)) |}]
 
@@ -112,8 +108,7 @@ let%test_module "Eval" =
         Src.(
           Expression.(
             atomic_load
-              (Atomic_load.make
-                 ~src:(var_addr e "y")
+              (Atomic_load.make ~src:(var_addr e "y")
                  ~mo:Act_c_mini.Mem_order.Seq_cst))) ;
       [%expect {| (Ok (Int 53)) |}]
 
@@ -124,17 +119,10 @@ let%test_module "Eval" =
           Expression.(
             sub
               (atomic_fetch
-                 (Atomic_fetch.make
-                    ~obj:(var_addr e "y")
-                    ~arg:(int_lit 1)
-                    ~mo:Act_c_mini.Mem_order.Seq_cst
-                    ~op:Op.Fetch.Sub))
+                 (Atomic_fetch.make ~obj:(var_addr e "y") ~arg:(int_lit 1)
+                    ~mo:Act_c_mini.Mem_order.Seq_cst ~op:Op.Fetch.Sub))
               (atomic_fetch
-                 (Atomic_fetch.make
-                    ~obj:(var_addr e "y")
-                    ~arg:(int_lit 1)
-                 ~mo:Act_c_mini.Mem_order.Seq_cst
-                    ~op:Op.Fetch.Add)))) ;
+                 (Atomic_fetch.make ~obj:(var_addr e "y") ~arg:(int_lit 1)
+                    ~mo:Act_c_mini.Mem_order.Seq_cst ~op:Op.Fetch.Add)))) ;
       [%expect {| (Ok (Int 1)) |}]
-
   end )

@@ -115,12 +115,11 @@ module Surround : sig
         is being defined. *)
 
     val cond_gen :
-         Act_c_mini.Env.t
-      -> Act_c_mini.Expression.t Base_quickcheck.Generator.t
-    (** [cond_gen env] should, given an environment [env]
-        capturing the variables in scope at the point where the if statement
-        is appearing, return a Quickcheck generator generating expressions
-        over those variables. *)
+      Act_c_mini.Env.t -> Act_c_mini.Expression.t Base_quickcheck.Generator.t
+    (** [cond_gen env] should, given an environment [env] capturing the
+        variables in scope at the point where the if statement is appearing,
+        return a Quickcheck generator generating expressions over those
+        variables. *)
 
     val build_filter : Path_filter.t -> Path_filter.t
     (** [build_filter pf] should apply any additional path filter conditions

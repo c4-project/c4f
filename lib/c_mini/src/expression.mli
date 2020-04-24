@@ -67,7 +67,6 @@ val add : t -> t -> t
 val sub : t -> t -> t
 (** [sub l r] builds a subtraction. It does not simplify. *)
 
-
 (** {2 lvalues, and variables}
 
     Also see [address] in {!Expression_types.S}. *)

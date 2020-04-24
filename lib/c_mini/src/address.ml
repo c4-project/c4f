@@ -143,9 +143,11 @@ let variable_of (addr : t) : Ac.C_id.t = Lvalue.variable_of (lvalue_of addr)
 let variable_in_env (addr : t) ~(env : _ Map.M(Ac.C_id).t) : bool =
   Lvalue.variable_in_env (lvalue_of addr) ~env
 
-let check_address_var (addr : t) ~(env : Env.t)
-    : Act_common.C_id.t Or_error.t =
-  let module A_check = Type_check (struct let env = env end) in
+let check_address_var (addr : t) ~(env : Env.t) :
+    Act_common.C_id.t Or_error.t =
+  let module A_check = Type_check (struct
+    let env = env
+  end) in
   Or_error.Let_syntax.(
     (* Addresses must have the same type as the entry for the variable in the
        environment. *)
@@ -159,14 +161,12 @@ let check_address_var (addr : t) ~(env : Env.t)
     in
     id)
 
-let get_single_known_value (env : Env.t)
-    (id : Act_common.C_id.t) : Constant.t Or_error.t =
-  Or_error.(
-    env
-    |> Env.known_value ~id
-    >>= Result.of_option
-    ~error:(Error.of_string "env doesn't contain this value"))
-
-let eval_on_env (addr : t) ~(env : Env.t) :
+let get_single_known_value (env : Env.t) (id : Act_common.C_id.t) :
     Constant.t Or_error.t =
+  Or_error.(
+    env |> Env.known_value ~id
+    >>= Result.of_option
+          ~error:(Error.of_string "env doesn't contain this value"))
+
+let eval_on_env (addr : t) ~(env : Env.t) : Constant.t Or_error.t =
   Or_error.(addr |> check_address_var ~env >>= get_single_known_value env)

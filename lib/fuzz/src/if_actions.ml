@@ -39,12 +39,11 @@ module Surround = struct
         given the original statement span [stms]. *)
 
     val cond_gen :
-         Act_c_mini.Env.t
-      -> Act_c_mini.Expression.t Base_quickcheck.Generator.t
-    (** [cond_gen env] should, given an environment [env]
-        capturing the variables in scope at the point where the if statement
-        is appearing, return a Quickcheck generator generating expressions
-        over those variables. *)
+      Act_c_mini.Env.t -> Act_c_mini.Expression.t Base_quickcheck.Generator.t
+    (** [cond_gen env] should, given an environment [env] capturing the
+        variables in scope at the point where the if statement is appearing,
+        return a Quickcheck generator generating expressions over those
+        variables. *)
 
     val build_filter : Path_filter.t -> Path_filter.t
     (** [build_filter pf] should apply any extra requirements on path filters
@@ -93,9 +92,10 @@ module Surround = struct
           original statements.  It cannot fire if the statements contain
           any labels, to avoid duplicating them. |}
 
-    let cond_gen : Act_c_mini.Env.t ->
-        Act_c_mini.Expression.t Base_quickcheck.Generator.t =
-        Act_c_mini.Expression_gen.gen_bools
+    let cond_gen :
+           Act_c_mini.Env.t
+        -> Act_c_mini.Expression.t Base_quickcheck.Generator.t =
+      Act_c_mini.Expression_gen.gen_bools
 
     let t_branch_of_statements (statements : Subject.Statement.t list) :
         Subject.Block.t =
@@ -117,9 +117,10 @@ module Surround = struct
          puts the original statements in the true block, and marks the false
          block as dead-code. |}
 
-    let cond_gen : Act_c_mini.Env.t ->
-        Act_c_mini.Expression.t Base_quickcheck.Generator.t =
-        Act_c_mini.Expression_gen.gen_tautologies
+    let cond_gen :
+           Act_c_mini.Env.t
+        -> Act_c_mini.Expression.t Base_quickcheck.Generator.t =
+      Act_c_mini.Expression_gen.gen_tautologies
 
     let t_branch_of_statements (statements : Subject.Statement.t list) :
         Subject.Block.t =

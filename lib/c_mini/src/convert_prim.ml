@@ -151,8 +151,7 @@ let expr_to_memory_order (expr : Ast.Expr.t) : Mem_order.t Or_error.t =
     let%bind id = expr_to_identifier expr in
     id |> Ac.C_id.to_string |> Mem_order.of_string_option
     |> Result.of_option
-      ~error:
-        (Error.create_s
-           [%message
-             "Unsupported memory order" ~got:(id : Act_common.C_id.t)])
-  )
+         ~error:
+           (Error.create_s
+              [%message
+                "Unsupported memory order" ~got:(id : Act_common.C_id.t)]))

@@ -94,19 +94,30 @@ let func_signature :
           "Unsupported function declarator"
             ~got:(x.direct : Ast.Direct_declarator.t)]
 
+let model_atomic_cmpxchg_expr (args : Ast.Expr.t list)
+    ~(expr : Ast.Expr.t -> Expression.t Or_error.t) : Expression.t Or_error.t
+    =
+  Or_error.(
+    args |> Convert_atomic.model_cmpxchg ~expr >>| Expression.atomic_cmpxchg)
 
-let model_atomic_cmpxchg_expr (args : Ast.Expr.t list) ~(expr : Ast.Expr.t -> Expression.t Or_error.t) : Expression.t Or_error.t =
-  Or_error.(args |> Convert_atomic.model_cmpxchg ~expr >>| Expression.atomic_cmpxchg)
+let model_atomic_fetch_expr (args : Ast.Expr.t list) ~(op : Op.Fetch.t)
+    ~(expr : Ast.Expr.t -> Expression.t Or_error.t) : Expression.t Or_error.t
+    =
+  Or_error.(
+    args |> Convert_atomic.model_fetch ~expr ~op >>| Expression.atomic_fetch)
 
-let model_atomic_fetch_expr (args : Ast.Expr.t list) ~(op: Op.Fetch.t) ~(expr : Ast.Expr.t -> Expression.t Or_error.t) : Expression.t Or_error.t =
-  Or_error.(args |> Convert_atomic.model_fetch ~expr ~op >>| Expression.atomic_fetch)
-
-let model_atomic_load_expr (args : Ast.Expr.t list) ~(expr : Ast.Expr.t -> Expression.t Or_error.t) : Expression.t Or_error.t =
-  ignore expr;
+let model_atomic_load_expr (args : Ast.Expr.t list)
+    ~(expr : Ast.Expr.t -> Expression.t Or_error.t) : Expression.t Or_error.t
+    =
+  ignore expr ;
   Or_error.(args |> Convert_atomic.model_load >>| Expression.atomic_load)
 
 let expr_call_table :
-    (Ast.Expr.t list -> expr:(Ast.Expr.t -> Expression.t Or_error.t) -> Expression.t Or_error.t) Map.M(Ac.C_id).t Lazy.t =
+    (   Ast.Expr.t list
+     -> expr:(Ast.Expr.t -> Expression.t Or_error.t)
+     -> Expression.t Or_error.t)
+    Map.M(Ac.C_id).t
+    Lazy.t =
   lazy
     (Map.of_alist_exn
        (module Ac.C_id)
@@ -116,24 +127,26 @@ let expr_call_table :
          , model_atomic_fetch_expr ~op:Op.Fetch.Add )
        ; ( Ac.C_id.of_string Convert_atomic.fetch_sub_name
          , model_atomic_fetch_expr ~op:Op.Fetch.Sub )
-       ; ( Ac.C_id.of_string Convert_atomic.load_name
-         , model_atomic_load_expr ) 
+       ; (Ac.C_id.of_string Convert_atomic.load_name, model_atomic_load_expr)
        ])
 
 let expr_call_handler (func_name : Ac.C_id.t) :
-    (Ast.Expr.t list -> expr:(Ast.Expr.t -> Expression.t Or_error.t) -> Expression.t Or_error.t) Or_error.t =
-      func_name
-      |> Map.find (Lazy.force expr_call_table)
-      |> Result.of_option
-           ~error:
-             (Error.create_s
-                [%message
-                  "Unsupported function in expression position"
-                    ~got:(func_name : Ac.C_id.t)])
+    (   Ast.Expr.t list
+     -> expr:(Ast.Expr.t -> Expression.t Or_error.t)
+     -> Expression.t Or_error.t)
+    Or_error.t =
+  func_name
+  |> Map.find (Lazy.force expr_call_table)
+  |> Result.of_option
+       ~error:
+         (Error.create_s
+            [%message
+              "Unsupported function in expression position"
+                ~got:(func_name : Ac.C_id.t)])
 
-let function_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list) 
-    ~(expr : Ast.Expr.t -> Expression.t Or_error.t)
-  : Expression.t Or_error.t =
+let function_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list)
+    ~(expr : Ast.Expr.t -> Expression.t Or_error.t) : Expression.t Or_error.t
+    =
   Or_error.Let_syntax.(
     let%bind func_name = Convert_prim.expr_to_identifier func in
     let%bind call_handler = expr_call_handler func_name in
@@ -152,7 +165,7 @@ let bop : Act_c_lang.Operators.Bin.t -> Op.Binary.t Or_error.t =
   Or_error.(
     function
     | `Add ->
-      return Op.Binary.add
+        return Op.Binary.add
     | `Eq ->
         return Op.Binary.eq
     | `Land ->
@@ -160,7 +173,7 @@ let bop : Act_c_lang.Operators.Bin.t -> Op.Binary.t Or_error.t =
     | `Lor ->
         return Op.Binary.l_or
     | `Sub ->
-      return Op.Binary.sub
+        return Op.Binary.sub
     | op ->
         error_s
           [%message
@@ -199,7 +212,8 @@ let rec expr : Ast.Expr.t -> Expression.t Or_error.t =
         Or_error.return (identifier_to_expr id)
     | Prefix (`Deref, expr) ->
         Or_error.(
-          expr |> Convert_prim.expr_to_lvalue >>| Lvalue.deref >>| Expression.lvalue)
+          expr |> Convert_prim.expr_to_lvalue >>| Lvalue.deref
+          >>| Expression.lvalue)
     | Prefix (op, expr) ->
         model_prefix op expr
     | Call {func; arguments} ->
@@ -214,19 +228,33 @@ let rec expr : Ast.Expr.t -> Expression.t Or_error.t =
         Or_error.error_s
           [%message "Unsupported expression" ~got:(e : Ast.Expr.t)])
 
+let model_atomic_cmpxchg_stm (args : Ast.Expr.t list) :
+    unit Statement.t Or_error.t =
+  Or_error.(
+    args
+    |> Convert_atomic.model_cmpxchg ~expr
+    >>| Prim_statement.atomic_cmpxchg >>| Statement.prim ())
 
+let model_atomic_fence_stm (args : Ast.Expr.t list)
+    ~(mode : Atomic_fence.Mode.t) : unit Statement.t Or_error.t =
+  Or_error.(
+    args
+    |> Convert_atomic.model_fence ~mode
+    >>| Prim_statement.atomic_fence >>| Statement.prim ())
 
-let model_atomic_cmpxchg_stm (args : Ast.Expr.t list) : unit Statement.t Or_error.t =
-  Or_error.(args |> Convert_atomic.model_cmpxchg ~expr >>| Prim_statement.atomic_cmpxchg >>| Statement.prim ())
+let model_atomic_fetch_stm (args : Ast.Expr.t list) ~(op : Op.Fetch.t) :
+    unit Statement.t Or_error.t =
+  Or_error.(
+    args
+    |> Convert_atomic.model_fetch ~expr ~op
+    >>| Prim_statement.atomic_fetch >>| Statement.prim ())
 
-let model_atomic_fence_stm (args : Ast.Expr.t list) ~(mode: Atomic_fence.Mode.t) : unit Statement.t Or_error.t =
-  Or_error.(args |> Convert_atomic.model_fence ~mode >>| Prim_statement.atomic_fence >>| Statement.prim ())
-
-let model_atomic_fetch_stm (args : Ast.Expr.t list) ~(op: Op.Fetch.t) : unit Statement.t Or_error.t =
-  Or_error.(args |> Convert_atomic.model_fetch ~expr ~op >>| Prim_statement.atomic_fetch >>| Statement.prim ())
-
-let model_atomic_store_stm (args : Ast.Expr.t list) : unit Statement.t Or_error.t =
-  Or_error.(args |> Convert_atomic.model_store ~expr >>| Prim_statement.atomic_store >>| Statement.prim ())
+let model_atomic_store_stm (args : Ast.Expr.t list) :
+    unit Statement.t Or_error.t =
+  Or_error.(
+    args
+    |> Convert_atomic.model_store ~expr
+    >>| Prim_statement.atomic_store >>| Statement.prim ())
 
 let expr_stm_call_table :
     (Ast.Expr.t list -> unit Statement.t Or_error.t) Map.M(Ac.C_id).t Lazy.t
@@ -235,7 +263,7 @@ let expr_stm_call_table :
     (Map.of_alist_exn
        (module Ac.C_id)
        [ ( Ac.C_id.of_string Convert_atomic.cmpxchg_name
-         , model_atomic_cmpxchg_stm)
+         , model_atomic_cmpxchg_stm )
        ; ( Ac.C_id.of_string Convert_atomic.fence_signal_name
          , model_atomic_fence_stm ~mode:Atomic_fence.Mode.Signal )
        ; ( Ac.C_id.of_string Convert_atomic.fence_thread_name
@@ -244,7 +272,8 @@ let expr_stm_call_table :
          , model_atomic_fetch_stm ~op:Op.Fetch.Add )
        ; ( Ac.C_id.of_string Convert_atomic.fetch_sub_name
          , model_atomic_fetch_stm ~op:Op.Fetch.Sub )
-       ; (Ac.C_id.of_string Convert_atomic.store_name, model_atomic_store_stm) ])
+       ; (Ac.C_id.of_string Convert_atomic.store_name, model_atomic_store_stm)
+       ])
 
 let arbitrary_procedure_call (function_id : Ac.C_id.t)
     (raw_arguments : Ast.Expr.t list) : unit Statement.t Or_error.t =
@@ -358,11 +387,11 @@ let rec stm : Ast.Stm.t -> unit Statement.t Or_error.t = function
 let func_body (body : Ast.Compound_stm.t) :
     (Initialiser.t Named.Alist.t * unit Statement.t list) Or_error.t =
   Or_error.Let_syntax.(
-  let%bind ast_decls, ast_nondecls = sift_decls body in
-  let%bind ast_stms = ensure_statements ast_nondecls in
-  let%map decls = Tx.Or_error.combine_map ~f:Convert_prim.decl ast_decls
-  and stms = Tx.Or_error.combine_map ~f:stm ast_stms in
-  (Named.alist_of_list decls, stms))
+    let%bind ast_decls, ast_nondecls = sift_decls body in
+    let%bind ast_stms = ensure_statements ast_nondecls in
+    let%map decls = Tx.Or_error.combine_map ~f:Convert_prim.decl ast_decls
+    and stms = Tx.Or_error.combine_map ~f:stm ast_stms in
+    (Named.alist_of_list decls, stms))
 
 let func (f : Ast.Function_def.t) : unit Function.t Named.t Or_error.t =
   Or_error.Let_syntax.(
@@ -376,7 +405,8 @@ let translation_unit (prog : Ast.Translation_unit.t) :
   Or_error.Let_syntax.(
     let%bind ast_decls, ast_nondecls = sift_decls prog in
     let%bind ast_funs = ensure_functions ast_nondecls in
-    let%map global_list = Tx.Or_error.combine_map ~f:Convert_prim.decl ast_decls
+    let%map global_list =
+      Tx.Or_error.combine_map ~f:Convert_prim.decl ast_decls
     and function_list = Tx.Or_error.combine_map ~f:func ast_funs in
     let globals = Named.alist_of_list global_list in
     let functions = Named.alist_of_list function_list in

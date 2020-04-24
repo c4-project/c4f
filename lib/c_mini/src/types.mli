@@ -41,8 +41,8 @@ module type S_type_checker = sig
   type t
 
   val type_of : t -> Type.t Or_error.t
-  (** [type_of x] tries to get the type of [x].
-      It fails if the type is inconsistent. *)
+  (** [type_of x] tries to get the type of [x]. It fails if the type is
+      inconsistent. *)
 end
 
 (** Signature of parts of the mini-model that implement type checking. *)

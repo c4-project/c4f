@@ -135,8 +135,7 @@ end) : Action_types.S with type Payload.t = Store_payload.t = struct
     @ B.extra_dst_restrictions
 
   let dst_env (vars : Var.Map.t) ~(tid : int)
-      ~(forbid_already_written : bool) :
-      Act_c_mini.Env.t =
+      ~(forbid_already_written : bool) : Act_c_mini.Env.t =
     let predicates = dst_restrictions ~forbid_already_written in
     Var.Map.env_satisfying_all ~predicates ~scope:(Local tid) vars
 
@@ -158,14 +157,12 @@ end) : Action_types.S with type Payload.t = Store_payload.t = struct
       log o "%s environment: %a@." env_name Sexp.pp_hum
         [%sexp (env : Act_c_mini.Env.t)]
 
-    let log_environments (o : Ac.Output.t)
-        (src_env : Act_c_mini.Env.t)
+    let log_environments (o : Ac.Output.t) (src_env : Act_c_mini.Env.t)
         (dst_env : Act_c_mini.Env.t) : unit =
       log_environment o "source" src_env ;
       log_environment o "dest" dst_env
 
-    let gen_store_with_envs (src : Act_c_mini.Env.t)
-        (dst : Act_c_mini.Env.t)
+    let gen_store_with_envs (src : Act_c_mini.Env.t) (dst : Act_c_mini.Env.t)
         (o : Ac.Output.t) ~(random : Splittable_random.State.t) :
         Act_c_mini.Atomic_store.t Or_error.t =
       Or_error.Let_syntax.(
@@ -173,8 +170,12 @@ end) : Action_types.S with type Payload.t = Store_payload.t = struct
         let%map () = error_if_empty "dst" dst in
         log o "Environments are non-empty" ;
         log_environments o src dst ;
-        let module Src = struct let env = src end in
-        let module Dst = struct let env = dst end in
+        let module Src = struct
+          let env = src
+        end in
+        let module Dst = struct
+          let env = dst
+        end in
         let module Gen = B.Quickcheck (Src) (Dst) in
         log o "Built generator module" ;
         Base_quickcheck.Generator.generate ~random ~size:10

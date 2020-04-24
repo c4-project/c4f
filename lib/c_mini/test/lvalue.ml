@@ -49,13 +49,17 @@ let%expect_test "variable_in_env: negative variable result, test env" =
   [%expect {| false |}]
 
 let%expect_test "Type-checking a valid normal variable lvalue" =
-  let module T = Type_check (struct let env = Lazy.force Env.test_env end) in
+  let module T = Type_check (struct
+    let env = Lazy.force Env.test_env
+  end) in
   let result = T.type_of (variable (Act_common.C_id.of_string "foo")) in
   print_s [%sexp (result : Act_c_mini.Type.t Or_error.t)] ;
   [%expect {| (Ok int) |}]
 
 let%expect_test "Type-checking an invalid deferencing variable lvalue" =
-  let module T = Type_check (struct let env = Lazy.force Env.test_env end) in
+  let module T = Type_check (struct
+    let env = Lazy.force Env.test_env
+  end) in
   let result =
     T.type_of (deref (variable (Act_common.C_id.of_string "foo")))
   in
@@ -93,9 +97,13 @@ let%expect_test "gen: sample" =
 
 let%test_unit "on_value_of_typed_id: always takes basic type" =
   let env = Lazy.force Env.test_env in
-  let module Tc = Type_check (struct let env = env end) in
+  let module Tc = Type_check (struct
+    let env = env
+  end) in
   Q.Test.run_exn
-    (module Act_c_mini.Env.Random_var_with_type (struct let env = env end))
+    ( module Act_c_mini.Env.Random_var_with_type (struct
+      let env = env
+    end) )
     ~f:(fun r ->
       let id = Act_common.C_named.name r in
       let ty = Act_common.C_named.value r in

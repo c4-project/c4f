@@ -129,8 +129,12 @@ module Base_map (Ap : Applicative.S) = struct
       ~uop:(fun o x -> Ap.map ~f:(fun (o', x') -> P.uop o' x') (uop (o, x)))
 end
 
-let atomic_cmpxchg (f : t Atomic_cmpxchg.t) : t = atomic (Atomic_expression.cmpxchg f)
-let atomic_fetch (f : t Atomic_fetch.t) : t = atomic (Atomic_expression.fetch f)
+let atomic_cmpxchg (f : t Atomic_cmpxchg.t) : t =
+  atomic (Atomic_expression.cmpxchg f)
+
+let atomic_fetch (f : t Atomic_fetch.t) : t =
+  atomic (Atomic_expression.fetch f)
+
 let atomic_load (l : Atomic_load.t) : t = atomic (Atomic_expression.load l)
 
 module Type_check (E : Env_types.S) = struct

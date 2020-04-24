@@ -34,16 +34,20 @@ module Int_prims (E : Env_types.S) = struct
     Q.Generator.map ~f:Expression.atomic_load [%quickcheck.generator: AL.t]
 
   let gen_atomic_fetch_nop ~(gen_zero : t Q.Generator.t) : t Q.Generator.t =
-    let module F =  Atomic_fetch.Quickcheck_generic
-      (Address_gen.Atomic_int_pointers (E))
-      (Op.Fetch)
-      (struct
-        type nonrec t = t
-        let sexp_of_t = sexp_of_t
-        let quickcheck_observer = Expression.quickcheck_observer
-        let quickcheck_shrinker = Q.Shrinker.atomic
-        let quickcheck_generator = gen_zero
-      end)
+    let module F =
+      Atomic_fetch.Quickcheck_generic
+        (Address_gen.Atomic_int_pointers (E)) (Op.Fetch)
+        (struct
+          type nonrec t = t
+
+          let sexp_of_t = sexp_of_t
+
+          let quickcheck_observer = Expression.quickcheck_observer
+
+          let quickcheck_shrinker = Q.Shrinker.atomic
+
+          let quickcheck_generator = gen_zero
+        end)
     in
     Q.Generator.map ~f:Expression.atomic_fetch [%quickcheck.generator: F.t]
 
@@ -55,46 +59,41 @@ module Int_prims (E : Env_types.S) = struct
     Env.has_variables_of_basic_type E.env ~basic:Type.Basic.(int ~atomic ())
 
   let gen_load ~(gen_zero : t Q.Generator.t) : t Q.Generator.t list =
-      eval_guards [
-        (has_ints ~atomic:true, gen_atomic_load )
-      ; (has_ints ~atomic:true, fun () -> gen_atomic_fetch_nop ~gen_zero )
-      ; (has_ints ~atomic:false, gen_lvalue)
-      ]
+    eval_guards
+      [ (has_ints ~atomic:true, gen_atomic_load)
+      ; (has_ints ~atomic:true, fun () -> gen_atomic_fetch_nop ~gen_zero)
+      ; (has_ints ~atomic:false, gen_lvalue) ]
 
   let gen_prim ~(gen_zero : t Q.Generator.t) : t Q.Generator.t =
-    Q.Generator.union
-      ([ gen_int32 ] @
-      gen_load ~gen_zero)
+    Q.Generator.union ([gen_int32] @ gen_load ~gen_zero)
 end
 
 module Int_zeroes (E : Env_types.S) = struct
   type t = Expression.t [@@deriving sexp]
 
-  module Det_env = (struct let env = Env.filter_to_known_values E.env end)
+  module Det_env = struct
+    let env = Env.filter_to_known_values E.env
+  end
 
-  (** Generates primitive expressions that, if appropriately tagged
-     with dependencies, are statically known to hold the same value,
-     and so can be used as a zero source through expressions of the
-     form [x - x]. *)
+  (** Generates primitive expressions that, if appropriately tagged with
+      dependencies, are statically known to hold the same value, and so can
+      be used as a zero source through expressions of the form [x - x]. *)
   module Det_prims = Int_prims (Det_env)
 
   let gen_cancel ~(mu : t Q.Generator.t) : t Q.Generator.t =
     Q.Generator.Let_syntax.(
       let%map p = Det_prims.gen_prim ~gen_zero:mu in
-      Expression.Infix.(p - p)
-    )
+      Expression.Infix.(p - p))
 
   (** Generates terminal zero integer expressions. *)
   let base_generators : t Q.Generator.t list =
     [Q.Generator.return (Expression.int_lit 0)]
 
-  let recursive_generators (mu : t Q.Generator.t): t Q.Generator.t list =
+  let recursive_generators (mu : t Q.Generator.t) : t Q.Generator.t list =
     [gen_cancel ~mu]
 
   let quickcheck_generator : t Q.Generator.t =
-    Q.Generator.recursive_union
-      base_generators
-      ~f:recursive_generators
+    Q.Generator.recursive_union base_generators ~f:recursive_generators
 
   let quickcheck_observer : t Q.Observer.t =
     [%quickcheck.observer: Expression.t]
@@ -111,9 +110,7 @@ module Int_values (E : Env_types.S) = struct
 
   (** Generates the terminal integer expressions. *)
   let base_generators : t Q.Generator.t list =
-    [ Z.quickcheck_generator
-    ; P.gen_prim ~gen_zero:Z.quickcheck_generator
-    ]
+    [Z.quickcheck_generator; P.gen_prim ~gen_zero:Z.quickcheck_generator]
 
   let quickcheck_generator : t Q.Generator.t =
     (* TODO(@MattWindsor91): find some 'safe' recursive ops. *)
@@ -334,13 +331,19 @@ module Bool_known (E : Env_types.S) = struct
 end
 
 let gen_bools (env : Env.t) : Expression.t Q.Generator.t =
-  let module G = Bool_values (struct let env = env end) in
+  let module G = Bool_values (struct
+    let env = env
+  end) in
   G.quickcheck_generator
 
 let gen_tautologies (env : Env.t) : Expression.t Q.Generator.t =
-  let module G = Bool_known (struct let env = env end) in
+  let module G = Bool_known (struct
+    let env = env
+  end) in
   G.Tautologies.quickcheck_generator
 
 let gen_falsehoods (env : Env.t) : Expression.t Q.Generator.t =
-  let module G = Bool_known (struct let env = env end) in
+  let module G = Bool_known (struct
+    let env = env
+  end) in
   G.Falsehoods.quickcheck_generator

@@ -88,16 +88,13 @@ module Surround = struct
           (Path_consumers.Test.transform_stm_list path ~target:test
              ~f:(fun test -> Or_error.return [f cond test]))))
 
-  let cond_env (vars : Var.Map.t) ~(tid : int) :
-      Act_c_mini.Env.t =
+  let cond_env (vars : Var.Map.t) ~(tid : int) : Act_c_mini.Env.t =
     Var.Map.env_satisfying_all ~scope:(Local tid) ~predicates:[] vars
 
   module Make (Basic : sig
     val action_id : Act_common.Id.t
 
-    val cond_gen :
-         Act_c_mini.Env.t
-      -> Act_c_mini.Expression.t Q.Generator.t
+    val cond_gen : Act_c_mini.Env.t -> Act_c_mini.Expression.t Q.Generator.t
     (** [cond_gen env] should, given a first-class environment module [env]
         capturing the variables in scope at the point where the if statement
         is appearing, return a Quickcheck generator generating expressions

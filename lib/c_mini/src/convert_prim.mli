@@ -22,15 +22,19 @@ val constant : Act_c_lang.Ast_basic.Constant.t -> Constant.t Or_error.t
 
 (** {1 Declarators and declarations} *)
 
-val decl : Act_c_lang.Ast.Decl.t -> Initialiser.t Act_common.C_named.t Or_error.t
+val decl :
+  Act_c_lang.Ast.Decl.t -> Initialiser.t Act_common.C_named.t Or_error.t
 (** [decl d] translates a declaration into an identifier-initialiser pair. *)
 
-val param_decl : Act_c_lang.Ast.Param_decl.t -> Type.t Act_common.C_named.t Or_error.t
-(** [param_decl d] translates a parameter declarator into an identifier-type pair. *)
+val param_decl :
+  Act_c_lang.Ast.Param_decl.t -> Type.t Act_common.C_named.t Or_error.t
+(** [param_decl d] translates a parameter declarator into an identifier-type
+    pair. *)
 
 (** {1 Converting expressions to lvalues, addresses, and so on} *)
 
-val expr_to_identifier : Act_c_lang.Ast.Expr.t -> Act_common.C_id.t Or_error.t
+val expr_to_identifier :
+  Act_c_lang.Ast.Expr.t -> Act_common.C_id.t Or_error.t
 (** [expr_to_identifier e] tries to interpret [e] as an identifier. *)
 
 val expr_to_lvalue : Act_c_lang.Ast.Expr.t -> Lvalue.t Or_error.t

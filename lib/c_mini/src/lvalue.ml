@@ -64,7 +64,10 @@ let as_variable (lv : t) : Ac.C_id.t Or_error.t =
         [%message
           "Can't safely convert this lvalue to a variable" ~lvalue:(lv : t)]
 
-module Type_check (E : sig val env : Env.t end) = struct
+module Type_check (E : sig
+  val env : Env.t
+end) =
+struct
   let rec type_of : t -> Type.t Or_error.t = function
     | Variable id ->
         Env.type_of E.env ~id

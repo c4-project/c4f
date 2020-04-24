@@ -23,18 +23,20 @@ val test_typing : Act_c_mini.Type.t Map.M(Act_common.C_id).t Lazy.t
 (** [test_env] is a typing environment used for testing the various
     environment-sensitive operations. *)
 
-val test_typing_atomic_ptrs_only : Act_c_mini.Type.t Map.M(Act_common.C_id).t Lazy.t
+val test_typing_atomic_ptrs_only :
+  Act_c_mini.Type.t Map.M(Act_common.C_id).t Lazy.t
 (** [test_env_atomic_ptrs_only] is a typing environment that contains only
     variables of type 'atomic_int*' and 'atomic_bool*'. *)
 
-val test_typing_scalars_only : Act_c_mini.Type.t Map.M(Act_common.C_id).t Lazy.t
+val test_typing_scalars_only :
+  Act_c_mini.Type.t Map.M(Act_common.C_id).t Lazy.t
 (** [test_env_atomic_ptrs_only] is a typing environment that contains only
     variables of scalar (but possibly atomic) type. *)
 
 (** {3 Test typing environment modules}
 
     Each of these contain deterministic singleton known values for all
-   non-pointer variables.  *)
+    non-pointer variables. *)
 
 val test_env : Act_c_mini.Env.t Lazy.t
 (** {!test_typing} with known-values added. *)

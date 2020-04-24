@@ -26,7 +26,9 @@ let test_in_env (env : Src.Env.t)
 let test_type (env : Src.Env.t)
     (module Qc : Qx.S_with_sexp with type t = Src.Address.t)
     (expected : Src.Type.t) : unit =
-  let module Tc = Src.Address.Type_check (struct let env = env end) in
+  let module Tc = Src.Address.Type_check (struct
+    let env = env
+  end) in
   Q.Test.run_exn
     (module Qc)
     ~f:(fun lv ->
@@ -37,7 +39,9 @@ let%test_module "On_env" =
   ( module struct
     let e = Lazy.force Env.test_env
 
-    module Qc = Src.Address_gen.On_env (struct let env = e end)
+    module Qc = Src.Address_gen.On_env (struct
+      let env = e
+    end)
 
     let%expect_test "sample" =
       Qx.print_sample
@@ -74,7 +78,9 @@ let%test_module "Atomic_int_pointers" =
   ( module struct
     let e = Lazy.force Env.test_env
 
-    module Qc = Src.Address_gen.Atomic_int_pointers (struct let env = e end)
+    module Qc = Src.Address_gen.Atomic_int_pointers (struct
+      let env = e
+    end)
 
     let%expect_test "liveness" =
       Qx.print_sample
@@ -99,7 +105,9 @@ let%test_module "Atomic_bool_pointers" =
   ( module struct
     let e = Lazy.force Env.test_env
 
-    module Qc = Src.Address_gen.Atomic_bool_pointers (struct let env = e end)
+    module Qc = Src.Address_gen.Atomic_bool_pointers (struct
+      let env = e
+    end)
 
     let%expect_test "Atomic_bool_pointers: liveness" =
       Qx.print_sample

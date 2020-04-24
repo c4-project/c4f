@@ -27,13 +27,13 @@ let print_sample (module G : Src.Expression_gen.S) : unit =
     end )
 
 let test_all_expressions_have_type
-    (f :
-         Src.Env.t
-      -> (module Q.Test.S with type t = Src.Expression.t)) (ty : Src.Type.t)
-    : unit =
+    (f : Src.Env.t -> (module Q.Test.S with type t = Src.Expression.t))
+    (ty : Src.Type.t) : unit =
   let env = Lazy.force Env.test_env in
   let (module Qc) = f env in
-  let module Ty = Src.Expression.Type_check (struct let env = env end) in
+  let module Ty = Src.Expression.Type_check (struct
+    let env = env
+  end) in
   Q.Test.run_exn
     (module Qc)
     ~f:(fun e ->
@@ -47,21 +47,17 @@ module Exp_idents =
     (Act_c_mini.Lvalue.On_identifiers)
 
 let test_all_expressions_in_env
-    (f :
-         Src.Env.t
-      -> (module Q.Test.S with type t = Src.Expression.t)) : unit =
+    (f : Src.Env.t -> (module Q.Test.S with type t = Src.Expression.t)) :
+    unit =
   let env = Lazy.force Env.test_env in
-  Base_quickcheck.Test.run_exn
-    (f env)
+  Base_quickcheck.Test.run_exn (f env)
     ~f:
       ([%test_pred: Src.Expression.t]
          (Exp_idents.for_all ~f:(Map.mem env))
          ~here:[[%here]])
 
 let test_all_expressions_evaluate
-    (f :
-         Src.Env.t
-      -> (module Q.Test.S with type t = Src.Expression.t))
+    (f : Src.Env.t -> (module Q.Test.S with type t = Src.Expression.t))
     ~(pred : Src.Constant.t -> bool) : unit =
   let env = Lazy.force Env.test_env in
   let heap = Src.Heap.make (Src.Address.eval_on_env ~env) in
@@ -78,7 +74,10 @@ let test_all_expressions_evaluate
 let%test_module "Int_values" =
   ( module struct
     let print_sample (env : Src.Env.t) =
-      print_sample (module Src.Expression_gen.Int_values (struct let env = env end))
+      print_sample
+        ( module Src.Expression_gen.Int_values (struct
+          let env = env
+        end) )
 
     let%expect_test "sample" =
       print_sample (Lazy.force Env.test_env) ;
@@ -92,7 +91,8 @@ let%test_module "Int_values" =
 
     let%expect_test "sample (environment has only atomic_int*)" =
       print_sample (Lazy.force Env.test_env_atomic_ptrs_only) ;
-      [%expect{|
+      [%expect
+        {|
         0
         470264907
         atomic_load_explicit(bar, memory_order_consume)
@@ -103,7 +103,8 @@ let%test_module "Int_values" =
 
     let%expect_test "sample (environment is empty)" =
       print_sample (Lazy.force Env.empty_env) ;
-      [%expect{|
+      [%expect
+        {|
         -23556581
         -38250
         0
@@ -112,19 +113,26 @@ let%test_module "Int_values" =
 
     let%test_unit "all expressions have 'int' type" =
       test_all_expressions_have_type
-        (fun e -> (module Src.Expression_gen.Int_values (struct let env = e end)))
+        (fun e ->
+          ( module Src.Expression_gen.Int_values (struct
+            let env = e
+          end) ))
         Src.Type.(int ())
 
     let%test_unit "all referenced variables in environment" =
       test_all_expressions_in_env (fun e ->
-          (module Src.Expression_gen.Int_values (struct let env = e end)))
+          ( module Src.Expression_gen.Int_values (struct
+            let env = e
+          end) ))
   end )
-
 
 let%test_module "Int zeroes" =
   ( module struct
     let print_sample (env : Src.Env.t) =
-      print_sample (module Src.Expression_gen.Int_zeroes (struct let env = env end))
+      print_sample
+        ( module Src.Expression_gen.Int_zeroes (struct
+          let env = env
+        end) )
 
     let%expect_test "sample" =
       print_sample (Lazy.force Env.test_env) ;
@@ -136,7 +144,9 @@ let%test_module "Int zeroes" =
 
     let test_fun (env : Src.Env.t) :
         (module Q.Test.S with type t = Src.Expression.t) =
-      (module Src.Expression_gen.Int_zeroes (struct let env = env end))
+      ( module Src.Expression_gen.Int_zeroes (struct
+        let env = env
+      end) )
 
     let%test_unit "all expressions have 'int' type" =
       test_all_expressions_have_type test_fun Src.Type.(int ())
@@ -147,13 +157,18 @@ let%test_module "Int zeroes" =
 
     let%test_unit "all referenced variables in environment" =
       test_all_expressions_in_env (fun e ->
-          (module Src.Expression_gen.Int_zeroes (struct let env = e end)))
+          ( module Src.Expression_gen.Int_zeroes (struct
+            let env = e
+          end) ))
   end )
 
 let%test_module "Bool_values" =
   ( module struct
     let print_sample (env : Src.Env.t) =
-      print_sample (module Src.Expression_gen.Bool_values (struct let env = env end))
+      print_sample
+        ( module Src.Expression_gen.Bool_values (struct
+          let env = env
+        end) )
 
     let%expect_test "sample" =
       print_sample (Lazy.force Env.test_env) ;
@@ -167,7 +182,8 @@ let%test_module "Bool_values" =
 
     let%expect_test "sample (environment has only atomic_int*)" =
       print_sample (Lazy.force Env.test_env_atomic_ptrs_only) ;
-      [%expect{|
+      [%expect
+        {|
         -38250 == atomic_load_explicit(bar, memory_order_acquire)
         atomic_fetch_sub_explicit(bar, 0, memory_order_seq_cst) == -186
         atomic_load_explicit(bar, memory_order_seq_cst) == 0
@@ -181,7 +197,8 @@ let%test_module "Bool_values" =
 
     let%expect_test "sample (environment is empty)" =
       print_sample (Lazy.force Env.empty_env) ;
-      [%expect{|
+      [%expect
+        {|
         -190264 == 0
         0 == 0
         !(0 == 0) && (0 == -879720314 && 0 == 7471)
@@ -189,7 +206,9 @@ let%test_module "Bool_values" =
         -4 == 7627 - 7627 && false || (0 == 115 || false || 0 == -4713 && 33209 == 0) |}]
 
     let test_fun (env : Src.Env.t) =
-      (module Src.Expression_gen.Bool_values (struct let env = env end) : Q.Test.S
+      ( module Src.Expression_gen.Bool_values (struct
+        let env = env
+      end) : Q.Test.S
         with type t = Src.Expression.t )
 
     let%test_unit "all expressions have 'bool' type" =
@@ -201,13 +220,17 @@ let%test_module "Bool_values" =
 
     let%test_unit "all referenced variables in environment" =
       test_all_expressions_in_env (fun e ->
-          (module Src.Expression_gen.Bool_values (struct let env = e end)))
+          ( module Src.Expression_gen.Bool_values (struct
+            let env = e
+          end) ))
   end )
 
 let%test_module "Bool falsehoods" =
   ( module struct
     let print_sample (env : Src.Env.t) =
-      let module B = Src.Expression_gen.Bool_known (struct let env = env end) in
+      let module B = Src.Expression_gen.Bool_known (struct
+        let env = env
+      end) in
       print_sample (module B.Falsehoods)
 
     let%expect_test "sample" =
@@ -224,7 +247,9 @@ let%test_module "Bool falsehoods" =
 
     let test_fun (env : Src.Env.t) :
         (module Q.Test.S with type t = Src.Expression.t) =
-      let module K = Src.Expression_gen.Bool_known (struct let env = env end) in
+      let module K = Src.Expression_gen.Bool_known (struct
+        let env = env
+      end) in
       (module K.Falsehoods)
 
     let%test_unit "all expressions have 'bool' type" =
@@ -236,13 +261,17 @@ let%test_module "Bool falsehoods" =
 
     let%test_unit "all referenced variables in environment" =
       test_all_expressions_in_env (fun e ->
-          (module Src.Expression_gen.Bool_values (struct let env = e end)))
+          ( module Src.Expression_gen.Bool_values (struct
+            let env = e
+          end) ))
   end )
 
 let%test_module "Bool tautologies" =
   ( module struct
     let print_sample (env : Src.Env.t) =
-      let module B = Src.Expression_gen.Bool_known (struct let env = env end) in
+      let module B = Src.Expression_gen.Bool_known (struct
+        let env = env
+      end) in
       print_sample (module B.Tautologies)
 
     let%expect_test "sample" =
@@ -256,7 +285,9 @@ let%test_module "Bool tautologies" =
 
     let test_fun (env : Src.Env.t) :
         (module Q.Test.S with type t = Src.Expression.t) =
-      let module K = Src.Expression_gen.Bool_known (struct let env = env end) in
+      let module K = Src.Expression_gen.Bool_known (struct
+        let env = env
+      end) in
       (module K.Tautologies)
 
     let%test_unit "all expressions have 'bool' type" =
@@ -268,6 +299,7 @@ let%test_module "Bool tautologies" =
 
     let%test_unit "all referenced variables in environment" =
       test_all_expressions_in_env (fun e ->
-          (module Src.Expression_gen.Bool_values (struct let env = e end)))
+          ( module Src.Expression_gen.Bool_values (struct
+            let env = e
+          end) ))
   end )
-

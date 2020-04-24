@@ -27,13 +27,14 @@ end = struct
   include On_env (E) (* to override as needed *)
 
   module Gen = Env.Random_var_with_type (E)
+
   let quickcheck_generator : t Generator.t =
-    Generator.filter_map Gen.quickcheck_generator
-      ~f:(fun r ->
+    Generator.filter_map Gen.quickcheck_generator ~f:(fun r ->
         let id = Act_common.C_named.name r in
         let ty = Act_common.C_named.value r in
-       Option.some_if (Type.basic_type_is ~basic:T.basic_type ty)
-        (L.on_value_of_typed_id ~id ~ty))
+        Option.some_if
+          (Type.basic_type_is ~basic:T.basic_type ty)
+          (L.on_value_of_typed_id ~id ~ty))
 end
 
 module Int_values (E : Env_types.S) : sig

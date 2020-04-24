@@ -42,14 +42,13 @@ let det_known_values : Src.Constant.t Map.M(Ac.C_id).t Lazy.t =
          ; (Ac.C_id.of_string "z", bool false)
          ; (Ac.C_id.of_string "blep", int 99) ])
 
-let lift_to_full (e : Src.Type.t Map.M(Ac.C_id).t Lazy.t) :
-    Src.Env.t Lazy.t =
-    Lazy.Let_syntax.(
-      let%map e = e and d = det_known_values in Src.Env.of_maps e d
-    )
+let lift_to_full (e : Src.Type.t Map.M(Ac.C_id).t Lazy.t) : Src.Env.t Lazy.t
+    =
+  Lazy.Let_syntax.(
+    let%map e = e and d = det_known_values in
+    Src.Env.of_maps e d)
 
-let test_env : Src.Env.t Lazy.t =
-  lift_to_full test_typing
+let test_env : Src.Env.t Lazy.t = lift_to_full test_typing
 
 let test_typing_atomic_ptrs_only : Src.Type.t Map.M(Ac.C_id).t Lazy.t =
   Lazy.(
@@ -64,4 +63,5 @@ let test_typing_scalars_only : Src.Type.t Map.M(Ac.C_id).t Lazy.t =
 let test_env_scalars_only : Src.Env.t Lazy.t =
   lift_to_full test_typing_scalars_only
 
-let empty_env : Src.Env.t Lazy.t = lift_to_full (lazy (Map.empty (module Ac.C_id)))
+let empty_env : Src.Env.t Lazy.t =
+  lift_to_full (lazy (Map.empty (module Ac.C_id)))

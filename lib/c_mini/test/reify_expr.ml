@@ -21,32 +21,26 @@ let%test_module "examples" =
     let%expect_test "subtract bracketing 1" =
       test
         Src.Expression.(
-          sub (sub (int_lit 1) (int_lit 1))
-            (sub (int_lit 1) (int_lit 1))
-        );
+          sub (sub (int_lit 1) (int_lit 1)) (sub (int_lit 1) (int_lit 1))) ;
       [%expect {| 1 - 1 - (1 - 1) |}]
 
     let%expect_test "subtract bracketing 2" =
       test
         Src.Expression.(
-          sub (sub (sub (int_lit 1) (int_lit 1)) (int_lit 1)) (int_lit 1)
-        );
+          sub (sub (sub (int_lit 1) (int_lit 1)) (int_lit 1)) (int_lit 1)) ;
       [%expect {| 1 - 1 - 1 - 1 |}]
 
     let%expect_test "subtract bracketing 3" =
       test
         Src.Expression.(
-          sub (int_lit 1) (sub (int_lit 1) (sub (int_lit 1) (int_lit 1)))
-        );
+          sub (int_lit 1) (sub (int_lit 1) (sub (int_lit 1) (int_lit 1)))) ;
       [%expect {| 1 - (1 - (1 - 1)) |}]
 
     let%expect_test "add-subtract bracketing" =
       test
         Src.Expression.(
-          sub (add (sub (int_lit 1) (int_lit 2)) (int_lit 3)) (int_lit 4)
-        );
+          sub (add (sub (int_lit 1) (int_lit 2)) (int_lit 3)) (int_lit 4)) ;
       [%expect {| 1 - 2 + 3 - 4 |}]
-
 
     let%expect_test "atomic_load of referenced variable" =
       test
@@ -75,7 +69,9 @@ let%test_module "round trips" =
     struct
       let run_round_trip () : unit =
         let env = Lazy.force Env.test_env in
-        let module Qc = F (struct let env = env end) in
+        let module Qc = F (struct
+          let env = env
+        end) in
         test_round_trip (module Qc)
     end
 
@@ -94,8 +90,7 @@ let%test_module "round trips" =
     let%test_unit "round-trip on Boolean expressions" =
       Bool_values.run_round_trip ()
 
-    module Bool_tautologies_in (E : Src.Env_types.S) =
-    struct
+    module Bool_tautologies_in (E : Src.Env_types.S) = struct
       module K = Src.Expression_gen.Bool_known (E)
       include K.Tautologies
     end
@@ -105,8 +100,7 @@ let%test_module "round trips" =
     let%test_unit "round-trip on Boolean tautologies" =
       Bool_tautologies.run_round_trip ()
 
-    module Bool_falsehoods_in (E : Src.Env_types.S) =
-    struct
+    module Bool_falsehoods_in (E : Src.Env_types.S) = struct
       module K = Src.Expression_gen.Bool_known (E)
       include K.Tautologies
     end

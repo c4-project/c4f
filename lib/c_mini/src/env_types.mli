@@ -11,7 +11,8 @@
 
 (** C-mini: module signatures for variable environments
 
-These exist because of the sheer number of functors that accept {!Env} types. *)
+    These exist because of the sheer number of functors that accept {!Env}
+    types. *)
 
 (** Type of modules containing typing/known-value environments. *)
 module type S = sig

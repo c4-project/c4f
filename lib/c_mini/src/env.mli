@@ -13,8 +13,8 @@
 
     Large parts of the mini-model's type checking and program fragment
     generation functionality depends on the existence of an environment
-    mapping variable names to their {{!Type} mini-model types}, and optionally
-    {{!Constant} known constant values}. This module provides
+    mapping variable names to their {{!Type} mini-model types}, and
+    optionally {{!Constant} known constant values}. This module provides
     typing/known-value environments, modelled as maps. *)
 
 open Base
@@ -22,12 +22,12 @@ open Base
 (** {1 Environment records} *)
 
 module Record : sig
-  type t [@@deriving sexp]
   (** Opaque type of records. *)
+  type t [@@deriving sexp]
 
   val make : ?known_value:Constant.t -> type_of:Type.t -> unit -> t
   (** [make ?known_value ~type_of ()] creates a new record with the given
-  type and optional known-value. *)
+      type and optional known-value. *)
 
   (** {2 Accessors} *)
 
@@ -40,15 +40,16 @@ end
 
 (** {1 Environment maps} *)
 
-type t = Record.t Map.M(Act_common.C_id).t [@@deriving sexp]
 (** Full environments are maps of {!Record.t}. *)
+type t = Record.t Map.M(Act_common.C_id).t [@@deriving sexp]
 
 (** {2 Constructors} *)
 
 val of_typing : Type.t Map.M(Act_common.C_id).t -> t
 (** [of_typing] lifts a typing map to an environment. *)
 
-val of_maps : Type.t Map.M(Act_common.C_id).t -> Constant.t Map.M(Act_common.C_id).t -> t
+val of_maps :
+  Type.t Map.M(Act_common.C_id).t -> Constant.t Map.M(Act_common.C_id).t -> t
 (** [of_maps] combines a typing map and known-value map. *)
 
 (** {3 Lookup} *)
@@ -64,20 +65,19 @@ val known_value : t -> id:Act_common.C_id.t -> Constant.t option Or_error.t
 
 val type_of_known_value : t -> id:Act_common.C_id.t -> Type.t Or_error.t
 (** [type_of_known_value env ~id] behaves like [type_of], but returns the
-    type associated with any known-value information stored for [id]. This
-    is [type_of id] for non-pointer-typed variables, and the non-pointer
+    type associated with any known-value information stored for [id]. This is
+    [type_of id] for non-pointer-typed variables, and the non-pointer
     equivalent otherwise. *)
 
 (** {2 Filtering and extracting} *)
 
-val typing : t ->
-  Type.t Map.M(Act_common.C_id).t
+val typing : t -> Type.t Map.M(Act_common.C_id).t
 (** [typing env] creates a map from variable IDs to their types. *)
 
-val variables_with_known_values : t ->
-  (Type.t * Constant.t) Map.M(Act_common.C_id).t
-(** [variables_with_known_values env] creates a map from variable IDs to their
-    types and definitely-known values, discarding any variable IDs for
+val variables_with_known_values :
+  t -> (Type.t * Constant.t) Map.M(Act_common.C_id).t
+(** [variables_with_known_values env] creates a map from variable IDs to
+    their types and definitely-known values, discarding any variable IDs for
     which there is no known value. *)
 
 val filter_to_known_values : t -> t
@@ -85,8 +85,8 @@ val filter_to_known_values : t -> t
     but returns another environment. *)
 
 val has_variables_of_basic_type : t -> basic:Type.Basic.t -> bool
-(** [has_variables_of_basic_type t] is true provided that [env]
-    has at least one variable whose basic type is [t]. *)
+(** [has_variables_of_basic_type t] is true provided that [env] has at least
+    one variable whose basic type is [t]. *)
 
 val variables_of_basic_type : t -> basic:Type.Basic.t -> t
 (** [variables_of_basic_type env ~basic] filters [env], returning a map
@@ -95,31 +95,40 @@ val variables_of_basic_type : t -> basic:Type.Basic.t -> t
 (** {2 Quickcheck-compatible random variable selection} *)
 
 val gen_random_var : t -> Act_common.C_id.t Base_quickcheck.Generator.t
-(** [gen_random_var env] is a generator that selects a random variable name from
-    [env]. *)
+(** [gen_random_var env] is a generator that selects a random variable name
+    from [env]. *)
 
-val gen_random_var_with_type : t -> Type.t Act_common.C_named.t Base_quickcheck.Generator.t
-(** [gen_random_var_with_type env] is a generator that selects a random variable typing record from [env]. *)
+val gen_random_var_with_type :
+  t -> Type.t Act_common.C_named.t Base_quickcheck.Generator.t
+(** [gen_random_var_with_type env] is a generator that selects a random
+    variable typing record from [env]. *)
 
-val gen_random_var_with_record : t -> Record.t Act_common.C_named.t Base_quickcheck.Generator.t
-(** [gen_random_var_with_record env] is a generator that selects a random variable record from
-    [env]. *)
+val gen_random_var_with_record :
+  t -> Record.t Act_common.C_named.t Base_quickcheck.Generator.t
+(** [gen_random_var_with_record env] is a generator that selects a random
+    variable record from [env]. *)
 
 (** {3 Modules}
 
-These wrap the above generators in Quickcheck-compatible modules. *)
+    These wrap the above generators in Quickcheck-compatible modules. *)
 
 (** Selection of random variables from an environment. *)
-module Random_var (E : sig val env : t end) : sig
+module Random_var (E : sig
+  val env : t
+end) : sig
   type t = Act_common.C_id.t [@@deriving sexp_of, quickcheck]
 end
 
 (** Selection of random variables, and their types, from an environment. *)
-module Random_var_with_type (E : sig val env : t end) : sig
+module Random_var_with_type (E : sig
+  val env : t
+end) : sig
   type t = Type.t Act_common.C_named.t [@@deriving sexp_of, quickcheck]
 end
 
 (** Selection of random variables, and their records, from an environment. *)
-module Random_var_with_record (E : sig val env : t end) : sig
+module Random_var_with_record (E : sig
+  val env : t
+end) : sig
   type t = Record.t Act_common.C_named.t [@@deriving sexp_of, quickcheck]
 end
