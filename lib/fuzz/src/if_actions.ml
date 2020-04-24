@@ -39,9 +39,9 @@ module Surround = struct
         given the original statement span [stms]. *)
 
     val cond_gen :
-         (module Act_c_mini.Env_types.S_with_known_values)
+         Act_c_mini.Env.t
       -> Act_c_mini.Expression.t Base_quickcheck.Generator.t
-    (** [cond_gen env] should, given a first-class environment module [env]
+    (** [cond_gen env] should, given an environment [env]
         capturing the variables in scope at the point where the if statement
         is appearing, return a Quickcheck generator generating expressions
         over those variables. *)
@@ -93,10 +93,9 @@ module Surround = struct
           original statements.  It cannot fire if the statements contain
           any labels, to avoid duplicating them. |}
 
-    let cond_gen (module Env : Act_c_mini.Env_types.S_with_known_values) :
+    let cond_gen : Act_c_mini.Env.t ->
         Act_c_mini.Expression.t Base_quickcheck.Generator.t =
-      let module B = Act_c_mini.Expression_gen.Bool_values (Env) in
-      B.quickcheck_generator
+        Act_c_mini.Expression_gen.gen_bools
 
     let t_branch_of_statements (statements : Subject.Statement.t list) :
         Subject.Block.t =
@@ -118,10 +117,9 @@ module Surround = struct
          puts the original statements in the true block, and marks the false
          block as dead-code. |}
 
-    let cond_gen (module Env : Act_c_mini.Env_types.S_with_known_values) :
+    let cond_gen : Act_c_mini.Env.t ->
         Act_c_mini.Expression.t Base_quickcheck.Generator.t =
-      let module B = Act_c_mini.Expression_gen.Bool_known (Env) in
-      B.Tautologies.quickcheck_generator
+        Act_c_mini.Expression_gen.gen_tautologies
 
     let t_branch_of_statements (statements : Subject.Statement.t list) :
         Subject.Block.t =

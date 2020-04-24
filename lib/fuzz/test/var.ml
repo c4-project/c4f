@@ -60,14 +60,17 @@ end
 
 let%test_module "environment modules in a test map" =
   ( module struct
-    let test_variables_of_basic_type (scope : Ac.Scope.t) (ty : Ty.Basic.t) :
+    let test_variables_of_basic_type (scope : Ac.Scope.t) (basic : Ty.Basic.t) :
         unit =
-      let (module Env) =
-        Src.Var.Map.env_module_satisfying_all
+      let env =
+        Src.Var.Map.env_satisfying_all
           (Lazy.force Test_data.test_map)
           ~scope
+          ~predicates:[]
       in
-      let vals = ty |> Env.variables_of_basic_type |> Map.to_alist in
+      let vals = env |>
+      Act_c_mini.Env.variables_of_basic_type ~basic |>
+      Act_c_mini.Env.typing |> Map.to_alist in
       print_s [%sexp (vals : (Ac.C_id.t, Ty.t) List.Assoc.t)]
 
     let%expect_test "all integer variables from thread 1" =
@@ -79,13 +82,14 @@ let%test_module "environment modules in a test map" =
       [%expect {| ((a bool) (barbaz bool) (c bool) (r1 bool)) |}]
 
     let%expect_test "known values in environment form" =
-      let (module Env) =
-        Src.Var.Map.env_module_satisfying_all
+      let env =
+        Src.Var.Map.env_satisfying_all
           (Lazy.force Test_data.test_map)
           ~scope:Ac.Scope.Global
+          ~predicates:[]
       in
       let vals =
-        Env.variables_with_known_values |> Lazy.force |> Map.to_alist
+        env |> Act_c_mini.Env.variables_with_known_values |> Map.to_alist
       in
       print_s [%sexp (vals : (Ac.C_id.t, Ty.t * Con.t) List.Assoc.t)] ;
       [%expect

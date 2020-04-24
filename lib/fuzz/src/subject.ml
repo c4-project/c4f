@@ -111,6 +111,7 @@ module Thread = struct
       Act_c_mini.Type.t Ac.C_named.Alist.t =
     vars
     |> Var.Map.env_satisfying_all ~scope:Global ~predicates:[]
+    |> Act_c_mini.Env.typing
     |> Map.to_alist
 
   let to_function (prog : t) ~(vars : Var.Map.t) ~(id : int) :

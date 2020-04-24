@@ -186,7 +186,8 @@ let%test_module "using sample environment" =
            (module Act_common.Litmus_id)
            ~f:(fun ~key ~data ->
              let lit = Act_common.Litmus_id.global key in
-             (lit, Src.Var.Record.make_existing Global data))
+             let ty = Act_c_mini.Env.Record.type_of data in
+             (lit, Src.Var.Record.make_existing Global ty))
       |> Or_error.ok_exn |> Act_common.Scoped_map.of_litmus_id_map
 
     let test programs =

@@ -26,6 +26,10 @@ module Record = struct
     ; has_writes: bool [@default false] }
   [@@deriving fields, make, equal]
 
+  let env_record (r : t) : Act_c_mini.Env.Record.t =
+    (* TODO(@MattWindsor91): nest this directly instead *)
+    Act_c_mini.Env.Record.make ~type_of:(ty r) ?known_value:(known_value r) ()
+
   let is_global (r : t) : bool = Ac.Scope.is_global (scope r)
 
   let has_basic_type (r : t) ~(basic : Act_c_mini.Type.Basic.t) : bool =
@@ -118,20 +122,8 @@ module Map = struct
     |> Map.filter ~f:(Tx.List.all ~predicates)
 
   let env_satisfying_all (vars : t) ~(scope : Ac.Scope.t)
-      ~(predicates : (Record.t -> bool) list) =
-    vars |> records_satisfying_all ~scope ~predicates |> Map.map ~f:Record.ty
-
-  let env_module_satisfying_all
-      ?(predicates : (Record.t -> bool) list = []) (vars : t)
-      ~(scope : Ac.Scope.t) :
-      (module Act_c_mini.Env_types.S_with_known_values) =
-    ( module Act_c_mini.Env.Make_with_known_values (struct
-      let records = records_satisfying_all vars ~scope ~predicates
-
-      let env = Map.map ~f:Record.ty records
-
-      let known_values = Map.filter_map ~f:Record.known_value records
-    end) )
+      ~(predicates : (Record.t -> bool) list) : Act_c_mini.Env.t =
+    vars |> records_satisfying_all ~scope ~predicates |> Map.map ~f:Record.env_record
 
   let satisfying_all (vars : t) ~(scope : Ac.Scope.t)
       ~(predicates : (Record.t -> bool) list) : Ac.C_id.t list =

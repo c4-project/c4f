@@ -110,20 +110,11 @@ module Map : sig
        t
     -> scope:Act_common.Scope.t
     -> predicates:(Record.t -> bool) list
-    -> Act_c_mini.Type.t Map.M(Act_common.C_id).t
-  (** [env_satisfying_all map ~scope ~predicates] returns a typing
+    -> Act_c_mini.Env.t
+  (** [env_satisfying_all map ~scope ~predicates] returns a variable
       environment for all variables in [map] in scope with regards to
       [scope], with known types, and for which all predicates in [predicates]
       are true. *)
-
-  val env_module_satisfying_all :
-    ?predicates:(Record.t -> bool) list
-    -> t
-    -> scope:Act_common.Scope.t
-    -> (module Act_c_mini.Env_types.S_with_known_values)
-  (** [env_module_satisfying_all map ~scope ~predicates] behaves as
-      {!env_satisfying_all}, but wraps the results in a first-class env
-      module. *)
 
   val satisfying_all :
        t

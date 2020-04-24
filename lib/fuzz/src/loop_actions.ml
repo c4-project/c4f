@@ -34,10 +34,9 @@ struct
   module Payload = Surround.Make (struct
     let action_id = name
 
-    let cond_gen (module Env : Act_c_mini.Env_types.S_with_known_values) :
+    let cond_gen : Act_c_mini.Env.t ->
         Act_c_mini.Expression.t Base_quickcheck.Generator.t =
-      let module B = Act_c_mini.Expression_gen.Bool_known (Env) in
-      B.Falsehoods.quickcheck_generator
+        Act_c_mini.Expression_gen.gen_falsehoods
 
     let build_filter : Path_filter.t -> Path_filter.t = Fn.id
   end)

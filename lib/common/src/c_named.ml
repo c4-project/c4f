@@ -12,7 +12,7 @@
 open Base
 
 module Parametric = struct
-  type 'a t = {name: C_id.t; value: 'a} [@@deriving sexp, equal, fields]
+  type 'a t = {name: C_id.t; value: 'a} [@@deriving sexp, equal, fields, quickcheck]
 end
 
 include Parametric

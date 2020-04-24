@@ -115,9 +115,9 @@ module Surround : sig
         is being defined. *)
 
     val cond_gen :
-         (module Act_c_mini.Env_types.S_with_known_values)
+         Act_c_mini.Env.t
       -> Act_c_mini.Expression.t Base_quickcheck.Generator.t
-    (** [cond_gen env] should, given a first-class environment module [env]
+    (** [cond_gen env] should, given an environment [env]
         capturing the variables in scope at the point where the if statement
         is appearing, return a Quickcheck generator generating expressions
         over those variables. *)

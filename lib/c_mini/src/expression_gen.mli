@@ -17,22 +17,22 @@ module type S =
 
 (** Generates random, type-safe expressions over the given variable
     environment, with type 'int'. *)
-module Int_values (E : Env_types.S_with_known_values) : S
+module Int_values (E : Env_types.S) : S
 
 (** Generates random integer expressions that always evaluate to 0. *)
-module Int_zeroes (Env : Env_types.S_with_known_values) : S
+module Int_zeroes (E : Env_types.S) : S
 
 (** {1 Booleans} *)
 
 (** Generates random, type-safe expressions over the given variable
     environment, with type 'bool'. *)
-module Bool_values (E : Env_types.S_with_known_values) : S
+module Bool_values (E : Env_types.S) : S
 
 (** {2 Booleans with known truth values}
 
     [Bool_known] constructs two generators over a given environment with
     known value data: a tautology generator and a falsehood generator. *)
-module Bool_known (E : Env_types.S_with_known_values) : sig
+module Bool_known (E : Env_types.S) : sig
   (** Generates random, type-safe expressions over the given variable
       environment, with type 'bool' and guaranteed 'true' value. *)
   module Tautologies : S
@@ -41,3 +41,16 @@ module Bool_known (E : Env_types.S_with_known_values) : sig
       environment, with type 'bool' and guaranteed 'false' value. *)
   module Falsehoods : S
 end
+
+(** {2 Generators only} *)
+
+val gen_bools : Env.t -> Expression.t Base_quickcheck.Generator.t
+(** [gen_bools env] is shorthand for the [Bool_values] generator over [env]. *)
+
+val gen_tautologies : Env.t -> Expression.t Base_quickcheck.Generator.t
+(** [gen_tautologies env] is shorthand for the [Tautologies] generator of an
+    instance of [Bool_known] over [env]. *)
+
+val gen_falsehoods : Env.t -> Expression.t Base_quickcheck.Generator.t
+(** [gen_falsehoods env] is shorthand for the [Falsehoods] generator of an
+    instance of [Bool_known] over [env]. *)

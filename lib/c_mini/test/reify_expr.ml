@@ -70,12 +70,12 @@ let%test_module "round trips" =
             ~expect:(Ok exp)
             (Src.Convert.expr (Src.Reify_expr.reify exp)))
 
-    module Make (F : functor (A : Src.Env_types.S_with_known_values) ->
+    module Make (F : functor (A : Src.Env_types.S) ->
       Act_utils.My_quickcheck.S_with_sexp with type t = Src.Expression.t) =
     struct
       let run_round_trip () : unit =
-        let (module Env) = Lazy.force Env.test_env_mod in
-        let module Qc = F (Env) in
+        let env = Lazy.force Env.test_env in
+        let module Qc = F (struct let env = env end) in
         test_round_trip (module Qc)
     end
 
@@ -94,7 +94,7 @@ let%test_module "round trips" =
     let%test_unit "round-trip on Boolean expressions" =
       Bool_values.run_round_trip ()
 
-    module Bool_tautologies_in (E : Src.Env_types.S_with_known_values) =
+    module Bool_tautologies_in (E : Src.Env_types.S) =
     struct
       module K = Src.Expression_gen.Bool_known (E)
       include K.Tautologies
@@ -105,7 +105,7 @@ let%test_module "round trips" =
     let%test_unit "round-trip on Boolean tautologies" =
       Bool_tautologies.run_round_trip ()
 
-    module Bool_falsehoods_in (E : Src.Env_types.S_with_known_values) =
+    module Bool_falsehoods_in (E : Src.Env_types.S) =
     struct
       module K = Src.Expression_gen.Bool_known (E)
       include K.Tautologies

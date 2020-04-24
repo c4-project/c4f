@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -19,16 +19,15 @@ open Base
     environments that can be used for expects tests, as well as Quickcheck
     tests that depend on a well-formed environment. *)
 
-val test_env : Act_c_mini.Type.t Map.M(Act_common.C_id).t Lazy.t
+val test_typing : Act_c_mini.Type.t Map.M(Act_common.C_id).t Lazy.t
 (** [test_env] is a typing environment used for testing the various
     environment-sensitive operations. *)
 
-val test_env_atomic_ptrs_only :
-  Act_c_mini.Type.t Map.M(Act_common.C_id).t Lazy.t
+val test_typing_atomic_ptrs_only : Act_c_mini.Type.t Map.M(Act_common.C_id).t Lazy.t
 (** [test_env_atomic_ptrs_only] is a typing environment that contains only
     variables of type 'atomic_int*' and 'atomic_bool*'. *)
 
-val test_env_scalars_only : Act_c_mini.Type.t Map.M(Act_common.C_id).t Lazy.t
+val test_typing_scalars_only : Act_c_mini.Type.t Map.M(Act_common.C_id).t Lazy.t
 (** [test_env_atomic_ptrs_only] is a typing environment that contains only
     variables of scalar (but possibly atomic) type. *)
 
@@ -37,16 +36,14 @@ val test_env_scalars_only : Act_c_mini.Type.t Map.M(Act_common.C_id).t Lazy.t
     Each of these contain deterministic singleton known values for all
    non-pointer variables.  *)
 
-val test_env_mod : (module Act_c_mini.Env_types.S_with_known_values) Lazy.t
-(** {!test_env} packaged as a first-class module. *)
+val test_env : Act_c_mini.Env.t Lazy.t
+(** {!test_typing} with known-values added. *)
 
-val test_env_atomic_ptrs_only_mod : (module Act_c_mini.Env_types.S_with_known_values) Lazy.t
-(** {!test_env_atomic_ptrs_only} packaged as a
-    first-class module. *)
+val test_env_atomic_ptrs_only : Act_c_mini.Env.t Lazy.t
+(** {!test_typing_atomic_ptrs_only} with known-values added. *)
 
-val test_env_scalars_only_mod : (module Act_c_mini.Env_types.S_with_known_values) Lazy.t
-(** {!test_env_scalars_only} packaged as a
-    first-class module. *)
+val test_env_scalars_only : Act_c_mini.Env.t Lazy.t
+(** {!test_typing_scalars_only} with known-values added. *)
 
-val empty_env_mod : (module Act_c_mini.Env_types.S_with_known_values) Lazy.t
-(** A first-class module containing a completely empty environment. *)
+val empty_env : Act_c_mini.Env.t Lazy.t
+(** A completely empty environment. *)

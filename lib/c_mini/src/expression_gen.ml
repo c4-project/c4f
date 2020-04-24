@@ -21,8 +21,8 @@ let eval_guards : (bool * (unit -> 'a)) list -> 'a list =
 let gen_int32 : Expression.t Q.Generator.t =
   Q.Generator.map ~f:Expression.constant Constant.gen_int32
 
-(** Primitive integer expressions over a given typing environment. *)
-module Int_prims (Env : Env_types.S) = struct
+(** Primitive integer expressions over a given environment. *)
+module Int_prims (E : Env_types.S) = struct
   type t = Expression.t [@@deriving sexp]
 
   (* These 'let module's can't be lifted outside of their thunks, because
@@ -30,12 +30,12 @@ module Int_prims (Env : Env_types.S) = struct
      of them will be available in all environments. *)
 
   let gen_atomic_load () : t Q.Generator.t =
-    let module AL = Atomic_load.Quickcheck_atomic_ints (Env) in
+    let module AL = Atomic_load.Quickcheck_atomic_ints (E) in
     Q.Generator.map ~f:Expression.atomic_load [%quickcheck.generator: AL.t]
 
   let gen_atomic_fetch_nop ~(gen_zero : t Q.Generator.t) : t Q.Generator.t =
     let module F =  Atomic_fetch.Quickcheck_generic
-      (Address_gen.Atomic_int_pointers (Env))
+      (Address_gen.Atomic_int_pointers (E))
       (Op.Fetch)
       (struct
         type nonrec t = t
@@ -48,11 +48,11 @@ module Int_prims (Env : Env_types.S) = struct
     Q.Generator.map ~f:Expression.atomic_fetch [%quickcheck.generator: F.t]
 
   let gen_lvalue () : t Q.Generator.t =
-    let module LV = Lvalue_gen.Int_values (Env) in
+    let module LV = Lvalue_gen.Int_values (E) in
     Q.Generator.map ~f:Expression.lvalue [%quickcheck.generator: LV.t]
 
   let has_ints ~(atomic : bool) : bool =
-    Env.has_variables_of_basic_type Type.Basic.(int ~atomic ())
+    Env.has_variables_of_basic_type E.env ~basic:Type.Basic.(int ~atomic ())
 
   let gen_load ~(gen_zero : t Q.Generator.t) : t Q.Generator.t list =
       eval_guards [
@@ -67,10 +67,10 @@ module Int_prims (Env : Env_types.S) = struct
       gen_load ~gen_zero)
 end
 
-module Int_zeroes (Env : Env_types.S_with_known_values) = struct
+module Int_zeroes (E : Env_types.S) = struct
   type t = Expression.t [@@deriving sexp]
 
-  module Det_env = (val Lazy.force Env.known_value_env)
+  module Det_env = (struct let env = Env.filter_to_known_values E.env end)
 
   (** Generates primitive expressions that, if appropriately tagged
      with dependencies, are statically known to hold the same value,
@@ -103,7 +103,7 @@ module Int_zeroes (Env : Env_types.S_with_known_values) = struct
   let quickcheck_shrinker : t Q.Shrinker.t = Q.Shrinker.atomic
 end
 
-module Int_values (E : Env_types.S_with_known_values) = struct
+module Int_values (E : Env_types.S) = struct
   type t = Expression.t [@@deriving sexp]
 
   module Z = Int_zeroes (E)
@@ -128,7 +128,7 @@ module Int_values (E : Env_types.S_with_known_values) = struct
   let quickcheck_shrinker : t Q.Shrinker.t = Q.Shrinker.atomic
 end
 
-module Bool_values (E : Env_types.S_with_known_values) : sig
+module Bool_values (E : Env_types.S) : sig
   type t = Expression.t [@@deriving sexp_of, quickcheck]
 end = struct
   type t = Expression.t [@@deriving sexp]
@@ -153,7 +153,7 @@ end = struct
        variables. *)
     [(1.0, gen_const); (4.0, gen_int_relational)]
     @ eval_guards
-        [ ( E.has_variables_of_basic_type Type.Basic.(bool ())
+        [ ( Env.has_variables_of_basic_type E.env ~basic:Type.Basic.(bool ())
           , fun () -> (4.0, gen_bool_lvalue ()) ) ]
 
   let recursive_generators (mu : t Q.Generator.t) :
@@ -173,7 +173,7 @@ end = struct
   let quickcheck_shrinker : t Q.Shrinker.t = Q.Shrinker.atomic
 end
 
-module Known_value_comparisons (Env : Env_types.S_with_known_values) : sig
+module Known_value_comparisons (E : Env_types.S) : sig
   type t = Expression.t [@@deriving sexp_of, quickcheck]
 end = struct
   type t = Expression.t [@@deriving sexp_of]
@@ -209,7 +209,7 @@ end = struct
        exists. *)
     Q.Generator.Let_syntax.(
       let%bind id, (ty, value) =
-        Env.variables_with_known_values |> Lazy.force |> Map.to_alist
+        E.env |> Env.variables_with_known_values |> Map.to_alist
         |> Q.Generator.of_list
       in
       let var_ref : Expression.t = make_var_ref id ty in
@@ -223,8 +223,8 @@ end = struct
   let quickcheck_shrinker : t Q.Shrinker.t = Q.Shrinker.atomic
 end
 
-module Bool_known (Env : Env_types.S_with_known_values) = struct
-  module BV = Bool_values (Env)
+module Bool_known (E : Env_types.S) = struct
+  module BV = Bool_values (E)
 
   type t = BV.t
 
@@ -268,7 +268,7 @@ module Bool_known (Env : Env_types.S_with_known_values) = struct
     Q.Generator.map mu ~f:Expression.l_not
 
   let is_var_eq_tenable : bool Lazy.t =
-    Lazy.map ~f:(Fn.non Map.is_empty) Env.variables_with_known_values
+    lazy (not (Map.is_empty (Env.variables_with_known_values E.env)))
 
   (* Tautology and falsehood generators are mutually recursive at the
      recursive-generator level. It's easier to do this mutual recursion over
@@ -282,7 +282,7 @@ module Bool_known (Env : Env_types.S_with_known_values) = struct
       [ (true, fun () -> Q.Generator.return Expression.truth)
       ; ( Lazy.force is_var_eq_tenable
         , fun () ->
-            let module Var_eq = Known_value_comparisons (Env) in
+            let module Var_eq = Known_value_comparisons (E) in
             Var_eq.quickcheck_generator ) ]
 
   let ff_base_generators : t Q.Generator.t list =
@@ -332,3 +332,15 @@ module Bool_known (Env : Env_types.S_with_known_values) = struct
     let quickcheck_generator : t Q.Generator.t = Lazy.force ff_generator
   end
 end
+
+let gen_bools (env : Env.t) : Expression.t Q.Generator.t =
+  let module G = Bool_values (struct let env = env end) in
+  G.quickcheck_generator
+
+let gen_tautologies (env : Env.t) : Expression.t Q.Generator.t =
+  let module G = Bool_known (struct let env = env end) in
+  G.Tautologies.quickcheck_generator
+
+let gen_falsehoods (env : Env.t) : Expression.t Q.Generator.t =
+  let module G = Bool_known (struct let env = env end) in
+  G.Falsehoods.quickcheck_generator

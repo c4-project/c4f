@@ -14,19 +14,19 @@ module Src = Act_c_mini
 module Q = Base_quickcheck
 module Qx = Act_utils.My_quickcheck
 
-let variable_in (module E : Src.Env_types.S_with_known_values) (l : Src.Address.t) : bool =
-  Map.mem E.env (Src.Address.variable_of l)
+let variable_in (env : Src.Env.t) (l : Src.Address.t) : bool =
+  Map.mem env (Src.Address.variable_of l)
 
-let test_in_env (module E : Src.Env_types.S_with_known_values)
+let test_in_env (env : Src.Env.t)
     (module Qc : Qx.S_with_sexp with type t = Src.Address.t) : unit =
   Q.Test.run_exn
     (module Qc)
-    ~f:([%test_pred: Src.Address.t] ~here:[[%here]] (variable_in (module E)))
+    ~f:([%test_pred: Src.Address.t] ~here:[[%here]] (variable_in env))
 
-let test_type (module E : Src.Env_types.S_with_known_values)
+let test_type (env : Src.Env.t)
     (module Qc : Qx.S_with_sexp with type t = Src.Address.t)
     (expected : Src.Type.t) : unit =
-  let module Tc = Src.Address.Type_check (E) in
+  let module Tc = Src.Address.Type_check (struct let env = env end) in
   Q.Test.run_exn
     (module Qc)
     ~f:(fun lv ->
@@ -35,9 +35,9 @@ let test_type (module E : Src.Env_types.S_with_known_values)
 
 let%test_module "On_env" =
   ( module struct
-    let e = Lazy.force Env.test_env_mod
+    let e = Lazy.force Env.test_env
 
-    module Qc = Src.Address_gen.On_env ((val e))
+    module Qc = Src.Address_gen.On_env (struct let env = e end)
 
     let%expect_test "sample" =
       Qx.print_sample
@@ -72,9 +72,9 @@ let%test_module "On_env" =
 
 let%test_module "Atomic_int_pointers" =
   ( module struct
-    let e = Lazy.force Env.test_env_mod
+    let e = Lazy.force Env.test_env
 
-    module Qc = Src.Address_gen.Atomic_int_pointers ((val e))
+    module Qc = Src.Address_gen.Atomic_int_pointers (struct let env = e end)
 
     let%expect_test "liveness" =
       Qx.print_sample
@@ -97,9 +97,9 @@ let%test_module "Atomic_int_pointers" =
 
 let%test_module "Atomic_bool_pointers" =
   ( module struct
-    let e = Lazy.force Env.test_env_mod
+    let e = Lazy.force Env.test_env
 
-    module Qc = Src.Address_gen.Atomic_bool_pointers ((val e))
+    module Qc = Src.Address_gen.Atomic_bool_pointers (struct let env = e end)
 
     let%expect_test "Atomic_bool_pointers: liveness" =
       Qx.print_sample

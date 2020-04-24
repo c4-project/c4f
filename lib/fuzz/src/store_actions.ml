@@ -98,8 +98,8 @@ module Make (B : sig
   (** A functor that produces a quickcheck instance for atomic stores given
       source and destination variable environments. *)
   module Quickcheck
-      (Src : Act_c_mini.Env_types.S_with_known_values)
-      (Dst : Act_c_mini.Env_types.S_with_known_values) :
+      (Src : Act_c_mini.Env_types.S)
+      (Dst : Act_c_mini.Env_types.S) :
     Act_utils.My_quickcheck.S_with_sexp
       with type t := Act_c_mini.Atomic_store.t
 end) : Action_types.S with type Payload.t = Store_payload.t = struct
@@ -125,10 +125,9 @@ end) : Action_types.S with type Payload.t = Store_payload.t = struct
   (** Lists the restrictions we put on source variables. *)
   let src_restrictions : (Var.Record.t -> bool) list Lazy.t = lazy []
 
-  let src_env (vars : Var.Map.t) ~(tid : int) :
-      (module Act_c_mini.Env_types.S_with_known_values) =
+  let src_env (vars : Var.Map.t) ~(tid : int) : Act_c_mini.Env.t =
     let predicates = Lazy.force src_restrictions in
-    Var.Map.env_module_satisfying_all ~predicates ~scope:(Local tid) vars
+    Var.Map.env_satisfying_all ~predicates ~scope:(Local tid) vars
 
   let dst_restrictions ~(forbid_already_written : bool) :
       (Var.Record.t -> bool) list =
@@ -137,43 +136,45 @@ end) : Action_types.S with type Payload.t = Store_payload.t = struct
 
   let dst_env (vars : Var.Map.t) ~(tid : int)
       ~(forbid_already_written : bool) :
-      (module Act_c_mini.Env_types.S_with_known_values) =
+      Act_c_mini.Env.t =
     let predicates = dst_restrictions ~forbid_already_written in
-    Var.Map.env_module_satisfying_all ~predicates ~scope:(Local tid) vars
+    Var.Map.env_satisfying_all ~predicates ~scope:(Local tid) vars
 
   module Payload = struct
     type t = Store_payload.t [@@deriving sexp]
 
     module G = Base_quickcheck.Generator
 
-    let error_if_empty (env : string) (module M : Act_c_mini.Env_types.S) :
+    let error_if_empty (env_name : string) (env : Act_c_mini.Env.t) :
         unit Or_error.t =
-      if Map.is_empty M.env then
+      if Map.is_empty env then
         Or_error.error_s
           [%message
-            "Internal error: Environment was empty." ~here:[%here] ~env]
+            "Internal error: Environment was empty." ~here:[%here] ~env_name]
       else Ok ()
 
     let log_environment (o : Ac.Output.t) (env_name : string)
-        (env : Act_c_mini.Type.t Map.M(Ac.C_id).t) : unit =
+        (env : Act_c_mini.Env.t) : unit =
       log o "%s environment: %a@." env_name Sexp.pp_hum
-        [%sexp (env : Act_c_mini.Type.t Map.M(Ac.C_id).t)]
+        [%sexp (env : Act_c_mini.Env.t)]
 
     let log_environments (o : Ac.Output.t)
-        (src_env : Act_c_mini.Type.t Map.M(Ac.C_id).t)
-        (dst_env : Act_c_mini.Type.t Map.M(Ac.C_id).t) : unit =
+        (src_env : Act_c_mini.Env.t)
+        (dst_env : Act_c_mini.Env.t) : unit =
       log_environment o "source" src_env ;
       log_environment o "dest" dst_env
 
-    let gen_store_with_envs (module Src : Act_c_mini.Env_types.S_with_known_values)
-        (module Dst : Act_c_mini.Env_types.S_with_known_values)
+    let gen_store_with_envs (src : Act_c_mini.Env.t)
+        (dst : Act_c_mini.Env.t)
         (o : Ac.Output.t) ~(random : Splittable_random.State.t) :
         Act_c_mini.Atomic_store.t Or_error.t =
       Or_error.Let_syntax.(
-        let%bind () = error_if_empty "src" (module Src) in
-        let%map () = error_if_empty "dst" (module Dst) in
+        let%bind () = error_if_empty "src" src in
+        let%map () = error_if_empty "dst" dst in
         log o "Environments are non-empty" ;
-        log_environments o Src.env Dst.env ;
+        log_environments o src dst ;
+        let module Src = struct let env = src end in
+        let module Dst = struct let env = dst end in
         let module Gen = B.Quickcheck (Src) (Dst) in
         log o "Built generator module" ;
         Base_quickcheck.Generator.generate ~random ~size:10
@@ -336,7 +337,7 @@ Make (struct
      destination's known value. *)
   module Quickcheck
       (Src : Act_c_mini.Env_types.S)
-      (Dst : Act_c_mini.Env_types.S_with_known_values) :
+      (Dst : Act_c_mini.Env_types.S) :
     Act_utils.My_quickcheck.S_with_sexp
       with type t = Act_c_mini.Atomic_store.t = struct
     type t = Act_c_mini.Atomic_store.t [@@deriving sexp]
@@ -351,9 +352,10 @@ Make (struct
     let known_value_expr_of_dest (dst : Q_dst.t) :
         Act_c_mini.Expression.t Or_error.t =
       Or_error.Let_syntax.(
-        let var = Act_c_mini.Address.variable_of dst in
+        let id = Act_c_mini.Address.variable_of dst in
+        let%bind kvo = Act_c_mini.Env.known_value Dst.env ~id in
         let%map kv =
-          Result.of_option (Dst.known_value var)
+          Result.of_option kvo
             ~error:(Error.of_string "No known value for this record.")
         in
         Act_c_mini.Expression.constant kv)

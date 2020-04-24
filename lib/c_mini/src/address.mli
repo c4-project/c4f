@@ -56,7 +56,7 @@ val deref : t -> t
 val on_address_of_typed_id : id:Act_common.C_id.t -> ty:Type.t -> t
 
 val of_id_in_env :
-  (module Env_types.S_with_known_values) -> id:Act_common.C_id.t -> t Or_error.t
+  Env.t -> id:Act_common.C_id.t -> t Or_error.t
 
 (** {2 Of variables} *)
 
@@ -115,8 +115,7 @@ module Quickcheck_generic
     (Lv : Act_utils.My_quickcheck.S_with_sexp with type t := Lvalue.t) :
   Act_utils.My_quickcheck.S_with_sexp with type t = t
 
-val eval_on_env :
-  (module Env_types.S_with_known_values) -> t -> Constant.t Or_error.t
-(** [eval_on_env env address] tries to evaluate an address [lv] against the
+val eval_on_env : t -> env:Env.t -> Constant.t Or_error.t
+(** [eval_on_env address ~env] tries to evaluate an address [lv] against the
     known-value tracking of an environment [env]. Currently, it supports only
     scalars; it rejects any ref or deref addresses. *)

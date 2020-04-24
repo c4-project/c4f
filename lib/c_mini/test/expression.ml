@@ -23,7 +23,7 @@ let%test_module "Eval" =
 
     let test_mod (e : Src.Expression.t) : unit =
       let src =
-        Src.Address.eval_on_env (Lazy.force Env.test_env_mod)
+        Src.Address.eval_on_env ~env:(Lazy.force Env.test_env)
       in
       let env = Src.Heap.make src in
       test e ~env
@@ -90,13 +90,13 @@ let%test_module "Eval" =
       [%expect
         {| (Error ("Variable not found in typing environment." (id a))) |}]
 
-    let var_addr (e: (module Src.Env_types.S_with_known_values)) (x: string): Src.Address.t =
+    let var_addr (env: Src.Env.t) (x: string): Src.Address.t =
       (Or_error.ok_exn
-         (Src.Address.of_id_in_env e
+         (Src.Address.of_id_in_env env
             ~id:(Act_common.C_id.of_string x)))
 
     let%expect_test "example atomic load" =
-      let e = Lazy.force Env.test_env_mod in
+      let e = Lazy.force Env.test_env in
       test_mod
         Src.(
           Expression.(
@@ -107,7 +107,7 @@ let%test_module "Eval" =
       [%expect {| (Ok (Int 53)) |}]
 
     let%expect_test "example atomic load" =
-      let e = Lazy.force Env.test_env_mod in
+      let e = Lazy.force Env.test_env in
       test_mod
         Src.(
           Expression.(
@@ -118,7 +118,7 @@ let%test_module "Eval" =
       [%expect {| (Ok (Int 53)) |}]
 
     let%expect_test "example atomic fetches" =
-      let e = Lazy.force Env.test_env_mod in
+      let e = Lazy.force Env.test_env in
       test_mod
         Src.(
           Expression.(

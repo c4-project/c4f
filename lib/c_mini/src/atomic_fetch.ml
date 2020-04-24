@@ -71,7 +71,7 @@ end = struct
       [%quickcheck.shrinker: A.t * E.t * Mem_order.t * O.t]
 end
 
-module Type_check (Env : Env_types.S) = struct
+module Type_check (Env : sig val env: Env.t end) = struct
   type nonrec t = Type.t t
 
   module Ad = Address.Type_check (Env)

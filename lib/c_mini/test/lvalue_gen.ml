@@ -13,22 +13,22 @@ open Base
 module Q = Base_quickcheck
 module Src = Act_c_mini
 
-let variable_in (module E : Src.Env_types.S_with_known_values) (l : Src.Lvalue.t) : bool =
-  Map.mem E.env (Src.Lvalue.variable_of l)
+let variable_in (env : Src.Env.t) (l : Src.Lvalue.t) : bool =
+  Map.mem env (Src.Lvalue.variable_of l)
 
 let print_sample = Act_utils.My_quickcheck.print_sample
 
-let test_in_env (module E : Src.Env_types.S_with_known_values)
+let test_in_env (env : Src.Env.t)
     (module Qc : Act_utils.My_quickcheck.S_with_sexp
       with type t = Src.Lvalue.t) : unit =
   Q.Test.run_exn
     (module Qc)
-    ~f:([%test_pred: Src.Lvalue.t] ~here:[[%here]] (variable_in (module E)))
+    ~f:([%test_pred: Src.Lvalue.t] ~here:[[%here]] (variable_in env))
 
-let test_type (module E : Src.Env_types.S_with_known_values)
+let test_type (env : Src.Env.t)
     (module Qc : Act_utils.My_quickcheck.S_with_sexp
       with type t = Src.Lvalue.t) (expected : Src.Type.t) : unit =
-  let module Tc = Src.Lvalue.Type_check (E) in
+  let module Tc = Src.Lvalue.Type_check (struct let env = env end) in
   Q.Test.run_exn
     (module Qc)
     ~f:(fun lv ->
@@ -38,8 +38,8 @@ let test_type (module E : Src.Env_types.S_with_known_values)
 let%test_module "On_env" =
   ( module struct
     let%expect_test "sample" =
-      let e = Lazy.force Env.test_env_mod in
-      let module Qc = Src.Lvalue_gen.On_env ((val e)) in
+      let e = Lazy.force Env.test_env in
+      let module Qc = Src.Lvalue_gen.On_env (struct let env = e end) in
       print_sample
         ( module struct
           include Src.Lvalue
@@ -65,21 +65,21 @@ let%test_module "On_env" =
         (Deref (Deref (Deref (Deref (Deref (Variable bar)))))) |}]
 
     let%test_unit "generated underlying variables in environment" =
-      let e = Lazy.force Env.test_env_mod in
-      test_in_env e (module Src.Lvalue_gen.On_env ((val e)))
+      let e = Lazy.force Env.test_env in
+      test_in_env e (module Src.Lvalue_gen.On_env (struct let env = e end))
   end )
 
 let%test_module "Int_values" =
   ( module struct
-    let e = Lazy.force Env.test_env_mod
+    let e = Lazy.force Env.test_env
 
-    module Qc = Src.Lvalue_gen.Int_values ((val e))
+    module Qc = Src.Lvalue_gen.Int_values (struct let env = e end)
 
-    let print_sample (module E : Src.Env_types.S_with_known_values) =
+    let print_sample (e : Src.Env.t) =
       print_sample
         ( module struct
           include Src.Lvalue
-          include Src.Lvalue_gen.Int_values (E)
+          include Src.Lvalue_gen.Int_values (struct let env = e end)
         end )
 
     let%expect_test "sample" =
@@ -98,23 +98,23 @@ let%test_module "Int_values" =
 
 let%test_module "Bool_values" =
   ( module struct
-    let e = Lazy.force Env.test_env_mod
+    let e = Lazy.force Env.test_env
 
-    let print_sample (module E : Src.Env_types.S_with_known_values) =
+    let print_sample (e : Src.Env.t) =
       print_sample
         ( module struct
           include Src.Lvalue
-          include Src.Lvalue_gen.Bool_values (E)
+          include Src.Lvalue_gen.Bool_values (struct let env = e end)
         end )
 
     let%expect_test "sample" =
       print_sample e ; [%expect {| (Variable barbaz) |}]
 
     let%test_unit "generated underlying variables in environment" =
-      test_in_env e (module Src.Lvalue_gen.Bool_values ((val e)))
+      test_in_env e (module Src.Lvalue_gen.Bool_values (struct let env = e end))
 
     let%test_unit "generated lvalues have 'bool' type" =
       test_type e
-        (module Src.Lvalue_gen.Bool_values ((val e)))
+        (module Src.Lvalue_gen.Bool_values (struct let env = e end))
         Src.Type.(bool ())
   end )

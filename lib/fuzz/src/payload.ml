@@ -89,15 +89,14 @@ module Surround = struct
              ~f:(fun test -> Or_error.return [f cond test]))))
 
   let cond_env (vars : Var.Map.t) ~(tid : int) :
-      (module Act_c_mini.Env_types.S_with_known_values) =
-    Var.Map.env_module_satisfying_all ~scope:(Local tid) ~predicates:[]
-      vars
+      Act_c_mini.Env.t =
+    Var.Map.env_satisfying_all ~scope:(Local tid) ~predicates:[] vars
 
   module Make (Basic : sig
     val action_id : Act_common.Id.t
 
     val cond_gen :
-         (module Act_c_mini.Env_types.S_with_known_values)
+         Act_c_mini.Env.t
       -> Act_c_mini.Expression.t Q.Generator.t
     (** [cond_gen env] should, given a first-class environment module [env]
         capturing the variables in scope at the point where the if statement

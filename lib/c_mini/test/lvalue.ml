@@ -49,13 +49,13 @@ let%expect_test "variable_in_env: negative variable result, test env" =
   [%expect {| false |}]
 
 let%expect_test "Type-checking a valid normal variable lvalue" =
-  let module T = Type_check ((val Lazy.force Env.test_env_mod)) in
+  let module T = Type_check (struct let env = Lazy.force Env.test_env end) in
   let result = T.type_of (variable (Act_common.C_id.of_string "foo")) in
   print_s [%sexp (result : Act_c_mini.Type.t Or_error.t)] ;
   [%expect {| (Ok int) |}]
 
 let%expect_test "Type-checking an invalid deferencing variable lvalue" =
-  let module T = Type_check ((val Lazy.force Env.test_env_mod)) in
+  let module T = Type_check (struct let env = Lazy.force Env.test_env end) in
   let result =
     T.type_of (deref (variable (Act_common.C_id.of_string "foo")))
   in
@@ -92,12 +92,13 @@ let%expect_test "gen: sample" =
     (Deref (Deref (Deref (Deref (Deref (Variable _9lCUCr6)))))) |}]
 
 let%test_unit "on_value_of_typed_id: always takes basic type" =
-  let (module E) = Lazy.force Env.test_env_mod in
-  let module Tc = Type_check (E) in
+  let env = Lazy.force Env.test_env in
+  let module Tc = Type_check (struct let env = env end) in
   Q.Test.run_exn
-    (module E.Random_var)
-    ~f:(fun id ->
-      let ty = Map.find_exn E.env id in
+    (module Act_c_mini.Env.Random_var_with_type (struct let env = env end))
+    ~f:(fun r ->
+      let id = Act_common.C_named.name r in
+      let ty = Act_common.C_named.value r in
       [%test_result: Act_c_mini.Type.t Or_error.t] ~here:[[%here]]
         (Tc.type_of (on_value_of_typed_id ~id ~ty))
         ~expect:(Or_error.return Act_c_mini.Type.(normal (basic_type ty))))
