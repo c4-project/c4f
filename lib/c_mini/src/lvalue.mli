@@ -47,12 +47,12 @@ val un_deref : t -> t Or_error.t
 (** [un_deref lvalue] tries to remove one layer of dereferencing from
     [lvalue]. It fails if [lvalue] is already a variable type. *)
 
-val on_value_of_typed_id : id:Act_common.C_id.t -> ty:Type.t -> t
-(** [on_value_of_typed_id ~id ~ty] constructs an lvalue with underlying
-    variable [id] and the right level of indirection to convert from a
-    variable of type [ty] to a primitive value.
+val on_value_of_typed_id : Type.t Act_common.C_named.t -> t
+(** [on_value_of_typed_id tid] constructs an lvalue with underlying variable
+    [name tid] and the right level of indirection to convert from a variable
+    of type [value tid] to a primitive value.
 
-    For example, if [ty] is a pointer type, the lvalue will become a
+    For example, if [value tid] is a pointer type, the lvalue will become a
     dereference. *)
 
 (** {3 Accessors} *)

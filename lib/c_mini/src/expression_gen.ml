@@ -195,7 +195,8 @@ end = struct
 
   let make_var_ref (id : Act_common.C_id.t) (ty : Type.t) : Expression.t =
     (* TODO(@MattWindsor91): can we do more than SC here? *)
-    let lv = Lvalue.on_value_of_typed_id ~id ~ty in
+    let tid = Act_common.C_named.make ty ~name:id in
+    let lv = Lvalue.on_value_of_typed_id tid in
     if Type.is_atomic ty then
       Expression.atomic_load
         (Atomic_load.make ~src:(Address.ref_lvalue lv) ~mo:Mem_order.Seq_cst)

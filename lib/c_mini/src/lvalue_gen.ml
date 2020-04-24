@@ -9,19 +9,13 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Base
-module L = Lvalue
-
 module On_env (E : Env_types.S) : sig
-  type t = L.t [@@deriving sexp_of, quickcheck]
+  type t = Lvalue.t [@@deriving sexp_of, quickcheck]
 end =
-  L.Quickcheck_generic (Env.Random_var (E))
+  Lvalue.Quickcheck_generic (Env.Random_var (E))
 
-module Typed_values_on_env (T : sig
-  val basic_type : Type.Basic.t
-end)
-(E : Env_types.S) : sig
-  type t = L.t [@@deriving sexp_of, quickcheck]
+module Values_on_env (E : Env_types.S) : sig
+  type t = Lvalue.t [@@deriving sexp_of, quickcheck]
 end = struct
   open Base_quickcheck
   include On_env (E) (* to override as needed *)
@@ -29,28 +23,17 @@ end = struct
   module Gen = Env.Random_var_with_type (E)
 
   let quickcheck_generator : t Generator.t =
-    Generator.filter_map Gen.quickcheck_generator ~f:(fun r ->
-        let id = Act_common.C_named.name r in
-        let ty = Act_common.C_named.value r in
-        Option.some_if
-          (Type.basic_type_is ~basic:T.basic_type ty)
-          (L.on_value_of_typed_id ~id ~ty))
+    Generator.map Gen.quickcheck_generator ~f:Lvalue.on_value_of_typed_id
 end
 
 module Int_values (E : Env_types.S) : sig
-  type t = L.t [@@deriving sexp_of, quickcheck]
-end =
-  Typed_values_on_env
-    (struct
-      let basic_type = Type.Basic.int ()
-    end)
-    (E)
+  type t = Lvalue.t [@@deriving sexp_of, quickcheck]
+end = Values_on_env (struct
+  let env = Env.variables_of_basic_type E.env ~basic:(Type.Basic.int ())
+end)
 
 module Bool_values (E : Env_types.S) : sig
-  type t = L.t [@@deriving sexp_of, quickcheck]
-end =
-  Typed_values_on_env
-    (struct
-      let basic_type = Type.Basic.bool ()
-    end)
-    (E)
+  type t = Lvalue.t [@@deriving sexp_of, quickcheck]
+end = Values_on_env (struct
+  let env = Env.variables_of_basic_type E.env ~basic:(Type.Basic.bool ())
+end)

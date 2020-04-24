@@ -9,19 +9,13 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Base
-module A = Address
-
 module On_env (E : Env_types.S) : sig
-  type t = A.t [@@deriving sexp_of, quickcheck]
+  type t = Address.t [@@deriving sexp_of, quickcheck]
 end =
-  A.Quickcheck_generic (Lvalue_gen.On_env (E))
+  Address.Quickcheck_generic (Lvalue_gen.On_env (E))
 
-module Typed_pointers_on_env (T : sig
-  val basic_type : Type.Basic.t
-end)
-(E : Env_types.S) : sig
-  type t = A.t [@@deriving sexp_of, quickcheck]
+module Pointers_on_env (E : Env_types.S) : sig
+  type t = Address.t [@@deriving sexp_of, quickcheck]
 end = struct
   open Base_quickcheck
   include On_env (E) (* to override as needed *)
@@ -29,27 +23,20 @@ end = struct
   module Gen = Env.Random_var_with_type (E)
 
   let quickcheck_generator : t Generator.t =
-    Generator.filter_map Gen.quickcheck_generator ~f:(fun r ->
-        let ty = Act_common.C_named.value r in
-        Option.some_if
-          (Type.basic_type_is ~basic:T.basic_type ty)
-          (A.on_address_of_typed_id r))
+    Generator.map Gen.quickcheck_generator ~f:Address.on_address_of_typed_id
 end
 
 module Atomic_int_pointers (E : Env_types.S) : sig
-  type t = A.t [@@deriving sexp_of, quickcheck]
-end =
-  Typed_pointers_on_env
-    (struct
-      let basic_type = Type.Basic.int ~atomic:true ()
-    end)
-    (E)
+  type t = Address.t [@@deriving sexp_of, quickcheck]
+end = Pointers_on_env (struct
+  let env =
+    Env.variables_of_basic_type E.env ~basic:(Type.Basic.int ~atomic:true ())
+end)
 
 module Atomic_bool_pointers (E : Env_types.S) : sig
-  type t = A.t [@@deriving sexp_of, quickcheck]
-end =
-  Typed_pointers_on_env
-    (struct
-      let basic_type = Type.Basic.bool ~atomic:true ()
-    end)
-    (E)
+  type t = Address.t [@@deriving sexp_of, quickcheck]
+end = Pointers_on_env (struct
+  let env =
+    Env.variables_of_basic_type E.env
+      ~basic:(Type.Basic.bool ~atomic:true ())
+end)
