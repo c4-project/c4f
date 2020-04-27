@@ -83,23 +83,27 @@ let%test_module "Int_values" =
       print_sample (Lazy.force Env.test_env) ;
       [%expect
         {|
-      -112015996
+      -22537
       0
-      22551631
-      foo - foo
-      atomic_load_explicit(&x, memory_order_acquire) -
-      atomic_load_explicit(&x, memory_order_acquire) |}]
+      atomic_fetch_sub_explicit(&y, 0, memory_order_seq_cst)
+      foo - 4
+      *blep - 99 |}]
 
     let%expect_test "sample (environment has only atomic_int*)" =
       print_sample (Lazy.force Env.test_env_atomic_ptrs_only) ;
       [%expect
         {|
         0
-        atomic_fetch_sub_explicit(bar, 0, memory_order_acq_rel)
         atomic_fetch_add_explicit(bar, 0, memory_order_seq_cst)
+        atomic_fetch_sub_explicit(bar,
+                                  atomic_fetch_add_explicit(bar, 0,
+                                                            memory_order_relaxed)
+                                  -
+                                  atomic_fetch_add_explicit(bar, 0,
+                                                            memory_order_relaxed),
+                                  memory_order_acq_rel)
         atomic_load_explicit(bar, memory_order_relaxed)
-        atomic_fetch_add_explicit(bar, 0, memory_order_relaxed) -
-        atomic_fetch_add_explicit(bar, 0, memory_order_relaxed) |}]
+        atomic_fetch_add_explicit(bar, 0, memory_order_relaxed) - 95 |}]
 
     let%expect_test "sample (environment is empty)" =
       print_sample (Lazy.force Env.empty_env) ;
@@ -139,8 +143,15 @@ let%test_module "Int zeroes" =
       [%expect
         {|
           0
-          -190264 - -190264
-          foo - foo |}]
+          -22537 - -22537
+          foo - 4
+          atomic_fetch_sub_explicit(&y, atomic_load_explicit(&y, memory_order_seq_cst)
+                                    - 53, memory_order_relaxed)
+          -
+          atomic_fetch_sub_explicit(&y, atomic_load_explicit(&y, memory_order_seq_cst)
+                                    - 53, memory_order_relaxed)
+          atomic_load_explicit(&x, memory_order_seq_cst) -
+          atomic_load_explicit(&x, memory_order_seq_cst) |}]
 
     let test_fun (env : Src.Env.t) :
         (module Q.Test.S with type t = Src.Expression.t) =
@@ -186,16 +197,15 @@ let%test_module "Bool_values" =
       print_sample (Lazy.force Env.test_env_atomic_ptrs_only) ;
       [%expect
         {|
+        0 == 0
         atomic_fetch_sub_explicit(bar, 0, memory_order_seq_cst) == 0
         !(0 == 0) && (0 == -879720314 && 0 == 7471)
         true || atomic_load_explicit(bar, memory_order_consume) == 0
         atomic_load_explicit(bar, memory_order_consume) ==
-        atomic_fetch_add_explicit(bar, 0, memory_order_relaxed) -
-        atomic_fetch_add_explicit(bar, 0, memory_order_relaxed) && true || false
-        115 == 0 && 0 == 0 || atomic_fetch_sub_explicit(bar, 0, memory_order_relaxed)
-        == 918 - 918 || 0 == 0 || 1508833144 ==
-        atomic_fetch_add_explicit(bar, 0, memory_order_relaxed) -
-        atomic_fetch_add_explicit(bar, 0, memory_order_relaxed) |}]
+        atomic_load_explicit(bar, memory_order_relaxed) - 95 &&
+        atomic_load_explicit(bar, memory_order_acquire) == 6126 ||
+        atomic_load_explicit(bar, memory_order_relaxed) == 40877287 - 40877287 &&
+        (0 == atomic_fetch_add_explicit(bar, 0, memory_order_relaxed) && false) |}]
 
     let%expect_test "sample (environment is empty)" =
       print_sample (Lazy.force Env.empty_env) ;

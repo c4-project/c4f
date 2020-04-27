@@ -94,17 +94,27 @@ module Int_zeroes (E : Env_types.S) = struct
       be used as a zero source through expressions of the form [x - x]. *)
   module Det_prims = Int_prims (Det_env)
 
+  (** Generates terminal zero integer expressions. *)
+  let base_generators : t Q.Generator.t list =
+    [Q.Generator.return (Expression.int_lit 0)]
+
   let gen_cancel ~(mu : t Q.Generator.t) : t Q.Generator.t =
     Q.Generator.Let_syntax.(
       let%map p = Det_prims.gen_prim ~gen_zero:mu in
       Expression.Infix.(p - p))
 
-  (** Generates terminal zero integer expressions. *)
-  let base_generators : t Q.Generator.t list =
-    [Q.Generator.return (Expression.int_lit 0)]
+  let gen_kv_sub ~(mu : t Q.Generator.t) : t Q.Generator.t =
+    Q.Generator.filter_map
+      (Q.Generator.union (Det_prims.gen_load_with_record ~gen_zero:mu))
+      ~f:(fun (l, r) ->
+        Option.map (Env.Record.known_value r) ~f:(fun kv ->
+            Expression.(Infix.(l - constant kv))))
 
   let recursive_generators (mu : t Q.Generator.t) : t Q.Generator.t list =
-    [gen_cancel ~mu]
+    eval_guards
+      [ (true, fun () -> gen_cancel ~mu)
+      ; ( Det_prims.has_ints ~atomic:true || Det_prims.has_ints ~atomic:false
+        , fun () -> gen_kv_sub ~mu ) ]
 
   let quickcheck_generator : t Q.Generator.t =
     Q.Generator.recursive_union base_generators ~f:recursive_generators
