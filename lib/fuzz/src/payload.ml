@@ -12,6 +12,12 @@
 open Base
 module Q = Base_quickcheck
 
+type 'a stateful_gen =
+     Subject.Test.t
+  -> random:Splittable_random.State.t
+  -> param_map:Param_map.t
+  -> 'a State.Monad.t
+
 module Helpers = struct
   let lift_quickcheck (type a) (gen : a Q.Generator.t)
       ~(random : Splittable_random.State.t) : a State.Monad.t =
@@ -35,22 +41,57 @@ end
 module Program_path (Basic : sig
   val action_id : Act_common.Id.t
 
-  val build_filter : Path_filter.t -> Path_filter.t
+  val path_filter : Path_filter.t
 
   val gen :
     ?filter:Path_filter.t -> Subject.Test.t -> Path.Program.t Opt_gen.t
-end) : Action_types.S_payload with type t = Path.Program.t = struct
+end) =
+struct
   type t = Path.Program.t [@@deriving sexp]
 
   let quickcheck_path (test : Subject.Test.t) : Path.Program.t Opt_gen.t =
-    let filter = Basic.build_filter Path_filter.empty in
-    Basic.gen ~filter test
+    Basic.gen ~filter:Basic.path_filter test
 
   let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
       ~(param_map : Param_map.t) : Path.Program.t State.Monad.t =
     ignore (param_map : Param_map.t) ;
     Helpers.lift_quickcheck_opt (quickcheck_path test) ~random
       ~action_id:Basic.action_id
+end
+
+module Insertion = struct
+  type 'a t = {to_insert: 'a; where: Path.Program.t}
+  [@@deriving make, fields, sexp]
+end
+
+module Stm_insert (To_insert : sig
+  type t [@@deriving sexp]
+
+  val action_id : Act_common.Id.t
+
+  val path_filter : Path_filter.t
+
+  val gen : Path.Program.t -> t stateful_gen
+end) =
+struct
+  type t = To_insert.t Insertion.t [@@deriving sexp]
+
+  module Path = Program_path (struct
+    let action_id = To_insert.action_id
+
+    let path_filter = To_insert.path_filter
+
+    let gen = Path_producers.Test.try_gen_insert_stm
+  end)
+
+  let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
+      ~(param_map : Param_map.t) : t State.Monad.t =
+    (* We can't do this inside the Opt-gen applicative, as we need the
+       ability to pull out the path and use it in the main generator. *)
+    State.Monad.Let_syntax.(
+      let%bind where = Path.gen test ~random ~param_map in
+      let%map to_insert = To_insert.gen where test ~random ~param_map in
+      Insertion.make ~to_insert ~where)
 end
 
 module Surround = struct
@@ -100,7 +141,7 @@ module Surround = struct
         is appearing, return a Quickcheck generator generating expressions
         over those variables. *)
 
-    val build_filter : Path_filter.t -> Path_filter.t
+    val path_filter : Path_filter.t
   end) : Action_types.S_payload with type t = Body.t = struct
     include Body
 
@@ -109,7 +150,7 @@ module Surround = struct
 
       let gen = Path_producers.Test.try_gen_transform_stm_list
 
-      let build_filter = Basic.build_filter
+      let path_filter = Basic.path_filter
     end)
 
     let quickcheck_cond (path : Path.Program.t) :

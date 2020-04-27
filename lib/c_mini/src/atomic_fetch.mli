@@ -58,6 +58,13 @@ module Quickcheck_generic
   type nonrec t = E.t t [@@deriving sexp_of, quickcheck]
 end
 
+(** Primitive building block for integer atomic-fetch quickchecks. *)
+module Quickcheck_ints
+    (Obj : Env_types.S)
+    (Arg : Act_utils.My_quickcheck.S_with_sexp) : sig
+  type nonrec t = Arg.t t [@@deriving sexp_of, quickcheck]
+end
+
 (** {1 Traversal primitives} *)
 
 (** Primitive building block for producing traversals over atomic fetches.

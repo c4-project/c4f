@@ -15,12 +15,27 @@
 module type S =
   Act_utils.My_quickcheck.S_with_sexp with type t = Expression.t
 
+(** {1 Integers} *)
+
 (** Generates random, type-safe expressions over the given variable
     environment, with type 'int'. *)
 module Int_values (E : Env_types.S) : S
 
 (** Generates random integer expressions that always evaluate to 0. *)
 module Int_zeroes (E : Env_types.S) : S
+
+(** {2 Atomic fetches}
+
+    These depend recursively on the integer generators, and so can't be
+    defined earlier than this. *)
+
+module Atomic_fetch_int_nops (Obj : Env_types.S) (Arg : Env_types.S) :
+  Act_utils.My_quickcheck.S_with_sexp
+    with type t = Expression.t Atomic_fetch.t
+
+module Atomic_fetch_int_values (Obj : Env_types.S) (Arg : Env_types.S) :
+  Act_utils.My_quickcheck.S_with_sexp
+    with type t = Expression.t Atomic_fetch.t
 
 (** {1 Booleans} *)
 

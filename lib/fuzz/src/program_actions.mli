@@ -14,14 +14,6 @@
 (** Fuzzer action that generates a new, empty program. *)
 module Make_empty : Action_types.S with type Payload.t = unit
 
-module Label_payload : sig
-  (** Opaque type of label payloads. *)
-  type t [@@deriving sexp]
-
-  val make : path:Path.Program.t -> name:Act_common.C_id.t -> t
-  (** [make ~path ~name] makes a label payload with path [path] and label
-      name [name]. *)
-end
-
 (** Fuzzer action that inserts a new, random label into the program. *)
-module Label : Action_types.S with type Payload.t = Label_payload.t
+module Label :
+  Action_types.S with type Payload.t = Act_common.C_id.t Payload.Insertion.t

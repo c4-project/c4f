@@ -33,7 +33,9 @@ end
 (** {2 Action} *)
 
 (** [Fence] is an action that inserts random memory fences. *)
-module Fence : Action_types.S with type Payload.t = Fence_payload.t
+module Fence :
+  Action_types.S
+    with type Payload.t = Act_c_mini.Atomic_fence.t Payload.Insertion.t
 
 (** {1 Memory order strengthening} *)
 
@@ -52,5 +54,5 @@ end
 
 (** {2 Action} *)
 
-(** [Strengthen] is an action that tries to strengthen payloads. *)
+(** [Strengthen] is an action that tries to strengthen memory orders. *)
 module Strengthen : Action_types.S with type Payload.t = Strengthen_payload.t

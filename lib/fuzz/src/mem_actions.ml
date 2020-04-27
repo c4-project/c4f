@@ -14,6 +14,7 @@ open Base
 open struct
   module Ac = Act_common
   module Cm = Act_c_mini
+  module P = Payload
 end
 
 module Fence_payload = struct
@@ -21,42 +22,39 @@ module Fence_payload = struct
   [@@deriving sexp, make]
 end
 
-module Fence : Action_types.S with type Payload.t = Fence_payload.t = struct
+module Fence :
+  Action_types.S with type Payload.t = Cm.Atomic_fence.t P.Insertion.t =
+struct
   let name : Ac.Id.t = Ac.Id.of_string "mem.fence"
 
   let readme () : string =
     Act_utils.My_string.format_for_readme
       {| Inserts a randomly generated memory fence into the test. |}
 
-  module Payload = struct
-    include Fence_payload
+  module Payload = P.Stm_insert (struct
+    type t = Cm.Atomic_fence.t [@@deriving sexp]
 
-    module PP = Payload.Program_path (struct
-      let action_id = name
+    let action_id = name
 
-      let gen = Path_producers.Test.try_gen_insert_stm
+    let path_filter = Path_filter.empty
 
-      let build_filter = Fn.id
-    end)
-
-    let gen (subject : Subject.Test.t) ~(random : Splittable_random.State.t)
-        ~(param_map : Param_map.t) : t State.Monad.t =
-      State.Monad.Let_syntax.(
-        let%map path = PP.gen subject ~random ~param_map
-        and fence =
-          Payload.Helpers.lift_quickcheck
-            Cm.Atomic_fence.quickcheck_generator ~random
-        in
-        Fence_payload.make ~path ~fence)
-  end
+    let gen (_ : Path.Program.t) (_ : Subject.Test.t)
+        ~(random : Splittable_random.State.t) ~(param_map : Param_map.t) :
+        Cm.Atomic_fence.t State.Monad.t =
+      ignore param_map ;
+      Payload.Helpers.lift_quickcheck Cm.Atomic_fence.quickcheck_generator
+        ~random
+  end)
 
   let available = Action.always
 
   let run (subject : Subject.Test.t)
-      ~payload:({path; fence} : Fence_payload.t) :
+      ~(payload : Cm.Atomic_fence.t P.Insertion.t) :
       Subject.Test.t State.Monad.t =
+    let path = P.Insertion.where payload in
     let fence_stm =
-      fence |> Act_c_mini.Prim_statement.atomic_fence
+      payload |> P.Insertion.to_insert
+      |> Act_c_mini.Prim_statement.atomic_fence
       |> Act_c_mini.Statement.prim Metadata.generated
     in
     (* We don't need to do any bookkeeping on fences. *)

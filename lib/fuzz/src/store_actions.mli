@@ -17,28 +17,21 @@ val forbid_already_written_flag_key : Act_common.Id.t
 (** [forbid_already_written_flag_key] is the key used to look-up the
     forbid-already-written flag. *)
 
-(** {1 Payload} *)
-
-module Store_payload : sig
-  type t
-
-  val make : store:Act_c_mini.Atomic_store.t -> path:Path.Program.t -> t
-
-  val store : t -> Act_c_mini.Atomic_store.t
-
-  val path : t -> Path.Program.t
-end
-
 (** {1 Action modules} *)
+
+(** Shorthand type for store actions. *)
+module type S =
+  Action_types.S
+    with type Payload.t = Act_c_mini.Atomic_store.t Payload.Insertion.t
 
 (** [Int] is a fuzzer action that generates a random atomic-int store
     instruction. *)
-module Int : Action_types.S with type Payload.t = Store_payload.t
+module Int : S
 
 (** [Int_dead] is a variant of [Int] that only targets dead-code, and, in
     turn, requires and adds fewer constraints on the destination. *)
-module Int_dead : Action_types.S with type Payload.t = Store_payload.t
+module Int_dead : S
 
 (** [Int_redundant] is a variant of [Int] that only stores a destination's
     known value back to itself. *)
-module Int_redundant : Action_types.S with type Payload.t = Store_payload.t
+module Int_redundant : S

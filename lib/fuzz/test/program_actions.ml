@@ -32,12 +32,12 @@ let%test_module "program.label" =
   ( module struct
     let path : Src.Path.Program.t Lazy.t = Subject.Test_data.Path.insert_live
 
-    let random_state : Src.Program_actions.Label_payload.t Lazy.t =
+    let random_state : Act_common.C_id.t Src.Payload.Insertion.t Lazy.t =
       Lazy.Let_syntax.(
-        let%map path = path in
-        Src.Program_actions.Label_payload.make
-          ~name:(Act_common.C_id.of_string "label_mclabelface")
-          ~path)
+        let%map where = path in
+        Src.Payload.Insertion.make
+          ~to_insert:(Act_common.C_id.of_string "label_mclabelface")
+          ~where)
 
     let test_action : Src.Subject.Test.t Src.State.Monad.t =
       Src.Program_actions.Label.run

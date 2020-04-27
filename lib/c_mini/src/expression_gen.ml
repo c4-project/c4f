@@ -43,8 +43,8 @@ module Int_prims (E : Env_types.S) = struct
   let gen_atomic_fetch_nop ~(gen_zero : t Q.Generator.t) :
       (t * Env.Record.t) Q.Generator.t =
     let module F =
-      Atomic_fetch.Quickcheck_generic
-        (Address_gen.Atomic_int_pointers (E)) (Op.Fetch)
+      Atomic_fetch.Quickcheck_ints
+        (E)
         (struct
           type nonrec t = t
 
@@ -148,6 +148,16 @@ module Int_values (E : Env_types.S) = struct
   (* TODO(@MattWindsor91): implement this *)
   let quickcheck_shrinker : t Q.Shrinker.t = Q.Shrinker.atomic
 end
+
+module Atomic_fetch_int_nops (Obj : Env_types.S) (Arg : Env_types.S) :
+  Act_utils.My_quickcheck.S_with_sexp
+    with type t = Expression.t Atomic_fetch.t =
+  Atomic_fetch.Quickcheck_ints (Obj) (Int_zeroes (Arg))
+
+module Atomic_fetch_int_values (Obj : Env_types.S) (Arg : Env_types.S) :
+  Act_utils.My_quickcheck.S_with_sexp
+    with type t = Expression.t Atomic_fetch.t =
+  Atomic_fetch.Quickcheck_ints (Obj) (Int_values (Arg))
 
 module Bool_values (E : Env_types.S) : sig
   type t = Expression.t [@@deriving sexp_of, quickcheck]

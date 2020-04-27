@@ -13,7 +13,12 @@ open Base
 
 open struct
   module Ac = Act_common
+  module P = Payload
 end
+
+module type S =
+  Action_types.S
+    with type Payload.t = Act_c_mini.Atomic_store.t P.Insertion.t
 
 let readme_preamble : string =
   {|
@@ -35,14 +40,6 @@ let forbid_already_written_flag_key : Ac.Id.t =
 let forbid_already_written_flag (param_map : Param_map.t) :
     Flag.t State.Monad.t =
   Param_map.get_flag_m param_map ~id:forbid_already_written_flag_key
-
-module Store_payload = struct
-  (* We don't give [gen] here, because it depends quite a lot on the functor
-     arguments of [Make]. *)
-
-  type t = {store: Act_c_mini.Atomic_store.t; path: Path.Program.t}
-  [@@deriving fields, make, sexp]
-end
 
 let basic_dst_restrictions (dst_type : Act_c_mini.Type.Basic.t) :
     (Var.Record.t -> bool) list =
@@ -102,13 +99,10 @@ module Make (B : sig
       (Dst : Act_c_mini.Env_types.S) :
     Act_utils.My_quickcheck.S_with_sexp
       with type t := Act_c_mini.Atomic_store.t
-end) : Action_types.S with type Payload.t = Store_payload.t = struct
-  module Name = struct
-    let name = Act_common.Id.("store" @: "make" @: B.name_suffix)
-  end
-
-  include Name
-  include Action.Make_log (Name)
+end) :
+  Action_types.S
+    with type Payload.t = Act_c_mini.Atomic_store.t P.Insertion.t = struct
+  let name = Act_common.Id.("store" @: "make" @: B.name_suffix)
 
   (** [readme_chunks ()] generates fragments of unformatted README text based
       on the configuration of this store module. *)
@@ -139,8 +133,12 @@ end) : Action_types.S with type Payload.t = Store_payload.t = struct
     let predicates = dst_restrictions ~forbid_already_written in
     Var.Map.env_satisfying_all ~predicates ~scope:(Local tid) vars
 
-  module Payload = struct
-    type t = Store_payload.t [@@deriving sexp]
+  module Payload = Payload.Stm_insert (struct
+    type t = Act_c_mini.Atomic_store.t [@@deriving sexp]
+
+    let action_id = name
+
+    let path_filter = B.path_filter
 
     module G = Base_quickcheck.Generator
 
@@ -152,24 +150,16 @@ end) : Action_types.S with type Payload.t = Store_payload.t = struct
             "Internal error: Environment was empty." ~here:[%here] ~env_name]
       else Ok ()
 
-    let log_environment (o : Ac.Output.t) (env_name : string)
-        (env : Act_c_mini.Env.t) : unit =
-      log o "%s environment: %a@." env_name Sexp.pp_hum
-        [%sexp (env : Act_c_mini.Env.t)]
-
-    let log_environments (o : Ac.Output.t) (src_env : Act_c_mini.Env.t)
-        (dst_env : Act_c_mini.Env.t) : unit =
-      log_environment o "source" src_env ;
-      log_environment o "dest" dst_env
-
-    let gen_store_with_envs (src : Act_c_mini.Env.t) (dst : Act_c_mini.Env.t)
-        (o : Ac.Output.t) ~(random : Splittable_random.State.t) :
-        Act_c_mini.Atomic_store.t Or_error.t =
+    let check_envs (src : Act_c_mini.Env.t) (dst : Act_c_mini.Env.t) :
+        unit Or_error.t =
       Or_error.Let_syntax.(
         let%bind () = error_if_empty "src" src in
-        let%map () = error_if_empty "dst" dst in
-        log o "Environments are non-empty" ;
-        log_environments o src dst ;
+        error_if_empty "dst" dst)
+
+    let gen_store_with_envs (src : Act_c_mini.Env.t) (dst : Act_c_mini.Env.t)
+        : Act_c_mini.Atomic_store.t Opt_gen.t =
+      Or_error.Let_syntax.(
+        let%map () = check_envs src dst in
         let module Src = struct
           let env = src
         end in
@@ -177,50 +167,27 @@ end) : Action_types.S with type Payload.t = Store_payload.t = struct
           let env = dst
         end in
         let module Gen = B.Quickcheck (Src) (Dst) in
-        log o "Built generator module" ;
-        Base_quickcheck.Generator.generate ~random ~size:10
-          [%quickcheck.generator: Gen.t])
+        [%quickcheck.generator: Gen.t])
 
-    let gen_store (o : Ac.Output.t) (vars : Var.Map.t) ~(tid : int)
-        ~(random : Splittable_random.State.t)
-        ~(forbid_already_written : bool) :
-        Act_c_mini.Atomic_store.t Or_error.t =
-      log o "Generating store" ;
-      let src_mod = src_env vars ~tid in
-      let dst_mod = dst_env vars ~tid ~forbid_already_written in
-      log o "Found environments for store" ;
-      gen_store_with_envs src_mod dst_mod o ~random
+    let gen' (_ : Subject.Test.t) (vars : Var.Map.t)
+        ~(where : Path.Program.t) ~(forbid_already_written : bool) :
+        Act_c_mini.Atomic_store.t Opt_gen.t =
+      let tid = Path.Program.tid where in
+      let src = src_env vars ~tid in
+      let dst = dst_env vars ~tid ~forbid_already_written in
+      gen_store_with_envs src dst
 
-    let gen_path (o : Ac.Output.t) (subject : Subject.Test.t)
-        ~(random : Splittable_random.State.t) : Path.Program.t State.Monad.t
-        =
-      log o "Generating path" ;
-      Payload.Helpers.lift_quickcheck_opt ~random ~action_id:name
-        (Path_producers.Test.try_gen_insert_stm subject
-           ~filter:B.path_filter)
-
-    let gen' (o : Ac.Output.t) (subject : Subject.Test.t) (vars : Var.Map.t)
-        ~(random : Splittable_random.State.t)
-        ~(forbid_already_written : bool) : t State.Monad.t =
-      State.Monad.Let_syntax.(
-        let%bind path = gen_path o subject ~random in
-        let tid = Path.Program.tid path in
-        let%map store =
-          State.Monad.Monadic.return
-            (gen_store o vars ~tid ~random ~forbid_already_written)
-        in
-        Store_payload.make ~store ~path)
-
-    let gen (subject : Subject.Test.t) ~(random : Splittable_random.State.t)
-        ~(param_map : Param_map.t) : t State.Monad.t =
+    let gen (where : Path.Program.t) (subject : Subject.Test.t)
+        ~(random : Splittable_random.State.t) ~(param_map : Param_map.t) :
+        t State.Monad.t =
       State.Monad.Let_syntax.(
         let%bind faw_flag = forbid_already_written_flag param_map in
         let forbid_already_written = Flag.eval faw_flag ~random in
-        let%bind o = State.Monad.output () in
-        log o "forbid already written: %b" forbid_already_written ;
-        State.Monad.with_vars_m
-          (gen' o subject ~random ~forbid_already_written))
-  end
+        State.Monad.with_vars_m (fun vars ->
+            Payload.Helpers.lift_quickcheck_opt
+              (gen' subject vars ~where ~forbid_already_written)
+              ~random ~action_id:name))
+  end)
 
   let available (subject : Subject.Test.t) ~(param_map : Param_map.t) :
       bool State.Monad.t =
@@ -256,25 +223,24 @@ end) : Action_types.S with type Payload.t = Store_payload.t = struct
           add_dependencies_to_store_src store ~tid))
 
   let run (subject : Subject.Test.t)
-      ~payload:({store; path} : Store_payload.t) :
+      ~(payload : Act_c_mini.Atomic_store.t P.Insertion.t) :
       Subject.Test.t State.Monad.t =
+    let store = P.Insertion.to_insert payload in
     let store_stm =
       Act_c_mini.(
         store |> Prim_statement.atomic_store
         |> Statement.prim Metadata.generated)
     in
+    let path = P.Insertion.where payload in
     let tid = Path.Program.tid path in
     State.Monad.Let_syntax.(
-      let%bind o = State.Monad.output () in
-      log o "Doing bookkeeping..." ;
       let%bind () = do_bookkeeping store ~tid in
       State.Monad.Monadic.return
         (Path_consumers.Test.insert_stm path ~to_insert:store_stm
            ~target:subject))
 end
 
-module Int : Action_types.S with type Payload.t = Store_payload.t =
-Make (struct
+module Int : S = Make (struct
   let name_suffix = Ac.Id.of_string "int.normal"
 
   let readme_insert : string =
@@ -293,8 +259,7 @@ Make (struct
   module Quickcheck = Act_c_mini.Atomic_store.Quickcheck_ints
 end)
 
-module Int_dead : Action_types.S with type Payload.t = Store_payload.t =
-Make (struct
+module Int_dead : S = Make (struct
   let name_suffix = Ac.Id.of_string "int.dead"
 
   let readme_insert : string =
@@ -315,8 +280,7 @@ Make (struct
   module Quickcheck = Act_c_mini.Atomic_store.Quickcheck_ints
 end)
 
-module Int_redundant : Action_types.S with type Payload.t = Store_payload.t =
-Make (struct
+module Int_redundant : S = Make (struct
   let name_suffix = Ac.Id.of_string "int.redundant"
 
   let readme_insert : string =

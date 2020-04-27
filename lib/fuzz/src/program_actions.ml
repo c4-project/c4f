@@ -11,6 +11,10 @@
 
 open Base
 
+open struct
+  module P = Payload
+end
+
 module Make_empty : Action_types.S with type Payload.t = unit = struct
   let name = Act_common.Id.of_string "program.make.empty"
 
@@ -37,30 +41,9 @@ module Make_empty : Action_types.S with type Payload.t = unit = struct
     State.Monad.return (Subject.Test.add_new_thread subject)
 end
 
-module Label_payload = struct
-  type t = {path: Path.Program.t; name: Act_common.C_id.t}
-  [@@deriving make, sexp]
-
-  module PP = Payload.Program_path (struct
-    let action_id = Act_common.Id.of_string "program.label"
-
-    let gen = Path_producers.Test.try_gen_insert_stm
-
-    let build_filter = Fn.id
-  end)
-
-  let gen (subject : Subject.Test.t) ~(random : Splittable_random.State.t)
-      ~(param_map : Param_map.t) : t State.Monad.t =
-    State.Monad.with_labels_m (fun labels ->
-        State.Monad.Let_syntax.(
-          let%map path = PP.gen subject ~random ~param_map
-          and name =
-            Payload.Helpers.lift_quickcheck (Label.gen_fresh labels) ~random
-          in
-          make ~path ~name))
-end
-
-module Label : Action_types.S with type Payload.t = Label_payload.t = struct
+module Label :
+  Action_types.S with type Payload.t = Act_common.C_id.t P.Insertion.t =
+struct
   let name = Act_common.Id.of_string "program.label"
 
   let available = Action.always
@@ -69,11 +52,25 @@ module Label : Action_types.S with type Payload.t = Label_payload.t = struct
     Act_utils.My_string.format_for_readme
       {| Inserts a new, random label into the program. |}
 
-  module Payload = Label_payload
+  module Payload = P.Stm_insert (struct
+    type t = Act_common.C_id.t [@@deriving sexp]
+
+    let action_id = name
+
+    let path_filter = Path_filter.empty
+
+    let gen (_ : Path.Program.t) (_ : Subject.Test.t)
+        ~(random : Splittable_random.State.t) ~(param_map : Param_map.t) :
+        t State.Monad.t =
+      ignore param_map ;
+      State.Monad.with_labels_m (fun labels ->
+          Payload.Helpers.lift_quickcheck (Label.gen_fresh labels) ~random)
+  end)
 
   let run (subject : Subject.Test.t) ~(payload : Payload.t) :
       Subject.Test.t State.Monad.t =
-    let {Label_payload.path; name} = payload in
+    let path = P.Insertion.where payload in
+    let name = P.Insertion.to_insert payload in
     let tid = Path.Program.tid path in
     let lid = Act_common.Litmus_id.local tid name in
     let label_stm =

@@ -15,10 +15,10 @@
   (payload ((basic_type int) (initial_value (Int 13)) (var cP))))
  ((name (store make int normal))
   (payload
-   ((store
+   ((to_insert
      ((src (Constant (Int 59774975))) (dst (Lvalue (Variable Is9Qk0n4Rhat)))
       (mo memory_order_relaxed)))
-    (path (In_thread 1 (In_stms (Insert 2)))))))
+    (where (In_thread 1 (In_stms (Insert 2)))))))
  ((name (var make))
   (payload ((basic_type int) (initial_value (Int -29491608)) (var u))))
  ((name (var make))

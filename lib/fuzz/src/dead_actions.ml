@@ -111,14 +111,13 @@ end
 module Goto_payload = struct
   type t = {path: Path.Program.t; label: Ac.C_id.t} [@@deriving sexp, make]
 
-  let build_filter (labels : Set.M(Ac.Litmus_id).t) :
-      Path_filter.t -> Path_filter.t =
+  let path_filter (labels : Set.M(Ac.Litmus_id).t) : Path_filter.t =
     let threads_with_labels =
       Set.filter_map (module Int) ~f:Ac.Litmus_id.tid labels
     in
-    Tx.Fn.Compose_syntax.(
-      Path_filter.in_dead_code_only
-      >> Path_filter.in_threads_only ~threads:threads_with_labels)
+    Path_filter.(
+      empty |> in_dead_code_only
+      |> Path_filter.in_threads_only ~threads:threads_with_labels)
 
   let gen (subject : Subject.Test.t) ~(random : Splittable_random.State.t)
       ~(param_map : Param_map.t) : t State.Monad.t =
@@ -128,7 +127,7 @@ module Goto_payload = struct
 
           let gen = Path_producers.Test.try_gen_insert_stm
 
-          let build_filter = build_filter labels
+          let path_filter = path_filter labels
         end) in
         State.Monad.Let_syntax.(
           let%bind path = PP.gen subject ~random ~param_map in
@@ -170,7 +169,7 @@ module Goto : Action_types.S with type Payload.t = Goto_payload.t = struct
     ignore param_map ;
     State.Monad.with_labels (fun labels ->
         Path_filter.is_constructible ~subject
-          (Goto_payload.build_filter labels Path_filter.empty))
+          (Goto_payload.path_filter labels))
 
   let run (subject : Subject.Test.t) ~(payload : Payload.t) :
       Subject.Test.t State.Monad.t =

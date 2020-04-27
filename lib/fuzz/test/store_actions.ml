@@ -86,9 +86,9 @@ let%test_module "store.make.int.normal" =
     let random_state (store : Act_c_mini.Atomic_store.t Lazy.t) :
         Src.Store_actions.Int.Payload.t Lazy.t =
       Lazy.Let_syntax.(
-        let%bind store = store in
-        let%map path = path in
-        Src.Store_actions.Store_payload.make ~store ~path)
+        let%bind to_insert = store in
+        let%map where = path in
+        Src.Payload.Insertion.make ~to_insert ~where)
 
     let test_action (store : Act_c_mini.Atomic_store.t Lazy.t) :
         Src.Subject.Test.t Src.State.Monad.t =
@@ -212,9 +212,9 @@ let%test_module "store.make.int.dead" =
 
     let random_state : Src.Store_actions.Int.Payload.t Lazy.t =
       Lazy.Let_syntax.(
-        let%bind store = Test_data.store in
-        let%map path = path in
-        Src.Store_actions.Store_payload.make ~store ~path)
+        let%bind to_insert = Test_data.store in
+        let%map where = path in
+        Src.Payload.Insertion.make ~to_insert ~where)
 
     let test_action : Src.Subject.Test.t Src.State.Monad.t =
       Src.State.Monad.(
@@ -287,9 +287,9 @@ let%test_module "store.make.int.redundant" =
 
     let random_state : Src.Store_actions.Int.Payload.t Lazy.t =
       Lazy.Let_syntax.(
-        let%bind store = redundant_store in
-        let%map path = path in
-        Src.Store_actions.Store_payload.make ~store ~path)
+        let%bind to_insert = redundant_store in
+        let%map where = path in
+        Src.Payload.Insertion.make ~to_insert ~where)
 
     let test_action : Src.Subject.Test.t Src.State.Monad.t =
       Src.State.Monad.(
