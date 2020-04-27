@@ -52,9 +52,6 @@ end)
 
 let variable_of : t -> Ac.C_id.t = reduce ~variable:Fn.id ~deref:Fn.id
 
-let variable_in_env (lv : t) ~(env : _ Map.M(Ac.C_id).t) : bool =
-  Map.mem env (variable_of lv)
-
 let as_variable (lv : t) : Ac.C_id.t Or_error.t =
   match lv with
   | Variable x ->

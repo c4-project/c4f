@@ -14,6 +14,9 @@ open Stdio
 open Act_c_mini.Lvalue
 module Q = Base_quickcheck
 
+let variable_in_env (x : t) ~(env : Act_c_mini.Env.t) : bool =
+  Map.mem env (variable_of x)
+
 let%expect_test "variable_in_env: positive variable result, test env" =
   let env = Lazy.force Env.test_env in
   print_s

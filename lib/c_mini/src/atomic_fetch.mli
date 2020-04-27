@@ -45,6 +45,11 @@ val mo : _ t -> Mem_order.t
 val op : _ t -> Op.Fetch.t
 (** [op f] gets [f]'s postfix operation. *)
 
+val variable_of : _ t -> Act_common.C_id.t
+(** [variable_of] x is the underlying variable of [x]. In the context of an
+    atomic fetch, the 'underlying variable' is that of [obj], not any
+    variable in [arg]. *)
+
 (** Primitive building block for atomic-fetch quickchecks. *)
 module Quickcheck_generic
     (A : Act_utils.My_quickcheck.S_with_sexp with type t := Address.t)

@@ -14,6 +14,9 @@ open Base
 type 'e t = {obj: Address.t; arg: 'e; mo: Mem_order.t; op: Op.Fetch.t}
 [@@deriving sexp, fields, make, compare, equal, quickcheck]
 
+let variable_of (type e) (x : e t) : Act_common.C_id.t =
+  Address.variable_of (obj x)
+
 module Base_map (Ap : Applicative.S) = struct
   let bmap (x : 'a t) ~(obj : Address.t -> Address.t Ap.t)
       ~(arg : 'a -> 'b Ap.t) ~(mo : Mem_order.t -> Mem_order.t Ap.t)

@@ -14,6 +14,8 @@ open Stdio
 module Src = Act_c_mini
 module Ac = Act_common
 
+let in_env env x = Map.mem env (Src.Atomic_load.variable_of x)
+
 let%expect_test "type_of: atomic_int* -> int" =
   let env = Lazy.force Env.test_env in
   let module Ty = Src.Atomic_load.Type_check (struct
@@ -32,8 +34,7 @@ let%test_unit "Quickcheck_atomic_ints: liveness" =
     let env = env
   end) in
   Core_kernel.Quickcheck.test_can_generate [%quickcheck.generator: Q.t]
-    ~sexp_of:[%sexp_of: Src.Atomic_load.t]
-    ~f:(Src.Atomic_load.variable_in_env ~env)
+    ~sexp_of:[%sexp_of: Src.Atomic_load.t] ~f:(in_env env)
 
 let%test_unit "Quickcheck_atomic_ints: generated underlying variables in \
                environment" =
@@ -43,6 +44,4 @@ let%test_unit "Quickcheck_atomic_ints: generated underlying variables in \
   end) in
   Base_quickcheck.Test.run_exn
     (module Q)
-    ~f:
-      ([%test_pred: Src.Atomic_load.t] ~here:[[%here]]
-         (Src.Atomic_load.variable_in_env ~env))
+    ~f:([%test_pred: Src.Atomic_load.t] ~here:[[%here]] (in_env env))

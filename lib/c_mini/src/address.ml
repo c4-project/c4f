@@ -142,9 +142,6 @@ let of_id_in_env (env : Env.t) ~(id : Ac.C_id.t) : t Or_error.t =
 
 let variable_of (addr : t) : Ac.C_id.t = Lvalue.variable_of (lvalue_of addr)
 
-let variable_in_env (addr : t) ~(env : _ Map.M(Ac.C_id).t) : bool =
-  Lvalue.variable_in_env (lvalue_of addr) ~env
-
 let check_address_var (addr : t) ~(env : Env.t) :
     Act_common.C_id.t Or_error.t =
   let module A_check = Type_check (struct
