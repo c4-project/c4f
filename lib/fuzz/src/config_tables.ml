@@ -81,7 +81,7 @@ let flag_map : Param_spec.Bool.t Map.M(Act_common.Id).t Lazy.t =
   (* Space for rent. *)
   lazy
     (make_param_spec_map
-       [ ( Store_actions.forbid_already_written_flag_key
+       [ ( Storelike.forbid_already_written_flag_key
          , Param_spec.make ~default:(Flag.exact false)
              ~description:
                {|
