@@ -56,22 +56,6 @@ module Pure (Basic : sig
   val quickcheck_generator : t Base_quickcheck.Generator.t
 end) : Action_types.S_payload with type t = Basic.t
 
-(** Scaffolding for building payload generators that just build program
-    paths. *)
-module Program_path (Basic : sig
-  val action_id : Act_common.Id.t
-  (** [action_id] should be the approximate ID of the action whose payload is
-      being defined. *)
-
-  val path_filter : Path_filter.t
-  (** [path_filter] should be the path filter predicate needed for the
-      payload generator. *)
-
-  val gen :
-    ?filter:Path_filter.t -> Subject.Test.t -> Path.Program.t Opt_gen.t
-  (** [gen] should be a path shape generator. *)
-end) : Action_types.S_payload with type t = Path.Program.t
-
 (** Type of results of a [Stm_insert] application. *)
 module Insertion : sig
   (** Opaque type of insertion payloads. *)
@@ -86,20 +70,21 @@ module Insertion : sig
 
   val where : _ t -> Path.Program.t
   (** [where x] gets the program path to which [x] is inserting. *)
+
+  (** Constructs a payload for inserting a statement. *)
+  module Make (To_insert : sig
+    type t [@@deriving sexp]
+
+    val action_id : Act_common.Id.t
+
+    val path_filter : Path_filter.t State.Monad.t
+    (** [path_filter] is a stateful action that generates a path filter. *)
+
+    val gen : Path.Program.t -> t stateful_gen
+    (** [gen where] generates the inner payload given the generated path
+        [where]. *)
+  end) : Action_types.S_payload with type t = To_insert.t t
 end
-
-(** Constructs a payload for inserting a statement. *)
-module Stm_insert (To_insert : sig
-  type t [@@deriving sexp]
-
-  val action_id : Act_common.Id.t
-
-  val path_filter : Path_filter.t
-
-  val gen : Path.Program.t -> t stateful_gen
-  (** [gen where] generates the inner payload given the generated path
-      [where]. *)
-end) : Action_types.S_payload with type t = To_insert.t Insertion.t
 
 (** {2 Surround} *)
 
@@ -157,7 +142,7 @@ module Surround : sig
         return a Quickcheck generator generating expressions over those
         variables. *)
 
-    val path_filter : Path_filter.t
+    val path_filter : Path_filter.t State.Monad.t
     (** [path_filter] should apply any additional path filter conditions
         needed for the action; for example, requiring that the scooped
         statement list must have no labels. *)

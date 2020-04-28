@@ -133,12 +133,12 @@ end) :
     let predicates = dst_restrictions ~forbid_already_written in
     Var.Map.env_satisfying_all ~predicates ~scope:(Local tid) vars
 
-  module Payload = Payload.Stm_insert (struct
+  module Payload = Payload.Insertion.Make (struct
     type t = Act_c_mini.Atomic_store.t [@@deriving sexp]
 
     let action_id = name
 
-    let path_filter = B.path_filter
+    let path_filter = State.Monad.return B.path_filter
 
     module G = Base_quickcheck.Generator
 

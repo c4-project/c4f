@@ -39,7 +39,8 @@ struct
         -> Act_c_mini.Expression.t Base_quickcheck.Generator.t =
       Act_c_mini.Expression_gen.gen_falsehoods
 
-    let path_filter : Path_filter.t = Path_filter.empty
+    let path_filter : Path_filter.t State.Monad.t =
+      State.Monad.return Path_filter.empty
   end)
 
   let wrap_in_loop (cond : Act_c_mini.Expression.t)

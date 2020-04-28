@@ -38,60 +38,49 @@ module Helpers = struct
       lift_quickcheck gen ~random)
 end
 
-module Program_path (Basic : sig
-  val action_id : Act_common.Id.t
-
-  val path_filter : Path_filter.t
-
-  val gen :
-    ?filter:Path_filter.t -> Subject.Test.t -> Path.Program.t Opt_gen.t
-end) =
-struct
-  type t = Path.Program.t [@@deriving sexp]
-
-  let quickcheck_path (test : Subject.Test.t) : Path.Program.t Opt_gen.t =
-    Basic.gen ~filter:Basic.path_filter test
-
-  let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
-      ~(param_map : Param_map.t) : Path.Program.t State.Monad.t =
-    ignore (param_map : Param_map.t) ;
-    Helpers.lift_quickcheck_opt (quickcheck_path test) ~random
-      ~action_id:Basic.action_id
-end
+let lift_path_gen (test : Subject.Test.t)
+    ~(random : Splittable_random.State.t) ~(action_id : Act_common.Id.t)
+    ~(filter : Path_filter.t State.Monad.t)
+    ~(f :
+       ?filter:Path_filter.t -> Subject.Test.t -> Path.Program.t Opt_gen.t) :
+    Path.Program.t State.Monad.t =
+  State.Monad.Let_syntax.(
+    let%bind filter = filter in
+    Helpers.lift_quickcheck_opt (f test ~filter) ~random ~action_id)
 
 module Insertion = struct
   type 'a t = {to_insert: 'a; where: Path.Program.t}
   [@@deriving make, fields, sexp]
-end
 
-module Stm_insert (To_insert : sig
-  type t [@@deriving sexp]
+  module Make (Basic : sig
+    type t [@@deriving sexp]
 
-  val action_id : Act_common.Id.t
+    val action_id : Act_common.Id.t
 
-  val path_filter : Path_filter.t
+    val path_filter : Path_filter.t State.Monad.t
 
-  val gen : Path.Program.t -> t stateful_gen
-end) =
-struct
-  type t = To_insert.t Insertion.t [@@deriving sexp]
+    val gen : Path.Program.t -> t stateful_gen
+  end) =
+  struct
+    open struct
+      type 'a ins = 'a t [@@deriving sexp]
+    end
 
-  module Path = Program_path (struct
-    let action_id = To_insert.action_id
+    type t = Basic.t ins [@@deriving sexp]
 
-    let path_filter = To_insert.path_filter
+    let gen_path test =
+      lift_path_gen test ~filter:Basic.path_filter ~action_id:Basic.action_id
+        ~f:Path_producers.Test.try_gen_insert_stm
 
-    let gen = Path_producers.Test.try_gen_insert_stm
-  end)
-
-  let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
-      ~(param_map : Param_map.t) : t State.Monad.t =
-    (* We can't do this inside the Opt-gen applicative, as we need the
-       ability to pull out the path and use it in the main generator. *)
-    State.Monad.Let_syntax.(
-      let%bind where = Path.gen test ~random ~param_map in
-      let%map to_insert = To_insert.gen where test ~random ~param_map in
-      Insertion.make ~to_insert ~where)
+    let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
+        ~(param_map : Param_map.t) : t State.Monad.t =
+      (* We can't do this inside the Opt-gen applicative, as we need the
+         ability to pull out the path and use it in the main generator. *)
+      State.Monad.Let_syntax.(
+        let%bind where = gen_path test ~random in
+        let%map to_insert = Basic.gen where test ~random ~param_map in
+        make ~to_insert ~where)
+  end
 end
 
 module Surround = struct
@@ -141,17 +130,13 @@ module Surround = struct
         is appearing, return a Quickcheck generator generating expressions
         over those variables. *)
 
-    val path_filter : Path_filter.t
+    val path_filter : Path_filter.t State.Monad.t
   end) : Action_types.S_payload with type t = Body.t = struct
     include Body
 
-    module PP = Program_path (struct
-      let action_id = Basic.action_id
-
-      let gen = Path_producers.Test.try_gen_transform_stm_list
-
-      let path_filter = Basic.path_filter
-    end)
+    let gen_path test =
+      lift_path_gen test ~filter:Basic.path_filter ~action_id:Basic.action_id
+        ~f:Path_producers.Test.try_gen_transform_stm_list
 
     let quickcheck_cond (path : Path.Program.t) :
         Act_c_mini.Expression.t Q.Generator.t State.Monad.t =
@@ -169,8 +154,9 @@ module Surround = struct
 
     let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
         ~(param_map : Param_map.t) : Body.t State.Monad.t =
+      ignore param_map ;
       State.Monad.Let_syntax.(
-        let%bind path = PP.gen test ~random ~param_map in
+        let%bind path = gen_path test ~random in
         let%map cond = gen_cond path ~random in
         Body.make ~cond ~path)
   end

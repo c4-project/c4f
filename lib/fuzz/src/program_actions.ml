@@ -52,12 +52,12 @@ struct
     Act_utils.My_string.format_for_readme
       {| Inserts a new, random label into the program. |}
 
-  module Payload = P.Stm_insert (struct
+  module Payload = P.Insertion.Make (struct
     type t = Act_common.C_id.t [@@deriving sexp]
 
     let action_id = name
 
-    let path_filter = Path_filter.empty
+    let path_filter = State.Monad.return Path_filter.empty
 
     let gen (_ : Path.Program.t) (_ : Subject.Test.t)
         ~(random : Splittable_random.State.t) ~(param_map : Param_map.t) :

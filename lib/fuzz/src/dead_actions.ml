@@ -14,6 +14,7 @@ open Base
 open struct
   module Ac = Act_common
   module Tx = Travesty_base_exts
+  module P = Payload
 end
 
 let early_out_name = Ac.Id.of_string_list ["flow"; "dead"; "early-out"]
@@ -21,8 +22,11 @@ let early_out_name = Ac.Id.of_string_list ["flow"; "dead"; "early-out"]
 let goto_name = Ac.Id.of_string_list ["flow"; "dead"; "goto"]
 
 module Early_out_payload = struct
-  type t = {path: Path.Program.t; kind: Act_c_mini.Early_out.t}
-  [@@deriving sexp, make]
+  (* TODO(@MattWindsor91): We can't easily refactor this into an
+     Insertion.Make payload, because the path filter depends on the choice of
+     early-out. We'd have to split it into three different actions first. *)
+
+  type t = Act_c_mini.Early_out.t P.Insertion.t [@@deriving sexp]
 
   let quickcheck_path (test : Subject.Test.t)
       ~(filter_f : Path_filter.t -> Path_filter.t) : Path.Program.t Opt_gen.t
@@ -38,7 +42,7 @@ module Early_out_payload = struct
       (Or_error.return
          (Base_quickcheck.Generator.filter ~f:kind_pred
             Act_c_mini.Early_out.quickcheck_generator))
-      ~f:(fun path kind -> make ~path ~kind)
+      ~f:(fun where to_insert -> P.Insertion.make ~where ~to_insert)
 
   let quickcheck_loop_payload : Subject.Test.t -> t Opt_gen.t =
     quickcheck_generic_payload ~kind_pred:Act_c_mini.Early_out.in_loop_only
@@ -104,53 +108,13 @@ struct
 
   let run (test : Subject.Test.t) ~(payload : Payload.t) :
       Subject.Test.t State.Monad.t =
-    let {Early_out_payload.path; kind} = payload in
+    let path = P.Insertion.where payload in
+    let kind = P.Insertion.to_insert payload in
     State.Monad.Monadic.return (run_inner test path kind)
 end
 
-module Goto_payload = struct
-  type t = {path: Path.Program.t; label: Ac.C_id.t} [@@deriving sexp, make]
-
-  let path_filter (labels : Set.M(Ac.Litmus_id).t) : Path_filter.t =
-    let threads_with_labels =
-      Set.filter_map (module Int) ~f:Ac.Litmus_id.tid labels
-    in
-    Path_filter.(
-      empty |> in_dead_code_only
-      |> Path_filter.in_threads_only ~threads:threads_with_labels)
-
-  let gen (subject : Subject.Test.t) ~(random : Splittable_random.State.t)
-      ~(param_map : Param_map.t) : t State.Monad.t =
-    State.Monad.with_labels_m (fun labels ->
-        let module PP = Payload.Program_path (struct
-          let action_id = goto_name
-
-          let gen = Path_producers.Test.try_gen_insert_stm
-
-          let path_filter = path_filter labels
-        end) in
-        State.Monad.Let_syntax.(
-          let%bind path = PP.gen subject ~random ~param_map in
-          let tid = Path.Program.tid path in
-          let labels_in_tid =
-            labels
-            |> Set.filter_map
-                 (module Ac.C_id)
-                 ~f:(fun x ->
-                   Option.some_if
-                     ([%equal: int option] (Ac.Litmus_id.tid x) (Some tid))
-                     (Ac.Litmus_id.variable_name x))
-            |> Set.to_list
-          in
-          let%map label =
-            Payload.Helpers.lift_quickcheck
-              (Base_quickcheck.Generator.of_list labels_in_tid)
-              ~random
-          in
-          make ~path ~label))
-end
-
-module Goto : Action_types.S with type Payload.t = Goto_payload.t = struct
+module Goto : Action_types.S with type Payload.t = Ac.C_id.t P.Insertion.t =
+struct
   let name = goto_name
 
   let readme () : string =
@@ -162,18 +126,56 @@ module Goto : Action_types.S with type Payload.t = Goto_payload.t = struct
         labels in the same thread; it does not jump outside the thread.
       |}
 
-  module Payload = Goto_payload
+  let path_filter' (labels : Set.M(Ac.Litmus_id).t) : Path_filter.t =
+    let threads_with_labels =
+      Set.filter_map (module Int) ~f:Ac.Litmus_id.tid labels
+    in
+    Path_filter.(
+      empty |> in_dead_code_only
+      |> Path_filter.in_threads_only ~threads:threads_with_labels)
+
+  module Payload = P.Insertion.Make (struct
+    type t = Act_common.C_id.t [@@deriving sexp]
+
+    let action_id = name
+
+    let path_filter : Path_filter.t State.Monad.t =
+      State.Monad.with_labels path_filter'
+
+    let reachable_labels (path : Path.Program.t) :
+        Ac.C_id.t list State.Monad.t =
+      State.Monad.with_labels (fun labels ->
+          labels
+          |> Set.filter_map
+               (module Ac.C_id)
+               ~f:(fun x ->
+                 Option.some_if
+                   (Ac.Litmus_id.is_in_local_scope x
+                      ~from:(Path.Program.tid path))
+                   (Ac.Litmus_id.variable_name x))
+          |> Set.to_list)
+
+    let gen (path : Path.Program.t) (_ : Subject.Test.t)
+        ~(random : Splittable_random.State.t) ~(param_map : Param_map.t) :
+        t State.Monad.t =
+      ignore param_map ;
+      State.Monad.Let_syntax.(
+        let%bind labels_in_tid = reachable_labels path in
+        Payload.Helpers.lift_quickcheck
+          (Base_quickcheck.Generator.of_list labels_in_tid)
+          ~random)
+  end)
 
   let available (subject : Subject.Test.t) ~(param_map : Param_map.t) :
       bool State.Monad.t =
     ignore param_map ;
     State.Monad.with_labels (fun labels ->
-        Path_filter.is_constructible ~subject
-          (Goto_payload.path_filter labels))
+        Path_filter.is_constructible ~subject (path_filter' labels))
 
   let run (subject : Subject.Test.t) ~(payload : Payload.t) :
       Subject.Test.t State.Monad.t =
-    let {Goto_payload.path; label} = payload in
+    let path = P.Insertion.where payload in
+    let label = P.Insertion.to_insert payload in
     let goto_stm =
       Act_c_mini.(
         label |> Prim_statement.goto |> Statement.prim Metadata.generated)

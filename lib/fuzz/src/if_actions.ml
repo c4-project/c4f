@@ -45,7 +45,7 @@ module Surround = struct
         return a Quickcheck generator generating expressions over those
         variables. *)
 
-    val path_filter : Path_filter.t
+    val path_filter : Path_filter.t State.Monad.t
     (** [path_filter] should apply any extra requirements on path filters. *)
   end) : S = struct
     include Basic
@@ -104,8 +104,9 @@ module Surround = struct
         =
       t_branch_of_statements
 
-    let path_filter : Path_filter.t =
-      Path_filter.(require_end_check empty ~check:Has_no_labels)
+    let path_filter : Path_filter.t State.Monad.t =
+      State.Monad.return
+        Path_filter.(require_end_check empty ~check:Has_no_labels)
   end)
 
   module Tautology : S = Make (struct
@@ -129,7 +130,8 @@ module Surround = struct
         Subject.Block.t =
       Act_c_mini.Block.make ~metadata:Metadata.dead_code ()
 
-    let path_filter : Path_filter.t = Path_filter.empty
+    let path_filter : Path_filter.t State.Monad.t =
+      State.Monad.return Path_filter.empty
   end)
 end
 

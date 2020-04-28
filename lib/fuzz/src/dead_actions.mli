@@ -13,32 +13,13 @@
 
     See also {!If_actions}. *)
 
-(** {1 Early-out} *)
-
-module Early_out_payload : sig
-  (** Opaque type of early-out payloads. *)
-  type t
-
-  val make : path:Path.Program.t -> kind:Act_c_mini.Early_out.t -> t
-  (** [make ~path ~kind] constructs an early-out payload with the path [path]
-      and early-out kind [kind]. *)
-end
-
 (** A fuzzer action that inserts early-out (break, return, etc) statements
     into dead-code. *)
-module Early_out : Action_types.S with type Payload.t = Early_out_payload.t
-
-(** {1 Goto} *)
-
-module Goto_payload : sig
-  (** Opaque type of goto payloads. *)
-  type t
-
-  val make : path:Path.Program.t -> label:Act_common.C_id.t -> t
-  (** [make ~path ~label] constructs a goto payload with the path [path] and
-      label [label] (relative to the thread of [path]).. *)
-end
+module Early_out :
+  Action_types.S
+    with type Payload.t = Act_c_mini.Early_out.t Payload.Insertion.t
 
 (** A fuzzer action that inserts goto statements to random labels into
     dead-code. *)
-module Goto : Action_types.S with type Payload.t = Goto_payload.t
+module Goto :
+  Action_types.S with type Payload.t = Act_common.C_id.t Payload.Insertion.t

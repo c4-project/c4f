@@ -13,11 +13,11 @@ module Src = Act_fuzz
 
 let%test_module "Early_out" =
   ( module struct
-    let test_on_example_program (path : Src.Path.Program.t)
-        (kind : Act_c_mini.Early_out.t) : unit =
+    let test_on_example_program (where : Src.Path.Program.t)
+        (to_insert : Act_c_mini.Early_out.t) : unit =
       let initial_state : Src.State.t = Lazy.force Subject.Test_data.state in
       let test : Src.Subject.Test.t = Lazy.force Subject.Test_data.test in
-      let payload = Src.Dead_actions.Early_out_payload.make ~path ~kind in
+      let payload = Src.Payload.Insertion.make ~where ~to_insert in
       Action.Test_utils.run_and_dump_test
         (Src.Dead_actions.Early_out.run test ~payload)
         ~initial_state
