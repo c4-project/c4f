@@ -14,11 +14,10 @@ open Base
 open struct
   module Ac = Act_common
   module Cm = Act_c_mini
-  module P = Payload
 end
 
 module type S =
-  Action_types.S with type Payload.t = Cm.Atomic_store.t P.Insertion.t
+  Action_types.S with type Payload.t = Cm.Atomic_store.t Payload.Insertion.t
 
 let readme_preamble : string =
   {|
@@ -53,7 +52,8 @@ module Make (B : sig
       source and destination variable environments. *)
   module Quickcheck (Src : Cm.Env_types.S) (Dst : Cm.Env_types.S) :
     Act_utils.My_quickcheck.S_with_sexp with type t := Cm.Atomic_store.t
-end) : Action_types.S with type Payload.t = Cm.Atomic_store.t P.Insertion.t =
+end) :
+  Action_types.S with type Payload.t = Cm.Atomic_store.t Payload.Insertion.t =
 Storelike.Make (struct
   let name = Act_common.Id.("store" @: "make" @: B.name_suffix)
 
