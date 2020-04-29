@@ -34,6 +34,21 @@ module Binary : sig
       | Add  (** An addition operator. *)
       | Sub  (** A subtraction operator. *)
     [@@deriving sexp, compare, equal, quickcheck]
+
+    include Op_types.S_binary with type t := t
+  end
+
+  (** {3 Bitwise binary operators} *)
+
+  module Bitwise : sig
+    (** Enumeration of bitwise binary operators. *)
+    type t =
+      | And  (** A bitwise AND operator. *)
+      | Or  (** A bitwise OR operator. *)
+      | Xor  (** A bitwise XOR operator. *)
+    [@@deriving sexp, compare, equal, quickcheck]
+
+    include Op_types.S_binary with type t := t
   end
 
   (** {3 Logical binary operators} *)
@@ -44,16 +59,26 @@ module Binary : sig
       | And  (** A logical AND operator. *)
       | Or  (** A logical OR operator. *)
     [@@deriving sexp, compare, equal, quickcheck]
+
+    include Op_types.S_binary with type t := t
   end
+
+  (** {3 Main enumeration} *)
 
   (** Enumeration of binary operators. *)
   type t =
     | Eq  (** An equality operator. *)
     | Arith of Arith.t
         (** Lifts an arithmetic operator to a binary operator. *)
+    | Bitwise of Bitwise.t
+        (** Lifts a bitwise operator to a binary operator. *)
     | Logical of Logical.t
         (** Lifts a logical operator to a binary operator. *)
   [@@deriving sexp, compare, equal, quickcheck]
+
+  include Op_types.S_binary with type t := t
+
+  (** {4 Convenience constructors} *)
 
   val eq : t
   (** [eq] is the equality operator. *)
@@ -64,11 +89,22 @@ module Binary : sig
   val sub : t
   (** [sub] is the subtraction operator. *)
 
+  val b_and : t
+  (** [b_and] is the bitwise AND operator. *)
+
+  val b_or : t
+  (** [b_or] is the bitwise OR operator. *)
+
+  val b_xor : t
+  (** [b_xor] is the bitwise XOR operator. *)
+
   val l_and : t
   (** [l_and] is the logical AND operator. *)
 
   val l_or : t
   (** [l_or] is the logical OR operator. *)
+
+  include Op_types.S_binary with type t := t
 end
 
 (** {1 Other operators} *)
@@ -80,7 +116,12 @@ end
     extra [Fetch.t] parameter. *)
 module Fetch : sig
   (** The enumeration of fetch postfix operations. *)
-  type t = Add  (** Fetch and add. *) | Sub  (** Fetch and subtract. *)
+  type t =
+    | Add  (** Fetch and add. *)
+    | Sub  (** Fetch and subtract. *)
+    | And  (** Fetch and (bitwise) AND. *)
+    | Or  (** Fetch and (bitwise) OR. *)
+    | Xor  (** Fetch and (bitwise) XOR. *)
 
   val to_bop : t -> Binary.t
   (** [to_bop op] gets the binary operator that represents the operation that
@@ -89,4 +130,6 @@ module Fetch : sig
   include Act_utils.Enum_types.S_table with type t := t
 
   include Act_utils.Enum_types.Extension_table with type t := t
+
+  include Op_types.S_binary with type t := t
 end

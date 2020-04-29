@@ -61,6 +61,7 @@ end
 (** Primitive building block for integer atomic-fetch quickchecks. *)
 module Quickcheck_ints
     (Obj : Env_types.S)
+    (O : Act_utils.My_quickcheck.S_with_sexp with type t = Op.Fetch.t)
     (Arg : Act_utils.My_quickcheck.S_with_sexp) : sig
   type nonrec t = Arg.t t [@@deriving sexp_of, quickcheck]
 end

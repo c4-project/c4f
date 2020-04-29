@@ -15,6 +15,13 @@ module Q = Base_quickcheck
 module type S =
   Act_utils.My_quickcheck.S_with_sexp with type t = Expression.t
 
+module Gen_nop_compat_fetch = struct
+  include Op.Fetch
+
+  let quickcheck_generator : t Q.Generator.t =
+    Q.Generator.filter quickcheck_generator ~f:Op.Fetch.zero_rhs_unit
+end
+
 let eval_guards : (bool * (unit -> 'a)) list -> 'a list =
   List.filter_map ~f:(fun (g, f) -> if g then Some (f ()) else None)
 
@@ -43,8 +50,7 @@ module Int_prims (E : Env_types.S) = struct
   let gen_atomic_fetch_nop ~(gen_zero : t Q.Generator.t) :
       (t * Env.Record.t) Q.Generator.t =
     let module F =
-      Atomic_fetch.Quickcheck_ints
-        (E)
+      Atomic_fetch.Quickcheck_ints (E) (Gen_nop_compat_fetch)
         (struct
           type nonrec t = t
 
@@ -152,12 +158,13 @@ end
 module Atomic_fetch_int_nops (Obj : Env_types.S) (Arg : Env_types.S) :
   Act_utils.My_quickcheck.S_with_sexp
     with type t = Expression.t Atomic_fetch.t =
-  Atomic_fetch.Quickcheck_ints (Obj) (Int_zeroes (Arg))
+  Atomic_fetch.Quickcheck_ints (Obj) (Gen_nop_compat_fetch)
+    (Int_zeroes (Arg))
 
 module Atomic_fetch_int_values (Obj : Env_types.S) (Arg : Env_types.S) :
   Act_utils.My_quickcheck.S_with_sexp
     with type t = Expression.t Atomic_fetch.t =
-  Atomic_fetch.Quickcheck_ints (Obj) (Int_values (Arg))
+  Atomic_fetch.Quickcheck_ints (Obj) (Op.Fetch) (Int_values (Arg))
 
 module Bool_values (E : Env_types.S) : sig
   type t = Expression.t [@@deriving sexp_of, quickcheck]

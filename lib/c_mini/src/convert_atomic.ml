@@ -24,9 +24,8 @@ let fence_signal_name : string = "atomic_signal_fence"
 
 let fence_thread_name : string = "atomic_thread_fence"
 
-let fetch_add_name : string = "atomic_fetch_add_explicit"
-
-let fetch_sub_name : string = "atomic_fetch_sub_explicit"
+let fetch_name (f : Op.Fetch.t) : string =
+  Printf.sprintf "atomic_fetch_%s_explicit" (Op.Fetch.to_string f)
 
 let load_name : string = "atomic_load_explicit"
 

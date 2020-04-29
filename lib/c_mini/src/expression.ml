@@ -141,6 +141,15 @@ module Type_check (E : Env_types.S) = struct
   module Ad = Address.Type_check (E)
   module At = Atomic_expression.Type_check (E)
 
+  let require_unified_bop_type (b : Op.Binary.t) ~(want : Type.t)
+      ~(got : Type.t) : Type.t Or_error.t =
+    Or_error.tag_s (Type.check want got)
+      ~tag:
+        [%message
+          "Checking unified type of binary operation"
+            ~operator:(b : Op.Binary.t)
+            ~should_be:(want : Type.t)]
+
   let type_of_resolved_bop (b : Op.Binary.t) (l_type : Type.t)
       (r_type : Type.t) : Type.t Or_error.t =
     Or_error.Let_syntax.(
@@ -157,24 +166,10 @@ module Type_check (E : Env_types.S) = struct
       match b with
       | Eq ->
           return Type.(bool ())
-      | Arith _ ->
-          if Type.equal Type.(int ()) u_type then Or_error.return u_type
-          else
-            Or_error.error_s
-              [%message
-                "Operand types must be 'int'"
-                  ~operator:(b : Op.Binary.t)
-                  ~left:(l_type : Type.t)
-                  ~right:(r_type : Type.t)]
+      | Arith _ | Bitwise _ ->
+          require_unified_bop_type b ~want:Type.(int ()) ~got:u_type
       | Logical _ ->
-          if Type.equal Type.(bool ()) u_type then Or_error.return u_type
-          else
-            Or_error.error_s
-              [%message
-                "Operand types must be 'bool'"
-                  ~operator:(b : Op.Binary.t)
-                  ~left:(l_type : Type.t)
-                  ~right:(r_type : Type.t)])
+          require_unified_bop_type b ~want:Type.(bool ()) ~got:u_type)
 
   let type_of_resolved_uop (u : Op.Unary.t) (x_type : Type.t) :
       Type.t Or_error.t =

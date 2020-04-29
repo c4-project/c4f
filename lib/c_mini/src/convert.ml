@@ -112,6 +112,12 @@ let model_atomic_load_expr (args : Ast.Expr.t list)
   ignore expr ;
   Or_error.(args |> Convert_atomic.model_load >>| Expression.atomic_load)
 
+let fetch_call_alist (modeller : Ast.Expr.t list -> op:Op.Fetch.t -> 'a) :
+    (Ac.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t =
+  List.map (Op.Fetch.all_list ()) ~f:(fun op ->
+      let name = Ac.C_id.of_string (Convert_atomic.fetch_name op) in
+      (name, modeller ~op))
+
 let expr_call_table :
     (   Ast.Expr.t list
      -> expr:(Ast.Expr.t -> Expression.t Or_error.t)
@@ -121,14 +127,11 @@ let expr_call_table :
   lazy
     (Map.of_alist_exn
        (module Ac.C_id)
-       [ ( Ac.C_id.of_string Convert_atomic.cmpxchg_name
-         , model_atomic_cmpxchg_expr )
-       ; ( Ac.C_id.of_string Convert_atomic.fetch_add_name
-         , model_atomic_fetch_expr ~op:Op.Fetch.Add )
-       ; ( Ac.C_id.of_string Convert_atomic.fetch_sub_name
-         , model_atomic_fetch_expr ~op:Op.Fetch.Sub )
-       ; (Ac.C_id.of_string Convert_atomic.load_name, model_atomic_load_expr)
-       ])
+       ( fetch_call_alist model_atomic_fetch_expr
+       @ [ ( Ac.C_id.of_string Convert_atomic.cmpxchg_name
+           , model_atomic_cmpxchg_expr )
+         ; ( Ac.C_id.of_string Convert_atomic.load_name
+           , model_atomic_load_expr ) ] ))
 
 let expr_call_handler (func_name : Ac.C_id.t) :
     (   Ast.Expr.t list
@@ -262,18 +265,15 @@ let expr_stm_call_table :
   lazy
     (Map.of_alist_exn
        (module Ac.C_id)
-       [ ( Ac.C_id.of_string Convert_atomic.cmpxchg_name
-         , model_atomic_cmpxchg_stm )
-       ; ( Ac.C_id.of_string Convert_atomic.fence_signal_name
-         , model_atomic_fence_stm ~mode:Atomic_fence.Mode.Signal )
-       ; ( Ac.C_id.of_string Convert_atomic.fence_thread_name
-         , model_atomic_fence_stm ~mode:Atomic_fence.Mode.Thread )
-       ; ( Ac.C_id.of_string Convert_atomic.fetch_add_name
-         , model_atomic_fetch_stm ~op:Op.Fetch.Add )
-       ; ( Ac.C_id.of_string Convert_atomic.fetch_sub_name
-         , model_atomic_fetch_stm ~op:Op.Fetch.Sub )
-       ; (Ac.C_id.of_string Convert_atomic.store_name, model_atomic_store_stm)
-       ])
+       ( fetch_call_alist model_atomic_fetch_stm
+       @ [ ( Ac.C_id.of_string Convert_atomic.cmpxchg_name
+           , model_atomic_cmpxchg_stm )
+         ; ( Ac.C_id.of_string Convert_atomic.fence_signal_name
+           , model_atomic_fence_stm ~mode:Atomic_fence.Mode.Signal )
+         ; ( Ac.C_id.of_string Convert_atomic.fence_thread_name
+           , model_atomic_fence_stm ~mode:Atomic_fence.Mode.Thread )
+         ; ( Ac.C_id.of_string Convert_atomic.store_name
+           , model_atomic_store_stm ) ] ))
 
 let arbitrary_procedure_call (function_id : Ac.C_id.t)
     (raw_arguments : Ast.Expr.t list) : unit Statement.t Or_error.t =

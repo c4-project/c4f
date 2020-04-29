@@ -4,7 +4,7 @@
  (name act_c_mini)
  (public_name act.c_mini)
  (synopsis "Automagic Compiler Tormentor: C mini-model")
- (modules_without_implementation env_types expression_types types
+ (modules_without_implementation env_types expression_types types op_types
    statement_types)
  (preprocess
   (pps ppx_deriving.std ppx_yojson_conv ppx_jane))

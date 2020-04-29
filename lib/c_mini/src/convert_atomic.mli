@@ -27,11 +27,8 @@ val fence_signal_name : string
 val fence_thread_name : string
 (** [fence_thread_name] is the name of the atomic thread fence function. *)
 
-val fetch_add_name : string
-(** [fetch_add_name] is the name of the atomic fetch-add function. *)
-
-val fetch_sub_name : string
-(** [fetch_sub_name] is the name of the atomic fetch-sub function. *)
+val fetch_name : Op.Fetch.t -> string
+(** [fetch_name] is the name of the atomic fetch-add function. *)
 
 val load_name : string
 (** [load_name] is the name of the atomic load function. *)

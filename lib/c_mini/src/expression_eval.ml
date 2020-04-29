@@ -53,19 +53,42 @@ let eval_eq (l : expr) (r : expr) ~(mu : mu) : Constant.t Heap.Monad.t =
                ~left:(l_const : Constant.t)
                ~right:(r_const : Constant.t)]))
 
-let eval_arith (op : Op.Binary.Arith.t) ~(mu : mu) (l : expr) (r : expr) :
-    Constant.t Heap.Monad.t =
+let eval_int_op (op : 'a) (l : expr) (r : expr)
+    ~(op_sem : 'a -> int -> int -> int) ~(mu : mu) : Constant.t Heap.Monad.t
+    =
   Heap.Monad.Let_syntax.(
     let%map l_int = expr_as_int ~mu l and r_int = expr_as_int ~mu r in
-    let o_int =
-      match op with Add -> l_int + r_int | Sub -> l_int - r_int
-    in
+    let o_int = op_sem op l_int r_int in
     Constant.int o_int)
+
+let arith_op_sem : Op.Binary.Arith.t -> int -> int -> int = function
+  | Add -> (
+      + )
+  | Sub -> (
+      - )
+
+let bitwise_op_sem : Op.Binary.Bitwise.t -> int -> int -> int = function
+  | And ->
+      Int.bit_and
+  | Or ->
+      Int.bit_or
+  | Xor ->
+      Int.bit_xor
+
+let eval_arith :
+    Op.Binary.Arith.t -> expr -> expr -> mu:mu -> Constant.t Heap.Monad.t =
+  eval_int_op ~op_sem:arith_op_sem
+
+let eval_bitwise :
+    Op.Binary.Bitwise.t -> expr -> expr -> mu:mu -> Constant.t Heap.Monad.t =
+  eval_int_op ~op_sem:bitwise_op_sem
 
 let eval_bop (mu : mu) :
     Op.Binary.t -> expr -> expr -> Constant.t Heap.Monad.t = function
   | Arith op ->
       eval_arith op ~mu
+  | Bitwise op ->
+      eval_bitwise op ~mu
   | Logical And ->
       eval_land ~mu
   | Logical Or ->

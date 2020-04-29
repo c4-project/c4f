@@ -42,22 +42,16 @@ module Atomic_pre (M : sig
 end) =
 struct
   let cmpxchg (cmpxchg : M.expr Atomic_cmpxchg.t) : Ast.Expr.t =
-    known_call "atomic_compare_exchange_strong_explicit"
+    known_call Convert_atomic.cmpxchg_name
       [ address (Atomic_cmpxchg.obj cmpxchg)
       ; address (Atomic_cmpxchg.expected cmpxchg)
       ; M.reify (Atomic_cmpxchg.desired cmpxchg)
       ; mem_order (Atomic_cmpxchg.succ cmpxchg)
       ; mem_order (Atomic_cmpxchg.fail cmpxchg) ]
 
-  let name_of_fetch : Op.Fetch.t -> string = function
-    | Add ->
-        "atomic_fetch_add_explicit"
-    | Sub ->
-        "atomic_fetch_sub_explicit"
-
   let fetch (f : M.expr Atomic_fetch.t) : Ast.Expr.t =
     known_call
-      (name_of_fetch (Atomic_fetch.op f))
+      (Convert_atomic.fetch_name (Atomic_fetch.op f))
       [ address (Atomic_fetch.obj f)
       ; M.reify (Atomic_fetch.arg f)
       ; mem_order (Atomic_fetch.mo f) ]
@@ -77,6 +71,12 @@ let bop : Op.Binary.t -> Act_c_lang.Operators.Bin.t = function
       `Add
   | Arith Sub ->
       `Sub
+  | Bitwise And ->
+      `And
+  | Bitwise Or ->
+      `Or
+  | Bitwise Xor ->
+      `Xor
   | Logical And ->
       `Land
   | Logical Or ->
