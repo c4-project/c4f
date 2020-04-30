@@ -177,6 +177,12 @@ let bop : Act_c_lang.Operators.Bin.t -> Op.Binary.t Or_error.t =
         return Op.Binary.l_or
     | `Sub ->
         return Op.Binary.sub
+    | `And ->
+        return Op.Binary.b_and
+    | `Or ->
+        return Op.Binary.b_or
+    | `Xor ->
+        return Op.Binary.b_xor
     | op ->
         error_s
           [%message

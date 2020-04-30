@@ -142,11 +142,19 @@ module Int_values (E : Env_types.S) = struct
   let base_generators : t Q.Generator.t list =
     [Z.quickcheck_generator; P.gen_prim ~gen_zero:Z.quickcheck_generator]
 
+  let bitwise_bop (mu : t Q.Generator.t) : t Q.Generator.t =
+    Q.Generator.(
+      return Expression.bop
+      <*> ( Op.Binary.Bitwise.quickcheck_generator
+          >>| fun x -> Op.Binary.Bitwise x )
+      <*> mu <*> mu)
+
+  let recursive_generators (mu : t Q.Generator.t) : t Q.Generator.t list =
+    [bitwise_bop mu]
+
   let quickcheck_generator : t Q.Generator.t =
     (* TODO(@MattWindsor91): find some 'safe' recursive ops. *)
-    Q.Generator.union base_generators
-
-  (* ~f:recursive_generators *)
+    Q.Generator.recursive_union base_generators ~f:recursive_generators
 
   let quickcheck_observer : t Q.Observer.t =
     [%quickcheck.observer: Expression.t]
