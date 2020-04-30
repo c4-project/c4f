@@ -19,9 +19,8 @@ module Gen_nop_compat_fetch = struct
   include Op.Fetch
 
   let quickcheck_generator : t Q.Generator.t =
-    Q.Generator.filter quickcheck_generator ~f:(
-      Fn.compose Op.Algebra.is_idem Op.Fetch.zero_rhs
-    )
+    Q.Generator.filter quickcheck_generator
+      ~f:(Fn.compose Op.Algebra.is_idem Op.Fetch.zero_rhs)
 end
 
 let eval_guards : (bool * (unit -> 'a)) list -> 'a list =
@@ -125,23 +124,22 @@ module Int_zeroes (E : Env_types.S) = struct
       Expression.(bop op p p))
 
   let gen_kv_sub ~(mu : t Q.Generator.t) : t Q.Generator.t =
-    (* Even though the operators are likely not commutative, we're passing them
-       two expressions that evaluate to the same value. *)
+    (* Even though the operators are likely not commutative, we're passing
+       them two expressions that evaluate to the same value. *)
     Q.Generator.Let_syntax.(
       let%bind op = gen_refl_zero_op in
       let%bind flip = Q.Generator.bool in
       let lr = Det_prims.gen_load_with_record ~gen_zero:mu in
-      Q.Generator.filter_map lr
-      ~f:(fun (l, r) ->
-        Option.map (Env.Record.known_value r) ~f:(fun kv ->
-          Expression.(if flip then bop op l (constant kv)
-          else bop op (constant kv) l))))
+      Q.Generator.filter_map lr ~f:(fun (l, r) ->
+          Option.map (Env.Record.known_value r) ~f:(fun kv ->
+              Expression.(
+                if flip then bop op l (constant kv)
+                else bop op (constant kv) l))))
 
   let recursive_generators (mu : t Q.Generator.t) : t Q.Generator.t list =
     eval_guards
       [ (true, fun () -> gen_refl_zero ~mu)
-      ; ( Det_prims.has_ints_any_atomicity ()
-        , fun () -> gen_kv_sub ~mu ) ]
+      ; (Det_prims.has_ints_any_atomicity (), fun () -> gen_kv_sub ~mu) ]
 
   let quickcheck_generator : t Q.Generator.t =
     Q.Generator.recursive_union base_generators ~f:recursive_generators

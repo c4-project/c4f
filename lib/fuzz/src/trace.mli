@@ -37,10 +37,13 @@ val add :
 val take : t -> int -> t
 (** [take t n] truncates [t] to its first [n] items. *)
 
-(** {2 From files} *)
+(** {2 To and from files} *)
 
 (** We can load traces (from S-expressions). *)
 include Plumbing.Loadable_types.S with type t := t
+
+(** We can store traces (to S-expressions). *)
+include Plumbing.Storable_types.S with type t := t
 
 (** {1 Replaying traces} *)
 
@@ -57,7 +60,13 @@ val run :
 val length : t -> int
 (** [length t] gets the number of actions in [t]. *)
 
-val bisect : t -> f:(t -> [`Bad | `Good]) -> t
-(** [bisect t ~f] reduces [t] by binary search, repeatedly invoking [f] on
-    various truncations of [t] as a heuristic, and attempting to return the
-    last 'good' trace. *)
+val bisect :
+     t
+  -> want:[`Last_on_left | `First_on_right]
+  -> f:(t -> [`Left | `Right])
+  -> t
+(** [bisect t ~want ~f] reduces [t] by binary search, repeatedly invoking [f]
+    on various truncations of [t] as a heuristic. Depending on the value of
+    [want], it will return the rightmost trace marked 'left' or the leftmost
+    trace marked 'right', where 'left' means 'towards the empty trace' and
+    'right' means 'towards [t]'. *)

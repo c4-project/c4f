@@ -110,52 +110,107 @@ let%test_module "trace playback" =
 
 let%test_module "trace bisection" =
   ( module struct
-    let test ~(f : Src.Trace.t -> [`Bad | `Good]) : unit =
+    let test ~(want : [`Last_on_left | `First_on_right])
+        ~(f : Src.Trace.t -> [`Left | `Right]) : unit =
       print_s
         [%sexp
-          (Src.Trace.bisect ~f (Lazy.force example_trace) : Src.Trace.t)]
+          (Src.Trace.bisect ~want ~f (Lazy.force example_trace) : Src.Trace.t)]
 
-    let%expect_test "bisection always returning bad returns empty trace" =
-      test ~f:(Fn.const `Bad) ;
-      [%expect {| () |}]
-
-    let%expect_test "bisection always returning good returns full trace" =
-      test ~f:(Fn.const `Good) ;
+    let%expect_test "left bisection always returning left returns full trace"
+        =
+      test ~want:`Last_on_left ~f:(Fn.const `Left) ;
       [%expect
         {|
         (((name (dummy action)) (payload ((foo 27) (bar true) (baz hello))))
          ((name (another dummy action)) (payload ()))
          ((name (dummy action)) (payload ((foo 53) (bar false) (baz world))))) |}]
 
-    let towards_length (n : int) (t : Src.Trace.t) : [`Bad | `Good] =
-      if n < Src.Trace.length t then `Bad else `Good
+    let%expect_test "right bisection always returning left returns full \
+                     trace" =
+      test ~want:`First_on_right ~f:(Fn.const `Left) ;
+      [%expect
+        {|
+        (((name (dummy action)) (payload ((foo 27) (bar true) (baz hello))))
+         ((name (another dummy action)) (payload ()))
+         ((name (dummy action)) (payload ((foo 53) (bar false) (baz world))))) |}]
 
-    let%expect_test "bisection towards length 0 returns trace of length 0" =
-      test ~f:(towards_length 0) ;
+    let%expect_test "left bisection always returning right returns empty \
+                     trace" =
+      test ~want:`Last_on_left ~f:(Fn.const `Right) ;
+      [%expect {|
+        () |}]
+
+    let%expect_test "right bisection always returning right returns trace \
+                     of length 1" =
+      test ~want:`First_on_right ~f:(Fn.const `Right) ;
+      [%expect
+        {|
+        (((name (dummy action)) (payload ((foo 27) (bar true) (baz hello))))) |}]
+
+    let towards_length (n : int) (t : Src.Trace.t) : [`Left | `Right] =
+      if n < Src.Trace.length t then `Right else `Left
+
+    let%expect_test "left bisection towards length 0 returns trace of \
+                     length 0" =
+      test ~want:`Last_on_left ~f:(towards_length 0) ;
       [%expect {| () |}]
 
-    let%expect_test "bisection towards length 1 returns trace of length 1" =
-      test ~f:(towards_length 1) ;
+    let%expect_test "right bisection towards length 0 returns trace of \
+                     length 1" =
+      test ~want:`First_on_right ~f:(towards_length 0) ;
       [%expect
         {| (((name (dummy action)) (payload ((foo 27) (bar true) (baz hello))))) |}]
 
-    let%expect_test "bisection towards length 2 returns trace of length 2" =
-      test ~f:(towards_length 2) ;
+    let%expect_test "left bisection towards length 1 returns trace of \
+                     length 1" =
+      test ~want:`Last_on_left ~f:(towards_length 1) ;
+      [%expect
+        {| (((name (dummy action)) (payload ((foo 27) (bar true) (baz hello))))) |}]
+
+    let%expect_test "right bisection towards length 1 returns trace of \
+                     length 2" =
+      test ~want:`First_on_right ~f:(towards_length 1) ;
       [%expect
         {|
         (((name (dummy action)) (payload ((foo 27) (bar true) (baz hello))))
          ((name (another dummy action)) (payload ()))) |}]
 
-    let%expect_test "bisection towards length 3 returns trace of length 3" =
-      test ~f:(towards_length 3) ;
+    let%expect_test "left bisection towards length 2 returns trace of \
+                     length 2" =
+      test ~want:`Last_on_left ~f:(towards_length 2) ;
+      [%expect
+        {|
+        (((name (dummy action)) (payload ((foo 27) (bar true) (baz hello))))
+         ((name (another dummy action)) (payload ()))) |}]
+
+    let%expect_test "right bisection towards length 2 returns trace of \
+                     length 3" =
+      test ~want:`First_on_right ~f:(towards_length 2) ;
       [%expect
         {|
         (((name (dummy action)) (payload ((foo 27) (bar true) (baz hello))))
          ((name (another dummy action)) (payload ()))
          ((name (dummy action)) (payload ((foo 53) (bar false) (baz world))))) |}]
 
-    let%expect_test "bisection towards length 4 returns full trace" =
-      test ~f:(towards_length 4) ;
+    let%expect_test "left bisection towards length 3 returns trace of \
+                     length 3" =
+      test ~want:`Last_on_left ~f:(towards_length 3) ;
+      [%expect
+        {|
+        (((name (dummy action)) (payload ((foo 27) (bar true) (baz hello))))
+         ((name (another dummy action)) (payload ()))
+         ((name (dummy action)) (payload ((foo 53) (bar false) (baz world))))) |}]
+
+    let%expect_test "right bisection towards length 3 returns full trace" =
+      test ~want:`First_on_right ~f:(towards_length 3) ;
+      [%expect
+        {|
+        (((name (dummy action)) (payload ((foo 27) (bar true) (baz hello))))
+         ((name (another dummy action)) (payload ()))
+         ((name (dummy action)) (payload ((foo 53) (bar false) (baz world))))) |}]
+
+    let%expect_test "left bisection towards length 4 returns full trace" =
+      test ~want:`Last_on_left ~f:(towards_length 4) ;
       [%expect
         {|
         (((name (dummy action)) (payload ((foo 27) (bar true) (baz hello))))

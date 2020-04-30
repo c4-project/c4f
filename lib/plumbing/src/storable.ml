@@ -42,7 +42,9 @@ Make (struct
 
   let store_to_oc ?(path = "stdout") (x : t) ~(dest : Stdio.Out_channel.t) :
       unit Or_error.t =
-    wrap path (fun () -> Sexp.output_hum dest (B.sexp_of_t x))
+    wrap path (fun () ->
+        Sexp.output_hum dest (B.sexp_of_t x) ;
+        Stdio.Out_channel.newline dest)
 end)
 
 module Of_jsonable (B : Jsonable_types.To) :

@@ -12,15 +12,17 @@
 open Base
 
 module Algebra = struct
-  let is_idem : [>`Idem] option -> bool =
-    function
-    | Some `Idem -> true
-    | _ -> false
+  let is_idem : [> `Idem] option -> bool = function
+    | Some `Idem ->
+        true
+    | _ ->
+        false
 
-  let is_zero : [>`Zero] option -> bool =
-    function
-    | Some `Zero -> true
-    | _ -> false
+  let is_zero : [> `Zero] option -> bool = function
+    | Some `Zero ->
+        true
+    | _ ->
+        false
 end
 
 module Unary = struct
@@ -31,30 +33,46 @@ module Binary = struct
   module Arith = struct
     type t = Add | Sub [@@deriving sexp, compare, equal, quickcheck]
 
-    let zero_lhs : t -> [`Idem|`Zero] option =
-      function Add -> Some `Idem (* 0+x == x *) | Sub -> None (* 0-x == ? *)
+    let zero_lhs : t -> [`Idem | `Zero] option = function
+      | Add ->
+          Some `Idem (* 0+x == x *)
+      | Sub ->
+          None
 
-    let zero_rhs : t -> [`Idem|`Zero] option =
-      function Add | Sub -> Some `Idem (* x+0 == x; x-0 == x *)
+    (* 0-x == ? *)
 
-    let refl : t -> [`Idem|`Zero] option =
-      function Sub -> Some `Zero | Add -> None
+    let zero_rhs : t -> [`Idem | `Zero] option = function
+      | Add | Sub ->
+          Some `Idem
+
+    (* x+0 == x; x-0 == x *)
+
+    let refl : t -> [`Idem | `Zero] option = function
+      | Sub ->
+          Some `Zero
+      | Add ->
+          None
   end
 
   module Bitwise = struct
     type t = And | Or | Xor [@@deriving sexp, compare, equal, quickcheck]
 
-
-    let zero_lhs : t -> [`Idem|`Zero] option = function
+    let zero_lhs : t -> [`Idem | `Zero] option = function
       | Or | Xor ->
           Some `Idem (* x|0 == x; x^0 == x *)
       | And ->
-          Some `Zero (* x&0 == 0 *)
+          Some `Zero
+
+    (* x&0 == 0 *)
 
     (* All bitwise operators are commutative. *)
     let zero_rhs = zero_lhs
 
-    let refl : t -> [`Idem|`Zero] option = function Xor -> Some `Zero | And | Or -> Some `Idem
+    let refl : t -> [`Idem | `Zero] option = function
+      | Xor ->
+          Some `Zero
+      | And | Or ->
+          Some `Idem
   end
 
   module Logical = struct
@@ -62,9 +80,11 @@ module Binary = struct
 
     (* TODO(@MattWindsor91): can we rely on properties for any logical
        operators? *)
-    let zero_lhs : t -> [`Idem|`Zero] option = Fn.const None
+    let zero_lhs : t -> [`Idem | `Zero] option = Fn.const None
+
     let zero_rhs = zero_lhs
-    let refl : t -> [`Idem|`Zero] option = Fn.const None
+
+    let refl : t -> [`Idem | `Zero] option = Fn.const None
   end
 
   type t =
@@ -88,7 +108,7 @@ module Binary = struct
 
   let b_xor : t = Bitwise Xor
 
-  let zero_lhs : t -> [`Idem|`Zero] option = function
+  let zero_lhs : t -> [`Idem | `Zero] option = function
     | Eq ->
         None
     | Arith o ->
@@ -98,7 +118,7 @@ module Binary = struct
     | Logical o ->
         Logical.zero_lhs o
 
-  let zero_rhs : t -> [`Idem|`Zero] option = function
+  let zero_rhs : t -> [`Idem | `Zero] option = function
     | Eq ->
         None
     | Arith o ->
@@ -108,11 +128,11 @@ module Binary = struct
     | Logical o ->
         Logical.zero_rhs o
 
-  let refl : t -> [`Idem|`Zero] option = function
+  let refl : t -> [`Idem | `Zero] option = function
     | Eq ->
-       None
+        None
     | Arith o ->
-         Arith.refl o
+        Arith.refl o
     | Bitwise o ->
         Bitwise.refl o
     | Logical o ->
@@ -142,9 +162,11 @@ module Fetch = struct
     | And ->
         Binary.b_and
 
-  let zero_lhs : t -> [`Idem|`Zero] option = Fn.compose Binary.zero_lhs to_bop
+  let zero_lhs : t -> [`Idem | `Zero] option =
+    Fn.compose Binary.zero_lhs to_bop
 
-  let zero_rhs : t -> [`Idem|`Zero] option = Fn.compose Binary.zero_rhs to_bop
+  let zero_rhs : t -> [`Idem | `Zero] option =
+    Fn.compose Binary.zero_rhs to_bop
 
-  let refl : t -> [`Idem|`Zero] option = Fn.compose Binary.refl to_bop
+  let refl : t -> [`Idem | `Zero] option = Fn.compose Binary.refl to_bop
 end

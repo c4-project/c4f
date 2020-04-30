@@ -11,10 +11,13 @@
 
 open Core (* for Filename.arg_type *)
 
-let write_trace (trace : Act_fuzz.Trace.t) (oc : Stdio.Out_channel.t) :
-    unit Or_error.t =
-  Sexp.output_hum oc [%sexp (trace : Act_fuzz.Trace.t)] ;
-  Ok ()
+let write_trace ?(trace_output : Plumbing.Output.t option)
+    (trace : Act_fuzz.Trace.t) : unit Or_error.t =
+  match trace_output with
+  | None ->
+      Ok ()
+  | Some dest ->
+      Act_fuzz.Trace.store trace ~dest
 
 let run ?(seed : int option) ?(trace_output : Plumbing.Output.t option)
     (args : _ Common_cmd.Args.With_files.t) (o : Act_common.Output.t)
@@ -27,7 +30,7 @@ let run ?(seed : int option) ?(trace_output : Plumbing.Output.t option)
         (module Act_fuzz.Filter.Random)
         args ~aux_in
     in
-    Plumbing.Output.with_output_opt trace_output ~f:(write_trace aux_out))
+    write_trace aux_out ?trace_output)
 
 let readme () : string =
   Act_utils.My_string.format_for_readme

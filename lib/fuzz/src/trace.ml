@@ -19,6 +19,7 @@ end
 
 include M
 include Plumbing.Loadable.Of_sexpable (M)
+include Plumbing.Storable.Of_sexpable (M)
 
 let empty : t = Fqueue.empty
 
@@ -81,16 +82,17 @@ let take (trace : t) (n : int) : t =
   let s = Fqueue.to_sequence trace in
   Fqueue.of_sequence (Sequence.take s n)
 
-let bisect_segment (trace : t) ~(f : t -> [`Bad | `Good]) : [`Left | `Right]
-    =
-  match f trace with `Bad -> `Right | `Good -> `Left
-
-let bisect_index (trace : t) ~(f : t -> [`Bad | `Good]) : int option =
-  Binary_search.binary_search_segmented trace `Last_on_left ~length
+let bisect_index (trace : t) ~(want : [`Last_on_left | `First_on_right])
+    ~(f : t -> [`Left | `Right]) : int option =
+  Binary_search.binary_search_segmented trace want ~length
     ~get:(fun t n -> take t (n + 1))
-    ~segment_of:(bisect_segment ~f)
+    ~segment_of:f
 
-let bisect (trace : t) ~(f : t -> [`Bad | `Good]) : t =
-  trace |> bisect_index ~f
+let default_for (trace : t) ~(want : [`Last_on_left | `First_on_right]) : t =
+  match want with `Last_on_left -> empty | `First_on_right -> trace
+
+let bisect (trace : t) ~(want : [`Last_on_left | `First_on_right])
+    ~(f : t -> [`Left | `Right]) : t =
+  trace |> bisect_index ~f ~want
   |> Option.map ~f:(fun n -> take trace (n + 1))
-  |> Option.value ~default:empty
+  |> Option.value ~default:(default_for trace ~want)
