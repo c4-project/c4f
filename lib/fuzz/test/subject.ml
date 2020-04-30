@@ -125,8 +125,19 @@ module Test_data = struct
           ; sample_known_false_if
           ; sample_once_do_while ]))
 
+  let body_decls : Act_c_mini.Initialiser.t Act_common.C_named.Alist.t Lazy.t
+      =
+    lazy
+      [ ( Act_common.C_id.of_string "r0"
+        , Act_c_mini.Initialiser.make
+            ~ty:(Act_c_mini.Type.int ~atomic:true ())
+            ~value:(Act_c_mini.Constant.int 4004)
+            () ) ]
+
   let thread0 : Src.Subject.Thread.t Lazy.t =
-    Lazy.map ~f:(fun stms -> Src.Subject.Thread.make ~stms ()) body_stms
+    Lazy.Let_syntax.(
+      let%map stms = body_stms and decls = body_decls in
+      Src.Subject.Thread.make ~stms ~decls ())
 
   let thread1_stms : Src.Subject.Statement.t list Lazy.t =
     lazy
@@ -209,6 +220,7 @@ let%test_module "using sample environment" =
         P0(atomic_int *bar, bool barbaz, int *blep, int foo, atomic_bool *foobaz,
            atomic_int x, atomic_int y, atomic_bool z)
         {
+            atomic_int r0 = 4004;
             atomic_store_explicit(x, 42, memory_order_seq_cst);
             ;
             atomic_store_explicit(y, foo, memory_order_relaxed);
@@ -236,6 +248,7 @@ let%test_module "using sample environment" =
         P0(atomic_int *bar, bool barbaz, int *blep, int foo, atomic_bool *foobaz,
            atomic_int x, atomic_int y, atomic_bool z)
         {
+            atomic_int r0 = 4004;
             atomic_store_explicit(x, 42, memory_order_seq_cst);
             ;
             atomic_store_explicit(y, foo, memory_order_relaxed);

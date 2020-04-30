@@ -49,6 +49,7 @@ let%test_module "Surround" =
              bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
              atomic_int y)
           {
+              atomic_int r0 = 4004;
               do { atomic_store_explicit(x, 42, memory_order_seq_cst); ; } while (y ==
               27 && a);
               atomic_store_explicit(y, foo, memory_order_relaxed);
@@ -92,6 +93,7 @@ let%test_module "Invert" =
         void
         P0(atomic_int *x, atomic_int *y)
         {
+            atomic_int r0 = 4004;
             atomic_store_explicit(x, 42, memory_order_seq_cst);
             ;
             atomic_store_explicit(y, foo, memory_order_relaxed);

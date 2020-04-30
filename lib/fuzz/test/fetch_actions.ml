@@ -87,6 +87,7 @@ let%test_module "fetch.make.int.dead" =
       void
       P0(atomic_int *gen1, atomic_int *gen2, atomic_int *x, atomic_int *y)
       {
+          atomic_int r0 = 4004;
           atomic_store_explicit(x, 42, memory_order_seq_cst);
           ;
           atomic_store_explicit(y, foo, memory_order_relaxed);
@@ -147,6 +148,7 @@ let%test_module "fetch.make.int.redundant" =
       void
       P0(atomic_int *gen1, atomic_int *gen2, atomic_int *x, atomic_int *y)
       {
+          atomic_int r0 = 4004;
           atomic_store_explicit(x, 42, memory_order_seq_cst);
           ;
           atomic_fetch_add_explicit(gen1, 0, memory_order_seq_cst);

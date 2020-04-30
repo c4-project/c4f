@@ -72,6 +72,7 @@ let%test_module "Make" =
           void
           P0(atomic_int *x, atomic_int *y)
           {
+              atomic_int r0 = 4004;
               atomic_store_explicit(x, 42, memory_order_seq_cst);
               ;
               atomic_store_explicit(y, foo, memory_order_relaxed);
@@ -93,6 +94,7 @@ let%test_module "Make" =
       void
       P0(int *foo, atomic_int *x, atomic_int *y)
       {
+          atomic_int r0 = 4004;
           atomic_store_explicit(x, 42, memory_order_seq_cst);
           ;
           atomic_store_explicit(y, foo, memory_order_relaxed);
