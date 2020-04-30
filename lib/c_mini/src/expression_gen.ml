@@ -74,15 +74,22 @@ module Int_prims (E : Env_types.S) = struct
   let has_ints ~(atomic : bool) : bool =
     Env.has_variables_of_basic_type E.env ~basic:Type.Basic.(int ~atomic ())
 
-  let gen_load_with_record ~(gen_zero : t Q.Generator.t) :
+  let has_ints_any_atomicity () : bool =
+    has_ints ~atomic:true || has_ints ~atomic:false
+
+  let base_load_with_record ~(gen_zero : t Q.Generator.t) :
       (t * Env.Record.t) Q.Generator.t list =
     eval_guards
       [ (has_ints ~atomic:true, gen_atomic_load)
       ; (has_ints ~atomic:true, fun () -> gen_atomic_fetch_nop ~gen_zero)
       ; (has_ints ~atomic:false, gen_lvalue) ]
 
+  let gen_load_with_record ~(gen_zero : t Q.Generator.t) :
+      (t * Env.Record.t) Q.Generator.t =
+    Q.Generator.union (base_load_with_record ~gen_zero)
+
   let gen_load ~(gen_zero : t Q.Generator.t) : t Q.Generator.t list =
-    List.map ~f:(Q.Generator.map ~f:fst) (gen_load_with_record ~gen_zero)
+    List.map ~f:(Q.Generator.map ~f:fst) (base_load_with_record ~gen_zero)
 
   let gen_prim ~(gen_zero : t Q.Generator.t) : t Q.Generator.t =
     Q.Generator.union ([gen_int32] @ gen_load ~gen_zero)
@@ -104,22 +111,34 @@ module Int_zeroes (E : Env_types.S) = struct
   let base_generators : t Q.Generator.t list =
     [Q.Generator.return (Expression.int_lit 0)]
 
-  let gen_cancel ~(mu : t Q.Generator.t) : t Q.Generator.t =
+  (** Generates operators with the property [x op x == 0]. *)
+  let gen_refl_zero_op : Op.Binary.t Q.Generator.t =
+    Q.Generator.filter [%quickcheck.generator: Op.Binary.t]
+      ~f:Op.Binary.refl_zero
+
+  let gen_refl_zero ~(mu : t Q.Generator.t) : t Q.Generator.t =
     Q.Generator.Let_syntax.(
+      let%bind op = gen_refl_zero_op in
       let%map p = Det_prims.gen_prim ~gen_zero:mu in
-      Expression.Infix.(p - p))
+      Expression.(bop op p p))
 
   let gen_kv_sub ~(mu : t Q.Generator.t) : t Q.Generator.t =
-    Q.Generator.filter_map
-      (Q.Generator.union (Det_prims.gen_load_with_record ~gen_zero:mu))
+    (* Even though the operators are likely not commutative, we're passing them
+       two expressions that evaluate to the same value. *)
+    Q.Generator.Let_syntax.(
+      let%bind op = gen_refl_zero_op in
+      let%bind flip = Q.Generator.bool in
+      let lr = Det_prims.gen_load_with_record ~gen_zero:mu in
+      Q.Generator.filter_map lr
       ~f:(fun (l, r) ->
         Option.map (Env.Record.known_value r) ~f:(fun kv ->
-            Expression.(Infix.(l - constant kv))))
+          Expression.(if flip then bop op l (constant kv)
+          else bop op (constant kv) l))))
 
   let recursive_generators (mu : t Q.Generator.t) : t Q.Generator.t list =
     eval_guards
-      [ (true, fun () -> gen_cancel ~mu)
-      ; ( Det_prims.has_ints ~atomic:true || Det_prims.has_ints ~atomic:false
+      [ (true, fun () -> gen_refl_zero ~mu)
+      ; ( Det_prims.has_ints_any_atomicity ()
         , fun () -> gen_kv_sub ~mu ) ]
 
   let quickcheck_generator : t Q.Generator.t =
