@@ -19,7 +19,9 @@ module Gen_nop_compat_fetch = struct
   include Op.Fetch
 
   let quickcheck_generator : t Q.Generator.t =
-    Q.Generator.filter quickcheck_generator ~f:Op.Fetch.zero_rhs_unit
+    Q.Generator.filter quickcheck_generator ~f:(
+      Fn.compose Op.Algebra.is_idem Op.Fetch.zero_rhs
+    )
 end
 
 let eval_guards : (bool * (unit -> 'a)) list -> 'a list =
@@ -114,7 +116,7 @@ module Int_zeroes (E : Env_types.S) = struct
   (** Generates operators with the property [x op x == 0]. *)
   let gen_refl_zero_op : Op.Binary.t Q.Generator.t =
     Q.Generator.filter [%quickcheck.generator: Op.Binary.t]
-      ~f:Op.Binary.refl_zero
+      ~f:Op.(Fn.compose Algebra.is_zero Binary.refl)
 
   let gen_refl_zero ~(mu : t Q.Generator.t) : t Q.Generator.t =
     Q.Generator.Let_syntax.(

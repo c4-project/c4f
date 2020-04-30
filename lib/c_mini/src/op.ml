@@ -11,6 +11,18 @@
 
 open Base
 
+module Algebra = struct
+  let is_idem : [>`Idem] option -> bool =
+    function
+    | Some `Idem -> true
+    | _ -> false
+
+  let is_zero : [>`Zero] option -> bool =
+    function
+    | Some `Zero -> true
+    | _ -> false
+end
+
 module Unary = struct
   type t = L_not [@@deriving sexp, variants, compare, equal, quickcheck]
 end
@@ -19,39 +31,40 @@ module Binary = struct
   module Arith = struct
     type t = Add | Sub [@@deriving sexp, compare, equal, quickcheck]
 
-    let zero_lhs_unit : t -> bool = function Add -> true | Sub -> false
+    let zero_lhs : t -> [`Idem|`Zero] option =
+      function Add -> Some `Idem (* 0+x == x *) | Sub -> None (* 0-x == ? *)
 
-    let zero_rhs_unit : t -> bool = function Add | Sub -> true
+    let zero_rhs : t -> [`Idem|`Zero] option =
+      function Add | Sub -> Some `Idem (* x+0 == x; x-0 == x *)
 
-    let refl_zero : t -> bool = function Sub -> true | Add -> false
+    let refl : t -> [`Idem|`Zero] option =
+      function Sub -> Some `Zero | Add -> None
   end
 
   module Bitwise = struct
     type t = And | Or | Xor [@@deriving sexp, compare, equal, quickcheck]
 
-    let zero_lhs_unit : t -> bool = function
+
+    let zero_lhs : t -> [`Idem|`Zero] option = function
       | Or | Xor ->
-          true
+          Some `Idem (* x|0 == x; x^0 == x *)
       | And ->
-          false
+          Some `Zero (* x&0 == 0 *)
 
     (* All bitwise operators are commutative. *)
-    let zero_rhs_unit = zero_lhs_unit
+    let zero_rhs = zero_lhs
 
-    let refl_zero : t -> bool = function Xor -> true | And | Or -> false
+    let refl : t -> [`Idem|`Zero] option = function Xor -> Some `Zero | And | Or -> Some `Idem
   end
 
   module Logical = struct
     type t = And | Or [@@deriving sexp, compare, equal, quickcheck]
 
-    (* TODO(@MattWindsor91): can we rely on zero-unit for any logical
+    (* TODO(@MattWindsor91): can we rely on properties for any logical
        operators? *)
-    let zero_lhs_unit : t -> bool = Fn.const false
-
-    (* All logical operators are commutative. *)
-    let zero_rhs_unit = zero_lhs_unit
-
-    let refl_zero : t -> bool = Fn.const false
+    let zero_lhs : t -> [`Idem|`Zero] option = Fn.const None
+    let zero_rhs = zero_lhs
+    let refl : t -> [`Idem|`Zero] option = Fn.const None
   end
 
   type t =
@@ -75,35 +88,35 @@ module Binary = struct
 
   let b_xor : t = Bitwise Xor
 
-  let zero_lhs_unit : t -> bool = function
+  let zero_lhs : t -> [`Idem|`Zero] option = function
     | Eq ->
-        false
+        None
     | Arith o ->
-        Arith.zero_lhs_unit o
+        Arith.zero_lhs o
     | Bitwise o ->
-        Bitwise.zero_lhs_unit o
+        Bitwise.zero_lhs o
     | Logical o ->
-        Logical.zero_lhs_unit o
+        Logical.zero_lhs o
 
-  let zero_rhs_unit : t -> bool = function
+  let zero_rhs : t -> [`Idem|`Zero] option = function
     | Eq ->
-        false
+        None
     | Arith o ->
-        Arith.zero_rhs_unit o
+        Arith.zero_rhs o
     | Bitwise o ->
-        Bitwise.zero_rhs_unit o
+        Bitwise.zero_rhs o
     | Logical o ->
-        Logical.zero_rhs_unit o
+        Logical.zero_rhs o
 
-  let refl_zero : t -> bool = function
+  let refl : t -> [`Idem|`Zero] option = function
     | Eq ->
-        false
+       None
     | Arith o ->
-        Arith.refl_zero o
+         Arith.refl o
     | Bitwise o ->
-        Bitwise.refl_zero o
+        Bitwise.refl o
     | Logical o ->
-        Logical.refl_zero o
+        Logical.refl o
 end
 
 module Fetch = struct
@@ -129,9 +142,9 @@ module Fetch = struct
     | And ->
         Binary.b_and
 
-  let zero_lhs_unit : t -> bool = Fn.compose Binary.zero_lhs_unit to_bop
+  let zero_lhs : t -> [`Idem|`Zero] option = Fn.compose Binary.zero_lhs to_bop
 
-  let zero_rhs_unit : t -> bool = Fn.compose Binary.zero_rhs_unit to_bop
+  let zero_rhs : t -> [`Idem|`Zero] option = Fn.compose Binary.zero_rhs to_bop
 
-  let refl_zero : t -> bool = Fn.compose Binary.refl_zero to_bop
+  let refl : t -> [`Idem|`Zero] option = Fn.compose Binary.refl to_bop
 end

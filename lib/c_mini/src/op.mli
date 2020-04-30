@@ -11,6 +11,21 @@
 
 (** C-mini: operators *)
 
+(** {1 Helpers for algebraic analysis}
+
+    These functions assist with interpreting the [refl], [zero_lhs], [zero_rhs],
+    and such functions (see {!Op_types.S_algebra}). *)
+
+module Algebra : sig
+  val is_idem : [>`Idem] option -> bool
+  (** [is_idem] checks the result of an algebraic analysis, returning [true]
+      if it claims the operation is idempotent. *)
+
+  val is_zero : [>`Zero] option -> bool
+  (** [is_zero] checks the result of an algebraic analysis, returning [true]
+    if it claims the operation yields zero. *)
+end
+
 (** {1 Expression operators} *)
 
 (** {2 Unary operators} *)
