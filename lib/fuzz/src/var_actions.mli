@@ -33,3 +33,6 @@ end
 
 (** Fuzzer action that generates a new variable. *)
 module Make : Action_types.S with type Payload.t = Make_payload.t
+
+(** Fuzzer action that makes existing local variables volatile. *)
+module Volatile : Action_types.S with type Payload.t = Act_common.Litmus_id.t

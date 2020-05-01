@@ -91,6 +91,18 @@ val int :
 
 (** {2 Modifiers} *)
 
+(** {3 Pointers} *)
+
+val deref : t -> t Or_error.t
+(** [deref ty] tries to strip a layer of pointer indirection off [ty]. It
+    fails if [ty] isn't a pointer type. *)
+
+val ref : t -> t Or_error.t
+(** [ref ty] tries to add a layer of pointer indirection onto [ty]. It fails
+    if [ty] is already a pointer type. *)
+
+(** {3 Atomicity} *)
+
 val to_non_atomic : t -> t Or_error.t
 (** [to_non_atomic ty] tries to get the non-atomic type corresponding to the
     atomic type [ty]. It fails if [ty] isn't atomic. *)
@@ -103,13 +115,11 @@ val strip_atomic : t -> t
 (** [strip_atomic ty] behaves as [to_non_atomic ty] if [ty] is atomic, and
     returns [ty] if not. *)
 
-val deref : t -> t Or_error.t
-(** [deref ty] tries to strip a layer of pointer indirection off [ty]. It
-    fails if [ty] isn't a pointer type. *)
+(** {3 Volatility} *)
 
-val ref : t -> t Or_error.t
-(** [ref ty] tries to add a layer of pointer indirection onto [ty]. It fails
-    if [ty] is already a pointer type. *)
+val as_volatile : t -> t
+(** [as_volatile ty] returns [ty] if it is volatile, or the volatile equivalent of
+    [ty] if not. *)
 
 (** {2 Accessors and predicates} *)
 

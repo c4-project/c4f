@@ -118,6 +118,11 @@ module Thread : sig
   (** [of_litmus func] converts a mini-model C function [func] to the
       intermediate form used for fuzzing. *)
 
+  (** {2 Manipulating threads} *)
+
+  val map_decls : t -> f:(Act_c_mini.Initialiser.t Act_common.C_named.t -> Act_c_mini.Initialiser.t Act_common.C_named.t) -> t
+  (** [map_decls thd ~f] maps [f] over each decl in [thd]. *)
+
   val to_function :
        t
     -> vars:Var.Map.t

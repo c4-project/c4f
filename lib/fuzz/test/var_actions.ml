@@ -109,3 +109,42 @@ let%test_module "Make" =
       { loop: ; if (true) {  } else { goto loop; } } |}]
       end )
   end )
+
+let%test_module "Volatile" =
+  ( module struct
+    let%test_module "Example runs" =
+      ( module struct
+        let test_action (payload : Act_common.Litmus_id.t) :
+          Src.Subject.Test.t Src.State.Monad.t =
+          Src.Var_actions.Volatile.run
+            (Lazy.force Subject.Test_data.test)
+            ~payload
+
+        let test (tid : int) (name : string) : unit =
+          let pld = Act_common.Litmus_id.local tid (Act_common.C_id.of_string name) in
+          let action = test_action pld in
+          Action.Test_utils.run_and_dump_test action
+            ~initial_state:(Lazy.force Subject.Test_data.state)
+
+        let%expect_test "r0" =
+          test 0 "r0";
+          [%expect {|
+            void
+            P0(atomic_int *x, atomic_int *y)
+            {
+                atomic_int volatile r0 = 4004;
+                atomic_store_explicit(x, 42, memory_order_seq_cst);
+                ;
+                atomic_store_explicit(y, foo, memory_order_relaxed);
+                if (foo == y)
+                { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
+                if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
+                do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
+                5);
+            }
+
+            void
+            P1(atomic_int *x, atomic_int *y)
+            { loop: ; if (true) {  } else { goto loop; } } |}]
+      end )
+  end )

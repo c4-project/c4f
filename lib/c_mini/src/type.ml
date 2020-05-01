@@ -123,6 +123,8 @@ let strip_atomic (ty : t) : t =
 let as_atomic (ty : t) : t =
   {ty with basic_type= Basic.as_atomic ty.basic_type}
 
+let as_volatile (t : t) : t = {t with is_volatile= true}
+
 let to_non_atomic (ty : t) : t Or_error.t =
   Or_error.(
     ty |> basic_type |> Basic.to_non_atomic

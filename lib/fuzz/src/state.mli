@@ -44,6 +44,9 @@ val labels : t -> Set.M(Act_common.Litmus_id).t
 val vars : t -> Var.Map.t
 (** [vars state] gets the state's variable map. *)
 
+val map_vars : t -> f:(Var.Map.t -> Var.Map.t) -> t
+(** [map_vars state ~f] maps [f] over the state's variable map. *)
+
 val vars_satisfying_all :
      t
   -> scope:Act_common.Scope.t

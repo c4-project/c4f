@@ -71,6 +71,9 @@ module Record : sig
 
   (** {3 Actions} *)
 
+  val map_type : t -> f:(Act_c_mini.Type.t -> Act_c_mini.Type.t) -> t
+  (** [map_type record ~f] maps [f] over the type of [record]. *)
+
   val add_dependency : t -> t
   (** [add_dependency record] adds a dependency flag to the known-value field
       of [record].

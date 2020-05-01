@@ -161,3 +161,6 @@ var.make:
     
     If the 'var.make.global' flag is set, the variable will be global; else,
     it'll be a local variable assigned to a random thread.
+var.volatile:
+  Weight: 30x
+  Summary: Adds the 'volatile' qualifier to a local variable.
