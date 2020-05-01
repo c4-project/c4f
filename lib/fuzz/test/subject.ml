@@ -23,7 +23,7 @@ module Test_data = struct
     lazy
       [ ( Act_common.C_id.of_string "r0"
         , Act_c_mini.Initialiser.make
-            ~ty:(Act_c_mini.Type.int ~atomic:true ())
+            ~ty:(Act_c_mini.Type.int ~is_atomic:true ())
             ~value:(Act_c_mini.Constant.int 4004)
             () ) ]
 
@@ -31,9 +31,9 @@ module Test_data = struct
     lazy
       Act_c_mini.
         [ ( Act_common.C_id.of_string "x"
-          , Type.(int ~pointer:true ~atomic:true ()) )
+          , Type.(int ~is_pointer:true ~is_atomic:true ()) )
         ; ( Act_common.C_id.of_string "y"
-          , Type.(int ~pointer:true ~atomic:true ()) ) ]
+          , Type.(int ~is_pointer:true ~is_atomic:true ()) ) ]
 
   let thread0_vars :
       (Act_common.Litmus_id.t, Act_fuzz.Var.Record.t) List.Assoc.t Lazy.t =

@@ -20,13 +20,14 @@ let test_typing : Src.Type.t Map.M(Ac.C_id).t Lazy.t =
        (module Ac.C_id)
        Src.Type.
          [ (Ac.C_id.of_string "foo", int ())
-         ; (Ac.C_id.of_string "bar", int ~pointer:true ~atomic:true ())
+         ; (Ac.C_id.of_string "bar", int ~is_pointer:true ~is_atomic:true ())
          ; (Ac.C_id.of_string "barbaz", bool ())
-         ; (Ac.C_id.of_string "foobaz", bool ~pointer:true ~atomic:true ())
-         ; (Ac.C_id.of_string "x", int ~atomic:true ())
-         ; (Ac.C_id.of_string "y", int ~atomic:true ())
-         ; (Ac.C_id.of_string "z", bool ~atomic:true ())
-         ; (Ac.C_id.of_string "blep", int ~pointer:true ()) ])
+         ; ( Ac.C_id.of_string "foobaz"
+           , bool ~is_pointer:true ~is_atomic:true () )
+         ; (Ac.C_id.of_string "x", int ~is_atomic:true ())
+         ; (Ac.C_id.of_string "y", int ~is_atomic:true ())
+         ; (Ac.C_id.of_string "z", bool ~is_atomic:true ())
+         ; (Ac.C_id.of_string "blep", int ~is_pointer:true ()) ])
 
 let det_known_values : Src.Constant.t Map.M(Ac.C_id).t Lazy.t =
   lazy

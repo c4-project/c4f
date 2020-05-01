@@ -92,8 +92,8 @@ module Make : Action_types.S with type Payload.t = Make_payload.t = struct
   let run (subject : Subject.Test.t)
       ~payload:({basic_type; initial_value; var} : Payload.t) :
       Subject.Test.t State.Monad.t =
-    let pointer = Act_common.Litmus_id.is_global var in
-    let ty = Act_c_mini.Type.of_basic basic_type ~pointer in
+    let is_global = Act_common.Litmus_id.is_global var in
+    let ty = Act_c_mini.Type.make basic_type ~is_pointer:is_global in
     let open State.Monad.Let_syntax in
     let%bind () = State.Monad.register_var ty var ~initial_value in
     State.Monad.Monadic.return

@@ -14,6 +14,7 @@
     These functions reify various top-level elements of a Mini-C program.
     Other modules govern smaller components:
 
+    - {!Reify_prim} for miscellaneous primitives;
     - {!Reify_expr} for expressions;
     - {!Reify_stm} for statements. *)
 
@@ -24,7 +25,3 @@ val func :
 
 val program : _ Program.t -> Act_c_lang.Ast.Translation_unit.t
 (** [program p] reifies the mini-program [p] into the C AST. *)
-
-val decl : Act_common.C_id.t -> Initialiser.t -> Act_c_lang.Ast.Decl.t
-(** [decl id d] reifies the mini-declaration [d], with name [id], into the C
-    AST. *)

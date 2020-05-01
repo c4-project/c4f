@@ -31,28 +31,29 @@ module Test_data = struct
   let test_map : Src.Var.Map.t Lazy.t =
     lazy
       ( [ ("foo", existing_global (Ty.int ()))
-        ; ("bar", existing_global (Ty.int ~atomic:true ()))
-        ; ("baz", existing_global (Ty.int ~atomic:true ~pointer:true ()))
-        ; ("foobar", existing_global (Ty.bool ~atomic:true ()))
+        ; ("bar", existing_global (Ty.int ~is_atomic:true ()))
+        ; ( "baz"
+          , existing_global (Ty.int ~is_atomic:true ~is_pointer:true ()) )
+        ; ("foobar", existing_global (Ty.bool ~is_atomic:true ()))
         ; ("barbaz", existing_global (Ty.bool ()))
         ; ("a", generated_global ~initial_value:Con.falsehood (Ty.bool ()))
         ; ( "b"
           , generated_global ~initial_value:Con.truth
-              (Ty.bool ~atomic:true ()) )
+              (Ty.bool ~is_atomic:true ()) )
         ; ("c", generated_global (Ty.bool ()))
         ; ("d", existing_global (Ty.int ()))
         ; ("e", generated_global (Ty.int ()))
         ; ( "x"
           , generated_global ~initial_value:(Con.int 27)
-              (Ty.int ~atomic:true ()) )
+              (Ty.int ~is_atomic:true ()) )
         ; ( "y"
           , generated_global ~initial_value:(Con.int 53)
-              (Ty.int ~atomic:true ()) )
+              (Ty.int ~is_atomic:true ()) )
         ; ("1:r0", existing_local 1 (Ty.bool ()))
         ; ("1:r1", existing_local 1 (Ty.int ()))
         ; ("2:r0", existing_local 2 (Ty.int ()))
         ; ("2:r1", existing_local 2 (Ty.bool ()))
-        ; ("3:r0", existing_local 3 (Ty.int ~pointer:true ())) ]
+        ; ("3:r0", existing_local 3 (Ty.int ~is_pointer:true ())) ]
       |> Tx.Alist.map_left ~f:Ac.Litmus_id.of_string
       |> Map.of_alist_exn (module Ac.Litmus_id)
       |> Ac.Scoped_map.of_litmus_id_map )

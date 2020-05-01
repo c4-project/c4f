@@ -12,7 +12,7 @@
 (** Mini-model: initialisers. *)
 
 (** Opaque type of initialisers. *)
-type t [@@deriving sexp, equal, quickcheck]
+type t [@@deriving sexp, compare, equal, quickcheck]
 
 (** {1 Constructors} *)
 
@@ -22,10 +22,11 @@ val make : ty:Type.t -> ?value:Constant.t -> unit -> t
 
 (** {2 Shortcuts} *)
 
-val of_int : ?atomic:bool -> int -> t
-(** [of_int ?atomic value] makes an initialiser for an integer with value
-    [value]. If [atomic] is present and true, the type will be atomic_int;
-    otherwise, it will be int. *)
+val of_int : ?is_atomic:bool -> ?is_volatile:bool -> int -> t
+(** [of_int ?is_atomic ?is_volatile value] makes an initialiser for an
+    integer with value [value]. If [is_atomic] is present and true, the type
+    will be atomic_int; otherwise, it will be int. If [is_volatile] is
+    present and true, the type will be volatile. *)
 
 (** {1 Accessors} *)
 

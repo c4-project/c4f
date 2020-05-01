@@ -37,8 +37,7 @@ let%test_module "Make" =
               let (_ : Act_c_mini.Type.t) =
                 Or_error.ok_exn
                   Act_c_mini.(
-                    Type.check_modulo_atomicity
-                      (Type.of_basic basic_type)
+                    Type.check_modulo_atomicity (Type.make basic_type)
                       (Constant.type_of initial_value))
               in
               ())

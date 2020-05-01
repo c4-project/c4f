@@ -17,21 +17,32 @@
 open Base
 open Act_utils
 
-(** Primitive types. *)
+(** {1 Primitive types} *)
+module Prim : sig
+  type t = Bool | Int  (** Type of primitive types. *)
+end
+
+(** {1 Basic types}
+
+    A basic type is a primitive type, or an atomic form of a primitive type. *)
 module Basic : sig
   (** Opaque type of basic types. *)
   type t
 
-  val bool : ?atomic:bool -> unit -> t
-  (** [bool ?atomic ()] is the (C99?) Boolean, or C11 atomic_bool, type. *)
-
-  val int : ?atomic:bool -> unit -> t
-  (** [int] is the int, or C11 atomic_int, type. *)
-
   include Enum_types.Extension_table with type t := t
 
-  val to_spec : t -> [> Act_c_lang.Ast.Type_spec.t]
-  (** [to_spec btype] converts a basic type to a type spec. *)
+  (** {2 Constructors} *)
+
+  val bool : ?is_atomic:bool -> unit -> t
+  (** [bool ?is_atomic ()] is the (C99?) Boolean, or C11 atomic_bool, type. *)
+
+  val int : ?is_atomic:bool -> unit -> t
+  (** [int] is the int, or C11 atomic_int, type. *)
+
+  (** {2 Accessors} *)
+
+  val prim : t -> Prim.t
+  (** [prim btype] gets the primitive type of [btype]. *)
 
   val is_atomic : t -> bool
   (** [is_atomic btype] is true if the basic type [btype] is atomic. *)
@@ -62,23 +73,21 @@ include Plumbing.Jsonable_types.S with type t := t
 
 (** {2 Constructors} *)
 
-val normal : Basic.t -> t
-(** [normal ty] lifts a basic type [ty] to a scalar type. *)
+val make : ?is_pointer:bool -> ?is_volatile:bool -> Basic.t -> t
+(** [make ?is_pointer ?is_volatile ty] makes a type from a basic type [ty],
+    applying any flags that are present and set to [true]. *)
 
-val pointer_to : Basic.t -> t
-(** [pointer_to ty] lifts a basic type [ty] to a pointer type. *)
+val bool :
+  ?is_atomic:bool -> ?is_pointer:bool -> ?is_volatile:bool -> unit -> t
+(** [bool ?is_atomic ?is_pointer ()] constructs the right Boolean type
+    according to the flags [is_atomic], [is_pointer], and [is_volatile], all
+    of which default to [false]. *)
 
-val of_basic : ?pointer:bool -> Basic.t -> t
-(** [of_basic ?is_pointer ty] lifts a basic type [ty] to a pointer type if
-    [is_pointer] is true, and a normal one otherwise (and by default). *)
-
-val bool : ?atomic:bool -> ?pointer:bool -> unit -> t
-(** [bool ?atomic ?pointer ()] constructs the right Boolean type according to
-    the flags [atomic] and [pointer], both of which default to [false]. *)
-
-val int : ?atomic:bool -> ?pointer:bool -> unit -> t
-(** [int ?atomic ?pointer ()] constructs the right integer type according to
-    the flags [atomic] and [pointer], both of which default to [false]. *)
+val int :
+  ?is_atomic:bool -> ?is_pointer:bool -> ?is_volatile:bool -> unit -> t
+(** [int ?is_atomic ?is_pointer ()] constructs the right integer type
+    according to the flags [is_atomic], [is_pointer], and [is_volatile], all
+    of which default to [false]. *)
 
 (** {2 Modifiers} *)
 
@@ -116,6 +125,9 @@ val is_atomic : t -> bool
 
 val is_pointer : t -> bool
 (** [is_pointer ty] returns whether [ty] is a pointer type. *)
+
+val is_volatile : t -> bool
+(** [is_volatile ty] returns whether [ty] is a volatile type. *)
 
 (** {2 Type checker building blocks} *)
 

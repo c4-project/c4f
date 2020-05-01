@@ -30,7 +30,8 @@ module Atomic_int_pointers (E : Env_types.S) : sig
   type t = Address.t [@@deriving sexp_of, quickcheck]
 end = Pointers_on_env (struct
   let env =
-    Env.variables_of_basic_type E.env ~basic:(Type.Basic.int ~atomic:true ())
+    Env.variables_of_basic_type E.env
+      ~basic:(Type.Basic.int ~is_atomic:true ())
 end)
 
 module Atomic_bool_pointers (E : Env_types.S) : sig
@@ -38,5 +39,5 @@ module Atomic_bool_pointers (E : Env_types.S) : sig
 end = Pointers_on_env (struct
   let env =
     Env.variables_of_basic_type E.env
-      ~basic:(Type.Basic.bool ~atomic:true ())
+      ~basic:(Type.Basic.bool ~is_atomic:true ())
 end)

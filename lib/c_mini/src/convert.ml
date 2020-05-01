@@ -156,12 +156,10 @@ let function_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list)
     call_handler arguments ~expr)
 
 let identifier_to_expr (id : Ac.C_id.t) : Expression.t =
-  match Ac.C_id.to_string id with
-  | "true" ->
-      Expression.truth
-  | "false" ->
-      Expression.falsehood
-  | _ ->
+  match Convert_prim.identifier_to_constant id with
+  | Some k ->
+      Expression.constant k
+  | None ->
       Expression.lvalue (Lvalue.variable id)
 
 let bop : Act_c_lang.Operators.Bin.t -> Op.Binary.t Or_error.t =

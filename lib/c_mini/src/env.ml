@@ -73,7 +73,7 @@ let filter_to_known_values : t -> t =
       data |> Record.known_value |> Option.is_some)
 
 let type_of_known_value (env : t) ~(id : Ac.C_id.t) : Type.t Or_error.t =
-  Or_error.(type_of env ~id >>| Type.basic_type >>| Type.of_basic)
+  Or_error.(type_of env ~id >>| Type.basic_type >>| Type.make)
 
 let gen_random_var_with_record (env : t) :
     Record.t Ac.C_named.t Q.Generator.t =

@@ -15,6 +15,7 @@ open struct
   module Ac = Act_common
   module Tx = Travesty_base_exts
   module Ast = Act_c_lang.Ast
+  module Astb = Act_c_lang.Ast_basic
   module Named = Ac.C_named
 end
 
@@ -28,27 +29,48 @@ let constant : Act_c_lang.Ast_basic.Constant.t -> Constant.t Or_error.t =
 let defined_types : (Ac.C_id.t, Type.Basic.t) List.Assoc.t Lazy.t =
   lazy
     Type.Basic.
-      [ (Ac.C_id.of_string "atomic_bool", bool ~atomic:true ())
-      ; (Ac.C_id.of_string "atomic_int", int ~atomic:true ())
+      [ (Ac.C_id.of_string "atomic_bool", bool ~is_atomic:true ())
+      ; (Ac.C_id.of_string "atomic_int", int ~is_atomic:true ())
       ; (Ac.C_id.of_string "bool", bool ()) ]
 
-let qualifiers_to_basic_type (quals : [> Ast.Decl_spec.t] list) :
+let defined_type_to_basic (t : Ac.C_id.t) : Type.Basic.t Or_error.t =
+  t
+  |> List.Assoc.find ~equal:Ac.C_id.equal (Lazy.force defined_types)
+  |> Result.of_option
+       ~error:
+         (Error.create_s
+            [%message "Unknown defined type" ~got:(t : Ac.C_id.t)])
+
+let partition_qualifiers :
+       [> Ast.Decl_spec.t] list
+    -> [> Ast.Type_spec.t] list
+       * [> Astb.Storage_class_spec.t | Astb.Type_qual.t] list =
+  List.partition_map ~f:(function
+    | #Ast.Type_spec.t as ts ->
+        `Fst ts
+    | #Astb.Storage_class_spec.t as ss ->
+        `Snd ss
+    | #Astb.Type_qual.t as qs ->
+        `Snd qs)
+
+let type_specs_to_basic (specs : [> Ast.Type_spec.t] list) :
     Type.Basic.t Or_error.t =
-  let open Or_error.Let_syntax in
-  match%bind Tx.List.one quals with
-  | `Int ->
-      return (Type.Basic.int ())
-  | `Defined_type t ->
-      t
-      |> List.Assoc.find ~equal:Ac.C_id.equal (Lazy.force defined_types)
-      |> Result.of_option
-           ~error:
-             (Error.create_s
-                [%message "Unknown defined type" ~got:(t : Ac.C_id.t)])
-  | #Ast.Type_spec.t as spec ->
-      Or_error.error_s
-        [%message
-          "This type isn't supported (yet)" ~got:(spec : Ast.Type_spec.t)]
+  Or_error.Let_syntax.(
+    match%bind Tx.List.one specs with
+    | `Int ->
+        return (Type.Basic.int ())
+    | `Defined_type t ->
+        defined_type_to_basic t
+    | #Ast.Type_spec.t as spec ->
+        Or_error.error_s
+          [%message
+            "This type isn't supported (yet)" ~got:(spec : Ast.Type_spec.t)])
+
+let qualifier_to_flags :
+    [> Astb.Storage_class_spec.t | Astb.Type_qual.t] -> bool Or_error.t =
+  function
+  | `Volatile ->
+      Ok true
   | #Act_c_lang.Ast_basic.Type_qual.t as qual ->
       Or_error.error_s
         [%message
@@ -59,6 +81,22 @@ let qualifiers_to_basic_type (quals : [> Ast.Decl_spec.t] list) :
         [%message
           "This storage-class specifier isn't supported (yet)"
             ~got:(spec : Act_c_lang.Ast_basic.Storage_class_spec.t)]
+
+let qualifiers_to_flags
+    (quals : [> Astb.Storage_class_spec.t | Astb.Type_qual.t] list) :
+    bool Or_error.t =
+  Or_error.Let_syntax.(
+    (* TODO(@MattWindsor91): other qualifiers? *)
+    let%map vs = Tx.Or_error.combine_map quals ~f:qualifier_to_flags in
+    List.exists vs ~f:Fn.id)
+
+let qualifiers_to_type (quals : [> Ast.Decl_spec.t] list)
+    ~(is_pointer : bool) : Type.t Or_error.t =
+  let tspecs, rquals = partition_qualifiers quals in
+  Or_error.Let_syntax.(
+    let%map basic = type_specs_to_basic tspecs
+    and is_volatile = qualifiers_to_flags rquals in
+    Type.make basic ~is_pointer ~is_volatile)
 
 let declarator_to_id :
     Ast.Declarator.t -> (Act_common.C_id.t * bool) Or_error.t = function
@@ -77,39 +115,54 @@ let declarator_to_id :
           "Unsupported direct declarator"
             ~got:(x.direct : Ast.Direct_declarator.t)]
 
+let identifier_to_constant (id : Ac.C_id.t) : Constant.t option =
+  match Ac.C_id.to_string id with
+  | "true" ->
+      Some Constant.truth
+  | "false" ->
+      Some Constant.falsehood
+  | _ ->
+      None
+
+let not_constant (x : Ast.Expr.t) : Constant.t Or_error.t =
+  Or_error.error_s
+    [%message "Expression not supported (must be constant)" (x : Ast.Expr.t)]
+
 let value_of_initialiser : Ast.Initialiser.t -> Constant.t Or_error.t =
   function
   | Assign (Constant v) ->
       (* TODO(@MattWindsor91): Boolean initialisers aren't covered by this
          case, as C99 Boolean 'constant's are identifiers. *)
       constant v
+  | Assign (Identifier k) -> (
+    match identifier_to_constant k with
+    | Some k ->
+        Ok k
+    | None ->
+        not_constant (Identifier k) )
   | Assign x ->
-      Or_error.error_s
-        [%message
-          "Expression not supported (must be constant)" (x : Ast.Expr.t)]
+      not_constant x
   | List _ ->
       Or_error.error_string "List initialisers not supported"
 
 let decl (d : Act_c_lang.Ast.Decl.t) : Initialiser.t Named.t Or_error.t =
   Or_error.Let_syntax.(
-    let%bind basic_type = qualifiers_to_basic_type d.qualifiers in
     let%bind idecl = Tx.List.one d.declarator in
-    let%bind name, pointer = declarator_to_id idecl.declarator in
+    let%bind name, is_pointer = declarator_to_id idecl.declarator in
+    let%bind ty = qualifiers_to_type d.qualifiers ~is_pointer in
     let%map value =
       Tx.Option.With_errors.map_m idecl.initialiser ~f:value_of_initialiser
     in
-    let ty = Type.of_basic ~pointer basic_type in
     Named.make ~name (Initialiser.make ~ty ?value ()))
 
 let param_decl : Ast.Param_decl.t -> Type.t Named.t Or_error.t = function
   | {declarator= `Abstract _; _} ->
       Or_error.error_string "Abstract parameter declarators not supported"
   | {qualifiers; declarator= `Concrete declarator} ->
-      let open Or_error.Let_syntax in
-      let%map basic_type = qualifiers_to_basic_type qualifiers
-      and name, pointer = declarator_to_id declarator in
-      let value = Type.of_basic ~pointer basic_type in
-      Named.make value ~name
+      Or_error.Let_syntax.(
+        let%bind name, is_pointer = declarator_to_id declarator in
+        let%map ty = qualifiers_to_type qualifiers ~is_pointer in
+        Named.make ty ~name)
 
 let rec expr_to_lvalue : Ast.Expr.t -> Lvalue.t Or_error.t = function
   | Identifier id ->

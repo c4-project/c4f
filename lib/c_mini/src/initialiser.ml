@@ -13,7 +13,10 @@ open Base
 open Base_quickcheck
 
 type t = {ty: Type.t; value: Constant.t option}
-[@@deriving sexp, make, equal, fields, quickcheck]
+[@@deriving sexp, make, compare, equal, fields, quickcheck]
 
-let of_int ?(atomic : bool = false) (value : int) =
-  make ~ty:(Type.int ~atomic ()) ~value:(Constant.int value) ()
+let of_int ?(is_atomic : bool = false) ?(is_volatile : bool = false)
+    (value : int) =
+  make
+    ~ty:(Type.int ~is_atomic ~is_volatile ())
+    ~value:(Constant.int value) ()

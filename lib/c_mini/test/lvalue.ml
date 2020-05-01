@@ -71,7 +71,7 @@ let%expect_test "Type-checking an invalid deferencing variable lvalue" =
     {|
     (Error
      ("While checking underlying type of lvalue dereferencing:" (Variable foo)
-      ("tried to get value type of a non-pointer type" (basic_type int)))) |}]
+      ("tried to get value type of a non-pointer type" (ty.basic_type int)))) |}]
 
 let%expect_test "gen: sample" =
   Act_utils.My_quickcheck.print_sample (module Act_c_mini.Lvalue) ;
@@ -111,4 +111,4 @@ let%test_unit "on_value_of_typed_id: always takes basic type" =
       let ty = Act_common.C_named.value r in
       [%test_result: Act_c_mini.Type.t Or_error.t] ~here:[[%here]]
         (Tc.type_of (on_value_of_typed_id r))
-        ~expect:(Or_error.return Act_c_mini.Type.(normal (basic_type ty))))
+        ~expect:(Or_error.return Act_c_mini.Type.(make (basic_type ty))))

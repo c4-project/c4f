@@ -12,38 +12,20 @@
 open Base
 
 open struct
+  module Ac = Act_common
   module Ast = Act_c_lang.Ast
   module Named = Act_common.C_named
 end
 
-let to_initialiser (value : Constant.t) : Ast.Initialiser.t =
-  Assign (Reify_expr.constant value)
-
-let type_to_spec (ty : Type.t) : [> Act_c_lang.Ast.Type_spec.t] =
-  (* We translate the level of indirection separately, in [type_to_pointer]. *)
-  Type.Basic.to_spec (Type.basic_type ty)
-
-let type_to_pointer (ty : Type.t) : Act_c_lang.Ast_basic.Pointer.t option =
-  (* We translate the actual underlying type separately, in [type_to_spec]. *)
-  Option.some_if (Type.is_pointer ty) [[]]
-
-let id_declarator (ty : Type.t) (id : Act_common.C_id.t) : Ast.Declarator.t =
-  {pointer= type_to_pointer ty; direct= Id id}
-
-let decl (id : Act_common.C_id.t) (elt : Initialiser.t) : Ast.Decl.t =
-  let ty = Initialiser.ty elt in
-  let value = Initialiser.value elt in
-  { qualifiers= [type_to_spec ty]
-  ; declarator=
-      [ { declarator= id_declarator ty id
-        ; initialiser= Option.map ~f:to_initialiser value } ] }
-
 let decls : Initialiser.t Named.Alist.t -> [> `Decl of Ast.Decl.t] list =
-  List.map ~f:(fun (k, v) -> `Decl (decl k v))
+  Fn.compose
+    (List.map ~f:(fun d -> `Decl (Reify_prim.decl d)))
+    Named.list_of_alist
 
 let func_parameter (id : Act_common.C_id.t) (ty : Type.t) : Ast.Param_decl.t
     =
-  {qualifiers= [type_to_spec ty]; declarator= `Concrete (id_declarator ty id)}
+  { qualifiers= Reify_prim.type_to_specs ty
+  ; declarator= `Concrete (Reify_prim.id_declarator ty id) }
 
 let func_parameters (parameters : Type.t Named.Alist.t) :
     Ast.Param_type_list.t =

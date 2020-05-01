@@ -99,7 +99,7 @@ module Int_dead : S = Make (struct
     let respect_src_dependencies = false
   end
 
-  let dst_type = Cm.Type.Basic.int ~atomic:true ()
+  let dst_type = Cm.Type.Basic.int ~is_atomic:true ()
 
   module Quickcheck = Cm.Expression_gen.Atomic_fetch_int_values
 end)
@@ -121,7 +121,7 @@ module Int_redundant : S = Make (struct
     let respect_src_dependencies = true
   end
 
-  let dst_type = Cm.Type.Basic.int ~atomic:true ()
+  let dst_type = Cm.Type.Basic.int ~is_atomic:true ()
 
   module Quickcheck (Src : Cm.Env_types.S) (Dst : Cm.Env_types.S) :
     Act_utils.My_quickcheck.S_with_sexp

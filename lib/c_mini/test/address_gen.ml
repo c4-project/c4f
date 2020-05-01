@@ -98,7 +98,9 @@ let%test_module "Atomic_int_pointers" =
       test_in_env e (module Qc)
 
     let%test_unit "generated lvalues have '*atomic_int' type" =
-      test_type e (module Qc) Src.Type.(int ~pointer:true ~atomic:true ())
+      test_type e
+        (module Qc)
+        Src.Type.(int ~is_pointer:true ~is_atomic:true ())
   end )
 
 let%test_module "Atomic_bool_pointers" =
@@ -124,5 +126,7 @@ let%test_module "Atomic_bool_pointers" =
       test_in_env e (module Qc)
 
     let%test_unit "generated lvalues have '*atomic_bool' type" =
-      test_type e (module Qc) Src.Type.(bool ~pointer:true ~atomic:true ())
+      test_type e
+        (module Qc)
+        Src.Type.(bool ~is_pointer:true ~is_atomic:true ())
   end )

@@ -14,7 +14,7 @@
 open Base
 
 (** Opaque type of named elements. *)
-type 'a t [@@deriving sexp, equal, quickcheck]
+type 'a t [@@deriving sexp, compare, equal, quickcheck]
 
 (** {2 Constructors} *)
 

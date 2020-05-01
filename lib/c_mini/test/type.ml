@@ -20,30 +20,46 @@ let dump : Act_c_mini.Type.t list -> unit =
 let%expect_test "bool: combinatoric" =
   dump
     Act_c_mini.Type.
-      [ bool ~atomic:false ~pointer:false ()
-      ; bool ~atomic:false ~pointer:true ()
-      ; bool ~atomic:true ~pointer:false ()
-      ; bool ~atomic:true ~pointer:true () ] ;
+      [ bool ~is_volatile:false ~is_atomic:false ~is_pointer:false ()
+      ; bool ~is_volatile:false ~is_atomic:false ~is_pointer:true ()
+      ; bool ~is_volatile:false ~is_atomic:true ~is_pointer:false ()
+      ; bool ~is_volatile:false ~is_atomic:true ~is_pointer:true ()
+      ; bool ~is_volatile:true ~is_atomic:false ~is_pointer:false ()
+      ; bool ~is_volatile:true ~is_atomic:false ~is_pointer:true ()
+      ; bool ~is_volatile:true ~is_atomic:true ~is_pointer:false ()
+      ; bool ~is_volatile:true ~is_atomic:true ~is_pointer:true () ] ;
   [%expect
     {|
     str: bool; sexp: bool
     str: bool*; sexp: bool*
     str: atomic_bool; sexp: atomic_bool
-    str: atomic_bool*; sexp: atomic_bool* |}]
+    str: atomic_bool*; sexp: atomic_bool*
+    str: volatile bool; sexp: "volatile bool"
+    str: volatile bool*; sexp: "volatile bool*"
+    str: volatile atomic_bool; sexp: "volatile atomic_bool"
+    str: volatile atomic_bool*; sexp: "volatile atomic_bool*" |}]
 
 let%expect_test "int: combinatoric" =
   dump
     Act_c_mini.Type.
-      [ int ~atomic:false ~pointer:false ()
-      ; int ~atomic:false ~pointer:true ()
-      ; int ~atomic:true ~pointer:false ()
-      ; int ~atomic:true ~pointer:true () ] ;
+      [ int ~is_volatile:false ~is_atomic:false ~is_pointer:false ()
+      ; int ~is_volatile:false ~is_atomic:false ~is_pointer:true ()
+      ; int ~is_volatile:false ~is_atomic:true ~is_pointer:false ()
+      ; int ~is_volatile:false ~is_atomic:true ~is_pointer:true ()
+      ; int ~is_volatile:true ~is_atomic:false ~is_pointer:false ()
+      ; int ~is_volatile:true ~is_atomic:false ~is_pointer:true ()
+      ; int ~is_volatile:true ~is_atomic:true ~is_pointer:false ()
+      ; int ~is_volatile:true ~is_atomic:true ~is_pointer:true () ] ;
   [%expect
     {|
     str: int; sexp: int
     str: int*; sexp: int*
     str: atomic_int; sexp: atomic_int
-    str: atomic_int*; sexp: atomic_int* |}]
+    str: atomic_int*; sexp: atomic_int*
+    str: volatile int; sexp: "volatile int"
+    str: volatile int*; sexp: "volatile int*"
+    str: volatile atomic_int; sexp: "volatile atomic_int"
+    str: volatile atomic_int*; sexp: "volatile atomic_int*" |}]
 
 let%test_unit "basic_type_is compatibility with basic_type" =
   Base_quickcheck.Test.run_exn
@@ -60,6 +76,6 @@ let%test_module "check_atomic_non" =
       Stdio.print_s [%sexp (result : Act_c_mini.Type.t Or_error.t)]
 
     let%expect_test "valid: atomic_int to int" =
-      Act_c_mini.Type.(test (int ~atomic:true ()) (int ())) ;
+      Act_c_mini.Type.(test (int ~is_atomic:true ()) (int ())) ;
       [%expect {| (Ok int) |}]
   end )

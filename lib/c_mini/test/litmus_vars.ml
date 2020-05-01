@@ -34,9 +34,10 @@ let%test_module "make_type_alist" =
           && Ac.Litmus_id.of_string "y" ==? Src.Constant.int 1)
 
     let parameters : (Ac.C_id.t, Src.Type.t) List.Assoc.t =
-      [ (Ac.C_id.of_string "x", Src.Type.int ~pointer:true ~atomic:true ())
-      ; (Ac.C_id.of_string "y", Src.Type.int ~pointer:true ~atomic:true ())
-      ]
+      [ ( Ac.C_id.of_string "x"
+        , Src.Type.int ~is_pointer:true ~is_atomic:true () )
+      ; ( Ac.C_id.of_string "y"
+        , Src.Type.int ~is_pointer:true ~is_atomic:true () ) ]
 
     let p0_decls : (Ac.C_id.t, Src.Initialiser.t) List.Assoc.t =
       (* This ordering is intentional: not only is it how Memalloy generated

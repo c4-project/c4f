@@ -72,18 +72,19 @@ module Int_prims (E : Env_types.S) = struct
     lift [%quickcheck.generator: LV.t] ~to_expr:Expression.lvalue
       ~to_var:Lvalue.variable_of
 
-  let has_ints ~(atomic : bool) : bool =
-    Env.has_variables_of_basic_type E.env ~basic:Type.Basic.(int ~atomic ())
+  let has_ints ~(is_atomic : bool) : bool =
+    Env.has_variables_of_basic_type E.env
+      ~basic:(Type.Basic.int ~is_atomic ())
 
   let has_ints_any_atomicity () : bool =
-    has_ints ~atomic:true || has_ints ~atomic:false
+    has_ints ~is_atomic:true || has_ints ~is_atomic:false
 
   let base_load_with_record ~(gen_zero : t Q.Generator.t) :
       (t * Env.Record.t) Q.Generator.t list =
     eval_guards
-      [ (has_ints ~atomic:true, gen_atomic_load)
-      ; (has_ints ~atomic:true, fun () -> gen_atomic_fetch_nop ~gen_zero)
-      ; (has_ints ~atomic:false, gen_lvalue) ]
+      [ (has_ints ~is_atomic:true, gen_atomic_load)
+      ; (has_ints ~is_atomic:true, fun () -> gen_atomic_fetch_nop ~gen_zero)
+      ; (has_ints ~is_atomic:false, gen_lvalue) ]
 
   let gen_load_with_record ~(gen_zero : t Q.Generator.t) :
       (t * Env.Record.t) Q.Generator.t =

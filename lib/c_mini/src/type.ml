@@ -17,22 +17,23 @@ open struct
 end
 
 module Prim = struct
-  type t = Int | Bool [@@deriving variants, equal, enumerate]
+  type t = Bool | Int [@@deriving variants, equal, enumerate]
 end
 
 module Basic = struct
   module M = struct
-    type t = {atomic: bool; prim: Prim.t} [@@deriving equal, enumerate]
+    type t = {is_atomic: bool; prim: Prim.t}
+    [@@deriving equal, fields, enumerate]
 
-    let int ?(atomic : bool = false) () : t = {atomic; prim= Int}
+    let int ?(is_atomic : bool = false) () : t = {is_atomic; prim= Int}
 
-    let bool ?(atomic : bool = false) () : t = {atomic; prim= Bool}
+    let bool ?(is_atomic : bool = false) () : t = {is_atomic; prim= Bool}
 
     let table : (t, string) List.Assoc.t =
       [ (int (), "int")
-      ; (int ~atomic:true (), "atomic_int")
+      ; (int ~is_atomic:true (), "atomic_int")
       ; (bool (), "bool")
-      ; (bool ~atomic:true (), "atomic_bool") ]
+      ; (bool ~is_atomic:true (), "atomic_bool") ]
   end
 
   module M_enum = struct
@@ -43,45 +44,51 @@ module Basic = struct
   include M
   include Au.Enum.Extend_table (M_enum)
 
-  let to_spec : t -> [> Act_c_lang.Ast.Type_spec.t] = function
-    | {atomic= false; prim= Int} ->
-        `Int
-    | {atomic= true; prim= Int} ->
-        `Defined_type (Ac.C_id.of_string "atomic_int")
-    | {atomic= false; prim= Bool} ->
-        `Defined_type (Ac.C_id.of_string "bool")
-    | {atomic= true; prim= Bool} ->
-        `Defined_type (Ac.C_id.of_string "atomic_bool")
+  let as_atomic (t : t) : t = {t with is_atomic= true}
 
-  let as_atomic (t : t) : t = {t with atomic= true}
-
-  let strip_atomic (t : t) : t = {t with atomic= false}
+  let strip_atomic (t : t) : t = {t with is_atomic= false}
 
   let to_non_atomic : t -> t Or_error.t = function
-    | {atomic= true; prim} ->
-        Or_error.return {atomic= false; prim}
+    | {is_atomic= true; prim} ->
+        Or_error.return {is_atomic= false; prim}
     | _ ->
         Or_error.error_string "already non-atomic"
-
-  let is_atomic ({atomic; _} : t) : bool = atomic
 end
 
 module M1 = struct
-  type t = Normal of Basic.t | Pointer_to of Basic.t
-  [@@deriving variants, equal, compare, quickcheck]
+  open Base_quickcheck
+
+  type t =
+    { basic_type: Basic.t [@main]
+    ; is_pointer: bool [@default false]
+    ; is_volatile: bool [@default false] }
+  [@@deriving make, fields, equal, compare, quickcheck]
+
+  let volatile_frag : string = "volatile "
+
+  let pointer_frag : string = "*"
+
+  let scrape (s : string) ~(f : string -> string option) : string * bool =
+    match f s with None -> (s, false) | Some s' -> (String.strip s', true)
+
+  let scrape_volatile : string -> string * bool =
+    scrape ~f:(String.chop_prefix ~prefix:volatile_frag)
+
+  let scrape_pointer : string -> string * bool =
+    scrape ~f:(String.chop_suffix ~suffix:pointer_frag)
 
   let of_string (s : string) : t =
-    match String.chop_suffix s ~suffix:"*" with
-    | None ->
-        Normal (Basic.of_string s)
-    | Some s' ->
-        Pointer_to (Basic.of_string s')
+    let s', is_volatile = scrape_volatile s in
+    let s'', is_pointer = scrape_pointer s' in
+    let basic_type = Basic.of_string s'' in
+    make basic_type ~is_pointer ~is_volatile
 
-  let to_string : t -> string = function
-    | Normal b ->
-        Basic.to_string b
-    | Pointer_to b ->
-        Basic.to_string b ^ "*"
+  let to_string (ty : t) : string =
+    String.concat
+      (List.filter_opt
+         [ Option.some_if (is_volatile ty) volatile_frag
+         ; Some (Basic.to_string (basic_type ty))
+         ; Option.some_if (is_pointer ty) pointer_frag ])
 end
 
 module M = struct
@@ -91,62 +98,43 @@ end
 
 include M
 
-let of_basic ?(pointer : bool = false) (ty : Basic.t) : t =
-  (if pointer then pointer_to else normal) ty
-
-let basic_type : t -> Basic.t = function Normal x | Pointer_to x -> x
-
 let basic_type_is (ty : t) ~(basic : Basic.t) : bool =
   Basic.equal (basic_type ty) basic
 
-let is_pointer : t -> bool = function
-  | Normal _ ->
-      false
-  | Pointer_to _ ->
-      true
+let deref (ty : t) : t Or_error.t =
+  if ty.is_pointer then Ok {ty with is_pointer= false}
+  else
+    Or_error.error_s
+      [%message
+        "tried to get value type of a non-pointer type"
+          (ty.basic_type : Basic.t)]
 
-let deref : t -> t Or_error.t = function
-  | Pointer_to k ->
-      Or_error.return (Normal k)
-  | Normal basic_type ->
-      Or_error.error_s
-        [%message
-          "tried to get value type of a non-pointer type"
-            (basic_type : Basic.t)]
-
-let ref : t -> t Or_error.t = function
-  | Normal k ->
-      Or_error.return (Pointer_to k)
-  | Pointer_to _ ->
-      Or_error.error_string "already a pointer type"
+let ref (ty : t) : t Or_error.t =
+  if not ty.is_pointer then Ok {ty with is_pointer= true}
+  else Or_error.error_string "already a pointer type"
 
 let is_atomic (ty : t) : bool = Basic.is_atomic (basic_type ty)
 
 (* for now *)
 
-let strip_atomic : t -> t = function
-  | Normal k ->
-      k |> Basic.strip_atomic |> normal
-  | Pointer_to k ->
-      k |> Basic.strip_atomic |> pointer_to
+let strip_atomic (ty : t) : t =
+  {ty with basic_type= Basic.strip_atomic ty.basic_type}
 
-let as_atomic : t -> t = function
-  | Normal k ->
-      k |> Basic.as_atomic |> normal
-  | Pointer_to k ->
-      k |> Basic.as_atomic |> pointer_to
+let as_atomic (ty : t) : t =
+  {ty with basic_type= Basic.as_atomic ty.basic_type}
 
-let to_non_atomic : t -> t Or_error.t = function
-  | Normal k ->
-      Or_error.(k |> Basic.to_non_atomic >>| normal)
-  | Pointer_to k ->
-      Or_error.(k |> Basic.to_non_atomic >>| pointer_to)
+let to_non_atomic (ty : t) : t Or_error.t =
+  Or_error.(
+    ty |> basic_type |> Basic.to_non_atomic
+    >>| fun b -> {ty with basic_type= b})
 
-let bool ?(atomic : bool option) ?(pointer : bool option) () : t =
-  of_basic (Basic.bool ?atomic ()) ?pointer
+let bool ?(is_atomic : bool option) ?(is_pointer : bool option)
+    ?(is_volatile : bool option) () : t =
+  make (Basic.bool ?is_atomic ()) ?is_pointer ?is_volatile
 
-let int ?(atomic : bool option) ?(pointer : bool option) () : t =
-  of_basic (Basic.int ?atomic ()) ?pointer
+let int ?(is_atomic : bool option) ?(is_pointer : bool option)
+    ?(is_volatile : bool option) () : t =
+  make (Basic.int ?is_atomic ()) ?is_pointer ?is_volatile
 
 module Json : Plumbing.Jsonable_types.S with type t := t =
   Plumbing.Jsonable.Of_stringable (M1)

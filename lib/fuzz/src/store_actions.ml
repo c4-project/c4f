@@ -89,7 +89,7 @@ module Int : S = Make (struct
     let respect_src_dependencies = true
   end
 
-  let dst_type = Cm.Type.Basic.int ~atomic:true ()
+  let dst_type = Cm.Type.Basic.int ~is_atomic:true ()
 
   module Quickcheck = Cm.Atomic_store.Quickcheck_ints
 end)
@@ -112,7 +112,7 @@ module Int_dead : S = Make (struct
     let respect_src_dependencies = false
   end
 
-  let dst_type = Cm.Type.Basic.int ~atomic:true ()
+  let dst_type = Cm.Type.Basic.int ~is_atomic:true ()
 
   module Quickcheck = Cm.Atomic_store.Quickcheck_ints
 end)
@@ -134,7 +134,7 @@ module Int_redundant : S = Make (struct
     let respect_src_dependencies = true
   end
 
-  let dst_type = Cm.Type.Basic.int ~atomic:true ()
+  let dst_type = Cm.Type.Basic.int ~is_atomic:true ()
 
   (* The quickcheck scheme for redundant stores needs to be very different
      from the usual scheme, as it must make sure the source is the

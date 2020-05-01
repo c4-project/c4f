@@ -31,7 +31,7 @@ module Lang :
 
     let reify : t -> _ = function
       | `Decl named_init ->
-          `Decl (Reify.decl (Named.name named_init) (Named.value named_init))
+          `Decl (Reify_prim.decl named_init)
       | `Stm stm ->
           `Stm (Reify_stm.reify stm)
 

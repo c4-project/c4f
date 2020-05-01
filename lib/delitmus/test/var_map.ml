@@ -35,7 +35,8 @@ let%test_module "with example map" =
                  ~mapped_to:(Param 0) )
            ; ( Li.of_string "x"
              , Rc.make ~c_id:(Ci.of_string "x")
-                 ~c_type:(Ct.int ~atomic:true ()) ~mapped_to:Global ) ])
+                 ~c_type:(Ct.int ~is_atomic:true ())
+                 ~mapped_to:Global ) ])
 
     let%expect_test "global_c_variables" =
       Set.iter
