@@ -81,7 +81,7 @@ module Int : S = Make (struct
 
   let path_filter = Path_filter.empty
 
-  let extra_dst_restrictions = [Fn.non Var.Record.has_dependencies]
+  let extra_dst_restrictions = [Storelike.Dst_restriction.forbid_dependencies]
 
   module Flags = struct
     let erase_known_values = true

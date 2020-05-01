@@ -23,6 +23,20 @@ val forbid_already_written_flag_key : Act_common.Id.t
 (** [forbid_already_written_flag_key] is the key used to look-up the
     forbid-already-written flag. *)
 
+(** {1 Helpers for constructing actions} *)
+
+(** {2 Destination restrictions} *)
+
+module Dst_restriction : sig
+  (** Type of destination restrictions. *)
+  type t = Var.Record.t -> bool
+
+  val forbid_dependencies : t
+  (** [forbid_dependencies] is a destination restriction that forbids
+      destinations that the fuzzer believes have dependencies, either through
+      explicit marking or through benefit of the doubt. *)
+end
+
 (** {1 Functors} *)
 
 (** Make makes an action for generating inserting a storelike statement. *)
@@ -41,7 +55,7 @@ module Make (B : sig
   (** [path_filter] is the filter to apply on statement insertion paths
       before considering them for the atomic store. *)
 
-  val extra_dst_restrictions : (Var.Record.t -> bool) list
+  val extra_dst_restrictions : Dst_restriction.t list
   (** [extra_dst_restrictions] is a list of additional restrictions to place
       on the destination variables (for example, 'must not have
       dependencies'). *)

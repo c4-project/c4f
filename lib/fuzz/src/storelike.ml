@@ -15,6 +15,7 @@ open struct
   module Ac = Act_common
   module Cm = Act_c_mini
   module P = Payload
+  module Tx = Travesty_base_exts
 end
 
 let forbid_already_written_flag_key : Ac.Id.t =
@@ -41,16 +42,26 @@ let readme_faw : string Lazy.t =
 (** Lists the restrictions we put on source variables. *)
 let basic_src_restrictions : (Var.Record.t -> bool) list Lazy.t = lazy []
 
-let basic_dst_restrictions (dst_type : Cm.Type.Basic.t) :
-    (Var.Record.t -> bool) list =
-  Var.Record.[is_atomic; was_generated; has_basic_type ~basic:dst_type]
+module Dst_restriction = struct
+  type t = Var.Record.t -> bool
 
-(** Lists the restrictions we put on destination variables. *)
-let dst_restrictions ~(dst_type : Cm.Type.Basic.t)
-    ~(forbid_already_written : bool) : (Var.Record.t -> bool) list =
-  basic_dst_restrictions dst_type
-  @ List.filter_opt
-      [Option.some_if forbid_already_written (Fn.non Var.Record.has_writes)]
+  let basic (dst_type : Cm.Type.Basic.t) : t list =
+    Var.Record.[is_atomic; has_basic_type ~basic:dst_type]
+
+  let with_user_flags ~(dst_type : Cm.Type.Basic.t)
+      ~(forbid_already_written : bool) : t list =
+    basic dst_type
+    @ List.filter_opt
+        [Option.some_if forbid_already_written (Fn.non Var.Record.has_writes)]
+
+  let forbid_dependencies : t =
+    Tx.Fn.(
+      Fn.non Var.Record.has_dependencies
+      (* We don't know whether variables that existed before fuzzing have any
+         dependencies, as we don't do any flow analysis of them. Maybe one
+         day this will be relaxed? *)
+      &&& Var.Record.was_generated)
+end
 
 module Make (B : sig
   val name : Ac.Id.t
@@ -67,7 +78,7 @@ module Make (B : sig
   (** [path_filter] is the filter to apply on statement insertion paths
       before considering them for the atomic store. *)
 
-  val extra_dst_restrictions : (Var.Record.t -> bool) list
+  val extra_dst_restrictions : Dst_restriction.t list
   (** [extra_dst_restrictions] is a list of additional restrictions to place
       on the destination variables (for example, 'must not have
       dependencies'). *)
@@ -96,7 +107,8 @@ end) : Action_types.S with type Payload.t = B.t P.Insertion.t = struct
 
   let dst_restrictions ~(forbid_already_written : bool) :
       (Var.Record.t -> bool) list =
-    dst_restrictions ~dst_type:B.dst_type ~forbid_already_written
+    Dst_restriction.with_user_flags ~dst_type:B.dst_type
+      ~forbid_already_written
     @ B.extra_dst_restrictions
 
   let dst_env (vars : Var.Map.t) ~(tid : int)
