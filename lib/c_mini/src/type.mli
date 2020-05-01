@@ -118,8 +118,8 @@ val strip_atomic : t -> t
 (** {3 Volatility} *)
 
 val as_volatile : t -> t
-(** [as_volatile ty] returns [ty] if it is volatile, or the volatile equivalent of
-    [ty] if not. *)
+(** [as_volatile ty] returns [ty] if it is volatile, or the volatile
+    equivalent of [ty] if not. *)
 
 (** {2 Accessors and predicates} *)
 

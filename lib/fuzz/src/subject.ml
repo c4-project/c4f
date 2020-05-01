@@ -69,9 +69,11 @@ module Thread = struct
 
   module An = Ac.C_named.Alist.As_named (Act_c_mini.Initialiser)
 
-  let map_decls (thread : t) ~(f:Act_c_mini.Initialiser.t Ac.C_named.t -> Act_c_mini.Initialiser.t Ac.C_named.t)
-  : t =
-   {thread with decls = An.map ~f thread.decls }
+  let map_decls (thread : t)
+      ~(f :
+            Act_c_mini.Initialiser.t Ac.C_named.t
+         -> Act_c_mini.Initialiser.t Ac.C_named.t) : t =
+    {thread with decls= An.map ~f thread.decls}
 
   let add_decl ?(value : Act_c_mini.Constant.t option) (thread : t)
       ~(ty : Act_c_mini.Type.t) ~(name : Ac.C_id.t) : t =

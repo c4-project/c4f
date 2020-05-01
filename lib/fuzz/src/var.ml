@@ -51,8 +51,9 @@ module Record = struct
     Result.of_option (known_value record)
       ~error:(Error.of_string "No known value for this record.")
 
-  let map_type (record : t) ~(f : Act_c_mini.Type.t -> Act_c_mini.Type.t) : t =
-    {record with ty = f record.ty}
+  let map_type (record : t) ~(f : Act_c_mini.Type.t -> Act_c_mini.Type.t) : t
+      =
+    {record with ty= f record.ty}
 
   let add_dependency (record : t) : t = {record with has_dependencies= true}
 

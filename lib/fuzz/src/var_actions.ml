@@ -36,8 +36,7 @@ module Make_payload = struct
     let bt = Act_c_mini.Type.basic_type ty in
     G.of_list [bt; Act_c_mini.Type.Basic.as_atomic bt]
 
-  let generator (vars : Var.Map.t) ~(gen_scope : Ac.Scope.t G.t) :
-      t G.t =
+  let generator (vars : Var.Map.t) ~(gen_scope : Ac.Scope.t G.t) : t G.t =
     G.Let_syntax.(
       (* TODO(@MattWindsor91): ideally, this should be
          [quickcheck_generator], ie it should generate Booleans as well.
@@ -70,14 +69,11 @@ module Make : Action_types.S with type Payload.t = Make_payload.t = struct
     include Make_payload
     module G = Base_quickcheck.Generator
 
-    let gen_scope (nthreads : int) (is_global : bool) :
-        Ac.Scope.t G.t =
+    let gen_scope (nthreads : int) (is_global : bool) : Ac.Scope.t G.t =
       G.(
         if is_global then return Ac.Scope.Global
         else
-          map
-            ~f:(fun x -> Ac.Scope.Local x)
-            (int_inclusive 0 (nthreads - 1)))
+          map ~f:(fun x -> Ac.Scope.Local x) (int_inclusive 0 (nthreads - 1)))
 
     let gen (subject : Subject.Test.t) ~(random : Splittable_random.State.t)
         ~(param_map : Param_map.t) : t State.Monad.t =
@@ -104,7 +100,8 @@ module Make : Action_types.S with type Payload.t = Make_payload.t = struct
       (Subject.Test.declare_var subject ty var initial_value)
 end
 
-module Volatile : Action_types.S with type Payload.t = Ac.Litmus_id.t = struct
+module Volatile : Action_types.S with type Payload.t = Ac.Litmus_id.t =
+struct
   let name = Ac.Id.("var" @: "volatile" @: empty)
 
   let readme () =
@@ -113,77 +110,73 @@ module Volatile : Action_types.S with type Payload.t = Ac.Litmus_id.t = struct
     Adds the 'volatile' qualifier to a local variable.
     |}
 
-    let is_viable (r : Var.Record.t) : bool =
-      (* TODO(@MattWindsor91): the not-is-global check arises because we want
-         to produce Litmus-compatible tests, and we can't easily translate
-         volatile global variables into Litmus.  If we can work out a way of
-         doing this, eg by having shadowed global variables, we should relax
-         this. *)
-      Var.Record.(not (is_global r))
+  let is_viable (r : Var.Record.t) : bool =
+    (* TODO(@MattWindsor91): the not-is-global check arises because we want
+       to produce Litmus-compatible tests, and we can't easily translate
+       volatile global variables into Litmus. If we can work out a way of
+       doing this, eg by having shadowed global variables, we should relax
+       this. *)
+    Var.Record.(not (is_global r))
 
   module Payload = struct
     type t = Ac.Litmus_id.t [@@deriving sexp]
 
     module Q = Base_quickcheck
 
-
     let gen_on_vars (vars : Var.Map.t) : Ac.Litmus_id.t Q.Generator.t =
       vars
       |> Ac.Scoped_map.filter ~f:is_viable
-      |> Ac.Scoped_map.to_litmus_id_map
-      |> Map.keys
-      |> Q.Generator.of_list
+      |> Ac.Scoped_map.to_litmus_id_map |> Map.keys |> Q.Generator.of_list
 
     let gen (_ : Subject.Test.t) ~(random : Splittable_random.State.t)
         ~(param_map : Param_map.t) : t State.Monad.t =
-      ignore param_map;
+      ignore param_map ;
       State.Monad.(
         Let_syntax.(
           let%bind generator = with_vars gen_on_vars in
           Payload.Helpers.lift_quickcheck ~random generator))
   end
 
-  let available (_ : Subject.Test.t) ~(param_map : Param_map.t) : bool State.Monad.t =
+  let available (_ : Subject.Test.t) ~(param_map : Param_map.t) :
+      bool State.Monad.t =
     (* TODO(@MattWindsor91): this is quite circuitous. *)
-    ignore param_map;
-    State.Monad.with_vars (fun x -> Map.exists ~f:is_viable (Ac.Scoped_map.to_litmus_id_map x))
+    ignore param_map ;
+    State.Monad.with_vars (fun x ->
+        Map.exists ~f:is_viable (Ac.Scoped_map.to_litmus_id_map x))
 
   let update_state (id : Ac.Litmus_id.t) : unit State.Monad.t =
     State.Monad.modify
       (State.map_vars
-        ~f:(Ac.Scoped_map.map_record ~id ~f:(Var.Record.map_type ~f:Act_c_mini.Type.as_volatile)
-        )
-      )
+         ~f:
+           (Ac.Scoped_map.map_record ~id
+              ~f:(Var.Record.map_type ~f:Act_c_mini.Type.as_volatile)))
 
-  let update_thread_decl (d : Act_c_mini.Initialiser.t Ac.C_named.t) ~(target: Ac.C_id.t) :
-    Act_c_mini.Initialiser.t Ac.C_named.t =
-    if Ac.C_id.equal target (Ac.C_named.name d)
-    then Ac.C_named.map_right d ~f:(fun init ->
-      Act_c_mini.Initialiser.(make
-        ~ty:(Act_c_mini.Type.as_volatile (ty init))
-        ?value:(value init)
-        ()
-      )
-    )
+  let update_thread_decl (d : Act_c_mini.Initialiser.t Ac.C_named.t)
+      ~(target : Ac.C_id.t) : Act_c_mini.Initialiser.t Ac.C_named.t =
+    if Ac.C_id.equal target (Ac.C_named.name d) then
+      Ac.C_named.map_right d ~f:(fun init ->
+          Act_c_mini.Initialiser.(
+            make
+              ~ty:(Act_c_mini.Type.as_volatile (ty init))
+              ?value:(value init) ()))
     else d
 
-  let update_decls (id : Ac.Litmus_id.t) (subject : Subject.Test.t) : Subject.Test.t Or_error.t =
+  let update_decls (id : Ac.Litmus_id.t) (subject : Subject.Test.t) :
+      Subject.Test.t Or_error.t =
     match Ac.Litmus_id.as_local id with
     | Some (index, target) ->
-      Act_litmus.Test.Raw.try_map_thread subject ~index ~f:(fun x ->
-        Ok (Subject.Thread.map_decls x ~f:(update_thread_decl ~target))
-      )
+        Act_litmus.Test.Raw.try_map_thread subject ~index ~f:(fun x ->
+            Ok (Subject.Thread.map_decls x ~f:(update_thread_decl ~target)))
     | None ->
-      Or_error.error_s
-        [%message "Internal: this action can't yet make globals volatile"
-          ~tried_to_change:(id : Ac.Litmus_id.t)
-        ]
+        Or_error.error_s
+          [%message
+            "Internal: this action can't yet make globals volatile"
+              ~tried_to_change:(id : Ac.Litmus_id.t)]
 
-  let run (subject : Subject.Test.t)
-      ~(payload:Ac.Litmus_id.t) :
+  let run (subject : Subject.Test.t) ~(payload : Ac.Litmus_id.t) :
       Subject.Test.t State.Monad.t =
-    State.Monad.(Let_syntax.(
-      let%bind () = update_state payload in
-      Monadic.return (update_decls payload subject)
-    ))
+    State.Monad.(
+      Let_syntax.(
+        let%bind () = update_state payload in
+        Monadic.return (update_decls payload subject)))
 end

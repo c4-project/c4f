@@ -115,20 +115,23 @@ let%test_module "Volatile" =
     let%test_module "Example runs" =
       ( module struct
         let test_action (payload : Act_common.Litmus_id.t) :
-          Src.Subject.Test.t Src.State.Monad.t =
+            Src.Subject.Test.t Src.State.Monad.t =
           Src.Var_actions.Volatile.run
             (Lazy.force Subject.Test_data.test)
             ~payload
 
         let test (tid : int) (name : string) : unit =
-          let pld = Act_common.Litmus_id.local tid (Act_common.C_id.of_string name) in
+          let pld =
+            Act_common.Litmus_id.local tid (Act_common.C_id.of_string name)
+          in
           let action = test_action pld in
           Action.Test_utils.run_and_dump_test action
             ~initial_state:(Lazy.force Subject.Test_data.state)
 
         let%expect_test "r0" =
-          test 0 "r0";
-          [%expect {|
+          test 0 "r0" ;
+          [%expect
+            {|
             void
             P0(atomic_int *x, atomic_int *y)
             {
