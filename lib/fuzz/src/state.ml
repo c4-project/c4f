@@ -100,6 +100,10 @@ module Monad = struct
     Exp_identsM.iter_m expr ~f:(fun c_id ->
         c_id |> resolve ~scope >>= add_dependency)
 
+  let add_multiple_expression_dependencies
+      (exprs : Act_c_mini.Expression.t list) ~(scope : Ac.Scope.t) : unit t =
+    all_unit (List.map ~f:(add_expression_dependencies ~scope) exprs)
+
   let add_write (id : Ac.Litmus_id.t) : unit t = modify (add_write ~id)
 
   let erase_var_value (id : Ac.Litmus_id.t) : unit t =

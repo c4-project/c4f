@@ -113,7 +113,7 @@ let%test_module "fetch.make.int.dead" =
       run_and_dump_vars test_action
         ~initial_state:(Lazy.force Subject.Test_data.state)
         ~predicates:[Src.Var.Record.has_known_value] ;
-      [%expect {| gen1 gen2 |}]
+      [%expect {| gen1 gen2 r0 |}]
 
     let%expect_test "test int fetch: variables with dependencies" =
       run_and_dump_vars test_action
@@ -174,7 +174,7 @@ let%test_module "fetch.make.int.redundant" =
       run_and_dump_vars test_action
         ~initial_state:(Lazy.force Subject.Test_data.state)
         ~predicates:[Src.Var.Record.has_known_value] ;
-      [%expect {| gen1 gen2 |}]
+      [%expect {| gen1 gen2 r0 |}]
 
     let%expect_test "test int fetch: variables with dependencies" =
       run_and_dump_vars test_action

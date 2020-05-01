@@ -18,6 +18,15 @@ module Test_data = struct
       [ (Act_common.C_id.of_string "x", Act_c_mini.Constant.int 27)
       ; (Act_common.C_id.of_string "y", Act_c_mini.Constant.int 53) ]
 
+  let body_decls : Act_c_mini.Initialiser.t Act_common.C_named.Alist.t Lazy.t
+      =
+    lazy
+      [ ( Act_common.C_id.of_string "r0"
+        , Act_c_mini.Initialiser.make
+            ~ty:(Act_c_mini.Type.int ~atomic:true ())
+            ~value:(Act_c_mini.Constant.int 4004)
+            () ) ]
+
   let globals : Act_c_mini.Type.t Act_common.C_named.Alist.t Lazy.t =
     lazy
       Act_c_mini.
@@ -26,15 +35,30 @@ module Test_data = struct
         ; ( Act_common.C_id.of_string "y"
           , Type.(int ~pointer:true ~atomic:true ()) ) ]
 
+  let thread0_vars :
+      (Act_common.Litmus_id.t, Act_fuzz.Var.Record.t) List.Assoc.t Lazy.t =
+    Lazy.map body_decls
+      ~f:
+        (List.map ~f:(fun (id, v) ->
+             let scope = Act_common.Scope.Local 0 in
+             ( Act_common.Litmus_id.make ~scope ~id
+             , Act_fuzz.Var.Record.make_generated
+                 ?initial_value:(Act_c_mini.Initialiser.value v)
+                 scope
+                 (Act_c_mini.Initialiser.ty v) )))
+
   let state : Act_fuzz.State.t Lazy.t =
     (* TODO(@MattWindsor91): labels? *)
     Lazy.Let_syntax.(
       let%map globals_alist = globals in
-      let vars =
+      let global_vars =
         globals_alist
         |> List.map ~f:(fun (id, ty) ->
                ( Act_common.Litmus_id.global id
                , Act_fuzz.Var.Record.make_existing Global ty ))
+      in
+      let vars =
+        global_vars @ Lazy.force thread0_vars
         |> Map.of_alist_exn (module Act_common.Litmus_id)
         |> Act_common.Scoped_map.of_litmus_id_map
       in
@@ -124,15 +148,6 @@ module Test_data = struct
           ; sample_known_true_if
           ; sample_known_false_if
           ; sample_once_do_while ]))
-
-  let body_decls : Act_c_mini.Initialiser.t Act_common.C_named.Alist.t Lazy.t
-      =
-    lazy
-      [ ( Act_common.C_id.of_string "r0"
-        , Act_c_mini.Initialiser.make
-            ~ty:(Act_c_mini.Type.int ~atomic:true ())
-            ~value:(Act_c_mini.Constant.int 4004)
-            () ) ]
 
   let thread0 : Src.Subject.Thread.t Lazy.t =
     Lazy.Let_syntax.(

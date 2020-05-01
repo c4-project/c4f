@@ -134,4 +134,11 @@ module Monad : sig
       adds dependency flags for any known-variable records for variables
       mentioned in [expr], resolving each variable from the perspective of
       scope [scope]. *)
+
+  val add_multiple_expression_dependencies :
+    Act_c_mini.Expression.t list -> scope:Act_common.Scope.t -> unit t
+  (** [add_multiple_expression_dependencies expr ~scope] is a stateful action
+      that adds dependency flags for any known-variable records for variables
+      mentioned in each expression in [exprs], resolving each variable from
+      the perspective of scope [scope]. *)
 end

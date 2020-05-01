@@ -178,30 +178,27 @@ end) : Action_types.S with type Payload.t = B.t P.Insertion.t = struct
         in
         has_vars && Path_filter.is_constructible B.path_filter ~subject))
 
-  let bookkeep_dst (x : Ac.C_id.t) : unit State.Monad.t =
-    (* TODO(@MattWindsor91): handle local variables too? *)
-    let dst_var = Act_common.Litmus_id.global x in
-    State.Monad.Let_syntax.(
-      let%bind () = State.Monad.add_write dst_var in
-      State.Monad.when_m B.Flags.erase_known_values ~f:(fun () ->
-          State.Monad.erase_var_value dst_var))
+  let bookkeep_dst (x : Ac.C_id.t) ~(tid : int) : unit State.Monad.t =
+    State.Monad.(
+      Let_syntax.(
+        let%bind dst_var = resolve x ~scope:(Local tid) in
+        let%bind () = add_write dst_var in
+        when_m B.Flags.erase_known_values ~f:(fun () ->
+            erase_var_value dst_var)))
 
-  let bookkeep_dsts (xs : Ac.C_id.t list) : unit State.Monad.t =
-    xs |> List.map ~f:bookkeep_dst |> State.Monad.all_unit
+  let bookkeep_dsts (xs : Ac.C_id.t list) ~(tid : int) : unit State.Monad.t =
+    xs |> List.map ~f:(bookkeep_dst ~tid) |> State.Monad.all_unit
 
-  let bookkeep_src (src : Cm.Expression.t) ~(tid : int) : unit State.Monad.t
-      =
-    State.Monad.add_expression_dependencies src ~scope:(Local tid)
-
-  let bookkeep_srcs (xs : Cm.Expression.t list) ~(tid : int) :
+  let bookkeep_srcs (srcs : Cm.Expression.t list) ~(tid : int) :
       unit State.Monad.t =
-    xs |> List.map ~f:(bookkeep_src ~tid) |> State.Monad.all_unit
+    State.Monad.(
+      when_m B.Flags.respect_src_dependencies ~f:(fun () ->
+          add_multiple_expression_dependencies srcs ~scope:(Local tid)))
 
   let do_bookkeeping (item : B.t) ~(tid : int) : unit State.Monad.t =
     State.Monad.Let_syntax.(
-      let%bind () = bookkeep_dsts (B.dst_ids item) in
-      State.Monad.when_m B.Flags.respect_src_dependencies ~f:(fun () ->
-          bookkeep_srcs (B.src_exprs item) ~tid))
+      let%bind () = bookkeep_dsts ~tid (B.dst_ids item) in
+      bookkeep_srcs ~tid (B.src_exprs item))
 
   let run (subject : Subject.Test.t) ~(payload : B.t P.Insertion.t) :
       Subject.Test.t State.Monad.t =
