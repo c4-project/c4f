@@ -13,6 +13,7 @@ open Base
 
 open struct
   module Ac = Act_common
+  module Cm = Act_c_mini
 end
 
 let make_global_flag_key : Ac.Id.t =
@@ -23,29 +24,32 @@ let make_global_flag (param_map : Param_map.t) : Flag.t State.Monad.t =
 
 module Make_payload = struct
   type t =
-    { basic_type: Act_c_mini.Type.Basic.t
-    ; initial_value: Act_c_mini.Constant.t
+    { basic_type: Cm.Type.Basic.t
+    ; initial_value: Cm.Constant.t
     ; var: Ac.Litmus_id.t }
-  [@@deriving sexp]
+  [@@deriving compare, sexp, quickcheck]
 
   module G = Base_quickcheck.Generator
 
-  let gen_type_from_constant (k : Act_c_mini.Constant.t) :
-      Act_c_mini.Type.Basic.t G.t =
-    let ty = Act_c_mini.Constant.type_of k in
-    let bt = Act_c_mini.Type.basic_type ty in
-    G.of_list [bt; Act_c_mini.Type.Basic.as_atomic bt]
+  let gen_type_from_constant (k : Cm.Constant.t) : Cm.Type.Basic.t G.t =
+    let ty = Cm.Constant.type_of k in
+    let bt = Cm.Type.basic_type ty in
+    G.of_list [bt; Cm.Type.Basic.as_atomic bt]
+
+  let gen_initial_value (scope : Ac.Scope.t) : Cm.Constant.t G.t =
+    (* TODO(@MattWindsor91): ideally, this should always be
+       [quickcheck_generator], ie it should generate Booleans as well.
+       However, this would presently result in the fuzzer generating init
+       blocks with `true` and `false` in them, which neither our parser nor
+       Litmus's parser can comprehend. Until this issue is worked around, we
+       only generate integers at global scope. *)
+    if Ac.Scope.is_global scope then Cm.Constant.gen_int32
+    else Cm.Constant.quickcheck_generator
 
   let generator (vars : Var.Map.t) ~(gen_scope : Ac.Scope.t G.t) : t G.t =
     G.Let_syntax.(
-      (* TODO(@MattWindsor91): ideally, this should be
-         [quickcheck_generator], ie it should generate Booleans as well.
-         However, this would presently result in the fuzzer generating init
-         blocks with `true` and `false` in them, which neither our parser nor
-         Litmus's parser can comprehend. Until this issue is worked around,
-         we only generate integers. *)
       let%bind scope = gen_scope in
-      let%bind initial_value = Act_c_mini.Constant.gen_int32 in
+      let%bind initial_value = gen_initial_value scope in
       let%bind basic_type = gen_type_from_constant initial_value in
       let%map id = Var.Map.gen_fresh_var vars in
       let var = Ac.Litmus_id.make ~scope ~id in
@@ -93,7 +97,7 @@ module Make : Action_types.S with type Payload.t = Make_payload.t = struct
       ~payload:({basic_type; initial_value; var} : Payload.t) :
       Subject.Test.t State.Monad.t =
     let is_global = Ac.Litmus_id.is_global var in
-    let ty = Act_c_mini.Type.make basic_type ~is_pointer:is_global in
+    let ty = Cm.Type.make basic_type ~is_pointer:is_global in
     let open State.Monad.Let_syntax in
     let%bind () = State.Monad.register_var ty var ~initial_value in
     State.Monad.Monadic.return
@@ -149,16 +153,14 @@ struct
       (State.map_vars
          ~f:
            (Ac.Scoped_map.map_record ~id
-              ~f:(Var.Record.map_type ~f:Act_c_mini.Type.as_volatile)))
+              ~f:(Var.Record.map_type ~f:Cm.Type.as_volatile)))
 
-  let update_thread_decl (d : Act_c_mini.Initialiser.t Ac.C_named.t)
-      ~(target : Ac.C_id.t) : Act_c_mini.Initialiser.t Ac.C_named.t =
+  let update_thread_decl (d : Cm.Initialiser.t Ac.C_named.t)
+      ~(target : Ac.C_id.t) : Cm.Initialiser.t Ac.C_named.t =
     if Ac.C_id.equal target (Ac.C_named.name d) then
       Ac.C_named.map_right d ~f:(fun init ->
-          Act_c_mini.Initialiser.(
-            make
-              ~ty:(Act_c_mini.Type.as_volatile (ty init))
-              ?value:(value init) ()))
+          Cm.Initialiser.(
+            make ~ty:(Cm.Type.as_volatile (ty init)) ?value:(value init) ()))
     else d
 
   let update_decls (id : Ac.Litmus_id.t) (subject : Subject.Test.t) :

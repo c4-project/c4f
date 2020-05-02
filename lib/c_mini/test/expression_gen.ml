@@ -11,8 +11,11 @@
 
 open Base
 module Src = Act_c_mini
-module Q = Base_quickcheck
-module Qx = Act_utils.My_quickcheck
+
+open struct
+  module Q = Base_quickcheck
+  module Qx = Act_utils.My_quickcheck
+end
 
 let printer (e : Src.Expression.t) : unit =
   e |> Src.Reify_expr.reify |> Fmt.(pr "@[%a@]@." Act_c_lang.Ast.Expr.pp)

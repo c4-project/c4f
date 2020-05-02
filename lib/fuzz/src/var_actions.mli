@@ -21,7 +21,13 @@ module Make_payload : sig
     { basic_type: Act_c_mini.Type.Basic.t
     ; initial_value: Act_c_mini.Constant.t
     ; var: Act_common.Litmus_id.t }
-  [@@deriving sexp]
+  [@@deriving compare, sexp]
+
+  val quickcheck_observer : t Base_quickcheck.Observer.t
+  (** [quickcheck_observer] is an observer for make-payloads. *)
+
+  val quickcheck_shrinker : t Base_quickcheck.Shrinker.t
+  (** [quickcheck_shrinker] is an shrinker for make-payloads. *)
 
   val generator :
        Var.Map.t

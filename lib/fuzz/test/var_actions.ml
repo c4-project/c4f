@@ -11,29 +11,76 @@
 
 open Base
 open Base_quickcheck
-module Src = Act_fuzz
+
+open struct
+  module Ac = Act_common
+  module Cm = Act_c_mini
+  module Src = Act_fuzz
+  module Qx = Act_utils.My_quickcheck
+end
 
 let%test_module "Make" =
   ( module struct
     let%test_module "Payload" =
       ( module struct
-        let%test_unit "constant is the right type" =
-          Test.run_exn
-            ( module struct
-              type t = Src.Var_actions.Make_payload.t [@@deriving sexp]
+        let printer
+            ({basic_type; initial_value; var} :
+              Src.Var_actions.Make_payload.t) : unit =
+          Fmt.pr "@[%s@ %a@ =@ %a;@]@."
+            (Cm.Type.Basic.to_string basic_type)
+            Ac.Litmus_id.pp var
+            (Fmt.using Cm.Reify_expr.constant Act_c_lang.Ast.Expr.pp)
+            initial_value
 
-              let quickcheck_generator =
-                Src.Var_actions.Make_payload.generator
-                  (Lazy.force Var.Test_data.test_map)
-                  ~gen_scope:
-                    (Base_quickcheck.Generator.return
-                       Act_common.Scope.Global)
+        let make_gen (scope : Ac.Scope.t) :
+            (module Qx.S_sample with type t = Src.Var_actions.Make_payload.t)
+            =
+          ( module struct
+            include Src.Var_actions.Make_payload
 
-              let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
-            end )
-            ~f:
-              (fun Src.Var_actions.Make_payload.{basic_type; initial_value; _}
-                   ->
+            let quickcheck_generator =
+              Src.Var_actions.Make_payload.generator
+                (Lazy.force Var.Test_data.test_map)
+                ~gen_scope:(Base_quickcheck.Generator.return scope)
+          end )
+
+        let make_gen' (scope : Ac.Scope.t) :
+            (module Test.S with type t = Src.Var_actions.Make_payload.t) =
+          (* TODO(@MattWindsor91): SURELY there's a better way of doing this *)
+          ( module struct
+            include (val make_gen scope)
+          end )
+
+        let print_sample (scope : Ac.Scope.t) : unit =
+          (* Expressions are quite big, so we tone down the generation
+             parameters a bit. *)
+          Qx.print_sample ~test_count:5 ~printer (make_gen scope)
+
+        let%expect_test "global: samples" =
+          print_sample Global ;
+          [%expect
+            {|
+            int opulent_yurt_1 = -24;
+            int xylophone = 22551631;
+            atomic_int robust_game_1 = -153;
+            atomic_int xylophone_0 = -1;
+            atomic_int zebra = 11676625; |}]
+
+        let%expect_test "thread 0: samples" =
+          print_sample (Local 0) ;
+          [%expect
+            {|
+            bool 0:jocular_easel = true;
+            atomic_bool 0:kelp_0 = true;
+            atomic_bool 0:opulent_heap = true;
+            atomic_int 0:strong_zebra = -1;
+            atomic_int 0:xylophone_0 = 33417; |}]
+
+        let test_type (scope : Ac.Scope.t) : unit =
+          Test.run_exn (make_gen' scope)
+            ~f:(fun Src.Var_actions.Make_payload.
+                      {basic_type; initial_value; _}
+                    ->
               let (_ : Act_c_mini.Type.t) =
                 Or_error.ok_exn
                   Act_c_mini.(
@@ -41,6 +88,11 @@ let%test_module "Make" =
                       (Constant.type_of initial_value))
               in
               ())
+
+        let%test_unit "global: constant is the right type" = test_type Global
+
+        let%test_unit "thread 0: constant is the right type" =
+          test_type (Local 0)
       end )
 
     let%test_module "Example runs" =
