@@ -147,4 +147,16 @@ module Fetch : sig
   include Act_utils.Enum_types.Extension_table with type t := t
 
   include Op_types.S_binary with type t := t
+
+  (** {3 Prebuilt quickcheck modules} *)
+
+  (** A restricted form of the fetch generator that generates only operators
+      for which the fetch argument [0] doesn't change the fetch object. *)
+  module Gen_idem_zero_rhs :
+    Act_utils.My_quickcheck.S_with_sexp with type t = t
+
+  (** A restricted form of the fetch generator that generates only operators
+      for which a fetch argument that evaluates to the same value as the
+      fetch object doesn't change the fetch object. *)
+  module Gen_idem_refl : Act_utils.My_quickcheck.S_with_sexp with type t = t
 end

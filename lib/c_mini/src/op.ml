@@ -140,15 +140,19 @@ module Binary = struct
 end
 
 module Fetch = struct
-  module M = struct
-    type t = Add | Sub | And | Or | Xor [@@deriving enum]
+  module With_qc = struct
+    module M = struct
+      type t = Add | Sub | And | Or | Xor [@@deriving enum]
 
-    let table =
-      [(Add, "add"); (Sub, "sub"); (Or, "or"); (Xor, "xor"); (And, "and")]
+      let table =
+        [(Add, "add"); (Sub, "sub"); (Or, "or"); (Xor, "xor"); (And, "and")]
+    end
+
+    include M
+    include Act_utils.Enum.Extend_table (M)
   end
 
-  include M
-  include Act_utils.Enum.Extend_table (M)
+  include With_qc
 
   let to_bop : t -> Binary.t = function
     | Add ->
@@ -169,4 +173,24 @@ module Fetch = struct
     Fn.compose Binary.zero_rhs to_bop
 
   let refl : t -> [`Idem | `Zero] option = Fn.compose Binary.refl to_bop
+
+  module Gen_idem_zero_rhs = struct
+    include With_qc
+
+    (* add, sub, OR, XOR, etc. *)
+
+    let quickcheck_generator : t Base_quickcheck.Generator.t =
+      Base_quickcheck.Generator.filter quickcheck_generator
+        ~f:(Fn.compose Algebra.is_idem zero_rhs)
+  end
+
+  module Gen_idem_refl = struct
+    include With_qc
+
+    (* AND and OR *)
+
+    let quickcheck_generator : t Base_quickcheck.Generator.t =
+      Base_quickcheck.Generator.filter quickcheck_generator
+        ~f:(Fn.compose Algebra.is_idem refl)
+  end
 end

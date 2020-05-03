@@ -78,9 +78,7 @@ module Quickcheck_ints
     (O : Act_utils.My_quickcheck.S_with_sexp with type t := Op.Fetch.t)
     (Arg : Act_utils.My_quickcheck.S_with_sexp) :
   Act_utils.My_quickcheck.S_with_sexp with type t = Arg.t t =
-  (* TODO(@MattWindsor91): if we add Boolean fetches, Op.Fetch below will
-     need changing. *)
-    Quickcheck_generic (Address_gen.Atomic_int_pointers (Obj)) (O) (Arg)
+  Quickcheck_generic (Address_gen.Atomic_int_pointers (Obj)) (O) (Arg)
 
 module Type_check (Env : sig
   val env : Env.t

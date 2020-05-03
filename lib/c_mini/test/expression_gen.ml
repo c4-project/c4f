@@ -165,6 +165,53 @@ let%test_module "Int zeroes" =
           end) ))
   end )
 
+let%test_module "Atomic int nops" =
+  ( module struct
+    let print_sample (env : Src.Env.t) =
+      print_sample
+        ( module struct
+          module E = struct
+            let env = env
+          end
+
+          module Af = Src.Expression_gen.Atomic_fetch_int_nops (E) (E)
+
+          (* TODO(@MattWindsor91): this is a hack. *)
+          include Src.Expression_gen.Int_values (E)
+
+          let quickcheck_generator =
+            Base_quickcheck.Generator.map ~f:Src.Expression.atomic_fetch
+              Af.quickcheck_generator
+        end )
+
+    let%expect_test "sample" =
+      print_sample (Lazy.force Env.test_env) ;
+      [%expect
+        {|
+          atomic_fetch_add_explicit(bar, 0, memory_order_acq_rel)
+          atomic_fetch_add_explicit(&x, 0, memory_order_seq_cst)
+          atomic_fetch_and_explicit(&x, 27, memory_order_seq_cst)
+          atomic_fetch_and_explicit(&y, 53, memory_order_relaxed)
+          atomic_fetch_and_explicit(&y, 53, memory_order_seq_cst) |}]
+
+    let test_fun (env : Src.Env.t) :
+        (module Q.Test.S with type t = Src.Expression.t) =
+      ( module Src.Expression_gen.Int_zeroes (struct
+        let env = env
+      end) )
+
+    let%test_unit "all expressions have 'int' type" =
+      test_all_expressions_have_type test_fun Src.Type.(int ())
+
+    (* TODO(@MattWindsor91): somehow check that these are indeed nops? *)
+
+    let%test_unit "all referenced variables in environment" =
+      test_all_expressions_in_env (fun e ->
+          ( module Src.Expression_gen.Int_zeroes (struct
+            let env = e
+          end) ))
+  end )
+
 let%test_module "Bool_values" =
   ( module struct
     let print_sample (env : Src.Env.t) =
