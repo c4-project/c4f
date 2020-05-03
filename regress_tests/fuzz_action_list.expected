@@ -58,7 +58,7 @@ flow.if.duplicate:
     statements. It cannot fire if the statements contain any labels, to avoid
     duplicating them.
 flow.if.tautology:
-  Weight: 25x
+  Weight: 15x
   Summary:
     Removes a sublist of statements from the program, replacing them with an
     `if` statement containing some transformation of the removed
@@ -71,7 +71,7 @@ flow.invert-if:
   Weight: 10x
   Summary: Flips the conditional and branches of an if statement.
 flow.loop.surround:
-  Weight: 20x
+  Weight: 15x
   Summary:
     Removes a sublist of statements from the program, replacing them with a
     `do... while` statement containing some transformation of the removed
@@ -162,5 +162,5 @@ var.make:
     If the 'var.make.global' flag is set, the variable will be global; else,
     it'll be a local variable assigned to a random thread.
 var.volatile:
-  Weight: 30x
+  Weight: 25x
   Summary: Adds the 'volatile' qualifier to a local variable.

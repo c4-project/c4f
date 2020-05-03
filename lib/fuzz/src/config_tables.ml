@@ -26,11 +26,11 @@ let actions : Action.With_default_weight.t list Lazy.t =
       ; make ~action:(module If_actions.Invert) ~default_weight:10
       ; make
           ~action:(module If_actions.Surround.Tautology)
-          ~default_weight:25
+          ~default_weight:15
       ; make
           ~action:(module If_actions.Surround.Duplicate)
           ~default_weight:15
-      ; make ~action:(module Loop_actions.Surround) ~default_weight:20
+      ; make ~action:(module Loop_actions.Surround) ~default_weight:15
       ; make ~action:(module Mem_actions.Fence) ~default_weight:15
       ; make ~action:(module Mem_actions.Strengthen) ~default_weight:15
       ; make ~action:(module Program_actions.Make_empty) ~default_weight:10
@@ -41,7 +41,7 @@ let actions : Action.With_default_weight.t list Lazy.t =
       ; make ~action:(module Fetch_actions.Int_dead) ~default_weight:20
       ; make ~action:(module Fetch_actions.Int_redundant) ~default_weight:20
       ; make ~action:(module Var_actions.Make) ~default_weight:20
-      ; make ~action:(module Var_actions.Volatile) ~default_weight:30 ]
+      ; make ~action:(module Var_actions.Volatile) ~default_weight:25 ]
 
 let action_map : Action.With_default_weight.t Map.M(Act_common.Id).t Lazy.t =
   Lazy.(
