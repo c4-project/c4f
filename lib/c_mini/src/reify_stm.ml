@@ -12,43 +12,12 @@
 open Base
 module Ast = Act_c_lang.Ast
 
-let known_call_stm (name : string) (args : Ast.Expr.t list) : Ast.Stm.t =
-  Expr (Some (Reify_expr.known_call name args))
-
-let function_of_fence_mode : Atomic_fence.Mode.t -> string = function
-  | Signal ->
-      "atomic_signal_fence"
-  | Thread ->
-      "atomic_thread_fence"
-
-module Atomic = struct
-  let cmpxchg (c : Expression.t Atomic_cmpxchg.t) : Ast.Stm.t =
-    Expr (Some (Reify_expr.Atomic.cmpxchg c))
-
-  let fetch (f : Expression.t Atomic_fetch.t) : Ast.Stm.t =
-    Expr (Some (Reify_expr.Atomic.fetch f))
-
-  let fence (fence : Atomic_fence.t) : Ast.Stm.t =
-    let call = function_of_fence_mode (Atomic_fence.mode fence) in
-    known_call_stm call Reify_expr.[mem_order (Atomic_fence.mo fence)]
-
-  let store (st : Atomic_store.t) : Ast.Stm.t =
-    known_call_stm "atomic_store_explicit"
-      Reify_expr.
-        [ address (Atomic_store.dst st)
-        ; reify (Atomic_store.src st)
-        ; mem_order (Atomic_store.mo st) ]
-
-  let reify : Atomic_statement.t -> Ast.Stm.t =
-    Atomic_statement.reduce ~cmpxchg ~fetch ~fence ~store
-end
-
-let atomic = Atomic.reify
+let atomic = Reify_atomic.reify_stm ~expr:Reify_expr.reify
 
 let assign (asn : Assign.t) : Ast.Stm.t =
   let l = Assign.lvalue asn in
   let r = Assign.rvalue asn in
-  Expr (Some Reify_expr.(Binary (lvalue l, `Assign, reify r)))
+  Expr (Some Reify_expr.(Binary (Reify_prim.lvalue l, `Assign, reify r)))
 
 let lift_stms (type stm) (stm : stm -> Ast.Stm.t) (xs : stm list) :
     Ast.Compound_stm.t =

@@ -66,6 +66,9 @@ val atomic_fence : Atomic_fence.t -> t
 val atomic_store : Atomic_store.t -> t
 (** [atomic_store a] lifts an atomic store [a] to a primitive statement. *)
 
+val atomic_xchg : Expression.t Atomic_xchg.t -> t
+(** [atomic_xchg a] lifts an atomic exchange [a] to a primitive statement. *)
+
 (** {2 Shorthand for early-out statements}
 
     See {!Early_out}. *)

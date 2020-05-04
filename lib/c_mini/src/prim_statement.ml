@@ -41,6 +41,9 @@ let atomic_fence (a : Atomic_fence.t) : t = atomic (Atomic_statement.fence a)
 
 let atomic_store (a : Atomic_store.t) : t = atomic (Atomic_statement.store a)
 
+let atomic_xchg (a : Expression.t Atomic_xchg.t) : t =
+  atomic (Atomic_statement.xchg a)
+
 let break : t = Early_out Break
 
 let continue : t = Early_out Continue

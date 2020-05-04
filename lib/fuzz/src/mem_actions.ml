@@ -192,6 +192,20 @@ module Strengthen :
               try_change (Atomic_store.mo atom) ~replacement:mo
                 ~is_compatible:is_store_compatible ~direction))
 
+  let change_mo_atomic_xchg
+      (atom : Act_c_mini.Expression.t Act_c_mini.Atomic_xchg.t)
+      ~(mo : Act_c_mini.Mem_order.t) ~(direction : [< `Strengthen | `Any]) :
+      Act_c_mini.Expression.t Act_c_mini.Atomic_xchg.t Or_error.t =
+    let mo' = mo in
+    Or_error.return
+      Act_c_mini.(
+        Atomic_xchg.(
+          make ~obj:(obj atom) ~desired:(desired atom)
+            ~mo:
+              Mem_order.(
+                try_change (mo atom) ~replacement:mo'
+                  ~is_compatible:is_rmw_compatible ~direction)))
+
   module Bm = Act_c_mini.Atomic_statement.Base_map (Or_error)
 
   let change_mo_atomic (atom : Act_c_mini.Atomic_statement.t)
@@ -202,6 +216,7 @@ module Strengthen :
       ~fence:(change_mo_atomic_fence ~mo ~direction)
       ~fetch:(change_mo_atomic_fetch ~mo ~direction)
       ~store:(change_mo_atomic_store ~mo ~direction)
+      ~xchg:(change_mo_atomic_xchg ~mo ~direction)
 
   let change_mo (stm : Subject.Statement.t) ~(mo : Act_c_mini.Mem_order.t)
       ~(can_weaken : bool) : Subject.Statement.t Or_error.t =

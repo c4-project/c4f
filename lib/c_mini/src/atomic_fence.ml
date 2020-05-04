@@ -10,7 +10,14 @@
    project root for more information. *)
 
 module Mode = struct
-  type t = Thread | Signal [@@deriving sexp, compare, equal, quickcheck]
+  module M = struct
+    type t = Thread | Signal [@@deriving enum]
+
+    let table = [(Thread, "thread"); (Signal, "signal")]
+  end
+
+  include M
+  include Act_utils.Enum.Extend_table (M)
 end
 
 type t = {mode: Mode.t; mo: Mem_order.t}

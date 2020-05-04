@@ -20,9 +20,8 @@ end
 
 let cmpxchg_name : string = "atomic_compare_exchange_strong_explicit"
 
-let fence_signal_name : string = "atomic_signal_fence"
-
-let fence_thread_name : string = "atomic_thread_fence"
+let fence_name (mode : Atomic_fence.Mode.t) : string =
+  Printf.sprintf "atomic_%s_fence" (Atomic_fence.Mode.to_string mode)
 
 let fetch_name (f : Op.Fetch.t) : string =
   Printf.sprintf "atomic_fetch_%s_explicit" (Op.Fetch.to_string f)
@@ -30,6 +29,8 @@ let fetch_name (f : Op.Fetch.t) : string =
 let load_name : string = "atomic_load_explicit"
 
 let store_name : string = "atomic_store_explicit"
+
+let xchg_name : string = "atomic_exchange_strong_explicit"
 
 let model_cmpxchg_with_args ~(raw_obj : Ast.Expr.t)
     ~(raw_expected : Ast.Expr.t) ~(raw_desired : Ast.Expr.t)
@@ -120,3 +121,23 @@ let model_store (args : Ast.Expr.t list)
         [%message
           "Invalid arguments to atomic_store_explicit"
             ~got:(args : Ast.Expr.t list)]
+
+let model_xchg_with_args ~(raw_obj : Ast.Expr.t) ~(raw_desired : Ast.Expr.t)
+    ~(raw_mo : Ast.Expr.t) ~(expr : Ast.Expr.t -> Expression.t Or_error.t) :
+    Expression.t Atomic_xchg.t Or_error.t =
+  Or_error.Let_syntax.(
+    let%map obj = Convert_prim.expr_to_address raw_obj (* volatile A* *)
+    and desired = expr raw_desired (* C *)
+    and mo = Convert_prim.expr_to_memory_order raw_mo (* memory_order *) in
+    Atomic_xchg.make ~obj ~desired ~mo)
+
+let model_xchg (args : Ast.Expr.t list)
+    ~(expr : Ast.Expr.t -> Expression.t Or_error.t) :
+    Expression.t Atomic_xchg.t Or_error.t =
+  match args with
+  | [raw_obj; raw_desired; raw_mo] ->
+      model_xchg_with_args ~raw_obj ~raw_desired ~raw_mo ~expr
+  | _ ->
+      Or_error.error_s
+        [%message
+          "Invalid arguments to exchange" ~got:(args : Ast.Expr.t list)]

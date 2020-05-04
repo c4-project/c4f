@@ -18,7 +18,8 @@ module Mode : sig
   type t =
     | Thread  (** 'atomic_thread_fence' *)
     | Signal  (** 'atomic_signal_fence' *)
-  [@@deriving sexp, compare, equal, quickcheck]
+
+  include Act_utils.Enum_types.Extension_table with type t := t
 end
 
 (** {1 Fences themselves} *)

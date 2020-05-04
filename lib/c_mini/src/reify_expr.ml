@@ -12,58 +12,6 @@
 open Base
 module Ast = Act_c_lang.Ast
 
-let bool_lit (b : bool) : Ast.Expr.t =
-  Ast.Expr.Identifier
-    (Act_common.C_id.of_string (if b then "true" else "false"))
-
-let constant : Constant.t -> Ast.Expr.t =
-  Constant.reduce
-    ~int:(fun i -> Ast.Expr.Constant (Integer i))
-    ~bool:bool_lit
-
-let lvalue : Lvalue.t -> Ast.Expr.t =
-  Lvalue.reduce
-    ~variable:(fun x -> Ast.Expr.Identifier x)
-    ~deref:(fun l -> Prefix (`Deref, l))
-
-let address : Address.t -> Ast.Expr.t =
-  Address.reduce ~lvalue ~ref:(fun l -> Prefix (`Ref, l))
-
-let mem_order (mo : Mem_order.t) : Ast.Expr.t =
-  Identifier (Act_common.C_id.of_string (Mem_order.to_string mo))
-
-let known_call (name : string) (args : Ast.Expr.t list) : Ast.Expr.t =
-  Call {func= Identifier (Act_common.C_id.of_string name); arguments= args}
-
-module Atomic_pre (M : sig
-  type expr
-
-  val reify : expr -> Ast.Expr.t
-end) =
-struct
-  let cmpxchg (cmpxchg : M.expr Atomic_cmpxchg.t) : Ast.Expr.t =
-    known_call Convert_atomic.cmpxchg_name
-      [ address (Atomic_cmpxchg.obj cmpxchg)
-      ; address (Atomic_cmpxchg.expected cmpxchg)
-      ; M.reify (Atomic_cmpxchg.desired cmpxchg)
-      ; mem_order (Atomic_cmpxchg.succ cmpxchg)
-      ; mem_order (Atomic_cmpxchg.fail cmpxchg) ]
-
-  let fetch (f : M.expr Atomic_fetch.t) : Ast.Expr.t =
-    known_call
-      (Convert_atomic.fetch_name (Atomic_fetch.op f))
-      [ address (Atomic_fetch.obj f)
-      ; M.reify (Atomic_fetch.arg f)
-      ; mem_order (Atomic_fetch.mo f) ]
-
-  let load (ld : Atomic_load.t) : Ast.Expr.t =
-    known_call "atomic_load_explicit"
-      [address (Atomic_load.src ld); mem_order (Atomic_load.mo ld)]
-
-  let reify : M.expr Atomic_expression.t -> Ast.Expr.t =
-    Atomic_expression.reduce ~cmpxchg ~fetch ~load
-end
-
 let bop : Op.Binary.t -> Act_c_lang.Operators.Bin.t = function
   | Eq ->
       `Eq
@@ -172,15 +120,5 @@ let uop (op : Op.Unary.t) (x : Ast.Expr.t) : Ast.Expr.t =
   Ast.Expr.Prefix (op', x')
 
 let reify (x : Expression.t) : Ast.Expr.t =
-  let module A = Atomic_pre (struct
-    type expr = Ast.Expr.t
-
-    let reify = Fn.id
-  end) in
-  Expression.reduce x ~constant ~address ~atomic:A.reify ~bop ~uop
-
-module Atomic = Atomic_pre (struct
-  type expr = Expression.t
-
-  let reify = reify
-end)
+  let atomic = Reify_atomic.reify_expr ~expr:Fn.id in
+  Reify_prim.(Expression.reduce x ~constant ~address ~atomic ~bop ~uop)

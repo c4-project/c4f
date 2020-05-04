@@ -16,8 +16,25 @@ open struct
   module Ast = Act_c_lang.Ast
 end
 
+let bool_lit (b : bool) : Ast.Expr.t =
+  Ast.Expr.Identifier
+    (Act_common.C_id.of_string (if b then "true" else "false"))
+
+let constant : Constant.t -> Ast.Expr.t =
+  Constant.reduce
+    ~int:(fun i -> Ast.Expr.Constant (Integer i))
+    ~bool:bool_lit
+
+let lvalue : Lvalue.t -> Ast.Expr.t =
+  Lvalue.reduce
+    ~variable:(fun x -> Ast.Expr.Identifier x)
+    ~deref:(fun l -> Prefix (`Deref, l))
+
+let address : Address.t -> Ast.Expr.t =
+  Address.reduce ~lvalue ~ref:(fun l -> Prefix (`Ref, l))
+
 let to_initialiser (value : Constant.t) : Ast.Initialiser.t =
-  Assign (Reify_expr.constant value)
+  Assign (constant value)
 
 let basic_type_to_spec (b : Type.Basic.t) : [> Ast.Type_spec.t] =
   match Type.Basic.(prim b, is_atomic b) with

@@ -111,7 +111,7 @@ let%test_module "On_lvalues and On_addresses" =
 
     let%expect_test "coalesce lvalues to list" =
       stm |> M.On_lvalues.to_list
-      |> List.map ~f:Src.Reify_expr.lvalue
+      |> List.map ~f:Src.Reify_prim.lvalue
       |> print_exprs ;
       [%expect
         {|
@@ -124,7 +124,7 @@ let%test_module "On_lvalues and On_addresses" =
 
     let%expect_test "coalesce addresses to list" =
       stm |> M.On_addresses.to_list
-      |> List.map ~f:Src.Reify_expr.address
+      |> List.map ~f:Src.Reify_prim.address
       |> print_exprs ;
       [%expect
         {|

@@ -34,6 +34,10 @@ val fetch : Expression.t Atomic_fetch.t -> t
 val store : Atomic_store.t -> t
 (** [store a] lifts an atomic store [a] to an atomic statement. *)
 
+val xchg : Expression.t Atomic_xchg.t -> t
+(** [xchg a] lifts an atomic exchange [a] to an atomic statement, discarding
+    the output. *)
+
 (** {1 Traversals} *)
 
 val reduce :
@@ -42,8 +46,9 @@ val reduce :
   -> fence:(Atomic_fence.t -> 'result)
   -> fetch:(Expression.t Atomic_fetch.t -> 'result)
   -> store:(Atomic_store.t -> 'result)
+  -> xchg:(Expression.t Atomic_xchg.t -> 'result)
   -> 'result
-(** [reduce x ~atomic_cmpxchg ~atomic_fence ~atomic_store] reduces an atomic
+(** [reduce x ~cmpxchg ~fence ~fetch ~store ~xchg] reduces an atomic
     statement [x] to a particular result type by applying the appropriate
     function. *)
 
@@ -58,9 +63,10 @@ module Base_map (Ap : Applicative.S) : sig
     -> fetch:
          (Expression.t Atomic_fetch.t -> Expression.t Atomic_fetch.t Ap.t)
     -> store:(Atomic_store.t -> Atomic_store.t Ap.t)
+    -> xchg:(Expression.t Atomic_xchg.t -> Expression.t Atomic_xchg.t Ap.t)
     -> t Ap.t
-  (** [bmap t ~cmpxchg ~fence ~store] traverses over [t] applicatively with
-      the appropriate traversal function. *)
+  (** [bmap t ~cmpxchg ~fence ~fetch ~store ~xchg] traverses over [t]
+      applicatively with the appropriate traversal function. *)
 end
 
 (** Traverses over the addresses of an atomic statement. *)

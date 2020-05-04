@@ -249,6 +249,14 @@ let model_atomic_fence_stm (args : Ast.Expr.t list)
     |> Convert_atomic.model_fence ~mode
     >>| Prim_statement.atomic_fence >>| Statement.prim ())
 
+let fence_call_alist :
+    (Ac.C_id.t, Ast.Expr.t list -> unit Statement.t Or_error.t) List.Assoc.t
+    Lazy.t =
+  lazy
+    (List.map (Atomic_fence.Mode.all_list ()) ~f:(fun mode ->
+         let name = Ac.C_id.of_string (Convert_atomic.fence_name mode) in
+         (name, model_atomic_fence_stm ~mode)))
+
 let model_atomic_fetch_stm (args : Ast.Expr.t list) ~(op : Op.Fetch.t) :
     unit Statement.t Or_error.t =
   Or_error.(
@@ -263,21 +271,28 @@ let model_atomic_store_stm (args : Ast.Expr.t list) :
     |> Convert_atomic.model_store ~expr
     >>| Prim_statement.atomic_store >>| Statement.prim ())
 
+let model_atomic_xchg_stm (args : Ast.Expr.t list) :
+    unit Statement.t Or_error.t =
+  Or_error.(
+    args
+    |> Convert_atomic.model_xchg ~expr
+    >>| Prim_statement.atomic_xchg >>| Statement.prim ())
+
 let expr_stm_call_table :
     (Ast.Expr.t list -> unit Statement.t Or_error.t) Map.M(Ac.C_id).t Lazy.t
     =
-  lazy
-    (Map.of_alist_exn
-       (module Ac.C_id)
-       ( fetch_call_alist model_atomic_fetch_stm
-       @ [ ( Ac.C_id.of_string Convert_atomic.cmpxchg_name
-           , model_atomic_cmpxchg_stm )
-         ; ( Ac.C_id.of_string Convert_atomic.fence_signal_name
-           , model_atomic_fence_stm ~mode:Atomic_fence.Mode.Signal )
-         ; ( Ac.C_id.of_string Convert_atomic.fence_thread_name
-           , model_atomic_fence_stm ~mode:Atomic_fence.Mode.Thread )
-         ; ( Ac.C_id.of_string Convert_atomic.store_name
-           , model_atomic_store_stm ) ] ))
+  Lazy.Let_syntax.(
+    let%map fence_call_alist = fence_call_alist in
+    Map.of_alist_exn
+      (module Ac.C_id)
+      ( fetch_call_alist model_atomic_fetch_stm
+      @ fence_call_alist
+      @ [ ( Ac.C_id.of_string Convert_atomic.cmpxchg_name
+          , model_atomic_cmpxchg_stm )
+        ; ( Ac.C_id.of_string Convert_atomic.store_name
+          , model_atomic_store_stm )
+        ; (Ac.C_id.of_string Convert_atomic.xchg_name, model_atomic_xchg_stm)
+        ] ))
 
 let arbitrary_procedure_call (function_id : Ac.C_id.t)
     (raw_arguments : Ast.Expr.t list) : unit Statement.t Or_error.t =

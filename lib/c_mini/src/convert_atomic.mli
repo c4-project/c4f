@@ -21,11 +21,9 @@ open Base
 val cmpxchg_name : string
 (** [cmpxchg_name] is the name of the atomic compare-exchange function. *)
 
-val fence_signal_name : string
-(** [fence_signal_name] is the name of the atomic signal fence function. *)
-
-val fence_thread_name : string
-(** [fence_thread_name] is the name of the atomic thread fence function. *)
+val fence_name : Atomic_fence.Mode.t -> string
+(** [fence_name mode] is the name of the atomic fence function for mode
+    [mode]. *)
 
 val fetch_name : Op.Fetch.t -> string
 (** [fetch_name] is the name of the atomic fetch-add function. *)
@@ -34,7 +32,10 @@ val load_name : string
 (** [load_name] is the name of the atomic load function. *)
 
 val store_name : string
-(** [store_name] is the name of the atomic load function. *)
+(** [store_name] is the name of the atomic store function. *)
+
+val xchg_name : string
+(** [xchg_name] is the name of the atomic exchange function. *)
 
 (** {1 Modellers} *)
 
@@ -75,3 +76,11 @@ val model_store :
 (** [model_store args ~expr] tries to convert an atomic store function call
     with arguments [args] into an atomic store, using [expr] to model inner
     expressions. *)
+
+val model_xchg :
+     Act_c_lang.Ast.Expr.t list
+  -> expr:(Act_c_lang.Ast.Expr.t -> Expression.t Or_error.t)
+  -> Expression.t Atomic_xchg.t Or_error.t
+(** [model_xchg args ~expr] tries to convert an atomic exchange function call
+    with arguments [args] into an atomic exchange, using [expr] to model
+    inner expressions. *)

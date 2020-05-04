@@ -29,7 +29,7 @@ let%test_module "Make" =
           Fmt.pr "@[%s@ %a@ =@ %a;@]@."
             (Cm.Type.Basic.to_string basic_type)
             Ac.Litmus_id.pp var
-            (Fmt.using Cm.Reify_expr.constant Act_c_lang.Ast.Expr.pp)
+            (Fmt.using Cm.Reify_prim.constant Act_c_lang.Ast.Expr.pp)
             initial_value
 
         let make_gen (scope : Ac.Scope.t) :
