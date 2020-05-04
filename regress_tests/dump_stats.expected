@@ -5,7 +5,7 @@
 ```
 threads 3
 returns 1
-literal-bools 0
+literal-bools 1
 ```
 ## iriw.c.litmus
 
