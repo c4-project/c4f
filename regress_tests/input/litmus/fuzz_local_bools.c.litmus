@@ -1,0 +1,72 @@
+C test_9
+
+{
+    game_11 = 230;
+    clumsy_unicorn_10 = -2;
+    gentle_corridor = -444497203;
+    zebra = 325;
+    y = 0;
+    x = 0;
+}
+
+void
+P0(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
+   atomic_int *x, atomic_int *y, int *zebra)
+{
+    int volatile r0 = 0;
+    if (!!(0 == atomic_fetch_xor_explicit(y, 0, memory_order_acq_rel))) {  }
+    yam: ;
+    r0 = atomic_load_explicit(x, memory_order_acquire);
+    atomic_store_explicit(y, 1, memory_order_relaxed);
+    atomic_fetch_and_explicit(gentle_corridor, -444497203,
+                              memory_order_seq_cst);
+}
+
+void
+P1(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
+   atomic_int *x, atomic_int *y, int *zebra)
+{
+    atomic_bool volatile asymptote = false;
+    humble_llama_11: ;
+    atomic_store_explicit(y, 2, memory_order_relaxed);
+    atomic_store_explicit(x, 1, memory_order_release);
+    map: ;
+    atomic_signal_fence(memory_order_consume);
+}
+
+void
+P2(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
+   atomic_int *x, atomic_int *y, int *zebra)
+{
+    atomic_int volatile kelp_10 = 17107;
+    if (atomic_load_explicit(&kelp_10, memory_order_seq_cst) == 17107) 
+    {  } else
+    {
+        return;
+        atomic_fetch_add_explicit(x, 0, memory_order_relaxed);
+        atomic_fetch_sub_explicit(x,
+                                  atomic_fetch_sub_explicit(y,
+                                                            atomic_fetch_add_explicit
+                                                            (&kelp_10, 0,
+                                                             memory_order_relaxed)
+                                                            -
+                                                            atomic_fetch_add_explicit
+                                                            (&kelp_10, 0,
+                                                             memory_order_relaxed),
+                                                            memory_order_seq_cst)
+                                  & 0, memory_order_seq_cst);
+        atomic_fetch_add_explicit(&kelp_10,
+                                  atomic_fetch_add_explicit(y, 0,
+                                                            memory_order_seq_cst),
+                                  memory_order_seq_cst);
+        atomic_fetch_add_explicit(&kelp_10,
+                                  atomic_load_explicit(gentle_corridor,
+                                                       memory_order_consume),
+                                  memory_order_seq_cst);
+    }
+    atomic_store_explicit(gentle_corridor, -444497203, memory_order_seq_cst);
+}
+
+forall
+((x == 1 /\ (y == 1 /\ 0:r0 == 0)) \/
+ ((x == 1 /\ (y == 1 /\ 0:r0 == 1)) \/ (x == 1 /\ (y == 2 /\ 0:r0 == 0))))

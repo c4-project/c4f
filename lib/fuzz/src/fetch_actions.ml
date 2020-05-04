@@ -108,7 +108,7 @@ module Int_redundant : S = Make (struct
   let name_suffix = Ac.Id.of_string "int.redundant"
 
   let readme_insert : string =
-    {| This variant can insert anywhere, but only fetchs the known value of
+    {| This variant can insert anywhere, but only fetches the known value of
        a destination back to itself. |}
 
   let path_filter = Path_filter.empty

@@ -1,5 +1,1030 @@
 # Delitmus tests
 
+## fuzz_local_bools.c.litmus
+
+```
+//
+// style: vars-as-globals
+// qualify-locals: false
+// suffix: (none)
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+int clumsy_unicorn_10 = -2;
+int game_11 = 230;
+atomic_int gentle_corridor = -444497203;
+atomic_int x = 0;
+atomic_int y = 0;
+int zebra = 325;
+int volatile r0 = 0;
+atomic_bool volatile asymptote = false;
+atomic_int volatile kelp_10 = 17107;
+void
+P0()
+{
+    if (!!(0 == atomic_fetch_xor_explicit(&y, 0, memory_order_acq_rel))) {  }
+    yam: ;
+    r0 = atomic_load_explicit(&x, memory_order_acquire);
+    atomic_store_explicit(&y, 1, memory_order_relaxed);
+    atomic_fetch_and_explicit(&gentle_corridor, -444497203,
+                              memory_order_seq_cst);
+}
+void
+P1()
+{
+    humble_llama_11: ;
+    atomic_store_explicit(&y, 2, memory_order_relaxed);
+    atomic_store_explicit(&x, 1, memory_order_release);
+    map: ;
+    atomic_signal_fence(memory_order_consume);
+}
+void
+P2()
+{
+    if (atomic_load_explicit(&kelp_10, memory_order_seq_cst) == 17107) 
+    {  } else
+    {
+        return;
+        ;
+        atomic_fetch_add_explicit(&x, 0, memory_order_relaxed);
+        atomic_fetch_sub_explicit(&x,
+                                  atomic_fetch_sub_explicit(&y,
+                                                            atomic_fetch_add_explicit
+                                                            (&kelp_10, 0,
+                                                             memory_order_relaxed)
+                                                            -
+                                                            atomic_fetch_add_explicit
+                                                            (&kelp_10, 0,
+                                                             memory_order_relaxed),
+                                                            memory_order_seq_cst)
+                                  & 0, memory_order_seq_cst);
+        atomic_fetch_add_explicit(&kelp_10,
+                                  atomic_fetch_add_explicit(&y, 0,
+                                                            memory_order_seq_cst),
+                                  memory_order_seq_cst);
+        atomic_fetch_add_explicit(&kelp_10,
+                                  atomic_load_explicit(&gentle_corridor,
+                                                       memory_order_consume),
+                                  memory_order_seq_cst);
+    }
+    atomic_store_explicit(&gentle_corridor, -444497203, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "test_9",
+    "locations": null,
+    "init": {
+      "game_11": 230,
+      "clumsy_unicorn_10": -2,
+      "gentle_corridor": -444497203,
+      "zebra": 325,
+      "y": 0,
+      "x": 0
+    },
+    "postcondition":
+      "forall\n((x == 1 /\\ (y == 1 /\\ 0:r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ 0:r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ 0:r0 == 0))))"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0" },
+    "P1": { "is_thread_body": true, "c_id": "P1" },
+    "P2": { "is_thread_body": true, "c_id": "P2" }
+  },
+  "var_map": {
+    "clumsy_unicorn_10": {
+      "c_type": "int",
+      "c_id": "clumsy_unicorn_10",
+      "mapped_to": [ "Global" ]
+    },
+    "game_11": {
+      "c_type": "int",
+      "c_id": "game_11",
+      "mapped_to": [ "Global" ]
+    },
+    "gentle_corridor": {
+      "c_type": "atomic_int",
+      "c_id": "gentle_corridor",
+      "mapped_to": [ "Global" ]
+    },
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Global" ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Global" ] },
+    "zebra": { "c_type": "int", "c_id": "zebra", "mapped_to": [ "Global" ] },
+    "0:r0": {
+      "c_type": "volatile int",
+      "c_id": "r0",
+      "mapped_to": [ "Global" ]
+    },
+    "1:asymptote": {
+      "c_type": "volatile atomic_bool",
+      "c_id": "asymptote",
+      "mapped_to": [ "Global" ]
+    },
+    "2:kelp_10": {
+      "c_type": "volatile atomic_int",
+      "c_id": "kelp_10",
+      "mapped_to": [ "Global" ]
+    }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-globals
+// qualify-locals: false
+// suffix: _body
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+int clumsy_unicorn_10 = -2;
+int game_11 = 230;
+atomic_int gentle_corridor = -444497203;
+atomic_int x = 0;
+atomic_int y = 0;
+int zebra = 325;
+int volatile r0 = 0;
+atomic_bool volatile asymptote = false;
+atomic_int volatile kelp_10 = 17107;
+void
+P0_body()
+{
+    if (!!(0 == atomic_fetch_xor_explicit(&y, 0, memory_order_acq_rel))) {  }
+    yam: ;
+    r0 = atomic_load_explicit(&x, memory_order_acquire);
+    atomic_store_explicit(&y, 1, memory_order_relaxed);
+    atomic_fetch_and_explicit(&gentle_corridor, -444497203,
+                              memory_order_seq_cst);
+}
+void
+P1_body()
+{
+    humble_llama_11: ;
+    atomic_store_explicit(&y, 2, memory_order_relaxed);
+    atomic_store_explicit(&x, 1, memory_order_release);
+    map: ;
+    atomic_signal_fence(memory_order_consume);
+}
+void
+P2_body()
+{
+    if (atomic_load_explicit(&kelp_10, memory_order_seq_cst) == 17107) 
+    {  } else
+    {
+        return;
+        ;
+        atomic_fetch_add_explicit(&x, 0, memory_order_relaxed);
+        atomic_fetch_sub_explicit(&x,
+                                  atomic_fetch_sub_explicit(&y,
+                                                            atomic_fetch_add_explicit
+                                                            (&kelp_10, 0,
+                                                             memory_order_relaxed)
+                                                            -
+                                                            atomic_fetch_add_explicit
+                                                            (&kelp_10, 0,
+                                                             memory_order_relaxed),
+                                                            memory_order_seq_cst)
+                                  & 0, memory_order_seq_cst);
+        atomic_fetch_add_explicit(&kelp_10,
+                                  atomic_fetch_add_explicit(&y, 0,
+                                                            memory_order_seq_cst),
+                                  memory_order_seq_cst);
+        atomic_fetch_add_explicit(&kelp_10,
+                                  atomic_load_explicit(&gentle_corridor,
+                                                       memory_order_consume),
+                                  memory_order_seq_cst);
+    }
+    atomic_store_explicit(&gentle_corridor, -444497203, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "test_9",
+    "locations": null,
+    "init": {
+      "game_11": 230,
+      "clumsy_unicorn_10": -2,
+      "gentle_corridor": -444497203,
+      "zebra": 325,
+      "y": 0,
+      "x": 0
+    },
+    "postcondition":
+      "forall\n((x == 1 /\\ (y == 1 /\\ 0:r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ 0:r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ 0:r0 == 0))))"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0_body" },
+    "P1": { "is_thread_body": true, "c_id": "P1_body" },
+    "P2": { "is_thread_body": true, "c_id": "P2_body" }
+  },
+  "var_map": {
+    "clumsy_unicorn_10": {
+      "c_type": "int",
+      "c_id": "clumsy_unicorn_10",
+      "mapped_to": [ "Global" ]
+    },
+    "game_11": {
+      "c_type": "int",
+      "c_id": "game_11",
+      "mapped_to": [ "Global" ]
+    },
+    "gentle_corridor": {
+      "c_type": "atomic_int",
+      "c_id": "gentle_corridor",
+      "mapped_to": [ "Global" ]
+    },
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Global" ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Global" ] },
+    "zebra": { "c_type": "int", "c_id": "zebra", "mapped_to": [ "Global" ] },
+    "0:r0": {
+      "c_type": "volatile int",
+      "c_id": "r0",
+      "mapped_to": [ "Global" ]
+    },
+    "1:asymptote": {
+      "c_type": "volatile atomic_bool",
+      "c_id": "asymptote",
+      "mapped_to": [ "Global" ]
+    },
+    "2:kelp_10": {
+      "c_type": "volatile atomic_int",
+      "c_id": "kelp_10",
+      "mapped_to": [ "Global" ]
+    }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-globals
+// qualify-locals: true
+// suffix: (none)
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+int clumsy_unicorn_10 = -2;
+int game_11 = 230;
+atomic_int gentle_corridor = -444497203;
+atomic_int x = 0;
+atomic_int y = 0;
+int zebra = 325;
+int volatile t0r0 = 0;
+atomic_bool volatile t1asymptote = false;
+atomic_int volatile t2kelp_10 = 17107;
+void
+P0()
+{
+    if (!!(0 == atomic_fetch_xor_explicit(&y, 0, memory_order_acq_rel))) {  }
+    yam: ;
+    t0r0 = atomic_load_explicit(&x, memory_order_acquire);
+    atomic_store_explicit(&y, 1, memory_order_relaxed);
+    atomic_fetch_and_explicit(&gentle_corridor, -444497203,
+                              memory_order_seq_cst);
+}
+void
+P1()
+{
+    humble_llama_11: ;
+    atomic_store_explicit(&y, 2, memory_order_relaxed);
+    atomic_store_explicit(&x, 1, memory_order_release);
+    map: ;
+    atomic_signal_fence(memory_order_consume);
+}
+void
+P2()
+{
+    if (atomic_load_explicit(&t2kelp_10, memory_order_seq_cst) == 17107) 
+    {  } else
+    {
+        return;
+        ;
+        atomic_fetch_add_explicit(&x, 0, memory_order_relaxed);
+        atomic_fetch_sub_explicit(&x,
+                                  atomic_fetch_sub_explicit(&y,
+                                                            atomic_fetch_add_explicit
+                                                            (&t2kelp_10, 0,
+                                                             memory_order_relaxed)
+                                                            -
+                                                            atomic_fetch_add_explicit
+                                                            (&t2kelp_10, 0,
+                                                             memory_order_relaxed),
+                                                            memory_order_seq_cst)
+                                  & 0, memory_order_seq_cst);
+        atomic_fetch_add_explicit(&t2kelp_10,
+                                  atomic_fetch_add_explicit(&y, 0,
+                                                            memory_order_seq_cst),
+                                  memory_order_seq_cst);
+        atomic_fetch_add_explicit(&t2kelp_10,
+                                  atomic_load_explicit(&gentle_corridor,
+                                                       memory_order_consume),
+                                  memory_order_seq_cst);
+    }
+    atomic_store_explicit(&gentle_corridor, -444497203, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "test_9",
+    "locations": null,
+    "init": {
+      "game_11": 230,
+      "clumsy_unicorn_10": -2,
+      "gentle_corridor": -444497203,
+      "zebra": 325,
+      "y": 0,
+      "x": 0
+    },
+    "postcondition":
+      "forall\n((x == 1 /\\ (y == 1 /\\ t0r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ t0r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ t0r0 == 0))))"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0" },
+    "P1": { "is_thread_body": true, "c_id": "P1" },
+    "P2": { "is_thread_body": true, "c_id": "P2" }
+  },
+  "var_map": {
+    "clumsy_unicorn_10": {
+      "c_type": "int",
+      "c_id": "clumsy_unicorn_10",
+      "mapped_to": [ "Global" ]
+    },
+    "game_11": {
+      "c_type": "int",
+      "c_id": "game_11",
+      "mapped_to": [ "Global" ]
+    },
+    "gentle_corridor": {
+      "c_type": "atomic_int",
+      "c_id": "gentle_corridor",
+      "mapped_to": [ "Global" ]
+    },
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Global" ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Global" ] },
+    "zebra": { "c_type": "int", "c_id": "zebra", "mapped_to": [ "Global" ] },
+    "0:r0": {
+      "c_type": "volatile int",
+      "c_id": "t0r0",
+      "mapped_to": [ "Global" ]
+    },
+    "1:asymptote": {
+      "c_type": "volatile atomic_bool",
+      "c_id": "t1asymptote",
+      "mapped_to": [ "Global" ]
+    },
+    "2:kelp_10": {
+      "c_type": "volatile atomic_int",
+      "c_id": "t2kelp_10",
+      "mapped_to": [ "Global" ]
+    }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-globals
+// qualify-locals: true
+// suffix: _body
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+int clumsy_unicorn_10 = -2;
+int game_11 = 230;
+atomic_int gentle_corridor = -444497203;
+atomic_int x = 0;
+atomic_int y = 0;
+int zebra = 325;
+int volatile t0r0 = 0;
+atomic_bool volatile t1asymptote = false;
+atomic_int volatile t2kelp_10 = 17107;
+void
+P0_body()
+{
+    if (!!(0 == atomic_fetch_xor_explicit(&y, 0, memory_order_acq_rel))) {  }
+    yam: ;
+    t0r0 = atomic_load_explicit(&x, memory_order_acquire);
+    atomic_store_explicit(&y, 1, memory_order_relaxed);
+    atomic_fetch_and_explicit(&gentle_corridor, -444497203,
+                              memory_order_seq_cst);
+}
+void
+P1_body()
+{
+    humble_llama_11: ;
+    atomic_store_explicit(&y, 2, memory_order_relaxed);
+    atomic_store_explicit(&x, 1, memory_order_release);
+    map: ;
+    atomic_signal_fence(memory_order_consume);
+}
+void
+P2_body()
+{
+    if (atomic_load_explicit(&t2kelp_10, memory_order_seq_cst) == 17107) 
+    {  } else
+    {
+        return;
+        ;
+        atomic_fetch_add_explicit(&x, 0, memory_order_relaxed);
+        atomic_fetch_sub_explicit(&x,
+                                  atomic_fetch_sub_explicit(&y,
+                                                            atomic_fetch_add_explicit
+                                                            (&t2kelp_10, 0,
+                                                             memory_order_relaxed)
+                                                            -
+                                                            atomic_fetch_add_explicit
+                                                            (&t2kelp_10, 0,
+                                                             memory_order_relaxed),
+                                                            memory_order_seq_cst)
+                                  & 0, memory_order_seq_cst);
+        atomic_fetch_add_explicit(&t2kelp_10,
+                                  atomic_fetch_add_explicit(&y, 0,
+                                                            memory_order_seq_cst),
+                                  memory_order_seq_cst);
+        atomic_fetch_add_explicit(&t2kelp_10,
+                                  atomic_load_explicit(&gentle_corridor,
+                                                       memory_order_consume),
+                                  memory_order_seq_cst);
+    }
+    atomic_store_explicit(&gentle_corridor, -444497203, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "test_9",
+    "locations": null,
+    "init": {
+      "game_11": 230,
+      "clumsy_unicorn_10": -2,
+      "gentle_corridor": -444497203,
+      "zebra": 325,
+      "y": 0,
+      "x": 0
+    },
+    "postcondition":
+      "forall\n((x == 1 /\\ (y == 1 /\\ t0r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ t0r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ t0r0 == 0))))"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0_body" },
+    "P1": { "is_thread_body": true, "c_id": "P1_body" },
+    "P2": { "is_thread_body": true, "c_id": "P2_body" }
+  },
+  "var_map": {
+    "clumsy_unicorn_10": {
+      "c_type": "int",
+      "c_id": "clumsy_unicorn_10",
+      "mapped_to": [ "Global" ]
+    },
+    "game_11": {
+      "c_type": "int",
+      "c_id": "game_11",
+      "mapped_to": [ "Global" ]
+    },
+    "gentle_corridor": {
+      "c_type": "atomic_int",
+      "c_id": "gentle_corridor",
+      "mapped_to": [ "Global" ]
+    },
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Global" ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Global" ] },
+    "zebra": { "c_type": "int", "c_id": "zebra", "mapped_to": [ "Global" ] },
+    "0:r0": {
+      "c_type": "volatile int",
+      "c_id": "t0r0",
+      "mapped_to": [ "Global" ]
+    },
+    "1:asymptote": {
+      "c_type": "volatile atomic_bool",
+      "c_id": "t1asymptote",
+      "mapped_to": [ "Global" ]
+    },
+    "2:kelp_10": {
+      "c_type": "volatile atomic_int",
+      "c_id": "t2kelp_10",
+      "mapped_to": [ "Global" ]
+    }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-parameters
+// qualify-locals: false
+// suffix: (none)
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+void
+P0(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
+   atomic_int *x, atomic_int *y, int *zebra, int volatile *r0)
+{
+    if (!!(0 == atomic_fetch_xor_explicit(y, 0, memory_order_acq_rel))) {  }
+    yam: ;
+    *r0 = atomic_load_explicit(x, memory_order_acquire);
+    atomic_store_explicit(y, 1, memory_order_relaxed);
+    atomic_fetch_and_explicit(gentle_corridor, -444497203,
+                              memory_order_seq_cst);
+}
+void
+P1(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
+   atomic_int *x, atomic_int *y, int *zebra, atomic_bool volatile *asymptote)
+{
+    humble_llama_11: ;
+    atomic_store_explicit(y, 2, memory_order_relaxed);
+    atomic_store_explicit(x, 1, memory_order_release);
+    map: ;
+    atomic_signal_fence(memory_order_consume);
+}
+void
+P2(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
+   atomic_int *x, atomic_int *y, int *zebra, atomic_int volatile *kelp_10)
+{
+    if (atomic_load_explicit(kelp_10, memory_order_seq_cst) == 17107) 
+    {  } else
+    {
+        return;
+        ;
+        atomic_fetch_add_explicit(x, 0, memory_order_relaxed);
+        atomic_fetch_sub_explicit(x,
+                                  atomic_fetch_sub_explicit(y,
+                                                            atomic_fetch_add_explicit
+                                                            (kelp_10, 0,
+                                                             memory_order_relaxed)
+                                                            -
+                                                            atomic_fetch_add_explicit
+                                                            (kelp_10, 0,
+                                                             memory_order_relaxed),
+                                                            memory_order_seq_cst)
+                                  & 0, memory_order_seq_cst);
+        atomic_fetch_add_explicit(kelp_10,
+                                  atomic_fetch_add_explicit(y, 0,
+                                                            memory_order_seq_cst),
+                                  memory_order_seq_cst);
+        atomic_fetch_add_explicit(kelp_10,
+                                  atomic_load_explicit(gentle_corridor,
+                                                       memory_order_consume),
+                                  memory_order_seq_cst);
+    }
+    atomic_store_explicit(gentle_corridor, -444497203, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "test_9",
+    "locations": null,
+    "init": {
+      "game_11": 230,
+      "clumsy_unicorn_10": -2,
+      "gentle_corridor": -444497203,
+      "zebra": 325,
+      "y": 0,
+      "x": 0
+    },
+    "postcondition":
+      "forall\n((x == 1 /\\ (y == 1 /\\ 0:r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ 0:r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ 0:r0 == 0))))"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0" },
+    "P1": { "is_thread_body": true, "c_id": "P1" },
+    "P2": { "is_thread_body": true, "c_id": "P2" }
+  },
+  "var_map": {
+    "clumsy_unicorn_10": {
+      "c_type": "int",
+      "c_id": "clumsy_unicorn_10",
+      "mapped_to": [ "Param", 0 ]
+    },
+    "game_11": {
+      "c_type": "int",
+      "c_id": "game_11",
+      "mapped_to": [ "Param", 1 ]
+    },
+    "gentle_corridor": {
+      "c_type": "atomic_int",
+      "c_id": "gentle_corridor",
+      "mapped_to": [ "Param", 2 ]
+    },
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Param", 3 ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 4 ] },
+    "zebra": {
+      "c_type": "int",
+      "c_id": "zebra",
+      "mapped_to": [ "Param", 5 ]
+    },
+    "0:r0": {
+      "c_type": "volatile int",
+      "c_id": "r0",
+      "mapped_to": [ "Param", 6 ]
+    },
+    "1:asymptote": {
+      "c_type": "volatile atomic_bool",
+      "c_id": "asymptote",
+      "mapped_to": [ "Param", 7 ]
+    },
+    "2:kelp_10": {
+      "c_type": "volatile atomic_int",
+      "c_id": "kelp_10",
+      "mapped_to": [ "Param", 8 ]
+    }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-parameters
+// qualify-locals: false
+// suffix: _body
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+void
+P0_body(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
+        atomic_int *x, atomic_int *y, int *zebra, int volatile *r0)
+{
+    if (!!(0 == atomic_fetch_xor_explicit(y, 0, memory_order_acq_rel))) {  }
+    yam: ;
+    *r0 = atomic_load_explicit(x, memory_order_acquire);
+    atomic_store_explicit(y, 1, memory_order_relaxed);
+    atomic_fetch_and_explicit(gentle_corridor, -444497203,
+                              memory_order_seq_cst);
+}
+void
+P1_body(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
+        atomic_int *x, atomic_int *y, int *zebra,
+        atomic_bool volatile *asymptote)
+{
+    humble_llama_11: ;
+    atomic_store_explicit(y, 2, memory_order_relaxed);
+    atomic_store_explicit(x, 1, memory_order_release);
+    map: ;
+    atomic_signal_fence(memory_order_consume);
+}
+void
+P2_body(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
+        atomic_int *x, atomic_int *y, int *zebra,
+        atomic_int volatile *kelp_10)
+{
+    if (atomic_load_explicit(kelp_10, memory_order_seq_cst) == 17107) 
+    {  } else
+    {
+        return;
+        ;
+        atomic_fetch_add_explicit(x, 0, memory_order_relaxed);
+        atomic_fetch_sub_explicit(x,
+                                  atomic_fetch_sub_explicit(y,
+                                                            atomic_fetch_add_explicit
+                                                            (kelp_10, 0,
+                                                             memory_order_relaxed)
+                                                            -
+                                                            atomic_fetch_add_explicit
+                                                            (kelp_10, 0,
+                                                             memory_order_relaxed),
+                                                            memory_order_seq_cst)
+                                  & 0, memory_order_seq_cst);
+        atomic_fetch_add_explicit(kelp_10,
+                                  atomic_fetch_add_explicit(y, 0,
+                                                            memory_order_seq_cst),
+                                  memory_order_seq_cst);
+        atomic_fetch_add_explicit(kelp_10,
+                                  atomic_load_explicit(gentle_corridor,
+                                                       memory_order_consume),
+                                  memory_order_seq_cst);
+    }
+    atomic_store_explicit(gentle_corridor, -444497203, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "test_9",
+    "locations": null,
+    "init": {
+      "game_11": 230,
+      "clumsy_unicorn_10": -2,
+      "gentle_corridor": -444497203,
+      "zebra": 325,
+      "y": 0,
+      "x": 0
+    },
+    "postcondition":
+      "forall\n((x == 1 /\\ (y == 1 /\\ 0:r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ 0:r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ 0:r0 == 0))))"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0_body" },
+    "P1": { "is_thread_body": true, "c_id": "P1_body" },
+    "P2": { "is_thread_body": true, "c_id": "P2_body" }
+  },
+  "var_map": {
+    "clumsy_unicorn_10": {
+      "c_type": "int",
+      "c_id": "clumsy_unicorn_10",
+      "mapped_to": [ "Param", 0 ]
+    },
+    "game_11": {
+      "c_type": "int",
+      "c_id": "game_11",
+      "mapped_to": [ "Param", 1 ]
+    },
+    "gentle_corridor": {
+      "c_type": "atomic_int",
+      "c_id": "gentle_corridor",
+      "mapped_to": [ "Param", 2 ]
+    },
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Param", 3 ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 4 ] },
+    "zebra": {
+      "c_type": "int",
+      "c_id": "zebra",
+      "mapped_to": [ "Param", 5 ]
+    },
+    "0:r0": {
+      "c_type": "volatile int",
+      "c_id": "r0",
+      "mapped_to": [ "Param", 6 ]
+    },
+    "1:asymptote": {
+      "c_type": "volatile atomic_bool",
+      "c_id": "asymptote",
+      "mapped_to": [ "Param", 7 ]
+    },
+    "2:kelp_10": {
+      "c_type": "volatile atomic_int",
+      "c_id": "kelp_10",
+      "mapped_to": [ "Param", 8 ]
+    }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-parameters
+// qualify-locals: true
+// suffix: (none)
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+void
+P0(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
+   atomic_int *x, atomic_int *y, int *zebra, int volatile *t0r0)
+{
+    if (!!(0 == atomic_fetch_xor_explicit(y, 0, memory_order_acq_rel))) {  }
+    yam: ;
+    *t0r0 = atomic_load_explicit(x, memory_order_acquire);
+    atomic_store_explicit(y, 1, memory_order_relaxed);
+    atomic_fetch_and_explicit(gentle_corridor, -444497203,
+                              memory_order_seq_cst);
+}
+void
+P1(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
+   atomic_int *x, atomic_int *y, int *zebra,
+   atomic_bool volatile *t1asymptote)
+{
+    humble_llama_11: ;
+    atomic_store_explicit(y, 2, memory_order_relaxed);
+    atomic_store_explicit(x, 1, memory_order_release);
+    map: ;
+    atomic_signal_fence(memory_order_consume);
+}
+void
+P2(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
+   atomic_int *x, atomic_int *y, int *zebra, atomic_int volatile *t2kelp_10)
+{
+    if (atomic_load_explicit(t2kelp_10, memory_order_seq_cst) == 17107) 
+    {  } else
+    {
+        return;
+        ;
+        atomic_fetch_add_explicit(x, 0, memory_order_relaxed);
+        atomic_fetch_sub_explicit(x,
+                                  atomic_fetch_sub_explicit(y,
+                                                            atomic_fetch_add_explicit
+                                                            (t2kelp_10, 0,
+                                                             memory_order_relaxed)
+                                                            -
+                                                            atomic_fetch_add_explicit
+                                                            (t2kelp_10, 0,
+                                                             memory_order_relaxed),
+                                                            memory_order_seq_cst)
+                                  & 0, memory_order_seq_cst);
+        atomic_fetch_add_explicit(t2kelp_10,
+                                  atomic_fetch_add_explicit(y, 0,
+                                                            memory_order_seq_cst),
+                                  memory_order_seq_cst);
+        atomic_fetch_add_explicit(t2kelp_10,
+                                  atomic_load_explicit(gentle_corridor,
+                                                       memory_order_consume),
+                                  memory_order_seq_cst);
+    }
+    atomic_store_explicit(gentle_corridor, -444497203, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "test_9",
+    "locations": null,
+    "init": {
+      "game_11": 230,
+      "clumsy_unicorn_10": -2,
+      "gentle_corridor": -444497203,
+      "zebra": 325,
+      "y": 0,
+      "x": 0
+    },
+    "postcondition":
+      "forall\n((x == 1 /\\ (y == 1 /\\ t0r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ t0r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ t0r0 == 0))))"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0" },
+    "P1": { "is_thread_body": true, "c_id": "P1" },
+    "P2": { "is_thread_body": true, "c_id": "P2" }
+  },
+  "var_map": {
+    "clumsy_unicorn_10": {
+      "c_type": "int",
+      "c_id": "clumsy_unicorn_10",
+      "mapped_to": [ "Param", 0 ]
+    },
+    "game_11": {
+      "c_type": "int",
+      "c_id": "game_11",
+      "mapped_to": [ "Param", 1 ]
+    },
+    "gentle_corridor": {
+      "c_type": "atomic_int",
+      "c_id": "gentle_corridor",
+      "mapped_to": [ "Param", 2 ]
+    },
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Param", 3 ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 4 ] },
+    "zebra": {
+      "c_type": "int",
+      "c_id": "zebra",
+      "mapped_to": [ "Param", 5 ]
+    },
+    "0:r0": {
+      "c_type": "volatile int",
+      "c_id": "t0r0",
+      "mapped_to": [ "Param", 6 ]
+    },
+    "1:asymptote": {
+      "c_type": "volatile atomic_bool",
+      "c_id": "t1asymptote",
+      "mapped_to": [ "Param", 7 ]
+    },
+    "2:kelp_10": {
+      "c_type": "volatile atomic_int",
+      "c_id": "t2kelp_10",
+      "mapped_to": [ "Param", 8 ]
+    }
+  }
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-parameters
+// qualify-locals: true
+// suffix: _body
+//
+
+// <!> Auto-generated from a litmus test by ACT.
+#include <stdatomic.h>
+#include <stdbool.h>
+void
+P0_body(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
+        atomic_int *x, atomic_int *y, int *zebra, int volatile *t0r0)
+{
+    if (!!(0 == atomic_fetch_xor_explicit(y, 0, memory_order_acq_rel))) {  }
+    yam: ;
+    *t0r0 = atomic_load_explicit(x, memory_order_acquire);
+    atomic_store_explicit(y, 1, memory_order_relaxed);
+    atomic_fetch_and_explicit(gentle_corridor, -444497203,
+                              memory_order_seq_cst);
+}
+void
+P1_body(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
+        atomic_int *x, atomic_int *y, int *zebra,
+        atomic_bool volatile *t1asymptote)
+{
+    humble_llama_11: ;
+    atomic_store_explicit(y, 2, memory_order_relaxed);
+    atomic_store_explicit(x, 1, memory_order_release);
+    map: ;
+    atomic_signal_fence(memory_order_consume);
+}
+void
+P2_body(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
+        atomic_int *x, atomic_int *y, int *zebra,
+        atomic_int volatile *t2kelp_10)
+{
+    if (atomic_load_explicit(t2kelp_10, memory_order_seq_cst) == 17107) 
+    {  } else
+    {
+        return;
+        ;
+        atomic_fetch_add_explicit(x, 0, memory_order_relaxed);
+        atomic_fetch_sub_explicit(x,
+                                  atomic_fetch_sub_explicit(y,
+                                                            atomic_fetch_add_explicit
+                                                            (t2kelp_10, 0,
+                                                             memory_order_relaxed)
+                                                            -
+                                                            atomic_fetch_add_explicit
+                                                            (t2kelp_10, 0,
+                                                             memory_order_relaxed),
+                                                            memory_order_seq_cst)
+                                  & 0, memory_order_seq_cst);
+        atomic_fetch_add_explicit(t2kelp_10,
+                                  atomic_fetch_add_explicit(y, 0,
+                                                            memory_order_seq_cst),
+                                  memory_order_seq_cst);
+        atomic_fetch_add_explicit(t2kelp_10,
+                                  atomic_load_explicit(gentle_corridor,
+                                                       memory_order_consume),
+                                  memory_order_seq_cst);
+    }
+    atomic_store_explicit(gentle_corridor, -444497203, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_header": {
+    "name": "test_9",
+    "locations": null,
+    "init": {
+      "game_11": 230,
+      "clumsy_unicorn_10": -2,
+      "gentle_corridor": -444497203,
+      "zebra": 325,
+      "y": 0,
+      "x": 0
+    },
+    "postcondition":
+      "forall\n((x == 1 /\\ (y == 1 /\\ t0r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ t0r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ t0r0 == 0))))"
+  },
+  "function_map": {
+    "P0": { "is_thread_body": true, "c_id": "P0_body" },
+    "P1": { "is_thread_body": true, "c_id": "P1_body" },
+    "P2": { "is_thread_body": true, "c_id": "P2_body" }
+  },
+  "var_map": {
+    "clumsy_unicorn_10": {
+      "c_type": "int",
+      "c_id": "clumsy_unicorn_10",
+      "mapped_to": [ "Param", 0 ]
+    },
+    "game_11": {
+      "c_type": "int",
+      "c_id": "game_11",
+      "mapped_to": [ "Param", 1 ]
+    },
+    "gentle_corridor": {
+      "c_type": "atomic_int",
+      "c_id": "gentle_corridor",
+      "mapped_to": [ "Param", 2 ]
+    },
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Param", 3 ] },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 4 ] },
+    "zebra": {
+      "c_type": "int",
+      "c_id": "zebra",
+      "mapped_to": [ "Param", 5 ]
+    },
+    "0:r0": {
+      "c_type": "volatile int",
+      "c_id": "t0r0",
+      "mapped_to": [ "Param", 6 ]
+    },
+    "1:asymptote": {
+      "c_type": "volatile atomic_bool",
+      "c_id": "t1asymptote",
+      "mapped_to": [ "Param", 7 ]
+    },
+    "2:kelp_10": {
+      "c_type": "volatile atomic_int",
+      "c_id": "t2kelp_10",
+      "mapped_to": [ "Param", 8 ]
+    }
+  }
+} 
+--End auxiliary output-- */
+```
 ## iriw.c.litmus
 
 ```
@@ -2297,4 +3322,4 @@ P2_body(atomic_int *x, atomic_int *y, int *t2r0)
 --End auxiliary output-- */
 ```
 
-Ran 5 test(s).
+Ran 6 test(s).

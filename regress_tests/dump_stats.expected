@@ -1,5 +1,12 @@
 # Dump-stats tests
 
+## fuzz_local_bools.c.litmus
+
+```
+threads 3
+returns 1
+literal-bools 0
+```
 ## iriw.c.litmus
 
 ```
@@ -36,4 +43,4 @@ returns 0
 literal-bools 0
 ```
 
-Ran 5 test(s).
+Ran 6 test(s).

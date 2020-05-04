@@ -1,5 +1,22 @@
 # Dump-header tests
 
+## fuzz_local_bools.c.litmus
+
+```
+{
+  "name": "test_9",
+  "locations": null,
+  "init": {
+    "game_11": 230,
+    "clumsy_unicorn_10": -2,
+    "gentle_corridor": -444497203,
+    "zebra": 325,
+    "y": 0,
+    "x": 0
+  },
+  "postcondition":
+    "forall\n((x == 1 /\\ (y == 1 /\\ 0:r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ 0:r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ 0:r0 == 0))))"
+}```
 ## iriw.c.litmus
 
 ```
@@ -58,4 +75,4 @@
   "postcondition": "exists (1:r0 == 1 /\\ 1:r1 == 0 /\\ 2:r0 == 0)"
 }```
 
-Ran 5 test(s).
+Ran 6 test(s).
