@@ -253,7 +253,7 @@ module Atomic_fetch_int_nops (Obj : Env_types.S) (Arg : Env_types.S) :
     (* Weightings are a crude way of acknowledging that the zeros pool is
        presently more diverse than the reflexive pool. *)
     Q.Generator.weighted_union
-      [(2.0, Z.quickcheck_generator); (1.0, R.quickcheck_generator)]
+      [(3.0, Z.quickcheck_generator); (2.0, R.quickcheck_generator)]
 end
 
 module Atomic_fetch_int_values (Obj : Env_types.S) (Arg : Env_types.S) :
