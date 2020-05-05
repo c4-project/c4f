@@ -48,9 +48,8 @@ val in_threads_only : t -> threads:Set.M(Int).t -> t
 module End_check : sig
   (** Type of end checks. *)
   type t =
-    | Is_atomic_statement
-        (** Requires the path to reach an atomic statement. *)
-    | Is_if_statement  (** Requires the path to reach an if statement. *)
+    | Is_of_class of Act_c_mini.Statement_class.t
+        (** Requires the path to reach a statement of the given class. *)
     | Has_no_labels
         (** Requires the path to reach a statement containing no labels. *)
 end

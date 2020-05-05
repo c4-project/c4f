@@ -11,6 +11,9 @@
 
 (** Mini C: top-level statements. *)
 
+module I := If
+module W := While
+
 (** A statement.
 
     We treat some things that are technically expressions in C as statements,
@@ -31,3 +34,15 @@ and While :
      and type 'meta stm := 'meta Main.t)
 
 include module type of Main with type 'meta t = 'meta Main.t
+
+(** {1 Derived operations} *)
+
+val reduce :
+     'meta t
+  -> prim:('meta * Prim_statement.t -> 'result)
+  -> if_stm:(('meta, 'result) I.t -> 'result)
+  -> while_loop:(('meta, 'result) W.t -> 'result)
+  -> 'result
+(** [reduce stm ~prim ~if_stm ~while_loop] applies the appropriate function
+    of those given to [stm]. Unlike {!reduce_step}, it _does_ recursively
+    reduce statements inside blocks. *)

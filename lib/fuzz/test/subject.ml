@@ -126,7 +126,7 @@ module Test_data = struct
                              ~dst:(Address.of_variable_str_exn "x")
                              ~mo:Mem_order.Seq_cst) ]
                     ())
-               ~kind:`Do_while)))
+               ~kind:Do_while)))
 
   let body_stms : Src.Subject.Statement.t list Lazy.t =
     Lazy.Let_syntax.(

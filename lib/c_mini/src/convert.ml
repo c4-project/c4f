@@ -364,8 +364,8 @@ let model_if (model_stm : Ast.Stm.t -> unit Statement.t Or_error.t)
     Statement.if_stm ifs)
 
 let loop (model_stm : Ast.Stm.t -> unit Statement.t Or_error.t)
-    (old_cond : Ast.Expr.t) (old_body : Ast.Stm.t)
-    (kind : [`While | `Do_while]) : unit Statement.t Or_error.t =
+    (old_cond : Ast.Expr.t) (old_body : Ast.Stm.t) (kind : While.Kind.t) :
+    unit Statement.t Or_error.t =
   Or_error.Let_syntax.(
     let%bind cond = expr old_cond in
     let%map body = block model_stm old_body in
@@ -390,9 +390,9 @@ let rec stm : Ast.Stm.t -> unit Statement.t Or_error.t = function
         [%message
           "Value returns not supported in Mini-C" ~got:(s : Ast.Stm.t)]
   | While (c, b) ->
-      loop stm c b `While
+      loop stm c b While
   | Do_while (b, c) ->
-      loop stm c b `Do_while
+      loop stm c b Do_while
   | Label (Normal l, Expr None) ->
       (* This is a particularly weird subset of the labels, but I'm not sure
          how best to expand it. *)

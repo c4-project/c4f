@@ -10,8 +10,12 @@
    project root for more information. *)
 
 open Base
-module Tx = Travesty_base_exts
-module Stm = Act_c_mini.Statement
+
+open struct
+  module Tx = Travesty_base_exts
+  module Cm = Act_c_mini
+  module Stm = Cm.Statement
+end
 
 type 'a transformer = 'a -> 'a Or_error.t
 
@@ -40,7 +44,7 @@ module rec Statement :
       ~(f :
          target:Subject.Statement.If.t -> Subject.Statement.If.t Or_error.t)
       : Subject.Statement.t Or_error.t =
-    Stm.reduce dest
+    Stm.reduce_step dest
       ~if_stm:(fun target -> Or_error.(f ~target >>| Stm.if_stm))
       ~while_loop:(in_if_error dest) ~prim:(in_if_error dest)
 
@@ -49,7 +53,7 @@ module rec Statement :
             target:Subject.Statement.Loop.t
          -> Subject.Statement.Loop.t Or_error.t) :
       Subject.Statement.t Or_error.t =
-    Stm.reduce dest
+    Stm.reduce_step dest
       ~while_loop:(fun target -> Or_error.(f ~target >>| Stm.while_loop))
       ~if_stm:(in_loop_error dest) ~prim:(in_loop_error dest)
 
@@ -114,7 +118,7 @@ and Block :
 
   type target = Subject.Block.t
 
-  module Block_stms = Act_c_mini.Block.On_meta_statement_list (Stm)
+  module Block_stms = Cm.Block.On_meta_statement_list (Stm)
   module Block_stms_err = Block_stms.On_monad (Or_error)
 
   let handle_in_stm (dest : target) (index : int)
@@ -138,7 +142,7 @@ and Block :
       ~(target : target) : target Or_error.t =
     let filter =
       Path_filter.update_with_block_metadata filter
-        (Act_c_mini.Block.metadata target)
+        (Cm.Block.metadata target)
     in
     match path with
     | In_stm (index, rest) ->
@@ -191,7 +195,7 @@ and If :
 
   type target = Subject.Statement.If.t
 
-  module B = Stm.If.Base_map (Or_error)
+  module B = Cm.If.Base_map (Or_error)
 
   let handle_stm (path : t)
       ~(f :
@@ -235,7 +239,7 @@ and Loop :
 
   type target = Subject.Statement.Loop.t
 
-  module B = Stm.While.Base_map (Or_error)
+  module B = Cm.While.Base_map (Or_error)
 
   let handle_stm (path : t)
       ~(f :
@@ -244,7 +248,7 @@ and Loop :
     match path with
     | In_block rest ->
         let body target = f rest ~target in
-        B.bmap target ~cond:Or_error.return ~body
+        B.bmap target ~cond:Or_error.return ~body ~kind:Or_error.return
     | This_cond ->
         Or_error.error_string "Not a statement path"
 
@@ -285,8 +289,7 @@ module Thread :
         Or_error.(
           f rest
             ~target:(Subject.Block.make_existing ~statements:target.stms ())
-          >>| fun block ->
-          {target with stms= Act_c_mini.Block.statements block})
+          >>| fun block -> {target with stms= Cm.Block.statements block})
 
   let check_path (path : t) ~(filter : Path_filter.t) ~(target : target) :
       target Or_error.t =

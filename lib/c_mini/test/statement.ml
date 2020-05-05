@@ -26,7 +26,7 @@ let mkwhile ?(cond : Src.Expression.t = cond)
     (xs : unit Src.Statement.t list) : unit Src.Statement.t =
   Src.Statement.(
     while_loop
-      (While.make ~cond ~kind:`While ~body:(Src.Block.of_statement_list xs)))
+      (While.make ~cond ~kind:While ~body:(Src.Block.of_statement_list xs)))
 
 let nop : unit Src.Statement.t = Src.Statement.prim () Src.Prim_statement.nop
 

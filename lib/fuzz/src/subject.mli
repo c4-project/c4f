@@ -167,6 +167,11 @@ module Test : sig
 
   (** {3 Availability queries} *)
 
+  val has_statements_matching_class :
+    t -> template:Act_c_mini.Statement_class.t -> bool
+  (** [has_statements_matching_class test ~template] is true if, and only if,
+      [test] contains at least one statement of class [template]. *)
+
   val has_atomic_statements : t -> bool
   (** [has_atomic_statements test] is true if, and only if, [test] contains
       at least one atomic statement. *)

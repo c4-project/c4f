@@ -98,7 +98,9 @@ module Strengthen :
 
   let filter : Path_filter.t =
     Path_filter.(
-      empty |> require_end_check ~check:End_check.Is_atomic_statement)
+      empty
+      |> require_end_check
+           ~check:(End_check.Is_of_class Cm.Statement_class.(atomic ())))
 
   module Payload = struct
     include Strengthen_payload

@@ -50,33 +50,25 @@ end
 (** Checks that can only be carried out at the end of a statement path. *)
 module End_check = struct
   module M = struct
-    type t = Is_atomic_statement | Is_if_statement | Has_no_labels
-    [@@deriving enum]
-
-    let table : (t, string) List.Assoc.t =
-      [ (Is_atomic_statement, "atomic actions only")
-      ; (Is_if_statement, "if statements only")
-      ; (Has_no_labels, "does not contain any labels") ]
+    type t = Is_of_class of Act_c_mini.Statement_class.t | Has_no_labels
+    [@@deriving compare, equal, sexp]
   end
 
   include M
-  include Act_utils.Enum.Extend_table (M)
+  include Comparable.Make (M)
 
   let is_ok (check : t) ~(stm : Subject.Statement.t) : bool =
     match check with
-    | Is_atomic_statement ->
-        Act_c_mini.(Statement.is_prim_and ~f:Prim_statement.is_atomic stm)
-    | Is_if_statement ->
-        Act_c_mini.Statement.is_if_statement stm
+    | Is_of_class template ->
+        Act_c_mini.Statement_class.(
+          Option.exists ~f:(matches ~template) (classify stm))
     | Has_no_labels ->
         not (Subject.Statement.has_labels stm)
 
   let is_constructible (flag : t) ~(subject : Subject.Test.t) : bool =
     match flag with
-    | Is_atomic_statement ->
-        Subject.Test.has_atomic_statements subject
-    | Is_if_statement ->
-        Subject.Test.has_if_statements subject
+    | Is_of_class template ->
+        Subject.Test.has_statements_matching_class subject ~template
     | Has_no_labels ->
         Subject.Test.has_non_label_prims subject
 

@@ -89,15 +89,15 @@ module type S_statement = sig
 
   (** {3 Accessors} *)
 
-  val reduce :
+  val reduce_step :
        'meta t
     -> prim:('meta * Prim_statement.t -> 'result)
     -> if_stm:('meta if_stm -> 'result)
     -> while_loop:('meta while_loop -> 'result)
     -> 'result
-  (** [reduce stm ~prim ~if_stm ~while_loop] applies the appropriate function
-      of those given to [stm]. It does _not_ recursively reduce statements
-      inside blocks. *)
+  (** [reduce_step stm ~prim ~if_stm ~while_loop] applies the appropriate
+      function of those given to [stm]. It does _not_ recursively reduce
+      statements inside blocks. *)
 
   val is_prim_and : 'meta t -> f:(Prim_statement.t -> bool) -> bool
   (** [is_prim_and x ~f] lifts the predicate [f] over primitive statements to
@@ -149,8 +149,8 @@ module type S_if_statement = sig
   (** Generally fixed to {!Statement.t}. *)
   type 'meta stm
 
-  (** Opaque type of if statements. *)
-  type 'meta t [@@deriving sexp, compare, equal]
+  (** Type of if statements. *)
+  type 'meta t = ('meta, 'meta stm) If.t [@@deriving sexp, compare, equal]
 
   (** {3 Constructors} *)
 
@@ -175,15 +175,6 @@ module type S_if_statement = sig
 
   (** {3 Traversing} *)
 
-  module Base_map (M : Monad.S) : sig
-    val bmap :
-         'm1 t
-      -> cond:('m1 expr -> 'm2 expr M.t)
-      -> t_branch:(('m1, 'm1 stm) Block.t -> ('m2, 'm2 stm) Block.t M.t)
-      -> f_branch:(('m1, 'm1 stm) Block.t -> ('m2, 'm2 stm) Block.t M.t)
-      -> 'm2 t M.t
-  end
-
   include S_common with type 'meta t := 'meta t
 end
 
@@ -197,18 +188,18 @@ module type S_while_loop = sig
   (** Generally fixed to {!Statement.t}. *)
   type 'meta stm
 
-  (** Opaque type of while loops. *)
-  type 'meta t [@@deriving sexp, compare, equal]
+  (** Type of while loops. *)
+  type 'meta t = ('meta, 'meta stm) While.t [@@deriving sexp, compare, equal]
 
   (** {3 Constructors} *)
 
   val make :
        cond:'meta expr
     -> body:('meta, 'meta stm) Block.t
-    -> kind:[`Do_while | `While]
+    -> kind:While.Kind.t
     -> 'meta t
-  (** [make ~cond ~body ~kind] creates a while loop (with [~kind=`While]) or
-      a do-while loop (with [~kind=`Do_while]) with condition [cond] and body
+  (** [make ~cond ~body ~kind] creates a while loop (with [~kind=While]) or a
+      do-while loop (with [~kind=Do_while]) with condition [cond] and body
       [body]. *)
 
   (** {3 Accessors} *)
@@ -219,18 +210,10 @@ module type S_while_loop = sig
   val body : 'meta t -> ('meta, 'meta stm) Block.t
   (** [body loop] gets [loop]'s body. *)
 
-  val kind : 'meta t -> [`While | `Do_while]
+  val kind : 'meta t -> While.Kind.t
   (** [kind loop] gets whether [loop] is a while loop or a do-while loop. *)
 
   (** {3 Traversing} *)
-
-  module Base_map (M : Monad.S) : sig
-    val bmap :
-         'm1 t
-      -> cond:('m1 expr -> 'm2 expr M.t)
-      -> body:(('m1, 'm1 stm) Block.t -> ('m2, 'm2 stm) Block.t M.t)
-      -> 'm2 t M.t
-  end
 
   include S_common with type 'meta t := 'meta t
 end

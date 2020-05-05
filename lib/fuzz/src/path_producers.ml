@@ -42,7 +42,7 @@ module rec Statement :
       ~(while_loop : Loop.target -> Path.Loop.t Opt_gen.t) :
       Path.Stm.t Opt_gen.t =
     Opt_gen.(
-      Stm.reduce m
+      Stm.reduce_step m
         ~if_stm:(fun x -> x |> if_stm >>| Path.Stm.in_if)
         ~while_loop:(fun x -> x |> while_loop >>| Path.Stm.in_loop)
         ~prim:(not_in_prim ~kind))

@@ -47,7 +47,7 @@ struct
       (statements : Metadata.t Act_c_mini.Statement.t list) :
       Metadata.t Act_c_mini.Statement.t =
     Act_c_mini.Statement.while_loop
-      (Act_c_mini.Statement.While.make ~kind:`Do_while ~cond
+      (Act_c_mini.Statement.While.make ~kind:Do_while ~cond
          ~body:(Subject.Block.make_generated ~statements ()))
 
   let run (test : Subject.Test.t) ~(payload : Payload.t) :

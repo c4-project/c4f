@@ -152,7 +152,7 @@ module Invert : Action_types.S with type Payload.t = Path.Program.t = struct
 
     let quickcheck_path (test : Subject.Test.t) : Path.Program.t Opt_gen.t =
       let filter =
-        Path_filter.(empty |> require_end_check ~check:Is_if_statement)
+        Path_filter.(empty |> require_end_check ~check:(Is_of_class If))
       in
       Path_producers.Test.try_gen_transform_stm ~filter test
 

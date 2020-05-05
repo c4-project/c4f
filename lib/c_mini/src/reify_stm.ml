@@ -19,17 +19,14 @@ let assign (asn : Assign.t) : Ast.Stm.t =
   let r = Assign.rvalue asn in
   Expr (Some Reify_expr.(Binary (Reify_prim.lvalue l, `Assign, reify r)))
 
-let lift_stms (type stm) (stm : stm -> Ast.Stm.t) (xs : stm list) :
-    Ast.Compound_stm.t =
-  List.map ~f:(fun s -> `Stm (stm s)) xs
+let lift_stms : Ast.Stm.t list -> Ast.Compound_stm.t =
+  List.map ~f:(fun s -> `Stm s)
 
-let block (type meta stm) (stm : stm -> Ast.Stm.t) (b : (meta, stm) Block.t)
-    : Ast.Stm.t =
-  Compound (lift_stms stm (Block.statements b))
+let block (type meta) (b : (meta, Ast.Stm.t) Block.t) : Ast.Stm.t =
+  Compound (lift_stms (Block.statements b))
 
-let ne_block (type meta stm) (stm : stm -> Ast.Stm.t)
-    (b : (meta, stm) Block.t) : Ast.Stm.t option =
-  if Block.is_empty b then None else Some (block stm b)
+let ne_block (type meta) (b : (meta, Ast.Stm.t) Block.t) : Ast.Stm.t option =
+  if Block.is_empty b then None else Some (block b)
 
 let nop (_ : 'meta) : Ast.Stm.t = Ast.Stm.Expr None
 
@@ -58,25 +55,25 @@ let prim ((_, p) : _ * Prim_statement.t) : Ast.Stm.t =
   Prim_statement.reduce p ~assign ~atomic ~early_out ~procedure_call ~label
     ~goto ~nop
 
-let rec reify : _ Statement.t -> Ast.Stm.t =
-  Statement.reduce ~prim ~if_stm ~while_loop
-
-and if_stm (ifs : _ Statement.If.t) : Ast.Stm.t =
+let if_stm (ifs : (_, Ast.Stm.t) If.t) : Ast.Stm.t =
   If
-    { cond= Reify_expr.reify (Statement.If.cond ifs)
-    ; t_branch= block reify (Statement.If.t_branch ifs)
-    ; f_branch= ne_block reify (Statement.If.f_branch ifs) }
+    { cond= Reify_expr.reify (If.cond ifs)
+    ; t_branch= block (If.t_branch ifs)
+    ; f_branch= ne_block (If.f_branch ifs) }
 
-and while_loop (loop : _ Statement.While.t) : Ast.Stm.t =
-  let cond = Reify_expr.reify (Statement.While.cond loop)
-  and body = block reify (Statement.While.body loop) in
-  match Statement.While.kind loop with
-  | `While ->
+let while_loop (loop : (_, Ast.Stm.t) While.t) : Ast.Stm.t =
+  let cond = Reify_expr.reify (While.cond loop)
+  and body = block (While.body loop) in
+  match While.kind loop with
+  | While ->
       While (cond, body)
-  | `Do_while ->
+  | Do_while ->
       Do_while (body, cond)
+
+let reify (type meta) (m : meta Statement.t) : Ast.Stm.t =
+  Statement.reduce m ~prim ~if_stm ~while_loop
 
 (* Yay, value restriction... *)
 let reify_compound (type meta) (m : meta Statement.t list) :
     Ast.Compound_stm.t =
-  lift_stms reify m
+  List.map ~f:(fun x -> `Stm (reify x)) m

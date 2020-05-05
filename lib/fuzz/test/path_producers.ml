@@ -22,7 +22,7 @@ let%test_module "Statement" =
             while_loop
               (While.make ~cond:Act_c_mini.Expression.falsehood
                  ~body:(Act_fuzz.Subject.Block.make_generated ())
-                 ~kind:`Do_while)))
+                 ~kind:Do_while)))
       in
       let gen =
         Act_fuzz.Path_producers.Statement.try_gen_insert_stm example
@@ -128,7 +128,7 @@ let%test_module "Block" =
             (Act_fuzz.Path_producers.Block.try_gen_transform_stm
                ~filter:
                  Act_fuzz.Path_filter.(
-                   empty |> require_end_check ~check:Is_if_statement)) ;
+                   empty |> require_end_check ~check:(Is_of_class If))) ;
           [%expect {|
             Stm[3]!This
             Stm[4]!This |}]
@@ -189,7 +189,7 @@ let%test_module "Block" =
             (Act_fuzz.Path_producers.Block.try_gen_transform_stm_list
                ~filter:
                  Act_fuzz.Path_filter.(
-                   empty |> require_end_check ~check:Is_if_statement)) ;
+                   empty |> require_end_check ~check:(Is_of_class If))) ;
           [%expect
             {|
               Stm[3]!If!False!Range[0, 0]
