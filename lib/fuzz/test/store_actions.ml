@@ -420,7 +420,7 @@ let%test_module "xchgify" =
       P0(atomic_int *x, atomic_int *y)
       {
           atomic_int r0 = 4004;
-          atomic_exchange_strong_explicit(x, 42, memory_order_seq_cst);
+          atomic_exchange_explicit(x, 42, memory_order_seq_cst);
           ;
           atomic_store_explicit(y, foo, memory_order_relaxed);
           if (foo == y)

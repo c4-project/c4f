@@ -30,7 +30,7 @@ let load_name : string = "atomic_load_explicit"
 
 let store_name : string = "atomic_store_explicit"
 
-let xchg_name : string = "atomic_exchange_strong_explicit"
+let xchg_name : string = "atomic_exchange_explicit"
 
 let model_cmpxchg_with_args ~(raw_obj : Ast.Expr.t)
     ~(raw_expected : Ast.Expr.t) ~(raw_desired : Ast.Expr.t)
