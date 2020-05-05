@@ -38,6 +38,7 @@ let actions : Action.With_default_weight.t list Lazy.t =
       ; make ~action:(module Store_actions.Int) ~default_weight:30
       ; make ~action:(module Store_actions.Int_dead) ~default_weight:20
       ; make ~action:(module Store_actions.Int_redundant) ~default_weight:15
+      ; make ~action:(module Store_actions.Xchgify) ~default_weight:15
       ; make ~action:(module Fetch_actions.Int_dead) ~default_weight:20
       ; make ~action:(module Fetch_actions.Int_redundant) ~default_weight:20
       ; make ~action:(module Var_actions.Make) ~default_weight:20
@@ -81,7 +82,6 @@ let param_map : Param_spec.Int.t Map.M(Act_common.Id).t Lazy.t =
          ) ])
 
 let flag_map : Param_spec.Bool.t Map.M(Act_common.Id).t Lazy.t =
-  (* Space for rent. *)
   lazy
     (make_param_spec_map
        [ ( Storelike.forbid_already_written_flag_key

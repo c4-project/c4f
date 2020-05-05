@@ -174,3 +174,70 @@ module Int_redundant : S = Make (struct
           Cm.Atomic_store.make ~src ~dst ~mo)
   end
 end)
+
+module Xchgify : Action_types.S with type Payload.t = Path.Program.t = struct
+  let name = Act_common.Id.("store" @: "xchgify" @: empty)
+
+  let readme () =
+    {| Promotes a random atomic store to an atomic exchange whose value is
+       discarded. |}
+
+  let path_filter : Path_filter.t Lazy.t =
+    lazy
+      Path_filter.(
+        empty
+        |> require_end_check
+             ~check:
+               (Is_of_class
+                  (Cm.Statement_class.atomic ~specifically:Store ())))
+
+  module Payload = struct
+    type t = Path.Program.t [@@deriving sexp]
+
+    let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
+        ~(param_map : Param_map.t) : t State.Monad.t =
+      ignore param_map ;
+      let filter = Lazy.force path_filter in
+      Payload.Helpers.lift_quickcheck_opt
+        (Path_producers.Test.try_gen_transform_stm test ~filter)
+        ~random ~action_id:name
+  end
+
+  let available (subject : Subject.Test.t) ~(param_map : Param_map.t) :
+      bool State.Monad.t =
+    ignore param_map ;
+    State.Monad.return
+      (Path_filter.is_constructible (Lazy.force path_filter) ~subject)
+
+  module Atoms =
+    Travesty.Traversable.Chain0
+      (Subject.Statement.On_primitives)
+      (Cm.Prim_statement.On_atomics)
+  module AtomsM = Atoms.On_monad (Or_error)
+
+  let not_a_store_action (type a) (_ : a) : Cm.Atomic_statement.t Or_error.t
+      =
+    Or_error.error_string "not a store action"
+
+  let a_store_action (s : Cm.Atomic_store.t) :
+      Cm.Atomic_statement.t Or_error.t =
+    Ok
+      (Cm.Atomic_statement.xchg
+         Cm.Atomic_store.(
+           Cm.Atomic_xchg.make ~obj:(dst s) ~desired:(src s) ~mo:(mo s)))
+
+  let xchgify_atomic :
+      Cm.Atomic_statement.t -> Cm.Atomic_statement.t Or_error.t =
+    Cm.Atomic_statement.reduce ~cmpxchg:not_a_store_action
+      ~fence:not_a_store_action ~fetch:not_a_store_action
+      ~xchg:not_a_store_action ~store:a_store_action
+
+  let xchgify :
+      Metadata.t Cm.Statement.t -> Metadata.t Cm.Statement.t Or_error.t =
+    AtomsM.map_m ~f:xchgify_atomic
+
+  let run (subject : Subject.Test.t) ~(payload : Path.Program.t) :
+      Subject.Test.t State.Monad.t =
+    State.Monad.Monadic.return
+      (Path_consumers.Test.transform_stm payload ~f:xchgify ~target:subject)
+end

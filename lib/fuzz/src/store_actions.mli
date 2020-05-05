@@ -27,3 +27,6 @@ module Int_dead : S
 (** [Int_redundant] is a variant of [Int] that only stores a destination's
     known value back to itself. *)
 module Int_redundant : S
+
+(** [Xchgify] converts store actions to exchange actions. *)
+module Xchgify : Action_types.S with type Payload.t = Path.Program.t

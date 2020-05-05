@@ -153,6 +153,11 @@ store.make.int.redundant:
     entropy somewhat. (Note that if the value is stochastic, the action will
     only fire if such variables exist, but may or may not proceed to select a
     previously-stored variable. This is a limitation of the flag system.)
+store.xchgify:
+  Weight: 15x
+  Summary:
+    Promotes a random atomic store to an atomic exchange whose value is
+    discarded.
 var.make:
   Weight: 20x
   Summary:
