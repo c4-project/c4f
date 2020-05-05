@@ -6,6 +6,12 @@
 threads 3
 returns 1
 literal-bools 1
+atomic-cmpxchg-statements 0
+atomic-fence-statements 1
+atomic-fetch-statements 5
+atomic-load-statements 0
+atomic-store-statements 4
+atomic-xchg-statements 0
 ```
 ## iriw.c.litmus
 
@@ -13,6 +19,12 @@ literal-bools 1
 threads 4
 returns 0
 literal-bools 0
+atomic-cmpxchg-statements 0
+atomic-fence-statements 0
+atomic-fetch-statements 0
+atomic-load-statements 0
+atomic-store-statements 2
+atomic-xchg-statements 0
 ```
 ## iriw_fuzz_redundant.c.litmus
 
@@ -20,6 +32,12 @@ literal-bools 0
 threads 5
 returns 0
 literal-bools 0
+atomic-cmpxchg-statements 0
+atomic-fence-statements 0
+atomic-fetch-statements 0
+atomic-load-statements 0
+atomic-store-statements 5
+atomic-xchg-statements 0
 ```
 ## memalloy_cmpxchg.c.litmus
 
@@ -27,6 +45,12 @@ literal-bools 0
 threads 2
 returns 0
 literal-bools 0
+atomic-cmpxchg-statements 1
+atomic-fence-statements 0
+atomic-fetch-statements 0
+atomic-load-statements 0
+atomic-store-statements 1
+atomic-xchg-statements 0
 ```
 ## memalloy_na_int.c.litmus
 
@@ -34,6 +58,12 @@ literal-bools 0
 threads 1
 returns 0
 literal-bools 0
+atomic-cmpxchg-statements 0
+atomic-fence-statements 0
+atomic-fetch-statements 0
+atomic-load-statements 0
+atomic-store-statements 0
+atomic-xchg-statements 0
 ```
 ## rwc.c.litmus
 
@@ -41,6 +71,12 @@ literal-bools 0
 threads 3
 returns 0
 literal-bools 0
+atomic-cmpxchg-statements 0
+atomic-fence-statements 0
+atomic-fetch-statements 0
+atomic-load-statements 0
+atomic-store-statements 2
+atomic-xchg-statements 0
 ```
 
 Ran 6 test(s).

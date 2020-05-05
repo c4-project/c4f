@@ -27,7 +27,15 @@
 
 module Atomic : sig
   (** Enumeration of atomic actions. *)
-  type t = Store [@@deriving compare, equal, sexp]
+  type t =
+    | Cmpxchg  (** Atomic compare-exchanges. *)
+    | Fence  (** Atomic fences. *)
+    | Fetch  (** Atomic fetches. *)
+    | Load  (** Atomic loads. *)
+    | Store  (** Atomic stores. *)
+    | Xchg  (** Atomic exchanges. *)
+
+  include Act_utils.Enum_types.Extension_table with type t := t
 
   val classify : Atomic_statement.t -> t option
   (** [classify s] tries to classify [s]. *)
@@ -36,6 +44,10 @@ module Atomic : sig
   (** [matches clazz ~template] checks whether [clazz] matches [template].
       Holes in [template] match any corresponding class in [clazz], but not
       vice versa. *)
+
+  val atomic_matches : Atomic_statement.t -> template:t -> bool
+  (** [atomic_matches atom ~template] checks whether an atomic statement
+      [atom] matches [template] (using {!classify} and {!matches}). *)
 end
 
 (** {1 Atomic classes} *)

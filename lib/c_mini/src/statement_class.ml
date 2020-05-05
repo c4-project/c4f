@@ -11,16 +11,34 @@
 
 open Base
 
+let const_some (x : 'a) (_ : 'b) : 'a option = Some x
+
 module Atomic = struct
-  type t = Store [@@deriving compare, equal, sexp]
+  module M = struct
+    type t = Cmpxchg | Fence | Fetch | Load | Store | Xchg
+    [@@deriving enum]
+
+    let table : (t, string) List.Assoc.t =
+      [ (Cmpxchg, "cmpxchg")
+      ; (Fence, "fence")
+      ; (Fetch, "fetch")
+      ; (Load, "load")
+      ; (Store, "store")
+      ; (Xchg, "xchg") ]
+  end
+
+  include M
+  include Act_utils.Enum.Extend_table (M)
 
   let classify : Atomic_statement.t -> t option =
-    Atomic_statement.reduce ~cmpxchg:(Fn.const None) ~fence:(Fn.const None)
-      ~fetch:(Fn.const None) ~store:(Fn.const (Some Store))
-      ~xchg:(Fn.const None)
+    Atomic_statement.reduce ~cmpxchg:(const_some Cmpxchg)
+      ~fence:(const_some Fence) ~fetch:(const_some Fetch)
+      ~store:(const_some Store) ~xchg:(const_some Xchg)
 
-  let matches (clazz : t) ~(template : t) : bool =
-    ignore clazz ; ignore template ; true
+  let matches (clazz : t) ~(template : t) : bool = equal clazz template
+
+  let atomic_matches (atom : Atomic_statement.t) ~(template : t) : bool =
+    Option.exists (classify atom) ~f:(matches ~template)
 end
 
 module Prim = struct
