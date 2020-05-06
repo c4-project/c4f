@@ -225,7 +225,9 @@ module Atomic_fetch_int_refl_nops (Obj : Env_types.S) :
       Q.Generator.t =
     Q.Generator.Let_syntax.(
       let%bind op = Op.Fetch.Gen_idem_refl.quickcheck_generator in
-      let%map mo = Mem_order.gen_rmw in
+      (* 'all values are permitted':
+         https://en.cppreference.com/w/c/atomic/atomic_fetch_add etc. *)
+      let%map mo = Mem_order.quickcheck_generator in
       fun (obj : Address.t) (arg : Expression.t) ->
         Atomic_fetch.make ~obj ~arg ~mo ~op)
 

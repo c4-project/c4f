@@ -32,3 +32,8 @@ module Fetch :
 (** Traversing over exchange. *)
 module Xchg :
   Expression_types.S_traversable with type t = Expression.t Atomic_xchg.t
+
+(** Traversing over atomic expressions. *)
+module Atomic :
+  Expression_types.S_traversable
+    with type t = Expression.t Atomic_expression.t

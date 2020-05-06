@@ -44,9 +44,13 @@ let test_all_expressions_have_type
         ~equal:[%compare.equal: Src.Type.t Or_error.t]
         ~expect:(Or_error.return ty))
 
+module Exp_lvalues =
+  Travesty.Traversable.Chain0
+    (Act_c_mini.Expression_traverse.On_addresses)
+    (Act_c_mini.Address.On_lvalues)
 module Exp_idents =
   Travesty.Traversable.Chain0
-    (Act_c_mini.Expression_traverse.On_lvalues)
+    (Exp_lvalues)
     (Act_c_mini.Lvalue.On_identifiers)
 
 let test_all_expressions_in_env
@@ -97,10 +101,16 @@ let%test_module "Int_values" =
       [%expect
         {|
         0
-        atomic_fetch_or_explicit(bar, 0, memory_order_acq_rel)
+        (-860 ^ atomic_load_explicit(bar, memory_order_relaxed) ^ 19482) &
+        (atomic_fetch_sub_explicit(bar, 2147483647 - 2147483647,
+                                   memory_order_acquire)
+         ^ 0 & atomic_load_explicit(bar, memory_order_seq_cst) |
+         atomic_load_explicit(bar, memory_order_seq_cst) ^
+         atomic_load_explicit(bar, memory_order_acquire))
+        95 ^ atomic_load_explicit(bar, memory_order_relaxed)
         95 ^ atomic_load_explicit(bar, memory_order_consume)
-        95 ^ atomic_load_explicit(bar, memory_order_acquire)
-        atomic_fetch_xor_explicit(bar, 0, memory_order_relaxed) ^ 0 & 0 |}]
+        atomic_fetch_xor_explicit(bar, -879720314 - -879720314, memory_order_consume)
+        ^ (7471 | atomic_fetch_xor_explicit(bar, 0, memory_order_consume)) |}]
 
     let%expect_test "sample (environment is empty)" =
       print_sample (Lazy.force Env.empty_env) ;
@@ -188,11 +198,16 @@ let%test_module "Atomic int nops" =
       print_sample (Lazy.force Env.test_env) ;
       [%expect
         {|
-          atomic_fetch_add_explicit(bar, 0, memory_order_acq_rel)
-          atomic_fetch_add_explicit(&x, 0, memory_order_seq_cst)
-          atomic_fetch_and_explicit(&x, 27, memory_order_seq_cst)
+          atomic_fetch_add_explicit(&x, 0, memory_order_release)
+          atomic_fetch_add_explicit(&x, 53 ^
+                                    atomic_load_explicit(&y, memory_order_consume),
+                                    memory_order_relaxed)
+          atomic_fetch_add_explicit(&y, 0, memory_order_acquire)
           atomic_fetch_and_explicit(&y, 53, memory_order_relaxed)
-          atomic_fetch_and_explicit(&y, 53, memory_order_seq_cst) |}]
+          atomic_fetch_add_explicit(&y,
+                                    atomic_fetch_xor_explicit(bar, 0,
+                                                              memory_order_seq_cst)
+                                    ^ 95, memory_order_consume) |}]
 
     let test_fun (env : Src.Env.t) :
         (module Q.Test.S with type t = Src.Expression.t) =
@@ -240,7 +255,7 @@ let%test_module "Bool_values" =
          (0 ^ 95 - atomic_load_explicit(bar, memory_order_consume) &
           atomic_fetch_or_explicit(bar, 95 ^
                                    atomic_fetch_or_explicit(bar, 0,
-                                                            memory_order_relaxed),
+                                                            memory_order_acquire),
                                    memory_order_relaxed)))
         (95 ^ atomic_load_explicit(bar, memory_order_acquire)) ==
         atomic_load_explicit(bar, memory_order_relaxed) - 95 &&

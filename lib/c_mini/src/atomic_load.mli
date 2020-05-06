@@ -37,9 +37,9 @@ include Types.S_has_underlying_variable with type t := t
 module On_addresses :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t
 
-(** Traversing over lvalues in atomic loads. *)
-module On_lvalues :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t
+(** Traversing over memory orders in atomic loads. *)
+module On_mem_orders :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Mem_order.t
 
 (** {2 Generation and quickchecking}
 

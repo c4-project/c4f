@@ -42,9 +42,9 @@ module On_expressions :
     with type t := t
      and type Elt.t = Expression.t
 
-(** Traversing over lvalues in atomic stores. *)
-module On_lvalues :
-  Travesty.Traversable_types.S0 with type t := t and type Elt.t = Lvalue.t
+(** Traversing over memory orders in atomic stores. *)
+module On_mem_orders :
+  Travesty.Traversable_types.S0 with type t := t and type Elt.t = Mem_order.t
 
 (** {1 Generating and quickchecking}
 

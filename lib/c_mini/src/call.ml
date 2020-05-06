@@ -35,12 +35,6 @@ Travesty.Traversable.Make0 (struct
   end
 end)
 
-module On_lvalues :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
-  Travesty.Traversable.Chain0
-    (On_expressions)
-    (Expression_traverse.On_lvalues)
-
 module On_addresses :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t =
   Travesty.Traversable.Chain0

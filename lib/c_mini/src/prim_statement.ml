@@ -142,8 +142,12 @@ module On_lvalues :
 Make_traversal (struct
   module Elt = Lvalue
   module A = Assign.On_lvalues
-  module C = Call.On_lvalues
-  module T = Atomic_statement.On_lvalues
+  module C =
+    Travesty.Traversable.Chain0 (Call.On_addresses) (Address.On_lvalues)
+  module T =
+    Travesty.Traversable.Chain0
+      (Atomic_statement.On_addresses)
+      (Address.On_lvalues)
 end)
 
 module On_addresses :

@@ -77,6 +77,6 @@ module On_addresses :
 module On_expressions :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Expression.t
 
-(** Traverses over the lvalues of an atomic statement. *)
-module On_lvalues :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t
+(** Traverses over the memory orders of an atomic statement. *)
+module On_mem_orders :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Mem_order.t

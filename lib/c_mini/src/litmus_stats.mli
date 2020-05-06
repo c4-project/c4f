@@ -13,17 +13,22 @@
 
 open Base
 
-(** Type of statistic outputs. *)
-type t =
-  { threads: int
-  ; returns: int
-  ; literal_bools: int
-  ; atomics: int Map.M(Statement_class.Atomic).t }
+module Statset : sig
+  (** Type of statistic outputs. *)
+  type t =
+    { threads: int
+    ; returns: int
+    ; literal_bools: int
+    ; expr_atomics: int Map.M(Atomic_class).t
+    ; expr_mos: int Map.M(Mem_order).t
+    ; stm_atomics: int Map.M(Atomic_class).t
+    ; stm_mos: int Map.M(Mem_order).t }
 
-(** We can pretty-print statistic outputs. *)
-include Pretty_printer.S with type t := t
+  (** We can pretty-print statistic outputs. *)
+  include Pretty_printer.S with type t := t
+end
 
-val scrape : Litmus.Test.t -> t
+val scrape : Litmus.Test.t -> Statset.t
 (** [scrape test] extracts statistics from [test]. *)
 
 (** Lifting of [scrape] to a filter from litmus test files to statistic

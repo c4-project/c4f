@@ -42,9 +42,19 @@ Travesty.Traversable.Make0 (struct
   end
 end)
 
-module On_lvalues :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
-  Travesty.Traversable.Chain0 (On_addresses) (Address.On_lvalues)
+module On_mem_orders :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Mem_order.t =
+Travesty.Traversable.Make0 (struct
+  type nonrec t = t
+
+  module Elt = Mem_order
+
+  module On_monad (M : Monad.S) = struct
+    module B = Base_map (M)
+
+    let map_m x ~f = B.bmap x ~src:M.return ~mo:f
+  end
+end)
 
 module Type_check (E : Env_types.S) = struct
   module A = Address.Type_check (E)

@@ -47,10 +47,10 @@ let is_store_compatible : t -> bool = function
   | Acquire | Consume | Acq_rel ->
       false
 
-let is_rmw_compatible : t -> bool = function
-  | Seq_cst | Acq_rel | Relaxed ->
+let is_cmpxchg_fail_compatible : t -> bool = function
+  | Seq_cst | Acquire | Consume | Relaxed ->
       true
-  | Acquire | Consume | Release ->
+  | Acq_rel | Release ->
       false
 
 let can_change_dir (current : t) ~(replacement : t)
@@ -81,6 +81,6 @@ let gen_store : t Base_quickcheck.Generator.t =
   Base_quickcheck.Generator.filter ~f:is_store_compatible
     [%quickcheck.generator: t]
 
-let gen_rmw : t Base_quickcheck.Generator.t =
-  Base_quickcheck.Generator.filter ~f:is_rmw_compatible
+let gen_cmpxchg_fail : t Base_quickcheck.Generator.t =
+  Base_quickcheck.Generator.filter ~f:is_cmpxchg_fail_compatible
     [%quickcheck.generator: t]

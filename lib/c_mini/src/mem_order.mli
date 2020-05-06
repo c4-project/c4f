@@ -35,9 +35,9 @@ val is_store_compatible : t -> bool
 (** [is_store_compatible mo] returns whether [mo] is compatible with store
     operations. *)
 
-val is_rmw_compatible : t -> bool
-(** [is_rmw_compatible mo] returns whether [mo] is compatible with
-    read-modify-writes. *)
+val is_cmpxchg_fail_compatible : t -> bool
+(** [is_cmpxchg_fail_compatible mo] returns whether [mo] is compatible with
+    the 'fail' order of a compare-exchange. *)
 
 (** {2 Helpers for strengthening and weakening memory orders} *)
 
@@ -73,6 +73,7 @@ val gen_load : t Base_quickcheck.Generator.t
 val gen_store : t Base_quickcheck.Generator.t
 (** [gen_load] generates a random memory order suitable for stores. *)
 
-val gen_rmw : t Base_quickcheck.Generator.t
-(** [gen_load] generates a random memory order suitable for
-    read-modify-writes. *)
+val gen_cmpxchg_fail : t Base_quickcheck.Generator.t
+(** [gen_cmpxchg_fail] generates a random memory order suitable for
+    compare-exchange failures (assuming that the result is no stronger than
+    the success memory order). *)

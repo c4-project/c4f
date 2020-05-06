@@ -64,20 +64,17 @@ Travesty.Traversable.Make0 (struct
   end
 end)
 
-module On_lvalues :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
+module On_mem_orders :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Mem_order.t =
 Travesty.Traversable.Make0 (struct
   type nonrec t = t
 
-  module Elt = Lvalue
+  module Elt = Mem_order
 
   module On_monad (M : Monad.S) = struct
     module B = Base_map (M)
-    module E = Expression_traverse.On_lvalues.On_monad (M)
-    module A = Address.On_lvalues.On_monad (M)
 
-    let map_m x ~f =
-      B.bmap x ~src:(E.map_m ~f) ~dst:(A.map_m ~f) ~mo:M.return
+    let map_m x ~f = B.bmap x ~src:M.return ~dst:M.return ~mo:f
   end
 end)
 

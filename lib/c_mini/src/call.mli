@@ -44,7 +44,3 @@ module On_addresses :
 (** Traverses over the expressions of a function call. *)
 module On_expressions :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Expression.t
-
-(** Traverses over the lvalues of a function call. *)
-module On_lvalues :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t

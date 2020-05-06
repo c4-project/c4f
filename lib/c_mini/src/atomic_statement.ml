@@ -103,14 +103,14 @@ Travesty.Traversable.Make0 (struct
   end
 end)
 
-module On_lvalues :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
+module On_mem_orders :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Mem_order.t =
 Make_traversal (struct
-  module Elt = Lvalue
-  module C = Expression_traverse.Cmpxchg.On_lvalues
-  module F = Expression_traverse.Fetch.On_lvalues
-  module S = Atomic_store.On_lvalues
-  module X = Expression_traverse.Xchg.On_lvalues
+  module Elt = Mem_order
+  module C = Expression_traverse.Cmpxchg.On_mem_orders
+  module F = Expression_traverse.Fetch.On_mem_orders
+  module S = Atomic_store.On_mem_orders
+  module X = Expression_traverse.Xchg.On_mem_orders
 end)
 
 module On_addresses :

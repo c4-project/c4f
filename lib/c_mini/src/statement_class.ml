@@ -1,52 +1,12 @@
-(* The Automagic Compiler Tormentor
-
-   Copyright (c) 2018--2020 Matt Windsor and contributors
-
-   ACT itself is licensed under the MIT License. See the LICENSE file in the
-   project root for more information.
-
-   ACT is based in part on code from the Herdtools7 project
-   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
-   project root for more information. *)
-
 open Base
 
-let const_some (x : 'a) (_ : 'b) : 'a option = Some x
-
-module Atomic = struct
-  module M = struct
-    type t = Cmpxchg | Fence | Fetch | Load | Store | Xchg
-    [@@deriving enum]
-
-    let table : (t, string) List.Assoc.t =
-      [ (Cmpxchg, "cmpxchg")
-      ; (Fence, "fence")
-      ; (Fetch, "fetch")
-      ; (Load, "load")
-      ; (Store, "store")
-      ; (Xchg, "xchg") ]
-  end
-
-  include M
-  include Act_utils.Enum.Extend_table (M)
-
-  let classify : Atomic_statement.t -> t option =
-    Atomic_statement.reduce ~cmpxchg:(const_some Cmpxchg)
-      ~fence:(const_some Fence) ~fetch:(const_some Fetch)
-      ~store:(const_some Store) ~xchg:(const_some Xchg)
-
-  let matches (clazz : t) ~(template : t) : bool = equal clazz template
-
-  let atomic_matches (atom : Atomic_statement.t) ~(template : t) : bool =
-    Option.exists (classify atom) ~f:(matches ~template)
-end
-
 module Prim = struct
-  type t = Atomic of Atomic.t option [@@deriving compare, equal, sexp]
+  type t = Atomic of Atomic_class.t option
+  [@@deriving compare, equal, sexp]
 
   let classify : Prim_statement.t -> t option =
     Prim_statement.reduce ~assign:(Fn.const None)
-      ~atomic:(fun x -> Some (Atomic (Atomic.classify x)))
+      ~atomic:(fun x -> Some (Atomic (Atomic_class.classify_stm x)))
       ~early_out:(Fn.const None) ~goto:(Fn.const None)
       ~procedure_call:(Fn.const None) ~label:(Fn.const None)
       ~nop:(Fn.const None)
@@ -56,7 +16,7 @@ module Prim = struct
     | Atomic None, Atomic _ ->
         true
     | Atomic (Some template), Atomic (Some clazz) ->
-        Atomic.matches clazz ~template
+        Atomic_class.matches clazz ~template
     | _, _ ->
         false
 end
@@ -99,5 +59,5 @@ let count_matches (type e) (stm : e Statement.t) ~(template : t) : int =
     ~while_loop:(fun w ->
       one_if_matches (classify_while w) ~template + sum_block (While.body w))
 
-let atomic ?(specifically : Atomic.t option) () : t =
+let atomic ?(specifically : Atomic_class.t option) () : t =
   Prim (Some (Prim.Atomic specifically))

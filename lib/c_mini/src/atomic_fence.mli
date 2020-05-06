@@ -39,3 +39,9 @@ val mode : t -> Mode.t
 
 val mo : t -> Mem_order.t
 (** [mo fence] gets [fence]'s memory order. *)
+
+(** {2 Traversals} *)
+
+(** Traverses over the memory order of an atomic fence. *)
+module On_mem_orders :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Mem_order.t

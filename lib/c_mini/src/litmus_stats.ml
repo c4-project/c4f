@@ -11,20 +11,80 @@
 
 open Base
 
-type t =
-  { threads: int
-  ; returns: int
-  ; literal_bools: int
-  ; atomics: int Map.M(Statement_class.Atomic).t }
-[@@deriving fields]
+module Statset = struct
+  type t =
+    { threads: int
+    ; returns: int
+    ; literal_bools: int
+    ; expr_atomics: int Map.M(Atomic_class).t
+    ; expr_mos: int Map.M(Mem_order).t
+    ; stm_atomics: int Map.M(Atomic_class).t
+    ; stm_mos: int Map.M(Mem_order).t }
+  [@@deriving fields]
 
-let empty_atomics () : int Map.M(Statement_class.Atomic).t =
-  Statement_class.Atomic.all_list ()
-  |> List.map ~f:(fun x -> (x, 0))
-  |> Map.of_alist_exn (module Statement_class.Atomic)
+  let init_enum (type t cw)
+      (module M : Act_utils.Enum_types.Extension
+        with type t = t
+         and type comparator_witness = cw) : (t, int, cw) Map.t =
+    M.all_list ()
+    |> List.map ~f:(fun x -> (x, 0))
+    |> Map.of_alist_exn (module M)
 
-let init (threads : int) : t =
-  {threads; returns= 0; literal_bools= 0; atomics= empty_atomics ()}
+  let init (threads : int) : t =
+    { threads
+    ; returns= 0
+    ; literal_bools= 0
+    ; expr_atomics= init_enum (module Atomic_class)
+    ; expr_mos= init_enum (module Mem_order)
+    ; stm_atomics= init_enum (module Atomic_class)
+    ; stm_mos= init_enum (module Mem_order) }
+
+  let pp_map (pp_k : 'k Fmt.t) (pp_v : 'v Fmt.t) : ('k, 'v, 'cw) Map.t Fmt.t
+      =
+    Fmt.(
+      vbox
+        (using Map.to_alist (list ~sep:sp (hbox (pair ~sep:sp pp_k pp_v)))))
+
+  let pp_atomic_name (ty : string) : Atomic_class.t Fmt.t =
+    Fmt.(
+      concat ~sep:(any ".")
+        [any "atomics"; const string ty; using Atomic_class.to_string string])
+
+  let pp_atomics (ty : string) : int Map.M(Atomic_class).t Fmt.t =
+    pp_map (pp_atomic_name ty) Fmt.int
+
+  let pp_mo_name (ty : string) : Mem_order.t Fmt.t =
+    Fmt.(
+      concat ~sep:(any ".")
+        [any "mem-orders"; const string ty; using Mem_order.to_string string])
+
+  let pp_mos (ty : string) : int Map.M(Mem_order).t Fmt.t =
+    pp_map (pp_mo_name ty) Fmt.int
+
+  let pp : t Fmt.t =
+    Fmt.(
+      record
+        [ field ~sep:sp "threads" threads int
+        ; field ~sep:sp "returns" returns int
+        ; field ~sep:sp "literals.bool" literal_bools int
+        ; using expr_atomics (pp_atomics "expression")
+        ; using expr_mos (pp_mos "expression")
+        ; using stm_atomics (pp_atomics "statement")
+        ; using stm_mos (pp_mos "statement") ])
+end
+
+module Monad = Travesty.State.Make (Statset)
+module MList = Travesty_base_exts.List.On_monad (Monad)
+module MPExpr = Prim_statement.On_expressions.On_monad (Monad)
+
+let nowt (type a) (_ : a) : unit Monad.t = Monad.return ()
+
+let up_counter (ctr : _ Field.t) (k : int) : unit Monad.t =
+  Monad.modify (Field.map ctr ~f:(fun n -> n + k))
+
+let up_mapping (type k cw) (map : (k, int, cw) Map.t) (key : k) :
+    (k, int, cw) Map.t =
+  Map.update map key ~f:(fun i -> Option.value i ~default:0 + 1)
 
 module Stm = Statement.With_meta (Unit)
 module K =
@@ -32,81 +92,131 @@ module K =
     (Stm.On_expressions)
     (Expression_traverse.On_constants)
 
-let is_return (stm : Prim_statement.t) : bool =
-  Option.exists (Prim_statement.as_early_out stm) ~f:(function
-    | Return ->
-        true
-    | Break | Continue ->
-        false)
-
-let fold_fn_decl (stats : t) (decl : Initialiser.t) : t =
+let probe_fn_decl (decl : Initialiser.t) : unit Monad.t =
   let literal_bools =
     Option.count (Initialiser.value decl) ~f:Constant.is_bool
   in
-  {stats with literal_bools= stats.literal_bools + literal_bools}
+  up_counter Statset.Fields.literal_bools literal_bools
 
-let fold_fn_decls (decls : Initialiser.t Act_common.C_named.Alist.t)
-    (stats : t) : t =
-  List.fold decls ~init:stats ~f:(fun stats (_, d) -> fold_fn_decl stats d)
+let probe_fn_decls (decls : Initialiser.t Act_common.C_named.Alist.t) :
+    unit Monad.t =
+  MList.iter_m decls ~f:(fun (_, d) -> probe_fn_decl d)
 
-let track_atomics (atomics : int Map.M(Statement_class.Atomic).t)
-    (prim : Prim_statement.t) : int Map.M(Statement_class.Atomic).t =
-  match Prim_statement.as_atomic prim with
-  | Some atom ->
-      Map.mapi atomics ~f:(fun ~key ~data ->
-          data
-          + Bool.to_int
-              (Statement_class.Atomic.atomic_matches atom ~template:key))
-  | None ->
-      atomics
+let add_classification (m : int Map.M(Atomic_class).t) :
+    Atomic_class.t option -> int Map.M(Atomic_class).t =
+  Option.value_map ~default:m ~f:(up_mapping m)
 
-let fold_top_stm (stats : t) (stm : unit Statement.t) : t =
-  let returns = Stm.On_primitives.count stm ~f:is_return in
-  let atomics =
-    Stm.On_primitives.fold stm ~f:track_atomics ~init:stats.atomics
-  in
-  let literal_bools = K.count stm ~f:Constant.is_bool in
-  { stats with
-    returns= stats.returns + returns
-  ; literal_bools= stats.literal_bools + literal_bools
-  ; atomics }
+let classify_atomic_stm (atom : Atomic_statement.t)
+    (m : int Map.M(Atomic_class).t) : int Map.M(Atomic_class).t =
+  atom |> Atomic_class.classify_stm |> add_classification m
 
-let fold_fn_stms (stms : unit Statement.t list) (stats : t) : t =
-  List.fold stms ~init:stats ~f:fold_top_stm
+module MEME = Atomic_expression.On_expressions.On_monad (Monad)
+module MEMO = Expression_traverse.Atomic.On_mem_orders.On_monad (Monad)
+module MSMO = Atomic_statement.On_mem_orders.On_monad (Monad)
 
-let fold_fn (stats : t) (fn : unit Function.t) : t =
-  stats
-  |> fold_fn_decls (Function.body_decls fn)
-  |> fold_fn_stms (Function.body_stms fn)
+let probe_atomic_stm (atom : Atomic_statement.t) : unit Monad.t =
+  Monad.(
+    Let_syntax.(
+      let%bind () =
+        modify
+          (Field.map Statset.Fields.stm_atomics
+             ~f:(classify_atomic_stm atom))
+      in
+      MSMO.iter_m atom ~f:(fun mo ->
+          modify
+            (Field.map Statset.Fields.stm_mos ~f:(fun map ->
+                 up_mapping map mo)))))
 
-let fold_named_fn (stats : t) (fn : unit Function.t Act_common.C_named.t) : t
+let classify_atomic_expr (atom : _ Atomic_expression.t)
+    (m : int Map.M(Atomic_class).t) : int Map.M(Atomic_class).t =
+  atom |> Atomic_class.classify_expr |> add_classification m
+
+let probe_atomic_expr (atom : _ Atomic_expression.t) : unit Monad.t =
+  Monad.(
+    Let_syntax.(
+      (* TODO(@MattWindsor91): part of this is supposed to sequence through
+         any inner state calls, but the replacement of them with dummy
+         expressions is kind-of awful. *)
+      let%bind atom =
+        MEME.map_m atom ~f:(fun expr ->
+            Monad.(expr >>| fun () -> Expression.falsehood))
+      in
+      let%bind () =
+        modify
+          (Field.map Statset.Fields.expr_atomics
+             ~f:(classify_atomic_expr atom))
+      in
+      MEMO.iter_m atom ~f:(fun mo ->
+          modify
+            (Field.map Statset.Fields.expr_mos ~f:(fun map ->
+                 up_mapping map mo)))))
+
+let probe_constant (k : Constant.t) : unit Monad.t =
+  Monad.when_m (Constant.is_bool k) ~f:(fun () ->
+      up_counter Statset.Fields.literal_bools 1)
+
+let probe_expr : Expression.t -> unit Monad.t =
+  Expression.reduce ~constant:probe_constant ~address:nowt
+    ~atomic:probe_atomic_expr
+    ~bop:(fun _ l r ->
+      Monad.Let_syntax.(
+        let%bind () = l in
+        r))
+    ~uop:(fun _ u -> u)
+
+let probe_early_out : Early_out.t -> unit Monad.t = function
+  | Return ->
+      up_counter Statset.Fields.returns 1
+  | Break | Continue ->
+      Monad.return ()
+
+let probe_prim (s : Prim_statement.t) : unit Monad.t =
+  Monad.Let_syntax.(
+    let%bind () = MPExpr.iter_m s ~f:probe_expr in
+    Prim_statement.reduce s ~assign:nowt ~atomic:probe_atomic_stm
+      ~early_out:probe_early_out ~label:nowt ~goto:nowt ~nop:nowt
+      ~procedure_call:nowt)
+
+let seq_block : (unit, unit Monad.t) Block.t -> unit Monad.t =
+  Fn.compose Monad.all_unit Block.statements
+
+let probe_if (i : (unit, unit Monad.t) If.t) : unit Monad.t =
+  Monad.Let_syntax.(
+    let%bind () = seq_block (If.t_branch i) in
+    let%bind () = seq_block (If.f_branch i) in
+    probe_expr (If.cond i))
+
+let probe_while (i : (unit, unit Monad.t) While.t) : unit Monad.t =
+  Monad.Let_syntax.(
+    let%bind () = seq_block (While.body i) in
+    probe_expr (While.cond i))
+
+let probe_fn_stm : unit Statement.t -> unit Monad.t =
+  Statement.reduce
+    ~prim:(fun ((), p) -> probe_prim p)
+    ~if_stm:probe_if ~while_loop:probe_while
+
+let probe_fn_stms : unit Statement.t list -> unit Monad.t =
+  MList.iter_m ~f:probe_fn_stm
+
+let probe_fn (fn : unit Function.t) : unit Monad.t =
+  Monad.Let_syntax.(
+    let%bind () = probe_fn_decls (Function.body_decls fn) in
+    probe_fn_stms (Function.body_stms fn))
+
+let probe_named_fn (fn : unit Function.t Act_common.C_named.t) : unit Monad.t
     =
-  fold_fn stats (Act_common.C_named.value fn)
+  probe_fn (Act_common.C_named.value fn)
 
-let scrape (t : Litmus.Test.t) : t =
+let probe_threads : unit Function.t Act_common.C_named.t list -> unit Monad.t
+    =
+  MList.iter_m ~f:probe_named_fn
+
+let scrape (t : Litmus.Test.t) : Statset.t =
   let ts = Litmus.Test.threads t in
   let threads = List.length ts in
-  List.fold ts ~init:(init threads) ~f:fold_named_fn
-
-let pp_atomic_name : Statement_class.Atomic.t Fmt.t =
-  Fmt.(
-    any "atomic-"
-    ++ using Statement_class.Atomic.to_string string
-    ++ any "-statements")
-
-let pp_atomics : int Map.M(Statement_class.Atomic).t Fmt.t =
-  Fmt.(
-    vbox
-      (using Map.to_alist
-         (list ~sep:sp (hbox (pair ~sep:sp pp_atomic_name int)))))
-
-let pp : t Fmt.t =
-  Fmt.(
-    record
-      [ field ~sep:sp "threads" threads int
-      ; field ~sep:sp "returns" returns int
-      ; field ~sep:sp "literal-bools" literal_bools int
-      ; using atomics pp_atomics ])
+  let state = Statset.init threads in
+  fst (Monad.run' (probe_threads ts) state)
 
 module Filter :
   Plumbing.Filter_types.S with type aux_i = unit and type aux_o = unit =
@@ -125,5 +235,5 @@ Plumbing.Filter.Make (struct
           ~path:(Plumbing.Filter_context.input_path_string ctx)
       in
       let f = Caml.Format.formatter_of_out_channel oc in
-      Fmt.pf f "@[<v>%a@]@." pp (scrape test))
+      Fmt.pf f "@[<v>%a@]@." Statset.pp (scrape test))
 end)

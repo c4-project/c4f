@@ -89,9 +89,13 @@ module Monad = struct
   let add_dependency (id : Ac.Litmus_id.t) : unit t =
     modify (add_dependency ~id)
 
+  module Exp_lvalues =
+    Travesty.Traversable.Chain0
+      (Act_c_mini.Expression_traverse.On_addresses)
+      (Act_c_mini.Address.On_lvalues)
   module Exp_idents =
     Travesty.Traversable.Chain0
-      (Act_c_mini.Expression_traverse.On_lvalues)
+      (Exp_lvalues)
       (Act_c_mini.Lvalue.On_identifiers)
   module Exp_identsM = Exp_idents.On_monad (M)
 

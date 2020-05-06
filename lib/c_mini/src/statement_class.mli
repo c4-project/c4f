@@ -23,37 +23,11 @@
     To allow this to happen smoothly, the various [classify] functions can
     choose to return [None] when asked for specific information. *)
 
-(** {1 Atomic classes} *)
-
-module Atomic : sig
-  (** Enumeration of atomic actions. *)
-  type t =
-    | Cmpxchg  (** Atomic compare-exchanges. *)
-    | Fence  (** Atomic fences. *)
-    | Fetch  (** Atomic fetches. *)
-    | Load  (** Atomic loads. *)
-    | Store  (** Atomic stores. *)
-    | Xchg  (** Atomic exchanges. *)
-
-  include Act_utils.Enum_types.Extension_table with type t := t
-
-  val classify : Atomic_statement.t -> t option
-  (** [classify s] tries to classify [s]. *)
-
-  val matches : t -> template:t -> bool
-  (** [matches clazz ~template] checks whether [clazz] matches [template].
-      Holes in [template] match any corresponding class in [clazz], but not
-      vice versa. *)
-
-  val atomic_matches : Atomic_statement.t -> template:t -> bool
-  (** [atomic_matches atom ~template] checks whether an atomic statement
-      [atom] matches [template] (using {!classify} and {!matches}). *)
-end
-
-(** {1 Atomic classes} *)
+(** {1 Primitive classes} *)
 module Prim : sig
-  (** Enumeration of atomic actions. *)
-  type t = Atomic of Atomic.t option [@@deriving compare, equal, sexp]
+  (** Enumeration of primitive statement classes. *)
+  type t = Atomic of Atomic_class.t option
+  [@@deriving compare, equal, sexp]
 
   val classify : Prim_statement.t -> t option
   (** [classify s] tries to classify [s]. *)
@@ -84,6 +58,6 @@ val count_matches : 'meta Statement.t -> template:t -> int
 
 (** {2 Convenience constructors} *)
 
-val atomic : ?specifically:Atomic.t -> unit -> t
+val atomic : ?specifically:Atomic_class.t -> unit -> t
 (** [atomic ?specifically ()] constructs an atomic class, optionally with the
     details in [specifically]. *)

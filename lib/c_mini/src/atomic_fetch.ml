@@ -61,8 +61,9 @@ end = struct
   let sexp_of_t = sexp_of_t E.sexp_of_t
 
   let quickcheck_generator : t Base_quickcheck.Generator.t =
+    (* See, eg, https://en.cppreference.com/w/c/atomic/atomic_fetch_add *)
     Base_quickcheck.Generator.map ~f:of_tuple
-      [%quickcheck.generator: A.t * E.t * [%custom Mem_order.gen_rmw] * O.t]
+      [%quickcheck.generator: A.t * E.t * Mem_order.t * O.t]
 
   let quickcheck_observer : t Base_quickcheck.Observer.t =
     Base_quickcheck.Observer.unmap ~f:to_tuple
