@@ -98,10 +98,10 @@ module Make : Action_types.S with type Payload.t = Make_payload.t = struct
       Subject.Test.t State.Monad.t =
     let is_global = Ac.Litmus_id.is_global var in
     let ty = Cm.Type.make basic_type ~is_pointer:is_global in
-    let open State.Monad.Let_syntax in
-    let%bind () = State.Monad.register_var ty var ~initial_value in
-    State.Monad.Monadic.return
-      (Subject.Test.declare_var subject ty var initial_value)
+    let init = Cm.Initialiser.make ~ty ~value:initial_value () in
+    State.Monad.Let_syntax.(
+      let%bind () = State.Monad.register_var var init in
+      State.Monad.Monadic.return (Subject.Test.declare_var subject var init))
 end
 
 module Volatile : Action_types.S with type Payload.t = Ac.Litmus_id.t =

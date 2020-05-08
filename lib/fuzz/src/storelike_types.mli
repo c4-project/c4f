@@ -29,21 +29,30 @@ module type Basic = sig
   (** Type of storelike statements. *)
   type t [@@deriving sexp]
 
-  (** A functor that produces a quickcheck instance for atomic stores given
-      source and destination variable environments. *)
-  module Quickcheck
-      (Src : Act_c_mini.Env_types.S)
-      (Dst : Act_c_mini.Env_types.S) :
-    Act_utils.My_quickcheck.S_with_sexp with type t := t
+  val gen :
+       src:Act_c_mini.Env.t
+    -> dst:Act_c_mini.Env.t
+    -> vars:Var.Map.t
+    -> tid:int
+    -> t Base_quickcheck.Generator.t
+  (** [gen ~src ~dst ~vars ~tid] returns a quickcheck instance for atomic
+      stores given source and destination variable environments [src] and
+      [dst], a variable map [var] for fresh variable generation, and the
+      target thread ID [tid]. *)
+
+  val new_locals : t -> Act_c_mini.Initialiser.t Act_common.C_named.Alist.t
+  (** [new_locals s] gets a list of any new local variables created for this
+      storelike, which should be registered and added to both the thread's
+      decls and the state. *)
 
   val dst_ids : t -> Act_common.C_id.t list
-  (** [dst_exprs] gets a list of any (unscoped) destination C identifiers
-      used in this storelike statement. *)
+  (** [dst_exprs s] gets a list of any (unscoped) destination C identifiers
+      used in this storelike. *)
 
   val src_exprs : t -> Act_c_mini.Expression.t list
-  (** [src_exprs] gets a list of any source expressions used in this
-      storelike statement. *)
+  (** [src_exprs s] gets a list of any source expressions used in this
+      storelike. *)
 
-  val to_stm : t -> Act_c_mini.Prim_statement.t
-  (** [to_stm] lifts a storelike into a primitive. *)
+  val to_stms : t -> Act_c_mini.Prim_statement.t list
+  (** [to_stms s] lifts a storelike into a list of primitives. *)
 end

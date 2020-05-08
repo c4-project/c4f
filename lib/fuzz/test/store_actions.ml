@@ -51,33 +51,7 @@ module Test_data = struct
                      ~mo:Seq_cst ~op:Sub)))
           ~dst:(Address.of_variable_str_exn "gen1")
           ~mo:Seq_cst)
-
-  let prepare_fuzzer_state () : unit Src.State.Monad.t =
-    Src.State.Monad.(
-      register_var
-        Act_c_mini.Type.(int ~is_pointer:true ~is_atomic:true ())
-        (Act_common.Litmus_id.of_string "gen1")
-        ~initial_value:(Act_c_mini.Constant.int 1337)
-      >>= fun () ->
-      register_var
-        Act_c_mini.Type.(int ~is_pointer:true ~is_atomic:true ())
-        (Act_common.Litmus_id.of_string "gen2")
-        ~initial_value:(Act_c_mini.Constant.int (-55)))
 end
-
-let run_and_dump_vars (test_action : Src.Subject.Test.t Src.State.Monad.t)
-    ~(predicates : (Src.Var.Record.t -> bool) list)
-    ~(initial_state : Src.State.t) : unit =
-  let result =
-    Or_error.(
-      Src.State.Monad.(run' test_action initial_state)
-      >>| fst
-      >>| Src.State.vars_satisfying_all ~scope:(Local 0) ~predicates)
-  in
-  Fmt.(
-    pr "@[%a@]@."
-      (result ~error:Error.pp ~ok:(list ~sep:sp Act_common.C_id.pp)))
-    result
 
 let%test_module "store.make.int.normal" =
   ( module struct
@@ -93,7 +67,7 @@ let%test_module "store.make.int.normal" =
     let test_action (store : Act_c_mini.Atomic_store.t Lazy.t) :
         Src.Subject.Test.t Src.State.Monad.t =
       Src.State.Monad.(
-        Test_data.prepare_fuzzer_state ()
+        Storelike.Test_common.prepare_fuzzer_state ()
         >>= fun () ->
         Src.Store_actions.Int.run
           (Lazy.force Subject.Test_data.test)
@@ -131,22 +105,19 @@ let%test_module "store.make.int.normal" =
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
         let%expect_test "test int store: global variables" =
-          run_and_dump_vars test_action
-            ~initial_state:(Lazy.force Subject.Test_data.state)
-            ~predicates:[Src.Var.Record.is_global] ;
-          [%expect {| gen1 gen2 x y |}]
+          Storelike.Test_common.run_and_dump_globals test_action
+            ~initial_state:(Lazy.force Subject.Test_data.state) ;
+          [%expect {| gen1= gen2=-55 x= y= |}]
 
         let%expect_test "test int store: variables with known values" =
-          run_and_dump_vars test_action
-            ~initial_state:(Lazy.force Subject.Test_data.state)
-            ~predicates:[Src.Var.Record.has_known_value] ;
-          [%expect {| gen2 r0 |}]
+          Storelike.Test_common.run_and_dump_kvs test_action
+            ~initial_state:(Lazy.force Subject.Test_data.state) ;
+          [%expect {| gen2=-55 r0=4004 |}]
 
         let%expect_test "test int store: variables with dependencies" =
-          run_and_dump_vars test_action
-            ~initial_state:(Lazy.force Subject.Test_data.state)
-            ~predicates:[Src.Var.Record.has_dependencies] ;
-          [%expect {| gen2 |}]
+          Storelike.Test_common.run_and_dump_deps test_action
+            ~initial_state:(Lazy.force Subject.Test_data.state) ;
+          [%expect {| gen2=-55 |}]
       end )
 
     let%test_module "store of load to local" =
@@ -181,22 +152,19 @@ let%test_module "store.make.int.normal" =
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
         let%expect_test "test int store: global variables" =
-          run_and_dump_vars test_action
-            ~initial_state:(Lazy.force Subject.Test_data.state)
-            ~predicates:[Src.Var.Record.is_global] ;
-          [%expect {| gen1 gen2 x y |}]
+          Storelike.Test_common.run_and_dump_globals test_action
+            ~initial_state:(Lazy.force Subject.Test_data.state) ;
+          [%expect {| gen1=1337 gen2=-55 x= y= |}]
 
         let%expect_test "test int store: variables with known values" =
-          run_and_dump_vars test_action
-            ~initial_state:(Lazy.force Subject.Test_data.state)
-            ~predicates:[Src.Var.Record.has_known_value] ;
-          [%expect {| gen1 gen2 |}]
+          Storelike.Test_common.run_and_dump_kvs test_action
+            ~initial_state:(Lazy.force Subject.Test_data.state) ;
+          [%expect {| gen1=1337 gen2=-55 |}]
 
         let%expect_test "test int store: variables with dependencies" =
-          run_and_dump_vars test_action
-            ~initial_state:(Lazy.force Subject.Test_data.state)
-            ~predicates:[Src.Var.Record.has_dependencies] ;
-          [%expect {| gen2 |}]
+          Storelike.Test_common.run_and_dump_deps test_action
+            ~initial_state:(Lazy.force Subject.Test_data.state) ;
+          [%expect {| gen2=-55 |}]
       end )
 
     let%test_module "store of self-referential fetching" =
@@ -239,22 +207,19 @@ let%test_module "store.make.int.normal" =
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
         let%expect_test "test int store: global variables" =
-          run_and_dump_vars test_action
-            ~initial_state:(Lazy.force Subject.Test_data.state)
-            ~predicates:[Src.Var.Record.is_global] ;
-          [%expect {| gen1 gen2 x y |}]
+          Storelike.Test_common.run_and_dump_globals test_action
+            ~initial_state:(Lazy.force Subject.Test_data.state) ;
+          [%expect {| gen1= gen2=-55 x= y= |}]
 
         let%expect_test "test int store: variables with known values" =
-          run_and_dump_vars test_action
-            ~initial_state:(Lazy.force Subject.Test_data.state)
-            ~predicates:[Src.Var.Record.has_known_value] ;
-          [%expect {| gen2 r0 |}]
+          Storelike.Test_common.run_and_dump_kvs test_action
+            ~initial_state:(Lazy.force Subject.Test_data.state) ;
+          [%expect {| gen2=-55 r0=4004 |}]
 
         let%expect_test "test int store: variables with dependencies" =
-          run_and_dump_vars test_action
-            ~initial_state:(Lazy.force Subject.Test_data.state)
-            ~predicates:[Src.Var.Record.has_dependencies] ;
-          [%expect {| gen1 |}]
+          Storelike.Test_common.run_and_dump_deps test_action
+            ~initial_state:(Lazy.force Subject.Test_data.state) ;
+          [%expect {| gen1= |}]
       end )
   end )
 
@@ -270,7 +235,7 @@ let%test_module "store.make.int.dead" =
 
     let test_action : Src.Subject.Test.t Src.State.Monad.t =
       Src.State.Monad.(
-        Test_data.prepare_fuzzer_state ()
+        Storelike.Test_common.prepare_fuzzer_state ()
         >>= fun () ->
         Src.Store_actions.Int_dead.run
           (Lazy.force Subject.Test_data.test)
@@ -307,21 +272,18 @@ let%test_module "store.make.int.dead" =
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "test int store: global variables" =
-      run_and_dump_vars test_action
-        ~initial_state:(Lazy.force Subject.Test_data.state)
-        ~predicates:[Src.Var.Record.is_global] ;
-      [%expect {| gen1 gen2 x y |}]
+      Storelike.Test_common.run_and_dump_globals test_action
+        ~initial_state:(Lazy.force Subject.Test_data.state) ;
+      [%expect {| gen1=1337 gen2=-55 x= y= |}]
 
     let%expect_test "test int store: variables with known values" =
-      run_and_dump_vars test_action
-        ~initial_state:(Lazy.force Subject.Test_data.state)
-        ~predicates:[Src.Var.Record.has_known_value] ;
-      [%expect {| gen1 gen2 r0 |}]
+      Storelike.Test_common.run_and_dump_kvs test_action
+        ~initial_state:(Lazy.force Subject.Test_data.state) ;
+      [%expect {| gen1=1337 gen2=-55 r0=4004 |}]
 
     let%expect_test "test int store: variables with dependencies" =
-      run_and_dump_vars test_action
-        ~initial_state:(Lazy.force Subject.Test_data.state)
-        ~predicates:[Src.Var.Record.has_dependencies] ;
+      Storelike.Test_common.run_and_dump_deps test_action
+        ~initial_state:(Lazy.force Subject.Test_data.state) ;
       [%expect {| |}]
   end )
 
@@ -346,7 +308,7 @@ let%test_module "store.make.int.redundant" =
 
     let test_action : Src.Subject.Test.t Src.State.Monad.t =
       Src.State.Monad.(
-        Test_data.prepare_fuzzer_state ()
+        Storelike.Test_common.prepare_fuzzer_state ()
         >>= fun () ->
         Src.Store_actions.Int_redundant.run
           (Lazy.force Subject.Test_data.test)
@@ -377,21 +339,18 @@ let%test_module "store.make.int.redundant" =
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "test int store: global variables" =
-      run_and_dump_vars test_action
-        ~initial_state:(Lazy.force Subject.Test_data.state)
-        ~predicates:[Src.Var.Record.is_global] ;
-      [%expect {| gen1 gen2 x y |}]
+      Storelike.Test_common.run_and_dump_globals test_action
+        ~initial_state:(Lazy.force Subject.Test_data.state) ;
+      [%expect {| gen1=1337 gen2=-55 x= y= |}]
 
     let%expect_test "test int store: variables with known values" =
-      run_and_dump_vars test_action
-        ~initial_state:(Lazy.force Subject.Test_data.state)
-        ~predicates:[Src.Var.Record.has_known_value] ;
-      [%expect {| gen1 gen2 r0 |}]
+      Storelike.Test_common.run_and_dump_kvs test_action
+        ~initial_state:(Lazy.force Subject.Test_data.state) ;
+      [%expect {| gen1=1337 gen2=-55 r0=4004 |}]
 
     let%expect_test "test int store: variables with dependencies" =
-      run_and_dump_vars test_action
-        ~initial_state:(Lazy.force Subject.Test_data.state)
-        ~predicates:[Src.Var.Record.has_dependencies] ;
+      Storelike.Test_common.run_and_dump_deps test_action
+        ~initial_state:(Lazy.force Subject.Test_data.state) ;
       [%expect {| |}]
   end )
 

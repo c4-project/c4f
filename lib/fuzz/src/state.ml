@@ -40,8 +40,10 @@ let map_vars (s : t) ~(f : Var.Map.t -> Var.Map.t) : t =
 let register_label (s : t) ~(label : Ac.Litmus_id.t) : t =
   {s with labels= Set.add s.labels label}
 
-let register_var ?(initial_value : Act_c_mini.Constant.t option) (s : t)
-    (var : Ac.Litmus_id.t) (ty : Act_c_mini.Type.t) : t =
+let register_var (s : t) (var : Ac.Litmus_id.t)
+    (init : Act_c_mini.Initialiser.t) : t =
+  let ty = Act_c_mini.Initialiser.ty init in
+  let initial_value = Act_c_mini.Initialiser.value init in
   map_vars s ~f:(fun v -> Var.Map.register_var v ?initial_value var ty)
 
 let add_dependency (s : t) ~(id : Ac.Litmus_id.t) : t =
@@ -79,9 +81,9 @@ module Monad = struct
   let resolve (id : Ac.C_id.t) ~(scope : Ac.Scope.t) : Ac.Litmus_id.t t =
     with_vars (Ac.Scoped_map.resolve ~id ~scope)
 
-  let register_var ?(initial_value : Act_c_mini.Constant.t option)
-      (ty : Act_c_mini.Type.t) (var : Ac.Litmus_id.t) : unit t =
-    modify (fun s -> register_var ?initial_value s var ty)
+  let register_var (var : Ac.Litmus_id.t) (init : Act_c_mini.Initialiser.t) :
+      unit t =
+    modify (fun s -> register_var s var init)
 
   let register_label (label : Ac.Litmus_id.t) : unit t =
     modify (register_label ~label)

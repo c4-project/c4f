@@ -63,8 +63,23 @@ Storelike.Make (struct
 
   type t = Cm.Atomic_store.t [@@deriving sexp]
 
-  let to_stm : Cm.Atomic_store.t -> Cm.Prim_statement.t =
-    Cm.Prim_statement.atomic_store
+  let gen ~(src : Cm.Env.t) ~(dst : Cm.Env.t) ~(vars : Var.Map.t)
+      ~(tid : int) : t Base_quickcheck.Generator.t =
+    let module Src = struct
+      let env = src
+    end in
+    let module Dst = struct
+      let env = dst
+    end in
+    let module G = B.Quickcheck (Src) (Dst) in
+    ignore vars ; ignore tid ; G.quickcheck_generator
+
+  let new_locals (_ : Cm.Atomic_store.t) :
+      Cm.Initialiser.t Ac.C_named.Alist.t =
+    []
+
+  let to_stms (x : Cm.Atomic_store.t) : Cm.Prim_statement.t list =
+    [Cm.Prim_statement.atomic_store x]
 
   let dst_ids (x : Cm.Atomic_store.t) : Ac.C_id.t list =
     [Cm.Address.variable_of (Cm.Atomic_store.dst x)]

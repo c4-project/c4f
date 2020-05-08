@@ -74,10 +74,9 @@ module Thread = struct
       t =
     {thread with decls= An.map ~f thread.decls}
 
-  let add_decl ?(value : Cm.Constant.t option) (thread : t) ~(ty : Cm.Type.t)
-      ~(name : Ac.C_id.t) : t =
-    let decl = Cm.Initialiser.make ~ty ?value () in
-    let decls' = (name, decl) :: thread.decls in
+  let add_decl (thread : t) ~(name : Ac.C_id.t) ~(init : Cm.Initialiser.t) :
+      t =
+    let decls' = (name, init) :: thread.decls in
     {thread with decls= decls'}
 
   let has_statements (p : t) : bool = not (List.is_empty p.stms)
@@ -182,21 +181,28 @@ module Test = struct
     at_least_one_thread_with ~f:Thread.has_dead_code_blocks
 
   let add_var_to_init (subject : t) (name : Ac.C_id.t)
-      (initial_value : Cm.Constant.t) : t Or_error.t =
-    Act_litmus.Test.Raw.try_map_header subject
-      ~f:(Act_litmus.Header.add_global ~name ~initial_value)
+      (init : Cm.Initialiser.t) : t Or_error.t =
+    match Cm.Initialiser.value init with
+    | Some initial_value ->
+        Act_litmus.Test.Raw.try_map_header subject
+          ~f:(Act_litmus.Header.add_global ~name ~initial_value)
+    | None ->
+        Or_error.error_s
+          [%message
+            "Can't add global variable without initial value"
+              ~name:(name : Ac.C_id.t)]
 
-  let add_var_to_thread (subject : t) (ty : Cm.Type.t) (index : int)
-      (name : Ac.C_id.t) (value : Cm.Constant.t) : t Or_error.t =
+  let add_var_to_thread (subject : t) (index : int) (name : Ac.C_id.t)
+      (init : Cm.Initialiser.t) : t Or_error.t =
     Act_litmus.Test.Raw.try_map_thread subject ~index ~f:(fun thread ->
-        Ok (Thread.add_decl thread ~ty ~name ~value))
+        Ok (Thread.add_decl thread ~name ~init))
 
-  let declare_var (subject : t) (ty : Cm.Type.t) (var : Ac.Litmus_id.t)
-      (initial_value : Cm.Constant.t) : t Or_error.t =
+  let declare_var (subject : t) (var : Ac.Litmus_id.t)
+      (init : Cm.Initialiser.t) : t Or_error.t =
     let name = Ac.Litmus_id.variable_name var in
     match Ac.Litmus_id.tid var with
     | None ->
-        add_var_to_init subject name initial_value
+        add_var_to_init subject name init
     | Some i ->
-        add_var_to_thread subject ty i name initial_value
+        add_var_to_thread subject i name init
 end

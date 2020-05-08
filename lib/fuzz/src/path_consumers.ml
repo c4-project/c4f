@@ -92,6 +92,15 @@ module rec Statement :
         Or_error.error_s
           [%message "Can't insert statement here" ~path:(path : Path.Stm.t)])
 
+  let insert_stm_list (path : Path.Stm.t)
+      ~(to_insert : Subject.Statement.t list) ~(target : Subject.Statement.t)
+      : Subject.Statement.t Or_error.t =
+    handle_path path ~target ~if_stm:(If.insert_stm_list ~to_insert)
+      ~while_loop:(Loop.insert_stm_list ~to_insert) ~this_stm:(fun ~target ->
+        ignore target ;
+        Or_error.error_s
+          [%message "Can't insert statements here" ~path:(path : Path.Stm.t)])
+
   let transform_stm (path : Path.Stm.t)
       ~(f : Subject.Statement.t transformer) ~(target : Subject.Statement.t)
       : Subject.Statement.t Or_error.t =
@@ -161,6 +170,13 @@ and Block :
     | On_range (_, _) ->
         bad_stm_list_path_error path ~context:"insert_stm" ~here:[%here]
 
+  let insert_stm_list (path : Path.Stms.t)
+      ~(to_insert : Subject.Statement.t list) ~(target : target) :
+      target Or_error.t =
+    (* TODO(@MattWindsor91): implement this more efficiently. *)
+    Tx.List.With_errors.fold_m (List.rev to_insert) ~init:target
+      ~f:(fun target to_insert -> insert_stm path ~to_insert ~target)
+
   let transform_stm (path : Path.Stms.t)
       ~(f : Subject.Statement.t transformer) ~(target : target) :
       target Or_error.t =
@@ -217,6 +233,10 @@ and If :
     (* TODO(@MattWindsor91): note in filter that we're in an if statement *)
     handle_stm path ~target ~f:(Block.check_path ~filter)
 
+  let insert_stm_list (path : t) ~(to_insert : Subject.Statement.t list)
+      ~(target : target) : target Or_error.t =
+    handle_stm path ~target ~f:(Block.insert_stm_list ~to_insert)
+
   let insert_stm (path : t) ~(to_insert : Subject.Statement.t)
       ~(target : target) : target Or_error.t =
     handle_stm path ~target ~f:(Block.insert_stm ~to_insert)
@@ -257,6 +277,10 @@ and Loop :
     let filter = Path_filter.update_with_loop filter in
     handle_stm path ~target ~f:(Block.check_path ~filter)
 
+  let insert_stm_list (path : t) ~(to_insert : Subject.Statement.t list)
+      ~(target : target) : target Or_error.t =
+    handle_stm path ~target ~f:(Block.insert_stm_list ~to_insert)
+
   let insert_stm (path : t) ~(to_insert : Subject.Statement.t)
       ~(target : target) : target Or_error.t =
     handle_stm path ~target ~f:(Block.insert_stm ~to_insert)
@@ -295,6 +319,10 @@ module Thread :
       target Or_error.t =
     handle_stm path ~target ~f:(Block.check_path ~filter)
 
+  let insert_stm_list (path : t) ~(to_insert : Subject.Statement.t list)
+      ~(target : target) : target Or_error.t =
+    handle_stm path ~target ~f:(Block.insert_stm_list ~to_insert)
+
   let insert_stm (path : t) ~(to_insert : Subject.Statement.t)
       ~(target : target) : target Or_error.t =
     handle_stm path ~target ~f:(Block.insert_stm ~to_insert)
@@ -332,6 +360,10 @@ module Test :
   let check_path (path : t) ~(filter : Path_filter.t) ~(target : target) :
       target Or_error.t =
     handle_stm path ~target ~f:(Thread.check_path ~filter)
+
+  let insert_stm_list (path : t) ~(to_insert : Subject.Statement.t list)
+      ~(target : target) : target Or_error.t =
+    handle_stm path ~target ~f:(Thread.insert_stm_list ~to_insert)
 
   let insert_stm (path : t) ~(to_insert : Subject.Statement.t)
       ~(target : target) : target Or_error.t =

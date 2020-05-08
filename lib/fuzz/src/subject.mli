@@ -199,12 +199,8 @@ module Test : sig
   (** {3 Helpers for mutating tests} *)
 
   val declare_var :
-       t
-    -> Act_c_mini.Type.t
-    -> Act_common.Litmus_id.t
-    -> Act_c_mini.Constant.t
-    -> t Or_error.t
-  (** [declare_var subject ty var initial_value] adds [var], typed [ty], to
+    t -> Act_common.Litmus_id.t -> Act_c_mini.Initialiser.t -> t Or_error.t
+  (** [declare_var subject var init] adds [var] with initialiser [init] to
       [subject]'s init block or thread initialisers with the initial value
       [initial_value]. *)
 end

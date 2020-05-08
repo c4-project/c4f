@@ -15,9 +15,17 @@ type 'e t =
   { obj: Address.t
   ; expected: Address.t
   ; desired: 'e
-  ; succ: Mem_order.t [@quickcheck.generator Mem_order.gen_rmw]
-  ; fail: Mem_order.t [@quickcheck.generator Mem_order.gen_rmw] }
+  ; succ: Mem_order.t
+  ; fail: Mem_order.t [@quickcheck.generator Mem_order.gen_cmpxchg_fail] }
 [@@deriving sexp, fields, make, compare, equal, quickcheck]
+
+(* The 'fail' memory order cannot be stronger than the 'succ' order. (At time
+   of writing, quickcheck shrinkers for mem-orders are atomic, and so we
+   shan't need to override the shrinker) *)
+
+let quickcheck_generator e =
+  Base_quickcheck.Generator.filter (quickcheck_generator e) ~f:(fun x ->
+      Mem_order.(x.fail <= x.succ))
 
 module Base_map (Ap : Applicative.S) = struct
   let bmap (x : 'a t) ~(obj : Address.t -> Address.t Ap.t)

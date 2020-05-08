@@ -94,14 +94,10 @@ module Monad : sig
   (** {2 Commands} *)
 
   val register_var :
-       ?initial_value:Act_c_mini.Constant.t
-    -> Act_c_mini.Type.t
-    -> Act_common.Litmus_id.t
-    -> unit t
-  (** [register_var ?initial_value ty var] is a stateful action that
-      registers a generated variable [var] of type [ty] and optional known
-      value [value] into the state, overwriting any existing variable of the
-      same name. *)
+    Act_common.Litmus_id.t -> Act_c_mini.Initialiser.t -> unit t
+  (** [register_var var init] is a stateful action that registers a generated
+      variable [var] with initialiser [init]] into the state, overwriting any
+      existing variable of the same name. *)
 
   val register_label : Act_common.Litmus_id.t -> unit t
   (** [register_label label] is a stateful action that registers a label

@@ -9,6 +9,8 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+open Base
+
 open struct
   module Ac = Act_common
   module Cm = Act_c_mini
@@ -67,8 +69,26 @@ Storelike.Make (struct
 
   type t = Cm.Expression.t Cm.Atomic_fetch.t [@@deriving sexp]
 
-  let to_stm : Cm.Expression.t Cm.Atomic_fetch.t -> Cm.Prim_statement.t =
-    Cm.Prim_statement.atomic_fetch
+  let gen ~(src : Cm.Env.t) ~(dst : Cm.Env.t) ~(vars : Var.Map.t)
+      ~(tid : int) : t Base_quickcheck.Generator.t =
+    let module Src = struct
+      let env = src
+    end in
+    let module Dst = struct
+      let env = dst
+    end in
+    ignore vars ;
+    ignore tid ;
+    let module Gen = B.Quickcheck (Src) (Dst) in
+    [%quickcheck.generator: Gen.t]
+
+  let to_stms (x : Cm.Expression.t Cm.Atomic_fetch.t) :
+      Cm.Prim_statement.t list =
+    [Cm.Prim_statement.atomic_fetch x]
+
+  let new_locals (_ : Cm.Expression.t Cm.Atomic_fetch.t) :
+      Cm.Initialiser.t Ac.C_named.Alist.t =
+    []
 
   let dst_ids (x : Cm.Expression.t Cm.Atomic_fetch.t) : Ac.C_id.t list =
     [Cm.Address.variable_of (Cm.Atomic_fetch.obj x)]

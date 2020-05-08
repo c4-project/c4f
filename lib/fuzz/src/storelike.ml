@@ -138,24 +138,14 @@ end) : Action_types.S with type Payload.t = B.t P.Insertion.t = struct
         let%bind () = error_if_empty "src" src in
         error_if_empty "dst" dst)
 
-    let gen_with_envs (src : Cm.Env.t) (dst : Cm.Env.t) : t Opt_gen.t =
-      Or_error.Let_syntax.(
-        let%map () = check_envs src dst in
-        let module Src = struct
-          let env = src
-        end in
-        let module Dst = struct
-          let env = dst
-        end in
-        let module Gen = B.Quickcheck (Src) (Dst) in
-        [%quickcheck.generator: Gen.t])
-
     let gen' (vars : Var.Map.t) ~(where : Path.Program.t)
         ~(forbid_already_written : bool) : t Opt_gen.t =
       let tid = Path.Program.tid where in
       let src = src_env vars ~tid in
       let dst = dst_env vars ~tid ~forbid_already_written in
-      gen_with_envs src dst
+      Or_error.Let_syntax.(
+        let%map () = check_envs src dst in
+        B.gen ~src ~dst ~vars ~tid)
 
     let gen (where : Path.Program.t) (_ : Subject.Test.t)
         ~(random : Splittable_random.State.t) ~(param_map : Param_map.t) :
@@ -207,21 +197,46 @@ end) : Action_types.S with type Payload.t = B.t P.Insertion.t = struct
       when_m B.Flags.respect_src_dependencies ~f:(fun () ->
           add_multiple_expression_dependencies srcs ~scope:(Local tid)))
 
+  module MList = Tx.List.On_monad (State.Monad)
+
+  let bookkeep_new_locals (nls : Cm.Initialiser.t Ac.C_named.Alist.t)
+      ~(tid : int) : unit State.Monad.t =
+    MList.iter_m nls ~f:(fun (name, init) ->
+        State.Monad.register_var (Ac.Litmus_id.local tid name) init)
+
   let do_bookkeeping (item : B.t) ~(tid : int) : unit State.Monad.t =
     State.Monad.Let_syntax.(
+      let%bind () = bookkeep_new_locals ~tid (B.new_locals item) in
       let%bind () = bookkeep_dsts ~tid (B.dst_ids item) in
       bookkeep_srcs ~tid (B.src_exprs item))
+
+  let insert_vars (target : Subject.Test.t)
+      (new_locals : Cm.Initialiser.t Ac.C_named.Alist.t) ~(tid : int) :
+      Subject.Test.t Or_error.t =
+    Tx.List.With_errors.fold_m new_locals ~init:target
+      ~f:(fun subject (id, init) ->
+        Subject.Test.declare_var subject (Ac.Litmus_id.local tid id) init)
+
+  let do_insertions (target : Subject.Test.t) ~(path : Path.Program.t)
+      ~(tid : int) ~(to_insert : B.t) : Subject.Test.t Or_error.t =
+    let stms =
+      Cm.(
+        to_insert |> B.to_stms
+        |> List.map ~f:(Statement.prim Metadata.generated))
+    in
+    Or_error.Let_syntax.(
+      let%bind target' =
+        Path_consumers.Test.insert_stm_list path ~to_insert:stms ~target
+      in
+      insert_vars target' (B.new_locals to_insert) ~tid)
 
   let run (subject : Subject.Test.t) ~(payload : B.t P.Insertion.t) :
       Subject.Test.t State.Monad.t =
     let to_insert = P.Insertion.to_insert payload in
-    let stm =
-      Cm.(to_insert |> B.to_stm |> Statement.prim Metadata.generated)
-    in
     let path = P.Insertion.where payload in
     let tid = Path.Program.tid path in
     State.Monad.Let_syntax.(
       let%bind () = do_bookkeeping to_insert ~tid in
       State.Monad.Monadic.return
-        (Path_consumers.Test.insert_stm path ~to_insert:stm ~target:subject))
+        (do_insertions subject ~path ~tid ~to_insert))
 end
