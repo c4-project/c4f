@@ -1,5 +1,5 @@
 cmpxchg.make.int.always-succeed:
-  Weight: 20x
+  Weight: 30x
   Summary:
     Inserts an atomic int compare-exchange that always succeeds, and a new
     local Boolean variable that receives its result.
@@ -140,7 +140,7 @@ store.make.int.dead:
     only fire if such variables exist, but may or may not proceed to select a
     previously-stored variable. This is a limitation of the flag system.)
 store.make.int.normal:
-  Weight: 30x
+  Weight: 20x
   Summary:
     Generates a store operation on a randomly selected fuzzer-generated
     global variable.
