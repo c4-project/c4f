@@ -192,22 +192,27 @@ let%test_module "Atomic int nops" =
           let quickcheck_generator =
             Base_quickcheck.Generator.map ~f:Src.Expression.atomic_fetch
               Af.quickcheck_generator
+
+          let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
         end )
 
     let%expect_test "sample" =
       print_sample (Lazy.force Env.test_env) ;
       [%expect
         {|
-          atomic_fetch_add_explicit(&x, 0, memory_order_release)
+          atomic_fetch_sub_explicit(bar,
+                                    atomic_fetch_or_explicit(bar, 53 ^
+                                                             atomic_fetch_add_explicit
+                                                             (&y, 0,
+                                                              memory_order_acq_rel),
+                                                             memory_order_relaxed)
+                                    - 95, memory_order_seq_cst)
+          atomic_fetch_sub_explicit(&x, 99 - *blep, memory_order_consume)
           atomic_fetch_add_explicit(&x, 53 ^
                                     atomic_load_explicit(&y, memory_order_consume),
                                     memory_order_relaxed)
-          atomic_fetch_add_explicit(&y, 0, memory_order_acquire)
-          atomic_fetch_and_explicit(&y, 53, memory_order_relaxed)
-          atomic_fetch_add_explicit(&y,
-                                    atomic_fetch_xor_explicit(bar, 0,
-                                                              memory_order_seq_cst)
-                                    ^ 95, memory_order_consume) |}]
+          atomic_fetch_xor_explicit(&x, 57357 ^ 57357, memory_order_consume)
+          atomic_fetch_add_explicit(&y, 0, memory_order_acquire) |}]
 
     let test_fun (env : Src.Env.t) :
         (module Q.Test.S with type t = Src.Expression.t) =

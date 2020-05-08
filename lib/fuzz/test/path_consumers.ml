@@ -77,7 +77,7 @@ let%test_module "Statement_list" =
               [%expect
                 {|
           ("Can't use this statement-list path here"
-           (here lib/fuzz/src/path_consumers.ml:170:65) (context insert_stm)
+           (here lib/fuzz/src/path_consumers.ml:171:65) (context insert_stm)
            (path (On_range 1 2))) |}]
 
             let%expect_test "insert into list" =
@@ -144,7 +144,7 @@ let%test_module "Statement_list" =
               [%expect
                 {|
           ("Can't use this statement-list path here"
-           (here lib/fuzz/src/path_consumers.ml:188:68) (context transform_stm)
+           (here lib/fuzz/src/path_consumers.ml:190:68) (context transform_stm)
            (path (Insert 2))) |}]
           end )
 
@@ -186,7 +186,7 @@ let%test_module "Statement_list" =
               [%expect
                 {|
                   ("Can't use this statement-list path here"
-                   (here lib/fuzz/src/path_consumers.ml:201:16) (context transform_stm_list)
+                   (here lib/fuzz/src/path_consumers.ml:203:16) (context transform_stm_list)
                    (path (Insert 2))) |}]
 
             let%test_unit "generator over stm-list produces valid paths" =

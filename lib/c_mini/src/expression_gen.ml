@@ -126,12 +126,15 @@ module Int_zeroes (E : Env_types.S) = struct
     Q.Generator.filter [%quickcheck.generator: Op.Binary.t]
       ~f:Op.(Fn.compose Algebra.is_zero Binary.refl)
 
+  (** Generates binary operations of the form [x op x], which are statically
+      known to produce 0. *)
   let gen_refl_zero ~(mu : t Q.Generator.t) : t Q.Generator.t =
     Q.Generator.Let_syntax.(
       let%bind op = gen_refl_zero_op in
       let%map p = Det_prims.gen_prim ~gen_zero:mu in
       Expression.(bop op p p))
 
+  (** Generates binary operators with the property [l op r == 0]. *)
   let gen_kv_refl_op : (t -> t -> t) Q.Generator.t =
     Q.Generator.Let_syntax.(
       let%bind op = gen_refl_zero_op in
@@ -142,6 +145,9 @@ module Int_zeroes (E : Env_types.S) = struct
            passing them two expressions that evaluate to the same value. *)
         if flip then op l r else op r l)
 
+  (** Generates binary operations of the form [x op y], in which one of [x]
+      and [y] is a variable, the other is its known value, and the operation
+      is statically known to produce 0. *)
   let gen_kv_refl ~(mu : t Q.Generator.t) : t Q.Generator.t =
     let gen_load = Det_prims.gen_load_with_record ~gen_zero:mu in
     Det_prims.gen_kv_refl ~gen_load ~gen_op:gen_kv_refl_op
@@ -252,10 +258,7 @@ module Atomic_fetch_int_nops (Obj : Env_types.S) (Arg : Env_types.S) :
   module R = Atomic_fetch_int_refl_nops (Obj)
 
   let quickcheck_generator =
-    (* Weightings are a crude way of acknowledging that the zeros pool is
-       presently more diverse than the reflexive pool. *)
-    Q.Generator.weighted_union
-      [(3.0, Z.quickcheck_generator); (2.0, R.quickcheck_generator)]
+    Q.Generator.union [Z.quickcheck_generator; R.quickcheck_generator]
 end
 
 module Atomic_fetch_int_values (Obj : Env_types.S) (Arg : Env_types.S) :
