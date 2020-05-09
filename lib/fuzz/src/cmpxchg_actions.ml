@@ -45,7 +45,9 @@ Storelike.Make (struct
 
   let path_filter = Path_filter.empty
 
-  let extra_dst_restrictions = [Storelike.Dst_restriction.forbid_dependencies]
+  let extra_dst_restrictions =
+    [ Storelike.Dst_restriction.forbid_dependencies
+    ; Var.Record.has_known_value ]
 
   module Flags = struct
     let erase_known_values = true
