@@ -99,5 +99,5 @@ let%test_module "cmpxchg.make.int.always-succeed" =
     let%expect_test "variables with dependencies" =
       Storelike.Test_common.run_and_dump_deps test_action
         ~initial_state:(Lazy.force Subject.Test_data.state) ;
-      [%expect {| expected=12345 |}]
+      [%expect {| expected=12345 gen1= |}]
   end )

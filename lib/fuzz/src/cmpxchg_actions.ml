@@ -123,6 +123,7 @@ Storelike.Make (struct
 
   let src_exprs (x : Inner_payload.t) : Cm.Expression.t list =
     [ Cm.Atomic_cmpxchg.desired x.cmpxchg
+    ; Cm.Expression.address (Cm.Atomic_cmpxchg.obj x.cmpxchg)
     ; Cm.Expression.address (Cm.Atomic_cmpxchg.expected x.cmpxchg) ]
 
   let dst_ids (x : Inner_payload.t) : Ac.C_id.t list =
