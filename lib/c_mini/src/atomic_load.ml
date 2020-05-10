@@ -19,13 +19,16 @@ let to_tuple ({src; mo} : t) : Address.t * Mem_order.t = (src, mo)
 
 let of_tuple ((src, mo) : Address.t * Mem_order.t) : t = {src; mo}
 
-module Base_map (M : Monad.S) = struct
-  module F = Travesty.Traversable.Helpers (M)
+let ensure_mo_compat (old : Mem_order.t) (nu : Mem_order.t) : Mem_order.t =
+  if Mem_order.is_load_compatible nu then nu else old
 
-  let bmap (store : t) ~(src : Address.t F.traversal)
-      ~(mo : Mem_order.t F.traversal) : t M.t =
-    Fields.fold ~init:(M.return store) ~src:(F.proc_field src)
-      ~mo:(F.proc_field mo)
+module Base_map (Ap : Applicative.S) = struct
+  let bmap (x : t)
+      ~(src : Address.t -> Address.t Ap.t)
+      ~(mo : Mem_order.t -> Mem_order.t Ap.t) : t Ap.t =
+    Ap.(
+      let m src mo = make ~src ~mo:(ensure_mo_compat x.mo mo) in
+      return m <*> src x.src <*> mo x.mo)
 end
 
 module On_addresses :
@@ -36,7 +39,11 @@ Travesty.Traversable.Make0 (struct
   module Elt = Address
 
   module On_monad (M : Monad.S) = struct
-    module B = Base_map (M)
+    module B = Base_map (struct
+      type 'a t = 'a M.t
+
+      include Applicative.Of_monad (M)
+    end)
 
     let map_m x ~f = B.bmap x ~src:f ~mo:M.return
   end
@@ -50,7 +57,11 @@ Travesty.Traversable.Make0 (struct
   module Elt = Mem_order
 
   module On_monad (M : Monad.S) = struct
-    module B = Base_map (M)
+    module B = Base_map (struct
+      type 'a t = 'a M.t
+
+      include Applicative.Of_monad (M)
+    end)
 
     let map_m x ~f = B.bmap x ~src:M.return ~mo:f
   end

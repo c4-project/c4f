@@ -53,7 +53,7 @@ let is_cmpxchg_fail_compatible : t -> bool = function
   | Acq_rel | Release ->
       false
 
-let can_change_dir (current : t) ~(replacement : t)
+let can_change (current : t) ~(replacement : t)
     ~(direction : [< `Strengthen | `Weaken | `Any]) : bool =
   match direction with
   | `Strengthen ->
@@ -63,15 +63,9 @@ let can_change_dir (current : t) ~(replacement : t)
   | `Any ->
       true
 
-let can_change (current : t) ~(replacement : t) ~(is_compatible : t -> bool)
-    ~(direction : [< `Strengthen | `Weaken | `Any]) : bool =
-  is_compatible replacement && can_change_dir current ~replacement ~direction
-
-let try_change (current : t) ~(replacement : t) ~(is_compatible : t -> bool)
+let try_change (current : t) ~(replacement : t)
     ~(direction : [< `Strengthen | `Weaken | `Any]) : t =
-  if can_change current ~replacement ~is_compatible ~direction then
-    replacement
-  else current
+  if can_change current ~replacement ~direction then replacement else current
 
 let gen_load : t Base_quickcheck.Generator.t =
   Base_quickcheck.Generator.filter ~f:is_load_compatible

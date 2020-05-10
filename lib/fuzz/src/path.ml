@@ -117,6 +117,8 @@ module Stms = struct
 
   let in_stm (i : index) (rest : Stm.t) : t = In_stm (i, rest)
 
+  let stm (i : index) : t = in_stm i Stm.this_stm
+
   let on_range (i : index) (stride : length) : t = On_range (i, stride)
 
   let pp : t Fmt.t = pp_stms

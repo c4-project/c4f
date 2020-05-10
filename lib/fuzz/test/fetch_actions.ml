@@ -66,7 +66,12 @@ let%test_module "fetch.make.int.dead" =
           if (foo == y)
           { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
           else { atomic_fetch_add_explicit(gen1, 54321, memory_order_seq_cst); }
-          if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
+          if (false)
+          {
+              atomic_store_explicit(y,
+                                    atomic_load_explicit(x, memory_order_seq_cst),
+                                    memory_order_seq_cst);
+          }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
           5);
       }
@@ -124,7 +129,12 @@ let%test_module "fetch.make.int.redundant" =
           atomic_store_explicit(y, foo, memory_order_relaxed);
           if (foo == y)
           { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
-          if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
+          if (false)
+          {
+              atomic_store_explicit(y,
+                                    atomic_load_explicit(x, memory_order_seq_cst),
+                                    memory_order_seq_cst);
+          }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
           5);
       }

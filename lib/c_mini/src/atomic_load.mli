@@ -37,7 +37,10 @@ include Types.S_has_underlying_variable with type t := t
 module On_addresses :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t
 
-(** Traversing over memory orders in atomic loads. *)
+(** Traversing over memory orders in atomic loads.
+
+    This traversal silently rejects any mappings that cause the memory order
+    to become load-incompatible. *)
 module On_mem_orders :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Mem_order.t
 

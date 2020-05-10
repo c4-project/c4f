@@ -52,49 +52,36 @@ let%test_module "can_change" =
     let%expect_test "can change rlx to sc if strengthening" =
       Act_utils.Io.print_bool
         Src.Mem_order.(
-          can_change Relaxed ~replacement:Seq_cst
-            ~is_compatible:(Fn.const true) ~direction:`Strengthen) ;
+          can_change Relaxed ~replacement:Seq_cst ~direction:`Strengthen) ;
       [%expect {| true |}]
 
     let%expect_test "cannot change rlx to sc if weakening" =
       Act_utils.Io.print_bool
         Src.Mem_order.(
-          can_change Relaxed ~replacement:Seq_cst
-            ~is_compatible:(Fn.const true) ~direction:`Weaken) ;
+          can_change Relaxed ~replacement:Seq_cst ~direction:`Weaken) ;
       [%expect {| false |}]
 
     let%expect_test "can change rlx to sc if no direction" =
       Act_utils.Io.print_bool
         Src.Mem_order.(
-          can_change Relaxed ~replacement:Seq_cst
-            ~is_compatible:(Fn.const true) ~direction:`Any) ;
+          can_change Relaxed ~replacement:Seq_cst ~direction:`Any) ;
       [%expect {| true |}]
 
     let%expect_test "cannot change sc to rlx if strengthening" =
       Act_utils.Io.print_bool
         Src.Mem_order.(
-          can_change Seq_cst ~replacement:Relaxed
-            ~is_compatible:(Fn.const true) ~direction:`Strengthen) ;
+          can_change Seq_cst ~replacement:Relaxed ~direction:`Strengthen) ;
       [%expect {| false |}]
 
     let%expect_test "can change sc to rlx if weakening" =
       Act_utils.Io.print_bool
         Src.Mem_order.(
-          can_change Seq_cst ~replacement:Relaxed
-            ~is_compatible:(Fn.const true) ~direction:`Weaken) ;
+          can_change Seq_cst ~replacement:Relaxed ~direction:`Weaken) ;
       [%expect {| true |}]
 
     let%expect_test "can change sc to rlx if no direction" =
       Act_utils.Io.print_bool
         Src.Mem_order.(
-          can_change Seq_cst ~replacement:Relaxed
-            ~is_compatible:(Fn.const true) ~direction:`Any) ;
+          can_change Seq_cst ~replacement:Relaxed ~direction:`Any) ;
       [%expect {| true |}]
-
-    let%expect_test "cannot change if not compatible" =
-      Act_utils.Io.print_bool
-        Src.Mem_order.(
-          can_change Seq_cst ~replacement:Relaxed
-            ~is_compatible:(Fn.const false) ~direction:`Any) ;
-      [%expect {| false |}]
   end )

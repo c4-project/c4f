@@ -105,7 +105,9 @@ module Test_data = struct
                  (Src.Subject.Block.make_dead_code
                     ~statements:
                       [ mk_store
-                          (Atomic_store.make ~src:(Expression.int_lit 95)
+                          (Atomic_store.make ~src:(Expression.atomic_load
+                            (Atomic_load.make ~src:(Address.of_variable_str_exn "x")
+                            ~mo:Mem_order.Seq_cst))
                              ~dst:(Address.of_variable_str_exn "y")
                              ~mo:Mem_order.Seq_cst) ]
                     ())
@@ -241,7 +243,12 @@ let%test_module "using sample environment" =
             atomic_store_explicit(y, foo, memory_order_relaxed);
             if (foo == y)
             { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
-            if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
+            if (false)
+            {
+                atomic_store_explicit(y,
+                                      atomic_load_explicit(x, memory_order_seq_cst),
+                                      memory_order_seq_cst);
+            }
             do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
             5);
         }
@@ -269,7 +276,12 @@ let%test_module "using sample environment" =
             atomic_store_explicit(y, foo, memory_order_relaxed);
             if (foo == y)
             { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
-            if (false) { atomic_store_explicit(y, 95, memory_order_seq_cst); }
+            if (false)
+            {
+                atomic_store_explicit(y,
+                                      atomic_load_explicit(x, memory_order_seq_cst),
+                                      memory_order_seq_cst);
+            }
             do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
             5);
         }

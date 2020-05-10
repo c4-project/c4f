@@ -39,27 +39,22 @@ val is_cmpxchg_fail_compatible : t -> bool
 (** [is_cmpxchg_fail_compatible mo] returns whether [mo] is compatible with
     the 'fail' order of a compare-exchange. *)
 
-(** {2 Helpers for strengthening and weakening memory orders} *)
+(** {2 Helpers for strengthening and weakening memory orders}
+
+    Generally, ensuring memory order compatibility occurs at the individual
+    statement/expression class level, and is baked into the various
+    [On_mem_orders] traversals. *)
 
 val can_change :
-     t
-  -> replacement:t
-  -> is_compatible:(t -> bool)
-  -> direction:[< `Strengthen | `Weaken | `Any]
-  -> bool
+  t -> replacement:t -> direction:[< `Strengthen | `Weaken | `Any] -> bool
 (** [can_change current ~replacement ~is_compatible ~direction] gets whether
     the memory order can be changed from [current] to [replacement] in the
-    direction described by [direction]; it also checks that [replacement] is
-    compatible with [is_compatible]. *)
+    direction described by [direction]. *)
 
 val try_change :
-     t
-  -> replacement:t
-  -> is_compatible:(t -> bool)
-  -> direction:[< `Strengthen | `Weaken | `Any]
-  -> t
-(** [try_change current ~replacement ~is_compatible ~direction] returns
-    [replacment] if [can_change] is true, and [current] otherwise. *)
+  t -> replacement:t -> direction:[< `Strengthen | `Weaken | `Any] -> t
+(** [try_change current ~replacement ~direction] returns [replacement] if
+    [can_change] is true, and [current] otherwise. *)
 
 (** {2 Quickcheck support} *)
 

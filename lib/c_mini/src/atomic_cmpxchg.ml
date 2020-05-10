@@ -27,6 +27,12 @@ let quickcheck_generator e =
   Base_quickcheck.Generator.filter (quickcheck_generator e) ~f:(fun x ->
       Mem_order.(x.fail <= x.succ))
 
+let ensure_mo_compat (old : 'a t) (succ : Mem_order.t) (fail : Mem_order.t) :
+    Mem_order.t * Mem_order.t =
+  if Mem_order.(is_cmpxchg_fail_compatible fail && fail <= succ) then
+    (succ, fail)
+  else (old.succ, old.fail)
+
 module Base_map (Ap : Applicative.S) = struct
   let bmap (x : 'a t) ~(obj : Address.t -> Address.t Ap.t)
       ~(expected : Address.t -> Address.t Ap.t) ~(desired : 'a -> 'b Ap.t)
@@ -34,6 +40,7 @@ module Base_map (Ap : Applicative.S) = struct
       ~(fail : Mem_order.t -> Mem_order.t Ap.t) : 'b t Ap.t =
     Ap.(
       let m obj expected desired succ fail =
+        let succ, fail = ensure_mo_compat x succ fail in
         make ~obj ~expected ~desired ~succ ~fail
       in
       return m <*> obj x.obj <*> expected x.expected <*> desired x.desired

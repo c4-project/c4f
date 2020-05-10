@@ -126,6 +126,9 @@ module Stms : sig
   (** [in_stm index rest] focuses on an existing statement at index [index]
       of a statement list, using subpath [rest]. *)
 
+  val stm : index -> t
+  (** [stm index] is shorthand for [in_stm index Stm.this_stm]. *)
+
   val on_range : index -> length -> t
   (** [on_range index length] focuses on an [length]-wide slice of a
       statement list starting at [index]. [length] may be 0, in which case

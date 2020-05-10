@@ -138,88 +138,17 @@ module Strengthen :
     Travesty.Traversable.Chain0
       (Subject.Statement.On_primitives)
       (Act_c_mini.Prim_statement.On_atomics)
-
-  let change_mo_atomic_cmpxchg
-      (atom : Act_c_mini.Expression.t Act_c_mini.Atomic_cmpxchg.t)
-      ~(mo : Act_c_mini.Mem_order.t) ~(direction : [< `Strengthen | `Any]) :
-      Act_c_mini.Expression.t Act_c_mini.Atomic_cmpxchg.t Or_error.t =
-    (* TODO(@MattWindsor91): don't change both succ and fail every time *)
-    Ok
-      Act_c_mini.(
-        Atomic_cmpxchg.(
-          make ~obj:(obj atom) ~expected:(expected atom)
-            ~desired:(desired atom)
-            ~succ:
-              Mem_order.(
-                try_change (succ atom) ~replacement:mo
-                  ~is_compatible:(Fn.const true) ~direction)
-            ~fail:
-              Mem_order.(
-                try_change (fail atom) ~replacement:mo
-                  ~is_compatible:is_cmpxchg_fail_compatible ~direction)))
-
-  let change_mo_atomic_fence (atom : Act_c_mini.Atomic_fence.t)
-      ~(mo : Act_c_mini.Mem_order.t) ~(direction : [< `Strengthen | `Any]) :
-      Act_c_mini.Atomic_fence.t Or_error.t =
-    Ok
-      Act_c_mini.(
-        Atomic_fence.On_mem_orders.map atom
-          ~f:
-            Mem_order.(
-              try_change ~replacement:mo ~is_compatible:(Fn.const true)
-                ~direction))
-
-  let change_mo_atomic_fetch
-      (atom : Act_c_mini.Expression.t Act_c_mini.Atomic_fetch.t)
-      ~(mo : Act_c_mini.Mem_order.t) ~(direction : [< `Strengthen | `Any]) :
-      Act_c_mini.Expression.t Act_c_mini.Atomic_fetch.t Or_error.t =
-    Ok
-      Act_c_mini.(
-        Expression_traverse.Fetch.On_mem_orders.map atom
-          ~f:
-            Mem_order.(
-              try_change ~replacement:mo ~is_compatible:(Fn.const true)
-                ~direction))
-
-  let change_mo_atomic_store (atom : Act_c_mini.Atomic_store.t)
-      ~(mo : Act_c_mini.Mem_order.t) ~(direction : [< `Strengthen | `Any]) :
-      Act_c_mini.Atomic_store.t Or_error.t =
-    Ok
-      Act_c_mini.(
-        Atomic_store.On_mem_orders.map atom
-          ~f:
-            Mem_order.(
-              try_change ~replacement:mo ~is_compatible:is_store_compatible
-                ~direction))
-
-  let change_mo_atomic_xchg
-      (atom : Act_c_mini.Expression.t Act_c_mini.Atomic_xchg.t)
-      ~(mo : Act_c_mini.Mem_order.t) ~(direction : [< `Strengthen | `Any]) :
-      Act_c_mini.Expression.t Act_c_mini.Atomic_xchg.t Or_error.t =
-    Ok
-      Act_c_mini.(
-        Expression_traverse.Xchg.On_mem_orders.map atom
-          ~f:
-            Mem_order.(
-              try_change ~replacement:mo ~is_compatible:(Fn.const true)
-                ~direction))
-
-  module Bm = Act_c_mini.Atomic_statement.Base_map (Or_error)
-
-  let change_mo_atomic (atom : Act_c_mini.Atomic_statement.t)
-      ~(mo : Act_c_mini.Mem_order.t) ~(direction : [< `Strengthen | `Any]) :
-      Act_c_mini.Atomic_statement.t Or_error.t =
-    Bm.bmap atom
-      ~cmpxchg:(change_mo_atomic_cmpxchg ~mo ~direction)
-      ~fence:(change_mo_atomic_fence ~mo ~direction)
-      ~fetch:(change_mo_atomic_fetch ~mo ~direction)
-      ~store:(change_mo_atomic_store ~mo ~direction)
-      ~xchg:(change_mo_atomic_xchg ~mo ~direction)
+  module On_mos =
+    Travesty.Traversable.Chain0
+      (On_atomics)
+      (Act_c_mini.Atomic_statement.On_mem_orders)
 
   let change_mo (stm : Subject.Statement.t) ~(mo : Act_c_mini.Mem_order.t)
       ~(can_weaken : bool) : Subject.Statement.t Or_error.t =
     let direction = if can_weaken then `Any else `Strengthen in
-    On_atomics.With_errors.map_m stm ~f:(change_mo_atomic ~mo ~direction)
+    Ok
+      (On_mos.map stm
+         ~f:(Act_c_mini.Mem_order.try_change ~replacement:mo ~direction))
 
   let run (subject : Subject.Test.t)
       ~payload:({path; mo; can_weaken} : Payload.t) :

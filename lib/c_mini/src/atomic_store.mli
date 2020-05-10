@@ -42,7 +42,10 @@ module On_expressions :
     with type t := t
      and type Elt.t = Expression.t
 
-(** Traversing over memory orders in atomic stores. *)
+(** Traversing over memory orders in atomic stores.
+
+    This traversal may silently fail to apply changes to the memory order if
+    they result in a store-incompatible order. *)
 module On_mem_orders :
   Travesty.Traversable_types.S0 with type t := t and type Elt.t = Mem_order.t
 

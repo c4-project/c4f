@@ -25,14 +25,16 @@ let quickcheck_observer : t Base_quickcheck.Observer.t =
     unmap [%quickcheck.observer: Expression.t * Address.t * Mem_order.t]
       ~f:to_tuple)
 
-module Base_map (M : Monad.S) = struct
-  module F = Travesty.Traversable.Helpers (M)
+let ensure_mo_compat (old : Mem_order.t) (nu : Mem_order.t) : Mem_order.t =
+  if Mem_order.is_store_compatible nu then nu else old
 
-  let bmap (store : t) ~(src : Expression.t F.traversal)
-      ~(dst : Address.t F.traversal) ~(mo : Mem_order.t F.traversal) : t M.t
-      =
-    Fields.fold ~init:(M.return store) ~src:(F.proc_field src)
-      ~dst:(F.proc_field dst) ~mo:(F.proc_field mo)
+module Base_map (Ap : Applicative.S) = struct
+  let bmap (x : t) ~(src : Expression.t -> Expression.t Ap.t)
+      ~(dst : Address.t -> Address.t Ap.t)
+      ~(mo : Mem_order.t -> Mem_order.t Ap.t) : t Ap.t =
+    Ap.(
+      let m src dst mo = make ~src ~dst ~mo:(ensure_mo_compat x.mo mo) in
+      return m <*> src x.src <*> dst x.dst <*> mo x.mo)
 end
 
 module On_addresses :
@@ -43,7 +45,12 @@ Travesty.Traversable.Make0 (struct
   module Elt = Address
 
   module On_monad (M : Monad.S) = struct
-    module B = Base_map (M)
+    module B = Base_map (struct
+      type 'a t = 'a M.t
+
+      include Applicative.Of_monad (M)
+    end)
+
     module E = Expression_traverse.On_addresses.On_monad (M)
 
     let map_m x ~f = B.bmap x ~src:(E.map_m ~f) ~dst:f ~mo:M.return
@@ -58,7 +65,11 @@ Travesty.Traversable.Make0 (struct
   module Elt = Expression
 
   module On_monad (M : Monad.S) = struct
-    module B = Base_map (M)
+    module B = Base_map (struct
+      type 'a t = 'a M.t
+
+      include Applicative.Of_monad (M)
+    end)
 
     let map_m x ~f = B.bmap x ~src:f ~dst:M.return ~mo:M.return
   end
@@ -72,9 +83,15 @@ Travesty.Traversable.Make0 (struct
   module Elt = Mem_order
 
   module On_monad (M : Monad.S) = struct
-    module B = Base_map (M)
+    module B = Base_map (struct
+      type 'a t = 'a M.t
 
-    let map_m x ~f = B.bmap x ~src:M.return ~dst:M.return ~mo:f
+      include Applicative.Of_monad (M)
+    end)
+
+    module E = Expression_traverse.On_mem_orders.On_monad (M)
+
+    let map_m x ~f = B.bmap x ~src:(E.map_m ~f) ~dst:M.return ~mo:f
   end
 end)
 
