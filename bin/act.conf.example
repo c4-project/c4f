@@ -46,48 +46,9 @@ machine this {
     asm_model x86.att   "x86_example.cat"
     asm_model x86.intel "x86_example.cat"
   }
-
-  # This block specifies a compiler we'll call `gcc.x86`.  Compiler
-  # IDs are dot-separated lists; each item in the list corresponds to a level
-  # in the directory hierarchy act builds in `test` mode.
-  #
-  # Whenever you want to refer to a compiler by identifier on an act
-  # command line, you need to join the list elements with one of the
-  # following characters: '.', ' ', '/', or '\'.  For example, you
-  # could refer to this compiler as 'gcc/x86'.
-  compiler gcc.x86 {
-    # As with machines, 'enabled BOOL' enables or disables a
-    # compiler.  If a compiler is enabled, but its machine isn't,
-    # the compiler won't run.
-    enabled on  # optional, defaults to `on`
-
-    # `style` tells us what sort of interface the compiler exposes.
-    #
-    # Currently, we only support `gcc` here; later, we might have
-    # support for MSVC, etc.
-    #
-    # act runs some lightweight checks to make sure that the
-    # compiler actually obeys the style choice.
-    style gcc
-
-    # `arch` tells act which language the compiler is emitting.
-    # Each language may have a sub-dialect, in which case 'arch' is
-    # a dotted identifier.
-    # Currently, we only support `x86.att' (AT&T syntax x86).
-    arch x86.att
-
-    # 'cmd' gives the command name for the compiler.  This should
-    # point to somewhere in the user's PATH, or be an absolute path.
-    cmd "gcc"
-
-    # 'argv' gives the list of arguments to the compiler.
-    # Internally, act adds its own arguments, so don't assume that these are the
-    # only ones.
-    argv "-m32" "-DNO_PTHREADS"
-  }
 }
 
-# Suppose we want to run compilers on a remote machine.
+# Suppose we want to run backends on a remote machine.
 # We can do so by using 'via ssh'.  Here's an example:
 machine example {
   # We can disable machines using `enabled off` (or `false`, or `no`).
@@ -120,16 +81,4 @@ machine example {
   #   across.  This may get optimised in future versions, but, until
   #   then, be warned that the process may be slow and
   #   traffic-intensive.
-
-  # You can give two compilers in two different machines the same name.
-  # To disambiguate, for example when specifying a compiler on the command line,
-  # prefix the ID by the machine ID (for example, `this.gcc.x86` vs
-  # `example.gcc.x86`.
-  compiler gcc.x86 {
-    enabled on
-    style gcc
-    arch x86.att
-    cmd "gcc"
-    argv "-m32" "-DNO_PTHREADS"
-  }
 }
