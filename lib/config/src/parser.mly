@@ -15,13 +15,13 @@
 %token COLON  ":"
 %token EOF EOL
 
-%token (* main groups *) MACHINE COMPILER BACKEND FUZZ
+%token (* main groups *) MACHINE BACKEND FUZZ
 %token (* default resolutipn *) DEFAULT TRY
 %token (* common keywords *) ENABLED CMD ARGV
 %token (* fuzz-specific keywords *) ACTION WEIGHT SET PARAM FLAG RATIO
 %token (* Herd-specific keywords *) ASM_MODEL C_MODEL
 %token (* machine-specific keywords *) VIA SSH HOST USER COPY LOCAL
-%token (* compiler-specific keywords *) STYLE ARCH
+%token (* backend-specific keywords *) STYLE
 %token (* noise words *) TO
 
 %token <bool>   BOOL
@@ -62,8 +62,6 @@ let default_item :=
   | TRY; ~ = try_category; ~ = IDENTIFIER; < Ast.Default.Try >
 
 let try_category :=
-  | ARCH     ; { Ast.Default.Category.Arch }
-  | COMPILER ; { Ast.Default.Category.Compiler }
   | MACHINE  ; { Ast.Default.Category.Machine }
   | BACKEND  ; { Ast.Default.Category.Backend }
 
@@ -97,7 +95,6 @@ let machine_stanza := id_stanza(MACHINE, machine_item)
 let machine_item :=
   | ~ = enabled         ; <                 Ast.Machine.Enabled         >
   | VIA; ~ = via_stanza ; <                 Ast.Machine.Via             >
-  | x = compiler_stanza ; { let i, c = x in Ast.Machine.Compiler (i, c) }
   | x = backend_stanza  ; { let i, s = x in Ast.Machine.Backend  (i, s) }
 
 let via_stanza :=
@@ -108,15 +105,6 @@ let ssh_item :=
   | USER;      ~ = STRING ; < Ast.Ssh.User    >
   | HOST;      ~ = STRING ; < Ast.Ssh.Host    >
   | COPY; TO?; ~ = STRING ; < Ast.Ssh.Copy_to >
-
-let compiler_stanza := id_stanza(COMPILER, compiler_item)
-
-let compiler_item :=
-  | ~ = enabled             ; < Ast.Compiler.Enabled >
-  | ~ = cmd                 ; < Ast.Compiler.Cmd     >
-  | ~ = argv                ; < Ast.Compiler.Argv    >
-  | ~ = id_directive(STYLE) ; < Ast.Compiler.Style   >
-  | ~ = id_directive(ARCH)  ; < Ast.Compiler.Emits   >
 
 let cmd := CMD; STRING
 

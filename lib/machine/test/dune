@@ -6,5 +6,4 @@
  (preprocess
   (pps ppx_jane))
  (libraries ppx_expect.common ppx_expect.config ppx_inline_test.config base
-   base.caml core_kernel fmt act.common act.compiler act_compiler_test
-   act.machine act.backend act.utils))
+   base.caml core_kernel fmt act.common act.machine act.backend act.utils))

@@ -27,7 +27,6 @@ module Data = struct
       Ac.Id.(
         Default.make
           ~machines:[of_string "foo"; of_string "bar"; of_string "localhost"]
-          ~compilers:[of_string "localhost.gcc.x86.normal"]
           ~arches:[of_string "x86.att"])
 
   let machines : Am.Spec.Set.t Lazy.t =
@@ -47,8 +46,7 @@ let%test_module "accessors" =
       print_s [%sexp (Global.defaults global : Default.t)] ;
       [%expect
         {|
-          ((arches ((x86 att))) (compilers ((localhost gcc x86 normal)))
-           (machines ((foo) (bar) (localhost))) (backends ())) |}]
+          ((arches ((x86 att))) (machines ((foo) (bar) (localhost))) (backends ())) |}]
 
     let%expect_test "fuzz" =
       print_s [%sexp (Global.fuzz global : Act_fuzz.Config.t)] ;

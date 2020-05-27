@@ -159,49 +159,16 @@ module Via = struct
           pp_simple_stanza Ssh.pp f ("via ssh", s))
 end
 
-module Compiler = struct
-  type t =
-    | Enabled of bool [@sexp.bool]
-    | Style of Id.t
-    | Emits of Id.t
-    | Cmd of string
-    | Argv of string list [@sexp.list]
-  [@@deriving sexp]
-
-  let pp (f : Formatter.t) : t -> unit =
-    Pp_helpers.(
-      function
-      | Cmd c ->
-          pp_cmd f c
-      | Argv xs ->
-          pp_argv f xs
-      | Enabled b ->
-          pp_enabled f b
-      | Style s ->
-          pp_id_directive f ("style", s)
-      | Emits s ->
-          pp_id_directive f ("arch", s))
-end
-
 module Machine = struct
   type t =
-    | Compiler of Id.t * Compiler.t list [@sexp.list]
     | Enabled of bool
     | Via of Via.t
     | Backend of Id.t * Backend.t list [@sexp.list]
   [@@deriving sexp]
 
-  let as_compiler : t -> (Id.t * Compiler.t list) option = function
-    | Compiler (i, c) ->
-        Some (i, c)
-    | _ ->
-        None
-
   let pp (f : Formatter.t) : t -> unit =
     Pp_helpers.(
       function
-      | Compiler (i, cs) ->
-          pp_id_stanza Compiler.pp f (("compiler", i), cs)
       | Enabled b ->
           pp_enabled f b
       | Via v ->
@@ -213,13 +180,10 @@ end
 module Default = struct
   module Category = struct
     module M = struct
-      type t = Arch | Compiler | Machine | Backend [@@deriving enum]
+      type t = Arch | Machine | Backend [@@deriving enum]
 
       let table : (t, string) List.Assoc.t =
-        [ (Arch, "arch")
-        ; (Compiler, "compiler")
-        ; (Machine, "machine")
-        ; (Backend, "backend") ]
+        [(Arch, "arch"); (Machine, "machine"); (Backend, "backend")]
     end
 
     include M

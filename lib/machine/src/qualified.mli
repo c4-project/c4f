@@ -60,30 +60,12 @@ module On_specs :
     with type 'qual t = 'qual t
      and type right = Spec.t
 
-(** {1 Qualified compiler specifications} *)
-module Compiler : sig
-  (** Shorthand for a qualified compiler specification. *)
-  type nonrec t = Act_compiler.Spec.t t [@@deriving equal]
-
-  (** {2 Resolving fully qualified IDs to compilers} *)
-
-  val lift_resolver :
-       t
-    -> f:
-         (   Act_compiler.Spec.t Act_common.Spec.With_id.t
-          -> (module Act_compiler.Instance_types.Basic) Or_error.t)
-    -> (module Act_compiler.Instance_types.S) Or_error.t
-  (** [lift_resolver spec ~f] lifts the basic compiler resolving function [f]
-      such that it accepts a qualified compiler spec [spec] and returns, on
-      success, a {!Act_compiler.Instance_types.S} instance. *)
-end
-
 (** {1 Qualified backend specifications} *)
 module Backend : sig
   (** Shorthand for a qualified backend specification. *)
   type nonrec t = Act_backend.Spec.t t [@@deriving equal]
 
-  (** {2 Resolving fully qualified IDs to compilers} *)
+  (** {2 Resolving fully qualified IDs to backends} *)
 
   val lift_resolver :
        t

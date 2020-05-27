@@ -33,11 +33,6 @@ module type S = sig
 
   include Pretty_printer.S with type t := t
 
-  (** {3 Compilers attached to this spec} *)
-
-  val compilers : t -> Act_compiler.Spec.Set.t
-  (** [compilers spec] gets the compiler specifications attached to [spec]. *)
-
   (** {3 Backends attached to this spec} *)
 
   val backends : t -> Act_backend.Spec.Set.t

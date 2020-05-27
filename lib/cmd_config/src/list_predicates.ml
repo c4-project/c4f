@@ -13,14 +13,10 @@ open Core_kernel
 
 open struct
   module Ac = Act_common
-  module C_spec = Act_compiler.Spec
-  module Cq_spec = Act_machine.Qualified.Compiler
 end
 
 let predicate_lists : (string, (module Ac.Property_types.S)) List.Assoc.t =
-  [ ("Backend predicates (-filter-backends)", (module Act_compiler.Property))
-  ; ( "Compiler predicates (-filter-compilers)"
-    , (module Act_compiler.Property) )
+  [ ("Backend predicates (-filter-backends)", (module Act_backend.Property))
   ; ("Machine predicates (-filter-machines)", (module Act_machine.Property))
   ; ("Identifier predicates", (module Ac.Id.Property)) ]
 

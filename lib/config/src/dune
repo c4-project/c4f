@@ -6,8 +6,8 @@
  (preprocess
   (pps ppx_deriving.std ppx_jane sedlex.ppx))
  (libraries sexplib0 fmt fpath menhirLib travesty travesty.base_exts sedlex
-   base.caml core_kernel plumbing act.common act.compiler act.litmus
-   act.backend act.utils act.fuzz act.machine))
+   base.caml core_kernel plumbing act.common act.litmus act.backend act.utils
+   act.fuzz act.machine))
 
 ;; Config file parser
 

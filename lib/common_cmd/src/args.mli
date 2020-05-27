@@ -158,10 +158,6 @@ val output_type : Plumbing.Output.t Command.Arg_type.t
 (** [output_type] is an argument type for Plumbing outputs. For stdout, use
     the {!With_files} argument helpers instead. *)
 
-val asm_target : Asm_target.t Command.Param.t
-(** [asm_target] defines a parameter for collecting an assembly target
-    (architecture or compiler). *)
-
 val flag_to_enum_choice :
   'a -> string -> doc:string -> 'a option Command.Param.t
 (** [flag_to_enum_choice enum str ~doc] is a helper for implementing
@@ -188,11 +184,6 @@ val aux_file : string option Command.Param.t
 val backend_predicate : Act_backend.Property.t Blang.t option Command.Param.t
 (** [backend_predicate] defines a parameter for collecting a filtering
     predicate for backends. *)
-
-val compiler_predicate :
-  Act_compiler.Property.t Blang.t option Command.Param.t
-(** [compiler_predicate] defines a parameter for collecting a filtering
-    predicate for compilers. *)
 
 val machine_predicate : Act_machine.Property.t Blang.t option Command.Param.t
 (** [machine_predicate] defines a parameter for collecting a filtering

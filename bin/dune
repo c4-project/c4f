@@ -11,12 +11,6 @@
  (libraries base core_kernel core common_cmd cmd_c))
 
 (executable
- (name act_compiler)
- (public_name act-compiler)
- (modules act_compiler)
- (libraries base core_kernel core common_cmd cmd_compiler))
-
-(executable
  (name act_config)
  (public_name act-config)
  (modules act_config)

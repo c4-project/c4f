@@ -15,5 +15,4 @@ let command : Command.t =
   Command.group ~summary:"commands for dealing with ACT configuration"
     [ ("dump", Dump.command)
     ; ("license", Common_cmd.License.command)
-    ; ("list-predicates", List_predicates.command)
-    ; ("probe", Probe.command) ]
+    ; ("list-predicates", List_predicates.command) ]

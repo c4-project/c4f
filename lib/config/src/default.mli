@@ -20,13 +20,12 @@ type t [@@deriving sexp]
 
 val make :
      ?arches:Act_common.Id.t list
-  -> ?compilers:Act_common.Id.t list
   -> ?machines:Act_common.Id.t list
   -> ?backends:Act_common.Id.t list
   -> unit
   -> t
-(** [make ?arches ?compilers ?machines ?backends ()] constructs a default ID
-    environment with the given bin contents. *)
+(** [make ?arches ?machines ?backends ()] constructs a default ID environment
+    with the given bin contents. *)
 
 val of_ast : Ast.Default.t list -> t Or_error.t
 (** [of_ast stanza] constructs a default ID environment from the config file
@@ -39,9 +38,6 @@ val of_ast : Ast.Default.t list -> t Or_error.t
 
 val arches : t -> Act_common.Id.t list
 (** [arches ds] gets the list of default architecture IDs from [ds]. *)
-
-val compilers : t -> Act_common.Id.t list
-(** [compilers ds] gets the list of default compiler IDs from [ds]. *)
 
 val machines : t -> Act_common.Id.t list
 (** [machines ds] gets the list of default machine IDs from [ds]. *)

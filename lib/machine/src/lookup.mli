@@ -13,11 +13,6 @@
 
 open Base
 
-(** Constructs a compiler lookup given a compiler presence testing function. *)
-module Compiler (Basic : sig
-  val test : Qualified.Compiler.t -> unit Or_error.t
-end) : Lookup_types.S_compiler
-
 (** Constructs a backend lookup given a backend presence testing function. *)
 module Backend (Resolver : sig
   val test : Qualified.Backend.t -> unit Or_error.t

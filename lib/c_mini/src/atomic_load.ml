@@ -23,8 +23,7 @@ let ensure_mo_compat (old : Mem_order.t) (nu : Mem_order.t) : Mem_order.t =
   if Mem_order.is_load_compatible nu then nu else old
 
 module Base_map (Ap : Applicative.S) = struct
-  let bmap (x : t)
-      ~(src : Address.t -> Address.t Ap.t)
+  let bmap (x : t) ~(src : Address.t -> Address.t Ap.t)
       ~(mo : Mem_order.t -> Mem_order.t Ap.t) : t Ap.t =
     Ap.(
       let m src mo = make ~src ~mo:(ensure_mo_compat x.mo mo) in

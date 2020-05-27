@@ -15,7 +15,7 @@ open Core_kernel
 
 (** General template for resolver types.
 
-    You'll want {!S_compiler} or {!S_backend} instead. *)
+    You'll want {!S_backend} instead. *)
 module type S = sig
   type spec
 
@@ -28,12 +28,12 @@ module type S = sig
     -> Spec.Set.t
     -> spec Lookup_listing.t Or_error.t
   (** [filtered_list ?machine_predicate ?predicate ?test_specs specs]
-      produces a filtered list of compiler or backend specs from the
-      configured spec set [specs].
+      produces a filtered list of backend specs from the configured spec set
+      [specs].
 
       If [test_specs] is set to true, the filtering process may {!resolve}
-      each spec to a compiler or backend, then perform a quick test to make
-      sure it works. *)
+      each spec to a backend, then perform a quick test to make sure it
+      works. *)
 
   val lookup_single :
        ?default_machines:Act_common.Id.t list
@@ -48,14 +48,6 @@ module type S = sig
       {!Lookup_listing.lookup} with the appropriate arguments, but may be
       faster in future versions of ACT. *)
 end
-
-(** [S_compiler] is the module type of compiler resolvers: resolvers that
-    consume {!Qualified.Compiler.t} specs and emit
-    {!Act_compiler.Instance_types.S} modules. *)
-module type S_compiler =
-  S
-    with type spec := Qualified.Compiler.t
-     and type property := Act_compiler.Property.t
 
 (** [S_backend] is the module type of backend resolvers: resolvers that
     consume {!Qualified.Backend.t} specs and emit

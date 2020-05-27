@@ -6,4 +6,4 @@
  (preprocess
   (pps ppx_deriving.std ppx_jane))
  (libraries sexplib0 fmt fpath travesty base base.caml travesty.base_exts
-   core_kernel act.common act.utils plumbing act.backend act.compiler))
+   core_kernel act.common act.utils plumbing act.backend))

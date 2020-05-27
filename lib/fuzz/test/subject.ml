@@ -105,9 +105,12 @@ module Test_data = struct
                  (Src.Subject.Block.make_dead_code
                     ~statements:
                       [ mk_store
-                          (Atomic_store.make ~src:(Expression.atomic_load
-                            (Atomic_load.make ~src:(Address.of_variable_str_exn "x")
-                            ~mo:Mem_order.Seq_cst))
+                          (Atomic_store.make
+                             ~src:
+                               (Expression.atomic_load
+                                  (Atomic_load.make
+                                     ~src:(Address.of_variable_str_exn "x")
+                                     ~mo:Mem_order.Seq_cst))
                              ~dst:(Address.of_variable_str_exn "y")
                              ~mo:Mem_order.Seq_cst) ]
                     ())

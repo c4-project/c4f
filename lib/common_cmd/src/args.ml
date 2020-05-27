@@ -96,18 +96,6 @@ module Other = struct
                ()) ]
         ~if_nothing_chosen:Return_none)
 
-  let asm_target : Asm_target.t Command.Param.t =
-    Command.Param.(
-      choose_one
-        [ map
-            ~f:(Option.map ~f:(fun x -> Act_machine.Target.Cc x))
-            (flag "compiler" (optional id_type)
-               ~doc:"COMPILER_ID ID of the compiler to target")
-        ; map
-            ~f:(Option.map ~f:(fun x -> Act_machine.Target.Arch x))
-            (arch ()) ]
-        ~if_nothing_chosen:Raise)
-
   let aux_file : string option Command.Param.t =
     flag "aux-file"
       (optional Filename.arg_type)
@@ -119,11 +107,6 @@ module Other = struct
     flag "filter-backends"
       (optional (sexp_conv [%of_sexp: Act_backend.Property.t Blang.t]))
       ~doc:"PREDICATE filter backends using this predicate"
-
-  let compiler_predicate =
-    flag "filter-compilers"
-      (optional (sexp_conv [%of_sexp: Act_compiler.Property.t Blang.t]))
-      ~doc:"PREDICATE filter compilers using this predicate"
 
   let machine_predicate =
     flag "filter-machines"

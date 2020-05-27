@@ -12,14 +12,12 @@
 open Base
 module Ac = Act_common
 module Tx = Travesty_base_exts
-module C_spec = Act_compiler.Spec
 module S_spec = Act_backend.Spec
 
 module M = struct
   type t =
     { enabled: bool [@default true] [@sexp_drop_default.equal]
     ; via: Via.t [@default Via.local] [@sexp_drop_default.equal]
-    ; compilers: C_spec.Set.t [@default Act_common.Spec.Set.empty]
     ; backends: S_spec.Set.t [@default Act_common.Spec.Set.empty] }
   [@@deriving fields, equal, make]
 
@@ -54,8 +52,6 @@ module Forward_basic_spec
     (B : Spec_types.S with type t := I.c) :
   Spec_types.S with type t := I.t and type via := B.via = struct
   module H = Act_utils.Inherit.Helpers (I)
-
-  let compilers = H.forward B.compilers
 
   (* TODO(@MattWindsor91): this is a bit suspect *)
   let pp f = H.forward (B.pp f)
@@ -99,27 +95,3 @@ end)
 
 include (
   MS : module type of MS with type t := M.t and module With_id := With_id )
-
-module On_compiler_set :
-  Travesty.Traversable_types.S0
-    with type t = M.t
-     and type Elt.t = C_spec.Set.t = Travesty.Traversable.Make0 (struct
-  type t = M.t
-
-  module Elt = C_spec.Set
-
-  module On_monad (M : Monad.S) = struct
-    let map_m (spec : t) ~(f : C_spec.Set.t -> C_spec.Set.t M.t) : t M.t =
-      M.Let_syntax.(
-        let compilers = compilers spec in
-        let%map compilers' = f compilers in
-        {spec with compilers= compilers'})
-  end
-end)
-
-module On_specs =
-  Travesty.Traversable.Fix_elt (Ac.Spec.Set.On_specs) (C_spec)
-
-module On_compilers :
-  Travesty.Traversable_types.S0 with type t = M.t and type Elt.t = C_spec.t =
-  Travesty.Traversable.Chain0 (On_compiler_set) (On_specs)

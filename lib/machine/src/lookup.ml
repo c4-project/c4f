@@ -11,7 +11,6 @@
 
 open Core_kernel
 module Ac = Act_common
-module Qc = Qualified.Compiler
 module Qb = Qualified.Backend
 
 module Machine = struct
@@ -203,24 +202,6 @@ struct
       Lookup_listing.get_with_fqid ?default_machines ~id_type:B.id_type ~fqid
         listing)
 end
-
-module Compiler (Basic : sig
-  val test : Qualified.Compiler.t -> unit Or_error.t
-end) : Lookup_types.S_compiler = Make (struct
-  type spec = Act_compiler.Spec.t
-
-  type pred = Act_compiler.Property.t Blang.t
-
-  let id_type = "compiler"
-
-  let is_enabled = Act_compiler.Spec.is_enabled
-
-  let eval_pred = Act_compiler.Property.eval_b
-
-  let specs_of_machine = Spec.With_id.compilers
-
-  let test_spec = Basic.test
-end)
 
 module Backend (Basic : sig
   val test : Qualified.Backend.t -> unit Or_error.t

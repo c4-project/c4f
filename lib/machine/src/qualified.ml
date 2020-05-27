@@ -51,27 +51,6 @@ let fqid (q : _ t) : Ac.Id.t = Ac.Id.(m_spec_id q @. spec_id q)
 let spec_without_id (q : 'qual t) : 'qual =
   q |> spec |> Act_common.Spec.With_id.spec
 
-module Compiler = struct
-  type t = Act_compiler.Spec.t M.t [@@deriving equal]
-
-  let lift_resolver (q_spec : t)
-      ~(f :
-            Act_compiler.Spec.With_id.t
-         -> (module Act_compiler.Instance_types.Basic) Or_error.t) :
-      (module Act_compiler.Instance_types.S) Or_error.t =
-    let c_spec = spec q_spec in
-    let m_spec = m_spec q_spec in
-    let (module Runner) = Spec.With_id.runner m_spec in
-    Or_error.Let_syntax.(
-      let%map (module B : Act_compiler.Instance_types.Basic) = f c_spec in
-      ( module Act_compiler.Instance.Make (struct
-        let spec = c_spec
-
-        include B
-        module Runner = Runner
-      end) : Act_compiler.Instance_types.S ))
-end
-
 module Backend = struct
   type t = Act_backend.Spec.t M.t [@@deriving equal]
 

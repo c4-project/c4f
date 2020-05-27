@@ -23,13 +23,11 @@ let keywords : token String_map.t Lazy.t =
     (Map.of_alist_exn
        (module String.Caseless)
        [ ("action", ACTION)
-       ; ("arch", ARCH)
        ; ("argv", ARGV)
        ; ("asm_model", ASM_MODEL)
        ; ("backend", BACKEND)
        ; ("c_model", C_MODEL)
        ; ("cmd", CMD)
-       ; ("compiler", COMPILER)
        ; ("copy", COPY)
        ; ("default", DEFAULT)
        ; ("enabled", ENABLED)

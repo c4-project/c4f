@@ -17,7 +17,6 @@ open Base
 module Ac = Act_common
 module Au = Act_utils
 module Tx = Travesty_base_exts
-module C_spec = Act_compiler.Spec
 module M_spec = Act_machine.Spec
 
 type t =
@@ -88,37 +87,6 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
         in
         Act_backend.Spec.make ~cmd ?c_model ~argv ~asm_models ~style ())
 
-    let compiler (items : Ast.Compiler.t list) : C_spec.t Or_error.t =
-      Or_error.Let_syntax.(
-        let%map enabled =
-          Au.My_list.find_at_most_one items ~item_name:"enabled"
-            ~f:(function Enabled b -> Some b | _ -> None)
-            ~on_empty:(Or_error.return true)
-        and style =
-          Au.My_list.find_one items ~item_name:"style" ~f:(function
-            | Style s ->
-                Some s
-            | _ ->
-                None)
-        and emits =
-          Au.My_list.find_one items ~item_name:"emits" ~f:(function
-            | Emits e ->
-                Some e
-            | _ ->
-                None)
-        and cmd =
-          Au.My_list.find_one items ~item_name:"cmd" ~f:(function
-            | Cmd c ->
-                Some c
-            | _ ->
-                None)
-        and argv =
-          Au.My_list.find_at_most_one items ~item_name:"argv"
-            ~f:(function Argv v -> Some v | _ -> None)
-            ~on_empty:(return [])
-        in
-        Act_compiler.Spec.make ~enabled ~style ~emits ~cmd ~argv ())
-
     let try_get_named_backends :
            Ast.Machine.t
         -> (Act_common.Id.t * Act_backend.Spec.t) option Or_error.t =
@@ -126,17 +94,6 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
       | Backend (n, s) ->
           Or_error.Let_syntax.(
             let%map s' = backends s in
-            Some (n, s'))
-      | _ ->
-          Or_error.return None
-
-    let try_get_named_compiler :
-           Ast.Machine.t
-        -> (Act_common.Id.t * Act_compiler.Spec.t) option Or_error.t =
-      function
-      | Compiler (n, s) ->
-          Or_error.Let_syntax.(
-            let%map s' = compiler s in
             Some (n, s'))
       | _ ->
           Or_error.return None
@@ -155,10 +112,6 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
         Ast.Machine.t list -> Act_backend.Spec.t Ac.Spec.Set.t Or_error.t =
       try_get_named_specs ~f:try_get_named_backends
 
-    let try_get_named_compilers :
-        Ast.Machine.t list -> Act_compiler.Spec.t Ac.Spec.Set.t Or_error.t =
-      try_get_named_specs ~f:try_get_named_compiler
-
     let machine (items : Ast.Machine.t list) : M_spec.t Or_error.t =
       Or_error.Let_syntax.(
         let%bind enabled =
@@ -166,7 +119,6 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
             ~f:(function Enabled b -> Some b | _ -> None)
             ~on_empty:(Or_error.return true)
         and backends = try_get_named_backendss items
-        and compilers = try_get_named_compilers items
         and via_raw =
           Au.My_list.find_one items ~item_name:"via" ~f:(function
             | Via v ->
@@ -175,7 +127,7 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
                 None)
         in
         let%map via = via via_raw in
-        M_spec.make ~backends ~compilers ~enabled ~via ())
+        M_spec.make ~backends ~enabled ~via ())
 
     let machine_with_id (id : Ac.Id.t) (spec_ast : Ast.Machine.t list) :
         M_spec.With_id.t Or_error.t =

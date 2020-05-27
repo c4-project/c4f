@@ -1,6 +1,6 @@
-main: MACHINE IDENTIFIER LBRACE COMPILER IDENTIFIER LBRACE ARGV VIA
+main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE ARGV VIA
 ##
-## Ends in an error in state: 33.
+## Ends in an error in state: 38.
 ##
 ## argv -> ARGV . nonempty_list(STRING) [ RBRACE EOL ]
 ##
@@ -10,16 +10,7 @@ main: MACHINE IDENTIFIER LBRACE COMPILER IDENTIFIER LBRACE ARGV VIA
 
 Expected at least one quoted string after `argv`
 
-main: MACHINE IDENTIFIER LBRACE COMPILER IDENTIFIER LBRACE ARCH VIA
-##
-## Ends in an error in state: 37.
-##
-## id_directive(ARCH) -> ARCH . IDENTIFIER [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## ARCH
-##
-main: MACHINE IDENTIFIER LBRACE COMPILER IDENTIFIER LBRACE STYLE VIA
+main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE STYLE VIA
 ##
 ## Ends in an error in state: 29.
 ##
@@ -30,7 +21,7 @@ main: MACHINE IDENTIFIER LBRACE COMPILER IDENTIFIER LBRACE STYLE VIA
 ##
 main: DEFAULT LBRACE TRY BACKEND WEIGHT
 ##
-## Ends in an error in state: 114.
+## Ends in an error in state: 95.
 ##
 ## default_item -> TRY try_category . IDENTIFIER [ RBRACE EOL ]
 ##
@@ -50,54 +41,19 @@ Expected a valid identifier argument
 ##
 main: MACHINE IDENTIFIER LBRACE BACKEND WEIGHT
 ##
-## Ends in an error in state: 50.
+## Ends in an error in state: 26.
 ##
 ## id_stanza(BACKEND,backend_item) -> BACKEND . IDENTIFIER LBRACE separated_nonempty_list(EOL,option(backend_item)) RBRACE [ RBRACE EOL ]
 ##
 ## The known suffix of the stack is as follows:
 ## BACKEND
 ##
-main: MACHINE IDENTIFIER LBRACE COMPILER VIA
-##
-## Ends in an error in state: 26.
-##
-## id_stanza(COMPILER,compiler_item) -> COMPILER . IDENTIFIER LBRACE separated_nonempty_list(EOL,option(compiler_item)) RBRACE [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## COMPILER
-##
 
 Expected a valid identifier before starting the stanza
 
-main: MACHINE IDENTIFIER LBRACE COMPILER IDENTIFIER LBRACE VIA
-##
-## Ends in an error in state: 28.
-##
-## id_stanza(COMPILER,compiler_item) -> COMPILER IDENTIFIER LBRACE . separated_nonempty_list(EOL,option(compiler_item)) RBRACE [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## COMPILER IDENTIFIER LBRACE
-##
-main: MACHINE IDENTIFIER LBRACE COMPILER IDENTIFIER LBRACE STYLE IDENTIFIER EOL VIA
-##
-## Ends in an error in state: 42.
-##
-## separated_nonempty_list(EOL,option(compiler_item)) -> option(compiler_item) EOL . separated_nonempty_list(EOL,option(compiler_item)) [ RBRACE ]
-##
-## The known suffix of the stack is as follows:
-## option(compiler_item) EOL
-##
-
-Expected a valid compiler configuration item; for example:
-- `enabled BOOL`
-- `cmd "COMMAND"`
-- `argv "ARG" "ARG" ...`
-- `style STYLE-ID`
-- `emits ARCH-ID`
-
 main: DEFAULT LBRACE WEIGHT
 ##
-## Ends in an error in state: 108.
+## Ends in an error in state: 90.
 ##
 ## simple_stanza(DEFAULT,default_item) -> DEFAULT LBRACE . separated_nonempty_list(EOL,option(default_item)) RBRACE [ EOL EOF ]
 ##
@@ -106,7 +62,7 @@ main: DEFAULT LBRACE WEIGHT
 ##
 main: DEFAULT LBRACE EOL WEIGHT
 ##
-## Ends in an error in state: 119.
+## Ends in an error in state: 100.
 ##
 ## separated_nonempty_list(EOL,option(default_item)) -> option(default_item) EOL . separated_nonempty_list(EOL,option(default_item)) [ RBRACE ]
 ##
@@ -118,7 +74,7 @@ Expected a valid default item (`try CATEGORY ID`)
 
 main: DEFAULT LBRACE TRY WEIGHT
 ##
-## Ends in an error in state: 109.
+## Ends in an error in state: 91.
 ##
 ## default_item -> TRY . try_category IDENTIFIER [ RBRACE EOL ]
 ##
@@ -127,14 +83,12 @@ main: DEFAULT LBRACE TRY WEIGHT
 ##
 
 Expected a category after `try`; for example:
-- `arch`
-- `compiler`
 - `machine`
 - `backend`
 
 main: FUZZ LBRACE WEIGHT
 ##
-## Ends in an error in state: 79.
+## Ends in an error in state: 61.
 ##
 ## simple_stanza(FUZZ,fuzz_item) -> FUZZ LBRACE . separated_nonempty_list(EOL,option(fuzz_item)) RBRACE [ EOL EOF ]
 ##
@@ -143,7 +97,7 @@ main: FUZZ LBRACE WEIGHT
 ##
 main: FUZZ LBRACE EOL WEIGHT
 ##
-## Ends in an error in state: 104.
+## Ends in an error in state: 86.
 ##
 ## separated_nonempty_list(EOL,option(fuzz_item)) -> option(fuzz_item) EOL . separated_nonempty_list(EOL,option(fuzz_item)) [ RBRACE ]
 ##
@@ -157,7 +111,7 @@ Expected a valid fuzz configuration item; for example:
 
 main: FUZZ LBRACE ACTION WEIGHT
 ##
-## Ends in an error in state: 95.
+## Ends in an error in state: 77.
 ##
 ## fuzz_item -> ACTION . IDENTIFIER option(fuzz_weight) [ RBRACE EOL ]
 ##
@@ -169,7 +123,7 @@ Expected an action identifier after `action`
 
 main: FUZZ LBRACE ACTION IDENTIFIER VIA
 ##
-## Ends in an error in state: 96.
+## Ends in an error in state: 78.
 ##
 ## fuzz_item -> ACTION IDENTIFIER . option(fuzz_weight) [ RBRACE EOL ]
 ##
@@ -181,7 +135,7 @@ Expected `weight NUMBER`, or a newline, after the action identifier
 
 main: FUZZ LBRACE ACTION IDENTIFIER WEIGHT WEIGHT
 ##
-## Ends in an error in state: 97.
+## Ends in an error in state: 79.
 ##
 ## fuzz_weight -> WEIGHT . INTEGER [ RBRACE EOL ]
 ##
@@ -193,7 +147,7 @@ Expected an integer weight after `weight`
 
 main: FUZZ LBRACE SET WEIGHT
 ##
-## Ends in an error in state: 80.
+## Ends in an error in state: 62.
 ##
 ## fuzz_item -> SET . fuzz_setter [ RBRACE EOL ]
 ##
@@ -205,7 +159,7 @@ Expected `flag` or `param`, followed by an identifier and value assignment
 
 main: FUZZ LBRACE SET PARAM WEIGHT
 ##
-## Ends in an error in state: 81.
+## Ends in an error in state: 63.
 ##
 ## fuzz_setter -> PARAM . IDENTIFIER option(TO) INTEGER [ RBRACE EOL ]
 ##
@@ -214,7 +168,7 @@ main: FUZZ LBRACE SET PARAM WEIGHT
 ##
 main: FUZZ LBRACE SET FLAG WEIGHT
 ##
-## Ends in an error in state: 85.
+## Ends in an error in state: 67.
 ##
 ## fuzz_setter -> FLAG . IDENTIFIER option(TO) fuzz_flag_value [ RBRACE EOL ]
 ##
@@ -226,7 +180,7 @@ Expected an identifier naming the fuzzer tunable to be set
 
 main: FUZZ LBRACE SET PARAM IDENTIFIER TO IDENTIFIER
 ##
-## Ends in an error in state: 83.
+## Ends in an error in state: 65.
 ##
 ## fuzz_setter -> PARAM IDENTIFIER option(TO) . INTEGER [ RBRACE EOL ]
 ##
@@ -238,7 +192,7 @@ Expected an integer value for this flag, optionally preceded by `to`
 
 main: FUZZ LBRACE SET PARAM IDENTIFIER WEIGHT
 ##
-## Ends in an error in state: 82.
+## Ends in an error in state: 64.
 ##
 ## fuzz_setter -> PARAM IDENTIFIER . option(TO) INTEGER [ RBRACE EOL ]
 ##
@@ -250,7 +204,7 @@ Expected an integer value for this flag
 
 main: FUZZ LBRACE SET FLAG IDENTIFIER WEIGHT
 ##
-## Ends in an error in state: 86.
+## Ends in an error in state: 68.
 ##
 ## fuzz_setter -> FLAG IDENTIFIER . option(TO) fuzz_flag_value [ RBRACE EOL ]
 ##
@@ -263,7 +217,7 @@ preceded by `to`
 
 main: FUZZ LBRACE SET FLAG IDENTIFIER TO BACKEND
 ##
-## Ends in an error in state: 87.
+## Ends in an error in state: 69.
 ##
 ## fuzz_setter -> FLAG IDENTIFIER option(TO) . fuzz_flag_value [ RBRACE EOL ]
 ##
@@ -275,7 +229,7 @@ Expected a Boolean, or `ratio NUMBER : NUMBER`, value for this flag
 
 main: FUZZ LBRACE SET FLAG IDENTIFIER RATIO WEIGHT
 ##
-## Ends in an error in state: 88.
+## Ends in an error in state: 70.
 ##
 ## fuzz_flag_value -> RATIO . INTEGER COLON INTEGER [ RBRACE EOL ]
 ##
@@ -287,7 +241,7 @@ Expected a ratio (`NUMBER : NUMBER`) after `ratio`
 
 main: FUZZ LBRACE SET FLAG IDENTIFIER RATIO INTEGER WEIGHT
 ##
-## Ends in an error in state: 89.
+## Ends in an error in state: 71.
 ##
 ## fuzz_flag_value -> RATIO INTEGER . COLON INTEGER [ RBRACE EOL ]
 ##
@@ -299,7 +253,7 @@ Expected `: NUMBER` after the denominator of a ratio
 
 main: FUZZ LBRACE SET FLAG IDENTIFIER RATIO INTEGER COLON WEIGHT
 ##
-## Ends in an error in state: 90.
+## Ends in an error in state: 72.
 ##
 ## fuzz_flag_value -> RATIO INTEGER COLON . INTEGER [ RBRACE EOL ]
 ##
@@ -320,7 +274,7 @@ main: MACHINE IDENTIFIER LBRACE VIA SSH VIA
 ##
 main: FUZZ WEIGHT
 ##
-## Ends in an error in state: 78.
+## Ends in an error in state: 60.
 ##
 ## simple_stanza(FUZZ,fuzz_item) -> FUZZ . LBRACE separated_nonempty_list(EOL,option(fuzz_item)) RBRACE [ EOL EOF ]
 ##
@@ -329,7 +283,7 @@ main: FUZZ WEIGHT
 ##
 main: DEFAULT WEIGHT
 ##
-## Ends in an error in state: 107.
+## Ends in an error in state: 89.
 ##
 ## simple_stanza(DEFAULT,default_item) -> DEFAULT . LBRACE separated_nonempty_list(EOL,option(default_item)) RBRACE [ EOL EOF ]
 ##
@@ -339,14 +293,14 @@ main: DEFAULT WEIGHT
 
 Expected an opening brace after the block name
 
-main: MACHINE IDENTIFIER LBRACE COMPILER IDENTIFIER VIA
+main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER VIA
 ##
 ## Ends in an error in state: 27.
 ##
-## id_stanza(COMPILER,compiler_item) -> COMPILER IDENTIFIER . LBRACE separated_nonempty_list(EOL,option(compiler_item)) RBRACE [ RBRACE EOL ]
+## id_stanza(BACKEND,backend_item) -> BACKEND IDENTIFIER . LBRACE separated_nonempty_list(EOL,option(backend_item)) RBRACE [ RBRACE EOL ]
 ##
 ## The known suffix of the stack is as follows:
-## COMPILER IDENTIFIER
+## BACKEND IDENTIFIER
 ##
 main: MACHINE IDENTIFIER VIA
 ##
@@ -357,21 +311,12 @@ main: MACHINE IDENTIFIER VIA
 ## The known suffix of the stack is as follows:
 ## MACHINE IDENTIFIER
 ##
-main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER VIA
-##
-## Ends in an error in state: 51.
-##
-## id_stanza(BACKEND,backend_item) -> BACKEND IDENTIFIER . LBRACE separated_nonempty_list(EOL,option(backend_item)) RBRACE [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## BACKEND IDENTIFIER
-##
 
 Expected an opening brace after the identifier
 
 main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE ASM_MODEL IDENTIFIER VIA
 ##
-## Ends in an error in state: 56.
+## Ends in an error in state: 36.
 ##
 ## backend_item -> ASM_MODEL IDENTIFIER . STRING [ RBRACE EOL ]
 ##
@@ -383,7 +328,7 @@ Expected a quoted filename for this assembly model (after the architecture ID)
 
 main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE ASM_MODEL VIA
 ##
-## Ends in an error in state: 55.
+## Ends in an error in state: 35.
 ##
 ## backend_item -> ASM_MODEL . IDENTIFIER STRING [ RBRACE EOL ]
 ##
@@ -395,7 +340,7 @@ Expected an architecture ID for this assembly model
 
 main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE CMD VIA
 ##
-## Ends in an error in state: 31.
+## Ends in an error in state: 33.
 ##
 ## cmd -> CMD . STRING [ RBRACE EOL ]
 ##
@@ -407,7 +352,7 @@ Expected a quoted command name or path
 
 main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE C_MODEL STRING VIA
 ##
-## Ends in an error in state: 60.
+## Ends in an error in state: 44.
 ##
 ## separated_nonempty_list(EOL,option(backend_item)) -> option(backend_item) . [ RBRACE ]
 ## separated_nonempty_list(EOL,option(backend_item)) -> option(backend_item) . EOL separated_nonempty_list(EOL,option(backend_item)) [ RBRACE ]
@@ -415,19 +360,9 @@ main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE C_MODEL STRING VIA
 ## The known suffix of the stack is as follows:
 ## option(backend_item)
 ##
-main: MACHINE IDENTIFIER LBRACE COMPILER IDENTIFIER LBRACE STYLE IDENTIFIER VIA
-##
-## Ends in an error in state: 41.
-##
-## separated_nonempty_list(EOL,option(compiler_item)) -> option(compiler_item) . [ RBRACE ]
-## separated_nonempty_list(EOL,option(compiler_item)) -> option(compiler_item) . EOL separated_nonempty_list(EOL,option(compiler_item)) [ RBRACE ]
-##
-## The known suffix of the stack is as follows:
-## option(compiler_item)
-##
 main: MACHINE IDENTIFIER LBRACE VIA LOCAL VIA
 ##
-## Ends in an error in state: 69.
+## Ends in an error in state: 53.
 ##
 ## separated_nonempty_list(EOL,option(machine_item)) -> option(machine_item) . [ RBRACE ]
 ## separated_nonempty_list(EOL,option(machine_item)) -> option(machine_item) . EOL separated_nonempty_list(EOL,option(machine_item)) [ RBRACE ]
@@ -447,7 +382,7 @@ main: MACHINE IDENTIFIER LBRACE VIA SSH LBRACE USER STRING VIA
 ##
 main: FUZZ LBRACE ACTION IDENTIFIER WEIGHT INTEGER WEIGHT
 ##
-## Ends in an error in state: 103.
+## Ends in an error in state: 85.
 ##
 ## separated_nonempty_list(EOL,option(fuzz_item)) -> option(fuzz_item) . [ RBRACE ]
 ## separated_nonempty_list(EOL,option(fuzz_item)) -> option(fuzz_item) . EOL separated_nonempty_list(EOL,option(fuzz_item)) [ RBRACE ]
@@ -457,7 +392,7 @@ main: FUZZ LBRACE ACTION IDENTIFIER WEIGHT INTEGER WEIGHT
 ##
 main: DEFAULT LBRACE TRY BACKEND IDENTIFIER EOF
 ##
-## Ends in an error in state: 118.
+## Ends in an error in state: 99.
 ##
 ## separated_nonempty_list(EOL,option(default_item)) -> option(default_item) . [ RBRACE ]
 ## separated_nonempty_list(EOL,option(default_item)) -> option(default_item) . EOL separated_nonempty_list(EOL,option(default_item)) [ RBRACE ]
@@ -468,9 +403,9 @@ main: DEFAULT LBRACE TRY BACKEND IDENTIFIER EOF
 
 Expected a closing brace (to terminate this block), or a newline
 
-main: MACHINE IDENTIFIER LBRACE COMPILER IDENTIFIER LBRACE ARGV STRING VIA
+main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE ARGV STRING VIA
 ##
-## Ends in an error in state: 34.
+## Ends in an error in state: 39.
 ##
 ## nonempty_list(STRING) -> STRING . [ RBRACE EOL ]
 ## nonempty_list(STRING) -> STRING . nonempty_list(STRING) [ RBRACE EOL ]
@@ -483,7 +418,7 @@ Expected a closing brace (to terminate this block), another string, or a newline
 
 main: MACHINE IDENTIFIER LBRACE RBRACE VIA
 ##
-## Ends in an error in state: 127.
+## Ends in an error in state: 108.
 ##
 ## separated_nonempty_list(EOL,option(top_stanza)) -> option(top_stanza) . [ EOF ]
 ## separated_nonempty_list(EOL,option(top_stanza)) -> option(top_stanza) . EOL separated_nonempty_list(EOL,option(top_stanza)) [ EOF ]
@@ -496,7 +431,7 @@ Top-level items must be separated by newlines
 
 main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE C_MODEL VIA
 ##
-## Ends in an error in state: 53.
+## Ends in an error in state: 31.
 ##
 ## backend_item -> C_MODEL . STRING [ RBRACE EOL ]
 ##
@@ -508,7 +443,7 @@ Expected a quoted filename for the C model
 
 main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE VIA
 ##
-## Ends in an error in state: 52.
+## Ends in an error in state: 28.
 ##
 ## id_stanza(BACKEND,backend_item) -> BACKEND IDENTIFIER LBRACE . separated_nonempty_list(EOL,option(backend_item)) RBRACE [ RBRACE EOL ]
 ##
@@ -517,7 +452,7 @@ main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE VIA
 ##
 main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE C_MODEL STRING EOL VIA
 ##
-## Ends in an error in state: 61.
+## Ends in an error in state: 45.
 ##
 ## separated_nonempty_list(EOL,option(backend_item)) -> option(backend_item) EOL . separated_nonempty_list(EOL,option(backend_item)) [ RBRACE ]
 ##
@@ -553,7 +488,7 @@ main: MACHINE IDENTIFIER LBRACE USER
 ##
 main: MACHINE IDENTIFIER LBRACE VIA LOCAL EOL USER
 ##
-## Ends in an error in state: 70.
+## Ends in an error in state: 54.
 ##
 ## separated_nonempty_list(EOL,option(machine_item)) -> option(machine_item) EOL . separated_nonempty_list(EOL,option(machine_item)) [ RBRACE ]
 ##
@@ -674,7 +609,7 @@ main: VIA
 ##
 main: DEFAULT LBRACE RBRACE EOL TO
 ##
-## Ends in an error in state: 128.
+## Ends in an error in state: 109.
 ##
 ## separated_nonempty_list(EOL,option(top_stanza)) -> option(top_stanza) EOL . separated_nonempty_list(EOL,option(top_stanza)) [ EOF ]
 ##

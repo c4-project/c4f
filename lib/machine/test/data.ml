@@ -28,11 +28,8 @@ module Spec_sets = struct
 
   let localhost_spec : Am.Spec.t Lazy.t =
     Lazy.Let_syntax.(
-      let%bind backends = localhost_backends in
-      let%map compilers =
-        Act_compiler_test.Data.Spec_sets.single_gcc_compiler
-      in
-      Am.Spec.make ~enabled:true ~via:Am.Via.local ~compilers ~backends ())
+      let%map backends = localhost_backends in
+      Am.Spec.make ~enabled:true ~via:Am.Via.local ~backends ())
 
   let single_local_machine : Am.Spec.Set.t Lazy.t =
     Lazy.Let_syntax.(

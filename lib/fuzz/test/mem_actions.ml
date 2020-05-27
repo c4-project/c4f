@@ -32,16 +32,15 @@ let%test_module "running payloads on test subject" =
         ~initial_state:(Lazy.force Subject.Test_data.state)
 
     let sc_action : Src.Path.Program.t Lazy.t =
-      Src.Path.(
-        Subject.Test_data.Path.thread_0_stms @@ Stms.stm 0)
+      Src.Path.(Subject.Test_data.Path.thread_0_stms @@ Stms.stm 0)
 
     let rlx_action : Src.Path.Program.t Lazy.t =
-      Src.Path.(
-        Subject.Test_data.Path.thread_0_stms @@ Stms.stm 2)
+      Src.Path.(Subject.Test_data.Path.thread_0_stms @@ Stms.stm 2)
 
     let nest_action : Src.Path.Program.t Lazy.t =
       Src.Path.(
-        Subject.Test_data.Path.thread_0_stms @@ Stms.in_stm 4 @@ Stm.in_if @@ If.in_branch true @@ Stms.stm 0)
+        Subject.Test_data.Path.thread_0_stms @@ Stms.in_stm 4 @@ Stm.in_if
+        @@ If.in_branch true @@ Stms.stm 0)
 
     let%expect_test "failed SC->RLX" =
       test sc_action Act_c_mini.Mem_order.Relaxed false ;

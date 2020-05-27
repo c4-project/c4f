@@ -20,7 +20,6 @@ module Defaults = struct
     [ Default
         (List.concat
            [ reify_try Arch (Default.arches defaults)
-           ; reify_try Compiler (Default.compilers defaults)
            ; reify_try Machine (Default.machines defaults)
            ; reify_try Backend (Default.backends defaults) ]) ]
 end
@@ -92,21 +91,6 @@ module Machines = struct
     reify_spec_set ~f:(fun id spec ->
         Ast.Machine.Backend (id, reify_backend_spec spec))
 
-  let reify_compiler_spec (spec : Act_compiler.Spec.t) : Ast.Compiler.t list
-      =
-    Act_compiler.Spec.(
-      let argv = argv spec in
-      [ Ast.Compiler.Enabled (is_enabled spec)
-      ; Style (style spec)
-      ; Emits (emits spec)
-      ; Cmd (cmd spec) ]
-      @ if List.is_empty argv then [] else [Argv argv])
-
-  let reify_compilers :
-      Act_compiler.Spec.t Act_common.Spec.Set.t -> Ast.Machine.t list =
-    reify_spec_set ~f:(fun id spec ->
-        Ast.Machine.Compiler (id, reify_compiler_spec spec))
-
   let reify_ssh (cfg : Plumbing.Ssh_runner.Config.t) : Ast.Ssh.t list =
     List.filter_opt
       Plumbing.Ssh_runner.Config.
@@ -127,8 +111,7 @@ module Machines = struct
   let reify_spec (spec : Act_machine.Spec.t) : Ast.Machine.t list =
     List.concat
       [ reify_standalone_items spec
-      ; reify_backends (Act_machine.Spec.backends spec)
-      ; reify_compilers (Act_machine.Spec.compilers spec) ]
+      ; reify_backends (Act_machine.Spec.backends spec) ]
 
   let reify_spec_with_id (wid : Act_machine.Spec.t Act_common.Spec.With_id.t)
       : Ast.Top.t =

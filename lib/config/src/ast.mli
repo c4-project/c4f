@@ -77,25 +77,10 @@ module Via : sig
   include Pretty_printer.S with type t := t
 end
 
-(** Items in a compiler stanza *)
-module Compiler : sig
-  type t =
-    | Enabled of bool
-    | Style of Act_common.Id.t
-    | Emits of Act_common.Id.t
-    | Cmd of string
-    | Argv of string list
-  [@@deriving sexp]
-
-  include Pretty_printer.S with type t := t
-end
-
 (** Items in a machine stanza *)
 module Machine : sig
   (** Type of machine stanza items. *)
   type t =
-    | Compiler of Act_common.Id.t * Compiler.t list
-        (** A compiler on this particular machine. *)
     | Enabled of bool  (** Whether or not the machine is enabled. *)
     | Via of Via.t  (** Where the machine is located. *)
     | Backend of Act_common.Id.t * Backend.t list
@@ -104,17 +89,13 @@ module Machine : sig
   [@@deriving sexp]
 
   include Pretty_printer.S with type t := t
-
-  val as_compiler : t -> (Act_common.Id.t * Compiler.t list) option
-  (** [as_compiler top] is [Some (i, c)] if [top] is [Compiler (i, c)], and
-      [None] otherwise. *)
 end
 
 (** Items in a default stanza *)
 module Default : sig
   (** Categories of default item *)
   module Category : sig
-    type t = Arch | Compiler | Machine | Backend [@@deriving sexp]
+    type t = Arch | Machine | Backend [@@deriving sexp]
 
     include Act_utils.Enum_types.Extension_table with type t := t
   end
