@@ -16,7 +16,7 @@ open Base
 open struct
   module Ac = Act_common
   module Src = Act_fir
-  module Ast = Act_c_lang.Ast
+  module Ast = Act_litmus_c.Ast
 end
 
 let%test_module "decls" =
@@ -25,7 +25,7 @@ let%test_module "decls" =
       ( module struct
         let test (x : Src.Initialiser.t Ac.C_named.t) =
           let rx = Src.Reify_prim.decl x in
-          Fmt.pr "@[%a@]@." Act_c_lang.Ast.Decl.pp rx
+          Fmt.pr "@[%a@]@." Act_litmus_c.Ast.Decl.pp rx
 
         let%expect_test "atomic bool without known value" =
           test

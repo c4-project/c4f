@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-module Src = Act_c_lang
+module Src = Act_litmus_c
 
 let%test_module "Bin" =
   ( module struct

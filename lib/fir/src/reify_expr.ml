@@ -10,9 +10,9 @@
    project root for more information. *)
 
 open Base
-module Ast = Act_c_lang.Ast
+module Ast = Act_litmus_c.Ast
 
-let bop : Op.Binary.t -> Act_c_lang.Operators.Bin.t = function
+let bop : Op.Binary.t -> Act_litmus_c.Operators.Bin.t = function
   | Eq ->
       `Eq
   | Arith Add ->
@@ -30,7 +30,7 @@ let bop : Op.Binary.t -> Act_c_lang.Operators.Bin.t = function
   | Logical Or ->
       `Lor
 
-let uop_pre : Op.Unary.t -> Act_c_lang.Operators.Pre.t = function
+let uop_pre : Op.Unary.t -> Act_litmus_c.Operators.Pre.t = function
   | L_not ->
       `Lnot
 
@@ -70,7 +70,7 @@ module Needs_brackets = struct
   (* NB: This works ATM because all of the bops are left-associative and have
      the same precedence, and will need refining if any right-associative
      Bops (assignments!) appear. *)
-  let bop (o : Act_c_lang.Operators.Bin.t) (operand : Ast.Expr.t)
+  let bop (o : Act_litmus_c.Operators.Bin.t) (operand : Ast.Expr.t)
       ~(is_left : bool) : bool =
     match operand with
     | Brackets _ ->
@@ -88,7 +88,7 @@ module Needs_brackets = struct
     | Ternary _ ->
         (* These bind looser than binaries. *)
         true
-    | Binary (_, #Act_c_lang.Operators.Assign.t, _) ->
+    | Binary (_, #Act_litmus_c.Operators.Assign.t, _) ->
         (* At time of writing, assignments shouldn't turn up in the middle of
            expressions. However, in case they do, we'll be conservative and
            add brackets (they tend to bind looser than other binary
@@ -99,7 +99,7 @@ module Needs_brackets = struct
            or, as [o] and [o'] at this stage should _both_ be
            left-associative, if the inner binary is appearing on the LHS of
            the outer binary. *)
-        Act_c_lang.Operators.Bin.(
+        Act_litmus_c.Operators.Bin.(
           binds_tighter o ~than:o' || (binds_same o o' && not is_left))
 
   let maybe_bracket (expr : Ast.Expr.t) ~(f : Ast.Expr.t -> bool) :

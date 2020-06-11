@@ -106,8 +106,8 @@ let%test_module "On_lvalues and On_addresses" =
                        (Act_common.C_id.of_string "not_you")) ]
                 [] ]))
 
-    let print_exprs : Act_c_lang.Ast.Expr.t list -> unit =
-      Fmt.(pr "@[<v>%a@]@." (list ~sep:sp Act_c_lang.Ast.Expr.pp))
+    let print_exprs : Act_litmus_c.Ast.Expr.t list -> unit =
+      Fmt.(pr "@[<v>%a@]@." (list ~sep:sp Act_litmus_c.Ast.Expr.pp))
 
     let%expect_test "coalesce addresses to list" =
       stm |> M.On_addresses.to_list
@@ -155,7 +155,7 @@ let%test_module "On_expressions" =
         M.On_expressions.map stm ~f:(fun _ -> Src.Expression.int_lit 2)
       in
       let rp = Src.Reify_stm.reify stm' in
-      Fmt.pr "@[%a@]@." Act_c_lang.Ast.Stm.pp rp ;
+      Fmt.pr "@[%a@]@." Act_litmus_c.Ast.Stm.pp rp ;
       [%expect
         {|
         while (2)
@@ -195,7 +195,7 @@ let%test_module "On_primitives" =
         M.On_primitives.map stm ~f:(fun _ -> Src.Prim_statement.return)
       in
       let rp = Src.Reify_stm.reify stm' in
-      Fmt.pr "@[%a@]@." Act_c_lang.Ast.Stm.pp rp ;
+      Fmt.pr "@[%a@]@." Act_litmus_c.Ast.Stm.pp rp ;
       [%expect
         {|
         while (true)

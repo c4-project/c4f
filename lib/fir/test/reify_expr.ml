@@ -16,7 +16,7 @@ let%test_module "examples" =
   ( module struct
     let test (x : Src.Expression.t) : unit =
       let rx = Src.Reify_expr.reify x in
-      Fmt.pr "@[%a@]@." Act_c_lang.Ast.Expr.pp rx
+      Fmt.pr "@[%a@]@." Act_litmus_c.Ast.Expr.pp rx
 
     let%expect_test "subtract bracketing 1" =
       test

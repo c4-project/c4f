@@ -11,7 +11,7 @@
 
 open Core_kernel
 module Ac = Act_common
-module Identifier = Act_c_lang.Ast_basic.Identifier
+module Identifier = Act_litmus_c.Ast_basic.Identifier
 
 module P = struct
   type t =

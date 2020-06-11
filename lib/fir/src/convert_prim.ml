@@ -14,12 +14,12 @@ open Base
 open struct
   module Ac = Act_common
   module Tx = Travesty_base_exts
-  module Ast = Act_c_lang.Ast
-  module Astb = Act_c_lang.Ast_basic
+  module Ast = Act_litmus_c.Ast
+  module Astb = Act_litmus_c.Ast_basic
   module Named = Ac.C_named
 end
 
-let constant : Act_c_lang.Ast_basic.Constant.t -> Constant.t Or_error.t =
+let constant : Act_litmus_c.Ast_basic.Constant.t -> Constant.t Or_error.t =
   function
   | Integer k ->
       Or_error.return (Constant.int k)
@@ -71,16 +71,16 @@ let qualifier_to_flags :
   function
   | `Volatile ->
       Ok true
-  | #Act_c_lang.Ast_basic.Type_qual.t as qual ->
+  | #Act_litmus_c.Ast_basic.Type_qual.t as qual ->
       Or_error.error_s
         [%message
           "This type qualifier isn't supported (yet)"
-            ~got:(qual : Act_c_lang.Ast_basic.Type_qual.t)]
-  | #Act_c_lang.Ast_basic.Storage_class_spec.t as spec ->
+            ~got:(qual : Act_litmus_c.Ast_basic.Type_qual.t)]
+  | #Act_litmus_c.Ast_basic.Storage_class_spec.t as spec ->
       Or_error.error_s
         [%message
           "This storage-class specifier isn't supported (yet)"
-            ~got:(spec : Act_c_lang.Ast_basic.Storage_class_spec.t)]
+            ~got:(spec : Act_litmus_c.Ast_basic.Storage_class_spec.t)]
 
 let qualifiers_to_flags
     (quals : [> Astb.Storage_class_spec.t | Astb.Type_qual.t] list) :
@@ -145,7 +145,7 @@ let value_of_initialiser : Ast.Initialiser.t -> Constant.t Or_error.t =
   | List _ ->
       Or_error.error_string "List initialisers not supported"
 
-let decl (d : Act_c_lang.Ast.Decl.t) : Initialiser.t Named.t Or_error.t =
+let decl (d : Act_litmus_c.Ast.Decl.t) : Initialiser.t Named.t Or_error.t =
   Or_error.Let_syntax.(
     let%bind idecl = Tx.List.one d.declarator in
     let%bind name, is_pointer = declarator_to_id idecl.declarator in

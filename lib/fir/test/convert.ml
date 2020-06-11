@@ -38,7 +38,7 @@ let%test_module "stm" =
       Stdio.print_s
         [%sexp
           ( Src.Convert.stm
-              Act_c_lang.Ast.(
+              Act_litmus_c.Ast.(
                 Stm.Expr
                   (Some
                      (Expr.Call
@@ -66,7 +66,7 @@ let%test_module "stm" =
       Stdio.print_s
         [%sexp
           ( Src.Convert.stm
-              Act_c_lang.Ast.(
+              Act_litmus_c.Ast.(
                 Stm.Expr
                   (Some
                      (Expr.Call
@@ -99,13 +99,13 @@ let%test_module "stm" =
 
 let%test_module "expr" =
   ( module struct
-    let test (expr : Act_c_lang.Ast.Expr.t) : unit =
+    let test (expr : Act_litmus_c.Ast.Expr.t) : unit =
       Stdio.print_s
         [%sexp (Src.Convert.expr expr : Src.Expression.t Or_error.t)]
 
     let%expect_test "model basic logical expression" =
       test
-        Act_c_lang.Ast.(
+        Act_litmus_c.Ast.(
           Expr.(
             Binary
               ( Identifier (Ac.C_id.of_string "true")
@@ -123,7 +123,7 @@ let%test_module "expr" =
 
     let%expect_test "model atomic_load_explicit" =
       test
-        Act_c_lang.Ast.(
+        Act_litmus_c.Ast.(
           Expr.Call
             { func= Identifier (Ac.C_id.of_string "atomic_load_explicit")
             ; arguments=

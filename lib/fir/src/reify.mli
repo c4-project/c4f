@@ -19,9 +19,9 @@
     - {!Reify_stm} for statements. *)
 
 val func :
-  Act_common.C_id.t -> _ Function.t -> Act_c_lang.Ast.External_decl.t
+  Act_common.C_id.t -> _ Function.t -> Act_litmus_c.Ast.External_decl.t
 (** [func id f] reifies the mini-function [f], with name [id], into the C
     AST. *)
 
-val program : _ Program.t -> Act_c_lang.Ast.Translation_unit.t
+val program : _ Program.t -> Act_litmus_c.Ast.Translation_unit.t
 (** [program p] reifies the mini-program [p] into the C AST. *)

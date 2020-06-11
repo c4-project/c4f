@@ -18,7 +18,7 @@ open struct
 end
 
 let printer (e : Src.Expression.t) : unit =
-  e |> Src.Reify_expr.reify |> Fmt.(pr "@[%a@]@." Act_c_lang.Ast.Expr.pp)
+  e |> Src.Reify_expr.reify |> Fmt.(pr "@[%a@]@." Act_litmus_c.Ast.Expr.pp)
 
 let print_sample (module G : Src.Expression_gen.S) : unit =
   (* Expressions are quite big, so we tone down the generation parameters a

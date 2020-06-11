@@ -13,7 +13,7 @@ open Base
 
 open struct
   module Ac = Act_common
-  module Ast = Act_c_lang.Ast
+  module Ast = Act_litmus_c.Ast
 end
 
 let bool_lit (b : bool) : Ast.Expr.t =
@@ -47,13 +47,13 @@ let basic_type_to_spec (b : Type.Basic.t) : [> Ast.Type_spec.t] =
   | Bool, true ->
       `Defined_type (Ac.C_id.of_string "atomic_bool")
 
-let type_to_specs (ty : Type.t) : [> Act_c_lang.Ast.Decl_spec.t] list =
+let type_to_specs (ty : Type.t) : [> Act_litmus_c.Ast.Decl_spec.t] list =
   (* We translate the level of indirection separately, in [type_to_pointer]. *)
   List.filter_opt
     [ Some (basic_type_to_spec (Type.basic_type ty))
     ; Option.some_if (Type.is_volatile ty) `Volatile ]
 
-let type_to_pointer (ty : Type.t) : Act_c_lang.Ast_basic.Pointer.t option =
+let type_to_pointer (ty : Type.t) : Act_litmus_c.Ast_basic.Pointer.t option =
   (* We translate the actual underlying type separately, in [type_to_specs]. *)
   Option.some_if (Type.is_pointer ty) [[]]
 

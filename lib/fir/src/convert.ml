@@ -14,7 +14,7 @@ open Core_kernel (* for Fqueue *)
 open struct
   module Ac = Act_common
   module Tx = Travesty_base_exts
-  module Ast = Act_c_lang.Ast
+  module Ast = Act_litmus_c.Ast
   module Named = Ac.C_named
 end
 
@@ -162,7 +162,7 @@ let identifier_to_expr (id : Ac.C_id.t) : Expression.t =
   | None ->
       Expression.lvalue (Lvalue.variable id)
 
-let bop : Act_c_lang.Operators.Bin.t -> Op.Binary.t Or_error.t =
+let bop : Act_litmus_c.Operators.Bin.t -> Op.Binary.t Or_error.t =
   Or_error.(
     function
     | `Add ->
@@ -185,9 +185,9 @@ let bop : Act_c_lang.Operators.Bin.t -> Op.Binary.t Or_error.t =
         error_s
           [%message
             "Unsupported binary operator"
-              ~got:(op : Act_c_lang.Operators.Bin.t)])
+              ~got:(op : Act_litmus_c.Operators.Bin.t)])
 
-let prefix_op : Act_c_lang.Operators.Pre.t -> Op.Unary.t Or_error.t =
+let prefix_op : Act_litmus_c.Operators.Pre.t -> Op.Unary.t Or_error.t =
   Or_error.(
     function
     | `Lnot ->
@@ -196,7 +196,7 @@ let prefix_op : Act_c_lang.Operators.Pre.t -> Op.Unary.t Or_error.t =
         error_s
           [%message
             "Unsupported prefix operator"
-              ~got:(op : Act_c_lang.Operators.Pre.t)])
+              ~got:(op : Act_litmus_c.Operators.Pre.t)])
 
 let rec expr : Ast.Expr.t -> Expression.t Or_error.t =
   Or_error.Let_syntax.(
@@ -445,12 +445,12 @@ module Litmus_conv = Act_litmus.Convert.Make (struct
 end)
 
 let litmus_post :
-       Act_c_lang.Ast_basic.Constant.t Act_litmus.Postcondition.t
+       Act_litmus_c.Ast_basic.Constant.t Act_litmus.Postcondition.t
     -> Constant.t Act_litmus.Postcondition.t Or_error.t =
   Litmus_conv.convert_post
 
 let litmus : Ast.Litmus.t -> Litmus.Test.t Or_error.t = Litmus_conv.convert
 
-let litmus_of_raw_ast (ast : Act_litmus.Ast.M(Act_c_lang.Ast.Litmus_lang).t)
-    =
+let litmus_of_raw_ast
+    (ast : Act_litmus.Ast.M(Act_litmus_c.Ast.Litmus_lang).t) =
   Or_error.(ast |> Ast.Litmus.of_ast >>= litmus)

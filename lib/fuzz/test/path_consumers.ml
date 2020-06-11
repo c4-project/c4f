@@ -37,7 +37,7 @@ let%test_module "Statement_list" =
 
         (* TODO(@MattWindsor91): generalise this? *)
         let pp_statement : F.Subject.Statement.t Fmt.t =
-          Fmt.using Act_fir.Reify_stm.reify Act_c_lang.Ast.Stm.pp
+          Fmt.using Act_fir.Reify_stm.reify Act_litmus_c.Ast.Stm.pp
 
         let test (stms : F.Subject.Block.t Or_error.t) : unit =
           Fmt.(

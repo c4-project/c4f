@@ -20,7 +20,7 @@ Act_litmus.Header.Json (struct
   let parse_post_string (s : string) :
       Constant.t Act_litmus.Postcondition.t Or_error.t =
     Or_error.(
-      s |> Act_c_lang.Frontend.Litmus_post.load_from_string
+      s |> Act_litmus_c.Frontend.Litmus_post.load_from_string
       >>= Act_litmus.Postcondition.With_errors.map_right_m
             ~f:Convert_prim.constant)
 end)
@@ -37,7 +37,7 @@ module Change_set = struct
   let parse_pc (pc : string) :
       Constant.t Act_litmus.Postcondition.t Or_error.t =
     Or_error.(
-      pc |> Act_c_lang.Frontend.Litmus_post.load_from_string
+      pc |> Act_litmus_c.Frontend.Litmus_post.load_from_string
       >>= Convert.litmus_post)
 
   let try_map_keep_clear_replace (type a b)

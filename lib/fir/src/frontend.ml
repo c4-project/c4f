@@ -10,7 +10,7 @@
    project root for more information. *)
 
 include Plumbing.Loadable.Make_chain
-          (Act_c_lang.Frontend.Litmus)
+          (Act_litmus_c.Frontend.Litmus)
           (struct
             type dst = Litmus.Test.t
 

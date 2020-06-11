@@ -14,7 +14,7 @@ open Base
 open struct
   module Ac = Act_common
   module Tx = Travesty_base_exts
-  module Ast = Act_c_lang.Ast
+  module Ast = Act_litmus_c.Ast
   module Named = Ac.C_named
 end
 

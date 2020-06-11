@@ -13,9 +13,9 @@
 
     For the big picture, see {!Reify}. *)
 
-val reify : _ Statement.t -> Act_c_lang.Ast.Stm.t
+val reify : _ Statement.t -> Act_litmus_c.Ast.Stm.t
 (** [reify s] reifies the mini-statement [s] into the C AST. *)
 
-val reify_compound : _ Statement.t list -> Act_c_lang.Ast.Compound_stm.t
+val reify_compound : _ Statement.t list -> Act_litmus_c.Ast.Compound_stm.t
 (** [reify_compound xs] reifies a list [xs] of statements into a C AST
     compound statement. *)

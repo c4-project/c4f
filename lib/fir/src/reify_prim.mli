@@ -15,24 +15,24 @@
 
 (** {1 Primitives} *)
 
-val type_to_specs : Type.t -> [> Act_c_lang.Ast.Decl_spec.t] list
+val type_to_specs : Type.t -> [> Act_litmus_c.Ast.Decl_spec.t] list
 (** [type_to_specs ty] reifies the type [ty] to C declarator specs. *)
 
-val decl : Initialiser.t Act_common.C_named.t -> Act_c_lang.Ast.Decl.t
+val decl : Initialiser.t Act_common.C_named.t -> Act_litmus_c.Ast.Decl.t
 (** [decl id d] reifies the mini-declaration [d] into the C AST. *)
 
 val id_declarator :
-  Type.t -> Act_common.C_id.t -> Act_c_lang.Ast.Declarator.t
+  Type.t -> Act_common.C_id.t -> Act_litmus_c.Ast.Declarator.t
 (** [id_declarator ty id] constructs a declarator with a type [ty] and ID
     [id]. *)
 
 (** {1 Expression sub-components} *)
 
-val lvalue : Lvalue.t -> Act_c_lang.Ast.Expr.t
+val lvalue : Lvalue.t -> Act_litmus_c.Ast.Expr.t
 (** [lvalue l] reifies the lvalue [l] into the C AST. *)
 
-val address : Address.t -> Act_c_lang.Ast.Expr.t
+val address : Address.t -> Act_litmus_c.Ast.Expr.t
 (** [address a] reifies the address [a] into the C AST. *)
 
-val constant : Constant.t -> Act_c_lang.Ast.Expr.t
+val constant : Constant.t -> Act_litmus_c.Ast.Expr.t
 (** [constant k] reifies the constant [k] into the C AST. *)

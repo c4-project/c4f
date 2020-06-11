@@ -12,7 +12,7 @@
 open Base
 
 open struct
-  module Ast = Act_c_lang.Ast
+  module Ast = Act_litmus_c.Ast
   module Prim = Reify_prim
 end
 

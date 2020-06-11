@@ -1,9 +1,9 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_c_lang)
- (public_name act.c_lang)
- (synopsis "Automagic Compiler Tormentor: C AST and frontend")
+ (name act_litmus_c)
+ (public_name act.litmus_c)
+ (synopsis "Automagic Compiler Tormentor: Litmus/C AST and frontend")
  (modules_without_implementation ast_basic_types ast_types)
  (preprocess
   (pps ppx_deriving.std ppx_jane sedlex.ppx))

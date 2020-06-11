@@ -16,12 +16,12 @@
 
 val reify_expr :
      'e Atomic_expression.t
-  -> expr:('e -> Act_c_lang.Ast.Expr.t)
-  -> Act_c_lang.Ast.Expr.t
+  -> expr:('e -> Act_litmus_c.Ast.Expr.t)
+  -> Act_litmus_c.Ast.Expr.t
 (** [reify_expr x ~expr] reifies an atomic expression. *)
 
 val reify_stm :
      Atomic_statement.t
-  -> expr:(Expression.t -> Act_c_lang.Ast.Expr.t)
-  -> Act_c_lang.Ast.Stm.t
+  -> expr:(Expression.t -> Act_litmus_c.Ast.Expr.t)
+  -> Act_litmus_c.Ast.Stm.t
 (** [reify_stm x ~expr] reifies an atomic statement. *)

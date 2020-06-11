@@ -36,7 +36,7 @@ module Lang :
           `Stm (Reify_stm.reify stm)
 
     let pp : t Fmt.t =
-      Fmt.using reify Act_c_lang.Ast.Litmus_lang.Statement.pp
+      Fmt.using reify Act_litmus_c.Ast.Litmus_lang.Statement.pp
 
     let empty () : t = `Stm (Statement.prim () Prim_statement.nop)
 
@@ -61,7 +61,7 @@ module Lang :
       Fmt.(
         using
           (fun np -> Reify.func (Named.name np) (Named.value np))
-          Act_c_lang.Ast.External_decl.pp)
+          Act_litmus_c.Ast.External_decl.pp)
 
     let global_vars (np : t) =
       np |> Named.value |> Function.parameters

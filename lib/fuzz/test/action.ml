@@ -15,7 +15,7 @@ open Act_fuzz.Action
 
 module Test_utils = struct
   let reify_test (test : Src.Subject.Test.t) :
-      Act_c_lang.Ast.Translation_unit.t Src.State.Monad.t =
+      Act_litmus_c.Ast.Translation_unit.t Src.State.Monad.t =
     Src.State.Monad.with_vars (fun vars ->
         List.mapi (Act_litmus.Test.Raw.threads test) ~f:(fun id p ->
             let fn = Src.Subject.Thread.to_function ~vars ~id p in
@@ -30,7 +30,7 @@ module Test_utils = struct
     Fmt.(
       pr "@[<v>%a@]@."
         (result
-           ~ok:(list ~sep:(sp ++ sp) Act_c_lang.Ast.External_decl.pp)
+           ~ok:(list ~sep:(sp ++ sp) Act_litmus_c.Ast.External_decl.pp)
            ~error:Error.pp))
       r
 

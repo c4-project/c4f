@@ -13,5 +13,5 @@
 
     For the big picture, see {!Reify}. *)
 
-val reify : Expression.t -> Act_c_lang.Ast.Expr.t
+val reify : Expression.t -> Act_litmus_c.Ast.Expr.t
 (** [reify e] reifies the mini-expression [e] into the C AST. *)

@@ -13,7 +13,7 @@ open Base
 
 open struct
   module Ac = Act_common
-  module Ast = Act_c_lang.Ast
+  module Ast = Act_litmus_c.Ast
   module Named = Act_common.C_named
 end
 

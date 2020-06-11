@@ -10,7 +10,7 @@
    project root for more information. *)
 
 open Base
-module Ast = Act_c_lang.Ast
+module Ast = Act_litmus_c.Ast
 
 let atomic = Reify_atomic.reify_stm ~expr:Reify_expr.reify
 
