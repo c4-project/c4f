@@ -29,20 +29,6 @@ module Base_map (A : Applicative.S) = struct
       <*> f_branch if_stm.f_branch)
 end
 
-module Ident = struct
-  type 'a t = 'a
-
-  include Applicative.Make (struct
-    type 'a t = 'a
-
-    let apply f a = f a
-
-    let return x = x
-
-    let map = `Custom (fun a ~f -> f a)
-  end)
-end
-
-module Bident = Base_map (Ident)
+module Bident = Base_map (Act_utils.Applicative.Ident)
 
 let map = Bident.bmap

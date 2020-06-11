@@ -30,21 +30,6 @@ module Base_map (A : Applicative.S) = struct
       <*> kind while_loop.kind)
 end
 
-(* TODO(@MattWindsor91): Travesty this and the one in If. *)
-module Ident = struct
-  type 'a t = 'a
-
-  include Applicative.Make (struct
-    type 'a t = 'a
-
-    let apply f a = f a
-
-    let return x = x
-
-    let map = `Custom (fun a ~f -> f a)
-  end)
-end
-
-module Bident = Base_map (Ident)
+module Bident = Base_map (Act_utils.Applicative.Ident)
 
 let map = Bident.bmap
