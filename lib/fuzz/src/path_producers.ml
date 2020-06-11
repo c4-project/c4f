@@ -199,8 +199,8 @@ and If :
          ?filter:Path_filter.t -> Subject.Block.t -> Path.stm_list Opt_gen.t)
       : Path.If.t Opt_gen.t =
     Opt_gen.union
-      [ gen_opt_over_block ?filter ~f true (Stm.If.t_branch ifs)
-      ; gen_opt_over_block ?filter ~f false (Stm.If.f_branch ifs) ]
+      [ gen_opt_over_block ?filter ~f true (Act_fir.If.t_branch ifs)
+      ; gen_opt_over_block ?filter ~f false (Act_fir.If.f_branch ifs) ]
 
   let try_gen_insert_stm :
       ?filter:Path_filter.t -> Subject.Statement.If.t -> Path.If.t Opt_gen.t
@@ -232,7 +232,7 @@ and Loop :
          ?filter:Path_filter.t -> Subject.Block.t -> Path.Stms.t Opt_gen.t) :
       Path.Loop.t Opt_gen.t =
     let filter = Path_filter.update_with_loop filter in
-    Opt_gen.map (f ~filter (Stm.While.body loop)) ~f:Path.Loop.in_body
+    Opt_gen.map (f ~filter (Act_fir.While.body loop)) ~f:Path.Loop.in_body
 
   let try_gen_insert_stm :
          ?filter:Path_filter.t

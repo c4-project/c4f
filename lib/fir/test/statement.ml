@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -16,17 +16,15 @@ let cond : Src.Expression.t = Src.Expression.bool_lit true
 
 let mkif ?(cond : Src.Expression.t = cond) (ts : unit Src.Statement.t list)
     (fs : unit Src.Statement.t list) : unit Src.Statement.t =
-  Src.Statement.(
-    if_stm
-      (If.make ~cond
-         ~t_branch:(Src.Block.of_statement_list ts)
-         ~f_branch:(Src.Block.of_statement_list fs)))
+  Src.Statement.if_stm
+    (Src.If.make ~cond
+       ~t_branch:(Src.Block.of_statement_list ts)
+       ~f_branch:(Src.Block.of_statement_list fs))
 
 let mkwhile ?(cond : Src.Expression.t = cond)
     (xs : unit Src.Statement.t list) : unit Src.Statement.t =
-  Src.Statement.(
-    while_loop
-      (While.make ~cond ~kind:While ~body:(Src.Block.of_statement_list xs)))
+  Src.Statement.while_loop
+    (Src.While.make ~cond ~kind:While ~body:(Src.Block.of_statement_list xs))
 
 let nop : unit Src.Statement.t = Src.Statement.prim () Src.Prim_statement.nop
 

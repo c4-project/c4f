@@ -170,7 +170,7 @@ let%test_module "Statement_list" =
                 F.Metadata.t Stm.t list Or_error.t =
               Or_error.return
                 [ Stm.if_stm
-                    (Stm.If.make
+                    (Act_fir.If.make
                        ~cond:(Act_fir.Expression.bool_lit true)
                        ~t_branch:
                          (F.Subject.Block.make_generated ~statements ())

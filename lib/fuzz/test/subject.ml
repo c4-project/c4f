@@ -72,11 +72,10 @@ module Test_data = struct
       (t : Src.Subject.Statement.t list) (f : Src.Subject.Statement.t list) :
       Src.Subject.Statement.t =
     Act_fir.(
-      Statement.(
-        if_stm
-          (If.make ~cond
-             ~t_branch:(Src.Subject.Block.make_generated ~statements:t ())
-             ~f_branch:(Src.Subject.Block.make_dead_code ~statements:f ()))))
+      Statement.if_stm
+        (Act_fir.If.make ~cond
+           ~t_branch:(Src.Subject.Block.make_generated ~statements:t ())
+           ~f_branch:(Src.Subject.Block.make_dead_code ~statements:f ())))
 
   let sample_known_true_if : Src.Subject.Statement.t Lazy.t =
     lazy
@@ -97,40 +96,38 @@ module Test_data = struct
   let sample_known_false_if : Src.Subject.Statement.t Lazy.t =
     lazy
       Act_fir.(
-        Statement.(
-          if_stm
-            (If.make ~cond:Expression.falsehood
-               ~t_branch:
-                 (Src.Subject.Block.make_dead_code
-                    ~statements:
-                      [ mk_store
-                          (Atomic_store.make
-                             ~src:
-                               (Expression.atomic_load
-                                  (Atomic_load.make
-                                     ~src:(Address.of_variable_str_exn "x")
-                                     ~mo:Mem_order.Seq_cst))
-                             ~dst:(Address.of_variable_str_exn "y")
-                             ~mo:Mem_order.Seq_cst) ]
-                    ())
-               ~f_branch:(Src.Subject.Block.make_generated ()))))
+        Statement.if_stm
+          (If.make ~cond:Expression.falsehood
+             ~t_branch:
+               (Src.Subject.Block.make_dead_code
+                  ~statements:
+                    [ mk_store
+                        (Atomic_store.make
+                           ~src:
+                             (Expression.atomic_load
+                                (Atomic_load.make
+                                   ~src:(Address.of_variable_str_exn "x")
+                                   ~mo:Mem_order.Seq_cst))
+                           ~dst:(Address.of_variable_str_exn "y")
+                           ~mo:Mem_order.Seq_cst) ]
+                  ())
+             ~f_branch:(Src.Subject.Block.make_generated ())))
 
   let sample_once_do_while : Src.Subject.Statement.t Lazy.t =
     lazy
       Act_fir.(
-        Statement.(
-          while_loop
-            (While.make
-               ~cond:Expression.(Infix.(int_lit 4 == int_lit 5))
-               ~body:
-                 (Src.Subject.Block.make_dead_code
-                    ~statements:
-                      [ mk_store
-                          (Atomic_store.make ~src:(Expression.int_lit 44)
-                             ~dst:(Address.of_variable_str_exn "x")
-                             ~mo:Mem_order.Seq_cst) ]
-                    ())
-               ~kind:Do_while)))
+        Statement.while_loop
+          (While.make
+             ~cond:Expression.(Infix.(int_lit 4 == int_lit 5))
+             ~body:
+               (Src.Subject.Block.make_dead_code
+                  ~statements:
+                    [ mk_store
+                        (Atomic_store.make ~src:(Expression.int_lit 44)
+                           ~dst:(Address.of_variable_str_exn "x")
+                           ~mo:Mem_order.Seq_cst) ]
+                  ())
+             ~kind:Do_while))
 
   let body_stms : Src.Subject.Statement.t list Lazy.t =
     Lazy.Let_syntax.(

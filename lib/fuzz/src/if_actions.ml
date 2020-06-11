@@ -72,7 +72,7 @@ module Surround = struct
     let wrap_in_if (statements : Metadata.t Act_fir.Statement.t list)
         ~(cond : Act_fir.Expression.t) : Metadata.t Act_fir.Statement.t =
       Act_fir.Statement.if_stm
-        (Act_fir.Statement.If.make ~cond
+        (Act_fir.If.make ~cond
            ~t_branch:(Basic.t_branch_of_statements statements)
            ~f_branch:(Basic.f_branch_of_statements statements))
 
@@ -162,7 +162,7 @@ module Invert : Action_types.S with type Payload.t = Path.Program.t = struct
 
   let invert_if (ifs : Metadata.t Act_fir.Statement.If.t) :
       Metadata.t Act_fir.Statement.If.t =
-    Act_fir.Statement.If.(
+    Act_fir.If.(
       make
         ~cond:(Act_fir.Expression.l_not (cond ifs))
         ~t_branch:(f_branch ifs) (* intentional inversion *)

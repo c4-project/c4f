@@ -35,8 +35,8 @@ val make :
   -> body:('meta, 'stm) Block.t
   -> kind:Kind.t
   -> ('meta, 'stm) t
-(** [make ~cond ~body ~kind] makes an if statement with the given branches
-    and conditional. *)
+(** [make ~cond ~body ~kind] makes a while loop with the given body,
+    conditional, and kind. *)
 
 (** {2 Accessors} *)
 
@@ -44,7 +44,7 @@ val cond : (_, _) t -> Expression.t
 (** [cond i] gets [i]'s conditional. *)
 
 val body : ('meta, 'stm) t -> ('meta, 'stm) Block.t
-(** [body i] gets [i]'s true branch. *)
+(** [body i] gets [i]'s body. *)
 
 val kind : (_, _) t -> Kind.t
 (** [kind i] gets [i]'s kind. *)

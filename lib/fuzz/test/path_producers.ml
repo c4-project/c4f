@@ -18,11 +18,10 @@ let%test_module "Statement" =
         =
       let example =
         Act_fir.(
-          Statement.(
-            while_loop
-              (While.make ~cond:Act_fir.Expression.falsehood
-                 ~body:(Act_fuzz.Subject.Block.make_generated ())
-                 ~kind:Do_while)))
+          Statement.while_loop
+            (While.make ~cond:Act_fir.Expression.falsehood
+               ~body:(Act_fuzz.Subject.Block.make_generated ())
+               ~kind:Do_while))
       in
       let gen =
         Act_fuzz.Path_producers.Statement.try_gen_insert_stm example

@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -360,7 +360,7 @@ let model_if (model_stm : Ast.Stm.t -> unit Statement.t Or_error.t)
       Option.value_map old_f_branch ~f:(block model_stm)
         ~default:(Or_error.return (Block.of_statement_list []))
     in
-    let ifs = Statement.If.make ~cond ~t_branch ~f_branch in
+    let ifs = If.make ~cond ~t_branch ~f_branch in
     Statement.if_stm ifs)
 
 let loop (model_stm : Ast.Stm.t -> unit Statement.t Or_error.t)
@@ -369,7 +369,7 @@ let loop (model_stm : Ast.Stm.t -> unit Statement.t Or_error.t)
   Or_error.Let_syntax.(
     let%bind cond = expr old_cond in
     let%map body = block model_stm old_body in
-    let loop = Statement.While.make ~cond ~body ~kind in
+    let loop = While.make ~cond ~body ~kind in
     Statement.while_loop loop)
 
 let rec stm : Ast.Stm.t -> unit Statement.t Or_error.t = function

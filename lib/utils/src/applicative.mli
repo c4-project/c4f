@@ -11,15 +11,15 @@
 
 (** Applicative polyfills for Travesty.
 
-  These exist because a lot of the more recent ACT traversal code hedges on
-  a possible migration of Travesty to applicatives.  If that migration does
-  happen upstream, everything in this module will move upstream, and this
-  module will disappear. *)
+    These exist because a lot of the more recent ACT traversal code hedges on
+    a possible migration of Travesty to applicatives. If that migration does
+    happen upstream, everything in this module will move upstream, and this
+    module will disappear. *)
 
 open Base
 
 (** The identity applicative functor.
 
-  This just directly wraps a type ['a], with maps of functions [f] just
-  applying [f] directly. *)
+    This just directly wraps a type ['a], with maps of functions [f] just
+    applying [f] directly. *)
 module Ident : Applicative.S with type 'a t = 'a
