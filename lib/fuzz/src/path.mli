@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Paths through mini-C programs.
+(** Paths through FIR programs.
 
     - For modules that generate paths over fuzzer subjects, see
       {!Path_producers}.

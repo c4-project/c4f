@@ -17,7 +17,7 @@ let%test_module "with example map" =
     module M = Act_delitmus.Var_map
     module Li = Act_common.Litmus_id
     module Ci = Act_common.C_id
-    module Ct = Act_c_mini.Type
+    module Ct = Act_fir.Type
     module Rc = M.Record
 
     let map : M.t =

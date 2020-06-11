@@ -21,8 +21,8 @@ module Inner_payload : sig
   type t =
     { out_var: Act_common.Litmus_id.t
     ; exp_var: Act_common.Litmus_id.t
-    ; exp_val: Act_c_mini.Constant.t
-    ; cmpxchg: Act_c_mini.Expression.t Act_c_mini.Atomic_cmpxchg.t }
+    ; exp_val: Act_fir.Constant.t
+    ; cmpxchg: Act_fir.Expression.t Act_fir.Atomic_cmpxchg.t }
   [@@deriving compare, sexp]
 end
 

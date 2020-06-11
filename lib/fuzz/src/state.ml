@@ -23,7 +23,7 @@ type t =
   ; vars: Var.Map.t }
 [@@deriving fields, make]
 
-let of_litmus ?(o : Ac.Output.t option) (lt : Act_c_mini.Litmus.Test.t) :
+let of_litmus ?(o : Ac.Output.t option) (lt : Act_fir.Litmus.Test.t) :
     t Or_error.t =
   let labels = Label.labels_of_test lt in
   Or_error.Let_syntax.(
@@ -41,9 +41,9 @@ let register_label (s : t) ~(label : Ac.Litmus_id.t) : t =
   {s with labels= Set.add s.labels label}
 
 let register_var (s : t) (var : Ac.Litmus_id.t)
-    (init : Act_c_mini.Initialiser.t) : t =
-  let ty = Act_c_mini.Initialiser.ty init in
-  let initial_value = Act_c_mini.Initialiser.value init in
+    (init : Act_fir.Initialiser.t) : t =
+  let ty = Act_fir.Initialiser.ty init in
+  let initial_value = Act_fir.Initialiser.value init in
   map_vars s ~f:(fun v -> Var.Map.register_var v ?initial_value var ty)
 
 let add_dependency (s : t) ~(id : Ac.Litmus_id.t) : t =
@@ -81,7 +81,7 @@ module Monad = struct
   let resolve (id : Ac.C_id.t) ~(scope : Ac.Scope.t) : Ac.Litmus_id.t t =
     with_vars (Ac.Scoped_map.resolve ~id ~scope)
 
-  let register_var (var : Ac.Litmus_id.t) (init : Act_c_mini.Initialiser.t) :
+  let register_var (var : Ac.Litmus_id.t) (init : Act_fir.Initialiser.t) :
       unit t =
     modify (fun s -> register_var s var init)
 
@@ -93,21 +93,21 @@ module Monad = struct
 
   module Exp_lvalues =
     Travesty.Traversable.Chain0
-      (Act_c_mini.Expression_traverse.On_addresses)
-      (Act_c_mini.Address.On_lvalues)
+      (Act_fir.Expression_traverse.On_addresses)
+      (Act_fir.Address.On_lvalues)
   module Exp_idents =
     Travesty.Traversable.Chain0
       (Exp_lvalues)
-      (Act_c_mini.Lvalue.On_identifiers)
+      (Act_fir.Lvalue.On_identifiers)
   module Exp_identsM = Exp_idents.On_monad (M)
 
-  let add_expression_dependencies (expr : Act_c_mini.Expression.t)
+  let add_expression_dependencies (expr : Act_fir.Expression.t)
       ~(scope : Ac.Scope.t) : unit t =
     Exp_identsM.iter_m expr ~f:(fun c_id ->
         c_id |> resolve ~scope >>= add_dependency)
 
   let add_multiple_expression_dependencies
-      (exprs : Act_c_mini.Expression.t list) ~(scope : Ac.Scope.t) : unit t =
+      (exprs : Act_fir.Expression.t list) ~(scope : Ac.Scope.t) : unit t =
     all_unit (List.map ~f:(add_expression_dependencies ~scope) exprs)
 
   let add_write (id : Ac.Litmus_id.t) : unit t = modify (add_write ~id)

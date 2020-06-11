@@ -20,7 +20,7 @@ val make :
      aux:Aux.t
   -> local_inits:
        ( int
-       , (Act_common.C_id.t, Act_c_mini.Constant.t) List.Assoc.t )
+       , (Act_common.C_id.t, Act_fir.Constant.t) List.Assoc.t )
        List.Assoc.t
   -> t
 
@@ -31,4 +31,4 @@ val aux : t -> Aux.t
 val var_map : t -> Var_map.t
 
 val lookup_initial_value :
-  t -> id:Act_common.Litmus_id.t -> Act_c_mini.Constant.t option
+  t -> id:Act_common.Litmus_id.t -> Act_fir.Constant.t option

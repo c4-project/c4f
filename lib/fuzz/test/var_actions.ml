@@ -14,7 +14,7 @@ open Base_quickcheck
 
 open struct
   module Ac = Act_common
-  module Cm = Act_c_mini
+  module Cm = Act_fir
   module Src = Act_fuzz
   module Qx = Act_utils.My_quickcheck
 end
@@ -81,9 +81,9 @@ let%test_module "Make" =
             ~f:(fun Src.Var_actions.Make_payload.
                       {basic_type; initial_value; _}
                     ->
-              let (_ : Act_c_mini.Type.t) =
+              let (_ : Act_fir.Type.t) =
                 Or_error.ok_exn
-                  Act_c_mini.(
+                  Act_fir.(
                     Type.check_modulo_atomicity (Type.make basic_type)
                       (Constant.type_of initial_value))
               in
@@ -106,8 +106,8 @@ let%test_module "Make" =
         let test (scope : Act_common.Scope.t) : unit =
           let pld =
             Src.Var_actions.Make_payload.
-              { basic_type= Act_c_mini.Type.Basic.int ()
-              ; initial_value= Act_c_mini.Constant.int 42
+              { basic_type= Act_fir.Type.Basic.int ()
+              ; initial_value= Act_fir.Constant.int 42
               ; var=
                   Act_common.Litmus_id.make ~scope
                     ~id:(Act_common.C_id.of_string "foo") }

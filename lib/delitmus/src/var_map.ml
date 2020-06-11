@@ -22,7 +22,7 @@ end
 
 module Record = struct
   type t =
-    {c_type: Act_c_mini.Type.t; c_id: Act_common.C_id.t; mapped_to: Mapping.t}
+    {c_type: Act_fir.Type.t; c_id: Act_common.C_id.t; mapped_to: Mapping.t}
   [@@deriving fields, make, yojson, equal]
 
   let mapped_to_global : t -> bool = function

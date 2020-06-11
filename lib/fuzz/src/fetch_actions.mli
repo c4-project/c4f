@@ -15,7 +15,7 @@
 module type S =
   Action_types.S
     with type Payload.t =
-          Act_c_mini.Expression.t Act_c_mini.Atomic_fetch.t
+          Act_fir.Expression.t Act_fir.Atomic_fetch.t
           Payload.Insertion.t
 
 (* TODO(@MattWindsor91): add Int. *)

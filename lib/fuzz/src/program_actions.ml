@@ -74,7 +74,7 @@ struct
     let tid = Path.Program.tid path in
     let lid = Act_common.Litmus_id.local tid name in
     let label_stm =
-      Act_c_mini.(
+      Act_fir.(
         name |> Prim_statement.label |> Statement.prim Metadata.generated)
     in
     State.Monad.(

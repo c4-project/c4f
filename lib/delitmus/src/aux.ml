@@ -17,7 +17,7 @@ end
 
 module M = struct
   type t =
-    { litmus_header: Act_c_mini.Litmus_header.t
+    { litmus_header: Act_fir.Litmus_header.t
           [@default Act_litmus.Header.empty]
     ; function_map: Function_map.t
           [@default Map.empty (module Act_common.C_id)]

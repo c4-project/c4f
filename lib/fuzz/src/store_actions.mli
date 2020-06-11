@@ -14,7 +14,7 @@
 (** Shorthand type for store actions. *)
 module type S =
   Action_types.S
-    with type Payload.t = Act_c_mini.Atomic_store.t Payload.Insertion.t
+    with type Payload.t = Act_fir.Atomic_store.t Payload.Insertion.t
 
 (** [Int] is a fuzzer action that generates a random atomic-int store
     instruction. *)

@@ -17,10 +17,10 @@ let%test_module "Statement" =
     let%expect_test "insert-stm generation is viable inside a do-while loop"
         =
       let example =
-        Act_c_mini.(
+        Act_fir.(
           Statement.(
             while_loop
-              (While.make ~cond:Act_c_mini.Expression.falsehood
+              (While.make ~cond:Act_fir.Expression.falsehood
                  ~body:(Act_fuzz.Subject.Block.make_generated ())
                  ~kind:Do_while)))
       in

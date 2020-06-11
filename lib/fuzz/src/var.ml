@@ -18,25 +18,25 @@ end
 
 module Record = struct
   type t =
-    { ty: Act_c_mini.Type.t
+    { ty: Act_fir.Type.t
     ; source: [`Existing | `Generated]
     ; scope: Ac.Scope.t
-    ; known_value: Act_c_mini.Constant.t option
+    ; known_value: Act_fir.Constant.t option
     ; has_dependencies: bool [@default false]
     ; has_writes: bool [@default false] }
   [@@deriving fields, make, equal]
 
-  let env_record (r : t) : Act_c_mini.Env.Record.t =
+  let env_record (r : t) : Act_fir.Env.Record.t =
     (* TODO(@MattWindsor91): nest this directly instead *)
-    Act_c_mini.Env.Record.make ~type_of:(ty r) ?known_value:(known_value r)
+    Act_fir.Env.Record.make ~type_of:(ty r) ?known_value:(known_value r)
       ()
 
   let is_global (r : t) : bool = Ac.Scope.is_global (scope r)
 
-  let has_basic_type (r : t) ~(basic : Act_c_mini.Type.Basic.t) : bool =
-    Act_c_mini.Type.basic_type_is ~basic (ty r)
+  let has_basic_type (r : t) ~(basic : Act_fir.Type.Basic.t) : bool =
+    Act_fir.Type.basic_type_is ~basic (ty r)
 
-  let is_atomic (r : t) : bool = Act_c_mini.Type.is_atomic (ty r)
+  let is_atomic (r : t) : bool = Act_fir.Type.is_atomic (ty r)
 
   let was_generated : t -> bool = function
     | {source= `Generated; _} ->
@@ -47,11 +47,11 @@ module Record = struct
   let has_known_value (record : t) : bool =
     Option.is_some (known_value record)
 
-  let try_get_known_value (record : t) : Act_c_mini.Constant.t Or_error.t =
+  let try_get_known_value (record : t) : Act_fir.Constant.t Or_error.t =
     Result.of_option (known_value record)
       ~error:(Error.of_string "No known value for this record.")
 
-  let map_type (record : t) ~(f : Act_c_mini.Type.t -> Act_c_mini.Type.t) : t
+  let map_type (record : t) ~(f : Act_fir.Type.t -> Act_fir.Type.t) : t
       =
     {record with ty= f record.ty}
 
@@ -61,30 +61,30 @@ module Record = struct
 
   let erase_value (record : t) : t = {record with known_value= None}
 
-  let make_existing (scope : Ac.Scope.t) (ty : Act_c_mini.Type.t) : t =
+  let make_existing (scope : Ac.Scope.t) (ty : Act_fir.Type.t) : t =
     make ~source:`Existing ~scope ~ty ()
 
-  let make_generated ?(initial_value : Act_c_mini.Constant.t option)
-      (scope : Ac.Scope.t) (ty : Act_c_mini.Type.t) : t =
+  let make_generated ?(initial_value : Act_fir.Constant.t option)
+      (scope : Ac.Scope.t) (ty : Act_fir.Type.t) : t =
     make ~ty ~source:`Generated ~scope ?known_value:initial_value ()
 end
 
 module Map = struct
   type t = Record.t Ac.Scoped_map.t
 
-  let make_existing_record (id : Ac.Litmus_id.t) (ty : Act_c_mini.Type.t) :
+  let make_existing_record (id : Ac.Litmus_id.t) (ty : Act_fir.Type.t) :
       Record.t =
     Record.make_existing (Ac.Litmus_id.scope id) ty
 
-  let make_existing_var_map (test : Act_c_mini.Litmus.Test.t) : t Or_error.t
+  let make_existing_var_map (test : Act_fir.Litmus.Test.t) : t Or_error.t
       =
     Or_error.(
-      test |> Act_c_mini.Litmus_vars.make_type_alist
+      test |> Act_fir.Litmus_vars.make_type_alist
       >>| List.map ~f:(fun (id, ty) -> (id, make_existing_record id ty))
       >>= Act_common.Scoped_map.of_litmus_id_alist)
 
-  let register_var ?(initial_value : Act_c_mini.Constant.t option) (map : t)
-      (id : Ac.Litmus_id.t) (ty : Act_c_mini.Type.t) : t =
+  let register_var ?(initial_value : Act_fir.Constant.t option) (map : t)
+      (id : Ac.Litmus_id.t) (ty : Act_fir.Type.t) : t =
     let scope = Ac.Litmus_id.scope id in
     let record = Record.make_generated ?initial_value scope ty in
     Ac.Scoped_map.set map ~id ~record
@@ -126,7 +126,7 @@ module Map = struct
     |> Map.filter ~f:(Tx.List.all ~predicates)
 
   let env_satisfying_all (vars : t) ~(scope : Ac.Scope.t)
-      ~(predicates : (Record.t -> bool) list) : Act_c_mini.Env.t =
+      ~(predicates : (Record.t -> bool) list) : Act_fir.Env.t =
     vars
     |> records_satisfying_all ~scope ~predicates
     |> Map.map ~f:Record.env_record

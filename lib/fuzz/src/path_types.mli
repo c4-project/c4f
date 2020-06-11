@@ -71,7 +71,7 @@ module type S_consumer = sig
 
   val insert_stm_list :
        t
-    -> to_insert:Metadata.t Act_c_mini.Statement.t list
+    -> to_insert:Metadata.t Act_fir.Statement.t list
     -> target:target
     -> target Or_error.t
   (** [insert_stm_list path ~to_insert ~target] tries to insert each
@@ -79,7 +79,7 @@ module type S_consumer = sig
 
   val insert_stm :
        t
-    -> to_insert:Metadata.t Act_c_mini.Statement.t
+    -> to_insert:Metadata.t Act_fir.Statement.t
     -> target:target
     -> target Or_error.t
   (** [insert_stm path ~to_insert ~target] tries to insert [to_insert] into
@@ -88,8 +88,8 @@ module type S_consumer = sig
   val transform_stm :
        t
     -> f:
-         (   Metadata.t Act_c_mini.Statement.t
-          -> Metadata.t Act_c_mini.Statement.t Or_error.t)
+         (   Metadata.t Act_fir.Statement.t
+          -> Metadata.t Act_fir.Statement.t Or_error.t)
     -> target:target
     -> target Or_error.t
   (** [transform_stm path ~f ~target] tries to modify the statement at [path]
@@ -98,8 +98,8 @@ module type S_consumer = sig
   val transform_stm_list :
        t
     -> f:
-         (   Metadata.t Act_c_mini.Statement.t list
-          -> Metadata.t Act_c_mini.Statement.t list Or_error.t)
+         (   Metadata.t Act_fir.Statement.t list
+          -> Metadata.t Act_fir.Statement.t list Or_error.t)
     -> target:target
     -> target Or_error.t
   (** [transform_stm_list path ~f ~target] tries to modify the list of all

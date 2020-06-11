@@ -102,13 +102,13 @@ module Surround : sig
 
   (** {3 Constructors} *)
 
-  val make : cond:Act_c_mini.Expression.t -> path:Path.Program.t -> t
+  val make : cond:Act_fir.Expression.t -> path:Path.Program.t -> t
   (** [make ~cond ~path] makes a payload given a specific condition
       expression [cond] and statement-list selecting path [path]. *)
 
   (** {3 Accessors} *)
 
-  val cond : t -> Act_c_mini.Expression.t
+  val cond : t -> Act_fir.Expression.t
   (** [cond payload] retrieves the generated condition inside [payload]. *)
 
   val path : t -> Path.Program.t
@@ -118,7 +118,7 @@ module Surround : sig
        t
     -> test:Subject.Test.t
     -> f:
-         (   Act_c_mini.Expression.t
+         (   Act_fir.Expression.t
           -> Subject.Statement.t list
           -> Subject.Statement.t)
     -> Subject.Test.t State.Monad.t
@@ -136,7 +136,7 @@ module Surround : sig
         is being defined. *)
 
     val cond_gen :
-      Act_c_mini.Env.t -> Act_c_mini.Expression.t Base_quickcheck.Generator.t
+      Act_fir.Env.t -> Act_fir.Expression.t Base_quickcheck.Generator.t
     (** [cond_gen env] should, given an environment [env] capturing the
         variables in scope at the point where the if statement is appearing,
         return a Quickcheck generator generating expressions over those

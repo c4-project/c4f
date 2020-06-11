@@ -35,19 +35,19 @@ struct
     let action_id = name
 
     let cond_gen :
-           Act_c_mini.Env.t
-        -> Act_c_mini.Expression.t Base_quickcheck.Generator.t =
-      Act_c_mini.Expression_gen.gen_falsehoods
+           Act_fir.Env.t
+        -> Act_fir.Expression.t Base_quickcheck.Generator.t =
+      Act_fir.Expression_gen.gen_falsehoods
 
     let path_filter : Path_filter.t State.Monad.t =
       State.Monad.return Path_filter.empty
   end)
 
-  let wrap_in_loop (cond : Act_c_mini.Expression.t)
-      (statements : Metadata.t Act_c_mini.Statement.t list) :
-      Metadata.t Act_c_mini.Statement.t =
-    Act_c_mini.Statement.while_loop
-      (Act_c_mini.Statement.While.make ~kind:Do_while ~cond
+  let wrap_in_loop (cond : Act_fir.Expression.t)
+      (statements : Metadata.t Act_fir.Statement.t list) :
+      Metadata.t Act_fir.Statement.t =
+    Act_fir.Statement.while_loop
+      (Act_fir.Statement.While.make ~kind:Do_while ~cond
          ~body:(Subject.Block.make_generated ~statements ()))
 
   let run (test : Subject.Test.t) ~(payload : Payload.t) :

@@ -23,8 +23,8 @@ let litmus_id ?(qualify_locals : bool = true) (id : Act_common.Litmus_id.t) :
     id
 
 let postcondition ?(qualify_locals : bool = true)
-    (pc : Act_c_mini.Constant.t Act_litmus.Postcondition.t) :
-    Act_c_mini.Constant.t Act_litmus.Postcondition.t =
+    (pc : Act_fir.Constant.t Act_litmus.Postcondition.t) :
+    Act_fir.Constant.t Act_litmus.Postcondition.t =
   (* We can't just map over [litmus_id ~qualify_locals], as it'll lose the
      thread IDs in the postcondition. *)
   (* TODO(@MattWindsor91): perhaps don't qualify things we've already

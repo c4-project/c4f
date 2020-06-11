@@ -20,7 +20,7 @@
 
 open Base
 
-val make : Aux.t -> Act_c_mini.Litmus.Test.t Or_error.t
+val make : Aux.t -> Act_fir.Litmus.Test.t Or_error.t
 (** [make aux] tries to produce a stub for the delitmus run described by
     [aux]. *)
 

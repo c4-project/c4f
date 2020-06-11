@@ -10,7 +10,7 @@
    project root for more information. *)
 
 open Base
-module Mini = Act_c_mini
+module Mini = Act_fir
 
 module type S = sig
   val tid : int

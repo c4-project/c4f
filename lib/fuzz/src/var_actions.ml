@@ -13,7 +13,7 @@ open Base
 
 open struct
   module Ac = Act_common
-  module Cm = Act_c_mini
+  module Cm = Act_fir
 end
 
 let make_global_flag_key : Ac.Id.t =

@@ -13,8 +13,8 @@ open Base
 open Stdio
 module Src = Act_fuzz
 module Ac = Act_common
-module Con = Act_c_mini.Constant
-module Ty = Act_c_mini.Type
+module Con = Act_fir.Constant
+module Ty = Act_fir.Type
 module Tx = Travesty_base_exts
 
 module Test_data = struct
@@ -70,8 +70,8 @@ let%test_module "environment modules in a test map" =
       in
       let vals =
         env
-        |> Act_c_mini.Env.variables_of_basic_type ~basic
-        |> Act_c_mini.Env.typing |> Map.to_alist
+        |> Act_fir.Env.variables_of_basic_type ~basic
+        |> Act_fir.Env.typing |> Map.to_alist
       in
       print_s [%sexp (vals : (Ac.C_id.t, Ty.t) List.Assoc.t)]
 
@@ -90,7 +90,7 @@ let%test_module "environment modules in a test map" =
           ~scope:Ac.Scope.Global ~predicates:[]
       in
       let vals =
-        env |> Act_c_mini.Env.variables_with_known_values |> Map.to_alist
+        env |> Act_fir.Env.variables_with_known_values |> Map.to_alist
       in
       print_s [%sexp (vals : (Ac.C_id.t, Ty.t * Con.t) List.Assoc.t)] ;
       [%expect

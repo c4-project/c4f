@@ -39,7 +39,7 @@ module Surround = struct
         given the original statement span [stms]. *)
 
     val cond_gen :
-      Act_c_mini.Env.t -> Act_c_mini.Expression.t Base_quickcheck.Generator.t
+      Act_fir.Env.t -> Act_fir.Expression.t Base_quickcheck.Generator.t
     (** [cond_gen env] should, given an environment [env] capturing the
         variables in scope at the point where the if statement is appearing,
         return a Quickcheck generator generating expressions over those
@@ -69,11 +69,11 @@ module Surround = struct
       ignore (param_map : Param_map.t) ;
       test |> Subject.Test.has_statements |> State.Monad.return
 
-    let wrap_in_if (statements : Metadata.t Act_c_mini.Statement.t list)
-        ~(cond : Act_c_mini.Expression.t) : Metadata.t Act_c_mini.Statement.t
+    let wrap_in_if (statements : Metadata.t Act_fir.Statement.t list)
+        ~(cond : Act_fir.Expression.t) : Metadata.t Act_fir.Statement.t
         =
-      Act_c_mini.Statement.if_stm
-        (Act_c_mini.Statement.If.make ~cond
+      Act_fir.Statement.if_stm
+        (Act_fir.Statement.If.make ~cond
            ~t_branch:(Basic.t_branch_of_statements statements)
            ~f_branch:(Basic.f_branch_of_statements statements))
 
@@ -92,9 +92,9 @@ module Surround = struct
           any labels, to avoid duplicating them. |}
 
     let cond_gen :
-           Act_c_mini.Env.t
-        -> Act_c_mini.Expression.t Base_quickcheck.Generator.t =
-      Act_c_mini.Expression_gen.gen_bools
+           Act_fir.Env.t
+        -> Act_fir.Expression.t Base_quickcheck.Generator.t =
+      Act_fir.Expression_gen.gen_bools
 
     let t_branch_of_statements (statements : Subject.Statement.t list) :
         Subject.Block.t =
@@ -118,9 +118,9 @@ module Surround = struct
          block as dead-code. |}
 
     let cond_gen :
-           Act_c_mini.Env.t
-        -> Act_c_mini.Expression.t Base_quickcheck.Generator.t =
-      Act_c_mini.Expression_gen.gen_tautologies
+           Act_fir.Env.t
+        -> Act_fir.Expression.t Base_quickcheck.Generator.t =
+      Act_fir.Expression_gen.gen_tautologies
 
     let t_branch_of_statements (statements : Subject.Statement.t list) :
         Subject.Block.t =
@@ -128,7 +128,7 @@ module Surround = struct
 
     let f_branch_of_statements (_statements : Subject.Statement.t list) :
         Subject.Block.t =
-      Act_c_mini.Block.make ~metadata:Metadata.dead_code ()
+      Act_fir.Block.make ~metadata:Metadata.dead_code ()
 
     let path_filter : Path_filter.t State.Monad.t =
       State.Monad.return Path_filter.empty
@@ -163,11 +163,11 @@ module Invert : Action_types.S with type Payload.t = Path.Program.t = struct
         ~action_id:name
   end
 
-  let invert_if (ifs : Metadata.t Act_c_mini.Statement.If.t) :
-      Metadata.t Act_c_mini.Statement.If.t =
-    Act_c_mini.Statement.If.(
+  let invert_if (ifs : Metadata.t Act_fir.Statement.If.t) :
+      Metadata.t Act_fir.Statement.If.t =
+    Act_fir.Statement.If.(
       make
-        ~cond:(Act_c_mini.Expression.l_not (cond ifs))
+        ~cond:(Act_fir.Expression.l_not (cond ifs))
         ~t_branch:(f_branch ifs) (* intentional inversion *)
         ~f_branch:(t_branch ifs)
       (* as above *))
@@ -179,7 +179,7 @@ module Invert : Action_types.S with type Payload.t = Path.Program.t = struct
         "Tried to if-invert an invalid statement"
           ~stm:(stm : Subject.Statement.t)]
 
-  module Bm = Act_c_mini.Statement.Base_map (Or_error)
+  module Bm = Act_fir.Statement.Base_map (Or_error)
 
   let invert_stm (stm : Subject.Statement.t) : Subject.Statement.t Or_error.t
       =

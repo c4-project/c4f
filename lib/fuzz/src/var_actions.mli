@@ -18,8 +18,8 @@ val make_global_flag_key : Act_common.Id.t
 (** Random state required for {!Make}. *)
 module Make_payload : sig
   type t =
-    { basic_type: Act_c_mini.Type.Basic.t
-    ; initial_value: Act_c_mini.Constant.t
+    { basic_type: Act_fir.Type.Basic.t
+    ; initial_value: Act_fir.Constant.t
     ; var: Act_common.Litmus_id.t }
   [@@deriving compare, sexp]
 

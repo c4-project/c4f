@@ -30,8 +30,8 @@ module type Basic = sig
   type t [@@deriving sexp]
 
   val gen :
-       src:Act_c_mini.Env.t
-    -> dst:Act_c_mini.Env.t
+       src:Act_fir.Env.t
+    -> dst:Act_fir.Env.t
     -> vars:Var.Map.t
     -> tid:int
     -> t Base_quickcheck.Generator.t
@@ -40,7 +40,7 @@ module type Basic = sig
       [dst], a variable map [var] for fresh variable generation, and the
       target thread ID [tid]. *)
 
-  val new_locals : t -> Act_c_mini.Initialiser.t Act_common.C_named.Alist.t
+  val new_locals : t -> Act_fir.Initialiser.t Act_common.C_named.Alist.t
   (** [new_locals s] gets a list of any new local variables created for this
       storelike, which should be registered and added to both the thread's
       decls and the state. *)
@@ -49,10 +49,10 @@ module type Basic = sig
   (** [dst_exprs s] gets a list of any (unscoped) destination C identifiers
       used in this storelike. *)
 
-  val src_exprs : t -> Act_c_mini.Expression.t list
+  val src_exprs : t -> Act_fir.Expression.t list
   (** [src_exprs s] gets a list of any source expressions used in this
       storelike. *)
 
-  val to_stms : t -> Act_c_mini.Prim_statement.t list
+  val to_stms : t -> Act_fir.Prim_statement.t list
   (** [to_stms s] lifts a storelike into a list of primitives. *)
 end

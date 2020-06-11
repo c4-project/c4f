@@ -13,7 +13,7 @@ open Base
 
 open struct
   module Tx = Travesty_base_exts
-  module Cm = Act_c_mini
+  module Cm = Act_fir
   module Stm = Cm.Statement
 end
 

@@ -16,9 +16,9 @@ open struct
 end
 
 module Test_data = struct
-  let cmpxchg : Act_c_mini.Expression.t Act_c_mini.Atomic_cmpxchg.t Lazy.t =
+  let cmpxchg : Act_fir.Expression.t Act_fir.Atomic_cmpxchg.t Lazy.t =
     lazy
-      Act_c_mini.(
+      Act_fir.(
         Atomic_cmpxchg.make
           ~obj:(Address.of_variable_str_exn "gen1")
           ~expected:
@@ -30,7 +30,7 @@ module Test_data = struct
     Lazy.map cmpxchg ~f:(fun cmpxchg ->
         Src.Cmpxchg_actions.Inner_payload.
           { cmpxchg
-          ; exp_val= Act_c_mini.Constant.int 12345
+          ; exp_val= Act_fir.Constant.int 12345
           ; exp_var= Act_common.Litmus_id.of_string "0:expected"
           ; out_var= Act_common.Litmus_id.of_string "0:out" })
 end

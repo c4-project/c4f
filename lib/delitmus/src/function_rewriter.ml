@@ -13,15 +13,15 @@ open Base
 
 open struct
   module Ac = Act_common
-  module C = Act_c_mini
+  module C = Act_fir
   module Tx = Travesty_base_exts
 end
 
 module type S = sig
   val rewrite_all :
-       unit Act_c_mini.Function.t Ac.C_named.t list
+       unit Act_fir.Function.t Ac.C_named.t list
     -> context:Context.t
-    -> unit Act_c_mini.Function.t Ac.C_named.t list Or_error.t
+    -> unit Act_fir.Function.t Ac.C_named.t list Or_error.t
 end
 
 type 'a local_rw_fun = 'a -> tid:int -> context:Context.t -> 'a Or_error.t
@@ -71,7 +71,7 @@ struct
     module On_ids =
       Travesty.Traversable.Chain0
         (C_stm_meta.On_lvalues)
-        (Act_c_mini.Lvalue.On_identifiers)
+        (Act_fir.Lvalue.On_identifiers)
 
     let rewrite_ids : unit C.Statement.t -> unit C.Statement.t Or_error.t =
       On_ids.With_errors.map_m ~f:rewrite_id_if_local

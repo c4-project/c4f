@@ -16,18 +16,18 @@ open struct
 end
 
 module Test_data = struct
-  let fadd : Act_c_mini.Expression.t Act_c_mini.Atomic_fetch.t Lazy.t =
+  let fadd : Act_fir.Expression.t Act_fir.Atomic_fetch.t Lazy.t =
     lazy
-      Act_c_mini.(
+      Act_fir.(
         Atomic_fetch.make
           ~obj:(Address.of_variable_str_exn "gen1")
           ~arg:(Expression.int_lit 54321)
           ~mo:Seq_cst ~op:Add)
 
   let fadd_redundant :
-      Act_c_mini.Expression.t Act_c_mini.Atomic_fetch.t Lazy.t =
+      Act_fir.Expression.t Act_fir.Atomic_fetch.t Lazy.t =
     lazy
-      Act_c_mini.(
+      Act_fir.(
         Atomic_fetch.make
           ~obj:(Address.of_variable_str_exn "gen1")
           ~arg:(Expression.int_lit 0) ~mo:Seq_cst ~op:Add)

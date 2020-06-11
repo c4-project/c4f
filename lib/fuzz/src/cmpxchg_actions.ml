@@ -11,7 +11,7 @@
 
 open struct
   module Ac = Act_common
-  module Cm = Act_c_mini
+  module Cm = Act_fir
 end
 
 module Inner_payload = struct

@@ -22,7 +22,7 @@ let%test_module "running payloads on test subject" =
         ~payload
 
     let test (lpath : Src.Path.Program.t Lazy.t)
-        (mo : Act_c_mini.Mem_order.t) (can_weaken : bool) : unit =
+        (mo : Act_fir.Mem_order.t) (can_weaken : bool) : unit =
       let path = Lazy.force lpath in
       let pld =
         Src.Mem_actions.Strengthen_payload.make ~path ~mo ~can_weaken
@@ -43,7 +43,7 @@ let%test_module "running payloads on test subject" =
         @@ If.in_branch true @@ Stms.stm 0)
 
     let%expect_test "failed SC->RLX" =
-      test sc_action Act_c_mini.Mem_order.Relaxed false ;
+      test sc_action Act_fir.Mem_order.Relaxed false ;
       [%expect
         {|
       void
@@ -70,7 +70,7 @@ let%test_module "running payloads on test subject" =
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "forced SC->RLX" =
-      test sc_action Act_c_mini.Mem_order.Relaxed true ;
+      test sc_action Act_fir.Mem_order.Relaxed true ;
       [%expect
         {|
       void
@@ -97,7 +97,7 @@ let%test_module "running payloads on test subject" =
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "successful RLX->SC" =
-      test rlx_action Act_c_mini.Mem_order.Seq_cst false ;
+      test rlx_action Act_fir.Mem_order.Seq_cst false ;
       [%expect
         {|
       void
@@ -124,7 +124,7 @@ let%test_module "running payloads on test subject" =
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "ignored RLX->ACQ" =
-      test rlx_action Act_c_mini.Mem_order.Acquire true ;
+      test rlx_action Act_fir.Mem_order.Acquire true ;
       [%expect
         {|
       void
@@ -151,7 +151,7 @@ let%test_module "running payloads on test subject" =
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "part-ignored nested change (outer)" =
-      test nest_action Act_c_mini.Mem_order.Acquire true ;
+      test nest_action Act_fir.Mem_order.Acquire true ;
       [%expect
         {|
       void
@@ -178,7 +178,7 @@ let%test_module "running payloads on test subject" =
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "part-ignored nested change (inner)" =
-      test nest_action Act_c_mini.Mem_order.Release true ;
+      test nest_action Act_fir.Mem_order.Release true ;
       [%expect
         {|
       void

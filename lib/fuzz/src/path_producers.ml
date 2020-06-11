@@ -14,9 +14,9 @@ open Base
 open struct
   module Tx = Travesty_base_exts
   module Q = Base_quickcheck
-  module Stm = Act_c_mini.Statement
-  module Fun = Act_c_mini.Function
-  module Prog = Act_c_mini.Program
+  module Stm = Act_fir.Statement
+  module Fun = Act_fir.Function
+  module Prog = Act_fir.Program
 end
 
 (* Helpers for making path generators. *)
@@ -111,7 +111,7 @@ and Block :
       [insert_after; insert_inside]
 
     let try_gen_at_each : target -> t Opt_gen.t list =
-      Fn.compose (List.concat_mapi ~f:try_gen_at) Act_c_mini.Block.statements
+      Fn.compose (List.concat_mapi ~f:try_gen_at) Act_fir.Block.statements
   end
 
   let try_gen_insert_stm ?(filter : Path_filter.t = Path_filter.empty)
@@ -119,7 +119,7 @@ and Block :
     let module I = Insert (struct
       let filter =
         Path_filter.update_with_block_metadata filter
-          (Act_c_mini.Block.metadata dest)
+          (Act_fir.Block.metadata dest)
     end) in
     Opt_gen.union (I.try_gen_here 0 :: I.try_gen_at_each dest)
 
@@ -131,9 +131,9 @@ and Block :
       (dest : target) : Path.stm_list Opt_gen.t =
     let filter =
       Path_filter.update_with_block_metadata filter
-        (Act_c_mini.Block.metadata dest)
+        (Act_fir.Block.metadata dest)
     in
-    let stms = Act_c_mini.Block.statements dest in
+    let stms = Act_fir.Block.statements dest in
     Opt_gen.union (List.mapi ~f:(gen_transform_stm_on ~filter) stms)
 
   let gen_transform_stm_list_here_populated (stms : Subject.Statement.t list)
@@ -170,9 +170,9 @@ and Block :
       t Opt_gen.t =
     let filter =
       Path_filter.update_with_block_metadata filter
-        (Act_c_mini.Block.metadata dest)
+        (Act_fir.Block.metadata dest)
     in
-    let stms = Act_c_mini.Block.statements dest in
+    let stms = Act_fir.Block.statements dest in
     Opt_gen.union
       ( check_ok ~filter (gen_transform_stm_list_here ~filter stms)
       :: List.mapi stms ~f:(gen_transform_stm_list_on ~filter) )

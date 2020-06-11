@@ -17,7 +17,7 @@
     into dead-code. *)
 module Early_out :
   Action_types.S
-    with type Payload.t = Act_c_mini.Early_out.t Payload.Insertion.t
+    with type Payload.t = Act_fir.Early_out.t Payload.Insertion.t
 
 (** A fuzzer action that inserts goto statements to random labels into
     dead-code. *)

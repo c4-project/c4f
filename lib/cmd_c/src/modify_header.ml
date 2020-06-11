@@ -17,10 +17,10 @@ let run ?(name : [< `Keep | `Replace_with of string] option)
     unit Or_error.t =
   Or_error.Let_syntax.(
     let%bind changes =
-      Act_c_mini.Litmus_header.Change_set.of_args ?name ?postcondition ()
+      Act_fir.Litmus_header.Change_set.of_args ?name ?postcondition ()
     in
     Common_cmd.Args.With_files.run_filter
-      (module Act_c_mini.Litmus_header.Filters.Modify)
+      (module Act_fir.Litmus_header.Filters.Modify)
       args ~aux_in:changes)
 
 let readme () : string =

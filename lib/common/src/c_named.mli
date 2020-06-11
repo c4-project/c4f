@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Mini C: elements tagged with a C identifier. *)
+(** FIR: elements tagged with a C identifier. *)
 
 open Base
 

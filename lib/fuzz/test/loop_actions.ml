@@ -24,9 +24,9 @@ let%test_module "Surround" =
 
     let test : Src.Subject.Test.t = Lazy.force Subject.Test_data.test
 
-    let cond : Act_c_mini.Expression.t =
+    let cond : Act_fir.Expression.t =
       (* should be false with respect to the var map *)
-      Act_c_mini.(
+      Act_fir.(
         Expression.(
           l_and
             (eq (of_variable_str_exn "y") (int_lit 27))

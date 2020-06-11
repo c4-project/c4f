@@ -5,7 +5,7 @@
   (pps ppx_jane))
  (libraries result yojson ppx_yojson_conv_lib sexplib0 base.caml core_kernel
    core stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
-   act.backend act.backend_herd act.backend_litmus act.c_mini act.common
+   act.backend act.backend_herd act.backend_litmus act.fir act.common
    act.config act.delitmus act.fuzz act.litmus act.state act.utils))
 
 (executables
@@ -17,7 +17,7 @@
   (pps ppx_jane))
  (libraries result yojson ppx_yojson_conv_lib sexplib0 base.caml core_kernel
    core stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
-   act.backend act.backend_herd act.backend_litmus act.c_mini act.common
+   act.backend act.backend_herd act.backend_litmus act.fir act.common
    act.config act.delitmus act.fuzz act.litmus act.state act.utils common))
 
 (rule
@@ -130,7 +130,7 @@
   (pps ppx_jane))
  (libraries result yojson ppx_yojson_conv_lib sexplib0 base.caml core_kernel
    core stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
-   act.c_mini act.common act.config act.litmus act.utils common)
+   act.fir act.common act.config act.litmus act.utils common)
  (action
   (run %{test} input))
  (deps

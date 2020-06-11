@@ -14,7 +14,7 @@ open Core
 let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o :
     unit Or_error.t =
   Common_cmd.Args.With_files.run_filter
-    (module Act_c_mini.Litmus_stats.Filter)
+    (module Act_fir.Litmus_stats.Filter)
     args ~aux_in:()
 
 let readme () : string =

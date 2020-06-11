@@ -22,7 +22,7 @@ type t [@@deriving equal, yojson]
 (** {1 Constructors} *)
 
 val make :
-     ?litmus_header:Act_c_mini.Constant.t Act_litmus.Header.t
+     ?litmus_header:Act_fir.Constant.t Act_litmus.Header.t
   -> ?function_map:Function_map.t
   -> ?var_map:Var_map.t
   -> unit
@@ -37,7 +37,7 @@ val empty : t
 
 (** {1 Accessors} *)
 
-val litmus_header : t -> Act_c_mini.Constant.t Act_litmus.Header.t
+val litmus_header : t -> Act_fir.Constant.t Act_litmus.Header.t
 (** [litmus_header aux] gets the header of the Litmus test from which this
     auxiliary record was generated. *)
 

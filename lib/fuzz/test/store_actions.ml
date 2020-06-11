@@ -16,9 +16,9 @@ open struct
 end
 
 module Test_data = struct
-  let store (name : string) : Act_c_mini.Atomic_store.t Lazy.t =
+  let store (name : string) : Act_fir.Atomic_store.t Lazy.t =
     lazy
-      Act_c_mini.(
+      Act_fir.(
         Atomic_store.make
           ~src:
             (Expression.atomic_load
@@ -28,21 +28,21 @@ module Test_data = struct
           ~dst:(Address.of_variable_str_exn name)
           ~mo:Mem_order.Seq_cst)
 
-  let fadd : Act_c_mini.Expression.t Lazy.t =
+  let fadd : Act_fir.Expression.t Lazy.t =
     lazy
-      Act_c_mini.(
+      Act_fir.(
         Expression.(
           atomic_fetch
             (Atomic_fetch.make
                ~obj:(Address.of_variable_str_exn "gen1")
                ~arg:(Expression.int_lit 0) ~mo:Seq_cst ~op:Add)))
 
-  let store_fa : Act_c_mini.Atomic_store.t Lazy.t =
+  let store_fa : Act_fir.Atomic_store.t Lazy.t =
     lazy
-      Act_c_mini.(
+      Act_fir.(
         Atomic_store.make
           ~src:
-            Act_c_mini.(
+            Act_fir.(
               Expression.(
                 atomic_fetch
                   (Atomic_fetch.make
@@ -57,14 +57,14 @@ let%test_module "store.make.int.normal" =
   ( module struct
     let path : Src.Path.Program.t Lazy.t = Subject.Test_data.Path.insert_live
 
-    let random_state (store : Act_c_mini.Atomic_store.t Lazy.t) :
+    let random_state (store : Act_fir.Atomic_store.t Lazy.t) :
         Src.Store_actions.Int.Payload.t Lazy.t =
       Lazy.Let_syntax.(
         let%bind to_insert = store in
         let%map where = path in
         Src.Payload.Insertion.make ~to_insert ~where)
 
-    let test_action (store : Act_c_mini.Atomic_store.t Lazy.t) :
+    let test_action (store : Act_fir.Atomic_store.t Lazy.t) :
         Src.Subject.Test.t Src.State.Monad.t =
       Src.State.Monad.(
         Storelike.Test_common.prepare_fuzzer_state ()
@@ -312,11 +312,11 @@ let%test_module "store.make.int.redundant" =
     let path : Src.Path.Program.t Lazy.t = Subject.Test_data.Path.insert_live
 
     (* TODO(@MattWindsor91): this is, ironically, overly redundant. *)
-    let redundant_store : Act_c_mini.Atomic_store.t Lazy.t =
+    let redundant_store : Act_fir.Atomic_store.t Lazy.t =
       lazy
-        Act_c_mini.(
+        Act_fir.(
           Atomic_store.make
-            ~src:(Act_c_mini.Expression.int_lit 1337)
+            ~src:(Act_fir.Expression.int_lit 1337)
             ~dst:(Address.of_variable (Act_common.C_id.of_string "gen1"))
             ~mo:Mem_order.Seq_cst)
 

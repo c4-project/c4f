@@ -22,14 +22,14 @@ module Record : sig
 
   (** {3 Constructors} *)
 
-  val make_existing : Act_common.Scope.t -> Act_c_mini.Type.t -> t
+  val make_existing : Act_common.Scope.t -> Act_fir.Type.t -> t
   (** [make_existing scope ty] makes a variable record for a
       non-fuzzer-generated variable of type [ty] and scope [scope]. *)
 
   val make_generated :
-       ?initial_value:Act_c_mini.Constant.t
+       ?initial_value:Act_fir.Constant.t
     -> Act_common.Scope.t
-    -> Act_c_mini.Type.t
+    -> Act_fir.Type.t
     -> t
   (** [make_generated_global ?initial_value scope ty] makes a variable record
       for a fuzzer-generated variable of scope [scope] and type [ty], with
@@ -40,7 +40,7 @@ module Record : sig
   val is_global : t -> bool
   (** [is_global vr] returns whether [vr] is a global variable. *)
 
-  val has_basic_type : t -> basic:Act_c_mini.Type.Basic.t -> bool
+  val has_basic_type : t -> basic:Act_fir.Type.Basic.t -> bool
   (** [has_type vr t] returns whether [vr] is known to have the basic type
       [t]. *)
 
@@ -62,16 +62,16 @@ module Record : sig
 
   (** {3 Properties} *)
 
-  val ty : t -> Act_c_mini.Type.t
+  val ty : t -> Act_fir.Type.t
   (** [ty vr] gets the type of [vr], if known. *)
 
-  val try_get_known_value : t -> Act_c_mini.Constant.t Or_error.t
+  val try_get_known_value : t -> Act_fir.Constant.t Or_error.t
   (** [try_get_known_value vr] gets the known value of [vr], if one exists.
       If [vr] doesn't have one, an error occurs. *)
 
   (** {3 Actions} *)
 
-  val map_type : t -> f:(Act_c_mini.Type.t -> Act_c_mini.Type.t) -> t
+  val map_type : t -> f:(Act_fir.Type.t -> Act_fir.Type.t) -> t
   (** [map_type record ~f] maps [f] over the type of [record]. *)
 
   val add_dependency : t -> t
@@ -102,7 +102,7 @@ module Map : sig
 
   (** {3 Constructors} *)
 
-  val make_existing_var_map : Act_c_mini.Litmus.Test.t -> t Or_error.t
+  val make_existing_var_map : Act_fir.Litmus.Test.t -> t Or_error.t
   (** [make_existing_var_map test] tries to generate a var-record map for the
       Litmus-style functions in [test], where each name is registered as an
       existing variable. *)
@@ -113,7 +113,7 @@ module Map : sig
        t
     -> scope:Act_common.Scope.t
     -> predicates:(Record.t -> bool) list
-    -> Act_c_mini.Env.t
+    -> Act_fir.Env.t
   (** [env_satisfying_all map ~scope ~predicates] returns a variable
       environment for all variables in [map] in scope with regards to
       [scope], with known types, and for which all predicates in [predicates]
@@ -140,10 +140,10 @@ module Map : sig
   (** {3 Actions} *)
 
   val register_var :
-       ?initial_value:Act_c_mini.Constant.t
+       ?initial_value:Act_fir.Constant.t
     -> t
     -> Act_common.Litmus_id.t
-    -> Act_c_mini.Type.t
+    -> Act_fir.Type.t
     -> t
   (** [register_global ?initial_value map var ty] registers a generated
       variable with scoped name [var], type [ty], and optional known initial

@@ -13,13 +13,13 @@ open Base
 
 open struct
   module Ac = Act_common
-  module Cm = Act_c_mini
+  module Cm = Act_fir
 end
 
 module type S =
   Action_types.S
     with type Payload.t =
-          Act_c_mini.Expression.t Act_c_mini.Atomic_fetch.t
+          Act_fir.Expression.t Act_fir.Atomic_fetch.t
           Payload.Insertion.t
 
 let readme_preamble : string =

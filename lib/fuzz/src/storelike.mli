@@ -48,7 +48,7 @@ module Make (B : sig
   (** [readme_preamble] is the part of the action readme specific to this
       form of the storelike action. *)
 
-  val dst_type : Act_c_mini.Type.Basic.t
+  val dst_type : Act_fir.Type.Basic.t
   (** [dst_type] is the value type of the destination. *)
 
   val path_filter : Path_filter.t

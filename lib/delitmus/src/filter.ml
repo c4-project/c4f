@@ -24,11 +24,11 @@ let pp_unit : Act_c_lang.Ast.Translation_unit.t Fmt.t =
   Fmt.(vbox (pp_prelude ++ Act_c_lang.Ast.Translation_unit.pp))
 
 let c_of_output : Output.t -> Act_c_lang.Ast.Translation_unit.t =
-  Fn.compose Act_c_mini.Reify.program Output.program
+  Fn.compose Act_fir.Reify.program Output.program
 
 let pp_del : Output.t Fmt.t = Fmt.(using c_of_output pp_unit)
 
-let delitmusify_and_print (test : Act_c_mini.Litmus.Test.t)
+let delitmusify_and_print (test : Act_fir.Litmus.Test.t)
     (oc : Stdio.Out_channel.t) ~(config : Config.t) : Output.t Or_error.t =
   let (module R) = Config.to_runner config in
   Or_error.Let_syntax.(
@@ -48,7 +48,7 @@ include Pb.Filter.Make (struct
     let input = Pb.Filter_context.input ctx in
     Or_error.Let_syntax.(
       let%bind vast =
-        Act_c_mini.Frontend.load_from_ic ~path:(Pb.Input.to_string input) ic
+        Act_fir.Frontend.load_from_ic ~path:(Pb.Input.to_string input) ic
       in
       delitmusify_and_print vast oc ~config)
 end)

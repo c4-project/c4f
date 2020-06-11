@@ -85,7 +85,7 @@ end
 
 module Surround = struct
   module Body = struct
-    type t = {cond: Act_c_mini.Expression.t; path: Path.Program.t}
+    type t = {cond: Act_fir.Expression.t; path: Path.Program.t}
     [@@deriving make, sexp, fields]
   end
 
@@ -98,7 +98,7 @@ module Surround = struct
       This is a considerable over-approximation of the actual needed
       dependencies. *)
   let add_cond_dependencies (path : Path.Program.t)
-      (cond : Act_c_mini.Expression.t) : unit State.Monad.t =
+      (cond : Act_fir.Expression.t) : unit State.Monad.t =
     (* TODO(@MattWindsor91): it would be pretty cool for the lvalues to track
        whether or not they are being used in a tautology, once we add
        metadata tracking to the expression. In this case, we could skip
@@ -108,7 +108,7 @@ module Surround = struct
 
   let apply ({cond; path} : t) ~(test : Subject.Test.t)
       ~(f :
-            Act_c_mini.Expression.t
+            Act_fir.Expression.t
          -> Subject.Statement.t list
          -> Subject.Statement.t) : Subject.Test.t State.Monad.t =
     State.Monad.(
@@ -118,13 +118,13 @@ module Surround = struct
           (Path_consumers.Test.transform_stm_list path ~target:test
              ~f:(fun test -> Or_error.return [f cond test]))))
 
-  let cond_env (vars : Var.Map.t) ~(tid : int) : Act_c_mini.Env.t =
+  let cond_env (vars : Var.Map.t) ~(tid : int) : Act_fir.Env.t =
     Var.Map.env_satisfying_all ~scope:(Local tid) ~predicates:[] vars
 
   module Make (Basic : sig
     val action_id : Act_common.Id.t
 
-    val cond_gen : Act_c_mini.Env.t -> Act_c_mini.Expression.t Q.Generator.t
+    val cond_gen : Act_fir.Env.t -> Act_fir.Expression.t Q.Generator.t
     (** [cond_gen env] should, given a first-class environment module [env]
         capturing the variables in scope at the point where the if statement
         is appearing, return a Quickcheck generator generating expressions
@@ -139,7 +139,7 @@ module Surround = struct
         ~f:Path_producers.Test.try_gen_transform_stm_list
 
     let quickcheck_cond (path : Path.Program.t) :
-        Act_c_mini.Expression.t Q.Generator.t State.Monad.t =
+        Act_fir.Expression.t Q.Generator.t State.Monad.t =
       let tid = Path.Program.tid path in
       State.Monad.Let_syntax.(
         let%map env = State.Monad.with_vars (cond_env ~tid) in
@@ -147,7 +147,7 @@ module Surround = struct
 
     let gen_cond (path : Path.Program.t)
         ~(random : Splittable_random.State.t) :
-        Act_c_mini.Expression.t State.Monad.t =
+        Act_fir.Expression.t State.Monad.t =
       State.Monad.Let_syntax.(
         let%bind gen = quickcheck_cond path in
         Helpers.lift_quickcheck gen ~random)

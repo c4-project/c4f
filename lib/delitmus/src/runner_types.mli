@@ -38,7 +38,7 @@ end
 
 (** Main signature for delitmus runners. *)
 module type S = sig
-  val run : Act_c_mini.Litmus.Test.t -> Output.t Or_error.t
+  val run : Act_fir.Litmus.Test.t -> Output.t Or_error.t
   (** [run test] runs a delitmus operation on [test]. The exact nature of the
       delitmusified output depends on the way in which the delitmusifier was
       configured. *)

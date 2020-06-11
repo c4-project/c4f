@@ -17,7 +17,7 @@ let%test_module "Statement_list" =
     let%test_module "paths applied to example code" =
       ( module struct
         module F = Act_fuzz
-        module Stm = Act_c_mini.Statement
+        module Stm = Act_fir.Statement
 
         let insert_path : F.Path.Stms.t = F.Path.Stms.insert 2
 
@@ -28,7 +28,7 @@ let%test_module "Statement_list" =
         let on_stm_range_path : F.Path.Stms.t = F.Path.Stms.on_range 1 2
 
         let example_stm : F.Metadata.t Stm.t =
-          Act_c_mini.(
+          Act_fir.(
             Statement.prim F.Metadata.generated
               (Prim_statement.atomic_store
                  (Atomic_store.make ~mo:Mem_order.Seq_cst
@@ -37,14 +37,14 @@ let%test_module "Statement_list" =
 
         (* TODO(@MattWindsor91): generalise this? *)
         let pp_statement : F.Subject.Statement.t Fmt.t =
-          Fmt.using Act_c_mini.Reify_stm.reify Act_c_lang.Ast.Stm.pp
+          Fmt.using Act_fir.Reify_stm.reify Act_c_lang.Ast.Stm.pp
 
         let test (stms : F.Subject.Block.t Or_error.t) : unit =
           Fmt.(
             pr "@[<v>%a@]@."
               (result
                  ~ok:
-                   (using Act_c_mini.Block.statements
+                   (using Act_fir.Block.statements
                       (list ~sep:sp (box pp_statement)))
                  ~error:Error.pp)
               stms)
@@ -171,7 +171,7 @@ let%test_module "Statement_list" =
               Or_error.return
                 [ Stm.if_stm
                     (Stm.If.make
-                       ~cond:(Act_c_mini.Expression.bool_lit true)
+                       ~cond:(Act_fir.Expression.bool_lit true)
                        ~t_branch:
                          (F.Subject.Block.make_generated ~statements ())
                        ~f_branch:(F.Subject.Block.make_generated ())) ]

@@ -22,7 +22,7 @@ val litmus_id :
 
 val postcondition :
      ?qualify_locals:bool
-  -> Act_c_mini.Constant.t Act_litmus.Postcondition.t
-  -> Act_c_mini.Constant.t Act_litmus.Postcondition.t
+  -> Act_fir.Constant.t Act_litmus.Postcondition.t
+  -> Act_fir.Constant.t Act_litmus.Postcondition.t
 (** [postcondition ?qualify_locals pc] qualifies all identifiers in the
     postcondition [pc]. *)

@@ -50,7 +50,7 @@ end
 (** Checks that can only be carried out at the end of a statement path. *)
 module End_check = struct
   module M = struct
-    type t = Is_of_class of Act_c_mini.Statement_class.t | Has_no_labels
+    type t = Is_of_class of Act_fir.Statement_class.t | Has_no_labels
     [@@deriving compare, equal, sexp]
   end
 
@@ -60,7 +60,7 @@ module End_check = struct
   let is_ok (check : t) ~(stm : Subject.Statement.t) : bool =
     match check with
     | Is_of_class template ->
-        Act_c_mini.Statement_class.(
+        Act_fir.Statement_class.(
           Option.exists ~f:(matches ~template) (classify stm))
     | Has_no_labels ->
         not (Subject.Statement.has_labels stm)

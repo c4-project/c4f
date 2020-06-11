@@ -13,7 +13,7 @@ open Base
 
 open struct
   module Ac = Act_common
-  module Cm = Act_c_mini
+  module Cm = Act_fir
   module P = Payload
 end
 
@@ -54,8 +54,8 @@ struct
     let path = P.Insertion.where payload in
     let fence_stm =
       payload |> P.Insertion.to_insert
-      |> Act_c_mini.Prim_statement.atomic_fence
-      |> Act_c_mini.Statement.prim Metadata.generated
+      |> Act_fir.Prim_statement.atomic_fence
+      |> Act_fir.Statement.prim Metadata.generated
     in
     (* We don't need to do any bookkeeping on fences. *)
     State.Monad.Monadic.return
@@ -113,10 +113,10 @@ module Strengthen :
         (Path_producers.Test.try_gen_transform_stm subject ~filter)
 
     let gen_mo (o : Ac.Output.t) ~(random : Splittable_random.State.t) :
-        Act_c_mini.Mem_order.t State.Monad.t =
+        Act_fir.Mem_order.t State.Monad.t =
       log o "generating memory order" ;
       Payload.Helpers.lift_quickcheck ~random
-        Act_c_mini.Mem_order.quickcheck_generator
+        Act_fir.Mem_order.quickcheck_generator
 
     let gen (subject : Subject.Test.t) ~(random : Splittable_random.State.t)
         ~(param_map : Param_map.t) : t State.Monad.t =
@@ -137,18 +137,18 @@ module Strengthen :
   module On_atomics =
     Travesty.Traversable.Chain0
       (Subject.Statement.On_primitives)
-      (Act_c_mini.Prim_statement.On_atomics)
+      (Act_fir.Prim_statement.On_atomics)
   module On_mos =
     Travesty.Traversable.Chain0
       (On_atomics)
-      (Act_c_mini.Atomic_statement.On_mem_orders)
+      (Act_fir.Atomic_statement.On_mem_orders)
 
-  let change_mo (stm : Subject.Statement.t) ~(mo : Act_c_mini.Mem_order.t)
+  let change_mo (stm : Subject.Statement.t) ~(mo : Act_fir.Mem_order.t)
       ~(can_weaken : bool) : Subject.Statement.t Or_error.t =
     let direction = if can_weaken then `Any else `Strengthen in
     Ok
       (On_mos.map stm
-         ~f:(Act_c_mini.Mem_order.try_change ~replacement:mo ~direction))
+         ~f:(Act_fir.Mem_order.try_change ~replacement:mo ~direction))
 
   let run (subject : Subject.Test.t)
       ~payload:({path; mo; can_weaken} : Payload.t) :

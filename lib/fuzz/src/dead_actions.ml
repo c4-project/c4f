@@ -26,7 +26,7 @@ module Early_out_payload = struct
      Insertion.Make payload, because the path filter depends on the choice of
      early-out. We'd have to split it into three different actions first. *)
 
-  type t = Act_c_mini.Early_out.t P.Insertion.t [@@deriving sexp]
+  type t = Act_fir.Early_out.t P.Insertion.t [@@deriving sexp]
 
   let quickcheck_path (test : Subject.Test.t)
       ~(filter_f : Path_filter.t -> Path_filter.t) : Path.Program.t Opt_gen.t
@@ -35,22 +35,22 @@ module Early_out_payload = struct
     Path_producers.Test.try_gen_insert_stm ~filter test
 
   let quickcheck_generic_payload (test : Subject.Test.t)
-      ~(kind_pred : Act_c_mini.Early_out.t -> bool)
+      ~(kind_pred : Act_fir.Early_out.t -> bool)
       ~(filter_f : Path_filter.t -> Path_filter.t) : t Opt_gen.t =
     Opt_gen.map2
       (quickcheck_path test ~filter_f)
       (Or_error.return
          (Base_quickcheck.Generator.filter ~f:kind_pred
-            Act_c_mini.Early_out.quickcheck_generator))
+            Act_fir.Early_out.quickcheck_generator))
       ~f:(fun where to_insert -> P.Insertion.make ~where ~to_insert)
 
   let quickcheck_loop_payload : Subject.Test.t -> t Opt_gen.t =
-    quickcheck_generic_payload ~kind_pred:Act_c_mini.Early_out.in_loop_only
+    quickcheck_generic_payload ~kind_pred:Act_fir.Early_out.in_loop_only
       ~filter_f:Path_filter.in_loop_only
 
   let quickcheck_non_loop_payload : Subject.Test.t -> t Opt_gen.t =
     quickcheck_generic_payload
-      ~kind_pred:(Fn.non Act_c_mini.Early_out.in_loop_only)
+      ~kind_pred:(Fn.non Act_fir.Early_out.in_loop_only)
       ~filter_f:Fn.id
 
   let quickcheck_payload (test : Subject.Test.t) : t Opt_gen.t =
@@ -80,19 +80,19 @@ struct
 
   module Payload = Early_out_payload
 
-  let kind_filter (kind : Act_c_mini.Early_out.t) :
+  let kind_filter (kind : Act_fir.Early_out.t) :
       (Path_filter.t -> Path_filter.t) Staged.t =
     Staged.stage
-      ( if Act_c_mini.Early_out.in_loop_only kind then
+      ( if Act_fir.Early_out.in_loop_only kind then
         Path_filter.in_loop_only
       else Fn.id )
 
-  let make_early_out (kind : Act_c_mini.Early_out.t) : Subject.Statement.t =
-    Act_c_mini.(
+  let make_early_out (kind : Act_fir.Early_out.t) : Subject.Statement.t =
+    Act_fir.(
       Statement.prim Metadata.generated (Prim_statement.early_out kind))
 
   let check_path (target : Subject.Test.t) (path : Path.Program.t)
-      (kind : Act_c_mini.Early_out.t) : Subject.Test.t Or_error.t =
+      (kind : Act_fir.Early_out.t) : Subject.Test.t Or_error.t =
     let filter =
       Path_filter.(
         empty |> in_dead_code_only |> Staged.unstage (kind_filter kind))
@@ -100,7 +100,7 @@ struct
     Path_consumers.Test.check_path path ~filter ~target
 
   let run_inner (test : Subject.Test.t) (path : Path.Program.t)
-      (kind : Act_c_mini.Early_out.t) : Subject.Test.t Or_error.t =
+      (kind : Act_fir.Early_out.t) : Subject.Test.t Or_error.t =
     Or_error.Let_syntax.(
       let%bind target = check_path test path kind in
       Path_consumers.Test.insert_stm path ~target
@@ -177,7 +177,7 @@ struct
     let path = P.Insertion.where payload in
     let label = P.Insertion.to_insert payload in
     let goto_stm =
-      Act_c_mini.(
+      Act_fir.(
         label |> Prim_statement.goto |> Statement.prim Metadata.generated)
     in
     State.Monad.Monadic.return

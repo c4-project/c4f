@@ -20,26 +20,26 @@ module Test_common = struct
     Src.State.Monad.(
       register_var
         (Act_common.Litmus_id.of_string "gen1")
-        Act_c_mini.(
+        Act_fir.(
           Initialiser.make
             ~ty:Type.(int ~is_pointer:true ~is_atomic:true ())
-            ~value:(Act_c_mini.Constant.int 1337)
+            ~value:(Act_fir.Constant.int 1337)
             ())
       >>= fun () ->
       register_var
         (Act_common.Litmus_id.of_string "gen2")
-        Act_c_mini.(
+        Act_fir.(
           Initialiser.make
             ~ty:Type.(int ~is_pointer:true ~is_atomic:true ())
-            ~value:(Act_c_mini.Constant.int (-55))
+            ~value:(Act_fir.Constant.int (-55))
             ()))
 
   let pp_vars :
-      (Act_common.C_id.t, Act_c_mini.Constant.t option) List.Assoc.t Fmt.t =
+      (Act_common.C_id.t, Act_fir.Constant.t option) List.Assoc.t Fmt.t =
     Fmt.(
       list ~sep:sp
         (pair ~sep:(any "=") Act_common.C_id.pp
-           (option Act_c_mini.Constant.pp)))
+           (option Act_fir.Constant.pp)))
 
   let run_and_dump_vars (test_action : Src.Subject.Test.t Src.State.Monad.t)
       ~(predicates : (Src.Var.Record.t -> bool) list)
@@ -51,7 +51,7 @@ module Test_common = struct
         >>| Src.Var.Map.env_satisfying_all ~scope:(Local 0) ~predicates
         >>| Map.to_alist
         >>| Travesty_base_exts.Alist.map_right
-              ~f:Act_c_mini.Env.Record.known_value)
+              ~f:Act_fir.Env.Record.known_value)
     in
     Fmt.(pr "@[%a@]@." (result ~error:Error.pp ~ok:pp_vars)) result
 

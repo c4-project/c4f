@@ -30,7 +30,7 @@ val make :
     process. *)
 
 val of_litmus :
-  ?o:Act_common.Output.t -> Act_c_mini.Litmus.Test.t -> t Or_error.t
+  ?o:Act_common.Output.t -> Act_fir.Litmus.Test.t -> t Or_error.t
 (** [of_litmus ?o lt] tries to create an initial state by extracting
     information from [lt]'s auxiliary data. If an output context [o] is
     provided, it can be used for logging verbose/debug information during the
@@ -94,7 +94,7 @@ module Monad : sig
   (** {2 Commands} *)
 
   val register_var :
-    Act_common.Litmus_id.t -> Act_c_mini.Initialiser.t -> unit t
+    Act_common.Litmus_id.t -> Act_fir.Initialiser.t -> unit t
   (** [register_var var init] is a stateful action that registers a generated
       variable [var] with initialiser [init]] into the state, overwriting any
       existing variable of the same name. *)
@@ -128,14 +128,14 @@ module Monad : sig
       depend on it having a particular known-value. *)
 
   val add_expression_dependencies :
-    Act_c_mini.Expression.t -> scope:Act_common.Scope.t -> unit t
+    Act_fir.Expression.t -> scope:Act_common.Scope.t -> unit t
   (** [add_expression_dependencies expr ~scope] is a stateful action that
       adds dependency flags for any known-variable records for variables
       mentioned in [expr], resolving each variable from the perspective of
       scope [scope]. *)
 
   val add_multiple_expression_dependencies :
-    Act_c_mini.Expression.t list -> scope:Act_common.Scope.t -> unit t
+    Act_fir.Expression.t list -> scope:Act_common.Scope.t -> unit t
   (** [add_multiple_expression_dependencies expr ~scope] is a stateful action
       that adds dependency flags for any known-variable records for variables
       mentioned in each expression in [exprs], resolving each variable from
