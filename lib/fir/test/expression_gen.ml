@@ -49,9 +49,7 @@ module Exp_lvalues =
     (Act_fir.Expression_traverse.On_addresses)
     (Act_fir.Address.On_lvalues)
 module Exp_idents =
-  Travesty.Traversable.Chain0
-    (Exp_lvalues)
-    (Act_fir.Lvalue.On_identifiers)
+  Travesty.Traversable.Chain0 (Exp_lvalues) (Act_fir.Lvalue.On_identifiers)
 
 let test_all_expressions_in_env
     (f : Src.Env.t -> (module Q.Test.S with type t = Src.Expression.t)) :

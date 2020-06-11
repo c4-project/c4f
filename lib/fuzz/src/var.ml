@@ -28,8 +28,7 @@ module Record = struct
 
   let env_record (r : t) : Act_fir.Env.Record.t =
     (* TODO(@MattWindsor91): nest this directly instead *)
-    Act_fir.Env.Record.make ~type_of:(ty r) ?known_value:(known_value r)
-      ()
+    Act_fir.Env.Record.make ~type_of:(ty r) ?known_value:(known_value r) ()
 
   let is_global (r : t) : bool = Ac.Scope.is_global (scope r)
 
@@ -51,8 +50,7 @@ module Record = struct
     Result.of_option (known_value record)
       ~error:(Error.of_string "No known value for this record.")
 
-  let map_type (record : t) ~(f : Act_fir.Type.t -> Act_fir.Type.t) : t
-      =
+  let map_type (record : t) ~(f : Act_fir.Type.t -> Act_fir.Type.t) : t =
     {record with ty= f record.ty}
 
   let add_dependency (record : t) : t = {record with has_dependencies= true}
@@ -76,8 +74,7 @@ module Map = struct
       Record.t =
     Record.make_existing (Ac.Litmus_id.scope id) ty
 
-  let make_existing_var_map (test : Act_fir.Litmus.Test.t) : t Or_error.t
-      =
+  let make_existing_var_map (test : Act_fir.Litmus.Test.t) : t Or_error.t =
     Or_error.(
       test |> Act_fir.Litmus_vars.make_type_alist
       >>| List.map ~f:(fun (id, ty) -> (id, make_existing_record id ty))

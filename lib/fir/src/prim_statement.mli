@@ -14,12 +14,12 @@
     A primitive statement is any statement that doesn't contain other
     statements recursively.
 
-    As a lot of FIR analysis involves whether a statement is a control
-    flow or not, it makes sense to group these statements into one block.
+    As a lot of FIR analysis involves whether a statement is a control flow
+    or not, it makes sense to group these statements into one block.
 
     Note that we treat some things that are technically expressions in C as
-    statements in FIR. This is for simplicity; it rejects some well-formed
-    C programs, but chimes better with how we expect the expressions to be
+    statements in FIR. This is for simplicity; it rejects some well-formed C
+    programs, but chimes better with how we expect the expressions to be
     used. *)
 
 open Base

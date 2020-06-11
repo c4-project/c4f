@@ -71,9 +71,8 @@ module Make (B : Runner_types.Basic) = struct
            change this hard-coded 'true' flag. *)
         Function_map.Record.make ~is_thread_body:true ~c_id:new_name () ))
 
-  let make_function_map
-      (threads : unit Act_fir.Function.t Ac.C_named.t list) :
-      Function_map.t Or_error.t =
+  let make_function_map (threads : unit Act_fir.Function.t Ac.C_named.t list)
+      : Function_map.t Or_error.t =
     Or_error.(
       threads
       |> Tx.Or_error.combine_map ~f:make_named_function_record

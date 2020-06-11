@@ -12,8 +12,8 @@
 (** FIR: lvalues.
 
     Lvalues, informally, represent a location to which we can store a value.
-    In FIR, they are always either variable names, or dereferences
-    of other lvalues.
+    In FIR, they are always either variable names, or dereferences of other
+    lvalues.
 
     Not to be confused with the more general idea of 'addresses', which can
     either be lvalues or address-of modifications of other addresses, and are

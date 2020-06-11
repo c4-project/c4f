@@ -6,5 +6,5 @@
  (preprocess
   (pps ppx_jane))
  (libraries ppx_inline_test.config ppx_expect.common ppx_expect.config base
-   base.caml stdio fmt act.common act.config act.machine
-   act.utils act.fuzz act_machine_test))
+   base.caml stdio fmt act.common act.config act.machine act.utils act.fuzz
+   act_machine_test))

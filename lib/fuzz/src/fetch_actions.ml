@@ -19,8 +19,7 @@ end
 module type S =
   Action_types.S
     with type Payload.t =
-          Act_fir.Expression.t Act_fir.Atomic_fetch.t
-          Payload.Insertion.t
+          Act_fir.Expression.t Act_fir.Atomic_fetch.t Payload.Insertion.t
 
 let readme_preamble : string =
   {|

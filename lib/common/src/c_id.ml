@@ -30,8 +30,8 @@ let badwords : Set.M(String).t Lazy.t =
   (* `true` and `false` are *not* currently treated as badwords, as
      technically in C they are identifiers and not keywords. This may need to
      be changed, as parts of ACT do treat them as if they were keywords (eg
-     in FIR), but keeping them in `badwords` presently causes large
-     amounts of test failures. *)
+     in FIR), but keeping them in `badwords` presently causes large amounts
+     of test failures. *)
   lazy (Set.of_list (module String) ["do"; "while"; "if"; "for"; "void"])
 
 let validate_general : string Validate.check = Fn.const Validate.pass

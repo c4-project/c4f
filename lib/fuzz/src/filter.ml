@@ -21,8 +21,7 @@ module Aux = struct
   [@@deriving make]
 end
 
-let run_on_litmus (test : Act_fir.Litmus.Test.t)
-    ~(o : Act_common.Output.t)
+let run_on_litmus (test : Act_fir.Litmus.Test.t) ~(o : Act_common.Output.t)
     ~(f : Subject.Test.t -> 'm Output.t State.Monad.t) :
     (Act_fir.Litmus.Test.t * 'm) Or_error.t =
   let subject = Subject.Test.of_litmus test in

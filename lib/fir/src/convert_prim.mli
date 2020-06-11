@@ -19,8 +19,7 @@ open Base
 (** {1 Constants} *)
 
 val constant : Act_c_lang.Ast_basic.Constant.t -> Constant.t Or_error.t
-(** [constant ast] tries to interpret a C constant AST as a FIR
-    constant. *)
+(** [constant ast] tries to interpret a C constant AST as a FIR constant. *)
 
 val identifier_to_constant : Act_common.C_id.t -> Constant.t option
 (** [identifier_to_constant id] tries to interpret [id] as a (Boolean)

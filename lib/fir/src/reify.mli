@@ -11,8 +11,8 @@
 
 (** Functions for reifying a FIR program into an AST.
 
-    These functions reify various top-level elements of a FIR program.
-    Other modules govern smaller components:
+    These functions reify various top-level elements of a FIR program. Other
+    modules govern smaller components:
 
     - {!Reify_prim} for miscellaneous primitives;
     - {!Reify_expr} for expressions;

@@ -21,8 +21,8 @@ let%test_module "running payloads on test subject" =
         (Lazy.force Subject.Test_data.test)
         ~payload
 
-    let test (lpath : Src.Path.Program.t Lazy.t)
-        (mo : Act_fir.Mem_order.t) (can_weaken : bool) : unit =
+    let test (lpath : Src.Path.Program.t Lazy.t) (mo : Act_fir.Mem_order.t)
+        (can_weaken : bool) : unit =
       let path = Lazy.force lpath in
       let pld =
         Src.Mem_actions.Strengthen_payload.make ~path ~mo ~can_weaken

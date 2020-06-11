@@ -38,8 +38,7 @@ module Test_common = struct
       (Act_common.C_id.t, Act_fir.Constant.t option) List.Assoc.t Fmt.t =
     Fmt.(
       list ~sep:sp
-        (pair ~sep:(any "=") Act_common.C_id.pp
-           (option Act_fir.Constant.pp)))
+        (pair ~sep:(any "=") Act_common.C_id.pp (option Act_fir.Constant.pp)))
 
   let run_and_dump_vars (test_action : Src.Subject.Test.t Src.State.Monad.t)
       ~(predicates : (Src.Var.Record.t -> bool) list)

@@ -76,16 +76,14 @@ let local_decls (tid : int) :
     -> (Ac.C_id.t, Act_fir.Initialiser.t) List.Assoc.t =
   List.filter_map ~f:(fun (id, ty) ->
       if [%equal: int option] (Ac.Litmus_id.tid id) (Some tid) then
-        Some
-          (Ac.Litmus_id.variable_name id, Act_fir.Initialiser.make ~ty ())
+        Some (Ac.Litmus_id.variable_name id, Act_fir.Initialiser.make ~ty ())
       else None)
 
 let inner_call_argument (lid : Ac.Litmus_id.t) (ty : Act_fir.Type.t) :
     Act_fir.Expression.t =
   let id = Ac.Litmus_id.variable_name lid in
   let tid = Ac.C_named.make ~name:id ty in
-  Act_fir.Expression.address
-    (Act_fir.Address.on_address_of_typed_id tid)
+  Act_fir.Expression.address (Act_fir.Address.on_address_of_typed_id tid)
 
 let inner_call_arguments (tid : int) :
        (Ac.Litmus_id.t, Act_fir.Type.t) List.Assoc.t
@@ -103,8 +101,7 @@ let inner_call_stm (tid : int) (function_id : Ac.C_id.t)
   Act_fir.(Statement.prim () (Prim_statement.procedure_call call))
 
 let make_function_stub (vars : Var_map.t) ~(old_id : Ac.C_id.t)
-    ~(new_id : Ac.C_id.t) :
-    unit Act_fir.Function.t Ac.C_named.t Or_error.t =
+    ~(new_id : Ac.C_id.t) : unit Act_fir.Function.t Ac.C_named.t Or_error.t =
   (* TODO(@MattWindsor91): eventually, we'll have variables that don't
      propagate outside of the wrapper into Litmus; in that case, the function
      stub should pass in their initial values directly. *)

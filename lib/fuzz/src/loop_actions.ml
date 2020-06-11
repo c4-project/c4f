@@ -35,8 +35,7 @@ struct
     let action_id = name
 
     let cond_gen :
-           Act_fir.Env.t
-        -> Act_fir.Expression.t Base_quickcheck.Generator.t =
+        Act_fir.Env.t -> Act_fir.Expression.t Base_quickcheck.Generator.t =
       Act_fir.Expression_gen.gen_falsehoods
 
     let path_filter : Path_filter.t State.Monad.t =

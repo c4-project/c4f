@@ -15,8 +15,8 @@ open Base
 
 (** {1 General signatures} *)
 
-(** Signature of modules that expose a 'named' part of a FIR element,
-    usually for compatibility with functors. *)
+(** Signature of modules that expose a 'named' part of a FIR element, usually
+    for compatibility with functors. *)
 module type S_named = sig
   type elt
 

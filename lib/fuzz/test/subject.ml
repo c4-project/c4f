@@ -18,8 +18,7 @@ module Test_data = struct
       [ (Act_common.C_id.of_string "x", Act_fir.Constant.int 27)
       ; (Act_common.C_id.of_string "y", Act_fir.Constant.int 53) ]
 
-  let body_decls : Act_fir.Initialiser.t Act_common.C_named.Alist.t Lazy.t
-      =
+  let body_decls : Act_fir.Initialiser.t Act_common.C_named.Alist.t Lazy.t =
     lazy
       [ ( Act_common.C_id.of_string "r0"
         , Act_fir.Initialiser.make

@@ -387,8 +387,7 @@ let rec stm : Ast.Stm.t -> unit Statement.t Or_error.t = function
       Or_error.return (Statement.prim () Prim_statement.return)
   | Return (Some _) as s ->
       Or_error.error_s
-        [%message
-          "Value returns not supported in FIR" ~got:(s : Ast.Stm.t)]
+        [%message "Value returns not supported in FIR" ~got:(s : Ast.Stm.t)]
   | While (c, b) ->
       loop stm c b While
   | Do_while (b, c) ->

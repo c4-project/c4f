@@ -83,8 +83,7 @@ struct
   let kind_filter (kind : Act_fir.Early_out.t) :
       (Path_filter.t -> Path_filter.t) Staged.t =
     Staged.stage
-      ( if Act_fir.Early_out.in_loop_only kind then
-        Path_filter.in_loop_only
+      ( if Act_fir.Early_out.in_loop_only kind then Path_filter.in_loop_only
       else Fn.id )
 
   let make_early_out (kind : Act_fir.Early_out.t) : Subject.Statement.t =

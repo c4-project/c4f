@@ -24,8 +24,7 @@ module Test_data = struct
           ~arg:(Expression.int_lit 54321)
           ~mo:Seq_cst ~op:Add)
 
-  let fadd_redundant :
-      Act_fir.Expression.t Act_fir.Atomic_fetch.t Lazy.t =
+  let fadd_redundant : Act_fir.Expression.t Act_fir.Atomic_fetch.t Lazy.t =
     lazy
       Act_fir.(
         Atomic_fetch.make

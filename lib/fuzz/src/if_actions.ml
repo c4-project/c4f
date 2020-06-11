@@ -70,8 +70,7 @@ module Surround = struct
       test |> Subject.Test.has_statements |> State.Monad.return
 
     let wrap_in_if (statements : Metadata.t Act_fir.Statement.t list)
-        ~(cond : Act_fir.Expression.t) : Metadata.t Act_fir.Statement.t
-        =
+        ~(cond : Act_fir.Expression.t) : Metadata.t Act_fir.Statement.t =
       Act_fir.Statement.if_stm
         (Act_fir.Statement.If.make ~cond
            ~t_branch:(Basic.t_branch_of_statements statements)
@@ -92,8 +91,7 @@ module Surround = struct
           any labels, to avoid duplicating them. |}
 
     let cond_gen :
-           Act_fir.Env.t
-        -> Act_fir.Expression.t Base_quickcheck.Generator.t =
+        Act_fir.Env.t -> Act_fir.Expression.t Base_quickcheck.Generator.t =
       Act_fir.Expression_gen.gen_bools
 
     let t_branch_of_statements (statements : Subject.Statement.t list) :
@@ -118,8 +116,7 @@ module Surround = struct
          block as dead-code. |}
 
     let cond_gen :
-           Act_fir.Env.t
-        -> Act_fir.Expression.t Base_quickcheck.Generator.t =
+        Act_fir.Env.t -> Act_fir.Expression.t Base_quickcheck.Generator.t =
       Act_fir.Expression_gen.gen_tautologies
 
     let t_branch_of_statements (statements : Subject.Statement.t list) :

@@ -12,8 +12,8 @@
 (** Converting an AST into FIR.
 
     This module contains partial functions that try to convert a full C AST
-    into FIR. They fail if the AST contains pieces of C syntax
-    that aren't expressible in FIR. *)
+    into FIR. They fail if the AST contains pieces of C syntax that aren't
+    expressible in FIR. *)
 
 open Base
 
@@ -26,8 +26,7 @@ val stm : Act_c_lang.Ast.Stm.t -> unit Statement.t Or_error.t
 (** [stm ast] tries to interpret a C statement AST as a FIR statement. *)
 
 val expr : Act_c_lang.Ast.Expr.t -> Expression.t Or_error.t
-(** [expr ast] tries to interpret a C expression AST as a FIR
-    statement. *)
+(** [expr ast] tries to interpret a C expression AST as a FIR statement. *)
 
 val func :
      Act_c_lang.Ast.Function_def.t

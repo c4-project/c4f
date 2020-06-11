@@ -11,11 +11,11 @@
 
 (** FIR: variable environments
 
-    Large parts of FIR's type checking and program fragment
-    generation functionality depends on the existence of an environment
-    mapping variable names to their {{!Type} FIR types}, and
-    optionally {{!Constant} known constant values}. This module provides
-    typing/known-value environments, modelled as maps. *)
+    Large parts of FIR's type checking and program fragment generation
+    functionality depends on the existence of an environment mapping variable
+    names to their {{!Type} FIR types}, and optionally {{!Constant} known
+    constant values}. This module provides typing/known-value environments,
+    modelled as maps. *)
 
 open Base
 

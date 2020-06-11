@@ -96,9 +96,7 @@ module Monad = struct
       (Act_fir.Expression_traverse.On_addresses)
       (Act_fir.Address.On_lvalues)
   module Exp_idents =
-    Travesty.Traversable.Chain0
-      (Exp_lvalues)
-      (Act_fir.Lvalue.On_identifiers)
+    Travesty.Traversable.Chain0 (Exp_lvalues) (Act_fir.Lvalue.On_identifiers)
   module Exp_identsM = Exp_idents.On_monad (M)
 
   let add_expression_dependencies (expr : Act_fir.Expression.t)

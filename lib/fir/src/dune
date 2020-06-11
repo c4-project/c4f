@@ -3,7 +3,8 @@
 (library
  (name act_fir)
  (public_name act.fir)
- (synopsis "Automagic Compiler Tormentor: Fuzzable Intermediate Representation")
+ (synopsis
+   "Automagic Compiler Tormentor: Fuzzable Intermediate Representation")
  (modules_without_implementation env_types expression_types types op_types
    statement_types)
  (preprocess

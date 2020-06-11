@@ -12,8 +12,7 @@
 (** Fuzzer: subjects of fuzzing
 
     This module contains types for thread and litmus tests that are looser
-    and lighter than their {!Act_fir} versions, and more suited to
-    mutation.
+    and lighter than their {!Act_fir} versions, and more suited to mutation.
 
     Many of these types take a metadata type parameter, but this is mostly
     just to support creating path types over them; in practice, the only
@@ -115,8 +114,8 @@ module Thread : sig
       statements (defaulting to empty). *)
 
   val of_function : unit Act_fir.Function.t -> t
-  (** [of_litmus func] converts a FIR C function [func] to the
-      intermediate form used for fuzzing. *)
+  (** [of_litmus func] converts a FIR C function [func] to the intermediate
+      form used for fuzzing. *)
 
   (** {2 Manipulating threads} *)
 

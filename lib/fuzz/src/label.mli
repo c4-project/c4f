@@ -13,8 +13,7 @@
 
 open Base
 
-val labels_of_test :
-  Act_fir.Litmus.Test.t -> Set.M(Act_common.Litmus_id).t
+val labels_of_test : Act_fir.Litmus.Test.t -> Set.M(Act_common.Litmus_id).t
 (** [labels_of_test test] extracts the labels from [test]. *)
 
 val gen_fresh :

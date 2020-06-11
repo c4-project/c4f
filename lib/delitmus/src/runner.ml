@@ -56,8 +56,8 @@ module Make (B : Runner_types.Basic) : Runner_types.S = struct
          List.Assoc.t =
     List.mapi ~f:(fun tid fn -> (tid, make_local_init fn))
 
-  let make_context (input : Act_fir.Litmus.Test.t) (aux : Aux.t) :
-      Context.t =
+  let make_context (input : Act_fir.Litmus.Test.t) (aux : Aux.t) : Context.t
+      =
     (* We can get the context just from looking at functions, because of the
        way in which C litmus tests are constructed. *)
     let functions =

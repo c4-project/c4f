@@ -53,8 +53,7 @@ struct
       Subject.Test.t State.Monad.t =
     let path = P.Insertion.where payload in
     let fence_stm =
-      payload |> P.Insertion.to_insert
-      |> Act_fir.Prim_statement.atomic_fence
+      payload |> P.Insertion.to_insert |> Act_fir.Prim_statement.atomic_fence
       |> Act_fir.Statement.prim Metadata.generated
     in
     (* We don't need to do any bookkeeping on fences. *)

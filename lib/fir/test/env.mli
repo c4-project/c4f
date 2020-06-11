@@ -28,8 +28,7 @@ val test_typing_atomic_ptrs_only :
 (** [test_env_atomic_ptrs_only] is a typing environment that contains only
     variables of type 'atomic_int*' and 'atomic_bool*'. *)
 
-val test_typing_scalars_only :
-  Act_fir.Type.t Map.M(Act_common.C_id).t Lazy.t
+val test_typing_scalars_only : Act_fir.Type.t Map.M(Act_common.C_id).t Lazy.t
 (** [test_env_atomic_ptrs_only] is a typing environment that contains only
     variables of scalar (but possibly atomic) type. *)
 

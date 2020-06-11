@@ -11,9 +11,8 @@
 
 (** Frontend for FIR litmus tests.
 
-    This module allows code to read FIR litmus tests in directly, rather
-    than reading a full C litmus test then converting manually. It also
-    therefore insulates against future changes in the abstract/full C
-    representation. *)
+    This module allows code to read FIR litmus tests in directly, rather than
+    reading a full C litmus test then converting manually. It also therefore
+    insulates against future changes in the abstract/full C representation. *)
 
 include Plumbing.Loadable_types.S with type t = Litmus.Test.t
