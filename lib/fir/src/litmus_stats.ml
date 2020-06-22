@@ -86,7 +86,7 @@ let up_mapping (type k cw) (map : (k, int, cw) Map.t) (key : k) :
     (k, int, cw) Map.t =
   Map.update map key ~f:(fun i -> Option.value i ~default:0 + 1)
 
-module Stm = Statement.With_meta (Unit)
+module Stm = Statement_traverse.With_meta (Unit)
 module K =
   Travesty.Traversable.Chain0
     (Stm.On_expressions)
@@ -186,15 +186,17 @@ let probe_if (i : (unit, unit Monad.t) If.t) : unit Monad.t =
     let%bind () = seq_block (If.f_branch i) in
     probe_expr (If.cond i))
 
-let probe_while (i : (unit, unit Monad.t) While.t) : unit Monad.t =
+module HdrM = Flow_block.Header.On_expressions.On_monad (Monad)
+
+let probe_flow (i : (unit, unit Monad.t) Flow_block.t) : unit Monad.t =
   Monad.Let_syntax.(
-    let%bind () = seq_block (While.body i) in
-    probe_expr (While.cond i))
+    let%bind () = seq_block (Flow_block.body i) in
+    HdrM.iter_m ~f:probe_expr (Flow_block.header i))
 
 let probe_fn_stm : unit Statement.t -> unit Monad.t =
   Statement.reduce
     ~prim:(fun ((), p) -> probe_prim p)
-    ~if_stm:probe_if ~while_loop:probe_while
+    ~if_stm:probe_if ~flow:probe_flow
 
 let probe_fn_stms : unit Statement.t list -> unit Monad.t =
   MList.iter_m ~f:probe_fn_stm

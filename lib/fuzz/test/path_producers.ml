@@ -18,8 +18,8 @@ let%test_module "Statement" =
         =
       let example =
         Act_fir.(
-          Statement.while_loop
-            (While.make ~cond:Act_fir.Expression.falsehood
+          Statement.flow
+            (Flow_block.while_loop ~cond:Act_fir.Expression.falsehood
                ~body:(Act_fuzz.Subject.Block.make_generated ())
                ~kind:Do_while))
       in
@@ -91,8 +91,8 @@ let%test_module "Block" =
               Stm[3]!If!True!Insert[1]
               Stm[4]!If!False!Insert[0]
               Stm[4]!If!True!Insert[0]
-              Stm[5]!Loop!Body!Insert[0]
-              Stm[5]!Loop!Body!Insert[1] |}]
+              Stm[5]!Flow-block!Body!Insert[0]
+              Stm[5]!Flow-block!Body!Insert[1] |}]
 
         let%expect_test "try_gen_insert_stm with dead-code filtering" =
           test
@@ -103,8 +103,8 @@ let%test_module "Block" =
             Stm[3]!If!False!Insert[0]
             Stm[4]!If!True!Insert[0]
             Stm[4]!If!True!Insert[1]
-            Stm[5]!Loop!Body!Insert[0]
-            Stm[5]!Loop!Body!Insert[1] |}]
+            Stm[5]!Flow-block!Body!Insert[0]
+            Stm[5]!Flow-block!Body!Insert[1] |}]
 
         let%expect_test "try_gen_transform_stm with no filtering" =
           test Act_fuzz.Path_producers.Block.try_gen_transform_stm ;
@@ -118,7 +118,7 @@ let%test_module "Block" =
             Stm[3]!This
             Stm[4]!If!True!Stm[0]!This
             Stm[4]!This
-            Stm[5]!Loop!Body!Stm[0]!This
+            Stm[5]!Flow-block!Body!Stm[0]!This
             Stm[5]!This |}]
 
         let%expect_test "try_gen_transform_stm with filtering to if \
@@ -139,13 +139,13 @@ let%test_module "Block" =
           [%expect
             {|
               Stm[4]!If!True!Stm[0]!This
-              Stm[5]!Loop!Body!Stm[0]!This |}]
+              Stm[5]!Flow-block!Body!Stm[0]!This |}]
 
         let%expect_test "try_gen_transform_stm with filtering to loops" =
           test
             (Act_fuzz.Path_producers.Block.try_gen_transform_stm
                ~filter:Act_fuzz.Path_filter.(empty |> in_loop_only)) ;
-          [%expect {| Stm[5]!Loop!Body!Stm[0]!This |}]
+          [%expect {| Stm[5]!Flow-block!Body!Stm[0]!This |}]
 
         let%expect_test "try_gen_transform_stm_list" =
           test Act_fuzz.Path_producers.Block.try_gen_transform_stm_list ;
@@ -159,8 +159,8 @@ let%test_module "Block" =
               Stm[4]!If!False!Range[0, 0]
               Stm[4]!If!True!Range[0, 0]
               Stm[4]!If!True!Range[1, 0]
-              Stm[5]!Loop!Body!Range[0, 0]
-              Stm[5]!Loop!Body!Range[0, 1]
+              Stm[5]!Flow-block!Body!Range[0, 0]
+              Stm[5]!Flow-block!Body!Range[0, 1]
               Range[2, 0]
               Range[3, 0]
               Range[3, 1]
@@ -178,9 +178,9 @@ let%test_module "Block" =
               Stm[4]!If!True!Range[0, 0]
               Stm[4]!If!True!Range[0, 1]
               Stm[4]!If!True!Range[1, 0]
-              Stm[5]!Loop!Body!Range[0, 0]
-              Stm[5]!Loop!Body!Range[0, 1]
-              Stm[5]!Loop!Body!Range[1, 0] |}]
+              Stm[5]!Flow-block!Body!Range[0, 0]
+              Stm[5]!Flow-block!Body!Range[0, 1]
+              Stm[5]!Flow-block!Body!Range[1, 0] |}]
 
         let%expect_test "try_gen_transform_stm_list with filtering to if \
                          statements" =
@@ -196,8 +196,8 @@ let%test_module "Block" =
               Stm[3]!If!True!Range[2, 0]
               Stm[4]!If!False!Range[0, 0]
               Stm[4]!If!True!Range[1, 0]
-              Stm[5]!Loop!Body!Range[0, 0]
-              Stm[5]!Loop!Body!Range[1, 0]
+              Stm[5]!Flow-block!Body!Range[0, 0]
+              Stm[5]!Flow-block!Body!Range[1, 0]
               Range[2, 0]
               Range[3, 0]
               Range[3, 1]
@@ -219,8 +219,8 @@ let%test_module "Block" =
               Stm[4]!If!False!Range[0, 0]
               Stm[4]!If!True!Range[0, 0]
               Stm[4]!If!True!Range[1, 0]
-              Stm[5]!Loop!Body!Range[0, 0]
-              Stm[5]!Loop!Body!Range[0, 1]
+              Stm[5]!Flow-block!Body!Range[0, 0]
+              Stm[5]!Flow-block!Body!Range[0, 1]
               Range[2, 0]
               Range[5, 1]
               Range[6, 0] |}]
@@ -260,7 +260,7 @@ let%test_module "Program" =
               P0!Stms!Insert[6]
               P0!Stms!Stm[3]!If!True!Insert[0]
               P0!Stms!Stm[3]!If!True!Insert[1]
-              P0!Stms!Stm[5]!Loop!Body!Insert[1]
+              P0!Stms!Stm[5]!Flow-block!Body!Insert[1]
               P1!Stms!Insert[0]
               P1!Stms!Insert[1]
               P1!Stms!Insert[2]

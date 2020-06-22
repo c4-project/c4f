@@ -23,3 +23,7 @@ open Base
     This just directly wraps a type ['a], with maps of functions [f] just
     applying [f] directly. *)
 module Ident : Applicative.S with type 'a t = 'a
+
+(** As {!Base.Applicative.Of_monad}, but doesn't destructively substitute
+    [t]. *)
+module Of_monad_ext (M : Monad.S) : Applicative.S with type 'a t = 'a M.t

@@ -23,8 +23,9 @@ let mkif ?(cond : Src.Expression.t = cond) (ts : unit Src.Statement.t list)
 
 let mkwhile ?(cond : Src.Expression.t = cond)
     (xs : unit Src.Statement.t list) : unit Src.Statement.t =
-  Src.Statement.while_loop
-    (Src.While.make ~cond ~kind:While ~body:(Src.Block.of_statement_list xs))
+  Src.Statement.flow
+    (Src.Flow_block.while_loop ~cond ~kind:While
+       ~body:(Src.Block.of_statement_list xs))
 
 let nop : unit Src.Statement.t = Src.Statement.prim () Src.Prim_statement.nop
 
@@ -74,7 +75,7 @@ let%test_module "has_while_loops" =
 
 let%test_module "On_lvalues and On_addresses" =
   ( module struct
-    module M = Src.Statement.With_meta (Unit)
+    module M = Src.Statement_traverse.With_meta (Unit)
 
     let stm =
       Src.(
@@ -123,7 +124,7 @@ let%test_module "On_lvalues and On_addresses" =
 
 let%test_module "On_expressions" =
   ( module struct
-    module M = Src.Statement.With_meta (Unit)
+    module M = Src.Statement_traverse.With_meta (Unit)
 
     let%expect_test "replace all expressions" =
       let stm =
@@ -166,7 +167,7 @@ let%test_module "On_expressions" =
 
 let%test_module "On_primitives" =
   ( module struct
-    module M = Src.Statement.With_meta (Unit)
+    module M = Src.Statement_traverse.With_meta (Unit)
 
     let%expect_test "replace all primitives" =
       let stm =

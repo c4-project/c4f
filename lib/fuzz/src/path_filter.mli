@@ -60,9 +60,12 @@ val require_end_check : t -> check:End_check.t -> t
 
 (** {1 Callbacks for the path producers} *)
 
-val update_with_loop : t -> t
-(** [update_with_loop filter] updates the internal filter compliance records
-    in [filter] with the fact that the path just passed into a loop. *)
+val update_with_flow : ?flow:Act_fir.Statement_class.Flow.t -> t -> t
+(** [update_with_flow ?flow filter] updates the internal filter compliance
+    records in [filter] with the fact that the path just passed into a flow
+    block with class [flow]. If [flow] is missing (which it may be, for
+    compatibility with the classifier returning [None]), we just return
+    [filter]. *)
 
 val update_with_block_metadata : t -> Metadata.t -> t
 (** [update_with_block_metadata filter block_metadata] updates the internal

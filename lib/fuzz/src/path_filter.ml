@@ -97,7 +97,12 @@ module Obs_flags = struct
   let observe_flags (existing : t) ~(flags : Set.M(Flag).t) : t =
     {existing with obs_flags= Set.union existing.obs_flags flags}
 
-  let update_with_loop : t -> t = observe_flag ~flag:In_loop
+  let update_with_flow ?(flow : Act_fir.Statement_class.Flow.t option)
+      (x : t) : t =
+    Option.value_map flow
+      ~f:(fun f ->
+        match f with While _ -> observe_flag ~flag:In_loop x | Lock _ -> x)
+      ~default:x
 
   (* Moving this into the Flag module'd require a lot of module gymnastics to
      get the set module correct, so we don't. *)

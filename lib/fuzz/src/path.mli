@@ -37,16 +37,24 @@ type branch = bool [@@deriving sexp, compare, equal]
     to break mutually recursive dependencies. Generally, you'll want to use
     the submodules instead. *)
 
-(** A path focusing on a conditionally guarded compound statement (that is,
-    an if statement, while loop, or do-while loop). *)
-type 'a cond_block = In_block of 'a | This_cond
+(** A path focusing on a flow block, or a particular branch of an if
+    statement. *)
+type 'a flow_block =
+  | In_block of 'a  (** Path passes into the block itself. *)
+  | This_cond
+      (** Path passes into any conditional in the flow block or statement.
+
+          This path, naturally, only makes sense on if statements, or flow
+          blocks with a conditional. *)
 [@@deriving sexp, compare, equal]
 
 (** A path focusing on a statement. *)
 type stm =
-  | In_if of (branch * stm_list) cond_block
-  | In_loop of stm_list cond_block
-  | This_stm
+  | In_if of (branch * stm_list) flow_block
+      (** Path passes through the given branch of an if statement. *)
+  | In_flow of stm_list flow_block
+      (** Path passes through the body of a flow block. *)
+  | This_stm  (** Path terminates on this statement. *)
 [@@deriving sexp, compare, equal]
 
 (** A path focusing on a list of statements. *)
@@ -64,7 +72,7 @@ and stm_list =
 
 (** A path focusing on an if statement. *)
 module If : sig
-  type t = (bool * stm_list) cond_block [@@deriving sexp, compare, equal]
+  type t = (branch * stm_list) flow_block [@@deriving sexp, compare, equal]
 
   include Pretty_printer.S with type t := t
 
@@ -78,9 +86,9 @@ module If : sig
   (** [this_cond] focuses on the conditional of an if statement. *)
 end
 
-(** A path focusing on a while or do-while loop statement. *)
-module Loop : sig
-  type t = stm_list cond_block [@@deriving sexp, compare, equal]
+(** A path focusing on a flow block. *)
+module Flow : sig
+  type t = stm_list flow_block [@@deriving sexp, compare, equal]
 
   include Pretty_printer.S with type t := t
 
@@ -104,8 +112,8 @@ module Stm : sig
   val in_if : If.t -> t
   (** [in_if rest] focuses on an if statement using subpath [rest]. *)
 
-  val in_loop : Loop.t -> t
-  (** [in_if rest] focuses on a loop using subpath [rest]. *)
+  val in_flow : Flow.t -> t
+  (** [in_flow rest] focuses on a flow block using subpath [rest]. *)
 
   val this_stm : t
   (** [this_stm] focuses on a statement as a whole. *)

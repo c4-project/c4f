@@ -116,8 +116,8 @@ module Test_data = struct
   let sample_once_do_while : Src.Subject.Statement.t Lazy.t =
     lazy
       Act_fir.(
-        Statement.while_loop
-          (While.make
+        Statement.flow
+          (Flow_block.while_loop
              ~cond:Expression.(Infix.(int_lit 4 == int_lit 5))
              ~body:
                (Src.Subject.Block.make_dead_code

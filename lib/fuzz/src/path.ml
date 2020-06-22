@@ -17,12 +17,12 @@ type length = int [@@deriving sexp, compare, equal]
 
 type branch = bool [@@deriving sexp, compare, equal]
 
-type 'a cond_block = In_block of 'a | This_cond
+type 'a flow_block = In_block of 'a | This_cond
 [@@deriving sexp, compare, equal]
 
 type stm =
-  | In_if of (bool * stm_list) cond_block
-  | In_loop of stm_list cond_block
+  | In_if of (bool * stm_list) flow_block
+  | In_flow of stm_list flow_block
   | This_stm
 [@@deriving sexp, compare, equal]
 
@@ -48,8 +48,8 @@ let rec pp_stm (f : Formatter.t) : stm -> unit = function
       pp_name `Green "This" f ()
   | In_if rest ->
       pp_step `Blue "If" pp_if f rest
-  | In_loop rest ->
-      pp_step `Blue "Loop" pp_loop f rest
+  | In_flow rest ->
+      pp_step `Blue "Flow-block" pp_flow f rest
 
 and pp_stms (f : Formatter.t) : stm_list -> unit = function
   | Insert idx ->
@@ -64,7 +64,7 @@ and pp_stms (f : Formatter.t) : stm_list -> unit = function
           (any "Range" ++ brackets (pair ~sep:comma int int)))
         f (idx, stride)
 
-and pp_if (f : Formatter.t) : (bool * stm_list) cond_block -> unit = function
+and pp_if (f : Formatter.t) : (bool * stm_list) flow_block -> unit = function
   | In_block (true, rest) ->
       pp_step `Magenta "True" pp_stms f rest
   | In_block (false, rest) ->
@@ -72,14 +72,14 @@ and pp_if (f : Formatter.t) : (bool * stm_list) cond_block -> unit = function
   | This_cond ->
       pp_name `Green "Cond" f ()
 
-and pp_loop (f : Formatter.t) : stm_list cond_block -> unit = function
+and pp_flow (f : Formatter.t) : stm_list flow_block -> unit = function
   | In_block rest ->
       pp_step `Magenta "Body" pp_stms f rest
   | This_cond ->
       pp_name `Green "Cond" f ()
 
 module If = struct
-  type t = (bool * stm_list) cond_block [@@deriving sexp, compare, equal]
+  type t = (bool * stm_list) flow_block [@@deriving sexp, compare, equal]
 
   let in_branch (b : branch) (rest : stm_list) : t = In_block (b, rest)
 
@@ -88,14 +88,14 @@ module If = struct
   let pp : t Fmt.t = pp_if
 end
 
-module Loop = struct
-  type t = stm_list cond_block [@@deriving sexp, compare, equal]
+module Flow = struct
+  type t = stm_list flow_block [@@deriving sexp, compare, equal]
 
   let in_body (rest : stm_list) : t = In_block rest
 
   let this_cond : t = This_cond
 
-  let pp : t Fmt.t = pp_loop
+  let pp : t Fmt.t = pp_flow
 end
 
 module Stm = struct
@@ -103,7 +103,7 @@ module Stm = struct
 
   let in_if (rest : If.t) : t = In_if rest
 
-  let in_loop (rest : Loop.t) : t = In_loop rest
+  let in_flow (rest : Flow.t) : t = In_flow rest
 
   let this_stm : t = This_stm
 

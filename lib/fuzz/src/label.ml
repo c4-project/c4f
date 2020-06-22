@@ -15,7 +15,7 @@ open struct
   module Ac = Act_common
 end
 
-module Stm = Act_fir.Statement.With_meta (Unit)
+module Stm = Act_fir.Statement_traverse.With_meta (Unit)
 
 let labels_of_thread (tid : int)
     (thread : unit Act_fir.Function.t Ac.C_named.t) :

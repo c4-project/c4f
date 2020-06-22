@@ -26,3 +26,10 @@ module Ident : Applicative.S with type 'a t = 'a = struct
     let map = `Custom (fun a ~f -> f a)
   end)
 end
+
+module Of_monad_ext (M : Monad.S) : Applicative.S with type 'a t = 'a M.t =
+struct
+  type 'a t = 'a M.t
+
+  include Applicative.Of_monad (M)
+end

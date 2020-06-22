@@ -45,8 +45,8 @@ struct
   let wrap_in_loop (cond : Act_fir.Expression.t)
       (statements : Metadata.t Act_fir.Statement.t list) :
       Metadata.t Act_fir.Statement.t =
-    Act_fir.Statement.while_loop
-      (Act_fir.While.make ~kind:Do_while ~cond
+    Act_fir.Statement.flow
+      (Act_fir.Flow_block.while_loop ~kind:Do_while ~cond
          ~body:(Subject.Block.make_generated ~statements ()))
 
   let run (test : Subject.Test.t) ~(payload : Payload.t) :

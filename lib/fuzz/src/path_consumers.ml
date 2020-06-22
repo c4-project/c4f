@@ -13,8 +13,8 @@ open Base
 
 open struct
   module Tx = Travesty_base_exts
-  module Cm = Act_fir
-  module Stm = Cm.Statement
+  module Fir = Act_fir
+  module Stm = Fir.Statement_traverse
 end
 
 type 'a transformer = 'a -> 'a Or_error.t
@@ -25,6 +25,8 @@ module rec Statement :
      and type target = Subject.Statement.t) = struct
   type t = Path.Stm.t
 
+  module Bm = Stm.Base_map (Or_error)
+
   type target = Subject.Statement.t
 
   let invalid_target_error (kind : string) (dest : Subject.Statement.t) :
@@ -32,7 +34,7 @@ module rec Statement :
     Or_error.error_s
       [%message
         "Invalid target for this kind of path" ~kind
-          ~target:(Stm.erase_meta dest : unit Stm.t)]
+          ~target:(Stm.erase_meta dest : unit Fir.Statement.t)]
 
   let in_if_error (dest : Subject.Statement.t) : 'a -> 'b Or_error.t =
     Fn.const (invalid_target_error "in_if" dest)
@@ -44,17 +46,17 @@ module rec Statement :
       ~(f :
          target:Subject.Statement.If.t -> Subject.Statement.If.t Or_error.t)
       : Subject.Statement.t Or_error.t =
-    Stm.reduce_step dest
-      ~if_stm:(fun target -> Or_error.(f ~target >>| Stm.if_stm))
-      ~while_loop:(in_if_error dest) ~prim:(in_if_error dest)
+    Bm.bmap dest
+      ~if_stm:(fun target -> f ~target)
+      ~flow:(in_if_error dest) ~prim:(in_if_error dest)
 
-  let handle_in_loop (dest : Subject.Statement.t)
+  let handle_in_flow (dest : Subject.Statement.t)
       ~(f :
-            target:Subject.Statement.Loop.t
-         -> Subject.Statement.Loop.t Or_error.t) :
+            target:Subject.Statement.Flow.t
+         -> Subject.Statement.Flow.t Or_error.t) :
       Subject.Statement.t Or_error.t =
-    Stm.reduce_step dest
-      ~while_loop:(fun target -> Or_error.(f ~target >>| Stm.while_loop))
+    Bm.bmap dest
+      ~flow:(fun target -> f ~target)
       ~if_stm:(in_loop_error dest) ~prim:(in_loop_error dest)
 
   let handle_path (path : Path.Stm.t)
@@ -62,32 +64,32 @@ module rec Statement :
             Path.If.t
          -> target:Subject.Statement.If.t
          -> Subject.Statement.If.t Or_error.t)
-      ~(while_loop :
-            Path.Loop.t
-         -> target:Subject.Statement.Loop.t
-         -> Subject.Statement.Loop.t Or_error.t)
+      ~(flow :
+            Path.Flow.t
+         -> target:Subject.Statement.Flow.t
+         -> Subject.Statement.Flow.t Or_error.t)
       ~(this_stm :
          target:Subject.Statement.t -> Subject.Statement.t Or_error.t)
       ~(target : Subject.Statement.t) : Subject.Statement.t Or_error.t =
     match path with
     | In_if rest ->
         handle_in_if ~f:(if_stm rest) target
-    | In_loop rest ->
-        handle_in_loop ~f:(while_loop rest) target
+    | In_flow rest ->
+        handle_in_flow ~f:(flow rest) target
     | This_stm ->
         this_stm ~target
 
   let check_path (path : Path.Stm.t) ~(filter : Path_filter.t)
       ~(target : Subject.Statement.t) : Subject.Statement.t Or_error.t =
     handle_path path ~target ~if_stm:(If.check_path ~filter)
-      ~while_loop:(Loop.check_path ~filter) ~this_stm:(fun ~target ->
+      ~flow:(Flow.check_path ~filter) ~this_stm:(fun ~target ->
         Tx.Or_error.tee_m target ~f:(fun stm ->
             Path_filter.check_final_statement filter ~stm))
 
   let insert_stm (path : Path.Stm.t) ~(to_insert : Subject.Statement.t)
       ~(target : Subject.Statement.t) : Subject.Statement.t Or_error.t =
     handle_path path ~target ~if_stm:(If.insert_stm ~to_insert)
-      ~while_loop:(Loop.insert_stm ~to_insert) ~this_stm:(fun ~target ->
+      ~flow:(Flow.insert_stm ~to_insert) ~this_stm:(fun ~target ->
         ignore target ;
         Or_error.error_s
           [%message "Can't insert statement here" ~path:(path : Path.Stm.t)])
@@ -96,7 +98,7 @@ module rec Statement :
       ~(to_insert : Subject.Statement.t list) ~(target : Subject.Statement.t)
       : Subject.Statement.t Or_error.t =
     handle_path path ~target ~if_stm:(If.insert_stm_list ~to_insert)
-      ~while_loop:(Loop.insert_stm_list ~to_insert) ~this_stm:(fun ~target ->
+      ~flow:(Flow.insert_stm_list ~to_insert) ~this_stm:(fun ~target ->
         ignore target ;
         Or_error.error_s
           [%message "Can't insert statements here" ~path:(path : Path.Stm.t)])
@@ -105,13 +107,13 @@ module rec Statement :
       ~(f : Subject.Statement.t transformer) ~(target : Subject.Statement.t)
       : Subject.Statement.t Or_error.t =
     handle_path path ~target ~if_stm:(If.transform_stm ~f)
-      ~while_loop:(Loop.transform_stm ~f) ~this_stm:(fun ~target -> f target)
+      ~flow:(Flow.transform_stm ~f) ~this_stm:(fun ~target -> f target)
 
   let transform_stm_list (path : Path.Stm.t)
       ~(f : Subject.Statement.t list transformer)
       ~(target : Subject.Statement.t) : Subject.Statement.t Or_error.t =
     handle_path path ~target ~if_stm:(If.transform_stm_list ~f)
-      ~while_loop:(Loop.transform_stm_list ~f) ~this_stm:(fun ~target ->
+      ~flow:(Flow.transform_stm_list ~f) ~this_stm:(fun ~target ->
         ignore target ;
         Or_error.error_s
           [%message
@@ -127,7 +129,7 @@ and Block :
 
   type target = Subject.Block.t
 
-  module Block_stms = Cm.Block.On_meta_statement_list (Stm)
+  module Block_stms = Fir.Block.On_meta_statement_list (Fir.Statement)
   module Block_stms_err = Block_stms.On_monad (Or_error)
 
   let handle_in_stm (dest : target) (index : int)
@@ -151,7 +153,7 @@ and Block :
       ~(target : target) : target Or_error.t =
     let filter =
       Path_filter.update_with_block_metadata filter
-        (Cm.Block.metadata target)
+        (Fir.Block.metadata target)
     in
     match path with
     | In_stm (index, rest) ->
@@ -211,7 +213,7 @@ and If :
 
   type target = Subject.Statement.If.t
 
-  module B = Cm.If.Base_map (Or_error)
+  module B = Fir.If.Base_map (Or_error)
 
   let handle_stm (path : t)
       ~(f :
@@ -251,15 +253,15 @@ and If :
     handle_stm path ~target ~f:(Block.transform_stm_list ~f)
 end
 
-and Loop :
+and Flow :
   (Path_types.S_consumer
-    with type t = Path.Loop.t
-     and type target = Subject.Statement.Loop.t) = struct
-  type t = Path.Loop.t
+    with type t = Path.Flow.t
+     and type target = Subject.Statement.Flow.t) = struct
+  type t = Path.Flow.t
 
-  type target = Subject.Statement.Loop.t
+  type target = Subject.Statement.Flow.t
 
-  module B = Cm.While.Base_map (Or_error)
+  module B = Fir.Flow_block.Base_map (Or_error)
 
   let handle_stm (path : t)
       ~(f :
@@ -268,13 +270,14 @@ and Loop :
     match path with
     | In_block rest ->
         let body target = f rest ~target in
-        B.bmap target ~cond:Or_error.return ~body ~kind:Or_error.return
+        B.bmap target ~body ~header:Or_error.return
     | This_cond ->
         Or_error.error_string "Not a statement path"
 
   let check_path (path : t) ~(filter : Path_filter.t) ~(target : target) :
       target Or_error.t =
-    let filter = Path_filter.update_with_loop filter in
+    let flow = Act_fir.Statement_class.Flow.classify target in
+    let filter = Path_filter.update_with_flow ?flow filter in
     handle_stm path ~target ~f:(Block.check_path ~filter)
 
   let insert_stm_list (path : t) ~(to_insert : Subject.Statement.t list)
@@ -289,7 +292,7 @@ and Loop :
       ~(target : target) : target Or_error.t =
     handle_stm path ~target ~f:(Block.transform_stm ~f)
 
-  let transform_stm_list (path : Path.Loop.t)
+  let transform_stm_list (path : Path.Flow.t)
       ~(f : Subject.Statement.t list transformer) ~(target : target) :
       target Or_error.t =
     handle_stm path ~target ~f:(Block.transform_stm_list ~f)
@@ -313,7 +316,7 @@ module Thread :
         Or_error.(
           f rest
             ~target:(Subject.Block.make_existing ~statements:target.stms ())
-          >>| fun block -> {target with stms= Cm.Block.statements block})
+          >>| fun block -> {target with stms= Fir.Block.statements block})
 
   let check_path (path : t) ~(filter : Path_filter.t) ~(target : target) :
       target Or_error.t =

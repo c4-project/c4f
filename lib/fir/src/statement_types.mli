@@ -43,8 +43,8 @@ module type S_with_meta = sig
 end
 
 (** Common functionality of statement components. *)
-module type S_common = sig
-  type 'meta t [@@deriving sexp]
+module type S_traversable = sig
+  type 'meta t
 
   (** We can traverse over the metadata. *)
   module On_meta : Travesty.Traversable_types.S1 with type 'meta t := 'meta t
@@ -55,38 +55,4 @@ module type S_common = sig
   (** By fixing the metadata type, we can perform various forms of standard
       traversal. *)
   module With_meta (Meta : T) : S_with_meta with type t := Meta.t t
-end
-
-(** {1 Parametrised statement signatures}
-
-    These two signatures exist because their implementing modules are
-    mutually recursive.
-
-    The implementations of these generally fix the type parameters at the top
-    of the signature. *)
-
-(** {2 Statements}
-
-    Parametrised signature of statement implementations. *)
-module type S_statement = sig
-  type 'meta t
-
-  (** Generally fixed to {!Statement.If.t}. *)
-  type 'meta if_stm
-
-  (** Generally fixed to {!Statement.While.t}. *)
-  type 'meta while_loop
-
-  (** {3 Traversing} *)
-
-  module Base_map (M : Monad.S) : sig
-    val bmap :
-         'm1 t
-      -> prim:('m1 * Prim_statement.t -> ('m2 * Prim_statement.t) M.t)
-      -> if_stm:('m1 if_stm -> 'm2 if_stm M.t)
-      -> while_loop:('m1 while_loop -> 'm2 while_loop M.t)
-      -> 'm2 t M.t
-  end
-
-  include S_common with type 'meta t := 'meta t
 end

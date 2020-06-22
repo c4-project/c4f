@@ -17,7 +17,7 @@ let%test_module "Statement_list" =
     let%test_module "paths applied to example code" =
       ( module struct
         module F = Act_fuzz
-        module Stm = Act_fir.Statement
+        module Stm = Act_fir.Statement_traverse
 
         let insert_path : F.Path.Stms.t = F.Path.Stms.insert 2
 
@@ -27,7 +27,7 @@ let%test_module "Statement_list" =
 
         let on_stm_range_path : F.Path.Stms.t = F.Path.Stms.on_range 1 2
 
-        let example_stm : F.Metadata.t Stm.t =
+        let example_stm : F.Subject.Statement.t =
           Act_fir.(
             Statement.prim F.Metadata.generated
               (Prim_statement.atomic_store
@@ -77,7 +77,7 @@ let%test_module "Statement_list" =
               [%expect
                 {|
           ("Can't use this statement-list path here"
-           (here lib/fuzz/src/path_consumers.ml:171:65) (context insert_stm)
+           (here lib/fuzz/src/path_consumers.ml:173:65) (context insert_stm)
            (path (On_range 1 2))) |}]
 
             let%expect_test "insert into list" =
@@ -160,16 +160,16 @@ let%test_module "Statement_list" =
               [%expect
                 {|
           ("Can't use this statement-list path here"
-           (here lib/fuzz/src/path_consumers.ml:190:68) (context transform_stm)
+           (here lib/fuzz/src/path_consumers.ml:192:68) (context transform_stm)
            (path (Insert 2))) |}]
           end )
 
         let%test_module "transform_stm_list" =
           ( module struct
-            let iffify (statements : F.Metadata.t Stm.t list) :
-                F.Metadata.t Stm.t list Or_error.t =
+            let iffify (statements : F.Subject.Statement.t list) :
+                F.Subject.Statement.t list Or_error.t =
               Or_error.return
-                [ Stm.if_stm
+                [ Act_fir.Statement.if_stm
                     (Act_fir.If.make
                        ~cond:(Act_fir.Expression.bool_lit true)
                        ~t_branch:
@@ -206,7 +206,7 @@ let%test_module "Statement_list" =
               [%expect
                 {|
                   ("Can't use this statement-list path here"
-                   (here lib/fuzz/src/path_consumers.ml:203:16) (context transform_stm_list)
+                   (here lib/fuzz/src/path_consumers.ml:205:16) (context transform_stm_list)
                    (path (Insert 2))) |}]
 
             let%test_unit "generator over stm-list produces valid paths" =

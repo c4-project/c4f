@@ -67,7 +67,7 @@ struct
       Ctx.T.when_local ~over:Fn.id
         ~f:(Basic.rewrite_local_cid ~context:Ctx.context ~tid:Ctx.T.tid)
 
-    module C_stm_meta = C.Statement.With_meta (Unit)
+    module C_stm_meta = C.Statement_traverse.With_meta (Unit)
     module On_ids =
       Travesty.Traversable.Chain0
         (C_stm_meta.On_lvalues)

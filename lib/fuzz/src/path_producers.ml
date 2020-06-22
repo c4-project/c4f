@@ -39,25 +39,24 @@ module rec Statement :
 
   let try_gen_recursively (m : Subject.Statement.t) ~(kind : string)
       ~(if_stm : If.target -> Path.If.t Opt_gen.t)
-      ~(while_loop : Loop.target -> Path.Loop.t Opt_gen.t) :
-      Path.Stm.t Opt_gen.t =
+      ~(flow : Flow.target -> Path.Flow.t Opt_gen.t) : Path.Stm.t Opt_gen.t =
     Opt_gen.(
       Stm.reduce_step m
         ~if_stm:(fun x -> x |> if_stm >>| Path.Stm.in_if)
-        ~while_loop:(fun x -> x |> while_loop >>| Path.Stm.in_loop)
+        ~flow:(fun x -> x |> flow >>| Path.Stm.in_flow)
         ~prim:(not_in_prim ~kind))
 
   let try_gen_insert_stm ?(filter : Path_filter.t option)
       (m : Subject.Statement.t) : Path.Stm.t Opt_gen.t =
     try_gen_recursively m ~kind:"insert_stm"
       ~if_stm:(If.try_gen_insert_stm ?filter)
-      ~while_loop:(Loop.try_gen_insert_stm ?filter)
+      ~flow:(Flow.try_gen_insert_stm ?filter)
 
   let try_gen_transform_stm_list ?(filter : Path_filter.t option)
       (m : Subject.Statement.t) : Path.Stm.t Opt_gen.t =
     try_gen_recursively m ~kind:"transform_stm_list"
       ~if_stm:(If.try_gen_transform_stm_list ?filter)
-      ~while_loop:(Loop.try_gen_transform_stm_list ?filter)
+      ~flow:(Flow.try_gen_transform_stm_list ?filter)
 
   let this_stm_if_ok (stm : Subject.Statement.t) ~(filter : Path_filter.t) :
       Path.Stm.t Opt_gen.t =
@@ -75,7 +74,7 @@ module rec Statement :
     let gen_rec =
       try_gen_recursively stm ~kind:"transform_stm"
         ~if_stm:(If.try_gen_transform_stm ~filter)
-        ~while_loop:(Loop.try_gen_transform_stm ~filter)
+        ~flow:(Flow.try_gen_transform_stm ~filter)
     in
     Opt_gen.union [gen_base; gen_rec]
 end
@@ -218,38 +217,40 @@ and If :
     gen_opt_over_blocks ~f:Block.try_gen_transform_stm_list
 end
 
-and Loop :
+and Flow :
   (Path_types.S_producer
-    with type t = Path.Loop.t
-     and type target = Subject.Statement.Loop.t) = struct
-  type t = Path.Loop.t
+    with type t = Path.Flow.t
+     and type target = Subject.Statement.Flow.t) = struct
+  type t = Path.Flow.t
 
-  type target = Subject.Statement.Loop.t
+  type target = Subject.Statement.Flow.t
 
   let gen_opt_over_body ?(filter : Path_filter.t = Path_filter.empty)
-      (loop : Subject.Statement.Loop.t)
+      (flow : Subject.Statement.Flow.t)
       ~(f :
          ?filter:Path_filter.t -> Subject.Block.t -> Path.Stms.t Opt_gen.t) :
-      Path.Loop.t Opt_gen.t =
-    let filter = Path_filter.update_with_loop filter in
-    Opt_gen.map (f ~filter (Act_fir.While.body loop)) ~f:Path.Loop.in_body
+      Path.Flow.t Opt_gen.t =
+    let body = Act_fir.Flow_block.body flow in
+    let flow = Act_fir.Statement_class.Flow.classify flow in
+    let filter = Path_filter.update_with_flow ?flow filter in
+    Opt_gen.map (f ~filter body) ~f:Path.Flow.in_body
 
   let try_gen_insert_stm :
          ?filter:Path_filter.t
-      -> Subject.Statement.Loop.t
-      -> Path.Loop.t Opt_gen.t =
+      -> Subject.Statement.Flow.t
+      -> Path.Flow.t Opt_gen.t =
     gen_opt_over_body ~f:Block.try_gen_insert_stm
 
   let try_gen_transform_stm :
          ?filter:Path_filter.t
-      -> Subject.Statement.Loop.t
-      -> Path.Loop.t Opt_gen.t =
+      -> Subject.Statement.Flow.t
+      -> Path.Flow.t Opt_gen.t =
     gen_opt_over_body ~f:Block.try_gen_transform_stm
 
   let try_gen_transform_stm_list :
          ?filter:Path_filter.t
-      -> Subject.Statement.Loop.t
-      -> Path.Loop.t Opt_gen.t =
+      -> Subject.Statement.Flow.t
+      -> Path.Flow.t Opt_gen.t =
     gen_opt_over_body ~f:Block.try_gen_transform_stm_list
 end
 

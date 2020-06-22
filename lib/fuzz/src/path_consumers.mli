@@ -34,12 +34,12 @@ module If :
     with type t = Path.If.t
      and type target = Subject.Statement.If.t
 
-(** A path consumer that acts upon a {!Subject.Statement.Loop.t} according to
-    a {!Path.Loop.t}. *)
-module Loop :
+(** A path consumer that acts upon a {!Subject.Statement.Flow.t} according to
+    a {!Path.Flow.t}. *)
+module Flow :
   Path_types.S_consumer
-    with type t = Path.Loop.t
-     and type target = Subject.Statement.Loop.t
+    with type t = Path.Flow.t
+     and type target = Subject.Statement.Flow.t
 
 (** A path consumer that acts upon a {!Subject.Statement.t} according to a
     {!Path.Stm.t}. *)

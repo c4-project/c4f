@@ -21,23 +21,46 @@ module Prim = struct
         false
 end
 
-type t = Prim of Prim.t option | If | While of While.Kind.t option
-[@@deriving compare, equal, sexp]
+module Flow = struct
+  type t =
+    | Lock of Flow_block.Lock.t option
+    | While of Flow_block.While.t option
+  [@@deriving compare, equal, sexp]
 
-let classify_while (w : (_, _) While.t) : t = While (Some (While.kind w))
+  let classify (f : (_, _) Flow_block.t) : t option =
+    match Flow_block.header f with
+    | Lock lk ->
+        Some (Lock (Some lk))
+    | While (wk, _) ->
+        Some (While (Some wk))
+
+  let matches (clazz : t) ~(template : t) : bool =
+    match (template, clazz) with
+    | Lock None, Lock _ | While None, While _ ->
+        true
+    | Lock (Some k1), Lock (Some k2) ->
+        Flow_block.Lock.equal k1 k2
+    | While (Some k1), While (Some k2) ->
+        Flow_block.While.equal k1 k2
+    | _, _ ->
+        false
+end
+
+type t = Prim of Prim.t option | If | Flow of Flow.t option
+[@@deriving compare, equal, sexp]
 
 let classify (type e) (stm : e Statement.t) : t option =
   Statement.reduce stm
     ~prim:(fun (_, x) -> Some (Prim (Prim.classify x)))
     ~if_stm:(Fn.const (Some If))
-    ~while_loop:(fun x -> Some (classify_while x))
+    ~flow:(fun x -> Some (Flow (Flow.classify x)))
 
 let matches (clazz : t) ~(template : t) : bool =
   match (template, clazz) with
-  | Prim None, Prim _ | If, If | While None, While _ ->
+  | Prim None, Prim _ | If, If | Flow None, Flow _ ->
       true
-  | While (Some k1), While (Some k2) ->
-      While.Kind.equal k1 k2
+  | Flow (Some template), Flow (Some clazz) ->
+      Flow.matches clazz ~template
   | Prim (Some template), Prim (Some clazz) ->
       Prim.matches clazz ~template
   | _, _ ->
@@ -56,8 +79,12 @@ let count_matches (type e) (stm : e Statement.t) ~(template : t) : int =
       one_if_matches If ~template
       + sum_block (If.t_branch ifs)
       + sum_block (If.f_branch ifs))
-    ~while_loop:(fun w ->
-      one_if_matches (classify_while w) ~template + sum_block (While.body w))
+    ~flow:(fun f ->
+      one_if_matches (Flow (Flow.classify f)) ~template
+      + sum_block (Flow_block.body f))
 
 let atomic ?(specifically : Atomic_class.t option) () : t =
   Prim (Some (Prim.Atomic specifically))
+
+let while_loop ?(specifically : Flow_block.While.t option) () : t =
+  Flow (Some (Flow.While specifically))

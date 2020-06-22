@@ -22,8 +22,12 @@ let assign (asn : Assign.t) : Ast.Stm.t =
 let lift_stms : Ast.Stm.t list -> Ast.Compound_stm.t =
   List.map ~f:(fun s -> `Stm s)
 
+let block_compound (type meta) (b : (meta, Ast.Stm.t) Block.t) :
+    Ast.Compound_stm.t =
+  lift_stms (Block.statements b)
+
 let block (type meta) (b : (meta, Ast.Stm.t) Block.t) : Ast.Stm.t =
-  Compound (lift_stms (Block.statements b))
+  Compound (block_compound b)
 
 let ne_block (type meta) (b : (meta, Ast.Stm.t) Block.t) : Ast.Stm.t option =
   if Block.is_empty b then None else Some (block b)
@@ -61,17 +65,29 @@ let if_stm (ifs : (_, Ast.Stm.t) If.t) : Ast.Stm.t =
     ; t_branch= block (If.t_branch ifs)
     ; f_branch= ne_block (If.f_branch ifs) }
 
-let while_loop (loop : (_, Ast.Stm.t) While.t) : Ast.Stm.t =
-  let cond = Reify_expr.reify (While.cond loop)
-  and body = block (While.body loop) in
-  match While.kind loop with
+let while_loop (kind : Flow_block.While.t) (cond : Expression.t)
+    (body : Ast.Compound_stm.t) : Ast.Stm.t =
+  let cond' = Reify_expr.reify cond in
+  let body' = Ast.Stm.Compound body in
+  match kind with
   | While ->
-      While (cond, body)
+      While (cond', body')
   | Do_while ->
-      Do_while (body, cond)
+      Do_while (body', cond')
+
+let lock (kind : Flow_block.Lock.t) (body : Ast.Compound_stm.t) : Ast.Stm.t =
+  match kind with Atomic -> Atomic body | Synchronized -> Synchronized body
+
+let flow (fb : (_, Ast.Stm.t) Flow_block.t) : Ast.Stm.t =
+  let body = block_compound (Flow_block.body fb) in
+  match Flow_block.header fb with
+  | Lock l ->
+      lock l body
+  | While (w, c) ->
+      while_loop w c body
 
 let reify (type meta) (m : meta Statement.t) : Ast.Stm.t =
-  Statement.reduce m ~prim ~if_stm ~while_loop
+  Statement.reduce m ~prim ~if_stm ~flow
 
 (* Yay, value restriction... *)
 let reify_compound (type meta) (m : meta Statement.t list) :

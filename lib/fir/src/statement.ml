@@ -16,189 +16,32 @@ open struct
 end
 
 (* This module brought to you by ppx_deriving's dislike of nonrec. *)
-module M = struct
+module Inner = struct
   type 'meta t =
     | Prim of 'meta * Prim_statement.t
     | If_stm of ('meta, 'meta t) If.t
-    | While_loop of ('meta, 'meta t) While.t
-  [@@deriving sexp, compare, equal]
+    | Flow of ('meta, 'meta t) Flow_block.t
+  [@@deriving sexp, compare, variants, equal]
 end
 
-include M
-
-module Constructors = struct
-  let prim (m : 'meta) (x : Prim_statement.t) : 'meta t = Prim (m, x)
-
-  let if_stm (x : ('meta, 'meta t) If.t) : 'meta t = If_stm x
-
-  let while_loop (x : ('meta, 'meta t) While.t) : 'meta t = While_loop x
-end
-
-include Constructors
+include Inner
 
 let reduce_step (type meta result) (x : meta t)
     ~(prim : meta * Prim_statement.t -> result)
     ~(if_stm : (meta, meta t) If.t -> result)
-    ~(while_loop : (meta, meta t) While.t -> result) : result =
+    ~(flow : (meta, meta t) Flow_block.t -> result) : result =
   match x with
   | Prim (m, x) ->
       prim (m, x)
   | If_stm x ->
       if_stm x
-  | While_loop x ->
-      while_loop x
-
-module Base_map (M : Monad.S) = struct
-  let bmap (type m1 m2) (x : m1 t)
-      ~(prim : m1 * Prim_statement.t -> (m2 * Prim_statement.t) M.t)
-      ~(if_stm : (m1, m1 t) If.t -> (m2, m2 t) If.t M.t)
-      ~(while_loop : (m1, m1 t) While.t -> (m2, m2 t) While.t M.t) : m2 t M.t
-      =
-    Travesty_base_exts.Fn.Compose_syntax.(
-      reduce_step x
-        ~prim:(prim >> M.map ~f:(fun (m, x) -> Constructors.prim m x))
-        ~if_stm:(if_stm >> M.map ~f:Constructors.if_stm)
-        ~while_loop:(while_loop >> M.map ~f:Constructors.while_loop))
-
-  module A = struct
-    type 'a t = 'a M.t
-
-    include Applicative.Of_monad (M)
-  end
-
-  module IB = If.Base_map (A)
-  module WB = While.Base_map (A)
-  module Bk = Block.On_monad (M)
-
-  let bmap_flat (type m1 m2) (x : m1 t)
-      ~(prim : m1 * Prim_statement.t -> (m2 * Prim_statement.t) M.t)
-      ~(cond : Expression.t -> Expression.t M.t) ~(block_meta : m1 -> m2 M.t)
-      : m2 t M.t =
-    let rec mu x =
-      bmap x ~prim
-        ~if_stm:
-          (IB.bmap ~cond
-             ~t_branch:(Bk.bi_map_m ~left:block_meta ~right:mu)
-             ~f_branch:(Bk.bi_map_m ~left:block_meta ~right:mu))
-        ~while_loop:
-          (WB.bmap ~cond
-             ~body:(Bk.bi_map_m ~left:block_meta ~right:mu)
-             ~kind:M.return)
-    in
-    mu x
-end
-
-module On_meta : Travesty.Traversable_types.S1 with type 'meta t := 'meta t =
-Travesty.Traversable.Make1 (struct
-  type nonrec 'meta t = 'meta t
-
-  module On_monad (M : Monad.S) = struct
-    module A = struct
-      type 'a t = 'a M.t
-
-      include Applicative.Of_monad (M)
-    end
-
-    module B = Base_map (M)
-    module IB = If.Base_map (A)
-    module WB = While.Base_map (A)
-    module Bk = Block.On_monad (M)
-
-    let map_m (x : 'm1 t) ~(f : 'm1 -> 'm2 M.t) : 'm2 t M.t =
-      B.bmap_flat x
-        ~prim:(fun (m, p) -> M.(m |> f >>| fun m' -> (m', p)))
-        ~cond:M.return ~block_meta:f
-  end
-end)
-
-let erase_meta (type meta) (s : meta t) : unit t =
-  On_meta.map s ~f:(Fn.const ())
-
-module With_meta (Meta : T) = struct
-  type nonrec t = Meta.t t
-
-  module Block_stms = Block.On_statements (Meta)
-
-  (** Does the legwork of implementing a particular type of traversal over
-      statements. *)
-  module Make_traversal (Basic : sig
-    module Elt : Equal.S
-
-    module P :
-      Travesty.Traversable_types.S0
-        with type t := Prim_statement.t
-         and module Elt = Elt
-
-    module E :
-      Travesty.Traversable_types.S0
-        with type t := Expression.t
-         and module Elt = Elt
-  end) =
-  Travesty.Traversable.Make0 (struct
-    type nonrec t = t
-
-    module Elt = Basic.Elt
-
-    module On_monad (M : Monad.S) = struct
-      module SBase = Base_map (M)
-      module PM = Basic.P.On_monad (M)
-      module EM = Basic.E.On_monad (M)
-
-      let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
-        SBase.bmap_flat x
-          ~prim:(fun (m, p) -> M.(p |> PM.map_m ~f >>| fun p' -> (m, p')))
-          ~cond:(EM.map_m ~f) ~block_meta:M.return
-    end
-  end)
-
-  module On_lvalues :
-    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
-  Make_traversal (struct
-    module Elt = Lvalue
-    module E =
-      Travesty.Traversable.Chain0
-        (Expression_traverse.On_addresses)
-        (Address.On_lvalues)
-    module P = Prim_statement.On_lvalues
-  end)
-
-  module On_addresses :
-    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t =
-  Make_traversal (struct
-    module Elt = Address
-    module E = Expression_traverse.On_addresses
-    module P = Prim_statement.On_addresses
-  end)
-
-  module On_expressions :
-    Travesty.Traversable_types.S0
-      with type t = t
-       and type Elt.t = Expression.t = Make_traversal (struct
-    module Elt = Expression
-    module E =
-      Travesty.Traversable.Fix_elt
-        (Travesty_containers.Singleton)
-        (Expression)
-    module P = Prim_statement.On_expressions
-  end)
-
-  module On_primitives :
-    Travesty.Traversable_types.S0
-      with type t = t
-       and type Elt.t = Prim_statement.t = Make_traversal (struct
-    module Elt = Prim_statement
-    module E = Travesty.Traversable.Const (Expression) (Prim_statement)
-    module P =
-      Travesty.Traversable.Fix_elt
-        (Travesty_containers.Singleton)
-        (Prim_statement)
-  end)
-end
+  | Flow x ->
+      flow x
 
 let reduce (type meta result) (x : meta t)
     ~(prim : meta * Prim_statement.t -> result)
     ~(if_stm : (meta, result) If.t -> result)
-    ~(while_loop : (meta, result) While.t -> result) : result =
+    ~(flow : (meta, result) Flow_block.t -> result) : result =
   let rec mu x =
     let block_map (x : (meta, meta t) Block.t) : (meta, result) Block.t =
       Block.map_right x ~f:mu
@@ -208,21 +51,19 @@ let reduce (type meta result) (x : meta t)
         ~if_stm:
           ( If.map ~cond:Fn.id ~t_branch:block_map ~f_branch:block_map
           >> if_stm )
-        ~while_loop:
-          (While.map ~cond:Fn.id ~body:block_map ~kind:Fn.id >> while_loop))
+        ~flow:(Flow_block.map ~body:block_map ~header:Fn.id >> flow))
   in
   mu x
 
 (** Shorthand for lifting a predicate on primitives. *)
 let is_prim_and (t : 'meta t) ~(f : Prim_statement.t -> bool) : bool =
-  reduce_step t ~while_loop:(Fn.const false) ~if_stm:(Fn.const false)
+  reduce_step t ~if_stm:(Fn.const false) ~flow:(Fn.const false)
     ~prim:(fun (_, p) -> f p)
 
 (** Shorthand for writing a predicate that is [false] on primitives. *)
-let is_not_prim_and (type meta)
-    ~(while_loop : (meta, meta t) While.t -> bool)
-    ~(if_stm : (meta, meta t) If.t -> bool) : meta t -> bool =
-  reduce_step ~while_loop ~if_stm ~prim:(Fn.const false)
+let is_not_prim_and (type meta) ~(if_stm : (meta, meta t) If.t -> bool)
+    ~(flow : (meta, meta t) Flow_block.t -> bool) : meta t -> bool =
+  reduce_step ~if_stm ~flow ~prim:(Fn.const false)
 
 let true_of_any_if_branch_stm (m : ('meta, 'meta t) If.t)
     ~(predicate : 'meta t -> bool) : bool =
@@ -230,253 +71,47 @@ let true_of_any_if_branch_stm (m : ('meta, 'meta t) If.t)
     If.(Block.statements (t_branch m) @ Block.statements (f_branch m))
     ~f:predicate
 
+let true_of_any_block_stm (b : ('meta, 'meta t) Block.t)
+    ~(predicate : 'meta t -> bool) : bool =
+  List.exists (Block.statements b) ~f:predicate
+
+let true_of_any_flow_body_stm (l : ('meta, 'meta t) Flow_block.t)
+    ~(predicate : 'meta t -> bool) : bool =
+  true_of_any_block_stm (Flow_block.body l) ~predicate
+
 let is_if_statement (m : 'meta t) : bool =
-  is_not_prim_and m ~if_stm:(Fn.const true) ~while_loop:(Fn.const false)
+  is_not_prim_and m ~if_stm:(Fn.const true) ~flow:(Fn.const false)
 
 let rec has_if_statements (m : 'meta t) : bool =
-  is_not_prim_and m ~if_stm:(Fn.const true) ~while_loop:(fun w ->
-      List.exists (Block.statements (While.body w)) ~f:has_if_statements)
+  is_not_prim_and m ~if_stm:(Fn.const true)
+    ~flow:(true_of_any_flow_body_stm ~predicate:has_if_statements)
 
 let rec has_while_loops (m : 'meta t) : bool =
-  is_not_prim_and m ~while_loop:(Fn.const true)
+  is_not_prim_and m
     ~if_stm:(true_of_any_if_branch_stm ~predicate:has_while_loops)
+    ~flow:(fun f ->
+      Flow_block.is_while_loop f
+      || true_of_any_flow_body_stm f ~predicate:has_while_loops)
 
 let has_blocks_with_metadata (m : 'meta t) ~(predicate : 'meta -> bool) :
     bool =
   let rec mu x =
+    let true_of_block b =
+      predicate (Block.metadata b) || true_of_any_block_stm ~predicate:mu b
+    in
     is_not_prim_and x
-      ~while_loop:(fun w ->
-        let b = While.body w in
-        predicate (Block.metadata b)
-        || List.exists (Block.statements b) ~f:mu)
+      ~flow:(fun l -> true_of_block (Flow_block.body l))
       ~if_stm:(fun ifs ->
-        predicate (Block.metadata If.(t_branch ifs))
-        || predicate (Block.metadata If.(f_branch ifs))
-        || true_of_any_if_branch_stm ifs ~predicate:mu)
+        true_of_block (If.t_branch ifs) || true_of_block (If.f_branch ifs))
   in
   mu m
 
-module If :
-  Statement_types.S_common with type 'meta t = ('meta, 'meta t) If.t = struct
-  type 'meta t = ('meta, 'meta M.t) If.t [@@deriving sexp, compare, equal]
-
-  module Base_map (M : Monad.S) = If.Base_map (struct
-    type 'a t = 'a M.t
-
-    include Applicative.Of_monad (M)
-  end)
-
-  module On_meta :
-    Travesty.Traversable_types.S1 with type 'meta t := 'meta t =
-  Travesty.Traversable.Make1 (struct
-    type nonrec 'meta t = 'meta t
-
-    module On_monad (M : Monad.S) = struct
-      module B = Base_map (M)
-      module Mn = On_meta.On_monad (M)
-      module Bk = Block.On_monad (M)
-
-      let map_m (x : 'm1 t) ~(f : 'm1 -> 'm2 M.t) : 'm2 t M.t =
-        B.bmap x ~cond:M.return
-          ~t_branch:(Bk.bi_map_m ~left:f ~right:(Mn.map_m ~f))
-          ~f_branch:(Bk.bi_map_m ~left:f ~right:(Mn.map_m ~f))
-    end
-  end)
-
-  let erase_meta (type meta) (s : meta t) : unit t =
-    On_meta.map s ~f:(Fn.const ())
-
-  module With_meta (Meta : T) = struct
-    type nonrec t = Meta.t t
-
-    module Block_stms = Block.On_statements (Meta)
-    module Sm = With_meta (Meta)
-
-    (** Does the legwork of implementing a particular type of traversal over
-        if statements. *)
-    module Make_traversal (Basic : sig
-      module Elt : Equal.S
-
-      module E :
-        Travesty.Traversable_types.S0
-          with type t := Expression.t
-           and module Elt = Elt
-
-      module S :
-        Travesty.Traversable_types.S0
-          with type t := Meta.t M.t
-           and module Elt = Elt
-    end) =
-    Travesty.Traversable.Make0 (struct
-      type nonrec t = t
-
-      module Elt = Basic.Elt
-
-      module On_monad (M : Monad.S) = struct
-        module IBase = Base_map (M)
-        module Bk = Block_stms.On_monad (M)
-        module EM = Basic.E.On_monad (M)
-        module SM = Basic.S.On_monad (M)
-
-        let map_m x ~f =
-          IBase.bmap x ~cond:(EM.map_m ~f)
-            ~t_branch:(Bk.map_m ~f:(SM.map_m ~f))
-            ~f_branch:(Bk.map_m ~f:(SM.map_m ~f))
-      end
-    end)
-
-    module On_lvalues :
-      Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
-    Make_traversal (struct
-      module Elt = Lvalue
-      module E =
-        Travesty.Traversable.Chain0
-          (Expression_traverse.On_addresses)
-          (Address.On_lvalues)
-      module S = Sm.On_lvalues
-    end)
-
-    module On_addresses :
-      Travesty.Traversable_types.S0
-        with type t = t
-         and type Elt.t = Address.t = Make_traversal (struct
-      module Elt = Address
-      module E = Expression_traverse.On_addresses
-      module S = Sm.On_addresses
-    end)
-
-    module On_expressions :
-      Travesty.Traversable_types.S0
-        with type t = t
-         and type Elt.t = Expression.t = Make_traversal (struct
-      module Elt = Expression
-      module E =
-        Travesty.Traversable.Fix_elt
-          (Travesty_containers.Singleton)
-          (Expression)
-      module S = Sm.On_expressions
-    end)
-
-    module On_primitives :
-      Travesty.Traversable_types.S0
-        with type t = t
-         and type Elt.t = Prim_statement.t = Make_traversal (struct
-      module Elt = Prim_statement
-      module E = Travesty.Traversable.Const (Expression) (Prim_statement)
-      module S = Sm.On_primitives
-    end)
-  end
+module If = struct
+  type 'meta t = ('meta, 'meta Inner.t) If.t
+  [@@deriving sexp, compare, equal]
 end
 
-module While :
-  Statement_types.S_common with type 'meta t = ('meta, 'meta t) While.t =
-struct
-  type 'meta t = ('meta, 'meta M.t) While.t [@@deriving sexp, compare, equal]
-
-  module Base_map (M : Monad.S) = While.Base_map (struct
-    type 'a t = 'a M.t
-
-    include Applicative.Of_monad (M)
-  end)
-
-  module On_meta :
-    Travesty.Traversable_types.S1 with type 'meta t := 'meta t =
-  Travesty.Traversable.Make1 (struct
-    type nonrec 'meta t = 'meta t
-
-    module On_monad (M : Monad.S) = struct
-      module B = Base_map (M)
-      module Mn = On_meta.On_monad (M)
-      module Bk = Block.On_monad (M)
-
-      let map_m (x : 'm1 t) ~(f : 'm1 -> 'm2 M.t) : 'm2 t M.t =
-        B.bmap x ~cond:M.return
-          ~body:(Bk.bi_map_m ~left:f ~right:(Mn.map_m ~f))
-          ~kind:M.return
-    end
-  end)
-
-  let erase_meta (type meta) (s : meta t) : unit t =
-    On_meta.map s ~f:(Fn.const ())
-
-  module With_meta (Meta : T) = struct
-    type nonrec t = Meta.t t
-
-    module Block_stms = Block.On_statements (Meta)
-    module Sm = With_meta (Meta)
-
-    (** Does the legwork of implementing a particular type of traversal over
-        while loops. *)
-    module Make_traversal (Basic : sig
-      module Elt : Equal.S
-
-      module E :
-        Travesty.Traversable_types.S0
-          with type t := Expression.t
-           and module Elt = Elt
-
-      module S :
-        Travesty.Traversable_types.S0
-          with type t := Meta.t M.t
-           and module Elt = Elt
-    end) =
-    Travesty.Traversable.Make0 (struct
-      type nonrec t = t
-
-      module Elt = Basic.Elt
-
-      module On_monad (M : Monad.S) = struct
-        module WBase = Base_map (M)
-        module Bk = Block_stms.On_monad (M)
-        module EM = Basic.E.On_monad (M)
-        module SM = Basic.S.On_monad (M)
-
-        let map_m x ~f =
-          WBase.bmap x ~cond:(EM.map_m ~f)
-            ~body:(Bk.map_m ~f:(SM.map_m ~f))
-            ~kind:M.return
-      end
-    end)
-
-    module On_lvalues :
-      Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
-    Make_traversal (struct
-      module Elt = Lvalue
-      module E =
-        Travesty.Traversable.Chain0
-          (Expression_traverse.On_addresses)
-          (Address.On_lvalues)
-      module S = Sm.On_lvalues
-    end)
-
-    module On_addresses :
-      Travesty.Traversable_types.S0
-        with type t = t
-         and type Elt.t = Address.t = Make_traversal (struct
-      module Elt = Address
-      module E = Expression_traverse.On_addresses
-      module S = Sm.On_addresses
-    end)
-
-    module On_expressions :
-      Travesty.Traversable_types.S0
-        with type t = t
-         and type Elt.t = Expression.t = Make_traversal (struct
-      module Elt = Expression
-      module E =
-        Travesty.Traversable.Fix_elt
-          (Travesty_containers.Singleton)
-          (Expression)
-      module S = Sm.On_expressions
-    end)
-
-    module On_primitives :
-      Travesty.Traversable_types.S0
-        with type t = t
-         and type Elt.t = Prim_statement.t = Make_traversal (struct
-      module Elt = Prim_statement
-      module E = Travesty.Traversable.Const (Expression) (Prim_statement)
-      module S = Sm.On_primitives
-    end)
-  end
+module Flow_block = struct
+  type 'meta t = ('meta, 'meta Inner.t) Flow_block.t
+  [@@deriving sexp, compare, equal]
 end

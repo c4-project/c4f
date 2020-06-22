@@ -38,10 +38,30 @@ module Prim : sig
       vice versa. *)
 end
 
+(** {1 Flow classes} *)
+module Flow : sig
+  (** Enumeration of flow statement classes. *)
+  type t =
+    | Lock of Flow_block.Lock.t option
+    | While of Flow_block.While.t option
+  [@@deriving compare, equal, sexp]
+
+  val classify : (_, _) Flow_block.t -> t option
+  (** [classify s] tries to classify [s]. *)
+
+  val matches : t -> template:t -> bool
+  (** [matches clazz ~template] checks whether [clazz] matches [template].
+      Holes in [template] match any corresponding class in [clazz], but not
+      vice versa. *)
+end
+
 (** {1 Top-level statement classes} *)
 
 (** Enumeration of top-level statements. *)
-type t = Prim of Prim.t option | If | While of While.Kind.t option
+type t =
+  | Prim of Prim.t option
+  | If  (** This statement is an if statement. *)
+  | Flow of Flow.t option  (** This statement is a flow block. *)
 [@@deriving compare, equal, sexp]
 
 val classify : 'e Statement.t -> t option
@@ -61,3 +81,7 @@ val count_matches : 'meta Statement.t -> template:t -> int
 val atomic : ?specifically:Atomic_class.t -> unit -> t
 (** [atomic ?specifically ()] constructs an atomic class, optionally with the
     details in [specifically]. *)
+
+val while_loop : ?specifically:Flow_block.While.t -> unit -> t
+(** [while_loop ?specifically ()] constructs a while-loop class, optionally
+    with the details in [specifically]. *)

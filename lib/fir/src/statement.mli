@@ -20,55 +20,41 @@
     partake in the recursion aren't defined here, but rather in
     [Statement_types.S_statement]. *)
 
-module I := If
-module W := While
-
 (** A statement.
 
     We treat some things that are technically expressions in C as statements,
     for simplicity. *)
 type 'meta t [@@deriving sexp, compare, equal]
 
-module If : Statement_types.S_common with type 'meta t = ('meta, 'meta t) I.t
-
-module While :
-  Statement_types.S_common with type 'meta t = ('meta, 'meta t) W.t
-
-include
-  Statement_types.S_statement
-    with type 'meta t := 'meta t
-     and type 'meta if_stm := 'meta If.t
-     and type 'meta while_loop := 'meta While.t
-
 (** {1 Reducing statements} *)
 
 val reduce_step :
      'meta t
   -> prim:('meta * Prim_statement.t -> 'result)
-  -> if_stm:(('meta, 'meta t) I.t -> 'result)
-  -> while_loop:(('meta, 'meta t) W.t -> 'result)
+  -> if_stm:(('meta, 'meta t) If.t -> 'result)
+  -> flow:(('meta, 'meta t) Flow_block.t -> 'result)
   -> 'result
-(** [reduce_step stm ~prim ~if_stm ~while_loop] applies the appropriate
-    function of those given to [stm]. It does _not_ recursively reduce
-    statements inside blocks. *)
+(** [reduce_step stm ~prim ~if_stm ~flow] applies the appropriate function of
+    those given to [stm]. It does _not_ recursively reduce statements inside
+    blocks. *)
 
 val reduce :
      'meta t
   -> prim:('meta * Prim_statement.t -> 'result)
-  -> if_stm:(('meta, 'result) I.t -> 'result)
-  -> while_loop:(('meta, 'result) W.t -> 'result)
+  -> if_stm:(('meta, 'result) If.t -> 'result)
+  -> flow:(('meta, 'result) Flow_block.t -> 'result)
   -> 'result
-(** [reduce stm ~prim ~if_stm ~while_loop] applies the appropriate function
-    of those given to [stm]. Unlike {!reduce_step}, it _does_ recursively
-    reduce statements inside blocks. *)
+(** [reduce stm ~prim ~if_stm ~flow] applies the appropriate function of
+    those given to [stm]. Unlike {!reduce_step}, it _does_ recursively reduce
+    statements inside blocks. *)
 
 (** {1 Constructors} *)
 
-val if_stm : 'meta If.t -> 'meta t
+val if_stm : ('meta, 'meta t) If.t -> 'meta t
 (** [if_stm ifs] lifts an if statement [ifs] to a statement. *)
 
-val while_loop : 'meta While.t -> 'meta t
-(** [while_loop loop] lifts a while or do-while loop [loop] to a statement. *)
+val flow : ('meta, 'meta t) Flow_block.t -> 'meta t
+(** [flow f] lifts a single-block flow construct [f] to a statement. *)
 
 val prim : 'meta -> Prim_statement.t -> 'meta t
 (** [prim meta p] lifts a primitive statement [p] to a statement, with
@@ -101,3 +87,19 @@ val has_blocks_with_metadata : 'meta t -> predicate:('meta -> bool) -> bool
     metadata.
 
     This is useful for tracking things like the existence of dead-code. *)
+
+(** {1 Specialised forms of statement component types}
+
+    These specialised forms contain basic derived operations, but no more.
+    Use {!Statement_traverse} for traversal, and the original modules for
+    everything else. *)
+
+module If : sig
+  (** Specialised if statement type. *)
+  type nonrec 'meta t = ('meta, 'meta t) If.t [@@deriving sexp]
+end
+
+module Flow_block : sig
+  (** Specialised flow block type. *)
+  type nonrec 'meta t = ('meta, 'meta t) Flow_block.t [@@deriving sexp]
+end

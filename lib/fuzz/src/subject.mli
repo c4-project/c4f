@@ -37,8 +37,8 @@ module Statement : sig
     type t = Metadata.t Act_fir.Statement.If.t [@@deriving sexp]
   end
 
-  module Loop : sig
-    type t = Metadata.t Act_fir.Statement.While.t [@@deriving sexp]
+  module Flow : sig
+    type t = Metadata.t Act_fir.Statement.Flow_block.t [@@deriving sexp]
   end
 
   include Act_fir.Statement_types.S_with_meta with type t := t

@@ -343,16 +343,22 @@ let possible_compound_to_list : Ast.Stm.t -> Ast.Stm.t list Or_error.t =
   | stm ->
       Or_error.return [stm]
 
-let block (model_stm : Ast.Stm.t -> unit Statement.t Or_error.t)
-    (old_block : Ast.Stm.t) : (unit, unit Statement.t) Block.t Or_error.t =
+(** Type of recursive statement converters. *)
+type mu_stm = Ast.Stm.t -> unit Statement.t Or_error.t
+
+let block_list (model_stm : mu_stm) (old_block : Ast.Stm.t list) :
+    (unit, unit Statement.t) Block.t Or_error.t =
   Or_error.(
-    old_block |> possible_compound_to_list
-    >>= Tx.Or_error.combine_map ~f:model_stm
+    Tx.Or_error.combine_map ~f:model_stm old_block
     >>| Block.of_statement_list)
 
-let model_if (model_stm : Ast.Stm.t -> unit Statement.t Or_error.t)
-    (old_cond : Ast.Expr.t) (old_t_branch : Ast.Stm.t)
-    (old_f_branch : Ast.Stm.t option) : unit Statement.t Or_error.t =
+let block (model_stm : mu_stm) (old_block : Ast.Stm.t) :
+    (unit, unit Statement.t) Block.t Or_error.t =
+  Or_error.(old_block |> possible_compound_to_list >>= block_list model_stm)
+
+let model_if (model_stm : mu_stm) (old_cond : Ast.Expr.t)
+    (old_t_branch : Ast.Stm.t) (old_f_branch : Ast.Stm.t option) :
+    unit Statement.t Or_error.t =
   Or_error.Let_syntax.(
     let%bind cond = expr old_cond in
     let%bind t_branch = block model_stm old_t_branch in
@@ -363,14 +369,19 @@ let model_if (model_stm : Ast.Stm.t -> unit Statement.t Or_error.t)
     let ifs = If.make ~cond ~t_branch ~f_branch in
     Statement.if_stm ifs)
 
-let loop (model_stm : Ast.Stm.t -> unit Statement.t Or_error.t)
-    (old_cond : Ast.Expr.t) (old_body : Ast.Stm.t) (kind : While.Kind.t) :
-    unit Statement.t Or_error.t =
+let loop (model_stm : mu_stm) (old_cond : Ast.Expr.t) (old_body : Ast.Stm.t)
+    (kind : Flow_block.While.t) : unit Statement.t Or_error.t =
   Or_error.Let_syntax.(
-    let%bind cond = expr old_cond in
-    let%map body = block model_stm old_body in
-    let loop = While.make ~cond ~body ~kind in
-    Statement.while_loop loop)
+    let%map cond = expr old_cond and body = block model_stm old_body in
+    Statement.flow (Flow_block.while_loop ~cond ~body ~kind))
+
+let lock (model_stm : mu_stm) (old_body : Ast.Compound_stm.t)
+    (kind : Flow_block.Lock.t) : unit Statement.t Or_error.t =
+  Or_error.Let_syntax.(
+    (* TODO(@MattWindsor91): we should really support declarations here. *)
+    let%bind ast_stms = ensure_statements old_body in
+    let%map body = block_list model_stm ast_stms in
+    Statement.flow (Flow_block.lock_block ~body ~kind))
 
 let rec stm : Ast.Stm.t -> unit Statement.t Or_error.t = function
   | Expr None ->
@@ -388,6 +399,10 @@ let rec stm : Ast.Stm.t -> unit Statement.t Or_error.t = function
   | Return (Some _) as s ->
       Or_error.error_s
         [%message "Value returns not supported in FIR" ~got:(s : Ast.Stm.t)]
+  | Atomic b ->
+      lock stm b Atomic
+  | Synchronized b ->
+      lock stm b Synchronized
   | While (c, b) ->
       loop stm c b While
   | Do_while (b, c) ->

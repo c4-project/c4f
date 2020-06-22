@@ -29,8 +29,8 @@ let%test_module "Early_out" =
 
     let loop_path : Src.Path.Program.t =
       Src.Path.(
-        Program.in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 5 @@ Stm.in_loop
-        @@ Loop.in_body @@ Stms.insert 0)
+        Program.in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 5 @@ Stm.in_flow
+        @@ Flow.in_body @@ Stms.insert 0)
 
     (* TODO(@MattWindsor91): invalid paths *)
 

@@ -52,11 +52,7 @@ Travesty.Traversable.Make1 (struct
   type nonrec 'e t = 'e t
 
   module On_monad (M : Monad.S) = struct
-    module B = Base_map (struct
-      type 'a t = 'a M.t
-
-      include Applicative.Of_monad (M)
-    end)
+    module B = Base_map (Act_utils.Applicative.Of_monad_ext (M))
 
     let map_m (x : 'a t) ~(f : 'a -> 'b M.t) : 'b t M.t =
       B.bmap x ~obj:M.return ~expected:M.return ~desired:f ~succ:M.return

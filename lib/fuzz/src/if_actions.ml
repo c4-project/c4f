@@ -176,11 +176,11 @@ module Invert : Action_types.S with type Payload.t = Path.Program.t = struct
         "Tried to if-invert an invalid statement"
           ~stm:(stm : Subject.Statement.t)]
 
-  module Bm = Act_fir.Statement.Base_map (Or_error)
+  module Bm = Act_fir.Statement_traverse.Base_map (Or_error)
 
   let invert_stm (stm : Subject.Statement.t) : Subject.Statement.t Or_error.t
       =
-    Bm.bmap stm ~prim:(not_an_if stm) ~while_loop:(not_an_if stm)
+    Bm.bmap stm ~prim:(not_an_if stm) ~flow:(not_an_if stm)
       ~if_stm:(Fn.compose Or_error.return invert_if)
 
   let run (test : Subject.Test.t) ~(payload : Payload.t) :

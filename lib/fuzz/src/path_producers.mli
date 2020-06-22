@@ -34,12 +34,12 @@ module If :
     with type t = Path.If.t
      and type target = Subject.Statement.If.t
 
-(** A path producer that takes in {!Subject.Statement.Loop.t} and produces
-    {!Path.Loop.t}. *)
-module Loop :
+(** A path producer that takes in {!Subject.Statement.Flow.t} and produces
+    {!Path.Flow.t}. *)
+module Flow :
   Path_types.S_producer
-    with type t = Path.Loop.t
-     and type target = Subject.Statement.Loop.t
+    with type t = Path.Flow.t
+     and type target = Subject.Statement.Flow.t
 
 (** A path producer that takes in {!Subject.Statement.t} and produces
     {!Path.Stm.t}. *)
