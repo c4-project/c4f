@@ -29,12 +29,11 @@
 %token <int>    INTEGER
 %token <Act_common.Id.t>   IDENTIFIER
 
-%type <Ast.t> main
-%start main
+%start <Ast.t> main
 
 %%
 
-let braced(x) == delimited(LBRACE, x, RBRACE)
+let braced(x) == delimited("{", x, "}")
 
 let line_list(x) ==
   | ~ = separated_nonempty_list(EOL, x?); < Base.List.filter_opt >

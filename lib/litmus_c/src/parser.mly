@@ -105,16 +105,13 @@
 %token LIT_OR (* \/; not expressible as an alias *)
 
 (* Endpoint for 'standalone' translation units, not contained within a test. *)
-%type <Ast.Translation_unit.t> translation_unit
-%start translation_unit
+%start <Ast.Translation_unit.t> translation_unit
 
 (* Endpoint for Litmus tests. *)
-%type <(Ast.Litmus_lang.Constant.t, Ast.Litmus_lang.Program.t) Act_litmus.Ast.t> litmus
-%start litmus
+%start <(Ast.Litmus_lang.Constant.t, Ast.Litmus_lang.Program.t) Act_litmus.Ast.t> litmus
 
 (* Endpoint for standalone Litmus postconditions. *)
-%type <Ast_basic.Constant.t Act_litmus.Postcondition.t> litmus_postcondition
-%start litmus_postcondition
+%start <Ast_basic.Constant.t Act_litmus.Postcondition.t> litmus_postcondition
 
 %%
 
