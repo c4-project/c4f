@@ -1,0 +1,18 @@
+C cpp
+
+// Checks to see that the Litmus/C parser rejects preprocessor directives.
+
+{
+  x = 0;
+  y = 0;
+}
+
+void
+P0(atomic_int *x, atomic_int *y)
+{
+#if 0
+  atomic_store_explicit(x, 1, memory_order_seq_cst);
+#endif
+}
+
+exists (2:r0 == 1 /\ 2:r1 == 0 /\ 3:r0 == 1 /\ 3:r1 == 0)

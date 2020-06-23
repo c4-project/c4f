@@ -135,3 +135,16 @@
   (run %{test} input))
  (deps
   (glob_files "input/litmus/*.litmus")))
+
+(test
+ (name litmus_failures)
+ (modules litmus_failures)
+ (preprocess
+  (pps ppx_jane))
+ (libraries result yojson ppx_yojson_conv_lib sexplib0 base.caml core_kernel
+   core stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
+   act.fir act.common act.config act.litmus act.litmus_c act.utils common)
+ (action
+  (run %{test} input))
+ (deps
+  (glob_files "input/litmus/failures/*.litmus")))

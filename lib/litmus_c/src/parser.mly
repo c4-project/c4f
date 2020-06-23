@@ -9,6 +9,20 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+(* This file contains a Menhir parser for Litmus C.
+
+   The Litmus C dialect supported by ACT supports most of C89, with quirks:
+
+   - There isn't any C preprocessor support;
+   - There isn't any proper typedef support, to avoid implementing the lexer
+     hack; instead, the parser gets sent a list of statically determined
+     'known typedefs';
+   - We support transactions using Memalloy's syntax ('atomic', 'synchronized',
+     etc);
+   - We support mixed declarations and code;
+   - While it doesn't appear in the grammar per se, we support C11 atomics.
+*)
+
 %{
     open Ast
     open Ast_basic
@@ -16,14 +30,14 @@
 
 %token EOF
 %token <string> IDENTIFIER
-%token <string> TYPEDEF_NAME (* TODO: lexer hack *)
+%token <string> TYPEDEF_NAME (* see above: we don't support user typedefs. *)
 %token <int> INT_LIT
 %token <float> FLOAT_LIT
 %token <string> CHAR_LIT (* string, not char, due to unicode *)
 %token <string> STRING
 
 %token CHAR INT SHORT LONG FLOAT DOUBLE VOID SIGNED UNSIGNED
-%token AUTO REGISTER STATIC EXTERN TYPEDEF
+%token AUTO REGISTER STATIC EXTERN
 %token CONST VOLATILE
 %token STRUCT UNION ENUM
 %token DO FOR WHILE IF ELSE
@@ -84,17 +98,21 @@
 %token DIV  "/"
 %token MOD  "%"
 
+(* Litmus tokens *)
 %token LIT_EXISTS LIT_FORALL LIT_LOCATIONS
 %token LIT_TRUE LIT_FALSE
 %token LIT_AND (* /\; not expressible as an alias *)
 %token LIT_OR (* \/; not expressible as an alias *)
 
+(* Endpoint for 'standalone' translation units, not contained within a test. *)
 %type <Ast.Translation_unit.t> translation_unit
 %start translation_unit
 
+(* Endpoint for Litmus tests. *)
 %type <(Ast.Litmus_lang.Constant.t, Ast.Litmus_lang.Program.t) Act_litmus.Ast.t> litmus
 %start litmus
 
+(* Endpoint for standalone Litmus postconditions. *)
 %type <Ast_basic.Constant.t Act_litmus.Postcondition.t> litmus_postcondition
 %start litmus_postcondition
 
@@ -190,7 +208,7 @@ let storage_class_specifier :=
   | REGISTER; { `Register }
   | STATIC  ; { `Static }
   | EXTERN  ; { `Extern }
-  | TYPEDEF ; { `Typedef }
+  (* C89 supports 'typedef' here, but we don't. *)
 
 let type_specifier :=
   | VOID                         ; { `Void }
@@ -204,6 +222,7 @@ let type_specifier :=
   | UNSIGNED                     ; { `Unsigned }
   | ~ = struct_or_union_specifier; < `Struct_or_union >
   | ~ = enum_specifier           ; < `Enum >
+  (* Statically known typedefs only. *)
   | t = TYPEDEF_NAME             ; { `Defined_type (Act_common.C_id.of_string t) }
 
 let type_qualifier :=
@@ -314,13 +333,12 @@ let labelled_statement :=
 
 let expression_statement := ~ = endsemi(expression?); < Stm.Expr >
 
-(* NB: this is (draft) C99.  Eventually, the rest of the grammar should be! *)
-
-let block_item :=
-  | ~ = declaration; < `Decl >
-  | ~ = statement  ; < `Stm  >
 
 let compound_statement := braced(block_item*)
+let block_item :=
+  (* NB: this is (draft) C99.  Eventually, the rest of the grammar should be! *)
+  | ~ = declaration; < `Decl >
+  | ~ = statement  ; < `Stm  >
 
 let selection_statement :=
   | IF; cond = parened(expression); t_branch = statement; f_branch = option(preceded(ELSE, statement));
@@ -412,12 +430,15 @@ let cast_expression :=
   | unary_expression
   | ~ = parened(type_name); ~ = cast_expression; < Expr.Cast >
 
-let inc_or_dec_operator := "++"; { `Inc } | "--"; { `Dec }
-
+let unary_expression :=
+  | postfix_expression
+  | ~ = unary_operator_unary; ~ = unary_expression; < Expr.Prefix >
+  | o = unary_operator_cast; e = cast_expression; { Expr.Prefix ((o :> Operators.Pre.t), e) }
+  | SIZEOF; ~ = parened(type_name); < Expr.Sizeof_type >
 let unary_operator_unary :=
   | o = inc_or_dec_operator; { o :> Operators.Pre.t }
   | SIZEOF; { `Sizeof_val }
-
+let inc_or_dec_operator := "++"; { `Inc } | "--"; { `Dec }
 let unary_operator_cast :=
   | "&"; { `Ref }
   | "*"; { `Deref }
@@ -426,11 +447,6 @@ let unary_operator_cast :=
   | "~"; { `Not }
   | "!"; { `Lnot }
 
-let unary_expression :=
-  | postfix_expression
-  | ~ = unary_operator_unary; ~ = unary_expression; < Expr.Prefix >
-  | o = unary_operator_cast; e = cast_expression; { Expr.Prefix ((o :> Operators.Pre.t), e) }
-  | SIZEOF; ~ = parened(type_name); < Expr.Sizeof_type >
 
 let field_access := "." ; { `Direct } | "->"; { `Deref }
 
