@@ -1,0 +1,17 @@
+C tx_sync_nonblock
+
+// Checks to see that the Litmus/C parser rejects synchronized blocks that don't
+// actually resolve into blocks.
+
+{
+  x = 0;
+  y = 0;
+}
+
+int
+P0(atomic_int *x, atomic_int *y)
+{
+  synchronized x=3;
+}
+
+exists (2:r0 == 1 /\ 2:r1 == 0 /\ 3:r0 == 1 /\ 3:r1 == 0)

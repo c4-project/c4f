@@ -44,6 +44,9 @@
 %token SWITCH CASE DEFAULT GOTO BREAK CONTINUE RETURN
 %token SIZEOF
 
+(* Types of transaction block *)
+%token ATOMIC SYNCHRONIZED
+
 %token LPAR     "("
 %token RPAR     ")"
 %token LBRACE   "{"
@@ -131,6 +134,10 @@ let bracketed(x) == delimited("[", x, "]")
 let parened(x) == delimited("(", x, ")")
 let endsemi(x) == terminated(x, ";")
 
+(*
+ * Litmus specifics
+ *)
+
 let litmus :=
   | language = IDENTIFIER; name = IDENTIFIER; decls = litmus_declaration+; EOF;
     { { Act_litmus.Ast.language = Act_common.C_id.of_string language
@@ -146,11 +153,11 @@ let litmus_declaration :=
   | ~ = function_definition;  < Act_litmus.Ast.Decl.Program >
 
 let litmus_init_stm :=
-  | id = identifier; "="; value = constant; { { Act_litmus.Ast.Init.id; value } }
+  | id = c_identifier; "="; value = constant; { { Act_litmus.Ast.Init.id; value } }
 
 let litmus_initialiser := braced(list(endsemi(litmus_init_stm)))
 
-let litmus_locations := LIT_LOCATIONS; bracketed(slist(identifier))
+let litmus_locations := LIT_LOCATIONS; bracketed(slist(c_identifier))
 
 let litmus_quantifier :=
   | LIT_EXISTS; { Act_litmus.Postcondition.Quantifier.Exists }
@@ -177,6 +184,10 @@ let litmus_primitive :=
 let litmus_identifier :=
   | i = IDENTIFIER;                   { Litmus.Id.global (Act_common.C_id.of_string i) }
   | t = INT_LIT; ":"; i = IDENTIFIER; { Litmus.Id.local t (Act_common.C_id.of_string i) }
+
+(*
+ * C grammar
+ *)
 
 let translation_unit := ~ = external_declaration+; EOF; <>
 
@@ -227,9 +238,9 @@ let type_qualifier :=
   | VOLATILE; { `Volatile }
 
 let struct_or_union_specifier :=
-  | kind = struct_or_union; name_opt = identifier?; decls = braced(struct_declaration+);
+  | kind = struct_or_union; name_opt = c_identifier?; decls = braced(struct_declaration+);
     { Struct_or_union_spec.Literal { kind; name_opt; decls } }
-  | ~ = struct_or_union; ~ = identifier; < Struct_or_union_spec.Named >
+  | ~ = struct_or_union; ~ = c_identifier; < Struct_or_union_spec.Named >
 
 let struct_or_union :=
   | STRUCT; { `Struct }
@@ -254,13 +265,13 @@ let struct_declarator :=
   | ~ = declarator?; ":"; ~ = expression; < Struct_declarator.Bitfield >
 
 let enum_specifier :=
-  | ENUM; name_opt = identifier?; decls = braced(clist(enumerator));
+  | ENUM; name_opt = c_identifier?; decls = braced(clist(enumerator));
     { Enum_spec.Literal { kind = `Enum; name_opt; decls } }
-  | ENUM; name = identifier;
+  | ENUM; name = c_identifier;
     { Enum_spec.Literal { kind = `Enum; name_opt = Some name; decls = [] } }
 
 let enumerator :=
-  name = identifier; value = option(preceded(EQ, constant_expression));
+  name = c_identifier; value = option(preceded(EQ, constant_expression));
     { { Enumerator.name; value } }
 
 let declarator :=
@@ -268,7 +279,8 @@ let declarator :=
     { { Declarator.pointer; direct } }
 
 let direct_declarator :=
-  | ~ = identifier;
+(* Litmus/C restriction *)
+  | ~ = restricted_c_identifier;
     < Direct_declarator.Id >
   | ~ = parened(declarator);
     < Direct_declarator.Bracket >
@@ -276,7 +288,7 @@ let direct_declarator :=
     { Direct_declarator.Array { Array.array; index } }
   | ~ = direct_declarator; ~ = parened(parameter_type_list);
     < Direct_declarator.Fun_decl >
-  | ~ = direct_declarator; ~ = parened(clist(identifier));
+  | ~ = direct_declarator; ~ = parened(clist(c_identifier));
     < Direct_declarator.Fun_call >
 
 let pointer := nonempty_list(preceded(STAR, type_qualifier*))
@@ -315,21 +327,43 @@ direct_abstract_declarator:
   | lhs = direct_abstract_declarator?; pars = parened(parameter_type_list?)
     { Direct_abs_declarator.Fun_decl (lhs, pars) }
 
-let statement :=
-  | labelled_statement
-  | expression_statement
-  | ~ = compound_statement; < Stm.Compound >
-  | selection_statement
-  | iteration_statement
-  | jump_statement
+(* Instead of the classic K&R statement derivation, we use the 'open/closed'
+   statement setup (eg http://www.parsifalsoft.com/ifelse.html) to remove the
+   ambiguity of `if (c1) if (c2) foo; else bar;`.
+   
+   Instead of duplicating every production that can produce either an open or
+   closed statement depending on whether it's in one, we parametrise the rules
+   by the appropriate class of statement. *)
 
-let labelled_statement :=
-  | id = identifier; ":"; s = statement; { Stm.Label (Label.Normal id, s) }
-  | CASE; cond = constant_expression; s = statement; { Stm.Label (Label.Case cond, s) }
-  | DEFAULT; COLON; s = statement; { Stm.Label (Label.Default, s) }
+let statement := open_statement | closed_statement
+
+let open_statement :=
+  | one_selection_statement
+  | statement_common(open_statement)
+
+let closed_statement :=
+  | simple_statement
+  | statement_common(closed_statement)
+
+let statement_common(s) ==
+  | two_selection_statement(s)
+  | iteration_statement(s)
+  | labelled_statement(s)
+
+let simple_statement :=
+  | ~ = compound_statement; < Stm.Compound >
+  | expression_statement
+  | jump_statement
+(* Litmus/C extension *)
+  | tx_statement
+
+let labelled_statement(s) := ~ = label; ":"; ~ = s; < Stm.Label >
+let label :=
+  | ~ = c_identifier;              < Label.Normal >
+  | CASE; ~ = constant_expression; < Label.Case >
+  | DEFAULT;                       { Label.Default }
 
 let expression_statement := ~ = endsemi(expression?); < Stm.Expr >
-
 
 let compound_statement := braced(block_item*)
 let block_item :=
@@ -337,31 +371,43 @@ let block_item :=
   | ~ = declaration; < `Decl >
   | ~ = statement  ; < `Stm  >
 
-let selection_statement :=
-  | IF; cond = parened(expression); t_branch = statement; f_branch = option(preceded(ELSE, statement));
-    { Stm.If { cond; t_branch; f_branch } }
-  | SWITCH; ~ = parened(expression); ~ = statement; < Stm.Switch >
+let one_selection_statement :=
+  cond = if_clause; t_branch = statement; { Stm.If { cond; t_branch; f_branch=None }}
 
-let iteration_statement :=
-  | WHILE; ~ = parened(expression); ~ = statement;
+let two_selection_statement(s) ==
+  | cond = if_clause; t_branch = closed_statement; ELSE; f_branch = s;
+    { Stm.If { cond; t_branch; f_branch = Some (f_branch) } }
+  | SWITCH; ~ = parened(expression); ~ = s; < Stm.Switch >
+
+let if_clause := preceded(IF, parened(expression))
+
+let iteration_statement(s) :=
+  | WHILE; ~ = parened(expression); ~ = s;
     < Stm.While >
-  | DO; ~ = statement; WHILE; ~ = parened(expression);
+  | DO; ~ = s; WHILE; ~ = parened(expression);
     < Stm.Do_while >
-  | FOR; "("; init = expression?; ";"; cond = expression?; ";"; update = expression?; ")"; body = statement;
+  | FOR; "("; init = expression?; ";"; cond = expression?; ";"; update = expression?; ")"; body = s;
     { Stm.For { init; cond; update; body } }
 
 let jump_statement :=
-  | GOTO; id = identifier  ; < Stm.Goto >
+  | GOTO; id = c_identifier; < Stm.Goto >
   | CONTINUE               ; { Stm.Continue }
   | BREAK                  ; { Stm.Break }
   | RETURN; ~ = expression?; < Stm.Return >
 
+(* Litmus/C extension: transaction blocks. *)
+let tx_statement :=
+  | ATOMIC      ; ~ = compound_statement; < Stm.Atomic >
+  | SYNCHRONIZED; ~ = compound_statement; < Stm.Synchronized >
+
+(* Expressions follow the hand-stratified grammar seen in the back of K&R.
+   TODO(@MattWindsor91): eventually work out how to replace this with an
+   automatically stratfied version. *)
 let expression :=
   left_binop(expression, assignment_expression, ","; {`Comma})
 
 let assignment_expression :=
   right_binop(assignment_expression, conditional_expression, assignment_operator)
-
 let assignment_operator :=
   | "="  ; { `Assign }
   | "*=" ; { `Assign_mul }
@@ -404,16 +450,11 @@ let equality_operator := "=="; { `Eq } | "!="; { `Ne }
 let relational_expression :=
   | left_binop(relational_expression, shift_expression, relational_operator)
 let relational_operator :=
-  | "<" ; { `Lt }
-  | "<="; { `Le }
-  | ">="; { `Ge }
-  | ">" ; { `Gt }
+  "<" ; { `Lt } | "<="; { `Le } | ">="; { `Ge } | ">" ; { `Gt }
 
 let shift_expression :=
   left_binop(shift_expression, additive_expression, shift_operator)
-let shift_operator :=
-  | "<<"; { `Shl }
-  | ">>"; { `Shr }
+let shift_operator := "<<"; { `Shl } | ">>"; { `Shr }
 
 let additive_expression :=
   left_binop(additive_expression, multiplicative_expression, additive_operator)
@@ -444,27 +485,20 @@ let unary_operator_cast :=
   | "~"; { `Not }
   | "!"; { `Lnot }
 
-
-let field_access := "." ; { `Direct } | "->"; { `Deref }
-
 let postfix_expression :=
   | primary_expression
   | array = postfix_expression; index = bracketed(expression);
     { Expr.Subscript { array; index } }
-  | func = postfix_expression; arguments = parened(argument_expression_list);
+  | func = postfix_expression; arguments = parened(clist(assignment_expression));
     { Expr.Call { func; arguments } }
-  | value = postfix_expression; access = field_access; field = identifier;
+  | value = postfix_expression; access = field_access; field = c_identifier;
     { Expr.Field { value; field; access } }
   | ~ = postfix_expression; ~ = inc_or_dec_operator;
     <Expr.Postfix>
-
-(* We can't use clist here; it produces a reduce-reduce conflict. *)
-let argument_expression_list :=
-  | x = assignment_expression; { [x] }
-  | x = assignment_expression; ","; xs = argument_expression_list; { x::xs }
+let field_access := "." ; { `Direct } | "->"; { `Deref }
 
 let primary_expression :=
-  | ~ = identifier         ; < Expr.Identifier >
+  | ~ = c_identifier       ; < Expr.Identifier >
   | ~ = constant           ; < Expr.Constant   >
   | ~ = STRING             ; < Expr.String     >
   | ~ = parened(expression); < Expr.Brackets   >
@@ -474,12 +508,19 @@ let constant :=
   | ~ = CHAR_LIT ; < Constant.Char    >
   | ~ = FLOAT_LIT; < Constant.Float   >
 
-let identifier :=
+let c_identifier :=
+  | restricted_c_identifier
+  | ~ = keyword_as_identifier; < Act_common.C_id.of_string >
+
+let keyword_as_identifier :=
+(* Contextual keywords that aren't in keyword position, and are therefore just
+   emitted as their identifiers. *)
+  | LIT_TRUE     ; { "true" }
+  | LIT_FALSE    ; { "false" }
+  | LIT_EXISTS   ; { "exists" }
+  | LIT_FORALL   ; { "forall" }
+  | LIT_LOCATIONS; { "locations" }
+
+let restricted_c_identifier :=
 (* The lexer should do C identifier validation for us by construction. *)
   | ~ = IDENTIFIER; < Act_common.C_id.of_string >
-(* Contextual keywords. *)
-  | LIT_TRUE     ; { Act_common.C_id.of_string "true" }
-  | LIT_FALSE    ; { Act_common.C_id.of_string "false" }
-  | LIT_EXISTS   ; { Act_common.C_id.of_string "exists" }
-  | LIT_FORALL   ; { Act_common.C_id.of_string "forall" }
-  | LIT_LOCATIONS; { Act_common.C_id.of_string "locations" }

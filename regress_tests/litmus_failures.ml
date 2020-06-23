@@ -15,12 +15,11 @@ open Core
 
 let fail_to_parse_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t
     =
-  ignore file;
+  ignore file ;
   let result =
-    Act_litmus_c.Frontend.Litmus.load
-      (Plumbing.Input.of_fpath path)
+    Act_litmus_c.Frontend.Litmus.load (Plumbing.Input.of_fpath path)
   in
-  Fmt.(pr "@[%a@]@." (result ~ok:(any "(success)") ~error:Error.pp)) result;
+  Fmt.(pr "@[%a@]@." (result ~ok:(any "(success)") ~error:Error.pp)) result ;
   Ok ()
 
 let run (test_dir : Fpath.t) : unit Or_error.t =

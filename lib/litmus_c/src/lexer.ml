@@ -17,8 +17,7 @@ module S = Sedlexing
    hack; as a result, typedefs are fed in manually as a 'known types' set in
    advance. *)
 
-let tr_name (typedefs : Base.Set.M(String).t) : string -> token =
-  function
+let tr_name (typedefs : Base.Set.M(String).t) : string -> token = function
   | "volatile" ->
       VOLATILE
   | "auto" ->
@@ -73,6 +72,11 @@ let tr_name (typedefs : Base.Set.M(String).t) : string -> token =
       DEFAULT
   | "void" ->
       VOID
+  (* Memalloy extensions *)
+  | "atomic" ->
+      ATOMIC
+  | "synchronized" ->
+      SYNCHRONIZED
   (* Litmus extensions *)
   | "true" ->
       LIT_TRUE
@@ -223,8 +227,7 @@ let rec token (typedefs : Set.M(String).t) (lexbuf : S.lexbuf) : token =
   | '.' ->
       DOT
   | "typedef" ->
-      Act_utils.Frontend.lex_error
-        "Typedefs aren't supported." lexbuf
+      Act_utils.Frontend.lex_error "Typedefs aren't supported." lexbuf
   | '#' ->
       Act_utils.Frontend.lex_error
         "C preprocessor directives aren't supported." lexbuf

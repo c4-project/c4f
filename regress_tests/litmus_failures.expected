@@ -1,0 +1,39 @@
+# Litmus-failures tests
+
+## cpp.c.litmus
+
+```
+("While reading from file:" input/litmus/failures/cpp.c.litmus
+ ("Lexing error" (position input/litmus/failures/cpp.c.litmus:13.1-13.2)
+  (details "C preprocessor directives aren't supported.")))
+```
+## location_fn.c.litmus
+
+```
+("While reading from file:" input/litmus/failures/location_fn.c.litmus
+ ("Parse error"
+  (position input/litmus/failures/location_fn.c.litmus:11.10-11.11)
+  (details
+    "Expected a '{' to open a Litmus locations stanza.\
+   \n(If this error occurs near a use of the word \"locations\" as an identifier,\
+   \nrename it; it is clashing with a Litmus keyword.)\
+   \n")))
+```
+## tx_atomic_nonblock.litmus
+
+```
+("While reading from file:" input/litmus/failures/tx_atomic_nonblock.litmus
+ ("Parse error"
+  (position input/litmus/failures/tx_atomic_nonblock.litmus:14.10-14.11)
+  (details "Keyword `atomic` must be followed by a block\n")))
+```
+## tx_sync_nonblock.litmus
+
+```
+("While reading from file:" input/litmus/failures/tx_sync_nonblock.litmus
+ ("Parse error"
+  (position input/litmus/failures/tx_sync_nonblock.litmus:14.16-14.17)
+  (details "Keyword `synchronized` must be followed by a block\n")))
+```
+
+Ran 4 test(s).
