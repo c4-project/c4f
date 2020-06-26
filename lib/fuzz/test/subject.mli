@@ -51,5 +51,16 @@ module Test_data : sig
     val insert_live : Act_fuzz.Path.Program.t Lazy.t
     (** [insert_dead] is a full path that points to somewhere in dead code
         that can take statement insertions. *)
+
+    (** {3 Surround paths} *)
+
+    val surround_atomic : Act_fuzz.Path.Program.t Lazy.t
+    (** [surround_atomic] is a full path that points to a statement range
+        containing atomics, ready for surrounding. *)
+
+    val surround_txsafe : Act_fuzz.Path.Program.t Lazy.t
+    (** [surround_txsafe] is a full path that points to a statement range
+        containing only transaction-safe statements (if any), ready for
+        surrounding. *)
   end
 end

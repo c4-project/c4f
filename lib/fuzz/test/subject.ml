@@ -198,6 +198,12 @@ module Test_data = struct
 
     let insert_dead : Src.Path.Program.t Lazy.t =
       Src.Path.(dead_else @@ Stms.insert 0)
+
+    let surround_atomic : Src.Path.Program.t Lazy.t =
+      Src.Path.(thread_0_stms @@ Stms.on_range 0 2)
+
+    let surround_txsafe : Src.Path.Program.t Lazy.t =
+      Src.Path.(thread_0_stms @@ Stms.on_range 1 1)
   end
 end
 
