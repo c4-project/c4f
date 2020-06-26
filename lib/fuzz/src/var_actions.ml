@@ -91,7 +91,7 @@ module Make : Action_types.S with type Payload.t = Make_payload.t = struct
           Payload.Helpers.lift_quickcheck ~random generator))
   end
 
-  let available = Action.has_threads
+  let available : Availability.t = Availability.has_threads
 
   let run (subject : Subject.Test.t)
       ~payload:({basic_type; initial_value; var} : Payload.t) :
@@ -141,12 +141,11 @@ struct
           Payload.Helpers.lift_quickcheck ~random generator))
   end
 
-  let available (_ : Subject.Test.t) ~(param_map : Param_map.t) :
-      bool State.Monad.t =
+  let available (ctx : Availability.Context.t) : bool Or_error.t =
     (* TODO(@MattWindsor91): this is quite circuitous. *)
-    ignore param_map ;
-    State.Monad.with_vars (fun x ->
-        Map.exists ~f:is_viable (Ac.Scoped_map.to_litmus_id_map x))
+    Ok
+      ( ctx |> Availability.Context.state |> State.vars
+      |> Ac.Scoped_map.to_litmus_id_map |> Map.exists ~f:is_viable )
 
   let update_state (id : Ac.Litmus_id.t) : unit State.Monad.t =
     State.Monad.modify

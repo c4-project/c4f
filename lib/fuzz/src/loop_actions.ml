@@ -11,8 +11,8 @@
 
 open Base
 
-module Surround : Action_types.S with type Payload.t = Payload.Surround.t =
-struct
+module Surround :
+  Action_types.S with type Payload.t = Payload.Cond_surround.t = struct
   let name = Act_common.Id.of_string_list ["flow"; "loop"; "surround"]
 
   let readme () : string =
@@ -24,15 +24,13 @@ struct
        The condition of the `do... while` loop is statically guaranteed to be
        false. |}
 
-  let available (test : Subject.Test.t) ~(param_map : Param_map.t) :
-      bool State.Monad.t =
-    ignore (param_map : Param_map.t) ;
-    test |> Subject.Test.has_statements |> State.Monad.return
+  let available (ctx : Availability.Context.t) : bool Or_error.t =
+    Ok (ctx |> Availability.Context.subject |> Subject.Test.has_statements)
 
-  module Surround = Payload.Surround
+  module Surround = Payload.Cond_surround
 
   module Payload = Surround.Make (struct
-    let action_id = name
+    let name = name
 
     let cond_gen :
         Act_fir.Env.t -> Act_fir.Expression.t Base_quickcheck.Generator.t =

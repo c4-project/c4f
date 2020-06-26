@@ -39,9 +39,6 @@ module Statement = struct
   let has_labels : t -> bool =
     On_primitives.exists ~f:Fir.Prim_statement.is_label
 
-  let has_non_label_prims : t -> bool =
-    On_primitives.exists ~f:(Fn.non Fir.Prim_statement.is_label)
-
   let make_generated_prim : Fir.Prim_statement.t -> t =
     Fir.Statement.prim Metadata.generated
 end
@@ -81,13 +78,15 @@ module Thread = struct
 
   let has_statements (p : t) : bool = not (List.is_empty p.stms)
 
-  let has_statements_matching_class (p : t)
-      ~(template : Fir.Statement_class.t) : bool =
-    List.exists p.stms ~f:(fun x ->
-        0 < Fir.Statement_class.count_matches x ~template)
+  let has_statements_matching (p : t)
+      ~(templates : Fir.Statement_class.t list) : bool =
+    List.exists p.stms
+      ~f:(Fir.Statement_class.statement_matches_any ~templates)
 
-  let has_non_label_prims (p : t) : bool =
-    List.exists p.stms ~f:Statement.has_non_label_prims
+  let has_statements_not_matching (p : t)
+      ~(templates : Fir.Statement_class.t list) : bool =
+    List.exists p.stms
+      ~f:(Fir.Statement_class.statement_matches_any ~templates)
 
   let has_dead_code_blocks (p : t) : bool =
     List.exists p.stms ~f:Statement.has_dead_code_blocks
@@ -162,26 +161,30 @@ module Test = struct
   let at_least_one_thread_with (p : t) ~(f : Thread.t -> bool) : bool =
     List.exists (Act_litmus.Test.Raw.threads p) ~f
 
-  let has_statements_matching_class (p : t)
-      ~(template : Fir.Statement_class.t) : bool =
+  let has_statements_matching (p : t)
+      ~(templates : Fir.Statement_class.t list) : bool =
+    at_least_one_thread_with p ~f:(Thread.has_statements_matching ~templates)
+
+  let has_statements_not_matching (p : t)
+      ~(templates : Fir.Statement_class.t list) : bool =
     at_least_one_thread_with p
-      ~f:(Thread.has_statements_matching_class ~template)
+      ~f:(Thread.has_statements_not_matching ~templates)
 
   let has_atomic_statements : t -> bool =
-    has_statements_matching_class ~template:(Fir.Statement_class.atomic ())
+    has_statements_matching ~templates:[Fir.Statement_class.atomic ()]
 
   let has_while_loops : t -> bool =
-    has_statements_matching_class
-      ~template:(Fir.Statement_class.while_loop ())
+    has_statements_matching ~templates:[Fir.Statement_class.while_loop ()]
 
   let has_if_statements : t -> bool =
-    has_statements_matching_class ~template:Fir.Statement_class.If
+    has_statements_matching ~templates:[Fir.Statement_class.If]
 
   let has_statements : t -> bool =
     at_least_one_thread_with ~f:Thread.has_statements
 
   let has_non_label_prims : t -> bool =
-    at_least_one_thread_with ~f:Thread.has_non_label_prims
+    has_statements_not_matching
+      ~templates:[Fir.Statement_class.(Prim (Some Label))]
 
   let has_dead_code_blocks : t -> bool =
     at_least_one_thread_with ~f:Thread.has_dead_code_blocks

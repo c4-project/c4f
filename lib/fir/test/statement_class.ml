@@ -52,21 +52,29 @@ let test_fragment : unit Src.Statement.t Lazy.t =
 
 let%test_module "count_matches" =
   ( module struct
-    let test (template : Src.Statement_class.t) : unit =
+    let test (templates : Src.Statement_class.t list) : unit =
       let k =
         Src.Statement_class.count_matches
           (Lazy.force test_fragment)
-          ~template
+          ~templates
       in
       Stdio.printf "%d" k
 
-    let%expect_test "if statements" = test If ; [%expect {| 2 |}]
+    let%expect_test "if statements" =
+      test [If] ;
+      [%expect {| 2 |}]
 
     let%expect_test "atomics of any form" =
-      test (Src.Statement_class.atomic ()) ;
+      test [Src.Statement_class.atomic ()] ;
       [%expect {| 3 |}]
 
     let%expect_test "atomic_store" =
-      test (Src.Statement_class.atomic ~specifically:Store ()) ;
+      test [Src.Statement_class.atomic ~specifically:Store ()] ;
+      [%expect {| 1 |}]
+
+    let%expect_test "atomic_store or atomic_load" =
+      test
+        [ Src.Statement_class.atomic ~specifically:Store ()
+        ; Src.Statement_class.atomic ~specifically:Load () ] ;
       [%expect {| 1 |}]
   end )

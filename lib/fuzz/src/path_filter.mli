@@ -48,10 +48,18 @@ val in_threads_only : t -> threads:Set.M(Int).t -> t
 module End_check : sig
   (** Type of end checks. *)
   type t =
-    | Is_of_class of Act_fir.Statement_class.t
-        (** Requires the path to reach a statement of the given class. *)
-    | Has_no_labels
-        (** Requires the path to reach a statement containing no labels. *)
+    | Is_of_class of Act_fir.Statement_class.t list
+        (** Requires the path to reach a statement of any of the given
+            classes. *)
+    | Is_not_of_class of Act_fir.Statement_class.t list
+        (** Requires the path to reach a statement not of any of the given
+            classes. *)
+
+  (** {2 Specific constructions of end check} *)
+
+  val transaction_safe : t
+  (** [transaction_safe] requires the path to reach a statement that is
+      'transaction safe'; that is, it can appear inside an 'atomic' block. *)
 end
 
 val require_end_check : t -> check:End_check.t -> t

@@ -28,12 +28,12 @@ module Make_empty : Action_types.S with type Payload.t = unit = struct
 
   module Payload = Payload.None
 
-  let available (subject : Subject.Test.t) ~(param_map : Param_map.t) :
-      bool State.Monad.t =
-    State.Monad.Monadic.return
-      Or_error.Let_syntax.(
-        let%map cap = Param_map.get_thread_cap param_map in
-        List.length (Act_litmus.Test.Raw.threads subject) < cap)
+  let available (ctx : Availability.Context.t) : bool Or_error.t =
+    let subject = Availability.Context.subject ctx in
+    let param_map = Availability.Context.param_map ctx in
+    Or_error.Let_syntax.(
+      let%map cap = Param_map.get_thread_cap param_map in
+      List.length (Act_litmus.Test.Raw.threads subject) < cap)
 
   let run (subject : Subject.Test.t) ~(payload : Payload.t) :
       Subject.Test.t State.Monad.t =
@@ -46,7 +46,7 @@ module Label :
 struct
   let name = Act_common.Id.of_string "program.label"
 
-  let available = Action.always
+  let available = Availability.has_threads
 
   let readme () =
     Act_utils.My_string.format_for_readme
@@ -55,7 +55,7 @@ struct
   module Payload = P.Insertion.Make (struct
     type t = Act_common.C_id.t [@@deriving sexp]
 
-    let action_id = name
+    let name = name
 
     let path_filter = State.Monad.return Path_filter.empty
 

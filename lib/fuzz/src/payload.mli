@@ -42,6 +42,20 @@ module Helpers : sig
       {!lift_quickcheck} if [gen_opt] is [Ok gen], and lifts the error inside
       the state monad if not. The caller must provide the ID of the action
       whose payload is being generated as [action_id]. *)
+
+  val lift_path_gen :
+       Subject.Test.t
+    -> random:Splittable_random.State.t
+    -> action_id:Act_common.Id.t
+    -> filter:Path_filter.t State.Monad.t
+    -> f:
+         (   ?filter:Path_filter.t
+          -> Subject.Test.t
+          -> Path.Program.t Opt_gen.t)
+    -> Path.Program.t State.Monad.t
+  (** [lift_path_gen subject ~random ~action_id ~filter ~f] lifts [f], a path
+      producer, into a monadic action that generates a path for an action
+      payload. *)
 end
 
 (** {1 Stock payloads and functors for building them} *)
@@ -75,7 +89,8 @@ module Insertion : sig
   module Make (To_insert : sig
     type t [@@deriving sexp]
 
-    val action_id : Act_common.Id.t
+    val name : Act_common.Id.t
+    (** [name] should be the approximate ID of the action. *)
 
     val path_filter : Path_filter.t State.Monad.t
     (** [path_filter] is a stateful action that generates a path filter. *)
@@ -88,31 +103,31 @@ end
 
 (** {2 Surround} *)
 
-(* Payload for actions that surround a statement span with an if- or
-   do-while- construct.
+(* Payload for actions that surround a statement span with a flow block or if
+   statement that requires a conditional.
 
    The payload for any surround action contains two elements:
 
    - the expression to insert into the condition of the if statement; - the
    path to the statements to remove, pass through the if statement block
    generators, and replace with the statement. *)
-module Surround : sig
+module Cond_surround : sig
   (** Opaque type of payloads. *)
   type t
 
   (** {3 Constructors} *)
 
-  val make : cond:Act_fir.Expression.t -> path:Path.Program.t -> t
-  (** [make ~cond ~path] makes a payload given a specific condition
-      expression [cond] and statement-list selecting path [path]. *)
+  val make : cond:Act_fir.Expression.t -> where:Path.Program.t -> t
+  (** [make ~cond ~where] makes a payload given a specific condition
+      expression [cond] and statement-list selecting path [where]. *)
 
   (** {3 Accessors} *)
 
   val cond : t -> Act_fir.Expression.t
   (** [cond payload] retrieves the generated condition inside [payload]. *)
 
-  val path : t -> Path.Program.t
-  (** [path payload] retrieves the generated path inside [payload]. *)
+  val where : t -> Path.Program.t
+  (** [where payload] retrieves the generated path inside [payload]. *)
 
   val apply :
        t
@@ -131,9 +146,9 @@ module Surround : sig
   (** [Make] builds a fully-functional payload module with the surround
       payload and a generator that uses the given conditional generator. *)
   module Make (Basic : sig
-    val action_id : Act_common.Id.t
-    (** [action_id] should be the approximate ID of the action whose payload
-        is being defined. *)
+    val name : Act_common.Id.t
+    (** [name] should be the approximate ID of the action whose payload is
+        being defined. *)
 
     val cond_gen :
       Act_fir.Env.t -> Act_fir.Expression.t Base_quickcheck.Generator.t

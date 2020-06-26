@@ -21,9 +21,9 @@ end
 let forbid_already_written_flag_key : Ac.Id.t =
   Ac.Id.("store" @: "forbid-already-written" @: empty)
 
-let forbid_already_written_flag (param_map : Param_map.t) :
-    Flag.t State.Monad.t =
-  Param_map.get_flag_m param_map ~id:forbid_already_written_flag_key
+let forbid_already_written_flag (param_map : Param_map.t) : Flag.t Or_error.t
+    =
+  Param_map.get_flag param_map ~id:forbid_already_written_flag_key
 
 let readme_faw : string Lazy.t =
   lazy
@@ -119,7 +119,7 @@ end) : Action_types.S with type Payload.t = B.t P.Insertion.t = struct
   module Payload = Payload.Insertion.Make (struct
     type t = B.t [@@deriving sexp]
 
-    let action_id = B.name
+    let name = B.name
 
     let path_filter = State.Monad.return B.path_filter
 
@@ -151,7 +151,9 @@ end) : Action_types.S with type Payload.t = B.t P.Insertion.t = struct
         ~(random : Splittable_random.State.t) ~(param_map : Param_map.t) :
         t State.Monad.t =
       State.Monad.Let_syntax.(
-        let%bind faw_flag = forbid_already_written_flag param_map in
+        let%bind faw_flag =
+          State.Monad.Monadic.return (forbid_already_written_flag param_map)
+        in
         let forbid_already_written = Flag.eval faw_flag ~random in
         State.Monad.with_vars_m (fun vars ->
             Payload.Helpers.lift_quickcheck_opt
@@ -159,26 +161,26 @@ end) : Action_types.S with type Payload.t = B.t P.Insertion.t = struct
               ~random ~action_id:name))
   end)
 
-  let available (subject : Subject.Test.t) ~(param_map : Param_map.t) :
-      bool State.Monad.t =
-    State.Monad.(
-      Let_syntax.(
-        let%bind faw_flag = forbid_already_written_flag param_map in
-        (* If the flag is stochastic, then we can't tell whether its value
-           will be the same in the payload check. As such, we need to be
-           pessimistic and assume that we _can't_ make writes to
-           already-written variables if we can't guarantee an exact value.
+  let available (ctx : Availability.Context.t) : bool Or_error.t =
+    let vars = State.vars (Availability.Context.state ctx) in
+    let param_map = Availability.Context.param_map ctx in
+    let subject = Availability.Context.subject ctx in
+    Or_error.Let_syntax.(
+      let%map faw_flag = forbid_already_written_flag param_map in
+      (* If the flag is stochastic, then we can't tell whether its value will
+         be the same in the payload check. As such, we need to be pessimistic
+         and assume that we _can't_ make writes to already-written variables
+         if we can't guarantee an exact value.
 
-           See https://github.com/MattWindsor91/act/issues/172. *)
-        let forbid_already_written =
-          Option.value (Flag.to_exact_opt faw_flag) ~default:true
-        in
-        let%map has_vars =
-          with_vars
-            (Var.Map.exists_satisfying_all ~scope:Ac.Scope.Global
-               ~predicates:(dst_restrictions ~forbid_already_written))
-        in
-        has_vars && Path_filter.is_constructible B.path_filter ~subject))
+         See https://github.com/MattWindsor91/act/issues/172. *)
+      let forbid_already_written =
+        Option.value (Flag.to_exact_opt faw_flag) ~default:true
+      in
+      let has_vars =
+        Var.Map.exists_satisfying_all vars ~scope:Ac.Scope.Global
+          ~predicates:(dst_restrictions ~forbid_already_written)
+      in
+      has_vars && Path_filter.is_constructible B.path_filter ~subject)
 
   let bookkeep_dst (x : Ac.C_id.t) ~(tid : int) : unit State.Monad.t =
     State.Monad.(

@@ -203,8 +203,7 @@ module Xchgify : Action_types.S with type Payload.t = Path.Program.t = struct
         empty
         |> require_end_check
              ~check:
-               (Is_of_class
-                  (Cm.Statement_class.atomic ~specifically:Store ())))
+               (Is_of_class [Cm.Statement_class.atomic ~specifically:Store ()]))
 
   module Payload = struct
     type t = Path.Program.t [@@deriving sexp]
@@ -218,11 +217,8 @@ module Xchgify : Action_types.S with type Payload.t = Path.Program.t = struct
         ~random ~action_id:name
   end
 
-  let available (subject : Subject.Test.t) ~(param_map : Param_map.t) :
-      bool State.Monad.t =
-    ignore param_map ;
-    State.Monad.return
-      (Path_filter.is_constructible (Lazy.force path_filter) ~subject)
+  let available : Availability.t =
+    Availability.is_filter_constructible (Lazy.force path_filter)
 
   module Atoms =
     Travesty.Traversable.Chain0

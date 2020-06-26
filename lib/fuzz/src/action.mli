@@ -119,21 +119,34 @@ end
 
 (** {1 Helpers for building actions} *)
 
-(** [availability_check] is the type of availability checks. *)
-type availability_check =
-  Subject.Test.t -> param_map:Param_map.t -> bool State.Monad.t
-
-val always : availability_check
-(** [always] always returns [true] without modifying or inspecting the fuzzer
-    state. *)
-
-val has_threads : availability_check
-(** [has_threads] returns [true] if there is at least one thread in the
-    program. *)
-
 (** Makes a basic logging function for an action. *)
 module Make_log (B : sig
   val name : Ac.Id.t
 end) : sig
   val log : Ac.Output.t -> ('a, Formatter.t, unit) format -> 'a
 end
+
+(** Makes a surrounding action.
+
+    This action template expects that the surrounding action is sound if it
+    surrounds zero statements. *)
+module Make_surround (Basic : sig
+  val name : Act_common.Id.t
+  (** [name] is the full name of the surround action. *)
+
+  val surround_with : string
+  (** [surround_with] is a phrase that specifies with what construct we're
+      surrounding the statements. *)
+
+  module Payload : sig
+    include Action_types.S_payload
+
+    val where : t -> Path.Program.t
+    (** [where pld] gets the transformation path from [pld]. *)
+  end
+
+  val wrap :
+    Subject.Statement.t list -> payload:Payload.t -> Subject.Statement.t
+  (** [wrap stms ~payload] surrounds [stms] in the construct induced by
+      [payload]. *)
+end) : Action_types.S with type Payload.t = Basic.Payload.t

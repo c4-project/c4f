@@ -127,7 +127,7 @@ let%test_module "Block" =
             (Act_fuzz.Path_producers.Block.try_gen_transform_stm
                ~filter:
                  Act_fuzz.Path_filter.(
-                   empty |> require_end_check ~check:(Is_of_class If))) ;
+                   empty |> require_end_check ~check:(Is_of_class [If]))) ;
           [%expect {|
             Stm[3]!This
             Stm[4]!This |}]
@@ -188,7 +188,7 @@ let%test_module "Block" =
             (Act_fuzz.Path_producers.Block.try_gen_transform_stm_list
                ~filter:
                  Act_fuzz.Path_filter.(
-                   empty |> require_end_check ~check:(Is_of_class If))) ;
+                   empty |> require_end_check ~check:(Is_of_class [If]))) ;
           [%expect
             {|
               Stm[3]!If!False!Range[0, 0]
@@ -210,7 +210,9 @@ let%test_module "Block" =
             (Act_fuzz.Path_producers.Block.try_gen_transform_stm_list
                ~filter:
                  Act_fuzz.Path_filter.(
-                   empty |> require_end_check ~check:Has_no_labels)) ;
+                   empty
+                   |> require_end_check
+                        ~check:(Is_not_of_class [Prim (Some Label)]))) ;
           [%expect
             {|
               Stm[3]!If!False!Range[0, 0]

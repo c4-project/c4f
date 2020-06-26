@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -45,12 +45,9 @@ module type S = sig
   (** The type of any payload on which this action depends. *)
   module Payload : S_payload
 
-  val available :
-    Subject.Test.t -> param_map:Param_map.t -> bool State.Monad.t
-  (** [available subject ~param_map] is a stateful computation that, given
-      subject [subject], the current state, and the fuzzer parameters in
-      [param_map], decides whether this action can run (given any member of
-      [Random_state.t]). *)
+  val available : Availability.t
+  (** [available] is an availability check that must hold before the action
+      can be chosen. *)
 
   val run :
     Subject.Test.t -> payload:Payload.t -> Subject.Test.t State.Monad.t

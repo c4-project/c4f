@@ -32,11 +32,11 @@ let%test_module "Surround" =
             (eq (of_variable_str_exn "x") (int_lit 27))
             (of_variable_str_exn "a")))
 
-    let path : Src.Path.Program.t =
+    let where : Src.Path.Program.t =
       Src.Path.(Program.in_thread 0 @@ Thread.in_stms @@ Stms.on_range 0 2)
 
-    let payload : Src.Payload.Surround.t =
-      Src.Payload.Surround.make ~cond ~path
+    let payload : Src.Payload.Cond_surround.t =
+      Src.Payload.Cond_surround.make ~cond ~where
 
     let%test_module "Tautology" =
       ( module struct

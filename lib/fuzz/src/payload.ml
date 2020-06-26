@@ -36,17 +36,17 @@ module Helpers = struct
                    ~action_id:(action_id : Act_common.Id.t)])
       in
       lift_quickcheck gen ~random)
-end
 
-let lift_path_gen (test : Subject.Test.t)
-    ~(random : Splittable_random.State.t) ~(action_id : Act_common.Id.t)
-    ~(filter : Path_filter.t State.Monad.t)
-    ~(f :
-       ?filter:Path_filter.t -> Subject.Test.t -> Path.Program.t Opt_gen.t) :
-    Path.Program.t State.Monad.t =
-  State.Monad.Let_syntax.(
-    let%bind filter = filter in
-    Helpers.lift_quickcheck_opt (f test ~filter) ~random ~action_id)
+  let lift_path_gen (test : Subject.Test.t)
+      ~(random : Splittable_random.State.t) ~(action_id : Act_common.Id.t)
+      ~(filter : Path_filter.t State.Monad.t)
+      ~(f :
+         ?filter:Path_filter.t -> Subject.Test.t -> Path.Program.t Opt_gen.t)
+      : Path.Program.t State.Monad.t =
+    State.Monad.Let_syntax.(
+      let%bind filter = filter in
+      lift_quickcheck_opt (f test ~filter) ~random ~action_id)
+end
 
 module Insertion = struct
   type 'a t = {to_insert: 'a; where: Path.Program.t}
@@ -55,7 +55,7 @@ module Insertion = struct
   module Make (Basic : sig
     type t [@@deriving sexp]
 
-    val action_id : Act_common.Id.t
+    val name : Act_common.Id.t
 
     val path_filter : Path_filter.t State.Monad.t
 
@@ -69,8 +69,8 @@ module Insertion = struct
     type t = Basic.t ins [@@deriving sexp]
 
     let gen_path test =
-      lift_path_gen test ~filter:Basic.path_filter ~action_id:Basic.action_id
-        ~f:Path_producers.Test.try_gen_insert_stm
+      Helpers.lift_path_gen test ~filter:Basic.path_filter
+        ~action_id:Basic.name ~f:Path_producers.Test.try_gen_insert_stm
 
     let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
         ~(param_map : Param_map.t) : t State.Monad.t =
@@ -83,9 +83,9 @@ module Insertion = struct
   end
 end
 
-module Surround = struct
+module Cond_surround = struct
   module Body = struct
-    type t = {cond: Act_fir.Expression.t; path: Path.Program.t}
+    type t = {cond: Act_fir.Expression.t; where: Path.Program.t}
     [@@deriving make, sexp, fields]
   end
 
@@ -106,23 +106,24 @@ module Surround = struct
     State.Monad.add_expression_dependencies cond
       ~scope:(Local (Path.Program.tid path))
 
-  let apply ({cond; path} : t) ~(test : Subject.Test.t)
+  let apply ({cond; where} : t) ~(test : Subject.Test.t)
       ~(f :
             Act_fir.Expression.t
          -> Subject.Statement.t list
          -> Subject.Statement.t) : Subject.Test.t State.Monad.t =
     State.Monad.(
       Let_syntax.(
-        let%bind () = add_cond_dependencies path cond in
+        let%bind () = add_cond_dependencies where cond in
         Monadic.return
-          (Path_consumers.Test.transform_stm_list path ~target:test
-             ~f:(fun test -> Or_error.return [f cond test]))))
+          (Path_consumers.Test.transform_stm_list where ~target:test
+             ~f:(fun test -> Ok [f cond test]))))
 
   let cond_env (vars : Var.Map.t) ~(tid : int) : Act_fir.Env.t =
     Var.Map.env_satisfying_all ~scope:(Local tid) ~predicates:[] vars
 
   module Make (Basic : sig
-    val action_id : Act_common.Id.t
+    val name : Act_common.Id.t
+    (** [name] should be the name of the action. *)
 
     val cond_gen : Act_fir.Env.t -> Act_fir.Expression.t Q.Generator.t
     (** [cond_gen env] should, given a first-class environment module [env]
@@ -135,7 +136,8 @@ module Surround = struct
     include Body
 
     let gen_path test =
-      lift_path_gen test ~filter:Basic.path_filter ~action_id:Basic.action_id
+      Helpers.lift_path_gen test ~filter:Basic.path_filter
+        ~action_id:Basic.name
         ~f:Path_producers.Test.try_gen_transform_stm_list
 
     let quickcheck_cond (path : Path.Program.t) :
@@ -156,9 +158,9 @@ module Surround = struct
         ~(param_map : Param_map.t) : Body.t State.Monad.t =
       ignore param_map ;
       State.Monad.Let_syntax.(
-        let%bind path = gen_path test ~random in
-        let%map cond = gen_cond path ~random in
-        Body.make ~cond ~path)
+        let%bind where = gen_path test ~random in
+        let%map cond = gen_cond where ~random in
+        Body.make ~cond ~where)
   end
 end
 

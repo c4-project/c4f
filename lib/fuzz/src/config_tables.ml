@@ -45,7 +45,11 @@ let actions : Action.With_default_weight.t list Lazy.t =
       ; make ~action:(module Fetch_actions.Int_dead) ~default_weight:20
       ; make ~action:(module Fetch_actions.Int_redundant) ~default_weight:20
       ; make ~action:(module Var_actions.Make) ~default_weight:20
-      ; make ~action:(module Var_actions.Volatile) ~default_weight:25 ]
+      ; make ~action:(module Var_actions.Volatile) ~default_weight:25
+        (* These are disabled by default because they induce transactions.
+           TODO(@MattWindsor91): gate them in another way. *)
+      ; make ~action:(module Lock_actions.Atomic_surround) ~default_weight:0
+      ; make ~action:(module Lock_actions.Sync_surround) ~default_weight:0 ]
 
 let action_map : Action.With_default_weight.t Map.M(Act_common.Id).t Lazy.t =
   Lazy.(

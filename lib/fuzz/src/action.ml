@@ -21,30 +21,19 @@ module With_default_weight = struct
 
   let name ({action= (module M); _} : t) : Act_common.Id.t = M.name
 
-  let available ({action= (module M); _} : t) :
-      Subject.Test.t -> param_map:Param_map.t -> bool State.Monad.t =
-    M.available
+  let available ({action= (module M); _} : t) : Availability.t = M.available
 
   let zero_if_not_available (action : t) (weight : int)
       ~(subject : Subject.Test.t) ~(param_map : Param_map.t) :
       int State.Monad.t =
-    State.Monad.Let_syntax.(
-      if%map available action subject ~param_map then weight else 0)
+    State.Monad.(
+      Let_syntax.(
+        let%bind ctx =
+          peek (fun state ->
+              Availability.Context.make ~state ~subject ~param_map)
+        in
+        if%map Monadic.return (available action ctx) then weight else 0))
 end
-
-type availability_check =
-  Subject.Test.t -> param_map:Param_map.t -> bool State.Monad.t
-
-let always (_ : Subject.Test.t) ~(param_map : Param_map.t) :
-    bool State.Monad.t =
-  ignore (param_map : Param_map.t) ;
-  State.Monad.return true
-
-let has_threads (subject : Subject.Test.t) ~(param_map : Param_map.t) :
-    bool State.Monad.t =
-  ignore (param_map : Param_map.t) ;
-  State.Monad.return
-    (not (List.is_empty (Act_litmus.Test.Raw.threads subject)))
 
 module Adjusted_weight = struct
   type t = Not_adjusted of int | Adjusted of {original: int; actual: int}
@@ -151,6 +140,43 @@ module Pool = struct
       table
       |> to_available_only ~subject ~param_map
       >>= pick_from_available ~random)
+end
+
+module Make_surround (Basic : sig
+  val name : Act_common.Id.t
+
+  val surround_with : string
+
+  module Payload : sig
+    include Action_types.S_payload
+
+    val where : t -> Path.Program.t
+  end
+
+  val wrap :
+    Subject.Statement.t list -> payload:Payload.t -> Subject.Statement.t
+end) : Action_types.S with type Payload.t = Basic.Payload.t = struct
+  include Basic
+
+  let readme () =
+    Act_utils.My_string.format_for_readme
+      (String.concat
+         [ {| This action removes a sublist of statements from the program, replacing
+          them with |}
+         ; Basic.surround_with
+         ; {| containing those statements. |} ])
+
+  (* Surround actions are always available if there is at least one thread.
+     This is because they can always surround a block of zero statements,
+     which trivially fulfils any path filter used on surrounds at time of
+     writing. *)
+  let available : Availability.t = Availability.has_threads
+
+  let run (test : Subject.Test.t) ~(payload : Payload.t) :
+      Subject.Test.t State.Monad.t =
+    State.Monad.Monadic.return
+      (Path_consumers.Test.transform_stm_list (Payload.where payload)
+         ~target:test ~f:(fun test -> Ok [Basic.wrap test ~payload]))
 end
 
 module Make_log (B : sig

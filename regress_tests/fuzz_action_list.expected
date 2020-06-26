@@ -90,6 +90,16 @@ flow.if.tautology:
 flow.invert-if:
   Weight: 10x
   Summary: Flips the conditional and branches of an if statement.
+flow.lock.surround.atomic:
+  Weight: disabled
+  Summary:
+    This action removes a sublist of statements from the program, replacing
+    them with an atomic block containing those statements.
+flow.lock.surround.sync:
+  Weight: disabled
+  Summary:
+    This action removes a sublist of statements from the program, replacing
+    them with a synchronised block containing those statements.
 flow.loop.surround:
   Weight: 15x
   Summary:

@@ -15,7 +15,8 @@ module Surround = struct
   (* This is shadowed, so we need to alias it. *)
   module Helpers = Payload.Helpers
 
-  module type S = Action_types.S with type Payload.t = Payload.Surround.t
+  module type S =
+    Action_types.S with type Payload.t = Payload.Cond_surround.t
 
   let readme_prelude : string =
     {| Removes a sublist of statements from the program, replacing them
@@ -45,7 +46,7 @@ module Surround = struct
         return a Quickcheck generator generating expressions over those
         variables. *)
 
-    val path_filter : Path_filter.t State.Monad.t
+    val path_filter : Path_filter.t
     (** [path_filter] should apply any extra requirements on path filters. *)
   end) : S = struct
     include Basic
@@ -56,18 +57,18 @@ module Surround = struct
       let raw = readme_prelude ^ "\n\n" ^ readme_suffix in
       Act_utils.My_string.format_for_readme raw
 
-    module Surround = Payload.Surround
+    module Surround = Payload.Cond_surround
 
     module Payload = Surround.Make (struct
       include Basic
 
-      let action_id = name
+      let name = name
+
+      let path_filter = State.Monad.return path_filter
     end)
 
-    let available (test : Subject.Test.t) ~(param_map : Param_map.t) :
-        bool State.Monad.t =
-      ignore (param_map : Param_map.t) ;
-      test |> Subject.Test.has_statements |> State.Monad.return
+    let available : Availability.t =
+      Availability.is_filter_constructible Basic.path_filter
 
     let wrap_in_if (statements : Metadata.t Act_fir.Statement.t list)
         ~(cond : Act_fir.Expression.t) : Metadata.t Act_fir.Statement.t =
@@ -102,9 +103,10 @@ module Surround = struct
         =
       t_branch_of_statements
 
-    let path_filter : Path_filter.t State.Monad.t =
-      State.Monad.return
-        Path_filter.(require_end_check empty ~check:Has_no_labels)
+    let path_filter : Path_filter.t =
+      Path_filter.(
+        require_end_check empty
+          ~check:(Is_not_of_class [Act_fir.Statement_class.label]))
   end)
 
   module Tautology : S = Make (struct
@@ -127,8 +129,7 @@ module Surround = struct
         Subject.Block.t =
       Act_fir.Block.make ~metadata:Metadata.dead_code ()
 
-    let path_filter : Path_filter.t State.Monad.t =
-      State.Monad.return Path_filter.empty
+    let path_filter : Path_filter.t = Path_filter.empty
   end)
 end
 
@@ -139,17 +140,15 @@ module Invert : Action_types.S with type Payload.t = Path.Program.t = struct
     Act_utils.My_string.format_for_readme
       {| Flips the conditional and branches of an if statement. |}
 
-  let available (test : Subject.Test.t) ~(param_map : Param_map.t) :
-      bool State.Monad.t =
-    ignore (param_map : Param_map.t) ;
-    test |> Subject.Test.has_if_statements |> State.Monad.return
+  let available (ctx : Availability.Context.t) : bool Or_error.t =
+    Ok (ctx |> Availability.Context.subject |> Subject.Test.has_if_statements)
 
   module Payload = struct
     type t = Path.Program.t [@@deriving sexp]
 
     let quickcheck_path (test : Subject.Test.t) : Path.Program.t Opt_gen.t =
       let filter =
-        Path_filter.(empty |> require_end_check ~check:(Is_of_class If))
+        Path_filter.(empty |> require_end_check ~check:(Is_of_class [If]))
       in
       Path_producers.Test.try_gen_transform_stm ~filter test
 

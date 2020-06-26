@@ -18,4 +18,5 @@
     removed statements.
 
     See also {!If_actions.Surround}. *)
-module Surround : Action_types.S with type Payload.t = Payload.Surround.t
+module Surround :
+  Action_types.S with type Payload.t = Payload.Cond_surround.t

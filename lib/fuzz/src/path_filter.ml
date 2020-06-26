@@ -50,27 +50,33 @@ end
 (** Checks that can only be carried out at the end of a statement path. *)
 module End_check = struct
   module M = struct
-    type t = Is_of_class of Act_fir.Statement_class.t | Has_no_labels
+    type t =
+      | Is_of_class of Act_fir.Statement_class.t list
+      | Is_not_of_class of Act_fir.Statement_class.t list
     [@@deriving compare, equal, sexp]
   end
 
   include M
   include Comparable.Make (M)
 
+  let transaction_safe : t =
+    (* TODO(@MattWindsor91): add things to this as we go along. *)
+    Is_not_of_class [Act_fir.Statement_class.atomic ()]
+
   let is_ok (check : t) ~(stm : Subject.Statement.t) : bool =
-    match check with
-    | Is_of_class template ->
-        Act_fir.Statement_class.(
-          Option.exists ~f:(matches ~template) (classify stm))
-    | Has_no_labels ->
-        not (Subject.Statement.has_labels stm)
+    Act_fir.Statement_class.(
+      match check with
+      | Is_of_class templates ->
+          Option.exists ~f:(matches_any ~templates) (classify stm)
+      | Is_not_of_class templates ->
+          Option.for_all ~f:(Fn.non (matches_any ~templates)) (classify stm))
 
   let is_constructible (flag : t) ~(subject : Subject.Test.t) : bool =
     match flag with
-    | Is_of_class template ->
-        Subject.Test.has_statements_matching_class subject ~template
-    | Has_no_labels ->
-        Subject.Test.has_non_label_prims subject
+    | Is_of_class templates ->
+        Subject.Test.has_statements_matching subject ~templates
+    | Is_not_of_class templates ->
+        Subject.Test.has_statements_not_matching subject ~templates
 
   let check (check : t) ~(stm : Subject.Statement.t) : unit Or_error.t =
     Tx.Or_error.unless_m (is_ok check ~stm) ~f:(fun () ->

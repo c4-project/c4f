@@ -21,7 +21,8 @@
     - a similar mapping to the 'false' block. *)
 module Surround : sig
   (** Each if statement generator has this type. *)
-  module type S = Action_types.S with type Payload.t = Payload.Surround.t
+  module type S =
+    Action_types.S with type Payload.t = Payload.Cond_surround.t
 
   (** Generates if statements where the expression is arbitrary and both
       blocks contain the original statement span. *)

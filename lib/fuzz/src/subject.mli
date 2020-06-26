@@ -61,10 +61,6 @@ module Statement : sig
   val has_labels : t -> bool
   (** [has_labels stm] is true if there are labels in [stm], looking
       recursively. *)
-
-  val has_non_label_prims : t -> bool
-  (** [has_non_label_prims stm] is true if there is at least one primitive in
-      [stm] that is not a label. *)
 end
 
 (** {2 Subject blocks} *)
@@ -166,10 +162,15 @@ module Test : sig
 
   (** {3 Availability queries} *)
 
-  val has_statements_matching_class :
-    t -> template:Act_fir.Statement_class.t -> bool
-  (** [has_statements_matching_class test ~template] is true if, and only if,
-      [test] contains at least one statement of class [template]. *)
+  val has_statements_matching :
+    t -> templates:Act_fir.Statement_class.t list -> bool
+  (** [has_statements_matching test ~templates] is true if, and only if,
+      [test] contains at least one statement matching one of [templates]. *)
+
+  val has_statements_not_matching :
+    t -> templates:Act_fir.Statement_class.t list -> bool
+  (** [has_statements_not_matching test ~templates] is true if, and only if,
+      [test] contains at least one statement not matching one of [templates]. *)
 
   val has_atomic_statements : t -> bool
   (** [has_atomic_statements test] is true if, and only if, [test] contains

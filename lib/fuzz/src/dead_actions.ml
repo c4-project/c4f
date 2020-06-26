@@ -73,10 +73,10 @@ struct
       {| Inserts a valid 'early-out' statement (break or return) into a random
          dead-code location. |}
 
-  let available (test : Subject.Test.t) ~(param_map : Param_map.t) :
-      bool State.Monad.t =
-    ignore (param_map : Param_map.t) ;
-    test |> Subject.Test.has_dead_code_blocks |> State.Monad.return
+  let available (ctx : Availability.Context.t) : bool Or_error.t =
+    Ok
+      ( ctx |> Availability.Context.subject
+      |> Subject.Test.has_dead_code_blocks )
 
   module Payload = Early_out_payload
 
@@ -136,7 +136,7 @@ struct
   module Payload = P.Insertion.Make (struct
     type t = Act_common.C_id.t [@@deriving sexp]
 
-    let action_id = name
+    let name = name
 
     let path_filter : Path_filter.t State.Monad.t =
       State.Monad.with_labels path_filter'
@@ -165,11 +165,9 @@ struct
           ~random)
   end)
 
-  let available (subject : Subject.Test.t) ~(param_map : Param_map.t) :
-      bool State.Monad.t =
-    ignore param_map ;
-    State.Monad.with_labels (fun labels ->
-        Path_filter.is_constructible ~subject (path_filter' labels))
+  let available (ctx : Availability.Context.t) : bool Or_error.t =
+    let labels = ctx |> Availability.Context.state |> State.labels in
+    Availability.is_filter_constructible (path_filter' labels) ctx
 
   let run (subject : Subject.Test.t) ~(payload : Payload.t) :
       Subject.Test.t State.Monad.t =

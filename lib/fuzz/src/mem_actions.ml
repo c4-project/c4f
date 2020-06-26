@@ -34,7 +34,7 @@ struct
   module Payload = P.Insertion.Make (struct
     type t = Cm.Atomic_fence.t [@@deriving sexp]
 
-    let action_id = name
+    let name = name
 
     let path_filter = State.Monad.return Path_filter.empty
 
@@ -46,7 +46,7 @@ struct
         ~random
   end)
 
-  let available = Action.always
+  let available = Availability.has_threads
 
   let run (subject : Subject.Test.t)
       ~(payload : Cm.Atomic_fence.t P.Insertion.t) :
@@ -99,7 +99,7 @@ module Strengthen :
     Path_filter.(
       empty
       |> require_end_check
-           ~check:(End_check.Is_of_class Cm.Statement_class.(atomic ())))
+           ~check:(End_check.Is_of_class Cm.Statement_class.[atomic ()]))
 
   module Payload = struct
     include Strengthen_payload
@@ -128,10 +128,8 @@ module Strengthen :
         {path; mo; can_weaken})
   end
 
-  let available (subject : Subject.Test.t) ~(param_map : Param_map.t) :
-      bool State.Monad.t =
-    ignore param_map ;
-    State.Monad.return (Path_filter.is_constructible filter ~subject)
+  let available : Availability.t =
+    Availability.is_filter_constructible filter
 
   module On_atomics =
     Travesty.Traversable.Chain0
