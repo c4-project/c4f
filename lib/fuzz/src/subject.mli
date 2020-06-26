@@ -176,6 +176,10 @@ module Test : sig
   (** [has_atomic_statements test] is true if, and only if, [test] contains
       at least one atomic statement. *)
 
+  val has_atomic_blocks : t -> bool
+  (** [has_atomic_block test] is true if, and only if, [test] contains at
+      least one atomic block. *)
+
   val has_statements : t -> bool
   (** [has_statements test] is true if, and only if, [test] contains at least
       one statement. *)

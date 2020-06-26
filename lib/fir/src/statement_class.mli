@@ -102,5 +102,9 @@ val while_loop : ?specifically:Flow_block.While.t -> unit -> t
 (** [while_loop ?specifically ()] constructs a while-loop class, optionally
     with the details in [specifically]. *)
 
+val lock_block : ?specifically:Flow_block.Lock.t -> unit -> t
+(** [lock_block ?specifically ()] constructs a lock-block class, optionally
+    with the details in [specifically]. *)
+
 val label : t
 (** [label] is a class that matches label statements. *)

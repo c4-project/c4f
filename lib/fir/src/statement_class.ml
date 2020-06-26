@@ -96,9 +96,12 @@ let statement_recursively_matches_any (type e) (stm : e Statement.t)
   0 < count_matches stm ~templates
 
 let atomic ?(specifically : Atomic_class.t option) () : t =
-  Prim (Some (Prim.Atomic specifically))
+  Prim (Some (Atomic specifically))
 
 let while_loop ?(specifically : Flow_block.While.t option) () : t =
-  Flow (Some (Flow.While specifically))
+  Flow (Some (While specifically))
+
+let lock_block ?(specifically : Flow_block.Lock.t option) () : t =
+  Flow (Some (Lock specifically))
 
 let label : t = Prim (Some Label)

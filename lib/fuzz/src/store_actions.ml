@@ -61,6 +61,10 @@ Storelike.Make (struct
 
   include B
 
+  (* No atomic stores are transaction-safe, so we forbid their generation in
+     atomic blocks. *)
+  let path_filter = Path_filter.not_in_atomic_block @@ path_filter
+
   type t = Cm.Atomic_store.t [@@deriving sexp]
 
   let gen ~(src : Cm.Env.t) ~(dst : Cm.Env.t) ~(vars : Var.Map.t)

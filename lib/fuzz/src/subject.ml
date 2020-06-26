@@ -179,6 +179,10 @@ module Test = struct
   let has_if_statements : t -> bool =
     has_statements_matching ~templates:[Fir.Statement_class.If]
 
+  let has_atomic_blocks : t -> bool =
+    has_statements_matching
+      ~templates:[Fir.Statement_class.lock_block ~specifically:Atomic ()]
+
   let has_statements : t -> bool =
     at_least_one_thread_with ~f:Thread.has_statements
 

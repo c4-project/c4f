@@ -32,6 +32,8 @@ val empty : t
     These consume a path filter and return a path filter with the given
     predicate switched on. *)
 
+(** {2 Require predicates} *)
+
 val in_dead_code_only : t -> t
 (** [in_dead_code_only filter] adds to [filter] the restriction that any path
     must travel through at least one dead-code block. *)
@@ -45,6 +47,14 @@ val in_threads_only : t -> threads:Set.M(Int).t -> t
     any path must travel through at least one of the threads in [threads].
     Such restrictions are cumulative. *)
 
+(** {2 Forbid predicates} *)
+
+val not_in_atomic_block : t -> t
+(** [not_in_atomic_block filter] adds to [filter] the restriction that any
+    path must not travel through an atomic block. *)
+
+(** {2 End checks} *)
+
 module End_check : sig
   (** Type of end checks. *)
   type t =
@@ -55,7 +65,7 @@ module End_check : sig
         (** Requires the path to reach a statement not of any of the given
             classes. *)
 
-  (** {2 Specific constructions of end check} *)
+  (** {3 Specific constructions of end check} *)
 
   val transaction_safe : t
   (** [transaction_safe] requires the path to reach a statement that is

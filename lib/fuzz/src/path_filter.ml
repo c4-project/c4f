@@ -25,10 +25,12 @@ end
     appropriate metadata or shape. *)
 module Flag = struct
   module M = struct
-    type t = In_loop | In_dead_code [@@deriving enum]
+    type t = In_loop | In_dead_code | In_atomic [@@deriving enum]
 
     let table : (t, string) List.Assoc.t =
-      [(In_loop, "in loop"); (In_dead_code, "in dead code")]
+      [ (In_loop, "in loop")
+      ; (In_dead_code, "in dead code")
+      ; (In_atomic, "in atomic block") ]
   end
 
   include M
@@ -40,6 +42,8 @@ module Flag = struct
         Subject.Test.has_while_loops subject
     | In_dead_code ->
         Subject.Test.has_dead_code_blocks subject
+    | In_atomic ->
+        Subject.Test.has_atomic_blocks subject
 
   (** Maps a subset of the flags to predicates that toggle whether a piece of
       metadata sets the flag or not. *)
@@ -87,12 +91,14 @@ end
 type t =
   { obs_flags: Set.M(Flag).t
   ; req_flags: Set.M(Flag).t
+  ; not_flags: Set.M(Flag).t
   ; end_checks: Set.M(End_check).t
   ; threads: Set.M(Int).t option }
 
 let empty : t =
   { obs_flags= Set.empty (module Flag)
   ; req_flags= Set.empty (module Flag)
+  ; not_flags= Set.empty (module Flag)
   ; end_checks= Set.empty (module End_check)
   ; threads= None }
 
@@ -106,8 +112,13 @@ module Obs_flags = struct
   let update_with_flow ?(flow : Act_fir.Statement_class.Flow.t option)
       (x : t) : t =
     Option.value_map flow
-      ~f:(fun f ->
-        match f with While _ -> observe_flag ~flag:In_loop x | Lock _ -> x)
+      ~f:(function
+        | While _ ->
+            observe_flag ~flag:In_loop x
+        | Lock (Some Atomic) ->
+            observe_flag ~flag:In_atomic x
+        | Lock _ ->
+            x)
       ~default:x
 
   (* Moving this into the Flag module'd require a lot of module gymnastics to
@@ -135,6 +146,15 @@ end
 
 include Req_flags
 
+module Not_flags = struct
+  let forbid_flag (existing : t) ~(flag : Flag.t) : t =
+    {existing with not_flags= Set.add existing.not_flags flag}
+
+  let not_in_atomic_block : t -> t = forbid_flag ~flag:In_atomic
+end
+
+include Not_flags
+
 let require_end_check (existing : t) ~(check : End_check.t) : t =
   {existing with end_checks= Set.add existing.end_checks check}
 
@@ -144,18 +164,34 @@ let in_threads_only (filter : t) ~(threads : Set.M(Int).t) : t =
   in
   {filter with threads= Some threads'}
 
-let unmet_flags (filter : t) : Set.M(Flag).t =
+let unmet_req_flags (filter : t) : Set.M(Flag).t =
   Set.diff filter.req_flags filter.obs_flags
 
-let error_of_flag (flag : Flag.t) : unit Or_error.t =
-  Or_error.errorf "Unmet flag condition: %s" (Flag.to_string flag)
+let unmet_not_flags (filter : t) : Set.M(Flag).t =
+  Set.inter filter.not_flags filter.obs_flags
+
+let error_of_flag (flag : Flag.t) ~(polarity : string) : unit Or_error.t =
+  Or_error.errorf "Unmet %s flag condition: %s" polarity
+    (Flag.to_string flag)
+
+let error_of_flags (flags : Set.M(Flag).t) ~(polarity : string) :
+    unit Or_error.t =
+  flags |> Set.to_list
+  |> Tx.Or_error.combine_map_unit ~f:(error_of_flag ~polarity)
 
 let is_thread_ok (filter : t) ~(thread : int) : bool =
   Option.for_all ~f:(fun t -> Set.mem t thread) filter.threads
 
+let check_req : t -> unit Or_error.t =
+  Fn.compose (error_of_flags ~polarity:"required") unmet_req_flags
+
+let check_not : t -> unit Or_error.t =
+  Fn.compose (error_of_flags ~polarity:"forbidden") unmet_not_flags
+
 let check (filter : t) : unit Or_error.t =
-  filter |> unmet_flags |> Set.to_list
-  |> Tx.Or_error.combine_map_unit ~f:error_of_flag
+  Or_error.Let_syntax.(
+    let%bind () = check_req filter in
+    check_not filter)
 
 let end_checks_for_statement (filter : t) (stm : Subject.Statement.t) :
     unit Or_error.t list =
