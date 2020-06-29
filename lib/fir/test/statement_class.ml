@@ -17,38 +17,19 @@ end
 
 let test_fragment : unit Src.Statement.t Lazy.t =
   lazy
-    Src.(
-      Statement.if_stm
-        (If.make ~cond:Expression.truth
-           ~t_branch:
-             (Block.of_statement_list
-                [ Statement.if_stm
-                    (If.make ~cond:Expression.truth
-                       ~t_branch:
-                         (Block.of_statement_list
-                            [ Statement.prim ()
-                                (Prim_statement.atomic_fetch
-                                   (Atomic_fetch.make
-                                      ~obj:(Address.of_variable_str_exn "x")
-                                      ~arg:(Expression.int_lit 42)
-                                      ~mo:Mem_order.Seq_cst ~op:Op.Fetch.Add))
-                            ])
-                       ~f_branch:
-                         (Block.of_statement_list
-                            [ Statement.prim ()
-                                (Prim_statement.atomic_store
-                                   (Atomic_store.make
-                                      ~dst:(Address.of_variable_str_exn "y")
-                                      ~src:(Expression.int_lit 64)
-                                      ~mo:Mem_order.Seq_cst)) ])) ])
-           ~f_branch:
-             (Block.of_statement_list
-                [ Statement.prim ()
-                    (Prim_statement.atomic_xchg
-                       (Atomic_xchg.make
-                          ~obj:(Address.of_variable_str_exn "x")
-                          ~desired:(Expression.int_lit 99)
-                          ~mo:Mem_order.Seq_cst)) ])))
+    Statement.(
+      mkif ~cond:Src.Expression.truth
+        [ mkif ~cond:Src.Expression.truth
+            Src.
+              [ mkafetch Add
+                  Address.(of_variable_str_exn "x")
+                  Expression.(int_lit 42) ]
+            Src.
+              [ mkastore
+                  Address.(of_variable_str_exn "y")
+                  Expression.(int_lit 64) ] ]
+        Src.
+          [mkaxchg Address.(of_variable_str_exn "x") Expression.(int_lit 99)])
 
 let%test_module "count_matches" =
   ( module struct

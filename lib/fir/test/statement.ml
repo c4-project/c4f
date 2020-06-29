@@ -27,7 +27,26 @@ let mkwhile ?(cond : Src.Expression.t = cond)
     (Src.Flow_block.while_loop ~cond ~kind:While
        ~body:(Src.Block.of_statement_list xs))
 
-let nop : unit Src.Statement.t = Src.Statement.prim () Src.Prim_statement.nop
+let prim : Src.Prim_statement.t -> unit Src.Statement.t =
+  Src.Statement.prim ()
+
+let nop : unit Src.Statement.t = prim Src.Prim_statement.nop
+
+let mkaxchg ?(mo : Src.Mem_order.t = Seq_cst) (obj : Src.Address.t)
+    (desired : Src.Expression.t) : unit Src.Statement.t =
+  prim
+    (Src.Prim_statement.atomic_xchg (Src.Atomic_xchg.make ~mo ~obj ~desired))
+
+let mkastore ?(mo : Src.Mem_order.t = Seq_cst) (dst : Src.Address.t)
+    (src : Src.Expression.t) : unit Src.Statement.t =
+  prim
+    (Src.Prim_statement.atomic_store (Src.Atomic_store.make ~mo ~dst ~src))
+
+let mkafetch ?(mo : Src.Mem_order.t = Seq_cst) (op : Src.Op.Fetch.t)
+    (obj : Src.Address.t) (arg : Src.Expression.t) : unit Src.Statement.t =
+  prim
+    (Src.Prim_statement.atomic_fetch
+       (Src.Atomic_fetch.make ~mo ~obj ~arg ~op))
 
 let%test_module "has_if_statements" =
   ( module struct
@@ -86,11 +105,9 @@ let%test_module "On_lvalues and On_addresses" =
                 ~cond:
                   (Expression.lvalue
                      Lvalue.(deref (of_variable_str_exn "i")))
-                [ prim ()
-                    (Prim_statement.atomic_store
-                       (Src.Atomic_store.make ~mo:Relaxed
-                          ~src:(Expression.of_variable_str_exn "herd")
-                          ~dst:Address.(ref (of_variable_str_exn "u")))) ]
+                [ mkastore ~mo:Relaxed
+                    Address.(ref (of_variable_str_exn "u"))
+                    Expression.(of_variable_str_exn "herd") ]
                 [ prim ()
                     (Prim_statement.goto
                        (Act_common.C_id.of_string "not_you")) ]
@@ -139,16 +156,12 @@ let%test_module "On_expressions" =
                             ~rvalue:(Expression.int_lit 1))) ]
                   []
               ; mkif
-                  [ prim ()
-                      (Prim_statement.atomic_store
-                         (Atomic_store.make ~mo:Seq_cst
-                            ~src:(Expression.int_lit 27)
-                            ~dst:(Address.of_variable_str_exn "x"))) ]
-                  [ prim ()
-                      (Prim_statement.atomic_store
-                         (Atomic_store.make ~mo:Seq_cst
-                            ~src:(Expression.int_lit 53)
-                            ~dst:(Address.of_variable_str_exn "x"))) ] ]))
+                  [ mkastore
+                      Address.(of_variable_str_exn "x")
+                      Expression.(int_lit 27) ]
+                  [ mkastore
+                      Address.(of_variable_str_exn "x")
+                      Expression.(int_lit 53) ] ]))
       in
       let stm' =
         M.On_expressions.map stm ~f:(fun _ -> Src.Expression.int_lit 2)
