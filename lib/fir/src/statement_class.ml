@@ -11,7 +11,10 @@ module Prim = struct
       ~procedure_call:(Fn.const None) ~label:(Fn.const (Some Label))
       ~nop:(Fn.const None)
 
-  let matches (clazz : t) ~(template : t) : bool =
+  let classify_rec : Prim_statement.t -> t list =
+    Class.lift_classify_rec classify
+
+  let class_matches (clazz : t) ~(template : t) : bool =
     match (template, clazz) with
     | Atomic None, Atomic _ | Label, Label ->
         true
@@ -27,14 +30,20 @@ module Flow = struct
     | While of Flow_block.While.t option
   [@@deriving compare, equal, sexp]
 
-  let classify (f : (_, _) Flow_block.t) : t option =
+  let classify' (f : ('a, 'b) Flow_block.t) : t option =
     match Flow_block.header f with
     | Lock lk ->
         Some (Lock (Some lk))
     | While (wk, _) ->
         Some (While (Some wk))
 
-  let matches (clazz : t) ~(template : t) : bool =
+  let classify (f : ('meta, 'meta Statement.t) Flow_block.t) : t option =
+    classify' f
+
+  let classify_rec (f : ('meta, 'meta Statement.t) Flow_block.t) : t list =
+    Class.lift_classify_rec classify f
+
+  let class_matches (clazz : t) ~(template : t) : bool =
     match (template, clazz) with
     | Lock None, Lock _ | While None, While _ ->
         true
@@ -46,54 +55,47 @@ module Flow = struct
         false
 end
 
-type t = Prim of Prim.t option | If | Flow of Flow.t option
-[@@deriving compare, equal, sexp]
+module Main = struct
+  type t = Prim of Prim.t option | If | Flow of Flow.t option
+  [@@deriving compare, equal, sexp]
 
-let classify (type e) (stm : e Statement.t) : t option =
-  Statement.reduce stm
-    ~prim:(fun (_, x) -> Some (Prim (Prim.classify x)))
-    ~if_stm:(Fn.const (Some If))
-    ~flow:(fun x -> Some (Flow (Flow.classify x)))
+  type 'meta elt = 'meta Statement.t
 
-let matches (clazz : t) ~(template : t) : bool =
-  match (template, clazz) with
-  | Prim None, Prim _ | If, If | Flow None, Flow _ ->
-      true
-  | Flow (Some template), Flow (Some clazz) ->
-      Flow.matches clazz ~template
-  | Prim (Some template), Prim (Some clazz) ->
-      Prim.matches clazz ~template
-  | _, _ ->
-      false
+  let classify (type e) (stm : e Statement.t) : t option =
+    Statement.reduce_step stm
+      ~prim:(fun (_, x) -> Some (Prim (Prim.classify x)))
+      ~if_stm:(Fn.const (Some If))
+      ~flow:(fun x -> Some (Flow (Flow.classify x)))
 
-let matches_any (clazz : t) ~(templates : t list) : bool =
-  List.exists templates ~f:(fun template -> matches clazz ~template)
+  let unfold_block (blk : ('m, t list) Block.t) : t list =
+    List.concat (Block.statements blk)
 
-let statement_matches_any (type e) (stm : e Statement.t)
-    ~(templates : t list) : bool =
-  Option.exists (classify stm) ~f:(matches_any ~templates)
+  let classify_rec (type e) (stm : e Statement.t) : t list =
+    Statement.reduce stm
+      ~prim:(fun (_, x) ->
+        List.map ~f:(fun t -> Prim (Some t)) (Prim.classify_rec x))
+      ~if_stm:(fun ifs ->
+        If
+        :: (unfold_block (If.t_branch ifs) @ unfold_block (If.f_branch ifs)))
+      ~flow:(fun f ->
+        Option.to_list
+          (Option.map ~f:(fun t -> Flow (Some t)) (Flow.classify' f))
+        @ unfold_block (Flow_block.body f))
 
-let sum_block (type e) (blk : (e, int) Block.t) : int =
-  List.sum (module Int) ~f:Fn.id (Block.statements blk)
+  let class_matches (clazz : t) ~(template : t) : bool =
+    match (template, clazz) with
+    | Prim None, Prim _ | If, If | Flow None, Flow _ ->
+        true
+    | Flow (Some template), Flow (Some clazz) ->
+        Flow.class_matches clazz ~template
+    | Prim (Some template), Prim (Some clazz) ->
+        Prim.class_matches clazz ~template
+    | _, _ ->
+        false
+end
 
-let one_if_matches (clazz : t) ~(templates : t list) : int =
-  clazz |> matches_any ~templates |> Bool.to_int
-
-let count_matches (type e) (stm : e Statement.t) ~(templates : t list) : int
-    =
-  Statement.reduce stm
-    ~prim:(fun (_, x) -> one_if_matches (Prim (Prim.classify x)) ~templates)
-    ~if_stm:(fun ifs ->
-      one_if_matches If ~templates
-      + sum_block (If.t_branch ifs)
-      + sum_block (If.f_branch ifs))
-    ~flow:(fun f ->
-      one_if_matches (Flow (Flow.classify f)) ~templates
-      + sum_block (Flow_block.body f))
-
-let statement_recursively_matches_any (type e) (stm : e Statement.t)
-    ~(templates : t list) : bool =
-  0 < count_matches stm ~templates
+include Main
+include Class.Make_ext (Main)
 
 let atomic ?(specifically : Atomic_class.t option) () : t =
   Prim (Some (Atomic specifically))

@@ -80,13 +80,12 @@ module Thread = struct
 
   let has_statements_matching (p : t)
       ~(templates : Fir.Statement_class.t list) : bool =
-    List.exists p.stms
-      ~f:(Fir.Statement_class.statement_matches_any ~templates)
+    List.exists p.stms ~f:(Fir.Statement_class.rec_matches_any ~templates)
 
   let has_statements_not_matching (p : t)
       ~(templates : Fir.Statement_class.t list) : bool =
     List.exists p.stms
-      ~f:(Fir.Statement_class.statement_matches_any ~templates)
+      ~f:(Fn.non (Fir.Statement_class.rec_unmatches_any ~templates))
 
   let has_dead_code_blocks (p : t) : bool =
     List.exists p.stms ~f:Statement.has_dead_code_blocks

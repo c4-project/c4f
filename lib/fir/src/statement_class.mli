@@ -32,13 +32,7 @@ module Prim : sig
     | Label  (** A label. *)
   [@@deriving compare, equal, sexp]
 
-  val classify : Prim_statement.t -> t option
-  (** [classify s] tries to classify [s]. *)
-
-  val matches : t -> template:t -> bool
-  (** [matches clazz ~template] checks whether [clazz] matches [template].
-      Holes in [template] match any corresponding class in [clazz], but not
-      vice versa. *)
+  include Class_types.S with type t := t and type 'e elt := Prim_statement.t
 end
 
 (** {1 Flow classes} *)
@@ -49,13 +43,10 @@ module Flow : sig
     | While of Flow_block.While.t option
   [@@deriving compare, equal, sexp]
 
-  val classify : (_, _) Flow_block.t -> t option
-  (** [classify s] tries to classify [s]. *)
-
-  val matches : t -> template:t -> bool
-  (** [matches clazz ~template] checks whether [clazz] matches [template].
-      Holes in [template] match any corresponding class in [clazz], but not
-      vice versa. *)
+  include
+    Class_types.S
+      with type t := t
+       and type 'e elt := ('e, 'e Statement.t) Flow_block.t
 end
 
 (** {1 Top-level statement classes} *)
@@ -67,30 +58,9 @@ type t =
   | Flow of Flow.t option  (** This statement is a flow block. *)
 [@@deriving compare, equal, sexp]
 
-val classify : 'e Statement.t -> t option
-(** [classify s] tries to classify [s]. *)
+include Class_types.S with type t := t and type 'e elt := 'e Statement.t
 
-val matches : t -> template:t -> bool
-(** [matches clazz ~template] checks whether [clazz] matches [template].
-    Holes in [template] match any corresponding class in [clazz], but not
-    vice versa. *)
-
-val matches_any : t -> templates:t list -> bool
-(** [matches_any clazz ~templates] checks whether [clazz] {!matches} any of
-    the templates in [templates]. *)
-
-val statement_matches_any : 'e Statement.t -> templates:t list -> bool
-(** [statement_matches_any stm ~templates] checks whether [stm]'s class
-    directly {!matches} any of the templates in [templates]. *)
-
-val statement_recursively_matches_any :
-  'e Statement.t -> templates:t list -> bool
-(** [statement_recursively_matches_any stm ~templates] checks whether [stm]'s
-    class recursively {!matches} any of the templates in [templates]. *)
-
-val count_matches : 'meta Statement.t -> templates:t list -> int
-(** [count_matches stm ~templates] counts the recursive number of times that
-    any class in [templates] matches a statement in [stm]. *)
+include Class_types.S_ext with type t := t and type 'e elt := 'e Statement.t
 
 (** {2 Convenience constructors} *)
 

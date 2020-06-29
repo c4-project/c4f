@@ -71,9 +71,9 @@ module End_check = struct
     Act_fir.Statement_class.(
       match check with
       | Is_of_class templates ->
-          Option.exists ~f:(matches_any ~templates) (classify stm)
+          matches_any stm ~templates
       | Is_not_of_class templates ->
-          Option.for_all ~f:(Fn.non (matches_any ~templates)) (classify stm))
+          not (matches_any stm ~templates))
 
   let is_constructible (flag : t) ~(subject : Subject.Test.t) : bool =
     match flag with

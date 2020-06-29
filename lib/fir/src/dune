@@ -5,8 +5,8 @@
  (public_name act.fir)
  (synopsis
    "Automagic Compiler Tormentor: Fuzzable Intermediate Representation")
- (modules_without_implementation env_types expression_types types op_types
-   statement_types)
+ (modules_without_implementation class_types env_types expression_types types
+   op_types statement_types)
  (preprocess
   (pps ppx_deriving.std ppx_yojson_conv ppx_jane))
  (libraries splittable_random sexplib0 stdio base.caml core_kernel fmt
