@@ -11,19 +11,5 @@
 
 open Base
 
-let has_prefix (str : string) ~(prefix : string) : bool =
-  Option.is_some (String.chop_prefix str ~prefix)
-
-let ensure_prefix (str : string) ~(prefix : string) : string =
-  let rest = Option.value (String.chop_prefix str ~prefix) ~default:str in
-  prefix ^ rest
-
-let has_suffix (str : string) ~(suffix : string) : bool =
-  Option.is_some (String.chop_suffix str ~suffix)
-
-let ensure_suffix (str : string) ~(suffix : string) : string =
-  let rest = Option.value (String.chop_suffix str ~suffix) ~default:str in
-  rest ^ suffix
-
 let format_for_readme (str : string) : string =
   Fmt.(str "%a" (box paragraphs)) str
