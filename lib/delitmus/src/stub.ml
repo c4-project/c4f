@@ -69,7 +69,7 @@ let thread_params :
        (Ac.Litmus_id.t, Act_fir.Type.t) List.Assoc.t
     -> (Ac.C_id.t, Act_fir.Type.t) List.Assoc.t =
   List.filter_map ~f:(fun (id, ty) ->
-      Option.map ~f:(fun id' -> (id', ty)) (Ac.Litmus_id.as_global id))
+      Option.map ~f:(fun id' -> (id', ty)) (Ac.Litmus_id.as_global id) )
 
 let local_decls (tid : int) :
        (Ac.Litmus_id.t, Act_fir.Type.t) List.Assoc.t
@@ -77,7 +77,7 @@ let local_decls (tid : int) :
   List.filter_map ~f:(fun (id, ty) ->
       if [%equal: int option] (Ac.Litmus_id.tid id) (Some tid) then
         Some (Ac.Litmus_id.variable_name id, Act_fir.Initialiser.make ~ty ())
-      else None)
+      else None )
 
 let inner_call_argument (lid : Ac.Litmus_id.t) (ty : Act_fir.Type.t) :
     Act_fir.Expression.t =
@@ -91,7 +91,7 @@ let inner_call_arguments (tid : int) :
   List.filter_map ~f:(fun (lid, ty) ->
       if Ac.Litmus_id.is_in_local_scope ~from:tid lid then
         Some (inner_call_argument lid ty)
-      else None)
+      else None )
 
 let inner_call_stm (tid : int) (function_id : Ac.C_id.t)
     (all_params : (Ac.Litmus_id.t, Act_fir.Type.t) List.Assoc.t) :
@@ -128,7 +128,7 @@ let make (aux : Aux.t) : Act_fir.Litmus.Test.t Or_error.t =
                Some
                  (make_function_stub vars ~old_id
                     ~new_id:(Function_map.Record.c_id record))
-             else None)
+             else None )
       |> Or_error.combine_errors
     in
     Act_fir.Litmus.Test.make ~header ~threads)

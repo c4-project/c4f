@@ -24,13 +24,12 @@ let sift_decls (maybe_decl_list : ([> `Decl of 'd] as 'a) list) :
     ('d list * 'a list) Or_error.t =
   Or_error.(
     Tx.List.With_errors.fold_m maybe_decl_list
-      ~init:(Fqueue.empty, Fqueue.empty) ~f:(fun (decls, rest) ->
-      function
+      ~init:(Fqueue.empty, Fqueue.empty) ~f:(fun (decls, rest) -> function
       | `Decl d ->
           if Fqueue.is_empty rest then return (Fqueue.enqueue decls d, rest)
           else error_string "Declarations must go before code."
       | item ->
-          return (decls, Fqueue.enqueue rest item))
+          return (decls, Fqueue.enqueue rest item) )
     >>| fun (decls, rest) -> (Fqueue.to_list decls, Fqueue.to_list rest))
 
 (** [ensure_functions xs] makes sure that each member of [xs] is a function
@@ -42,7 +41,7 @@ let ensure_functions :
         Or_error.return f
     | d ->
         Or_error.error_s
-          [%message "Expected a function" ~got:(d : Ast.External_decl.t)])
+          [%message "Expected a function" ~got:(d : Ast.External_decl.t)] )
 
 (** [ensure_statements xs] makes sure that each member of [xs] is a
     statement. *)
@@ -53,7 +52,7 @@ let ensure_statements :
         Or_error.return f
     | d ->
         Or_error.error_s
-          [%message "Expected a statement" ~got:(d : Ast.Compound_stm.Elt.t)])
+          [%message "Expected a statement" ~got:(d : Ast.Compound_stm.Elt.t)] )
 
 let validate_func_void_type (f : Ast.Function_def.t) : Validate.t =
   match f.decl_specs with
@@ -116,7 +115,7 @@ let fetch_call_alist (modeller : Ast.Expr.t list -> op:Op.Fetch.t -> 'a) :
     (Ac.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t =
   List.map (Op.Fetch.all_list ()) ~f:(fun op ->
       let name = Ac.C_id.of_string (Convert_atomic.fetch_name op) in
-      (name, modeller ~op))
+      (name, modeller ~op) )
 
 let expr_call_table :
     (   Ast.Expr.t list
@@ -255,7 +254,7 @@ let fence_call_alist :
   lazy
     (List.map (Atomic_fence.Mode.all_list ()) ~f:(fun mode ->
          let name = Ac.C_id.of_string (Convert_atomic.fence_name mode) in
-         (name, model_atomic_fence_stm ~mode)))
+         (name, model_atomic_fence_stm ~mode) ))
 
 let model_atomic_fetch_stm (args : Ast.Expr.t list) ~(op : Op.Fetch.t) :
     unit Statement.t Or_error.t =

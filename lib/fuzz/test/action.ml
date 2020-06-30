@@ -22,7 +22,7 @@ module Test_utils = struct
             Act_fir.(
               Reify.func
                 (Act_common.C_named.name fn)
-                (Act_common.C_named.value fn))))
+                (Act_common.C_named.value fn)) ) )
 
   let run_and_dump_test (action : Src.Subject.Test.t Src.State.Monad.t)
       ~(initial_state : Src.State.t) : unit =

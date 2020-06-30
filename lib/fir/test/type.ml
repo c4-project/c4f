@@ -15,7 +15,7 @@ open Stdio
 let dump : Act_fir.Type.t list -> unit =
   List.iter ~f:(fun ty ->
       Stdio.printf "str: %s; sexp: " (Act_fir.Type.to_string ty) ;
-      print_s [%sexp (ty : Act_fir.Type.t)])
+      print_s [%sexp (ty : Act_fir.Type.t)] )
 
 let%expect_test "bool: combinatoric" =
   dump
@@ -67,7 +67,7 @@ let%test_unit "basic_type_is compatibility with basic_type" =
     ~f:
       Act_fir.Type.(
         [%test_pred: t] ~here:[[%here]] (fun t ->
-            basic_type_is t ~basic:(basic_type t)))
+            basic_type_is t ~basic:(basic_type t) ))
 
 let%test_module "check_atomic_non" =
   ( module struct

@@ -35,13 +35,11 @@ let%test_module "matches_any" =
   ( module struct
     let test (templates : Src.Statement_class.t list) : unit =
       let k =
-        Src.Statement_class.matches_any
-          (Lazy.force test_fragment)
-          ~templates
+        Src.Statement_class.matches_any (Lazy.force test_fragment) ~templates
       in
       Stdio.printf "%b" k
 
-    let%expect_test "no classes" = test [] ; [%expect{| false |}]
+    let%expect_test "no classes" = test [] ; [%expect {| false |}]
 
     let%expect_test "if statements" =
       test [If] ;
@@ -70,7 +68,7 @@ let%test_module "unmatches_any" =
       in
       Stdio.printf "%b" k
 
-    let%expect_test "no classes" = test [] ; [%expect{| false |}]
+    let%expect_test "no classes" = test [] ; [%expect {| false |}]
 
     let%expect_test "if statements" =
       test [If] ;
@@ -89,7 +87,6 @@ let%test_module "unmatches_any" =
       [%expect {| true |}]
   end )
 
-
 let%test_module "rec_matches_any" =
   ( module struct
     let test (templates : Src.Statement_class.t list) : unit =
@@ -100,7 +97,7 @@ let%test_module "rec_matches_any" =
       in
       Stdio.printf "%b" k
 
-    let%expect_test "no classes" = test [] ; [%expect{| false |}]
+    let%expect_test "no classes" = test [] ; [%expect {| false |}]
 
     let%expect_test "if statements" =
       test [If] ;
@@ -129,7 +126,7 @@ let%test_module "rec_unmatches_any" =
       in
       Stdio.printf "%b" k
 
-    let%expect_test "no classes" = test [] ; [%expect{| false |}]
+    let%expect_test "no classes" = test [] ; [%expect {| false |}]
 
     let%expect_test "if statements" =
       test [If] ;

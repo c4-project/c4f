@@ -73,7 +73,7 @@ module Alist = struct
             M.Let_syntax.(
               let m = make ~name value in
               let%map m' = f m in
-              (m'.name, m'.value)))
+              (m'.name, m'.value)) )
     end
   end)
 end

@@ -51,7 +51,7 @@ let configs_to_try : Act_delitmus.Config.t list Lazy.t =
          [None; Some "_body"]
      in
      List.map pairs ~f:(fun ((style, qualify_locals), impl_suffix) ->
-         Act_delitmus.Config.make ~style ~qualify_locals ?impl_suffix ()))
+         Act_delitmus.Config.make ~style ~qualify_locals ?impl_suffix () ) )
 
 let delitmus_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t =
   ignore file ;

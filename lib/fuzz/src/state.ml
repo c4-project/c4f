@@ -102,7 +102,7 @@ module Monad = struct
   let add_expression_dependencies (expr : Act_fir.Expression.t)
       ~(scope : Ac.Scope.t) : unit t =
     Exp_identsM.iter_m expr ~f:(fun c_id ->
-        c_id |> resolve ~scope >>= add_dependency)
+        c_id |> resolve ~scope >>= add_dependency )
 
   let add_multiple_expression_dependencies
       (exprs : Act_fir.Expression.t list) ~(scope : Ac.Scope.t) : unit t =

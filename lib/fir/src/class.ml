@@ -16,11 +16,11 @@ module Make_ext (B : Class_types.S) :
 struct
   let class_matches_any (clazz : B.t) ~(templates : B.t list) : bool =
     List.exists templates ~f:(fun template ->
-        B.class_matches clazz ~template)
+        B.class_matches clazz ~template )
 
   let class_unmatches_any (clazz : B.t) ~(templates : B.t list) : bool =
     List.exists templates ~f:(fun template ->
-        not (B.class_matches clazz ~template))
+        not (B.class_matches clazz ~template) )
 
   let matches_any (type e) (stm : e B.elt) ~(templates : B.t list) : bool =
     Option.exists (B.classify stm) ~f:(class_matches_any ~templates)

@@ -228,7 +228,8 @@ let%test_module "Statement_list" =
                     ~expect:(Or_error.return ())
                     (Or_error.map ~f:(Fn.const ())
                        (F.Path_consumers.Block.transform_stm_list path
-                          ~f:Or_error.return ~target:(Lazy.force body_block))))
+                          ~f:Or_error.return ~target:(Lazy.force body_block)))
+                  )
           end )
       end )
   end )

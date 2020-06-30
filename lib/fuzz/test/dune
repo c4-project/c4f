@@ -5,7 +5,7 @@
  (inline_tests)
  (preprocess
   (pps ppx_jane))
- (libraries sexplib0 splittable_random ppx_expect.common ppx_expect.config
+ (libraries sexplib0 splittable_random expect_test_helpers_core
    ppx_inline_test.config base base.caml core_kernel stdio fmt
    travesty.base_exts act.fuzz act.litmus_c act.fir act.common act.litmus
-   act.utils act_c_mini_test))
+   act.utils act_fir_test))

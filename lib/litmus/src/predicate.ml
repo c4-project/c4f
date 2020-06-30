@@ -212,21 +212,21 @@ module Q : Quickcheck.S1 with type 'const t := 'const t = struct
       ~f:(fun mu ->
         [ G.map
             ~f:(fun (o, l, r) -> Bop (o, l, r))
-            [%quickcheck.generator: Bop.t * [%custom mu] * [%custom mu]] ])
+            [%quickcheck.generator: Bop.t * [%custom mu] * [%custom mu]] ] )
 
   let quickcheck_observer (elt : 'const O.t) : 'const t O.t =
     O.fixed_point (fun mu ->
         O.unmap ~f:anonymise
           [%quickcheck.observer:
             [ `A of Bop.t * [%custom mu] * [%custom mu]
-            | `B of [%custom elt] Element.t ]])
+            | `B of [%custom elt] Element.t ]] )
 
   let quickcheck_shrinker (elt : 'const S.t) : 'const t S.t =
     S.fixed_point (fun mu ->
         S.map ~f:deanonymise ~f_inverse:anonymise
           [%quickcheck.shrinker:
             [ `A of Bop.t * [%custom mu] * [%custom mu]
-            | `B of [%custom elt] Element.t ]])
+            | `B of [%custom elt] Element.t ]] )
 end
 
 include Q

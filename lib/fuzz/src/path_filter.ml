@@ -85,7 +85,7 @@ module End_check = struct
   let check (check : t) ~(stm : Subject.Statement.t) : unit Or_error.t =
     Tx.Or_error.unless_m (is_ok check ~stm) ~f:(fun () ->
         Or_error.error_s
-          [%message "Statement failed check" ~check:(check : t)])
+          [%message "Statement failed check" ~check:(check : t)] )
 end
 
 type t =
@@ -118,7 +118,7 @@ module Obs_flags = struct
         | Lock (Some Atomic) ->
             observe_flag ~flag:In_atomic x
         | Lock _ ->
-            x)
+            x )
       ~default:x
 
   (* Moving this into the Flag module'd require a lot of module gymnastics to
@@ -126,7 +126,7 @@ module Obs_flags = struct
   let flags_of_metadata (m : Metadata.t) : Set.M(Flag).t =
     Flag.metadata_predicates
     |> List.filter_map ~f:(fun (flag, predicate) ->
-           Option.some_if (predicate m) flag)
+           Option.some_if (predicate m) flag )
     |> Set.of_list (module Flag)
 
   let update_with_block_metadata (existing : t) (m : Metadata.t) : t =
@@ -208,7 +208,7 @@ let are_final_statements_ok (filter : t)
   ||
   let stms' = Sequence.(sub (of_list all_stms) ~pos ~len) in
   Sequence.for_all stms' ~f:(fun stm ->
-      Set.for_all filter.end_checks ~f:(End_check.is_ok ~stm))
+      Set.for_all filter.end_checks ~f:(End_check.is_ok ~stm) )
 
 module Construct_checks = struct
   let is_constructible_req (filter : t) ~(subject : Subject.Test.t) : bool =
@@ -243,7 +243,7 @@ module Construct_checks = struct
            subject'
            |> Act_litmus.Test.Raw.remove_thread ~index
            |> Result.ok
-           |> Option.value ~default:subject')
+           |> Option.value ~default:subject' )
 
   let is_constructible (filter : t) ~(subject : Subject.Test.t) : bool =
     let subject =

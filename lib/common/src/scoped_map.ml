@@ -41,12 +41,12 @@ let build_set (type a e w)
   Map.fold m
     ~init:(Set.empty (module Carrier))
     ~f:(fun ~key ~data set ->
-      Option.value_map (f key data) ~default:set ~f:(Set.add set))
+      Option.value_map (f key data) ~default:set ~f:(Set.add set) )
 
 let c_id_mem (m : _ t) ~(id : C_id.t) : bool =
   Map.existsi m ~f:(fun ~key ~data ->
       ignore data ;
-      [%equal: C_id.t] id (Litmus_id.variable_name key))
+      [%equal: C_id.t] id (Litmus_id.variable_name key) )
 
 let find_by_litmus_id (type a) (m : a t) ~(id : Litmus_id.t) : a Or_error.t =
   id |> Map.find m

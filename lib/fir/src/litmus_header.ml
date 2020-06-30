@@ -74,7 +74,7 @@ module Filters = struct
       in
       let%map test' =
         Litmus.Test.try_map_header test ~f:(fun header ->
-            Or_error.return (f aux header))
+            Or_error.return (f aux header) )
       in
       Litmus.Pp.print oc test')
 
@@ -104,7 +104,7 @@ module Filters = struct
 
     let run =
       lift_on_header ~f:(fun changes header ->
-          Act_litmus.Header.Change_set.apply changes ~header)
+          Act_litmus.Header.Change_set.apply changes ~header )
   end)
 
   module Replace = Plumbing.Filter.Make (struct

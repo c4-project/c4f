@@ -44,7 +44,7 @@ module Test_data = struct
              , Act_fuzz.Var.Record.make_generated
                  ?initial_value:(Act_fir.Initialiser.value v)
                  scope
-                 (Act_fir.Initialiser.ty v) )))
+                 (Act_fir.Initialiser.ty v) ) ))
 
   let state : Act_fuzz.State.t Lazy.t =
     (* TODO(@MattWindsor91): labels? *)
@@ -54,7 +54,7 @@ module Test_data = struct
         globals_alist
         |> List.map ~f:(fun (id, ty) ->
                ( Act_common.Litmus_id.global id
-               , Act_fuzz.Var.Record.make_existing Global ty ))
+               , Act_fuzz.Var.Record.make_existing Global ty ) )
       in
       let vars =
         global_vars @ Lazy.force thread0_vars
@@ -211,7 +211,7 @@ let%test_module "using sample environment" =
   ( module struct
     type r = Act_fir.Litmus.Lang.Program.t list [@@deriving sexp_of]
 
-    let env = Lazy.force Act_c_mini_test.Env.test_env
+    let env = Lazy.force Act_fir_test.Env.test_env
 
     let vars : Src.Var.Map.t =
       env
@@ -220,7 +220,7 @@ let%test_module "using sample environment" =
            ~f:(fun ~key ~data ->
              let lit = Act_common.Litmus_id.global key in
              let ty = Act_fir.Env.Record.type_of data in
-             (lit, Src.Var.Record.make_existing Global ty))
+             (lit, Src.Var.Record.make_existing Global ty) )
       |> Or_error.ok_exn |> Act_common.Scoped_map.of_litmus_id_map
 
     let test programs =

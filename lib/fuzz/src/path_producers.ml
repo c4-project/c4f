@@ -141,9 +141,9 @@ and Block :
     Q.Generator.(
       create (fun ~size ~random ->
           ignore size ;
-          Option.value_exn (Act_utils.My_list.Random.stride stms ~random))
+          Option.value_exn (Act_utils.My_list.Random.stride stms ~random) )
       |> filter ~f:(fun (pos, len) ->
-             Path_filter.are_final_statements_ok flt ~pos ~len ~all_stms:stms)
+             Path_filter.are_final_statements_ok flt ~pos ~len ~all_stms:stms )
       >>| fun (p, d) -> Path.Stms.on_range p d)
 
   let gen_transform_stm_list_here (stms : Subject.Statement.t list)
@@ -305,7 +305,7 @@ module Test :
              Some
                (Opt_gen.map (f ~filter prog)
                   ~f:(Path.Program.in_thread thread))
-           else None)
+           else None )
     |> Opt_gen.union
 
   let try_gen_insert_stm ?(filter : Path_filter.t option) :

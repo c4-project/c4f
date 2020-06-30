@@ -19,23 +19,23 @@ module Machine = struct
       Spec.With_id.t list
       * (Spec.With_id.t, Lookup_listing.Disable.t) List.Assoc.t =
     Ac.Spec.Set.partition_map specs ~f:(fun spec ->
-        if Property.eval_b spec predicate then `Fst spec
+        if Property.eval_b spec predicate then First spec
         else
-          `Snd
+          Second
             ( spec
             , Lookup_listing.Disable.make ~location:Machine ~reason:Filtered
-            ))
+            ) )
 
   let partition_by_enabled (specs : Spec.With_id.t list) :
       Spec.With_id.t list
       * (Spec.With_id.t, Lookup_listing.Disable.t) List.Assoc.t =
     List.partition_map specs ~f:(fun m_spec ->
-        if Spec.With_id.is_enabled m_spec then `Fst m_spec
+        if Spec.With_id.is_enabled m_spec then First m_spec
         else
-          `Snd
+          Second
             ( m_spec
             , Lookup_listing.Disable.make ~location:Machine ~reason:In_config
-            ))
+            ) )
 
   let filtered_list ?(predicate : Property.t Blang.t = Blang.true_)
       (specs : Spec.Set.t) : Spec.t Lookup_listing.t =
@@ -57,20 +57,20 @@ let partition_by_filter_gen (type spec qspec) (specs : spec Ac.Spec.Set.t)
     ~(qualify : spec Ac.Spec.With_id.t -> qspec) :
     qspec list * (qspec, Lookup_listing.Disable.t) List.Assoc.t =
   Ac.Spec.Set.partition_map specs ~f:(fun spec ->
-      if filter spec then `Fst (qualify spec)
+      if filter spec then First (qualify spec)
       else
-        `Snd
+        Second
           ( qualify spec
-          , Lookup_listing.Disable.make ~location:Spec ~reason:Filtered ))
+          , Lookup_listing.Disable.make ~location:Spec ~reason:Filtered ) )
 
 let partition_by_enabled_gen (type spec) (specs : spec list)
     ~(is_enabled : spec -> bool) :
     spec list * (spec, Lookup_listing.Disable.t) List.Assoc.t =
   List.partition_map specs ~f:(fun spec ->
-      if is_enabled spec then `Fst spec
+      if is_enabled spec then First spec
       else
-        `Snd
-          (spec, Lookup_listing.Disable.make ~location:Spec ~reason:In_config))
+        Second
+          (spec, Lookup_listing.Disable.make ~location:Spec ~reason:In_config) )
 
 (** The flow for both compiler and backend lookup is basically the same, with
     some different types and intermediate functions. As such, we build it
@@ -129,7 +129,7 @@ struct
     List.concat_map disabled_machines ~f:(fun (m_spec, disable) ->
         m_spec |> B.specs_of_machine
         |> Ac.Spec.Set.map ~f:(fun spec ->
-               (Qualified.make ~m_spec ~spec, disable)))
+               (Qualified.make ~m_spec ~spec, disable) ) )
 
   let actually_test_specs :
          B.spec Qualified.t list
@@ -138,10 +138,10 @@ struct
     List.partition_map ~f:(fun spec ->
         match B.test_spec spec with
         | Ok () ->
-            `Fst spec
+            First spec
         | Error error ->
-            `Snd
-              (spec, Lookup_listing.Disable.make_failed ~location:Spec ~error))
+            Second
+              (spec, Lookup_listing.Disable.make_failed ~location:Spec ~error) )
 
   let maybe_test_specs ?(test_specs : bool = false)
       (specs : B.spec Qualified.t list) :
@@ -152,7 +152,7 @@ struct
   let add_fqids_to_enabled :
       B.spec Qualified.t list -> B.spec Qualified.t Ac.Spec.With_id.t list =
     List.map ~f:(fun s ->
-        Ac.Spec.With_id.make ~id:(Qualified.fqid s) ~spec:s)
+        Ac.Spec.With_id.make ~id:(Qualified.fqid s) ~spec:s )
 
   let add_fqids_to_disabled :
          (B.spec Qualified.t, Lookup_listing.Disable.t) List.Assoc.t
@@ -160,7 +160,7 @@ struct
          , Lookup_listing.Disable.t )
          List.Assoc.t =
     List.map ~f:(fun (s, e) ->
-        (Ac.Spec.With_id.make ~id:(Qualified.fqid s) ~spec:s, e))
+        (Ac.Spec.With_id.make ~id:(Qualified.fqid s) ~spec:s, e) )
 
   let filtered_list ?(machine_predicate : Property.t Blang.t option)
       ?(predicate : B.pred option) ?(test_specs : bool option)

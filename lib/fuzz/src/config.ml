@@ -49,7 +49,7 @@ let make_merged_param_map (type v)
      TODO(@MattWindsor91): error on these? *)
   Map.merge defaults user_provided ~f:(fun ~key ->
       ignore key ;
-      function `Left v | `Both (_, v) -> Some v | `Right _ -> None)
+      function `Left v | `Both (_, v) -> Some v | `Right _ -> None )
 
 let make_param_map (config : t) : Param_map.t =
   let params =

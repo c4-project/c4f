@@ -28,7 +28,7 @@ let%test_module "pp_c_braces" =
       Fmt.(
         pr "@[%a@]@."
           (pp_c_braces (fun f () ->
-               string f "eggs" ; sp f () ; string f "ham"))
+               string f "eggs" ; sp f () ; string f "ham" ))
           ()) ;
       [%expect {| { eggs ham } |}]
 
@@ -36,7 +36,7 @@ let%test_module "pp_c_braces" =
       Fmt.(
         pr "@[poached@ %a@ sandwich@]@."
           (pp_c_braces (fun f () ->
-               string f "eggs" ; sp f () ; string f "ham"))
+               string f "eggs" ; sp f () ; string f "ham" ))
           ()) ;
       [%expect {| poached { eggs ham } sandwich |}]
 
@@ -46,7 +46,7 @@ let%test_module "pp_c_braces" =
           (pp_c_braces (fun f () ->
                string f "a very long string that'll doubtless wrap the box" ;
                sp f () ;
-               string f "ham and cheese and cheese and ham"))
+               string f "ham and cheese and cheese and ham" ))
           ()) ;
       [%expect
         {|
@@ -61,7 +61,7 @@ let%test_module "pp_c_braces" =
           (pp_c_braces (fun f () ->
                string f "a very long string that'll doubtless wrap the box" ;
                sp f () ;
-               string f "ham and cheese and cheese and ham"))
+               string f "ham and cheese and cheese and ham" ))
           ()) ;
       [%expect
         {|

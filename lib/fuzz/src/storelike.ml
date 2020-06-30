@@ -158,7 +158,7 @@ end) : Action_types.S with type Payload.t = B.t P.Insertion.t = struct
         State.Monad.with_vars_m (fun vars ->
             Payload.Helpers.lift_quickcheck_opt
               (gen' vars ~where ~forbid_already_written)
-              ~random ~action_id:name))
+              ~random ~action_id:name ))
   end)
 
   let available (ctx : Availability.Context.t) : bool Or_error.t =
@@ -188,7 +188,7 @@ end) : Action_types.S with type Payload.t = B.t P.Insertion.t = struct
         let%bind dst_var = resolve x ~scope:(Local tid) in
         let%bind () = add_write dst_var in
         when_m B.Flags.erase_known_values ~f:(fun () ->
-            erase_var_value dst_var)))
+            erase_var_value dst_var )))
 
   let bookkeep_dsts (xs : Ac.C_id.t list) ~(tid : int) : unit State.Monad.t =
     xs |> List.map ~f:(bookkeep_dst ~tid) |> State.Monad.all_unit
@@ -197,14 +197,14 @@ end) : Action_types.S with type Payload.t = B.t P.Insertion.t = struct
       unit State.Monad.t =
     State.Monad.(
       when_m B.Flags.respect_src_dependencies ~f:(fun () ->
-          add_multiple_expression_dependencies srcs ~scope:(Local tid)))
+          add_multiple_expression_dependencies srcs ~scope:(Local tid) ))
 
   module MList = Tx.List.On_monad (State.Monad)
 
   let bookkeep_new_locals (nls : Cm.Initialiser.t Ac.C_named.Alist.t)
       ~(tid : int) : unit State.Monad.t =
     MList.iter_m nls ~f:(fun (name, init) ->
-        State.Monad.register_var (Ac.Litmus_id.local tid name) init)
+        State.Monad.register_var (Ac.Litmus_id.local tid name) init )
 
   let do_bookkeeping (item : B.t) ~(tid : int) : unit State.Monad.t =
     State.Monad.Let_syntax.(
@@ -217,7 +217,7 @@ end) : Action_types.S with type Payload.t = B.t P.Insertion.t = struct
       Subject.Test.t Or_error.t =
     Tx.List.With_errors.fold_m new_locals ~init:target
       ~f:(fun subject (id, init) ->
-        Subject.Test.declare_var subject (Ac.Litmus_id.local tid id) init)
+        Subject.Test.declare_var subject (Ac.Litmus_id.local tid id) init )
 
   let do_insertions (target : Subject.Test.t) ~(path : Path.Program.t)
       ~(tid : int) ~(to_insert : B.t) : Subject.Test.t Or_error.t =

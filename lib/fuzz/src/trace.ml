@@ -72,7 +72,7 @@ let run (trace : t) (test : Subject.Test.t)
               State.Monad.Monadic.return (Error e)
           | Action {f; tail= next_trace} ->
               let%bind next_test = f this_test in
-              mu (next_trace, next_test))
+              mu (next_trace, next_test) )
     in
     test')
 

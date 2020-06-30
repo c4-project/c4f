@@ -80,14 +80,14 @@ let%test_module "Make" =
           Test.run_exn (make_gen' scope)
             ~f:(fun Src.Var_actions.Make_payload.
                       {basic_type; initial_value; _}
-                    ->
+               ->
               let (_ : Act_fir.Type.t) =
                 Or_error.ok_exn
                   Act_fir.(
                     Type.check_modulo_atomicity (Type.make basic_type)
                       (Constant.type_of initial_value))
               in
-              ())
+              () )
 
         let%test_unit "global: constant is the right type" = test_type Global
 

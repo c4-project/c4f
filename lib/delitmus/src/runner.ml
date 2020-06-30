@@ -47,7 +47,7 @@ module Make (B : Runner_types.Basic) : Runner_types.S = struct
       (Act_common.C_id.t, Act_fir.Constant.t) List.Assoc.t =
     fn |> Act_fir.Function.body_decls
     |> List.filter_map ~f:(fun (id, init) ->
-           Option.(init |> Act_fir.Initialiser.value >>| fun v -> (id, v)))
+           Option.(init |> Act_fir.Initialiser.value >>| fun v -> (id, v)) )
 
   let make_local_inits :
          unit Act_fir.Function.t list

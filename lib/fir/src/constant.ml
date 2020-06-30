@@ -39,11 +39,11 @@ let reduce (k : t) ~(int : int -> 'a) ~(bool : bool -> 'a) : 'a =
 
 let as_bool : t -> bool Or_error.t =
   reduce ~bool:Or_error.return ~int:(fun _ ->
-      Or_error.error_string "expected bool; got int")
+      Or_error.error_string "expected bool; got int" )
 
 let as_int : t -> int Or_error.t =
   reduce ~int:Or_error.return ~bool:(fun _ ->
-      Or_error.error_string "expected int; got bool")
+      Or_error.error_string "expected int; got bool" )
 
 let pp (f : Formatter.t) : t -> unit =
   reduce ~int:(Fmt.int f) ~bool:(Fmt.bool f)
@@ -72,7 +72,7 @@ let t_of_yojson (json : Yojson.Safe.t) : t =
 
 let gen_int32_as_int : int Generator.t =
   Generator.map [%quickcheck.generator: int32] ~f:(fun x ->
-      Option.value ~default:0 (Int.of_int32 x))
+      Option.value ~default:0 (Int.of_int32 x) )
 
 let gen_int32 : t Generator.t = Generator.map ~f:int gen_int32_as_int
 

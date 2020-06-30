@@ -62,7 +62,7 @@ let%test_module "round trips" =
         ~f:(fun exp ->
           [%test_result: Src.Expression.t Or_error.t] ~here:[[%here]]
             ~expect:(Ok exp)
-            (Src.Convert.expr (Src.Reify_expr.reify exp)))
+            (Src.Convert.expr (Src.Reify_expr.reify exp)) )
 
     module Make (F : functor (A : Src.Env_types.S) ->
       Act_utils.My_quickcheck.S_with_sexp with type t = Src.Expression.t) =

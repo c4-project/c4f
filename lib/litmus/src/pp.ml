@@ -38,7 +38,7 @@ module Make_common (B : Basic) = struct
     Act_utils.My_format.pp_c_braces
       Fmt.(
         list ~sep:sp (fun f (l, c) ->
-            pf f "@[%a = %a;@]" Ac.C_id.pp l B.Test.Lang.Constant.pp c))
+            pf f "@[%a = %a;@]" Ac.C_id.pp l B.Test.Lang.Constant.pp c ))
 
   let pp_post : B.Test.Lang.Constant.t Postcondition.t Fmt.t =
     Postcondition.pp ~pp_const:B.Test.Lang.Constant.pp
@@ -96,7 +96,7 @@ struct
     let print_listings (oc : Out_channel.t) :
         Test.Lang.Statement.t list list -> unit =
       Program_tabulator.print_as_table ~oc ~on_error:(fun e ->
-          Fmt.epr "@[<@ error printing table:@ %a@ >@]" Error.pp e)
+          Fmt.epr "@[<@ error printing table:@ %a@ >@]" Error.pp e )
 
     let get_uniform_listings (progs : Test.Lang.Program.t list) :
         Test.Lang.Statement.t list list =

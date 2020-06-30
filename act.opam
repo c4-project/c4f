@@ -12,16 +12,17 @@ bug-reports: "https://github.com/MattWindsor91/act/issues"
 depends: [
   "ocaml" {>= "4.09" & < "4.11"}
   "dune" {>= "2.0" & < "3"}
+  "expect_test_helpers_core" {>= "v0.14" & < "v0.15"}
   "ppx_deriving"
   "ppx_jane"
-  "ppx_yojson_conv" {>= "v0.13" & < "v0.14"}
-  "core" {>= "v0.13" & < "v0.14"}
+  "ppx_yojson_conv" {>= "v0.14" & < "v0.15"}
+  "core" {>= "v0.14" & < "v0.15"}
   "fmt" {>= "0.8.7" & < "0.9"}
   "fpath" {>= "0.7.2" & < "0.8"}
   "menhir" {>= "20200211"}
   "sedlex" {>= "2.1" & < "3"}
-  "shell" {>= "v0.13" & < "v0.14"}
-  "textutils_kernel" {>= "v0.13" & < "v0.14"}
+  "shell" {>= "v0.14" & < "v0.15"}
+  "textutils_kernel" {>= "v0.14" & < "v0.15"}
   "travesty" {>= "0.6.2" & < "0.7"}
   "yojson" {>= "1.7" & < "2"}
 ]

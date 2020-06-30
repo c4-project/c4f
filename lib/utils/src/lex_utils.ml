@@ -173,7 +173,7 @@ let rec read_string_inner (tok : string -> 't) (buf : Buffer.t)
         read_string_inner tok buf lexbuf
     | String s ->
         Buffer.add_string buf s ;
-        read_string_inner tok buf lexbuf)
+        read_string_inner tok buf lexbuf )
 
 let read_string (tok : string -> 't) : S.lexbuf -> 't =
   read_string_inner tok (Buffer.create 17)
@@ -195,7 +195,7 @@ let read_char (tok : string -> 't) (lexbuf : S.lexbuf) : 't =
     | Char c ->
         read_char_end tok lexbuf (String.of_char c)
     | String s ->
-        read_char_end tok lexbuf s)
+        read_char_end tok lexbuf s )
 
 let escape_string_char (buf : Buffer.t) (lexeme : string) : unit =
   if String.length lexeme = 1 then

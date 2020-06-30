@@ -97,13 +97,13 @@ end = struct
     Base_quickcheck.Observer.(
       fixed_point (fun mu ->
           unmap ~f:anonymise
-            [%quickcheck.observer: [`A of Id.t | `B of [%custom mu]]]))
+            [%quickcheck.observer: [`A of Id.t | `B of [%custom mu]]] ))
 
   let quickcheck_shrinker : t Base_quickcheck.Shrinker.t =
     Base_quickcheck.Shrinker.(
       fixed_point (fun mu ->
           map ~f:deanonymise ~f_inverse:anonymise
-            [%quickcheck.shrinker: [`A of Id.t | `B of [%custom mu]]]))
+            [%quickcheck.shrinker: [`A of Id.t | `B of [%custom mu]]] ))
 end
 
 module Quickcheck_id = Quickcheck_generic (Ac.C_id)

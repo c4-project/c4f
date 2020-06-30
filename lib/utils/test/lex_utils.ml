@@ -71,4 +71,4 @@ let%test_unit "escape_string/read_string idempotent for ASCII" =
       (module Ascii_string)
       ~f:(fun s ->
         [%test_result: string] ~equal:String.equal ~here:[[%here]] ~expect:s
-          (read_string_from_string (Act_utils.Lex_utils.escape_string s))))
+          (read_string_from_string (Act_utils.Lex_utils.escape_string s)) ))

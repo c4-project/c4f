@@ -95,7 +95,7 @@ module Make_traversal_base (Basic : Basic) = struct
           ~atomic:(map_m_ae ~f ~mu)
           ~uop:(fun (u, x) -> Ap.map ~f:(fun x' -> (u, x')) (mu x))
           ~bop:(fun (u, l, r) ->
-            Ap.map2 ~f:(fun l' r' -> (u, l', r')) (mu l) (mu r))
+            Ap.map2 ~f:(fun l' r' -> (u, l', r')) (mu l) (mu r) )
       in
       mu x
   end

@@ -47,11 +47,11 @@ let partition_qualifiers :
        * [> Astb.Storage_class_spec.t | Astb.Type_qual.t] list =
   List.partition_map ~f:(function
     | #Ast.Type_spec.t as ts ->
-        `Fst ts
+        First ts
     | #Astb.Storage_class_spec.t as ss ->
-        `Snd ss
+        Second ss
     | #Astb.Type_qual.t as qs ->
-        `Snd qs)
+        Second qs )
 
 let type_specs_to_basic (specs : [> Ast.Type_spec.t] list) :
     Type.Basic.t Or_error.t =

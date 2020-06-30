@@ -58,7 +58,7 @@ let quickcheck_observer : t Base_quickcheck.Observer.t =
             | `B of Address.t
             | `C of [%custom Atomic_expression.quickcheck_observer mu]
             | `D of Op.Binary.t * [%custom mu] * [%custom mu]
-            | `E of Op.Unary.t * [%custom mu] ]]))
+            | `E of Op.Unary.t * [%custom mu] ]] ))
 
 let lvalue (l : Lvalue.t) : t = address (Address.lvalue l)
 
@@ -125,7 +125,7 @@ module Base_map (Ap : Applicative.S) = struct
         ~address:(address >> Ap.map ~f:P.address)
         ~atomic:(atomic >> Ap.map ~f:P.atomic))
       ~bop:(fun o l r ->
-        Ap.map ~f:(fun (o', l', r') -> P.bop o' l' r') (bop (o, l, r)))
+        Ap.map ~f:(fun (o', l', r') -> P.bop o' l' r') (bop (o, l, r)) )
       ~uop:(fun o x -> Ap.map ~f:(fun (o', x') -> P.uop o' x') (uop (o, x)))
 end
 
@@ -198,7 +198,7 @@ module Type_check (E : Env_types.S) = struct
       ~bop:(fun b l r ->
         Or_error.Let_syntax.(
           let%bind l = l and r = r in
-          type_of_resolved_bop b l r))
+          type_of_resolved_bop b l r) )
       ~uop:(fun b -> Or_error.bind ~f:(type_of_resolved_uop b))
       ~atomic:type_of_atomic
 end

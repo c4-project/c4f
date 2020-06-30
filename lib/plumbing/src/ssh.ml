@@ -16,7 +16,7 @@ type t = {user: string option [@sexp.option]; host: string}
 
 let to_string (ssh : t) : string =
   Option.value_map (user ssh) ~default:(host ssh) ~f:(fun u ->
-      sprintf "%s@%s" u (host ssh))
+      sprintf "%s@%s" u (host ssh) )
 
 let of_string (str : string) : t =
   match String.lsplit2 str ~on:'@' with
@@ -34,7 +34,7 @@ let run_inner ?(user : string option) ~(host : string) ~(prog : string)
       (try_with (fun () ->
            Shell.ssh_lines "%s %s" prog
              (String.concat ~sep:" " argv)
-             ~host ?user))
+             ~host ?user ))
       "Error running remote command via ssh:"
       (host, Option.value ~default:"(default user)" user)
       [%sexp_of: string * string])

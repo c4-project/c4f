@@ -125,7 +125,7 @@ let probe_atomic_stm (atom : Atomic_statement.t) : unit Monad.t =
       MSMO.iter_m atom ~f:(fun mo ->
           modify
             (Field.map Statset.Fields.stm_mos ~f:(fun map ->
-                 up_mapping map mo)))))
+                 up_mapping map mo )) )))
 
 let classify_atomic_expr (atom : _ Atomic_expression.t)
     (m : int Map.M(Atomic_class).t) : int Map.M(Atomic_class).t =
@@ -139,7 +139,7 @@ let probe_atomic_expr (atom : _ Atomic_expression.t) : unit Monad.t =
          expressions is kind-of awful. *)
       let%bind atom =
         MEME.map_m atom ~f:(fun expr ->
-            Monad.(expr >>| fun () -> Expression.falsehood))
+            Monad.(expr >>| fun () -> Expression.falsehood) )
       in
       let%bind () =
         modify
@@ -149,11 +149,11 @@ let probe_atomic_expr (atom : _ Atomic_expression.t) : unit Monad.t =
       MEMO.iter_m atom ~f:(fun mo ->
           modify
             (Field.map Statset.Fields.expr_mos ~f:(fun map ->
-                 up_mapping map mo)))))
+                 up_mapping map mo )) )))
 
 let probe_constant (k : Constant.t) : unit Monad.t =
   Monad.when_m (Constant.is_bool k) ~f:(fun () ->
-      up_counter Statset.Fields.literal_bools 1)
+      up_counter Statset.Fields.literal_bools 1 )
 
 let probe_expr : Expression.t -> unit Monad.t =
   Expression.reduce ~constant:probe_constant ~address:nowt
@@ -161,7 +161,7 @@ let probe_expr : Expression.t -> unit Monad.t =
     ~bop:(fun _ l r ->
       Monad.Let_syntax.(
         let%bind () = l in
-        r))
+        r) )
     ~uop:(fun _ u -> u)
 
 let probe_early_out : Early_out.t -> unit Monad.t = function

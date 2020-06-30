@@ -30,7 +30,7 @@ module With_default_weight = struct
       Let_syntax.(
         let%bind ctx =
           peek (fun state ->
-              Availability.Context.make ~state ~subject ~param_map)
+              Availability.Context.make ~state ~subject ~param_map )
         in
         if%map Monadic.return (available action ctx) then weight else 0))
 end
@@ -95,7 +95,7 @@ module Pool = struct
     |> List.map ~f:(fun (act, override) ->
            ( act
            , Option.value override
-               ~default:(With_default_weight.default_weight act) ))
+               ~default:(With_default_weight.default_weight act) ) )
     |> Weighted_list.from_alist
 
   let summarise : t -> Summary.t Id.Map.t =
@@ -109,7 +109,7 @@ module Pool = struct
         in
         Map.set map
           ~key:(With_default_weight.name action)
-          ~data:(Summary.of_action action ?user_weight))
+          ~data:(Summary.of_action action ?user_weight) )
 
   module W = Weighted_list.On_monad (struct
     include State.Monad

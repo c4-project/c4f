@@ -123,7 +123,7 @@ module Local : Runner_types.S = Make (struct
           [%message
             "Failed to run a child process" ~prog ~args:(args : string list)]
         (try_with (fun () ->
-             Low_level_process.run ~prog ~args ~stdoutf ~stderrf ())))
+             Low_level_process.run ~prog ~args ~stdoutf ~stderrf () )))
 
   let run_single (prog : string) (args : string list)
       ~(stdoutf : Core.Bytes.t -> int -> unit)

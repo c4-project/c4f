@@ -84,7 +84,7 @@ module rec Statement :
     handle_path path ~target ~if_stm:(If.check_path ~filter)
       ~flow:(Flow.check_path ~filter) ~this_stm:(fun ~target ->
         Tx.Or_error.tee_m target ~f:(fun stm ->
-            Path_filter.check_final_statement filter ~stm))
+            Path_filter.check_final_statement filter ~stm ) )
 
   let insert_stm (path : Path.Stm.t) ~(to_insert : Subject.Statement.t)
       ~(target : Subject.Statement.t) : Subject.Statement.t Or_error.t =
@@ -92,7 +92,7 @@ module rec Statement :
       ~flow:(Flow.insert_stm ~to_insert) ~this_stm:(fun ~target ->
         ignore target ;
         Or_error.error_s
-          [%message "Can't insert statement here" ~path:(path : Path.Stm.t)])
+          [%message "Can't insert statement here" ~path:(path : Path.Stm.t)] )
 
   let insert_stm_list (path : Path.Stm.t)
       ~(to_insert : Subject.Statement.t list) ~(target : Subject.Statement.t)
@@ -101,7 +101,7 @@ module rec Statement :
       ~flow:(Flow.insert_stm_list ~to_insert) ~this_stm:(fun ~target ->
         ignore target ;
         Or_error.error_s
-          [%message "Can't insert statements here" ~path:(path : Path.Stm.t)])
+          [%message "Can't insert statements here" ~path:(path : Path.Stm.t)] )
 
   let transform_stm (path : Path.Stm.t)
       ~(f : Subject.Statement.t transformer) ~(target : Subject.Statement.t)
@@ -118,7 +118,7 @@ module rec Statement :
         Or_error.error_s
           [%message
             "Can't transform multiple statements here"
-              ~path:(path : Path.Stm.t)])
+              ~path:(path : Path.Stm.t)] )
 end
 
 and Block :
@@ -137,7 +137,7 @@ and Block :
       target Or_error.t =
     Block_stms_err.map_m dest ~f:(fun stms ->
         Tx.List.With_errors.replace_m stms index ~f:(fun target ->
-            Or_error.(f ~target >>| Option.some)))
+            Or_error.(f ~target >>| Option.some) ) )
 
   let bad_stm_list_path_error (path : Path.Stms.t)
       ~(here : Source_code_position.t) ~(context : string) :
@@ -166,7 +166,7 @@ and Block :
     match path with
     | Insert index ->
         Block_stms_err.map_m target ~f:(fun stms ->
-            Tx.List.insert stms index to_insert)
+            Tx.List.insert stms index to_insert )
     | In_stm (index, rest) ->
         handle_in_stm target index ~f:(Statement.insert_stm rest ~to_insert)
     | On_range (_, _) ->

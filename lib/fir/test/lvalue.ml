@@ -111,4 +111,4 @@ let%test_unit "on_value_of_typed_id: always takes basic type" =
       let ty = Act_common.C_named.value r in
       [%test_result: Act_fir.Type.t Or_error.t] ~here:[[%here]]
         (Tc.type_of (on_value_of_typed_id r))
-        ~expect:(Or_error.return Act_fir.Type.(make (basic_type ty))))
+        ~expect:(Or_error.return Act_fir.Type.(make (basic_type ty))) )

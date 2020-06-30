@@ -93,7 +93,7 @@ struct
     Or_error.(
       tag_s
         (bind (Type.ref arg) ~f:(fun argp ->
-             Type.check_atomic_non ~atomic:obj ~non:argp))
+             Type.check_atomic_non ~atomic:obj ~non:argp ))
         ~tag:
           [%message
             "'obj' type must be atomic version of 'expected' type"

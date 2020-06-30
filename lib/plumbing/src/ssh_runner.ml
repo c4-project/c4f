@@ -53,7 +53,7 @@ end) : Runner_types.S = Runner.Make (struct
         | `Directory ->
             copy_dir
         | `File ->
-            remote_file_name path)
+            remote_file_name path )
 
   let scp_receive : Copy_projection.t Copy_spec.t -> unit Or_error.t =
     function
@@ -69,7 +69,7 @@ end) : Runner_types.S = Runner.Make (struct
         Tx.Or_error.combine_map_unit fs ~f:(fun file ->
             let local = Copy_projection.local file in
             let remote = Copy_projection.remote file in
-            Scp.receive remote_cfg ~recurse:false ~remotes:[remote] ~local)
+            Scp.receive remote_cfg ~recurse:false ~remotes:[remote] ~local )
 
   (* TODO(@MattWindsor91): mangle the files such that duplicate files get
      non-overlapping names, forbid duplicate files, or do a two-speed thing

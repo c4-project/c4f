@@ -35,7 +35,7 @@ module Fuzz = struct
   let reify_param_alist :
       (Act_common.Id.t, int) List.Assoc.t -> Ast.Fuzz.t list =
     List.map ~f:(fun (id, value) ->
-        Ast.Fuzz.Set (Ast.Fuzz.Setter.Param (id, value)))
+        Ast.Fuzz.Set (Ast.Fuzz.Setter.Param (id, value)) )
 
   let reify_params : int Map.M(Act_common.Id).t -> Ast.Fuzz.t list =
     Fn.compose reify_param_alist Map.to_alist
@@ -51,7 +51,7 @@ module Fuzz = struct
   let reify_flag_alist :
       (Act_common.Id.t, Act_fuzz.Flag.t) List.Assoc.t -> Ast.Fuzz.t list =
     List.map ~f:(fun (id, value) ->
-        Ast.Fuzz.Set (Ast.Fuzz.Setter.Flag (id, reify_flag value)))
+        Ast.Fuzz.Set (Ast.Fuzz.Setter.Flag (id, reify_flag value)) )
 
   let reify_flags : Act_fuzz.Flag.t Map.M(Act_common.Id).t -> Ast.Fuzz.t list
       =
@@ -71,14 +71,14 @@ module Machines = struct
       (specs : spec Act_common.Spec.Set.t) : result list =
     specs |> Act_common.Spec.Set.to_list
     |> List.map ~f:(fun wid ->
-           Act_common.Spec.With_id.(f (id wid) (spec wid)))
+           Act_common.Spec.With_id.(f (id wid) (spec wid)) )
 
   let reify_backend_spec (spec : Act_backend.Spec.t) : Ast.Backend.t list =
     List.concat
       Act_backend.Spec.
         [ [Ast.Backend.Style (style spec); Cmd (cmd spec)]
         ; (let a = argv spec in
-           if List.is_empty a then [] else [Ast.Backend.Argv a])
+           if List.is_empty a then [] else [Ast.Backend.Argv a] )
         ; List.map
             ~f:(fun str -> Ast.Backend.C_model str)
             (Option.to_list (c_model spec))
@@ -89,7 +89,7 @@ module Machines = struct
   let reify_backends :
       Act_backend.Spec.t Act_common.Spec.Set.t -> Ast.Machine.t list =
     reify_spec_set ~f:(fun id spec ->
-        Ast.Machine.Backend (id, reify_backend_spec spec))
+        Ast.Machine.Backend (id, reify_backend_spec spec) )
 
   let reify_ssh (cfg : Plumbing.Ssh_runner.Config.t) : Ast.Ssh.t list =
     List.filter_opt

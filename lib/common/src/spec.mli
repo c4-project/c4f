@@ -82,9 +82,7 @@ module Set : sig
       returning the results as a list. *)
 
   val partition_map :
-       'spec t
-    -> f:('spec With_id.t -> [`Fst of 'a | `Snd of 'b])
-    -> 'a list * 'b list
+    'spec t -> f:('spec With_id.t -> ('a, 'b) Either.t) -> 'a list * 'b list
   (** [partition_map specs ~f] applies a partitioning predicate [f] to the
       specifications in [specs], returning those marked [`Fst] in the first
       bucket and those marked [`Snd] in the second. *)

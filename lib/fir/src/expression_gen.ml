@@ -28,7 +28,7 @@ module Int_prims (E : Env_types.S) = struct
   let with_record (g : 'a Q.Generator.t) ~(to_var : 'a -> Act_common.C_id.t)
       : ('a * Env.Record.t) Q.Generator.t =
     Q.Generator.filter_map g ~f:(fun x ->
-        Option.(x |> to_var |> Map.find E.env >>| fun r -> (x, r)))
+        Option.(x |> to_var |> Map.find E.env >>| fun r -> (x, r)) )
 
   let lift (g : 'a Q.Generator.t) ~(to_expr : 'a -> t)
       ~(to_var : 'a -> Act_common.C_id.t) : (t * Env.Record.t) Q.Generator.t
@@ -96,7 +96,7 @@ module Int_prims (E : Env_types.S) = struct
       let%bind op = gen_op in
       Q.Generator.filter_map gen_load ~f:(fun (l, r) ->
           Option.map (Env.Record.known_value r) ~f:(fun r ->
-              op l (Expression.constant r))))
+              op l (Expression.constant r) ) ))
 
   let gen_load ~(gen_zero : t Q.Generator.t) : t Q.Generator.t list =
     List.map ~f:(Q.Generator.map ~f:fst) (base_load_with_record ~gen_zero)

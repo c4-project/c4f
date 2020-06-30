@@ -42,7 +42,7 @@ module Set = struct
   let empty (type a) : a t = []
 
   let partition_map (type a b) (t : 'spec t)
-      ~(f : 'spec With_id.t -> [`Fst of a | `Snd of b]) : a list * b list =
+      ~(f : 'spec With_id.t -> (a, b) Either.t) : a list * b list =
     List.partition_map t ~f:(fun (id, spec) -> f (With_id.make ~id ~spec))
 
   let map (type a) (t : 'spec t) ~(f : 'spec With_id.t -> a) : a list =
@@ -57,7 +57,7 @@ module Set = struct
       |> List.find_all_dups ~compare:(Tx.Fn.on With_id.id ~f:Id.compare)
       |> List.map ~f:(fun x ->
              Or_error.error_s
-               [%message "duplicate ID" ~id:(With_id.id x : Id.t)])
+               [%message "duplicate ID" ~id:(With_id.id x : Id.t)] )
       |> Or_error.combine_errors_unit
     in
     List.map ~f:(fun x -> (With_id.id x, With_id.spec x)) xs
@@ -75,7 +75,7 @@ module Set = struct
     let result =
       Or_error.find_map_ok defaults ~f:(fun default ->
           let fqid = Id.(default @. fqid) in
-          get ?id_type specs ~id:fqid)
+          get ?id_type specs ~id:fqid )
     in
     (* We want default resolution to be 'hidden' in the error case; errors
        returned should refer to the original resolution attempt. *)
@@ -140,7 +140,7 @@ module Make (B : Basic) :
     let group t ~f =
       t
       |> List.map ~f:(fun (id, spec) ->
-             (f (With_id.make ~id ~spec), (id, spec)))
+             (f (With_id.make ~id ~spec), (id, spec)) )
       |> Id.Map.of_alist_multi
   end
 end

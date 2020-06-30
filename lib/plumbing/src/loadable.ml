@@ -18,7 +18,7 @@ struct
 
   let load (is : Input.t) : t Or_error.t =
     Input.with_input is ~f:(fun ic ->
-        load_from_ic ?path:(Input.to_string_opt is) ic)
+        load_from_ic ?path:(Input.to_string_opt is) ic )
 end
 
 module Make_chain

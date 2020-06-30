@@ -46,7 +46,7 @@ let%test_module "Block" =
           let quickcheck_shrinker = Shrinker.atomic
         end )
         ~f:(function
-          | Act_fuzz.Path.Insert 0 -> () | _ -> failwith "Unexpected path")
+          | Act_fuzz.Path.Insert 0 -> () | _ -> failwith "Unexpected path" )
 
     let%test_module "sample path output on example code" =
       ( module struct
