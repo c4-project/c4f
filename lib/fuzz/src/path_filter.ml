@@ -170,7 +170,9 @@ let transaction_safe (filter : t) : t =
   (* TODO(@MattWindsor91): add things to this as we go along. *)
   require_end_check
     ~check:(Is_not_of_class [Act_fir.Statement_class.atomic ()])
-  @@ filter
+  @@ require_end_check
+       ~check:(Has_no_expressions_of_class [Atomic None])
+       filter
 
 let in_threads_only (filter : t) ~(threads : Set.M(Int).t) : t =
   let threads' =
