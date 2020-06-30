@@ -56,8 +56,8 @@ let procedure_call (c : Call.t) : Ast.Stm.t =
           ; arguments= List.map ~f:Reify_expr.reify (Call.arguments c) }))
 
 let prim ((_, p) : _ * Prim_statement.t) : Ast.Stm.t =
-  Prim_statement.value_map p ~assign ~atomic ~early_out ~procedure_call ~label
-    ~goto ~nop
+  Prim_statement.value_map p ~assign ~atomic ~early_out ~procedure_call
+    ~label ~goto ~nop
 
 let if_stm (ifs : (_, Ast.Stm.t) If.t) : Ast.Stm.t =
   If

@@ -207,7 +207,44 @@ module Test_data = struct
   end
 end
 
-let%test_module "using sample environment" =
+let%test_module "program statement checks" =
+  ( module struct
+    let test (pred : Src.Subject.Test.t -> bool) : unit =
+      Act_utils.Io.print_bool (pred (Lazy.force Test_data.test))
+
+    let%expect_test "has atomic blocks" =
+      test
+        (Src.Subject.Test.has_statements_matching
+           ~templates:[Flow (Some (Lock (Some Atomic)))]) ;
+      [%expect {| false |}]
+
+    let%expect_test "has things that are not atomic blocks" =
+      test
+        (Src.Subject.Test.has_statements_not_matching
+           ~templates:[Flow (Some (Lock (Some Atomic)))]) ;
+      [%expect {| true |}]
+
+    let%expect_test "has atomics" =
+      test
+        (Src.Subject.Test.has_statements_matching
+           ~templates:[Act_fir.Statement_class.atomic ()]) ;
+      [%expect {| true |}]
+
+    let%expect_test "has non-atomics" =
+      test
+        (Src.Subject.Test.has_statements_not_matching
+           ~templates:[Act_fir.Statement_class.atomic ()]) ;
+      [%expect {| true |}]
+
+    let%expect_test "has things that are not a primitive, or not an if, or \
+                     not a flow" =
+      test
+        (Src.Subject.Test.has_statements_not_matching
+           ~templates:[If; Flow None; Prim None]) ;
+      [%expect {| true |}]
+  end )
+
+let%test_module "list_to_litmus" =
   ( module struct
     type r = Act_fir.Litmus.Lang.Program.t list [@@deriving sexp_of]
 

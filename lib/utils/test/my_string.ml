@@ -14,22 +14,24 @@ let%test_module "format_for_readme" =
     let test (str : string) : unit =
       Fmt.pr "@[%s@]@." (Act_utils.My_string.format_for_readme str)
 
-    let%expect_test "empty" =
-      test "" ; [%expect {| |}]
+    let%expect_test "empty" = test "" ; [%expect {| |}]
 
     let%expect_test "short example" =
-      test "here is a short example" ; [%expect {| here is a short example |}]
+      test "here is a short example" ;
+      [%expect {| here is a short example |}]
 
     let%expect_test "long example" =
-      test {|
+      test
+        {|
         This is hopefully a representative example of an unformatted
         README.
         It has
         line breaks in very strange places.
         
 
-        Here is another paragraph. |};
-        [%expect {|
+        Here is another paragraph. |} ;
+      [%expect
+        {|
           This is hopefully a representative example of an unformatted README. It has
           line breaks in very strange places.
 

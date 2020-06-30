@@ -97,9 +97,9 @@ val value_map :
   -> nop:(unit -> 'result)
   -> procedure_call:(Call.t -> 'result)
   -> 'result
-(** [value_map x ~assign ~atomic ~early_out ~label ~goto ~nop ~procedure_call]
-    reduces a primitive statement [x] to a particular result type by applying
-    the appropriate function. *)
+(** [value_map x ~assign ~atomic ~early_out ~label ~goto ~nop
+    ~procedure_call] reduces a primitive statement [x] to a particular result
+    type by applying the appropriate function. *)
 
 val as_atomic : t -> Atomic_statement.t option
 (** [as_atomic x] is [Some a] if [x] is [atomic a], and [None] otherwise. *)
