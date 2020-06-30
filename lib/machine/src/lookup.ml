@@ -216,7 +216,7 @@ end) : Lookup_types.S_backend = Make (struct
 
   let eval_pred = Act_backend.Property.eval_b
 
-  let specs_of_machine = Spec.With_id.backends
+  let specs_of_machine = Fn.compose Spec.backends Spec.With_id.spec
 
   let test_spec = Basic.test
 end)

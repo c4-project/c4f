@@ -60,61 +60,6 @@ module Make_common (B : Basic) = struct
       litmus
 end
 
-module Make_tabular (Test : Test_types.S) : S with module Test = Test =
-struct
-  module Test = Test
-
-  module Specific = struct
-    let pp_instr = Fmt.strf "@[<h>%a@]" Test.Lang.Statement.pp
-
-    module Program_tabulator = struct
-      module M = struct
-        type data = Test.Lang.Statement.t list list
-
-        let to_table programs =
-          let open Or_error.Let_syntax in
-          let header =
-            List.mapi ~f:(fun i _ -> Printf.sprintf "P%d" i) programs
-          in
-          let%bind programs' =
-            Result.of_option (List.transpose programs)
-              ~error:
-                (Error.create_s
-                   [%message
-                     "Couldn't transpose program table"
-                       ~table:(programs : Test.Lang.Statement.t list list)])
-          in
-          let rows = List.map ~f:(List.map ~f:pp_instr) programs' in
-          Act_utils.Tabulator.(
-            make ~sep:" | " ~terminator:" ;" ~header () >>= add_rows ~rows)
-      end
-
-      include M
-      include Act_utils.Tabulator.Extend_tabular (M)
-    end
-
-    let print_listings (oc : Out_channel.t) :
-        Test.Lang.Statement.t list list -> unit =
-      Program_tabulator.print_as_table ~oc ~on_error:(fun e ->
-          Fmt.epr "@[<@ error printing table:@ %a@ >@]" Error.pp e )
-
-    let get_uniform_listings (progs : Test.Lang.Program.t list) :
-        Test.Lang.Statement.t list list =
-      progs
-      |> List.map ~f:Test.Lang.Program.listing
-      |> Test.Lang.Statement.make_uniform
-
-    let print_programs_inner (oc : Out_channel.t)
-        (programs : Test.Lang.Program.t list) : unit =
-      programs |> get_uniform_listings |> print_listings oc
-  end
-
-  include Make_common (struct
-    module Test = Test
-    include Specific
-  end)
-end
-
 module Make_sequential (Test : Test_types.S) : S with module Test = Test =
 struct
   module Test = Test

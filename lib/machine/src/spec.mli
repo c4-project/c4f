@@ -27,16 +27,11 @@ val make :
     These fields are subject to change, and as such [make] is an unstable
     API. *)
 
-(** [With_id] is an extension onto [Spec.With_id] that lets such items be
-    machine references, and adds all of the [Spec] accessors. *)
-module With_id : sig
-  include
-    Act_common.Spec_types.S_with_id
-      with type elt := t
-       and type t = t Act_common.Spec.With_id.t
-
-  include Spec_types.S with type t := t and type via := Via.t
-end
+(** [With_id] is an implementation of [Spec.With_id]. *)
+module With_id :
+  Act_common.Spec_types.S_with_id
+    with type elt := t
+     and type t = t Act_common.Spec.With_id.t
 
 (** Machine specifications are specifications. *)
 include Act_common.Spec.S with type t := t and module With_id := With_id

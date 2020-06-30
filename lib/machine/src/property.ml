@@ -20,11 +20,14 @@ end
 type t = Id of Ac.Id.Property.t | Is_remote | Is_local
 [@@deriving sexp, variants]
 
+let remoteness : Spec.With_id.t -> [`Local | `Remote | `Unknown] =
+  Fn.compose Spec.remoteness Spec.With_id.spec
+
 let check_is_remote (spec : Spec.With_id.t) : bool =
-  match Spec.With_id.remoteness spec with `Remote -> true | _ -> false
+  match remoteness spec with `Remote -> true | _ -> false
 
 let check_is_local (spec : Spec.With_id.t) : bool =
-  match Spec.With_id.remoteness spec with `Local -> true | _ -> false
+  match remoteness spec with `Local -> true | _ -> false
 
 let eval (spec : Spec.With_id.t) = function
   | Id prop ->

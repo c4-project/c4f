@@ -61,7 +61,7 @@ module Backend = struct
       (module Act_backend.Instance_types.S) Or_error.t =
     let s_spec = spec q_spec in
     let m_spec = m_spec q_spec in
-    let (module Runner) = Spec.With_id.runner m_spec in
+    let (module Runner) = Spec.(runner (With_id.spec m_spec)) in
     Or_error.Let_syntax.(
       let%map (module B : Act_backend.Instance_types.Basic) = f s_spec in
       ( module Act_backend.Instance.Make (struct

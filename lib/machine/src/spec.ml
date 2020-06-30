@@ -46,44 +46,7 @@ module M = struct
 end
 
 include M
-
-module Forward_basic_spec
-    (I : Act_utils.Inherit_types.S)
-    (B : Spec_types.S with type t := I.c) :
-  Spec_types.S with type t := I.t and type via := B.via = struct
-  module H = Act_utils.Inherit.Helpers (I)
-
-  (* TODO(@MattWindsor91): this is a bit suspect *)
-  let pp f = H.forward (B.pp f)
-
-  let runner = H.forward B.runner
-
-  let backends = H.forward B.backends
-
-  let via = H.forward B.via
-
-  let remoteness = H.forward B.remoteness
-end
-
-module With_id = struct
-  include Ac.Spec.Make_with_id (M)
-
-  include Forward_basic_spec
-            (struct
-              type nonrec t = t
-
-              type c = M.t
-
-              let component = spec
-            end)
-            (struct
-              type via = Via.t
-
-              include M
-            end)
-
-  let pp f t = Fmt.pf f "@[%a@ (@,%a@,)@]" Ac.Id.pp (id t) M.pp (spec t)
-end
+module With_id = Ac.Spec.Make_with_id (M)
 
 module MS = Ac.Spec.Make (struct
   include M
