@@ -40,13 +40,9 @@ module type S = sig
       [clazz], but not vice versa. *)
 end
 
-(** Module type of classification extensions. *)
+(** Module type of extended classifications. *)
 module type S_ext = sig
-  (** Enumeration of primitive statement classes. *)
-  type t
-
-  (** The element being classified, which may range over metadata. *)
-  type 'meta elt
+  include S
 
   val count_rec_matches : 'meta elt -> templates:t list -> int
   (** [count_rec_matches elt ~templates] counts the recursive number of times

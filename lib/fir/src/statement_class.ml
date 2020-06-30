@@ -55,9 +55,11 @@ module Flow = struct
         false
 end
 
-module Main = struct
-  type t = Prim of Prim.t option | If | Flow of Flow.t option
-  [@@deriving compare, equal, sexp]
+type t = Prim of Prim.t option | If | Flow of Flow.t option
+[@@deriving compare, equal, sexp]
+
+include Class.Make_ext (struct
+  type nonrec t = t
 
   type 'meta elt = 'meta Statement.t
 
@@ -93,10 +95,7 @@ module Main = struct
         Prim.class_matches clazz ~template
     | _, _ ->
         false
-end
-
-include Main
-include Class.Make_ext (Main)
+end)
 
 let atomic ?(specifically : Atomic_class.t option) () : t =
   Prim (Some (Atomic specifically))
