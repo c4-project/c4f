@@ -87,7 +87,7 @@ val return : t
 
 (** {1 Traversals} *)
 
-val reduce :
+val value_map :
      t
   -> assign:(Assign.t -> 'result)
   -> atomic:(Atomic_statement.t -> 'result)
@@ -97,7 +97,7 @@ val reduce :
   -> nop:(unit -> 'result)
   -> procedure_call:(Call.t -> 'result)
   -> 'result
-(** [reduce x ~assign ~atomic ~early_out ~label ~goto ~nop ~procedure_call]
+(** [value_map x ~assign ~atomic ~early_out ~label ~goto ~nop ~procedure_call]
     reduces a primitive statement [x] to a particular result type by applying
     the appropriate function. *)
 

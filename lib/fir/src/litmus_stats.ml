@@ -173,7 +173,7 @@ let probe_early_out : Early_out.t -> unit Monad.t = function
 let probe_prim (s : Prim_statement.t) : unit Monad.t =
   Monad.Let_syntax.(
     let%bind () = MPExpr.iter_m s ~f:probe_expr in
-    Prim_statement.reduce s ~assign:nowt ~atomic:probe_atomic_stm
+    Prim_statement.value_map s ~assign:nowt ~atomic:probe_atomic_stm
       ~early_out:probe_early_out ~label:nowt ~goto:nowt ~nop:nowt
       ~procedure_call:nowt)
 

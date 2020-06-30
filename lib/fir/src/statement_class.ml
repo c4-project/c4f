@@ -5,7 +5,7 @@ module Prim = struct
   [@@deriving compare, equal, sexp]
 
   let classify : Prim_statement.t -> t option =
-    Prim_statement.reduce ~assign:(Fn.const None)
+    Prim_statement.value_map ~assign:(Fn.const None)
       ~atomic:(fun x -> Some (Atomic (Atomic_class.classify_stm x)))
       ~early_out:(Fn.const None) ~goto:(Fn.const None)
       ~procedure_call:(Fn.const None) ~label:(Fn.const (Some Label))

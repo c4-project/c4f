@@ -50,7 +50,7 @@ let continue : t = Early_out Continue
 
 let return : t = Early_out Return
 
-let reduce (type result) (x : t) ~(assign : Assign.t -> result)
+let value_map (type result) (x : t) ~(assign : Assign.t -> result)
     ~(atomic : Atomic_statement.t -> result)
     ~(early_out : Early_out.t -> result) ~(label : Ac.C_id.t -> result)
     ~(goto : Ac.C_id.t -> result) ~(nop : unit -> result)
@@ -91,7 +91,7 @@ module Base_map (M : Monad.S) = struct
       ~(goto : Ac.C_id.t -> Ac.C_id.t M.t)
       ~(procedure_call : Call.t -> Call.t M.t) : t M.t =
     Travesty_base_exts.Fn.Compose_syntax.(
-      reduce x
+      value_map x
         ~assign:(assign >> M.map ~f:P.assign)
         ~atomic:(atomic >> M.map ~f:P.atomic)
         ~early_out:(early_out >> M.map ~f:P.early_out)
