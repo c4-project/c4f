@@ -78,13 +78,8 @@ module Thread = struct
 
   let has_statements (p : t) : bool = not (List.is_empty p.stms)
 
-  let has_statements_matching (p : t)
-      ~(templates : Fir.Statement_class.t list) : bool =
-    List.exists p.stms ~f:(Fir.Statement_class.rec_matches_any ~templates)
-
-  let has_statements_not_matching (p : t)
-      ~(templates : Fir.Statement_class.t list) : bool =
-    List.exists p.stms ~f:(Fir.Statement_class.rec_unmatches_any ~templates)
+  let exists_statement (p : t) ~(f : Statement.t -> bool) =
+    List.exists p.stms ~f
 
   let has_dead_code_blocks (p : t) : bool =
     List.exists p.stms ~f:Statement.has_dead_code_blocks
@@ -156,17 +151,19 @@ module Test = struct
     let threads' = Thread.list_to_litmus ~vars threads in
     Fir.Litmus.Test.make ~header ~threads:threads'
 
-  let at_least_one_thread_with (p : t) ~(f : Thread.t -> bool) : bool =
+  let exists_thread (p : t) ~(f : Thread.t -> bool) : bool =
     List.exists (Act_litmus.Test.Raw.threads p) ~f
+
+  let exists_statement (p : t) ~(f : Statement.t -> bool) : bool =
+    exists_thread p ~f:(Thread.exists_statement ~f)
 
   let has_statements_matching (p : t)
       ~(templates : Fir.Statement_class.t list) : bool =
-    at_least_one_thread_with p ~f:(Thread.has_statements_matching ~templates)
+    exists_statement p ~f:(Fir.Statement_class.rec_matches_any ~templates)
 
   let has_statements_not_matching (p : t)
       ~(templates : Fir.Statement_class.t list) : bool =
-    at_least_one_thread_with p
-      ~f:(Thread.has_statements_not_matching ~templates)
+    exists_statement p ~f:(Fir.Statement_class.rec_unmatches_any ~templates)
 
   let has_atomic_statements : t -> bool =
     has_statements_matching ~templates:[Fir.Statement_class.atomic ()]
@@ -181,15 +178,14 @@ module Test = struct
     has_statements_matching
       ~templates:[Fir.Statement_class.lock_block ~specifically:Atomic ()]
 
-  let has_statements : t -> bool =
-    at_least_one_thread_with ~f:Thread.has_statements
+  let has_statements : t -> bool = exists_thread ~f:Thread.has_statements
 
   let has_non_label_prims : t -> bool =
     has_statements_not_matching
       ~templates:[Fir.Statement_class.(Prim (Some Label))]
 
   let has_dead_code_blocks : t -> bool =
-    at_least_one_thread_with ~f:Thread.has_dead_code_blocks
+    exists_thread ~f:Thread.has_dead_code_blocks
 
   let add_var_to_init (subject : t) (name : Ac.C_id.t)
       (init : Fir.Initialiser.t) : t Or_error.t =

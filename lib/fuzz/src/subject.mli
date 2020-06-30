@@ -138,6 +138,10 @@ module Thread : sig
       back into Litmus programs, adding parameter lists generated from
       [vars], and using the physical position of each program in the list to
       generate its thread ID. *)
+
+  val exists_statement : t -> f:(Statement.t -> bool) -> bool
+  (** [exists_statement thread ~f] is true if there exists a statement in
+      [thread] such that [f] holds. *)
 end
 
 (** Fuzzable representation of a litmus test. *)
@@ -162,15 +166,13 @@ module Test : sig
 
   (** {3 Availability queries} *)
 
-  val has_statements_matching :
-    t -> templates:Act_fir.Statement_class.t list -> bool
-  (** [has_statements_matching test ~templates] is true if, and only if,
-      [test] contains at least one statement matching one of [templates]. *)
+  val exists_thread : t -> f:(Thread.t -> bool) -> bool
+  (** [exists_thread test ~f] is true if there exists a thread in [test] such
+      that [f] holds. *)
 
-  val has_statements_not_matching :
-    t -> templates:Act_fir.Statement_class.t list -> bool
-  (** [has_statements_not_matching test ~templates] is true if, and only if,
-      [test] contains at least one statement not matching one of [templates]. *)
+  val exists_statement : t -> f:(Statement.t -> bool) -> bool
+  (** [exists_statement test ~f] is true if there exists a statement in
+      [test] such that [f] holds. *)
 
   val has_atomic_statements : t -> bool
   (** [has_atomic_statements test] is true if, and only if, [test] contains

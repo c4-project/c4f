@@ -207,39 +207,41 @@ module Test_data = struct
   end
 end
 
-let%test_module "program statement checks" =
+let%test_module "exists-statement checks" =
   ( module struct
-    let test (pred : Src.Subject.Test.t -> bool) : unit =
-      Act_utils.Io.print_bool (pred (Lazy.force Test_data.test))
+    let test (pred : Src.Subject.Statement.t -> bool) : unit =
+      Act_utils.Io.print_bool
+        (Src.Subject.Test.exists_statement ~f:pred
+           (Lazy.force Test_data.test))
 
     let%expect_test "has atomic blocks" =
       test
-        (Src.Subject.Test.has_statements_matching
+        (Act_fir.Statement_class.rec_matches_any
            ~templates:[Flow (Some (Lock (Some Atomic)))]) ;
       [%expect {| false |}]
 
     let%expect_test "has things that are not atomic blocks" =
       test
-        (Src.Subject.Test.has_statements_not_matching
+        (Act_fir.Statement_class.rec_unmatches_any
            ~templates:[Flow (Some (Lock (Some Atomic)))]) ;
       [%expect {| true |}]
 
     let%expect_test "has atomics" =
       test
-        (Src.Subject.Test.has_statements_matching
+        (Act_fir.Statement_class.rec_matches_any
            ~templates:[Act_fir.Statement_class.atomic ()]) ;
       [%expect {| true |}]
 
     let%expect_test "has non-atomics" =
       test
-        (Src.Subject.Test.has_statements_not_matching
+        (Act_fir.Statement_class.rec_unmatches_any
            ~templates:[Act_fir.Statement_class.atomic ()]) ;
       [%expect {| true |}]
 
     let%expect_test "has things that are not a primitive, or not an if, or \
                      not a flow" =
       test
-        (Src.Subject.Test.has_statements_not_matching
+        (Act_fir.Statement_class.rec_unmatches_any
            ~templates:[If; Flow None; Prim None]) ;
       [%expect {| true |}]
   end )

@@ -57,6 +57,7 @@ module End_check = struct
     type t =
       | Is_of_class of Act_fir.Statement_class.t list
       | Is_not_of_class of Act_fir.Statement_class.t list
+      | Has_no_expressions_of_class of Act_fir.Expression_class.t list
     [@@deriving compare, equal, sexp]
   end
 
@@ -69,14 +70,25 @@ module End_check = struct
       | Is_of_class templates ->
           matches_any stm ~templates
       | Is_not_of_class templates ->
-          not (matches_any stm ~templates))
+          not (matches_any stm ~templates)
+      | Has_no_expressions_of_class templates ->
+          not
+            (Subject.Statement.On_expressions.exists stm
+               ~f:(Act_fir.Expression_class.rec_matches_any ~templates)))
 
   let is_constructible (flag : t) ~(subject : Subject.Test.t) : bool =
     match flag with
     | Is_of_class templates ->
-        Subject.Test.has_statements_matching subject ~templates
+        Subject.Test.exists_statement subject
+          ~f:(Act_fir.Statement_class.rec_matches_any ~templates)
     | Is_not_of_class templates ->
-        Subject.Test.has_statements_not_matching subject ~templates
+        Subject.Test.exists_statement subject
+          ~f:(Act_fir.Statement_class.rec_unmatches_any ~templates)
+    | Has_no_expressions_of_class templates ->
+        Subject.Test.exists_statement subject
+          ~f:
+            (Subject.Statement.On_expressions.exists
+               ~f:(Act_fir.Expression_class.rec_unmatches_any ~templates))
 
   let check (check : t) ~(stm : Subject.Statement.t) : unit Or_error.t =
     Tx.Or_error.unless_m (is_ok check ~stm) ~f:(fun () ->

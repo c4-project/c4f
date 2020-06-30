@@ -69,6 +69,9 @@ module End_check : sig
     | Is_not_of_class of Act_fir.Statement_class.t list
         (** Requires the path to reach a statement not of any of the given
             classes. *)
+    | Has_no_expressions_of_class of Act_fir.Expression_class.t list
+        (** Requires the path to reach a statement that has no expressions of
+            any of the given classes. *)
 end
 
 val require_end_check : t -> check:End_check.t -> t
