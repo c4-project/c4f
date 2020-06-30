@@ -53,6 +53,11 @@ val not_in_atomic_block : t -> t
 (** [not_in_atomic_block filter] adds to [filter] the restriction that any
     path must not travel through an atomic block. *)
 
+val transaction_safe : t -> t
+(** [transaction_safe] requires the path to reach a statement that is
+    'transaction safe'; that is, it can appear inside an 'atomic' block. This
+    forbids particular forms of statement and expression. *)
+
 (** {2 End checks} *)
 
 module End_check : sig
@@ -64,12 +69,6 @@ module End_check : sig
     | Is_not_of_class of Act_fir.Statement_class.t list
         (** Requires the path to reach a statement not of any of the given
             classes. *)
-
-  (** {3 Specific constructions of end check} *)
-
-  val transaction_safe : t
-  (** [transaction_safe] requires the path to reach a statement that is
-      'transaction safe'; that is, it can appear inside an 'atomic' block. *)
 end
 
 val require_end_check : t -> check:End_check.t -> t

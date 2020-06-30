@@ -62,9 +62,7 @@ module Atomic_surround :
 
   let lock_type_name = "an atomic"
 
-  let path_filter =
-    Path_filter.(
-      require_end_check ~check:End_check.transaction_safe @@ empty)
+  let path_filter = Path_filter.(transaction_safe @@ empty)
 end)
 
 module Sync_surround : Action_types.S with type Payload.t = Path.Program.t =

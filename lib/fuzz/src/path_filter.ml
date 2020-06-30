@@ -63,10 +63,6 @@ module End_check = struct
   include M
   include Comparable.Make (M)
 
-  let transaction_safe : t =
-    (* TODO(@MattWindsor91): add things to this as we go along. *)
-    Is_not_of_class [Act_fir.Statement_class.atomic ()]
-
   let is_ok (check : t) ~(stm : Subject.Statement.t) : bool =
     Act_fir.Statement_class.(
       match check with
@@ -157,6 +153,12 @@ include Not_flags
 
 let require_end_check (existing : t) ~(check : End_check.t) : t =
   {existing with end_checks= Set.add existing.end_checks check}
+
+let transaction_safe (filter : t) : t =
+  (* TODO(@MattWindsor91): add things to this as we go along. *)
+  require_end_check
+    ~check:(Is_not_of_class [Act_fir.Statement_class.atomic ()])
+  @@ filter
 
 let in_threads_only (filter : t) ~(threads : Set.M(Int).t) : t =
   let threads' =
