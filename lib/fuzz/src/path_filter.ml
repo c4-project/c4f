@@ -39,11 +39,17 @@ module Flag = struct
   let is_constructible (flag : t) ~(subject : Subject.Test.t) : bool =
     match flag with
     | In_loop ->
-        Subject.Test.has_while_loops subject
+        Subject.Test.has_statements subject
+          ~matching:[Act_fir.Statement_class.while_loop ()]
     | In_dead_code ->
-        Subject.Test.has_dead_code_blocks subject
+        Subject.Test.exists_top_statement subject
+          ~f:
+            (Act_fir.Statement.has_blocks_with_metadata
+               ~predicate:Metadata.is_dead_code)
     | In_atomic ->
-        Subject.Test.has_atomic_blocks subject
+        Subject.Test.has_statements subject
+          ~matching:
+            [Act_fir.Statement_class.lock_block ~specifically:Atomic ()]
 
   (** Maps a subset of the flags to predicates that toggle whether a piece of
       metadata sets the flag or not. *)
@@ -78,14 +84,12 @@ module End_check = struct
 
   let is_constructible (flag : t) ~(subject : Subject.Test.t) : bool =
     match flag with
-    | Is_of_class templates ->
-        Subject.Test.exists_statement subject
-          ~f:(Act_fir.Statement_class.rec_matches_any ~templates)
-    | Is_not_of_class templates ->
-        Subject.Test.exists_statement subject
-          ~f:(Act_fir.Statement_class.rec_unmatches_any ~templates)
+    | Is_of_class matching ->
+        Subject.Test.has_statements subject ~matching
+    | Is_not_of_class one_of ->
+        Subject.Test.has_statements_not_matching subject ~one_of
     | Has_no_expressions_of_class templates ->
-        Subject.Test.exists_statement subject
+        Subject.Test.exists_top_statement subject
           ~f:
             (Subject.Statement.On_expressions.exists
                ~f:(Act_fir.Expression_class.rec_unmatches_any ~templates))

@@ -48,19 +48,6 @@ module Statement : sig
   val make_generated_prim : Act_fir.Prim_statement.t -> t
   (** [make_generated_prim prim] lifts a primitive statement to a generated
       subject statement. *)
-
-  (** {3 Statement predicates}
-
-      If a predicate exists here instead of on {!Act_fir.Statement}, it
-      depends on having fixed metadata in some way. *)
-
-  val has_atomic_statements : t -> bool
-  (** [has_atomic_statements stm] is true if there are atomic statements in
-      [stm], looking recursively. *)
-
-  val has_labels : t -> bool
-  (** [has_labels stm] is true if there are labels in [stm], looking
-      recursively. *)
 end
 
 (** {2 Subject blocks} *)
@@ -139,9 +126,9 @@ module Thread : sig
       [vars], and using the physical position of each program in the list to
       generate its thread ID. *)
 
-  val exists_statement : t -> f:(Statement.t -> bool) -> bool
-  (** [exists_statement thread ~f] is true if there exists a statement in
-      [thread] such that [f] holds. *)
+  val exists_top_statement : t -> f:(Statement.t -> bool) -> bool
+  (** [exists_top_statement thread ~f] is true if there exists a top-level
+      statement in [thread] such that [f] holds. *)
 end
 
 (** Fuzzable representation of a litmus test. *)
@@ -170,37 +157,21 @@ module Test : sig
   (** [exists_thread test ~f] is true if there exists a thread in [test] such
       that [f] holds. *)
 
-  val exists_statement : t -> f:(Statement.t -> bool) -> bool
-  (** [exists_statement test ~f] is true if there exists a statement in
-      [test] such that [f] holds. *)
+  val exists_top_statement : t -> f:(Statement.t -> bool) -> bool
+  (** [exists_top_statement test ~f] is true if there exists a top-level
+      statement in [test] such that [f] holds. *)
 
-  val has_atomic_statements : t -> bool
-  (** [has_atomic_statements test] is true if, and only if, [test] contains
-      at least one atomic statement. *)
+  val has_statements : ?matching:Act_fir.Statement_class.t list -> t -> bool
+  (** [has_statements ?matching test] is true if there exists a statement at
+      any level in [test] that matches at least one of [matching]; if
+      [matching] is empty or not given, we just check to see if any
+      statements exist. *)
 
-  val has_atomic_blocks : t -> bool
-  (** [has_atomic_block test] is true if, and only if, [test] contains at
-      least one atomic block. *)
-
-  val has_statements : t -> bool
-  (** [has_statements test] is true if, and only if, [test] contains at least
-      one statement. *)
-
-  val has_if_statements : t -> bool
-  (** [has_if_statements test] is true if, and only if, [test] contains at
-      least one if statement. *)
-
-  val has_while_loops : t -> bool
-  (** [has_while_loops test] is true if, and only if, [test] contains at
-      least one while loop. *)
-
-  val has_dead_code_blocks : t -> bool
-  (** [has_dead_code_blocks test] is true if, and only if, [test] contains at
-      least one dead code block. *)
-
-  val has_non_label_prims : t -> bool
-  (** [has_non_label_prims test] is true if there is at least one primitive
-      statement in [test] that is not a label. *)
+  val has_statements_not_matching :
+    t -> one_of:Act_fir.Statement_class.t list -> bool
+  (** [exist_statement_not_matching test ~templates] is true if there exists
+      a statement at any level in [test] that fails to match at least one of
+      [one_of]. *)
 
   (** {3 Helpers for mutating tests} *)
 

@@ -73,10 +73,11 @@ struct
       {| Inserts a valid 'early-out' statement (break or return) into a random
          dead-code location. |}
 
-  let available (ctx : Availability.Context.t) : bool Or_error.t =
-    Ok
-      ( ctx |> Availability.Context.subject
-      |> Subject.Test.has_dead_code_blocks )
+  let base_path_filter : Path_filter.t =
+    Path_filter.(in_dead_code_only empty)
+
+  let available : Availability.t =
+    Availability.is_filter_constructible base_path_filter
 
   module Payload = Early_out_payload
 
@@ -92,10 +93,8 @@ struct
 
   let check_path (target : Subject.Test.t) (path : Path.Program.t)
       (kind : Act_fir.Early_out.t) : Subject.Test.t Or_error.t =
-    let filter =
-      Path_filter.(
-        empty |> in_dead_code_only |> Staged.unstage (kind_filter kind))
-    in
+    let f = Staged.unstage (kind_filter kind) in
+    let filter = f base_path_filter in
     Path_consumers.Test.check_path path ~filter ~target
 
   let run_inner (test : Subject.Test.t) (path : Path.Program.t)

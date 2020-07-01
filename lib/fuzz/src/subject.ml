@@ -28,16 +28,7 @@ module Statement = struct
     type t = Metadata.t Fir.Statement.Flow_block.t [@@deriving sexp]
   end
 
-  let has_dead_code_blocks : t -> bool =
-    Fir.Statement.has_blocks_with_metadata ~predicate:Metadata.is_dead_code
-
   include Fir.Statement_traverse.With_meta (Metadata)
-
-  let has_atomic_statements : t -> bool =
-    On_primitives.exists ~f:Fir.Prim_statement.is_atomic
-
-  let has_labels : t -> bool =
-    On_primitives.exists ~f:Fir.Prim_statement.is_label
 
   let make_generated_prim : Fir.Prim_statement.t -> t =
     Fir.Statement.prim Metadata.generated
@@ -78,11 +69,8 @@ module Thread = struct
 
   let has_statements (p : t) : bool = not (List.is_empty p.stms)
 
-  let exists_statement (p : t) ~(f : Statement.t -> bool) =
+  let exists_top_statement (p : t) ~(f : Statement.t -> bool) =
     List.exists p.stms ~f
-
-  let has_dead_code_blocks (p : t) : bool =
-    List.exists p.stms ~f:Statement.has_dead_code_blocks
 
   let statements_of_function (func : unit Fir.Function.t) : Statement.t list
       =
@@ -154,38 +142,20 @@ module Test = struct
   let exists_thread (p : t) ~(f : Thread.t -> bool) : bool =
     List.exists (Act_litmus.Test.Raw.threads p) ~f
 
-  let exists_statement (p : t) ~(f : Statement.t -> bool) : bool =
-    exists_thread p ~f:(Thread.exists_statement ~f)
+  let exists_top_statement (p : t) ~(f : Statement.t -> bool) : bool =
+    exists_thread p ~f:(Thread.exists_top_statement ~f)
 
-  let has_statements_matching (p : t)
-      ~(templates : Fir.Statement_class.t list) : bool =
-    exists_statement p ~f:(Fir.Statement_class.rec_matches_any ~templates)
+  let has_statements ?(matching : Fir.Statement_class.t list = []) (p : t) :
+      bool =
+    if List.is_empty matching then exists_thread p ~f:Thread.has_statements
+    else
+      exists_top_statement p
+        ~f:(Fir.Statement_class.rec_matches_any ~templates:matching)
 
   let has_statements_not_matching (p : t)
-      ~(templates : Fir.Statement_class.t list) : bool =
-    exists_statement p ~f:(Fir.Statement_class.rec_unmatches_any ~templates)
-
-  let has_atomic_statements : t -> bool =
-    has_statements_matching ~templates:[Fir.Statement_class.atomic ()]
-
-  let has_while_loops : t -> bool =
-    has_statements_matching ~templates:[Fir.Statement_class.while_loop ()]
-
-  let has_if_statements : t -> bool =
-    has_statements_matching ~templates:[Fir.Statement_class.If]
-
-  let has_atomic_blocks : t -> bool =
-    has_statements_matching
-      ~templates:[Fir.Statement_class.lock_block ~specifically:Atomic ()]
-
-  let has_statements : t -> bool = exists_thread ~f:Thread.has_statements
-
-  let has_non_label_prims : t -> bool =
-    has_statements_not_matching
-      ~templates:[Fir.Statement_class.(Prim (Some Label))]
-
-  let has_dead_code_blocks : t -> bool =
-    exists_thread ~f:Thread.has_dead_code_blocks
+      ~(one_of : Fir.Statement_class.t list) : bool =
+    exists_top_statement p
+      ~f:(Fir.Statement_class.rec_unmatches_any ~templates:one_of)
 
   let add_var_to_init (subject : t) (name : Ac.C_id.t)
       (init : Fir.Initialiser.t) : t Or_error.t =

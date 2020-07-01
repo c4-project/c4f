@@ -140,17 +140,17 @@ module Invert : Action_types.S with type Payload.t = Path.Program.t = struct
     Act_utils.My_string.format_for_readme
       {| Flips the conditional and branches of an if statement. |}
 
-  let available (ctx : Availability.Context.t) : bool Or_error.t =
-    Ok (ctx |> Availability.Context.subject |> Subject.Test.has_if_statements)
+  let path_filter =
+    Path_filter.(require_end_check empty ~check:(Is_of_class [If]))
+
+  let available : Availability.t =
+    Availability.is_filter_constructible path_filter
 
   module Payload = struct
     type t = Path.Program.t [@@deriving sexp]
 
     let quickcheck_path (test : Subject.Test.t) : Path.Program.t Opt_gen.t =
-      let filter =
-        Path_filter.(empty |> require_end_check ~check:(Is_of_class [If]))
-      in
-      Path_producers.Test.try_gen_transform_stm ~filter test
+      Path_producers.Test.try_gen_transform_stm ~filter:path_filter test
 
     let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
         ~(param_map : Param_map.t) : Path.Program.t State.Monad.t =

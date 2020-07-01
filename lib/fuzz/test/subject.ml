@@ -207,42 +207,40 @@ module Test_data = struct
   end
 end
 
-let%test_module "exists-statement checks" =
+let%test_module "has_statements checks" =
   ( module struct
-    let test (pred : Src.Subject.Statement.t -> bool) : unit =
+    let test (matching : Act_fir.Statement_class.t list) : unit =
       Act_utils.Io.print_bool
-        (Src.Subject.Test.exists_statement ~f:pred
+        (Src.Subject.Test.has_statements ~matching
            (Lazy.force Test_data.test))
 
     let%expect_test "has atomic blocks" =
-      test
-        (Act_fir.Statement_class.rec_matches_any
-           ~templates:[Flow (Some (Lock (Some Atomic)))]) ;
+      test [Flow (Some (Lock (Some Atomic)))] ;
       [%expect {| false |}]
 
-    let%expect_test "has things that are not atomic blocks" =
-      test
-        (Act_fir.Statement_class.rec_unmatches_any
-           ~templates:[Flow (Some (Lock (Some Atomic)))]) ;
-      [%expect {| true |}]
-
     let%expect_test "has atomics" =
-      test
-        (Act_fir.Statement_class.rec_matches_any
-           ~templates:[Act_fir.Statement_class.atomic ()]) ;
+      test [Act_fir.Statement_class.atomic ()] ;
+      [%expect {| true |}]
+  end )
+
+let%test_module "has_statements_not_matching" =
+  ( module struct
+    let test (one_of : Act_fir.Statement_class.t list) : unit =
+      Act_utils.Io.print_bool
+        (Src.Subject.Test.has_statements_not_matching ~one_of
+           (Lazy.force Test_data.test))
+
+    let%expect_test "has things that are not atomic blocks" =
+      test [Flow (Some (Lock (Some Atomic)))] ;
       [%expect {| true |}]
 
     let%expect_test "has non-atomics" =
-      test
-        (Act_fir.Statement_class.rec_unmatches_any
-           ~templates:[Act_fir.Statement_class.atomic ()]) ;
+      test [Act_fir.Statement_class.atomic ()] ;
       [%expect {| true |}]
 
     let%expect_test "has things that are not a primitive, or not an if, or \
                      not a flow" =
-      test
-        (Act_fir.Statement_class.rec_unmatches_any
-           ~templates:[If; Flow None; Prim None]) ;
+      test [If; Flow None; Prim None] ;
       [%expect {| true |}]
   end )
 
