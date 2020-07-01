@@ -228,12 +228,10 @@ let are_final_statements_ok (filter : t)
 
 module Construct_checks = struct
   let is_constructible_req (filter : t) ~(subject : Subject.Test.t) : bool =
-    filter.req_flags |> Set.to_list
-    |> List.for_all ~f:(Flag.is_constructible ~subject)
+    Set.for_all filter.req_flags ~f:(Flag.is_constructible ~subject)
 
   let is_constructible_end (filter : t) ~(subject : Subject.Test.t) : bool =
-    filter.end_checks |> Set.to_list
-    |> List.for_all ~f:(End_check.is_constructible ~subject)
+    Set.for_all filter.end_checks ~f:(End_check.is_constructible ~subject)
 
   let threads_to_remove (threads_to_keep : Set.M(Int).t)
       ~(subject : Subject.Test.t) : Set.M(Int).t =
