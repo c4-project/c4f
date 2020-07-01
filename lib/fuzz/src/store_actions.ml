@@ -217,7 +217,7 @@ module Xchgify : Action_types.S with type Payload.t = Path.Program.t = struct
       ignore param_map ;
       let filter = Lazy.force path_filter in
       Payload.Helpers.lift_quickcheck_opt
-        (Path_producers.Test.try_gen_transform_stm test ~filter)
+        (Path_producers.try_gen_transform_stm test ~filter)
         ~random ~action_id:name
   end
 

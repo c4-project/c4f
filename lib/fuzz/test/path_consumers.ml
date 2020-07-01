@@ -212,12 +212,12 @@ let%test_module "Statement_list" =
             let%test_unit "generator over stm-list produces valid paths" =
               Test.run_exn
                 ( module struct
-                  type t = F.Path.stm_list [@@deriving sexp]
+                  type t = F.Path.Program.t [@@deriving sexp]
 
                   let quickcheck_generator =
                     Or_error.ok_exn
-                      (F.Path_producers.Block.try_gen_transform_stm_list
-                         (Lazy.force body_block))
+                      (F.Path_producers.try_gen_transform_stm_list
+                         (Lazy.force Subject.Test_data.test))
 
                   let quickcheck_shrinker =
                     (* for now *)
@@ -227,9 +227,9 @@ let%test_module "Statement_list" =
                   [%test_result: unit Or_error.t] ~here:[[%here]]
                     ~expect:(Or_error.return ())
                     (Or_error.map ~f:(Fn.const ())
-                       (F.Path_consumers.Block.transform_stm_list path
-                          ~f:Or_error.return ~target:(Lazy.force body_block)))
-                  )
+                       (F.Path_consumers.Test.transform_stm_list path
+                          ~f:Or_error.return
+                          ~target:(Lazy.force Subject.Test_data.test))) )
           end )
       end )
   end )

@@ -150,7 +150,7 @@ module Invert : Action_types.S with type Payload.t = Path.Program.t = struct
     type t = Path.Program.t [@@deriving sexp]
 
     let quickcheck_path (test : Subject.Test.t) : Path.Program.t Opt_gen.t =
-      Path_producers.Test.try_gen_transform_stm ~filter:path_filter test
+      Path_producers.try_gen_transform_stm ~filter:path_filter test
 
     let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
         ~(param_map : Param_map.t) : Path.Program.t State.Monad.t =

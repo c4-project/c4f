@@ -32,7 +32,7 @@ module Early_out_payload = struct
       ~(filter_f : Path_filter.t -> Path_filter.t) : Path.Program.t Opt_gen.t
       =
     let filter = Path_filter.(empty |> in_dead_code_only |> filter_f) in
-    Path_producers.Test.try_gen_insert_stm ~filter test
+    Path_producers.try_gen_insert_stm ~filter test
 
   let quickcheck_generic_payload (test : Subject.Test.t)
       ~(kind_pred : Act_fir.Early_out.t -> bool)

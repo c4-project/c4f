@@ -11,53 +11,31 @@
 
 (** Producers of fuzzer subject paths.
 
-    These take the form of modules that expose partial functions from
-    specific parts of a fuzzer subject to Quickcheck generators over paths.
+    These take the form of partial functions from fuzzer subjects to
+    Quickcheck generators over paths. *)
 
-    Each contains two types: [t], which is the type of the path itself, and
-    [target], which is the type of the subject segment that must be supplied
-    as context. *)
+(** {1 Path producers} *)
 
-(** {1 Path producer modules} *)
+val try_gen_insert_stm :
+  ?filter:Path_filter.t -> Subject.Test.t -> Path.Program.t Opt_gen.t
+(** [try_gen_insert_stm dest] tries to create a Quickcheck-style generator
+    for statement insertion paths targeting [dest]. These paths can also be
+    used for inserting statement lists.
 
-(** A path producer that takes in {!Subject.Block.t} and produces
-    {!Path.Stms.t}. *)
-module Block :
-  Path_types.S_producer
-    with type t = Path.Stms.t
-     and type target = Subject.Block.t
+    It can return an error if [dest] has no position at which statements can
+    be inserted. *)
 
-(** A path producer that takes in {!Subject.Statement.If.t} and produces
-    {!Path.If.t}. *)
-module If :
-  Path_types.S_producer
-    with type t = Path.If.t
-     and type target = Subject.Statement.If.t
+val try_gen_transform_stm_list :
+  ?filter:Path_filter.t -> Subject.Test.t -> Path.Program.t Opt_gen.t
+(** [try_gen_transform_stm dest] tries to create a Quickcheck-style generator
+    for statement list transformation paths targeting [dest].
 
-(** A path producer that takes in {!Subject.Statement.Flow.t} and produces
-    {!Path.Flow.t}. *)
-module Flow :
-  Path_types.S_producer
-    with type t = Path.Flow.t
-     and type target = Subject.Statement.Flow.t
+    It can return an error if [dest] has no position at which statement lists
+    can be transformed. *)
 
-(** A path producer that takes in {!Subject.Statement.t} and produces
-    {!Path.Stm.t}. *)
-module Statement :
-  Path_types.S_producer
-    with type t = Path.Stm.t
-     and type target = Subject.Statement.t
-
-(** A path producer that takes in {!Subject.Thread.t} and produces
-    {!Path.Thread.t}. *)
-module Thread :
-  Path_types.S_producer
-    with type t = Path.Thread.t
-     and type target = Subject.Thread.t
-
-(** A path producer that takes in {!Subject.Test.t} and produces
-    {!Path.Program.t}. *)
-module Test :
-  Path_types.S_producer
-    with type t = Path.Program.t
-     and type target = Subject.Test.t
+val try_gen_transform_stm :
+  ?filter:Path_filter.t -> Subject.Test.t -> Path.Program.t Opt_gen.t
+(** [try_gen_transform_stm ?predicate dest] tries to create a
+    Quickcheck-style generator for statement transformation paths targeting
+    [dest], and, optionally, satisfying [filter]. It returns an error if the
+    container is empty or no such statements were found. *)

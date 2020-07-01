@@ -24,10 +24,38 @@ end
 let check_ok (type a) (x : a) ~(filter : Path_filter.t) : a Or_error.t =
   Tx.Or_error.tee_m x ~f:(fun (_ : a) -> Path_filter.check filter)
 
+(* TODO (@MattWindsor91): slated for removal *)
+module type S_producer = sig
+  type t
+
+  type target
+
+  val try_gen_insert_stm : ?filter:Path_filter.t -> target -> t Opt_gen.t
+  (** [try_gen_insert_stm dest] tries to create a Quickcheck-style generator
+      for statement insertion paths targeting [dest]. These paths can also be
+      used for inserting statement lists.
+
+      It can return an error if [dest] has no position at which statements
+      can be inserted. *)
+
+  val try_gen_transform_stm_list :
+    ?filter:Path_filter.t -> target -> t Opt_gen.t
+  (** [try_gen_transform_stm dest] tries to create a Quickcheck-style
+      generator for statement list transformation paths targeting [dest].
+
+      It can return an error if [dest] has no position at which statement
+      lists can be transformed. *)
+
+  val try_gen_transform_stm : ?filter:Path_filter.t -> target -> t Opt_gen.t
+  (** [try_gen_transform_stm ?predicate dest] tries to create a
+      Quickcheck-style generator for statement transformation paths targeting
+      [dest], and, optionally, satisfying [filter]. It returns an error if
+      the container is empty or no such statements were found. *)
+end
+
 module rec Statement :
-  (Path_types.S_producer
-    with type t = Path.stm
-     and type target = Subject.Statement.t) = struct
+  (S_producer with type t = Path.stm and type target = Subject.Statement.t) =
+struct
   type t = Path.stm
 
   type target = Subject.Statement.t
@@ -80,9 +108,8 @@ module rec Statement :
 end
 
 and Block :
-  (Path_types.S_producer
-    with type t = Path.stm_list
-     and type target = Subject.Block.t) = struct
+  (S_producer with type t = Path.stm_list and type target = Subject.Block.t) =
+struct
   type t = Path.stm_list
 
   let in_stm (index : int) : Path.Stm.t Opt_gen.t -> Path.Stms.t Opt_gen.t =
@@ -178,7 +205,7 @@ and Block :
 end
 
 and If :
-  (Path_types.S_producer
+  (S_producer
     with type t = Path.If.t
      and type target = Subject.Statement.If.t) = struct
   type t = Path.If.t
@@ -218,7 +245,7 @@ and If :
 end
 
 and Flow :
-  (Path_types.S_producer
+  (S_producer
     with type t = Path.Flow.t
      and type target = Subject.Statement.Flow.t) = struct
   type t = Path.Flow.t
@@ -255,9 +282,8 @@ and Flow :
 end
 
 module Thread :
-  Path_types.S_producer
-    with type t = Path.Thread.t
-     and type target = Subject.Thread.t = struct
+  S_producer with type t = Path.Thread.t and type target = Subject.Thread.t =
+struct
   type t = Path.Thread.t
 
   type target = Subject.Thread.t
@@ -282,41 +308,34 @@ module Thread :
     gen_opt_over_stms ~f:(Block.try_gen_transform_stm_list ?filter)
 end
 
-module Test :
-  Path_types.S_producer
-    with type t = Path.Program.t
-     and type target = Subject.Test.t = struct
-  type t = Path.Program.t
+type target = Subject.Test.t
 
-  type target = Subject.Test.t
+let map_threads (test : target) ~(f : int -> Subject.Thread.t -> 'a option) :
+    'a list =
+  List.filter_mapi (Act_litmus.Test.Raw.threads test) ~f
 
-  let map_threads (test : target) ~(f : int -> Subject.Thread.t -> 'a option)
-      : 'a list =
-    List.filter_mapi (Act_litmus.Test.Raw.threads test) ~f
+let gen_opt_over_threads ?(filter : Path_filter.t = Path_filter.empty)
+    (test : target)
+    ~(f :
+       ?filter:Path_filter.t -> Subject.Thread.t -> Path.Thread.t Opt_gen.t)
+    : Path.Program.t Opt_gen.t =
+  test
+  |> map_threads ~f:(fun thread prog ->
+         if Path_filter.is_thread_ok filter ~thread then
+           Some
+             (Opt_gen.map (f ~filter prog)
+                ~f:(Path.Program.in_thread thread))
+         else None )
+  |> Opt_gen.union
 
-  let gen_opt_over_threads ?(filter : Path_filter.t = Path_filter.empty)
-      (test : target)
-      ~(f :
-         ?filter:Path_filter.t -> Subject.Thread.t -> Path.Thread.t Opt_gen.t)
-      : Path.Program.t Opt_gen.t =
-    test
-    |> map_threads ~f:(fun thread prog ->
-           if Path_filter.is_thread_ok filter ~thread then
-             Some
-               (Opt_gen.map (f ~filter prog)
-                  ~f:(Path.Program.in_thread thread))
-           else None )
-    |> Opt_gen.union
+let try_gen_insert_stm ?(filter : Path_filter.t option) :
+    target -> Path.Program.t Opt_gen.t =
+  gen_opt_over_threads ?filter ~f:Thread.try_gen_insert_stm
 
-  let try_gen_insert_stm ?(filter : Path_filter.t option) :
-      target -> Path.Program.t Opt_gen.t =
-    gen_opt_over_threads ?filter ~f:Thread.try_gen_insert_stm
+let try_gen_transform_stm ?(filter : Path_filter.t option) :
+    target -> Path.Program.t Opt_gen.t =
+  gen_opt_over_threads ?filter ~f:Thread.try_gen_transform_stm
 
-  let try_gen_transform_stm ?(filter : Path_filter.t option) :
-      target -> Path.Program.t Opt_gen.t =
-    gen_opt_over_threads ?filter ~f:Thread.try_gen_transform_stm
-
-  let try_gen_transform_stm_list ?(filter : Path_filter.t option) :
-      target -> Path.Program.t Opt_gen.t =
-    gen_opt_over_threads ?filter ~f:Thread.try_gen_transform_stm_list
-end
+let try_gen_transform_stm_list ?(filter : Path_filter.t option) :
+    target -> Path.Program.t Opt_gen.t =
+  gen_opt_over_threads ?filter ~f:Thread.try_gen_transform_stm_list

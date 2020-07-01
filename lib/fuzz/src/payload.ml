@@ -70,7 +70,7 @@ module Insertion = struct
 
     let gen_path test =
       Helpers.lift_path_gen test ~filter:Basic.path_filter
-        ~action_id:Basic.name ~f:Path_producers.Test.try_gen_insert_stm
+        ~action_id:Basic.name ~f:Path_producers.try_gen_insert_stm
 
     let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
         ~(param_map : Param_map.t) : t State.Monad.t =
@@ -137,8 +137,7 @@ module Cond_surround = struct
 
     let gen_path test =
       Helpers.lift_path_gen test ~filter:Basic.path_filter
-        ~action_id:Basic.name
-        ~f:Path_producers.Test.try_gen_transform_stm_list
+        ~action_id:Basic.name ~f:Path_producers.try_gen_transform_stm_list
 
     let quickcheck_cond (path : Path.Program.t) :
         Act_fir.Expression.t Q.Generator.t State.Monad.t =

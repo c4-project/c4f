@@ -41,7 +41,7 @@ Action.Make_surround (struct
         ~(param_map : Param_map.t) : t State.Monad.t =
       ignore param_map ;
       Payload.Helpers.lift_path_gen test ~action_id:name
-        ~f:Path_producers.Test.try_gen_transform_stm_list
+        ~f:Path_producers.try_gen_transform_stm_list
         ~filter:(State.Monad.return Basic.path_filter)
         ~random
   end

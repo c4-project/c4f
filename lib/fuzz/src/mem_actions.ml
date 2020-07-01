@@ -109,7 +109,7 @@ module Strengthen :
         =
       log o "generating path" ;
       Payload.Helpers.lift_quickcheck_opt ~random ~action_id:name
-        (Path_producers.Test.try_gen_transform_stm subject ~filter)
+        (Path_producers.try_gen_transform_stm subject ~filter)
 
     let gen_mo (o : Ac.Output.t) ~(random : Splittable_random.State.t) :
         Act_fir.Mem_order.t State.Monad.t =
