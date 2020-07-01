@@ -20,42 +20,21 @@ end
    flag-based approach to give better error messages when paths fail
    validation. *)
 
-(** Flags that are raised as 'required' before considering a path, then
-    lowered as the path progresses through segments of program that have the
-    appropriate metadata or shape. *)
-module Flag = struct
-  module M = struct
-    type t = In_loop | In_dead_code | In_atomic [@@deriving enum]
-
-    let table : (t, string) List.Assoc.t =
-      [ (In_loop, "in loop")
-      ; (In_dead_code, "in dead code")
-      ; (In_atomic, "in atomic block") ]
-  end
-
-  include M
-  include Act_utils.Enum.Extend_table (M)
-
-  let is_constructible (flag : t) ~(subject : Subject.Test.t) : bool =
-    match flag with
-    | In_loop ->
-        Subject.Test.has_statements subject
-          ~matching:[Act_fir.Statement_class.while_loop ()]
-    | In_dead_code ->
-        Subject.Test.exists_top_statement subject
-          ~f:
-            (Act_fir.Statement.has_blocks_with_metadata
-               ~predicate:Metadata.is_dead_code)
-    | In_atomic ->
-        Subject.Test.has_statements subject
-          ~matching:
-            [Act_fir.Statement_class.lock_block ~specifically:Atomic ()]
-
-  (** Maps a subset of the flags to predicates that toggle whether a piece of
-      metadata sets the flag or not. *)
-  let metadata_predicates : (t, Metadata.t -> bool) List.Assoc.t =
-    [(In_dead_code, Metadata.is_dead_code)]
-end
+let is_flag_constructible (flag : Path_flag.t) ~(subject : Subject.Test.t) :
+    bool =
+  (* TODO(@MattWindsor91): unsound: see GitHub issue #187 *)
+  match flag with
+  | In_loop ->
+      Subject.Test.has_statements subject
+        ~matching:[Act_fir.Statement_class.while_loop ()]
+  | In_dead_code ->
+      Subject.Test.exists_top_statement subject
+        ~f:
+          (Act_fir.Statement.has_blocks_with_metadata
+             ~predicate:Metadata.is_dead_code)
+  | In_atomic ->
+      Subject.Test.has_statements subject
+        ~matching:[Act_fir.Statement_class.lock_block ~specifically:Atomic ()]
 
 (** Checks that can only be carried out at the end of a statement path. *)
 module End_check = struct
@@ -83,6 +62,7 @@ module End_check = struct
                ~f:(Act_fir.Expression_class.rec_matches_any ~templates)))
 
   let is_constructible (flag : t) ~(subject : Subject.Test.t) : bool =
+    (* TODO(@MattWindsor91): unsound: see GitHub issue #187 *)
     match flag with
     | Is_of_class matching ->
         Subject.Test.has_statements subject ~matching
@@ -101,54 +81,39 @@ module End_check = struct
 end
 
 type t =
-  { obs_flags: Set.M(Flag).t
-  ; req_flags: Set.M(Flag).t
-  ; not_flags: Set.M(Flag).t
+  { obs_flags: Set.M(Path_flag).t
+  ; req_flags: Set.M(Path_flag).t
+  ; not_flags: Set.M(Path_flag).t
   ; end_checks: Set.M(End_check).t
   ; threads: Set.M(Int).t option }
 
 let empty : t =
-  { obs_flags= Set.empty (module Flag)
-  ; req_flags= Set.empty (module Flag)
-  ; not_flags= Set.empty (module Flag)
+  { obs_flags= Set.empty (module Path_flag)
+  ; req_flags= Set.empty (module Path_flag)
+  ; not_flags= Set.empty (module Path_flag)
   ; end_checks= Set.empty (module End_check)
   ; threads= None }
 
 module Obs_flags = struct
-  let observe_flag (existing : t) ~(flag : Flag.t) : t =
-    {existing with obs_flags= Set.add existing.obs_flags flag}
-
-  let observe_flags (existing : t) ~(flags : Set.M(Flag).t) : t =
+  let observe_flags (existing : t) ~(flags : Set.M(Path_flag).t) : t =
     {existing with obs_flags= Set.union existing.obs_flags flags}
 
   let update_with_flow ?(flow : Act_fir.Statement_class.Flow.t option)
       (x : t) : t =
-    Option.value_map flow
-      ~f:(function
-        | While _ ->
-            observe_flag ~flag:In_loop x
-        | Lock (Some Atomic) ->
-            observe_flag ~flag:In_atomic x
-        | Lock _ ->
-            x )
-      ~default:x
-
-  (* Moving this into the Flag module'd require a lot of module gymnastics to
-     get the set module correct, so we don't. *)
-  let flags_of_metadata (m : Metadata.t) : Set.M(Flag).t =
-    Flag.metadata_predicates
-    |> List.filter_map ~f:(fun (flag, predicate) ->
-           Option.some_if (predicate m) flag )
-    |> Set.of_list (module Flag)
+    let flags =
+      Option.value_map flow ~f:Path_flag.flags_of_flow
+        ~default:(Set.empty (module Path_flag))
+    in
+    observe_flags x ~flags
 
   let update_with_block_metadata (existing : t) (m : Metadata.t) : t =
-    observe_flags existing ~flags:(flags_of_metadata m)
+    observe_flags existing ~flags:(Path_flag.flags_of_metadata m)
 end
 
 include Obs_flags
 
 module Req_flags = struct
-  let require_flag (existing : t) ~(flag : Flag.t) : t =
+  let require_flag (existing : t) ~(flag : Path_flag.t) : t =
     {existing with req_flags= Set.add existing.req_flags flag}
 
   let in_dead_code_only : t -> t = require_flag ~flag:In_dead_code
@@ -159,7 +124,7 @@ end
 include Req_flags
 
 module Not_flags = struct
-  let forbid_flag (existing : t) ~(flag : Flag.t) : t =
+  let forbid_flag (existing : t) ~(flag : Path_flag.t) : t =
     {existing with not_flags= Set.add existing.not_flags flag}
 
   let not_in_atomic_block : t -> t = forbid_flag ~flag:In_atomic
@@ -184,17 +149,18 @@ let in_threads_only (filter : t) ~(threads : Set.M(Int).t) : t =
   in
   {filter with threads= Some threads'}
 
-let unmet_req_flags (filter : t) : Set.M(Flag).t =
+let unmet_req_flags (filter : t) : Set.M(Path_flag).t =
   Set.diff filter.req_flags filter.obs_flags
 
-let unmet_not_flags (filter : t) : Set.M(Flag).t =
+let unmet_not_flags (filter : t) : Set.M(Path_flag).t =
   Set.inter filter.not_flags filter.obs_flags
 
-let error_of_flag (flag : Flag.t) ~(polarity : string) : unit Or_error.t =
+let error_of_flag (flag : Path_flag.t) ~(polarity : string) : unit Or_error.t
+    =
   Or_error.errorf "Unmet %s flag condition: %s" polarity
-    (Flag.to_string flag)
+    (Path_flag.to_string flag)
 
-let error_of_flags (flags : Set.M(Flag).t) ~(polarity : string) :
+let error_of_flags (flags : Set.M(Path_flag).t) ~(polarity : string) :
     unit Or_error.t =
   flags |> Set.to_list
   |> Tx.Or_error.combine_map_unit ~f:(error_of_flag ~polarity)
@@ -232,7 +198,7 @@ let are_final_statements_ok (filter : t)
 
 module Construct_checks = struct
   let is_constructible_req (filter : t) ~(subject : Subject.Test.t) : bool =
-    Set.for_all filter.req_flags ~f:(Flag.is_constructible ~subject)
+    Set.for_all filter.req_flags ~f:(is_flag_constructible ~subject)
 
   let is_constructible_end (filter : t) ~(subject : Subject.Test.t) : bool =
     Set.for_all filter.end_checks ~f:(End_check.is_constructible ~subject)

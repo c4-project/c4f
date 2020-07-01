@@ -222,10 +222,8 @@ and If :
     let lift_f rest target = f rest ~target in
     match path with
     | In_block (branch, rest) ->
-        let t_branch, f_branch =
-          ( (if branch then lift_f rest else Or_error.return)
-          , if branch then Or_error.return else lift_f rest )
-        in
+        let t_branch = if branch then lift_f rest else Or_error.return in
+        let f_branch = if branch then Or_error.return else lift_f rest in
         B.bmap target ~cond:Or_error.return ~t_branch ~f_branch
     | This_cond ->
         Or_error.error_string "Not a statement path"
