@@ -30,7 +30,7 @@ let run_and_dump_labels (test_action : Src.Subject.Test.t Src.State.Monad.t)
 
 let%test_module "program.label" =
   ( module struct
-    let path : Src.Path.Program.t Lazy.t = Subject.Test_data.Path.insert_live
+    let path : Src.Path.Test.t Lazy.t = Subject.Test_data.Path.insert_live
 
     let random_state : Act_common.C_id.t Src.Payload.Insertion.t Lazy.t =
       Lazy.Let_syntax.(

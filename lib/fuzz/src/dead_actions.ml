@@ -29,8 +29,7 @@ module Early_out_payload = struct
   type t = Act_fir.Early_out.t P.Insertion.t [@@deriving sexp]
 
   let quickcheck_path (test : Subject.Test.t)
-      ~(filter_f : Path_filter.t -> Path_filter.t) : Path.Program.t Opt_gen.t
-      =
+      ~(filter_f : Path_filter.t -> Path_filter.t) : Path.Test.t Opt_gen.t =
     let filter = Path_filter.(empty |> in_dead_code_only |> filter_f) in
     Path_producers.try_gen_insert_stm ~filter test
 
@@ -91,13 +90,13 @@ struct
     Act_fir.(
       Statement.prim Metadata.generated (Prim_statement.early_out kind))
 
-  let check_path (target : Subject.Test.t) (path : Path.Program.t)
+  let check_path (target : Subject.Test.t) (path : Path.Test.t)
       (kind : Act_fir.Early_out.t) : Subject.Test.t Or_error.t =
     let f = Staged.unstage (kind_filter kind) in
     let filter = f base_path_filter in
     Path_consumers.check_path path ~filter ~target
 
-  let run_inner (test : Subject.Test.t) (path : Path.Program.t)
+  let run_inner (test : Subject.Test.t) (path : Path.Test.t)
       (kind : Act_fir.Early_out.t) : Subject.Test.t Or_error.t =
     Or_error.Let_syntax.(
       let%bind target = check_path test path kind in
@@ -139,8 +138,8 @@ struct
     let path_filter : Path_filter.t State.Monad.t =
       State.Monad.with_labels path_filter'
 
-    let reachable_labels (path : Path.Program.t) :
-        Ac.C_id.t list State.Monad.t =
+    let reachable_labels (path : Path.Test.t) : Ac.C_id.t list State.Monad.t
+        =
       State.Monad.with_labels (fun labels ->
           labels
           |> Set.filter_map
@@ -148,11 +147,11 @@ struct
                ~f:(fun x ->
                  Option.some_if
                    (Ac.Litmus_id.is_in_local_scope x
-                      ~from:(Path.Program.tid path))
+                      ~from:(Path.Test.tid path))
                    (Ac.Litmus_id.variable_name x) )
           |> Set.to_list )
 
-    let gen (path : Path.Program.t) (_ : Subject.Test.t)
+    let gen (path : Path.Test.t) (_ : Subject.Test.t)
         ~(random : Splittable_random.State.t) ~(param_map : Param_map.t) :
         t State.Monad.t =
       ignore param_map ;

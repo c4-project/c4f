@@ -184,35 +184,35 @@ module Test_data = struct
   module Path = struct
     (* These will need manually synchronising with the statements above. *)
 
-    let thread_0_stms (path : Src.Path.Stms.t) : Src.Path.Program.t Lazy.t =
-      lazy Src.Path.(Program.in_thread 0 @@ Thread.in_stms @@ path)
+    let thread_0_stms (path : Src.Path.Stms.t) : Src.Path.Test.t Lazy.t =
+      lazy Src.Path.(Test.in_thread 0 @@ Thread.in_stms @@ path)
 
-    let insert_live : Src.Path.Program.t Lazy.t =
+    let insert_live : Src.Path.Test.t Lazy.t =
       Src.Path.(thread_0_stms @@ Stms.insert 2)
 
-    let insert_start : Src.Path.Program.t Lazy.t =
+    let insert_start : Src.Path.Test.t Lazy.t =
       Src.Path.(thread_0_stms @@ Stms.insert 0)
 
-    let insert_end : Src.Path.Program.t Lazy.t =
+    let insert_end : Src.Path.Test.t Lazy.t =
       Lazy.bind body_stms ~f:(fun stms ->
           Src.Path.(thread_0_stms @@ Stms.insert (List.length stms)) )
 
-    let known_true_if (path : Src.Path.If.t) : Src.Path.Program.t Lazy.t =
+    let known_true_if (path : Src.Path.If.t) : Src.Path.Test.t Lazy.t =
       Src.Path.(thread_0_stms @@ Stms.in_stm 3 @@ Stm.in_if @@ path)
 
-    let dead_else (path : Src.Path.Stms.t) : Src.Path.Program.t Lazy.t =
+    let dead_else (path : Src.Path.Stms.t) : Src.Path.Test.t Lazy.t =
       Src.Path.(known_true_if @@ If.in_branch false @@ path)
 
-    let insert_dead : Src.Path.Program.t Lazy.t =
+    let insert_dead : Src.Path.Test.t Lazy.t =
       Src.Path.(dead_else @@ Stms.insert 0)
 
-    let in_stm : Src.Path.Program.t Lazy.t =
+    let in_stm : Src.Path.Test.t Lazy.t =
       Src.Path.(thread_0_stms @@ Stms.stm 2)
 
-    let surround_atomic : Src.Path.Program.t Lazy.t =
+    let surround_atomic : Src.Path.Test.t Lazy.t =
       Src.Path.(thread_0_stms @@ Stms.on_range 0 2)
 
-    let surround_txsafe : Src.Path.Program.t Lazy.t =
+    let surround_txsafe : Src.Path.Test.t Lazy.t =
       Src.Path.(thread_0_stms @@ Stms.on_range 1 1)
   end
 end

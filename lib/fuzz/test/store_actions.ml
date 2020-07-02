@@ -55,7 +55,7 @@ end
 
 let%test_module "store.make.int.normal" =
   ( module struct
-    let path : Src.Path.Program.t Lazy.t = Subject.Test_data.Path.insert_live
+    let path : Src.Path.Test.t Lazy.t = Subject.Test_data.Path.insert_live
 
     let random_state (store : Act_fir.Atomic_store.t Lazy.t) :
         Src.Store_actions.Int.Payload.t Lazy.t =
@@ -240,7 +240,7 @@ let%test_module "store.make.int.normal" =
 
 let%test_module "store.make.int.dead" =
   ( module struct
-    let path : Src.Path.Program.t Lazy.t = Subject.Test_data.Path.insert_dead
+    let path : Src.Path.Test.t Lazy.t = Subject.Test_data.Path.insert_dead
 
     let random_state : Src.Store_actions.Int.Payload.t Lazy.t =
       Lazy.Let_syntax.(
@@ -309,7 +309,7 @@ let%test_module "store.make.int.dead" =
 
 let%test_module "store.make.int.redundant" =
   ( module struct
-    let path : Src.Path.Program.t Lazy.t = Subject.Test_data.Path.insert_live
+    let path : Src.Path.Test.t Lazy.t = Subject.Test_data.Path.insert_live
 
     (* TODO(@MattWindsor91): this is, ironically, overly redundant. *)
     let redundant_store : Act_fir.Atomic_store.t Lazy.t =
@@ -381,13 +381,13 @@ let%test_module "store.make.int.redundant" =
 
 let%test_module "xchgify" =
   ( module struct
-    let test_action (payload : Src.Path.Program.t) :
+    let test_action (payload : Src.Path.Test.t) :
         Src.Subject.Test.t Src.State.Monad.t =
       Src.Store_actions.Xchgify.run
         (Lazy.force Subject.Test_data.test)
         ~payload
 
-    let test (lpath : Src.Path.Program.t Lazy.t) : unit =
+    let test (lpath : Src.Path.Test.t Lazy.t) : unit =
       let path = Lazy.force lpath in
       let action = test_action path in
       Action.Test_utils.run_and_dump_test action

@@ -59,7 +59,7 @@ struct
 
     let path_filter = State.Monad.return Path_filter.empty
 
-    let gen (_ : Path.Program.t) (_ : Subject.Test.t)
+    let gen (_ : Path.Test.t) (_ : Subject.Test.t)
         ~(random : Splittable_random.State.t) ~(param_map : Param_map.t) :
         t State.Monad.t =
       ignore param_map ;
@@ -71,7 +71,7 @@ struct
       Subject.Test.t State.Monad.t =
     let path = P.Insertion.where payload in
     let name = P.Insertion.to_insert payload in
-    let tid = Path.Program.tid path in
+    let tid = Path.Test.tid path in
     let lid = Act_common.Litmus_id.local tid name in
     let label_stm =
       Act_fir.(

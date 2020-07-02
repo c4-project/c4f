@@ -194,7 +194,7 @@ module Int_redundant : S = Make (struct
   end
 end)
 
-module Xchgify : Action_types.S with type Payload.t = Path.Program.t = struct
+module Xchgify : Action_types.S with type Payload.t = Path.Test.t = struct
   let name = Act_common.Id.("store" @: "xchgify" @: empty)
 
   let readme () =
@@ -210,7 +210,7 @@ module Xchgify : Action_types.S with type Payload.t = Path.Program.t = struct
                (Is_of_class [Cm.Statement_class.atomic ~specifically:Store ()]))
 
   module Payload = struct
-    type t = Path.Program.t [@@deriving sexp]
+    type t = Path.Test.t [@@deriving sexp]
 
     let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
         ~(param_map : Param_map.t) : t State.Monad.t =
@@ -251,7 +251,7 @@ module Xchgify : Action_types.S with type Payload.t = Path.Program.t = struct
       Metadata.t Cm.Statement.t -> Metadata.t Cm.Statement.t Or_error.t =
     AtomsM.map_m ~f:xchgify_atomic
 
-  let run (subject : Subject.Test.t) ~(payload : Path.Program.t) :
+  let run (subject : Subject.Test.t) ~(payload : Path.Test.t) :
       Subject.Test.t State.Monad.t =
     State.Monad.Monadic.return
       (Path_consumers.transform_stm payload ~f:xchgify ~target:subject)

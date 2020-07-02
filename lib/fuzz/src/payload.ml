@@ -40,16 +40,15 @@ module Helpers = struct
   let lift_path_gen (test : Subject.Test.t)
       ~(random : Splittable_random.State.t) ~(action_id : Act_common.Id.t)
       ~(filter : Path_filter.t State.Monad.t)
-      ~(f :
-         ?filter:Path_filter.t -> Subject.Test.t -> Path.Program.t Opt_gen.t)
-      : Path.Program.t State.Monad.t =
+      ~(f : ?filter:Path_filter.t -> Subject.Test.t -> Path.Test.t Opt_gen.t)
+      : Path.Test.t State.Monad.t =
     State.Monad.Let_syntax.(
       let%bind filter = filter in
       lift_quickcheck_opt (f test ~filter) ~random ~action_id)
 end
 
 module Insertion = struct
-  type 'a t = {to_insert: 'a; where: Path.Program.t}
+  type 'a t = {to_insert: 'a; where: Path.Test.t}
   [@@deriving make, fields, sexp]
 
   module Make (Basic : sig
@@ -59,7 +58,7 @@ module Insertion = struct
 
     val path_filter : Path_filter.t State.Monad.t
 
-    val gen : Path.Program.t -> t stateful_gen
+    val gen : Path.Test.t -> t stateful_gen
   end) =
   struct
     open struct
@@ -85,7 +84,7 @@ end
 
 module Cond_surround = struct
   module Body = struct
-    type t = {cond: Act_fir.Expression.t; where: Path.Program.t}
+    type t = {cond: Act_fir.Expression.t; where: Path.Test.t}
     [@@deriving make, sexp, fields]
   end
 
@@ -97,14 +96,14 @@ module Cond_surround = struct
 
       This is a considerable over-approximation of the actual needed
       dependencies. *)
-  let add_cond_dependencies (path : Path.Program.t)
+  let add_cond_dependencies (path : Path.Test.t)
       (cond : Act_fir.Expression.t) : unit State.Monad.t =
     (* TODO(@MattWindsor91): it would be pretty cool for the lvalues to track
        whether or not they are being used in a tautology, once we add
        metadata tracking to the expression. In this case, we could skip
        adding dependencies where not necessary. *)
     State.Monad.add_expression_dependencies cond
-      ~scope:(Local (Path.Program.tid path))
+      ~scope:(Local (Path.Test.tid path))
 
   let apply ({cond; where} : t) ~(test : Subject.Test.t)
       ~(f :
@@ -139,15 +138,14 @@ module Cond_surround = struct
       Helpers.lift_path_gen test ~filter:Basic.path_filter
         ~action_id:Basic.name ~f:Path_producers.try_gen_transform_stm_list
 
-    let quickcheck_cond (path : Path.Program.t) :
+    let quickcheck_cond (path : Path.Test.t) :
         Act_fir.Expression.t Q.Generator.t State.Monad.t =
-      let tid = Path.Program.tid path in
+      let tid = Path.Test.tid path in
       State.Monad.Let_syntax.(
         let%map env = State.Monad.with_vars (cond_env ~tid) in
         Basic.cond_gen env)
 
-    let gen_cond (path : Path.Program.t)
-        ~(random : Splittable_random.State.t) :
+    let gen_cond (path : Path.Test.t) ~(random : Splittable_random.State.t) :
         Act_fir.Expression.t State.Monad.t =
       State.Monad.Let_syntax.(
         let%bind gen = quickcheck_cond path in

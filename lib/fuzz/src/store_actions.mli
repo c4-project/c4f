@@ -29,4 +29,4 @@ module Int_dead : S
 module Int_redundant : S
 
 (** [Xchgify] converts store actions to exchange actions. *)
-module Xchgify : Action_types.S with type Payload.t = Path.Program.t
+module Xchgify : Action_types.S with type Payload.t = Path.Test.t

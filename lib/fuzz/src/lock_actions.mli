@@ -17,7 +17,7 @@
     them with an `synchronized` statement containing those statements.
 
     See also {!If_actions.Surround}. *)
-module Sync_surround : Action_types.S with type Payload.t = Path.Program.t
+module Sync_surround : Action_types.S with type Payload.t = Path.Test.t
 
 (** This action removes a sublist of statements from the program, replacing
     them with an `atomic` statement containing those statements.
@@ -25,4 +25,4 @@ module Sync_surround : Action_types.S with type Payload.t = Path.Program.t
     It only fires if the statements are transaction-safe.
 
     See also {!If_actions.Surround}. *)
-module Atomic_surround : Action_types.S with type Payload.t = Path.Program.t
+module Atomic_surround : Action_types.S with type Payload.t = Path.Test.t

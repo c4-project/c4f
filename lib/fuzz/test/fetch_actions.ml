@@ -34,7 +34,7 @@ end
 
 let%test_module "fetch.make.int.dead" =
   ( module struct
-    let path : Src.Path.Program.t Lazy.t = Subject.Test_data.Path.insert_dead
+    let path : Src.Path.Test.t Lazy.t = Subject.Test_data.Path.insert_dead
 
     let random_state : Src.Fetch_actions.Int_dead.Payload.t Lazy.t =
       Lazy.Let_syntax.(
@@ -97,7 +97,7 @@ let%test_module "fetch.make.int.dead" =
 
 let%test_module "fetch.make.int.redundant" =
   ( module struct
-    let path : Src.Path.Program.t Lazy.t = Subject.Test_data.Path.insert_live
+    let path : Src.Path.Test.t Lazy.t = Subject.Test_data.Path.insert_live
 
     let random_state : Src.Fetch_actions.Int_redundant.Payload.t Lazy.t =
       Lazy.Let_syntax.(

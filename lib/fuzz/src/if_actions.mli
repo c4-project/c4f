@@ -36,4 +36,4 @@ end
 
 (** {1 Inverting existing if statements} *)
 
-module Invert : Action_types.S with type Payload.t = Path.Program.t
+module Invert : Action_types.S with type Payload.t = Path.Test.t

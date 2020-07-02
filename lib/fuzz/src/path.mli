@@ -155,8 +155,8 @@ module Thread : sig
   val in_stms : stm_list -> t
 end
 
-(** A path focusing on a whole program. *)
-module Program : sig
+(** A path focusing on a whole test. *)
+module Test : sig
   type t = In_thread of index * Thread.t [@@deriving sexp, compare, equal]
 
   include Pretty_printer.S with type t := t

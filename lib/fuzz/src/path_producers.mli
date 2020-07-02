@@ -17,7 +17,7 @@
 (** {1 Path producers} *)
 
 val try_gen_insert_stm :
-  ?filter:Path_filter.t -> Subject.Test.t -> Path.Program.t Opt_gen.t
+  ?filter:Path_filter.t -> Subject.Test.t -> Path.Test.t Opt_gen.t
 (** [try_gen_insert_stm dest] tries to create a Quickcheck-style generator
     for statement insertion paths targeting [dest]. These paths can also be
     used for inserting statement lists.
@@ -26,7 +26,7 @@ val try_gen_insert_stm :
     be inserted. *)
 
 val try_gen_transform_stm_list :
-  ?filter:Path_filter.t -> Subject.Test.t -> Path.Program.t Opt_gen.t
+  ?filter:Path_filter.t -> Subject.Test.t -> Path.Test.t Opt_gen.t
 (** [try_gen_transform_stm dest] tries to create a Quickcheck-style generator
     for statement list transformation paths targeting [dest].
 
@@ -34,7 +34,7 @@ val try_gen_transform_stm_list :
     can be transformed. *)
 
 val try_gen_transform_stm :
-  ?filter:Path_filter.t -> Subject.Test.t -> Path.Program.t Opt_gen.t
+  ?filter:Path_filter.t -> Subject.Test.t -> Path.Test.t Opt_gen.t
 (** [try_gen_transform_stm ?predicate dest] tries to create a
     Quickcheck-style generator for statement transformation paths targeting
     [dest], and, optionally, satisfying [filter]. It returns an error if the

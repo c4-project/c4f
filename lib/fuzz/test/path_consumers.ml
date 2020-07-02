@@ -22,9 +22,9 @@ let%test_module "Statement_list" =
           module P = Subject.Test_data.Path
         end
 
-        let test (path : F.Path.Program.t Lazy.t)
+        let test (path : F.Path.Test.t Lazy.t)
             ~(f :
-                  F.Path.Program.t
+                  F.Path.Test.t
                -> target:F.Subject.Test.t
                -> F.Subject.Test.t Or_error.t) : unit =
           let vars = F.State.vars (Lazy.force Subject.Test_data.state) in
@@ -45,7 +45,7 @@ let%test_module "Statement_list" =
 
         let%test_module "insert_stm" =
           ( module struct
-            let test_insert : F.Path.Program.t Lazy.t -> unit =
+            let test_insert : F.Path.Test.t Lazy.t -> unit =
               test ~f:(F.Path_consumers.insert_stm ~to_insert:example_stm)
 
             let%expect_test "insert onto statement (invalid)" =
@@ -119,7 +119,7 @@ let%test_module "Statement_list" =
 
         let%test_module "transform_stm" =
           ( module struct
-            let test_transform : F.Path.Program.t Lazy.t -> unit =
+            let test_transform : F.Path.Test.t Lazy.t -> unit =
               test
                 ~f:
                   (F.Path_consumers.transform_stm
@@ -200,7 +200,7 @@ let%test_module "Statement_list" =
                          (F.Subject.Block.make_generated ~statements ())
                        ~f_branch:(F.Subject.Block.make_generated ())) ]
 
-            let test_transform_list : F.Path.Program.t Lazy.t -> unit =
+            let test_transform_list : F.Path.Test.t Lazy.t -> unit =
               test ~f:(F.Path_consumers.transform_stm_list ~f:iffify)
 
             let%expect_test "try to list-transform a statement (invalid)" =
@@ -245,7 +245,7 @@ let%test_module "Statement_list" =
             let%test_unit "generator over stm-list produces valid paths" =
               Test.run_exn
                 ( module struct
-                  type t = F.Path.Program.t [@@deriving sexp]
+                  type t = F.Path.Test.t [@@deriving sexp]
 
                   let quickcheck_generator =
                     Or_error.ok_exn

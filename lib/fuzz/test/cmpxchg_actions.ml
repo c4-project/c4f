@@ -37,7 +37,7 @@ end
 
 let%test_module "cmpxchg.make.int.always-succeed" =
   ( module struct
-    let path : Src.Path.Program.t Lazy.t = Subject.Test_data.Path.insert_dead
+    let path : Src.Path.Test.t Lazy.t = Subject.Test_data.Path.insert_dead
 
     let random_state :
         Src.Cmpxchg_actions.Int_always_succeed.Payload.t Lazy.t =

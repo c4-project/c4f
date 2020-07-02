@@ -17,7 +17,7 @@
 open Base
 
 val check_path :
-     Path.Program.t
+     Path.Test.t
   -> filter:Path_filter.t
   -> target:Subject.Test.t
   -> Subject.Test.t Or_error.t
@@ -30,7 +30,7 @@ val check_path :
     against generation errors, stale traces, and badly written test cases. *)
 
 val insert_stm_list :
-     Path.Program.t
+     Path.Test.t
   -> to_insert:Metadata.t Act_fir.Statement.t list
   -> target:Subject.Test.t
   -> Subject.Test.t Or_error.t
@@ -38,7 +38,7 @@ val insert_stm_list :
     in [to_insert] into [path] relative to [target], in order. *)
 
 val insert_stm :
-     Path.Program.t
+     Path.Test.t
   -> to_insert:Metadata.t Act_fir.Statement.t
   -> target:Subject.Test.t
   -> Subject.Test.t Or_error.t
@@ -46,7 +46,7 @@ val insert_stm :
     [path] relative to [target]. *)
 
 val transform_stm :
-     Path.Program.t
+     Path.Test.t
   -> f:
        (   Metadata.t Act_fir.Statement.t
         -> Metadata.t Act_fir.Statement.t Or_error.t)
@@ -56,7 +56,7 @@ val transform_stm :
     relative to [target] using [f]. *)
 
 val transform_stm_list :
-     Path.Program.t
+     Path.Test.t
   -> f:
        (   Metadata.t Act_fir.Statement.t list
         -> Metadata.t Act_fir.Statement.t list Or_error.t)

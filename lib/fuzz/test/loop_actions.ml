@@ -82,10 +82,9 @@ let%test_module "Invert" =
 
     let test : Src.Subject.Test.t = Lazy.force Subject.Test_data.test
 
-    let payload : Src.Path.Program.t =
+    let payload : Src.Path.Test.t =
       Src.Path.(
-        Program.in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 3
-        @@ Stm.this_stm)
+        Test.in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 3 @@ Stm.this_stm)
 
     let%expect_test "resulting AST" =
       Action.Test_utils.run_and_dump_test

@@ -138,16 +138,16 @@ end) : Action_types.S with type Payload.t = B.t P.Insertion.t = struct
         let%bind () = error_if_empty "src" src in
         error_if_empty "dst" dst)
 
-    let gen' (vars : Var.Map.t) ~(where : Path.Program.t)
+    let gen' (vars : Var.Map.t) ~(where : Path.Test.t)
         ~(forbid_already_written : bool) : t Opt_gen.t =
-      let tid = Path.Program.tid where in
+      let tid = Path.Test.tid where in
       let src = src_env vars ~tid in
       let dst = dst_env vars ~tid ~forbid_already_written in
       Or_error.Let_syntax.(
         let%map () = check_envs src dst in
         B.gen ~src ~dst ~vars ~tid)
 
-    let gen (where : Path.Program.t) (_ : Subject.Test.t)
+    let gen (where : Path.Test.t) (_ : Subject.Test.t)
         ~(random : Splittable_random.State.t) ~(param_map : Param_map.t) :
         t State.Monad.t =
       State.Monad.Let_syntax.(
@@ -219,7 +219,7 @@ end) : Action_types.S with type Payload.t = B.t P.Insertion.t = struct
       ~f:(fun subject (id, init) ->
         Subject.Test.declare_var subject (Ac.Litmus_id.local tid id) init )
 
-  let do_insertions (target : Subject.Test.t) ~(path : Path.Program.t)
+  let do_insertions (target : Subject.Test.t) ~(path : Path.Test.t)
       ~(tid : int) ~(to_insert : B.t) : Subject.Test.t Or_error.t =
     let stms =
       Cm.(
@@ -236,7 +236,7 @@ end) : Action_types.S with type Payload.t = B.t P.Insertion.t = struct
       Subject.Test.t State.Monad.t =
     let to_insert = P.Insertion.to_insert payload in
     let path = P.Insertion.where payload in
-    let tid = Path.Program.tid path in
+    let tid = Path.Test.tid path in
     State.Monad.Let_syntax.(
       let%bind () = do_bookkeeping to_insert ~tid in
       State.Monad.Monadic.return

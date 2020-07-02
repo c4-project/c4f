@@ -21,7 +21,7 @@ let%test_module "running payloads on test subject" =
         (Lazy.force Subject.Test_data.test)
         ~payload
 
-    let test (lpath : Src.Path.Program.t Lazy.t) (mo : Act_fir.Mem_order.t)
+    let test (lpath : Src.Path.Test.t Lazy.t) (mo : Act_fir.Mem_order.t)
         (can_weaken : bool) : unit =
       let path = Lazy.force lpath in
       let pld =
@@ -31,13 +31,13 @@ let%test_module "running payloads on test subject" =
       Action.Test_utils.run_and_dump_test action
         ~initial_state:(Lazy.force Subject.Test_data.state)
 
-    let sc_action : Src.Path.Program.t Lazy.t =
+    let sc_action : Src.Path.Test.t Lazy.t =
       Src.Path.(Subject.Test_data.Path.thread_0_stms @@ Stms.stm 0)
 
-    let rlx_action : Src.Path.Program.t Lazy.t =
+    let rlx_action : Src.Path.Test.t Lazy.t =
       Src.Path.(Subject.Test_data.Path.thread_0_stms @@ Stms.stm 2)
 
-    let nest_action : Src.Path.Program.t Lazy.t =
+    let nest_action : Src.Path.Test.t Lazy.t =
       Src.Path.(
         Subject.Test_data.Path.thread_0_stms @@ Stms.in_stm 4 @@ Stm.in_if
         @@ If.in_branch true @@ Stms.stm 0)

@@ -18,7 +18,7 @@ open struct
 end
 
 module Fence_payload = struct
-  type t = {path: Path.Program.t; fence: Cm.Atomic_fence.t}
+  type t = {path: Path.Test.t; fence: Cm.Atomic_fence.t}
   [@@deriving sexp, make]
 end
 
@@ -38,7 +38,7 @@ struct
 
     let path_filter = State.Monad.return Path_filter.empty
 
-    let gen (_ : Path.Program.t) (_ : Subject.Test.t)
+    let gen (_ : Path.Test.t) (_ : Subject.Test.t)
         ~(random : Splittable_random.State.t) ~(param_map : Param_map.t) :
         Cm.Atomic_fence.t State.Monad.t =
       ignore param_map ;
@@ -69,7 +69,7 @@ let unsafe_weaken_orders_flag (param_map : Param_map.t) :
   Param_map.get_flag_m param_map ~id:unsafe_weaken_orders_flag_key
 
 module Strengthen_payload = struct
-  type t = {path: Path.Program.t; mo: Cm.Mem_order.t; can_weaken: bool}
+  type t = {path: Path.Test.t; mo: Cm.Mem_order.t; can_weaken: bool}
   [@@deriving sexp, make]
 end
 
@@ -104,8 +104,7 @@ module Strengthen :
     include Strengthen_payload
 
     let gen_path (o : Ac.Output.t) (subject : Subject.Test.t)
-        ~(random : Splittable_random.State.t) : Path.Program.t State.Monad.t
-        =
+        ~(random : Splittable_random.State.t) : Path.Test.t State.Monad.t =
       log o "generating path" ;
       Payload.Helpers.lift_quickcheck_opt ~random ~action_id:name
         (Path_producers.try_gen_transform_stm subject ~filter)

@@ -141,7 +141,7 @@ module Make_surround (Basic : sig
   module Payload : sig
     include Action_types.S_payload
 
-    val where : t -> Path.Program.t
+    val where : t -> Path.Test.t
     (** [where pld] gets the transformation path from [pld]. *)
   end
 

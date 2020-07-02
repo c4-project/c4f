@@ -391,7 +391,7 @@ struct
     handle_stm path ~target ~f:(Block.transform_stm_list ~f)
 end
 
-type t = Path.Program.t
+type t = Path.Test.t
 
 type target = Subject.Test.t
 

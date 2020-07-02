@@ -134,7 +134,7 @@ module Thread = struct
         Fmt.(styled (`Fg `Yellow) (any "Stms") ++ bang ++ Stms.pp) f rest
 end
 
-module Program = struct
+module Test = struct
   type t = In_thread of index * Thread.t [@@deriving sexp, compare, equal]
 
   let in_thread (i : index) (rest : Thread.t) : t = In_thread (i, rest)

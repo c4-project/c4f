@@ -14,12 +14,11 @@ open Base_quickcheck
 
 let%test_module "sample path output on example code" =
   ( module struct
-    let print_sample (generator : Act_fuzz.Path.Program.t Generator.t) : unit
-        =
+    let print_sample (generator : Act_fuzz.Path.Test.t Generator.t) : unit =
       Act_utils.My_quickcheck.print_sample
-        ~printer:(Fmt.pr "@[%a@]@." Act_fuzz.Path.Program.pp)
+        ~printer:(Fmt.pr "@[%a@]@." Act_fuzz.Path.Test.pp)
         ( module struct
-          type t = Act_fuzz.Path.Program.t [@@deriving compare, sexp]
+          type t = Act_fuzz.Path.Test.t [@@deriving compare, sexp]
 
           let quickcheck_generator = generator
 
@@ -30,8 +29,8 @@ let%test_module "sample path output on example code" =
 
     let test
         (gen :
-             Act_fuzz.Subject.Test.t
-          -> Act_fuzz.Path.Program.t Act_fuzz.Opt_gen.t) : unit =
+          Act_fuzz.Subject.Test.t -> Act_fuzz.Path.Test.t Act_fuzz.Opt_gen.t)
+        : unit =
       let test = Lazy.force Subject.Test_data.test in
       print_sample (Or_error.ok_exn (gen test))
 

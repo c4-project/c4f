@@ -150,7 +150,7 @@ module Make_surround (Basic : sig
   module Payload : sig
     include Action_types.S_payload
 
-    val where : t -> Path.Program.t
+    val where : t -> Path.Test.t
   end
 
   val wrap :

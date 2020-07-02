@@ -25,7 +25,7 @@ module Make_surround (Basic : sig
   val path_filter : Path_filter.t
   (** [path_filter] is the path filter used on paths to statement spans being
       surrounded. *)
-end) : Action_types.S with type Payload.t = Path.Program.t =
+end) : Action_types.S with type Payload.t = Path.Test.t =
 Action.Make_surround (struct
   let name =
     Act_common.Id.("flow" @: "lock" @: "surround" @: Basic.subname @: empty)
@@ -33,9 +33,9 @@ Action.Make_surround (struct
   let surround_with : string = Basic.lock_type_name ^ " block"
 
   module Payload = struct
-    type t = Path.Program.t [@@deriving sexp]
+    type t = Path.Test.t [@@deriving sexp]
 
-    let where : t -> Path.Program.t = Fn.id
+    let where : t -> Path.Test.t = Fn.id
 
     let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
         ~(param_map : Param_map.t) : t State.Monad.t =
@@ -54,8 +54,8 @@ Action.Make_surround (struct
          ~body:(Subject.Block.make_generated ~statements ()))
 end)
 
-module Atomic_surround :
-  Action_types.S with type Payload.t = Path.Program.t = Make_surround (struct
+module Atomic_surround : Action_types.S with type Payload.t = Path.Test.t =
+Make_surround (struct
   let subname = "atomic"
 
   let lock_type = Act_fir.Flow_block.Lock.Atomic
@@ -65,7 +65,7 @@ module Atomic_surround :
   let path_filter = Path_filter.(transaction_safe @@ empty)
 end)
 
-module Sync_surround : Action_types.S with type Payload.t = Path.Program.t =
+module Sync_surround : Action_types.S with type Payload.t = Path.Test.t =
 Make_surround (struct
   let subname = "sync"
 

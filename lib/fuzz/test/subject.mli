@@ -29,49 +29,48 @@ module Test_data : sig
   module Path : sig
     (** {3 Path stubs} *)
 
-    val thread_0_stms :
-      Act_fuzz.Path.Stms.t -> Act_fuzz.Path.Program.t Lazy.t
+    val thread_0_stms : Act_fuzz.Path.Stms.t -> Act_fuzz.Path.Test.t Lazy.t
     (** [thread_0_stms rest] constructs a path that visits the statements of
         test thread 0. *)
 
-    val known_true_if : Act_fuzz.Path.If.t -> Act_fuzz.Path.Program.t Lazy.t
+    val known_true_if : Act_fuzz.Path.If.t -> Act_fuzz.Path.Test.t Lazy.t
     (** [known_true_if rest] constructs a path that visits an if statement
         with a known-true conditional. *)
 
-    val dead_else : Act_fuzz.Path.Stms.t -> Act_fuzz.Path.Program.t Lazy.t
+    val dead_else : Act_fuzz.Path.Stms.t -> Act_fuzz.Path.Test.t Lazy.t
     (** [dead_else rest] constructs a path that visits a dead 'else' leg of
         an if statement. *)
 
     (** {3 Statement paths} *)
-    val in_stm : Act_fuzz.Path.Program.t Lazy.t
+    val in_stm : Act_fuzz.Path.Test.t Lazy.t
     (** [in_stm] is a full path that points to an arbitrary primitive
         statement. *)
 
     (** {3 Insertion paths} *)
 
-    val insert_dead : Act_fuzz.Path.Program.t Lazy.t
+    val insert_dead : Act_fuzz.Path.Test.t Lazy.t
     (** [insert_dead] is a full path that points to somewhere in dead code
         that can take statement insertions. *)
 
-    val insert_live : Act_fuzz.Path.Program.t Lazy.t
+    val insert_live : Act_fuzz.Path.Test.t Lazy.t
     (** [insert_live] is a full path that points to somewhere in live code
         that can take statement insertions. *)
 
-    val insert_start : Act_fuzz.Path.Program.t Lazy.t
+    val insert_start : Act_fuzz.Path.Test.t Lazy.t
     (** [insert_start] is a full path that points to the start of a block of
         live code, for statement insertions. *)
 
-    val insert_end : Act_fuzz.Path.Program.t Lazy.t
+    val insert_end : Act_fuzz.Path.Test.t Lazy.t
     (** [insert_end] is a full path that points to the end of a block of live
         code, for statement insertions. *)
 
     (** {3 Surround paths} *)
 
-    val surround_atomic : Act_fuzz.Path.Program.t Lazy.t
+    val surround_atomic : Act_fuzz.Path.Test.t Lazy.t
     (** [surround_atomic] is a full path that points to a statement range
         containing atomics, ready for surrounding. *)
 
-    val surround_txsafe : Act_fuzz.Path.Program.t Lazy.t
+    val surround_txsafe : Act_fuzz.Path.Test.t Lazy.t
     (** [surround_txsafe] is a full path that points to a statement range
         containing only transaction-safe statements (if any), ready for
         surrounding. *)

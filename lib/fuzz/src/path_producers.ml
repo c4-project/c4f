@@ -318,24 +318,23 @@ let gen_opt_over_threads ?(filter : Path_filter.t = Path_filter.empty)
     (test : target)
     ~(f :
        ?filter:Path_filter.t -> Subject.Thread.t -> Path.Thread.t Opt_gen.t)
-    : Path.Program.t Opt_gen.t =
+    : Path.Test.t Opt_gen.t =
   test
   |> map_threads ~f:(fun thread prog ->
          if Path_filter.is_thread_ok filter ~thread then
            Some
-             (Opt_gen.map (f ~filter prog)
-                ~f:(Path.Program.in_thread thread))
+             (Opt_gen.map (f ~filter prog) ~f:(Path.Test.in_thread thread))
          else None )
   |> Opt_gen.union
 
 let try_gen_insert_stm ?(filter : Path_filter.t option) :
-    target -> Path.Program.t Opt_gen.t =
+    target -> Path.Test.t Opt_gen.t =
   gen_opt_over_threads ?filter ~f:Thread.try_gen_insert_stm
 
 let try_gen_transform_stm ?(filter : Path_filter.t option) :
-    target -> Path.Program.t Opt_gen.t =
+    target -> Path.Test.t Opt_gen.t =
   gen_opt_over_threads ?filter ~f:Thread.try_gen_transform_stm
 
 let try_gen_transform_stm_list ?(filter : Path_filter.t option) :
-    target -> Path.Program.t Opt_gen.t =
+    target -> Path.Test.t Opt_gen.t =
   gen_opt_over_threads ?filter ~f:Thread.try_gen_transform_stm_list

@@ -48,11 +48,8 @@ module Helpers : sig
     -> random:Splittable_random.State.t
     -> action_id:Act_common.Id.t
     -> filter:Path_filter.t State.Monad.t
-    -> f:
-         (   ?filter:Path_filter.t
-          -> Subject.Test.t
-          -> Path.Program.t Opt_gen.t)
-    -> Path.Program.t State.Monad.t
+    -> f:(?filter:Path_filter.t -> Subject.Test.t -> Path.Test.t Opt_gen.t)
+    -> Path.Test.t State.Monad.t
   (** [lift_path_gen subject ~random ~action_id ~filter ~f] lifts [f], a path
       producer, into a monadic action that generates a path for an action
       payload. *)
@@ -75,14 +72,14 @@ module Insertion : sig
   (** Opaque type of insertion payloads. *)
   type 'a t [@@deriving sexp]
 
-  val make : to_insert:'a -> where:Path.Program.t -> 'a t
+  val make : to_insert:'a -> where:Path.Test.t -> 'a t
   (** [make ~to_insert ~where] makes a payload that expresses the desire to
       insert [to_insert] using path [where]. *)
 
   val to_insert : 'a t -> 'a
   (** [to_insert x] gets the insertion candidate of [x]. *)
 
-  val where : _ t -> Path.Program.t
+  val where : _ t -> Path.Test.t
   (** [where x] gets the program path to which [x] is inserting. *)
 
   (** Constructs a payload for inserting a statement. *)
@@ -95,7 +92,7 @@ module Insertion : sig
     val path_filter : Path_filter.t State.Monad.t
     (** [path_filter] is a stateful action that generates a path filter. *)
 
-    val gen : Path.Program.t -> t stateful_gen
+    val gen : Path.Test.t -> t stateful_gen
     (** [gen where] generates the inner payload given the generated path
         [where]. *)
   end) : Action_types.S_payload with type t = To_insert.t t
@@ -117,7 +114,7 @@ module Cond_surround : sig
 
   (** {3 Constructors} *)
 
-  val make : cond:Act_fir.Expression.t -> where:Path.Program.t -> t
+  val make : cond:Act_fir.Expression.t -> where:Path.Test.t -> t
   (** [make ~cond ~where] makes a payload given a specific condition
       expression [cond] and statement-list selecting path [where]. *)
 
@@ -126,7 +123,7 @@ module Cond_surround : sig
   val cond : t -> Act_fir.Expression.t
   (** [cond payload] retrieves the generated condition inside [payload]. *)
 
-  val where : t -> Path.Program.t
+  val where : t -> Path.Test.t
   (** [where payload] retrieves the generated path inside [payload]. *)
 
   val apply :
