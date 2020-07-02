@@ -11,53 +11,57 @@
 
 (** Consumers of fuzzer subject paths.
 
-    These take the form of modules that expose functions that accept paths
-    and subject components, and perform actions on the part of that subject
-    referenced by the path.
+    These take the form of functions that accept paths and tests, and perform
+    actions on the part of that subject referenced by the path. *)
 
-    Each contains two types: [t], which is the type of the path itself, and
-    [target], which is the type of the target subject component. *)
+open Base
 
-(** {1 Path consumer modules} *)
+val check_path :
+     Path.Program.t
+  -> filter:Path_filter.t
+  -> target:Subject.Test.t
+  -> Subject.Test.t Or_error.t
+(** [check_path path ~filter ~target] does a post-generation check of [path]
+    against the path filter [filter] and target [target].
 
-(** A path consumer that acts upon a {!Subject.Block.t} according to a
-    {!Path.Stms.t}. *)
-module Block :
-  Path_types.S_consumer
-    with type t = Path.Stms.t
-     and type target = Subject.Block.t
+    Don't confuse this with the in-generation checks done in
+    {!Path_producers}, which serve to stop invalid paths from being
+    generated. The purpose of *this* check is to protect fuzzer actions
+    against generation errors, stale traces, and badly written test cases. *)
 
-(** A path consumer that acts upon a {!Subject.Statement.If.t} according to a
-    {!Path.If.t}. *)
-module If :
-  Path_types.S_consumer
-    with type t = Path.If.t
-     and type target = Subject.Statement.If.t
+val insert_stm_list :
+     Path.Program.t
+  -> to_insert:Metadata.t Act_fir.Statement.t list
+  -> target:Subject.Test.t
+  -> Subject.Test.t Or_error.t
+(** [insert_stm_list path ~to_insert ~target] tries to insert each statement
+    in [to_insert] into [path] relative to [target], in order. *)
 
-(** A path consumer that acts upon a {!Subject.Statement.Flow.t} according to
-    a {!Path.Flow.t}. *)
-module Flow :
-  Path_types.S_consumer
-    with type t = Path.Flow.t
-     and type target = Subject.Statement.Flow.t
+val insert_stm :
+     Path.Program.t
+  -> to_insert:Metadata.t Act_fir.Statement.t
+  -> target:Subject.Test.t
+  -> Subject.Test.t Or_error.t
+(** [insert_stm path ~to_insert ~target] tries to insert [to_insert] into
+    [path] relative to [target]. *)
 
-(** A path consumer that acts upon a {!Subject.Statement.t} according to a
-    {!Path.Stm.t}. *)
-module Statement :
-  Path_types.S_consumer
-    with type t = Path.Stm.t
-     and type target = Subject.Statement.t
+val transform_stm :
+     Path.Program.t
+  -> f:
+       (   Metadata.t Act_fir.Statement.t
+        -> Metadata.t Act_fir.Statement.t Or_error.t)
+  -> target:Subject.Test.t
+  -> Subject.Test.t Or_error.t
+(** [transform_stm path ~f ~target] tries to modify the statement at [path]
+    relative to [target] using [f]. *)
 
-(** A path consumer that acts upon a {!Subject.Thread.t} according to a
-    {!Path.Thread.t}. *)
-module Thread :
-  Path_types.S_consumer
-    with type t = Path.Thread.t
-     and type target = Subject.Thread.t
-
-(** A path consumer that acts upon a {!Subject.Test.t} according to a
-    {!Path.Program.t}. *)
-module Test :
-  Path_types.S_consumer
-    with type t = Path.Program.t
-     and type target = Subject.Test.t
+val transform_stm_list :
+     Path.Program.t
+  -> f:
+       (   Metadata.t Act_fir.Statement.t list
+        -> Metadata.t Act_fir.Statement.t list Or_error.t)
+  -> target:Subject.Test.t
+  -> Subject.Test.t Or_error.t
+(** [transform_stm_list path ~f ~target] tries to modify the list of all
+    statement at [path] relative to [target] using [f]. Unlike
+    {!transform_stm}, [transform_stm_list] can add and remove statements. *)

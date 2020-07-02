@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -16,16 +16,24 @@ let%test_module "Statement_list" =
   ( module struct
     let%test_module "paths applied to example code" =
       ( module struct
-        module F = Act_fuzz
-        module Stm = Act_fir.Statement_traverse
+        open struct
+          module F = Act_fuzz
+          module Stm = Act_fir.Statement_traverse
+          module P = Subject.Test_data.Path
+        end
 
-        let insert_path : F.Path.Stms.t = F.Path.Stms.insert 2
-
-        let insert_at_end_path : F.Path.Stms.t = F.Path.Stms.insert 3
-
-        let in_stm_path : F.Path.Stms.t = F.Path.(Stms.in_stm 2 Stm.this_stm)
-
-        let on_stm_range_path : F.Path.Stms.t = F.Path.Stms.on_range 1 2
+        let test (path : F.Path.Program.t Lazy.t)
+            ~(f :
+                  F.Path.Program.t
+               -> target:F.Subject.Test.t
+               -> F.Subject.Test.t Or_error.t) : unit =
+          let vars = F.State.vars (Lazy.force Subject.Test_data.state) in
+          Fmt.(
+            pr "@[<v>%a@]@."
+              (Act_utils.My_format.pp_or_error
+                 Action.Test_utils.(using (Fn.flip reify_test vars) pp_tu))
+              (f (Lazy.force path)
+                 ~target:(Lazy.force Subject.Test_data.test)))
 
         let example_stm : F.Subject.Statement.t =
           Act_fir.(
@@ -35,132 +43,148 @@ let%test_module "Statement_list" =
                     ~src:(Expression.int_lit 9001)
                     ~dst:(Address.of_variable_str_exn "y"))))
 
-        (* TODO(@MattWindsor91): generalise this? *)
-        let pp_statement : F.Subject.Statement.t Fmt.t =
-          Fmt.using Act_fir.Reify_stm.reify Act_litmus_c.Ast.Stm.pp
-
-        let test (stms : F.Subject.Block.t Or_error.t) : unit =
-          Fmt.(
-            pr "@[<v>%a@]@."
-              (result
-                 ~ok:
-                   (using Act_fir.Block.statements
-                      (list ~sep:sp (box pp_statement)))
-                 ~error:Error.pp)
-              stms)
-
-        let body_stms : F.Subject.Statement.t list Lazy.t =
-          Lazy.(
-            Subject.Test_data.body_stms
-            >>| List.map
-                  ~f:(Stm.On_meta.map ~f:(Fn.const F.Metadata.existing)))
-
-        let body_block : F.Subject.Block.t Lazy.t =
-          Lazy.(
-            body_stms
-            >>| fun statements ->
-            F.Subject.Block.make_existing ~statements ())
-
         let%test_module "insert_stm" =
           ( module struct
-            let test_insert (path : F.Path.stm_list) : unit =
-              test
-                (F.Path_consumers.Block.insert_stm path
-                   ~to_insert:example_stm ~target:(Lazy.force body_block))
+            let test_insert : F.Path.Program.t Lazy.t -> unit =
+              test ~f:(F.Path_consumers.insert_stm ~to_insert:example_stm)
 
             let%expect_test "insert onto statement (invalid)" =
-              test_insert in_stm_path ;
+              test_insert P.in_stm ;
               [%expect {| ("Can't insert statement here" (path This_stm)) |}]
 
             let%expect_test "insert onto range (invalid)" =
-              test_insert on_stm_range_path ;
+              test_insert P.surround_atomic ;
               [%expect
                 {|
           ("Can't use this statement-list path here"
-           (here lib/fuzz/src/path_consumers.ml:173:65) (context insert_stm)
-           (path (On_range 1 2))) |}]
+           (here lib/fuzz/src/path_consumers.ml:227:65) (context insert_stm)
+           (path (On_range 0 2))) |}]
 
             let%expect_test "insert into list" =
-              test_insert insert_path ;
+              test_insert P.insert_live ;
               [%expect
                 {|
-          atomic_store_explicit(x, 42, memory_order_seq_cst);
-          ;
-          atomic_store_explicit(y, 9001, memory_order_seq_cst);
-          atomic_store_explicit(y, foo, memory_order_relaxed);
-          if (foo == y)
-          { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
-          if (false)
+          void
+          P0(atomic_int *x, atomic_int *y)
           {
-              atomic_store_explicit(y, atomic_load_explicit(x, memory_order_seq_cst),
-                                    memory_order_seq_cst);
+              atomic_int r0 = 4004;
+              atomic_store_explicit(x, 42, memory_order_seq_cst);
+              ;
+              atomic_store_explicit(y, 9001, memory_order_seq_cst);
+              atomic_store_explicit(y, foo, memory_order_relaxed);
+              if (foo == y)
+              { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
+              if (false)
+              {
+                  atomic_store_explicit(y,
+                                        atomic_load_explicit(x, memory_order_seq_cst),
+                                        memory_order_seq_cst);
+              }
+              do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
+              5);
           }
-          do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 == 5); |}]
+
+          void
+          P1(atomic_int *x, atomic_int *y)
+          { loop: ; if (true) {  } else { goto loop; } } |}]
 
             let%expect_test "insert onto end of list" =
-              test_insert insert_at_end_path ;
+              test_insert P.insert_end ;
               [%expect
                 {|
-          atomic_store_explicit(x, 42, memory_order_seq_cst);
-          ;
-          atomic_store_explicit(y, foo, memory_order_relaxed);
-          atomic_store_explicit(y, 9001, memory_order_seq_cst);
-          if (foo == y)
-          { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
-          if (false)
+          void
+          P0(atomic_int *x, atomic_int *y)
           {
-              atomic_store_explicit(y, atomic_load_explicit(x, memory_order_seq_cst),
-                                    memory_order_seq_cst);
+              atomic_int r0 = 4004;
+              atomic_store_explicit(x, 42, memory_order_seq_cst);
+              ;
+              atomic_store_explicit(y, foo, memory_order_relaxed);
+              if (foo == y)
+              { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
+              if (false)
+              {
+                  atomic_store_explicit(y,
+                                        atomic_load_explicit(x, memory_order_seq_cst),
+                                        memory_order_seq_cst);
+              }
+              do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
+              5);
+              atomic_store_explicit(y, 9001, memory_order_seq_cst);
           }
-          do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 == 5); |}]
+
+          void
+          P1(atomic_int *x, atomic_int *y)
+          { loop: ; if (true) {  } else { goto loop; } } |}]
           end )
 
         let%test_module "transform_stm" =
           ( module struct
-            let test_transform (path : F.Path.stm_list) : unit =
+            let test_transform : F.Path.Program.t Lazy.t -> unit =
               test
-                (F.Path_consumers.Block.transform_stm path
-                   ~f:(Fn.const (Or_error.return example_stm))
-                   ~target:(Lazy.force body_block))
+                ~f:
+                  (F.Path_consumers.transform_stm
+                     ~f:(Fn.const (Ok example_stm)))
 
             let%expect_test "transform a statement" =
-              test_transform in_stm_path ;
+              test_transform P.in_stm ;
               [%expect
                 {|
-                  atomic_store_explicit(x, 42, memory_order_seq_cst);
-                  ;
-                  atomic_store_explicit(y, 9001, memory_order_seq_cst);
-                  if (foo == y)
-                  { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
-                  if (false)
+                  void
+                  P0(atomic_int *x, atomic_int *y)
                   {
-                      atomic_store_explicit(y, atomic_load_explicit(x, memory_order_seq_cst),
-                                            memory_order_seq_cst);
+                      atomic_int r0 = 4004;
+                      atomic_store_explicit(x, 42, memory_order_seq_cst);
+                      ;
+                      atomic_store_explicit(y, 9001, memory_order_seq_cst);
+                      if (foo == y)
+                      { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
+                      if (false)
+                      {
+                          atomic_store_explicit(y,
+                                                atomic_load_explicit(x, memory_order_seq_cst),
+                                                memory_order_seq_cst);
+                      }
+                      do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
+                      5);
                   }
-                  do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 == 5); |}]
+
+                  void
+                  P1(atomic_int *x, atomic_int *y)
+                  { loop: ; if (true) {  } else { goto loop; } } |}]
 
             let%expect_test "transform a range" =
-              test_transform on_stm_range_path ;
+              test_transform P.surround_atomic ;
               [%expect
                 {|
-          atomic_store_explicit(x, 42, memory_order_seq_cst);
-          atomic_store_explicit(y, 9001, memory_order_seq_cst);
-          atomic_store_explicit(y, 9001, memory_order_seq_cst);
-          if (foo == y)
-          { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
-          if (false)
+          void
+          P0(atomic_int *x, atomic_int *y)
           {
-              atomic_store_explicit(y, atomic_load_explicit(x, memory_order_seq_cst),
-                                    memory_order_seq_cst);
+              atomic_int r0 = 4004;
+              atomic_store_explicit(y, 9001, memory_order_seq_cst);
+              atomic_store_explicit(y, 9001, memory_order_seq_cst);
+              atomic_store_explicit(y, foo, memory_order_relaxed);
+              if (foo == y)
+              { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
+              if (false)
+              {
+                  atomic_store_explicit(y,
+                                        atomic_load_explicit(x, memory_order_seq_cst),
+                                        memory_order_seq_cst);
+              }
+              do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
+              5);
           }
-          do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 == 5); |}]
+
+          void
+          P1(atomic_int *x, atomic_int *y)
+          { loop: ; if (true) {  } else { goto loop; } } |}]
 
             let%expect_test "transform an insertion (invalid)" =
-              test_transform insert_path ;
+              test_transform P.insert_live ;
               [%expect
                 {|
           ("Can't use this statement-list path here"
-           (here lib/fuzz/src/path_consumers.ml:192:68) (context transform_stm)
+           (here lib/fuzz/src/path_consumers.ml:246:68) (context transform_stm)
            (path (Insert 2))) |}]
           end )
 
@@ -176,37 +200,46 @@ let%test_module "Statement_list" =
                          (F.Subject.Block.make_generated ~statements ())
                        ~f_branch:(F.Subject.Block.make_generated ())) ]
 
-            let test_transform_list (path : F.Path.stm_list) : unit =
-              test
-                (F.Path_consumers.Block.transform_stm_list path ~f:iffify
-                   ~target:(Lazy.force body_block))
+            let test_transform_list : F.Path.Program.t Lazy.t -> unit =
+              test ~f:(F.Path_consumers.transform_stm_list ~f:iffify)
 
             let%expect_test "try to list-transform a statement (invalid)" =
-              test_transform_list in_stm_path ;
+              test_transform_list P.in_stm ;
               [%expect
                 {| ("Can't transform multiple statements here" (path This_stm)) |}]
 
             let%expect_test "list-transform a range" =
-              test_transform_list on_stm_range_path ;
+              test_transform_list P.surround_atomic ;
               [%expect
                 {|
-                  atomic_store_explicit(x, 42, memory_order_seq_cst);
-                  if (true) { ; atomic_store_explicit(y, foo, memory_order_relaxed); }
-                  if (foo == y)
-                  { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
-                  if (false)
+                  void
+                  P0(atomic_int *x, atomic_int *y)
                   {
-                      atomic_store_explicit(y, atomic_load_explicit(x, memory_order_seq_cst),
-                                            memory_order_seq_cst);
+                      atomic_int r0 = 4004;
+                      if (true) { atomic_store_explicit(x, 42, memory_order_seq_cst); ; }
+                      atomic_store_explicit(y, foo, memory_order_relaxed);
+                      if (foo == y)
+                      { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
+                      if (false)
+                      {
+                          atomic_store_explicit(y,
+                                                atomic_load_explicit(x, memory_order_seq_cst),
+                                                memory_order_seq_cst);
+                      }
+                      do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
+                      5);
                   }
-                  do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 == 5); |}]
+
+                  void
+                  P1(atomic_int *x, atomic_int *y)
+                  { loop: ; if (true) {  } else { goto loop; } } |}]
 
             let%expect_test "list-transform an insertion (invalid)" =
-              test_transform_list insert_path ;
+              test_transform_list P.insert_live ;
               [%expect
                 {|
                   ("Can't use this statement-list path here"
-                   (here lib/fuzz/src/path_consumers.ml:205:16) (context transform_stm_list)
+                   (here lib/fuzz/src/path_consumers.ml:259:16) (context transform_stm_list)
                    (path (Insert 2))) |}]
 
             let%test_unit "generator over stm-list produces valid paths" =
@@ -227,7 +260,7 @@ let%test_module "Statement_list" =
                   [%test_result: unit Or_error.t] ~here:[[%here]]
                     ~expect:(Or_error.return ())
                     (Or_error.map ~f:(Fn.const ())
-                       (F.Path_consumers.Test.transform_stm_list path
+                       (F.Path_consumers.transform_stm_list path
                           ~f:Or_error.return
                           ~target:(Lazy.force Subject.Test_data.test))) )
           end )

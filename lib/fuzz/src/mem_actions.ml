@@ -58,8 +58,7 @@ struct
     in
     (* We don't need to do any bookkeeping on fences. *)
     State.Monad.Monadic.return
-      (Path_consumers.Test.insert_stm path ~to_insert:fence_stm
-         ~target:subject)
+      (Path_consumers.insert_stm path ~to_insert:fence_stm ~target:subject)
 end
 
 let unsafe_weaken_orders_flag_key : Ac.Id.t =
@@ -151,6 +150,6 @@ module Strengthen :
       ~payload:({path; mo; can_weaken} : Payload.t) :
       Subject.Test.t State.Monad.t =
     State.Monad.Monadic.return
-      (Path_consumers.Test.transform_stm path ~target:subject
+      (Path_consumers.transform_stm path ~target:subject
          ~f:(change_mo ~mo ~can_weaken))
 end

@@ -190,6 +190,13 @@ module Test_data = struct
     let insert_live : Src.Path.Program.t Lazy.t =
       Src.Path.(thread_0_stms @@ Stms.insert 2)
 
+    let insert_start : Src.Path.Program.t Lazy.t =
+      Src.Path.(thread_0_stms @@ Stms.insert 0)
+
+    let insert_end : Src.Path.Program.t Lazy.t =
+      Lazy.bind body_stms ~f:(fun stms ->
+          Src.Path.(thread_0_stms @@ Stms.insert (List.length stms)) )
+
     let known_true_if (path : Src.Path.If.t) : Src.Path.Program.t Lazy.t =
       Src.Path.(thread_0_stms @@ Stms.in_stm 3 @@ Stm.in_if @@ path)
 
@@ -198,6 +205,9 @@ module Test_data = struct
 
     let insert_dead : Src.Path.Program.t Lazy.t =
       Src.Path.(dead_else @@ Stms.insert 0)
+
+    let in_stm : Src.Path.Program.t Lazy.t =
+      Src.Path.(thread_0_stms @@ Stms.stm 2)
 
     let surround_atomic : Src.Path.Program.t Lazy.t =
       Src.Path.(thread_0_stms @@ Stms.on_range 0 2)

@@ -19,10 +19,65 @@ end
 
 type 'a transformer = 'a -> 'a Or_error.t
 
+module type S_consumer = sig
+  (** Type of paths. *)
+  type t
+
+  (** Type of path targets. *)
+  type target
+
+  val check_path :
+    t -> filter:Path_filter.t -> target:target -> target Or_error.t
+  (** [check_path path ~filter ~target] does a post-generation check of
+      [path] against the path filter [filter] and target [target].
+
+      Don't confuse this with the in-generation checks done in
+      {!Path_producers}, which serve to stop invalid paths from being
+      generated. The purpose of *this* check is to protect fuzzer actions
+      against generation errors, stale traces, and badly written test cases. *)
+
+  val insert_stm_list :
+       t
+    -> to_insert:Metadata.t Act_fir.Statement.t list
+    -> target:target
+    -> target Or_error.t
+  (** [insert_stm_list path ~to_insert ~target] tries to insert each
+      statement in [to_insert] into [path] relative to [target], in order. *)
+
+  val insert_stm :
+       t
+    -> to_insert:Metadata.t Act_fir.Statement.t
+    -> target:target
+    -> target Or_error.t
+  (** [insert_stm path ~to_insert ~target] tries to insert [to_insert] into
+      [path] relative to [target]. *)
+
+  val transform_stm :
+       t
+    -> f:
+         (   Metadata.t Act_fir.Statement.t
+          -> Metadata.t Act_fir.Statement.t Or_error.t)
+    -> target:target
+    -> target Or_error.t
+  (** [transform_stm path ~f ~target] tries to modify the statement at [path]
+      relative to [target] using [f]. *)
+
+  val transform_stm_list :
+       t
+    -> f:
+         (   Metadata.t Act_fir.Statement.t list
+          -> Metadata.t Act_fir.Statement.t list Or_error.t)
+    -> target:target
+    -> target Or_error.t
+  (** [transform_stm_list path ~f ~target] tries to modify the list of all
+      statement at [path] relative to [target] using [f]. Unlike
+      {!transform_stm}, [transform_stm_list] can add and remove statements
+      from the enclosing block. *)
+end
+
 module rec Statement :
-  (Path_types.S_consumer
-    with type t = Path.Stm.t
-     and type target = Subject.Statement.t) = struct
+  (S_consumer with type t = Path.Stm.t and type target = Subject.Statement.t) =
+struct
   type t = Path.Stm.t
 
   module Bm = Stm.Base_map (Or_error)
@@ -122,9 +177,8 @@ module rec Statement :
 end
 
 and Block :
-  (Path_types.S_consumer
-    with type t = Path.Stms.t
-     and type target = Subject.Block.t) = struct
+  (S_consumer with type t = Path.Stms.t and type target = Subject.Block.t) =
+struct
   type t = Path.Stms.t
 
   type target = Subject.Block.t
@@ -206,7 +260,7 @@ and Block :
 end
 
 and If :
-  (Path_types.S_consumer
+  (S_consumer
     with type t = Path.If.t
      and type target = Subject.Statement.If.t) = struct
   type t = Path.If.t
@@ -252,7 +306,7 @@ and If :
 end
 
 and Flow :
-  (Path_types.S_consumer
+  (S_consumer
     with type t = Path.Flow.t
      and type target = Subject.Statement.Flow.t) = struct
   type t = Path.Flow.t
@@ -297,9 +351,8 @@ and Flow :
 end
 
 module Thread :
-  Path_types.S_consumer
-    with type t = Path.Thread.t
-     and type target = Subject.Thread.t = struct
+  S_consumer with type t = Path.Thread.t and type target = Subject.Thread.t =
+struct
   type t = Path.Thread.t
 
   type target = Subject.Thread.t
@@ -338,44 +391,38 @@ module Thread :
     handle_stm path ~target ~f:(Block.transform_stm_list ~f)
 end
 
-module Test :
-  Path_types.S_consumer
-    with type t = Path.Program.t
-     and type target = Subject.Test.t = struct
-  type t = Path.Program.t
+type t = Path.Program.t
 
-  type target = Subject.Test.t
+type target = Subject.Test.t
 
-  let handle_stm (path : t)
-      ~(f :
-            Path.Thread.t
-         -> target:Subject.Thread.t
-         -> Subject.Thread.t Or_error.t) ~(target : target) :
-      target Or_error.t =
-    match path with
-    | In_thread (index, rest) ->
-        Act_litmus.Test.Raw.try_map_thread ~index
-          ~f:(fun target -> f rest ~target)
-          target
+let handle_stm (path : t)
+    ~(f :
+          Path.Thread.t
+       -> target:Subject.Thread.t
+       -> Subject.Thread.t Or_error.t) ~(target : target) : target Or_error.t
+    =
+  match path with
+  | In_thread (index, rest) ->
+      Act_litmus.Test.Raw.try_map_thread ~index
+        ~f:(fun target -> f rest ~target)
+        target
 
-  let check_path (path : t) ~(filter : Path_filter.t) ~(target : target) :
-      target Or_error.t =
-    handle_stm path ~target ~f:(Thread.check_path ~filter)
+let check_path (path : t) ~(filter : Path_filter.t) ~(target : target) :
+    target Or_error.t =
+  handle_stm path ~target ~f:(Thread.check_path ~filter)
 
-  let insert_stm_list (path : t) ~(to_insert : Subject.Statement.t list)
-      ~(target : target) : target Or_error.t =
-    handle_stm path ~target ~f:(Thread.insert_stm_list ~to_insert)
+let insert_stm_list (path : t) ~(to_insert : Subject.Statement.t list)
+    ~(target : target) : target Or_error.t =
+  handle_stm path ~target ~f:(Thread.insert_stm_list ~to_insert)
 
-  let insert_stm (path : t) ~(to_insert : Subject.Statement.t)
-      ~(target : target) : target Or_error.t =
-    handle_stm path ~target ~f:(Thread.insert_stm ~to_insert)
+let insert_stm (path : t) ~(to_insert : Subject.Statement.t)
+    ~(target : target) : target Or_error.t =
+  handle_stm path ~target ~f:(Thread.insert_stm ~to_insert)
 
-  let transform_stm (path : t) ~(f : Subject.Statement.t transformer)
-      ~(target : target) : target Or_error.t =
-    handle_stm path ~target ~f:(Thread.transform_stm ~f)
+let transform_stm (path : t) ~(f : Subject.Statement.t transformer)
+    ~(target : target) : target Or_error.t =
+  handle_stm path ~target ~f:(Thread.transform_stm ~f)
 
-  let transform_stm_list (path : t)
-      ~(f : Subject.Statement.t list transformer) ~(target : target) :
-      target Or_error.t =
-    handle_stm path ~target ~f:(Thread.transform_stm_list ~f)
-end
+let transform_stm_list (path : t) ~(f : Subject.Statement.t list transformer)
+    ~(target : target) : target Or_error.t =
+  handle_stm path ~target ~f:(Thread.transform_stm_list ~f)

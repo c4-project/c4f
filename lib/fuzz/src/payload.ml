@@ -115,7 +115,7 @@ module Cond_surround = struct
       Let_syntax.(
         let%bind () = add_cond_dependencies where cond in
         Monadic.return
-          (Path_consumers.Test.transform_stm_list where ~target:test
+          (Path_consumers.transform_stm_list where ~target:test
              ~f:(fun test -> Ok [f cond test]))))
 
   let cond_env (vars : Var.Map.t) ~(tid : int) : Act_fir.Env.t =

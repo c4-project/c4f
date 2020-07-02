@@ -95,14 +95,13 @@ struct
       (kind : Act_fir.Early_out.t) : Subject.Test.t Or_error.t =
     let f = Staged.unstage (kind_filter kind) in
     let filter = f base_path_filter in
-    Path_consumers.Test.check_path path ~filter ~target
+    Path_consumers.check_path path ~filter ~target
 
   let run_inner (test : Subject.Test.t) (path : Path.Program.t)
       (kind : Act_fir.Early_out.t) : Subject.Test.t Or_error.t =
     Or_error.Let_syntax.(
       let%bind target = check_path test path kind in
-      Path_consumers.Test.insert_stm path ~target
-        ~to_insert:(make_early_out kind))
+      Path_consumers.insert_stm path ~target ~to_insert:(make_early_out kind))
 
   let run (test : Subject.Test.t) ~(payload : Payload.t) :
       Subject.Test.t State.Monad.t =
@@ -177,6 +176,5 @@ struct
         label |> Prim_statement.goto |> Statement.prim Metadata.generated)
     in
     State.Monad.Monadic.return
-      (Path_consumers.Test.insert_stm path ~to_insert:goto_stm
-         ~target:subject)
+      (Path_consumers.insert_stm path ~to_insert:goto_stm ~target:subject)
 end

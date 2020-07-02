@@ -42,6 +42,11 @@ module Test_data : sig
     (** [dead_else rest] constructs a path that visits a dead 'else' leg of
         an if statement. *)
 
+    (** {3 Statement paths} *)
+    val in_stm : Act_fuzz.Path.Program.t Lazy.t
+    (** [in_stm] is a full path that points to an arbitrary primitive
+        statement. *)
+
     (** {3 Insertion paths} *)
 
     val insert_dead : Act_fuzz.Path.Program.t Lazy.t
@@ -49,8 +54,16 @@ module Test_data : sig
         that can take statement insertions. *)
 
     val insert_live : Act_fuzz.Path.Program.t Lazy.t
-    (** [insert_dead] is a full path that points to somewhere in dead code
+    (** [insert_live] is a full path that points to somewhere in live code
         that can take statement insertions. *)
+
+    val insert_start : Act_fuzz.Path.Program.t Lazy.t
+    (** [insert_start] is a full path that points to the start of a block of
+        live code, for statement insertions. *)
+
+    val insert_end : Act_fuzz.Path.Program.t Lazy.t
+    (** [insert_end] is a full path that points to the end of a block of live
+        code, for statement insertions. *)
 
     (** {3 Surround paths} *)
 

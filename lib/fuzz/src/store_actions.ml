@@ -254,5 +254,5 @@ module Xchgify : Action_types.S with type Payload.t = Path.Program.t = struct
   let run (subject : Subject.Test.t) ~(payload : Path.Program.t) :
       Subject.Test.t State.Monad.t =
     State.Monad.Monadic.return
-      (Path_consumers.Test.transform_stm payload ~f:xchgify ~target:subject)
+      (Path_consumers.transform_stm payload ~f:xchgify ~target:subject)
 end

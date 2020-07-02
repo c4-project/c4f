@@ -185,5 +185,5 @@ module Invert : Action_types.S with type Payload.t = Path.Program.t = struct
   let run (test : Subject.Test.t) ~(payload : Payload.t) :
       Subject.Test.t State.Monad.t =
     State.Monad.Monadic.return
-      (Path_consumers.Test.transform_stm payload ~target:test ~f:invert_stm)
+      (Path_consumers.transform_stm payload ~target:test ~f:invert_stm)
 end

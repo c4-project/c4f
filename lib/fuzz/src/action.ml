@@ -175,8 +175,8 @@ end) : Action_types.S with type Payload.t = Basic.Payload.t = struct
   let run (test : Subject.Test.t) ~(payload : Payload.t) :
       Subject.Test.t State.Monad.t =
     State.Monad.Monadic.return
-      (Path_consumers.Test.transform_stm_list (Payload.where payload)
-         ~target:test ~f:(fun test -> Ok [Basic.wrap test ~payload]))
+      (Path_consumers.transform_stm_list (Payload.where payload) ~target:test
+         ~f:(fun test -> Ok [Basic.wrap test ~payload]))
 end
 
 module Make_log (B : sig

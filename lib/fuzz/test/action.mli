@@ -14,6 +14,16 @@
 (** {1 Test utilities} *)
 
 module Test_utils : sig
+  val reify_test :
+       Act_fuzz.Subject.Test.t
+    -> Act_fuzz.Var.Record.t Act_common.Scoped_map.t
+    -> Act_litmus_c.Ast.Translation_unit.t
+  (** [reify_test test vars] reifies [test] into a translation unit, using
+      [vars] as its variable map. *)
+
+  val pp_tu : Act_litmus_c.Ast.Translation_unit.t Fmt.t
+  (** [pp_tu] prints a translation unit. *)
+
   val run_and_dump_test :
        Act_fuzz.Subject.Test.t Act_fuzz.State.Monad.t
     -> initial_state:Act_fuzz.State.t
