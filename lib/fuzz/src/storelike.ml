@@ -228,7 +228,8 @@ end) : Action_types.S with type Payload.t = B.t P.Insertion.t = struct
     in
     Or_error.Let_syntax.(
       let%bind target' =
-        Path_consumers.insert_stm_list path ~to_insert:stms ~target
+        Path_consumers.consume target ~filter:B.path_filter ~path
+          ~action:(Insert stms)
       in
       insert_vars target' (B.new_locals to_insert) ~tid)
 

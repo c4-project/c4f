@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -13,416 +13,249 @@ open Base
 
 open struct
   module Tx = Travesty_base_exts
-  module Fir = Act_fir
-  module Stm = Fir.Statement_traverse
 end
 
-type 'a transformer = 'a -> 'a Or_error.t
+type ctx = Path_kind.With_action.t Path_context.t
 
-module type S_consumer = sig
-  (** Type of paths. *)
+(** Shorthand for the type of the recursive statement producing function. *)
+type mu =
+     Subject.Statement.t
+  -> path:Path.Stm.t
+  -> ctx:ctx
+  -> Subject.Statement.t Or_error.t
+
+module Helpers = struct
+  let with_flags (flags : Set.M(Path_flag).t) ~(f : ctx -> 'a Or_error.t)
+      ~(ctx : ctx) : 'a Or_error.t =
+    Or_error.(Path_context.add_flags ctx flags >>= f)
+
+  let bad_kind (got_wa : Path_kind.With_action.t) ~(want : Path_kind.t) :
+      'a Or_error.t =
+    let got = Path_kind.With_action.to_kind got_wa in
+    Or_error.error_s
+      [%message
+        "Unexpected kind of action associated with this path"
+          ~got:(got : Path_kind.t)
+          ~want:(want : Path_kind.t)]
+
+  let bad_stm (got_stm : Subject.Statement.t)
+      ~(want : Act_fir.Statement_class.t) : 'a Or_error.t =
+    let got = Act_fir.Statement_class.classify got_stm in
+    Or_error.error_s
+      [%message
+        "Unexpected statement class for this path"
+          ~got:(got : Act_fir.Statement_class.t option)
+          ~want:(want : Act_fir.Statement_class.t)]
+end
+
+open Helpers
+
+module Block = struct
+  let insert (b : Subject.Statement.t list) ~(pos : int) ~(ctx : ctx) :
+      Subject.Statement.t list Or_error.t =
+    (* TODO(@MattWindsor91): consider unifying with Transform_list; the
+       similarity of the code here makes it very clear that the differences
+       between the two could be a path filter. *)
+    match Path_context.kind ctx with
+    | Insert stms ->
+        Or_error.(
+          Path_context.check_filter ctx
+          >>= fun () ->
+          Act_utils.My_list.splice b ~pos ~len:0 ~replace_f:(Fn.const stms))
+    | x ->
+        bad_kind x ~want:Insert
+
+  let on_range (b : Subject.Statement.t list) ~(pos : int) ~(len : int)
+      ~(ctx : ctx) : Subject.Statement.t list Or_error.t =
+    match Path_context.kind ctx with
+    | Transform f ->
+        let f stm =
+          Or_error.Let_syntax.(
+            let%bind () = Path_context.check_filter ctx in
+            let%bind () = Path_context.check_filter_stm ctx ~stm in
+            f stm)
+        in
+        Act_utils.My_list.try_map_sub b ~pos ~len ~f
+    | Transform_list f ->
+        let replace_f stms =
+          Or_error.Let_syntax.(
+            let%bind () = Path_context.check_filter ctx in
+            let%bind () =
+              Tx.Or_error.combine_map_unit stms ~f:(fun stm ->
+                  Path_context.check_filter_stm ctx ~stm )
+            in
+            f stms)
+        in
+        Act_utils.My_list.try_splice b ~pos ~len ~replace_f
+    | x ->
+        bad_kind x ~want:Transform_list
+
+  let in_stm (b : Subject.Statement.t list) ~(pos : int) ~(path : Path.Stm.t)
+      ~(mu : mu) ~(ctx : ctx) : Subject.Statement.t list Or_error.t =
+    Tx.List.With_errors.replace_m b pos
+      ~f:Or_error.(fun s -> s |> mu ~path ~ctx >>| Option.return)
+
+  let consume_stms (b : Subject.Statement.t list) ~(path : Path.Stms.t)
+      ~(mu : mu) ~(ctx : ctx) : Subject.Statement.t list Or_error.t =
+    match path with
+    | Insert pos ->
+        insert b ~pos ~ctx
+    | On_range (pos, len) ->
+        on_range b ~pos ~len ~ctx
+    | In_stm (pos, path) ->
+        in_stm b ~pos ~path ~mu ~ctx
+
+  let consume (b : Subject.Block.t) ~(path : Path.Stms.t) ~(mu : mu) :
+      ctx:ctx -> Subject.Block.t Or_error.t =
+    let metadata = Act_fir.Block.metadata b in
+    with_flags (Path_flag.flags_of_block b) ~f:(fun ctx ->
+        Or_error.Let_syntax.(
+          let%map statements =
+            consume_stms (Act_fir.Block.statements b) ~path ~mu ~ctx
+          in
+          Act_fir.Block.make ~statements ~metadata ()) )
+end
+
+(** If blocks and flow blocks both share the same path structure, with some
+    minor differences relating to branching. This functor abstracts over
+    both. *)
+module Make_flow (F : sig
+  (** Type of targets. *)
   type t
 
-  (** Type of path targets. *)
-  type target
+  (** Type of the 'rest' of the path leading to this flow, containing both
+      the remainder path and any block selectors. *)
+  type rest
 
-  val check_path :
-    t -> filter:Path_filter.t -> target:target -> target Or_error.t
-  (** [check_path path ~filter ~target] does a post-generation check of
-      [path] against the path filter [filter] and target [target].
+  val path : rest -> Path.Stms.t
+  (** [path rest] extracts the path from [rest]. *)
 
-      Don't confuse this with the in-generation checks done in
-      {!Path_producers}, which serve to stop invalid paths from being
-      generated. The purpose of *this* check is to protect fuzzer actions
-      against generation errors, stale traces, and badly written test cases. *)
+  val thru_flags : t -> Set.M(Path_flag).t
+  (** [thru_flags x] gets any flags that should activate on passing through
+      [x]. *)
 
-  val insert_stm_list :
-       t
-    -> to_insert:Metadata.t Act_fir.Statement.t list
-    -> target:target
-    -> target Or_error.t
-  (** [insert_stm_list path ~to_insert ~target] tries to insert each
-      statement in [to_insert] into [path] relative to [target], in order. *)
+  val block_lens :
+       rest
+    -> (Subject.Block.t -> Subject.Block.t Or_error.t)
+    -> t
+    -> t Or_error.t
+  (** [block_lens rest f flow] lifts [f] onto the block pointed to by [rest],
+      and applies it to [flow]. *)
+end) =
+struct
+  let this_cond (_ : F.t) ~(ctx : ctx) : F.t Or_error.t =
+    ignore ctx ;
+    Or_error.error_string "no this-cond paths implemented yet"
 
-  val insert_stm :
-       t
-    -> to_insert:Metadata.t Act_fir.Statement.t
-    -> target:target
-    -> target Or_error.t
-  (** [insert_stm path ~to_insert ~target] tries to insert [to_insert] into
-      [path] relative to [target]. *)
+  let in_block (x : F.t) ~(rest : F.rest) ~(mu : mu) ~(ctx : ctx) :
+      F.t Or_error.t =
+    let path = F.path rest in
+    F.block_lens rest (Block.consume ~path ~mu ~ctx) x
 
-  val transform_stm :
-       t
-    -> f:
-         (   Metadata.t Act_fir.Statement.t
-          -> Metadata.t Act_fir.Statement.t Or_error.t)
-    -> target:target
-    -> target Or_error.t
-  (** [transform_stm path ~f ~target] tries to modify the statement at [path]
-      relative to [target] using [f]. *)
-
-  val transform_stm_list :
-       t
-    -> f:
-         (   Metadata.t Act_fir.Statement.t list
-          -> Metadata.t Act_fir.Statement.t list Or_error.t)
-    -> target:target
-    -> target Or_error.t
-  (** [transform_stm_list path ~f ~target] tries to modify the list of all
-      statement at [path] relative to [target] using [f]. Unlike
-      {!transform_stm}, [transform_stm_list] can add and remove statements
-      from the enclosing block. *)
+  let consume (x : F.t) ~(path : F.rest Path.flow_block) ~(mu : mu) :
+      ctx:ctx -> F.t Or_error.t =
+    with_flags (F.thru_flags x) ~f:(fun ctx ->
+        match path with
+        | This_cond ->
+            this_cond x ~ctx
+        | In_block rest ->
+            in_block x ~rest ~mu ~ctx )
 end
 
-module rec Statement :
-  (S_consumer with type t = Path.Stm.t and type target = Subject.Statement.t) =
-struct
-  type t = Path.Stm.t
+module If = Make_flow (struct
+  type t = Subject.Statement.If.t
 
-  module Bm = Stm.Base_map (Or_error)
+  type rest = bool * Path.Stms.t
 
-  type target = Subject.Statement.t
+  let path : rest -> Path.Stms.t = snd
 
-  let invalid_target_error (kind : string) (dest : Subject.Statement.t) :
-      'a Or_error.t =
-    Or_error.error_s
-      [%message
-        "Invalid target for this kind of path" ~kind
-          ~target:(Stm.erase_meta dest : unit Fir.Statement.t)]
+  let thru_flags = Fn.const (Set.empty (module Path_flag))
 
-  let in_if_error (dest : Subject.Statement.t) : 'a -> 'b Or_error.t =
-    Fn.const (invalid_target_error "in_if" dest)
+  module Map = Act_fir.If.Base_map (Or_error)
 
-  let in_loop_error (dest : Subject.Statement.t) : 'a -> 'b Or_error.t =
-    Fn.const (invalid_target_error "in_loop" dest)
+  let block_lens ((b, _) : rest)
+      (f : Subject.Block.t -> Subject.Block.t Or_error.t) : t -> t Or_error.t
+      =
+    let br active block = if active then f block else Ok block in
+    Map.bmap ~cond:Or_error.return ~t_branch:(br b) ~f_branch:(br (not b))
+end)
 
-  let handle_in_if (dest : Subject.Statement.t)
-      ~(f :
-         target:Subject.Statement.If.t -> Subject.Statement.If.t Or_error.t)
-      : Subject.Statement.t Or_error.t =
-    Bm.bmap dest
-      ~if_stm:(fun target -> f ~target)
-      ~flow:(in_if_error dest) ~prim:(in_if_error dest)
+module Flow = Make_flow (struct
+  type t = Subject.Statement.Flow.t
 
-  let handle_in_flow (dest : Subject.Statement.t)
-      ~(f :
-            target:Subject.Statement.Flow.t
-         -> Subject.Statement.Flow.t Or_error.t) :
+  type rest = Path.Stms.t
+
+  let path : rest -> Path.Stms.t = Fn.id
+
+  let thru_flags = Path_flag.flags_of_flow
+
+  module Map = Act_fir.Flow_block.Base_map (Or_error)
+
+  let block_lens (_ : rest)
+      (f : Subject.Block.t -> Subject.Block.t Or_error.t) : t -> t Or_error.t
+      =
+    Map.bmap ~header:Or_error.return ~body:f
+end)
+
+module Stm = struct
+  module Map = Act_fir.Statement_traverse.Base_map (Or_error)
+
+  let this_stm (stm : Subject.Statement.t) ~(ctx : ctx) :
       Subject.Statement.t Or_error.t =
-    Bm.bmap dest
-      ~flow:(fun target -> f ~target)
-      ~if_stm:(in_loop_error dest) ~prim:(in_loop_error dest)
+    match Path_context.kind ctx with
+    | Transform f ->
+        Or_error.Let_syntax.(
+          let%bind () = Path_context.check_filter_stm ctx ~stm in
+          let%bind () = Path_context.check_filter ctx in
+          f stm)
+    | k ->
+        bad_kind k ~want:Transform
 
-  let handle_path (path : Path.Stm.t)
-      ~(if_stm :
-            Path.If.t
-         -> target:Subject.Statement.If.t
-         -> Subject.Statement.If.t Or_error.t)
-      ~(flow :
-            Path.Flow.t
-         -> target:Subject.Statement.Flow.t
-         -> Subject.Statement.Flow.t Or_error.t)
-      ~(this_stm :
-         target:Subject.Statement.t -> Subject.Statement.t Or_error.t)
-      ~(target : Subject.Statement.t) : Subject.Statement.t Or_error.t =
-    match path with
-    | In_if rest ->
-        handle_in_if ~f:(if_stm rest) target
-    | In_flow rest ->
-        handle_in_flow ~f:(flow rest) target
-    | This_stm ->
-        this_stm ~target
+  let in_flow (s : Subject.Statement.t) ~(path : Path.Flow.t) ~(mu : mu)
+      ~(ctx : ctx) : Subject.Statement.t Or_error.t =
+    let bad _ = bad_stm s ~want:(Flow None) in
+    Map.bmap s ~prim:bad ~flow:(Flow.consume ~path ~mu ~ctx) ~if_stm:bad
 
-  let check_path (path : Path.Stm.t) ~(filter : Path_filter.t)
-      ~(target : Subject.Statement.t) : Subject.Statement.t Or_error.t =
-    handle_path path ~target ~if_stm:(If.check_path ~filter)
-      ~flow:(Flow.check_path ~filter) ~this_stm:(fun ~target ->
-        Tx.Or_error.tee_m target ~f:(fun stm ->
-            Path_filter.check_final_statement filter ~stm ) )
+  let in_if (s : Subject.Statement.t) ~(path : Path.If.t) ~(mu : mu)
+      ~(ctx : ctx) : Subject.Statement.t Or_error.t =
+    let bad _ = bad_stm s ~want:If in
+    Map.bmap s ~prim:bad ~flow:bad ~if_stm:(If.consume ~path ~mu ~ctx)
 
-  let insert_stm (path : Path.Stm.t) ~(to_insert : Subject.Statement.t)
-      ~(target : Subject.Statement.t) : Subject.Statement.t Or_error.t =
-    handle_path path ~target ~if_stm:(If.insert_stm ~to_insert)
-      ~flow:(Flow.insert_stm ~to_insert) ~this_stm:(fun ~target ->
-        ignore target ;
-        Or_error.error_s
-          [%message "Can't insert statement here" ~path:(path : Path.Stm.t)] )
-
-  let insert_stm_list (path : Path.Stm.t)
-      ~(to_insert : Subject.Statement.t list) ~(target : Subject.Statement.t)
-      : Subject.Statement.t Or_error.t =
-    handle_path path ~target ~if_stm:(If.insert_stm_list ~to_insert)
-      ~flow:(Flow.insert_stm_list ~to_insert) ~this_stm:(fun ~target ->
-        ignore target ;
-        Or_error.error_s
-          [%message "Can't insert statements here" ~path:(path : Path.Stm.t)] )
-
-  let transform_stm (path : Path.Stm.t)
-      ~(f : Subject.Statement.t transformer) ~(target : Subject.Statement.t)
-      : Subject.Statement.t Or_error.t =
-    handle_path path ~target ~if_stm:(If.transform_stm ~f)
-      ~flow:(Flow.transform_stm ~f) ~this_stm:(fun ~target -> f target)
-
-  let transform_stm_list (path : Path.Stm.t)
-      ~(f : Subject.Statement.t list transformer)
-      ~(target : Subject.Statement.t) : Subject.Statement.t Or_error.t =
-    handle_path path ~target ~if_stm:(If.transform_stm_list ~f)
-      ~flow:(Flow.transform_stm_list ~f) ~this_stm:(fun ~target ->
-        ignore target ;
-        Or_error.error_s
-          [%message
-            "Can't transform multiple statements here"
-              ~path:(path : Path.Stm.t)] )
-end
-
-and Block :
-  (S_consumer with type t = Path.Stms.t and type target = Subject.Block.t) =
-struct
-  type t = Path.Stms.t
-
-  type target = Subject.Block.t
-
-  module Block_stms = Fir.Block.On_meta_statement_list (Fir.Statement)
-  module Block_stms_err = Block_stms.On_monad (Or_error)
-
-  let handle_in_stm (dest : target) (index : int)
-      ~(f : target:Subject.Statement.t -> Subject.Statement.t Or_error.t) :
-      target Or_error.t =
-    Block_stms_err.map_m dest ~f:(fun stms ->
-        Tx.List.With_errors.replace_m stms index ~f:(fun target ->
-            Or_error.(f ~target >>| Option.some) ) )
-
-  let bad_stm_list_path_error (path : Path.Stms.t)
-      ~(here : Source_code_position.t) ~(context : string) :
-      target Or_error.t =
-    Or_error.error_s
-      [%message
-        "Can't use this statement-list path here"
-          ~here:(here : Source_code_position.t)
-          ~context
-          ~path:(path : Path.Stms.t)]
-
-  let check_path (path : Path.Stms.t) ~(filter : Path_filter.t)
-      ~(target : target) : target Or_error.t =
-    let filter =
-      Path_filter.update_with_block_metadata filter
-        (Fir.Block.metadata target)
+  let consume (s : Subject.Statement.t) ~(path : Path.Stm.t) ~(ctx : ctx) :
+      Subject.Statement.t Or_error.t =
+    let rec mu s ~(path : Path.Stm.t) =
+      with_flags (Path_flag.flags_of_stm s) ~f:(fun ctx ->
+          match path with
+          | This_stm ->
+              this_stm s ~ctx
+          | In_flow path ->
+              in_flow s ~path ~mu ~ctx
+          | In_if path ->
+              in_if s ~path ~mu ~ctx )
     in
-    match path with
-    | In_stm (index, rest) ->
-        handle_in_stm target index ~f:(Statement.check_path rest ~filter)
-    | Insert _ | On_range (_, _) ->
-        Tx.Or_error.(Path_filter.check filter >> Or_error.return target)
-
-  let insert_stm (path : Path.Stms.t) ~(to_insert : Subject.Statement.t)
-      ~(target : target) : target Or_error.t =
-    match path with
-    | Insert index ->
-        Block_stms_err.map_m target ~f:(fun stms ->
-            Tx.List.insert stms index to_insert )
-    | In_stm (index, rest) ->
-        handle_in_stm target index ~f:(Statement.insert_stm rest ~to_insert)
-    | On_range (_, _) ->
-        bad_stm_list_path_error path ~context:"insert_stm" ~here:[%here]
-
-  let insert_stm_list (path : Path.Stms.t)
-      ~(to_insert : Subject.Statement.t list) ~(target : target) :
-      target Or_error.t =
-    (* TODO(@MattWindsor91): implement this more efficiently. *)
-    Tx.List.With_errors.fold_m (List.rev to_insert) ~init:target
-      ~f:(fun target to_insert -> insert_stm path ~to_insert ~target)
-
-  let transform_stm (path : Path.Stms.t)
-      ~(f : Subject.Statement.t transformer) ~(target : target) :
-      target Or_error.t =
-    match path with
-    | In_stm (index, rest) ->
-        handle_in_stm target index ~f:(Statement.transform_stm rest ~f)
-    | On_range (pos, len) ->
-        Block_stms_err.map_m target
-          ~f:(Act_utils.My_list.try_map_sub ~pos ~len ~f)
-    | Insert _ ->
-        bad_stm_list_path_error path ~context:"transform_stm" ~here:[%here]
-
-  let transform_stm_list (path : Path.Stms.t)
-      ~(f : Subject.Statement.t list transformer) ~(target : target) :
-      target Or_error.t =
-    match path with
-    | In_stm (index, rest) ->
-        handle_in_stm target index ~f:(Statement.transform_stm_list rest ~f)
-    | On_range (pos, len) ->
-        Block_stms_err.map_m target
-          ~f:(Act_utils.My_list.try_splice ~pos ~len ~replace_f:f)
-    | Insert _ ->
-        bad_stm_list_path_error path ~context:"transform_stm_list"
-          ~here:[%here]
+    mu s ~path ~ctx
 end
 
-and If :
-  (S_consumer
-    with type t = Path.If.t
-     and type target = Subject.Statement.If.t) = struct
-  type t = Path.If.t
-
-  type target = Subject.Statement.If.t
-
-  module B = Fir.If.Base_map (Or_error)
-
-  let handle_stm (path : t)
-      ~(f :
-         Path.Stms.t -> target:Subject.Block.t -> Subject.Block.t Or_error.t)
-      ~(target : target) : target Or_error.t =
-    let lift_f rest target = f rest ~target in
+let thread (tid : int) (s : Subject.Thread.t) ~(path : Path.Thread.t)
+    ~(ctx : ctx) : Subject.Thread.t Or_error.t =
+  Or_error.(
+    Path_context.check_thread_ok ctx ~thread:tid
+    >>= fun () ->
     match path with
-    | In_block (branch, rest) ->
-        let t_branch = if branch then lift_f rest else Or_error.return in
-        let f_branch = if branch then Or_error.return else lift_f rest in
-        B.bmap target ~cond:Or_error.return ~t_branch ~f_branch
-    | This_cond ->
-        Or_error.error_string "Not a statement path"
+    | In_stms path ->
+        s.stms
+        |> Block.consume_stms ~path ~ctx ~mu:Stm.consume
+        >>| fun stms' -> {s with stms= stms'})
 
-  let check_path (path : t) ~(filter : Path_filter.t) ~(target : target) :
-      target Or_error.t =
-    (* TODO(@MattWindsor91): note in filter that we're in an if statement *)
-    handle_stm path ~target ~f:(Block.check_path ~filter)
-
-  let insert_stm_list (path : t) ~(to_insert : Subject.Statement.t list)
-      ~(target : target) : target Or_error.t =
-    handle_stm path ~target ~f:(Block.insert_stm_list ~to_insert)
-
-  let insert_stm (path : t) ~(to_insert : Subject.Statement.t)
-      ~(target : target) : target Or_error.t =
-    handle_stm path ~target ~f:(Block.insert_stm ~to_insert)
-
-  let transform_stm (path : t) ~(f : Subject.Statement.t transformer)
-      ~(target : target) : target Or_error.t =
-    handle_stm path ~target ~f:(Block.transform_stm ~f)
-
-  let transform_stm_list (path : t)
-      ~(f : Subject.Statement.t list transformer) ~(target : target) :
-      target Or_error.t =
-    handle_stm path ~target ~f:(Block.transform_stm_list ~f)
-end
-
-and Flow :
-  (S_consumer
-    with type t = Path.Flow.t
-     and type target = Subject.Statement.Flow.t) = struct
-  type t = Path.Flow.t
-
-  type target = Subject.Statement.Flow.t
-
-  module B = Fir.Flow_block.Base_map (Or_error)
-
-  let handle_stm (path : t)
-      ~(f :
-         Path.Stms.t -> target:Subject.Block.t -> Subject.Block.t Or_error.t)
-      ~(target : target) : target Or_error.t =
-    match path with
-    | In_block rest ->
-        let body target = f rest ~target in
-        B.bmap target ~body ~header:Or_error.return
-    | This_cond ->
-        Or_error.error_string "Not a statement path"
-
-  let check_path (path : t) ~(filter : Path_filter.t) ~(target : target) :
-      target Or_error.t =
-    let flow = Act_fir.Statement_class.Flow.classify target in
-    let filter = Path_filter.update_with_flow ?flow filter in
-    handle_stm path ~target ~f:(Block.check_path ~filter)
-
-  let insert_stm_list (path : t) ~(to_insert : Subject.Statement.t list)
-      ~(target : target) : target Or_error.t =
-    handle_stm path ~target ~f:(Block.insert_stm_list ~to_insert)
-
-  let insert_stm (path : t) ~(to_insert : Subject.Statement.t)
-      ~(target : target) : target Or_error.t =
-    handle_stm path ~target ~f:(Block.insert_stm ~to_insert)
-
-  let transform_stm (path : t) ~(f : Subject.Statement.t transformer)
-      ~(target : target) : target Or_error.t =
-    handle_stm path ~target ~f:(Block.transform_stm ~f)
-
-  let transform_stm_list (path : Path.Flow.t)
-      ~(f : Subject.Statement.t list transformer) ~(target : target) :
-      target Or_error.t =
-    handle_stm path ~target ~f:(Block.transform_stm_list ~f)
-end
-
-module Thread :
-  S_consumer with type t = Path.Thread.t and type target = Subject.Thread.t =
-struct
-  type t = Path.Thread.t
-
-  type target = Subject.Thread.t
-
-  let handle_stm (path : t)
-      ~(f :
-         Path.Stms.t -> target:Subject.Block.t -> Subject.Block.t Or_error.t)
-      ~(target : target) : target Or_error.t =
-    match path with
-    | In_stms rest ->
-        (* TODO(@MattWindsor91): fix this horrific mess *)
-        Or_error.(
-          f rest
-            ~target:(Subject.Block.make_existing ~statements:target.stms ())
-          >>| fun block -> {target with stms= Fir.Block.statements block})
-
-  let check_path (path : t) ~(filter : Path_filter.t) ~(target : target) :
-      target Or_error.t =
-    handle_stm path ~target ~f:(Block.check_path ~filter)
-
-  let insert_stm_list (path : t) ~(to_insert : Subject.Statement.t list)
-      ~(target : target) : target Or_error.t =
-    handle_stm path ~target ~f:(Block.insert_stm_list ~to_insert)
-
-  let insert_stm (path : t) ~(to_insert : Subject.Statement.t)
-      ~(target : target) : target Or_error.t =
-    handle_stm path ~target ~f:(Block.insert_stm ~to_insert)
-
-  let transform_stm (path : t) ~(f : Subject.Statement.t transformer)
-      ~(target : target) : target Or_error.t =
-    handle_stm path ~target ~f:(Block.transform_stm ~f)
-
-  let transform_stm_list (path : t)
-      ~(f : Subject.Statement.t list transformer) ~(target : target) :
-      target Or_error.t =
-    handle_stm path ~target ~f:(Block.transform_stm_list ~f)
-end
-
-type t = Path.Test.t
-
-type target = Subject.Test.t
-
-let handle_stm (path : t)
-    ~(f :
-          Path.Thread.t
-       -> target:Subject.Thread.t
-       -> Subject.Thread.t Or_error.t) ~(target : target) : target Or_error.t
-    =
+let consume' (test : Subject.Test.t) ~(path : Path.Test.t) ~(ctx : ctx) :
+    Subject.Test.t Or_error.t =
   match path with
-  | In_thread (index, rest) ->
-      Act_litmus.Test.Raw.try_map_thread ~index
-        ~f:(fun target -> f rest ~target)
-        target
+  | In_thread (index, path) ->
+      Act_litmus.Test.Raw.try_map_thread test ~index
+        ~f:(thread index ~path ~ctx)
 
-let check_path (path : t) ~(filter : Path_filter.t) ~(target : target) :
-    target Or_error.t =
-  handle_stm path ~target ~f:(Thread.check_path ~filter)
-
-let insert_stm_list (path : t) ~(to_insert : Subject.Statement.t list)
-    ~(target : target) : target Or_error.t =
-  handle_stm path ~target ~f:(Thread.insert_stm_list ~to_insert)
-
-let insert_stm (path : t) ~(to_insert : Subject.Statement.t)
-    ~(target : target) : target Or_error.t =
-  handle_stm path ~target ~f:(Thread.insert_stm ~to_insert)
-
-let transform_stm (path : t) ~(f : Subject.Statement.t transformer)
-    ~(target : target) : target Or_error.t =
-  handle_stm path ~target ~f:(Thread.transform_stm ~f)
-
-let transform_stm_list (path : t) ~(f : Subject.Statement.t list transformer)
-    ~(target : target) : target Or_error.t =
-  handle_stm path ~target ~f:(Thread.transform_stm_list ~f)
+let consume ?(filter : Path_filter.t option) (test : Subject.Test.t)
+    ~(path : Path.Test.t) ~(action : Path_kind.With_action.t) :
+    Subject.Test.t Or_error.t =
+  let ctx = Path_context.init action ?filter in
+  consume' test ~path ~ctx

@@ -81,6 +81,5 @@ struct
       Let_syntax.(
         let%bind () = register_label lid in
         Monadic.return
-          (Path_consumers.insert_stm path ~to_insert:label_stm
-             ~target:subject)))
+          (Path_consumers.consume subject ~path ~action:(Insert [label_stm]))))
 end

@@ -40,10 +40,9 @@ Action.Make_surround (struct
     let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
         ~(param_map : Param_map.t) : t State.Monad.t =
       ignore param_map ;
-      Payload.Helpers.lift_path_gen test ~action_id:name
-        ~f:Path_producers.try_gen_transform_stm_list
+      Payload.Helpers.gen_path test ~action_id:name
         ~filter:(State.Monad.return Basic.path_filter)
-        ~random
+        ~kind:Transform_list ~random
   end
 
   let wrap (statements : Metadata.t Act_fir.Statement.t list)

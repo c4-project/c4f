@@ -31,7 +31,7 @@ module Early_out_payload = struct
   let quickcheck_path (test : Subject.Test.t)
       ~(filter_f : Path_filter.t -> Path_filter.t) : Path.Test.t Opt_gen.t =
     let filter = Path_filter.(empty |> in_dead_code_only |> filter_f) in
-    Path_producers.try_gen_insert_stm ~filter test
+    Path_producers.try_gen test ~filter ~kind:Insert
 
   let quickcheck_generic_payload (test : Subject.Test.t)
       ~(kind_pred : Act_fir.Early_out.t -> bool)
@@ -90,17 +90,12 @@ struct
     Act_fir.(
       Statement.prim Metadata.generated (Prim_statement.early_out kind))
 
-  let check_path (target : Subject.Test.t) (path : Path.Test.t)
+  let run_inner (test : Subject.Test.t) (path : Path.Test.t)
       (kind : Act_fir.Early_out.t) : Subject.Test.t Or_error.t =
     let f = Staged.unstage (kind_filter kind) in
     let filter = f base_path_filter in
-    Path_consumers.check_path path ~filter ~target
-
-  let run_inner (test : Subject.Test.t) (path : Path.Test.t)
-      (kind : Act_fir.Early_out.t) : Subject.Test.t Or_error.t =
-    Or_error.Let_syntax.(
-      let%bind target = check_path test path kind in
-      Path_consumers.insert_stm path ~target ~to_insert:(make_early_out kind))
+    Path_consumers.consume test ~filter ~path
+      ~action:(Insert [make_early_out kind])
 
   let run (test : Subject.Test.t) ~(payload : Payload.t) :
       Subject.Test.t State.Monad.t =
@@ -130,13 +125,15 @@ struct
       empty |> in_dead_code_only
       |> Path_filter.in_threads_only ~threads:threads_with_labels)
 
+  let path_filter : Path_filter.t State.Monad.t =
+    State.Monad.with_labels path_filter'
+
   module Payload = P.Insertion.Make (struct
     type t = Act_common.C_id.t [@@deriving sexp]
 
     let name = name
 
-    let path_filter : Path_filter.t State.Monad.t =
-      State.Monad.with_labels path_filter'
+    let path_filter = path_filter
 
     let reachable_labels (path : Path.Test.t) : Ac.C_id.t list State.Monad.t
         =
@@ -174,6 +171,10 @@ struct
       Act_fir.(
         label |> Prim_statement.goto |> Statement.prim Metadata.generated)
     in
-    State.Monad.Monadic.return
-      (Path_consumers.insert_stm path ~to_insert:goto_stm ~target:subject)
+    State.Monad.(
+      Let_syntax.(
+        let%bind filter = path_filter in
+        Monadic.return
+          (Path_consumers.consume subject ~filter ~path
+             ~action:(Insert [goto_stm]))))
 end

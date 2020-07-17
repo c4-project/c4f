@@ -11,330 +11,248 @@
 
 open Base
 
-open struct
-  module Tx = Travesty_base_exts
-  module Q = Base_quickcheck
-  module Stm = Act_fir.Statement
-  module Fun = Act_fir.Function
-  module Prog = Act_fir.Program
+type 'm t = 'm Path_flag.Flagged.t Sequence.t
+
+type ctx = Path_kind.t Path_context.t
+
+(** Shorthand for the type of the recursive statement producing function. *)
+type mu = Subject.Statement.t -> ctx:ctx -> Path.Stm.t t
+
+module Helpers = struct
+  (** [lift_err x] converts [x] into a sequence of one item if it is [Ok],
+      and no items otherwise.i
+
+      This is used to convert errors into blockages in the sequence. *)
+  let lift_err : type m. m Or_error.t -> m Sequence.t = function
+    | Ok o ->
+        Sequence.singleton o
+    | Error _ ->
+        Sequence.empty
+
+  (** [with_flags flags ~f ~ctx] registers [flags] in [ctx], then, if the
+      result satisfies the current path filter, proceeds according to [f]. *)
+  let with_flags (flags : Set.M(Path_flag).t) ~(f : ctx -> 'a t) ~(ctx : ctx)
+      : 'a t =
+    Sequence.(Path_context.add_flags ctx flags |> lift_err >>= f)
+
+  (** [if_kind k x ~f ~ctx] is [f ~ctx x] if [ctx]'s kind is [k], and empty
+      otherwise. *)
+  let if_kind (k : Path_kind.t) (x : 'a) ~(f : 'a -> ctx:ctx -> 'b t)
+      ~(ctx : ctx) : 'b t =
+    if Path_kind.equal (Path_context.kind ctx) k then f x ~ctx
+    else Sequence.empty
+
+  (** [branch x branches] represents a branch in the path producer's decision
+      tree, where an element [x] can produce paths using any of the
+      generators in [branches]. *)
+  let branch (x : 'a) (branches : ('a -> 'm t) list) : 'm t =
+    branches |> Sequence.of_list |> Sequence.concat_map ~f:(fun f -> f x)
+
+  let map_path (x : 'a t) ~(f : 'a -> 'b) : 'b t =
+    Sequence.map x ~f:(Path_flag.Flagged.map_left ~f)
 end
 
-(* Helpers for making path generators. *)
+open Helpers
 
-let check_ok (type a) (x : a) ~(filter : Path_filter.t) : a Or_error.t =
-  Tx.Or_error.tee_m x ~f:(fun (_ : a) -> Path_filter.check filter)
-
-(* TODO (@MattWindsor91): slated for removal *)
-module type S_producer = sig
-  type t
-
-  type target
-
-  val try_gen_insert_stm : ?filter:Path_filter.t -> target -> t Opt_gen.t
-  (** [try_gen_insert_stm dest] tries to create a Quickcheck-style generator
-      for statement insertion paths targeting [dest]. These paths can also be
-      used for inserting statement lists.
-
-      It can return an error if [dest] has no position at which statements
-      can be inserted. *)
-
-  val try_gen_transform_stm_list :
-    ?filter:Path_filter.t -> target -> t Opt_gen.t
-  (** [try_gen_transform_stm dest] tries to create a Quickcheck-style
-      generator for statement list transformation paths targeting [dest].
-
-      It can return an error if [dest] has no position at which statement
-      lists can be transformed. *)
-
-  val try_gen_transform_stm : ?filter:Path_filter.t -> target -> t Opt_gen.t
-  (** [try_gen_transform_stm ?predicate dest] tries to create a
-      Quickcheck-style generator for statement transformation paths targeting
-      [dest], and, optionally, satisfying [filter]. It returns an error if
-      the container is empty or no such statements were found. *)
-end
-
-module rec Statement :
-  (S_producer with type t = Path.stm and type target = Subject.Statement.t) =
-struct
-  type t = Path.stm
-
-  type target = Subject.Statement.t
-
-  let not_in_prim (type a b) (_ : a) ~(kind : string) : b Or_error.t =
-    Or_error.error_s
-      [%message
-        "Can't generate a path of this type on a primitive statement" ~kind]
-
-  let try_gen_recursively (m : Subject.Statement.t) ~(kind : string)
-      ~(if_stm : If.target -> Path.If.t Opt_gen.t)
-      ~(flow : Flow.target -> Path.Flow.t Opt_gen.t) : Path.Stm.t Opt_gen.t =
-    Opt_gen.(
-      Stm.reduce_step m
-        ~if_stm:(fun x -> x |> if_stm >>| Path.Stm.in_if)
-        ~flow:(fun x -> x |> flow >>| Path.Stm.in_flow)
-        ~prim:(not_in_prim ~kind))
-
-  let try_gen_insert_stm ?(filter : Path_filter.t option)
-      (m : Subject.Statement.t) : Path.Stm.t Opt_gen.t =
-    try_gen_recursively m ~kind:"insert_stm"
-      ~if_stm:(If.try_gen_insert_stm ?filter)
-      ~flow:(Flow.try_gen_insert_stm ?filter)
-
-  let try_gen_transform_stm_list ?(filter : Path_filter.t option)
-      (m : Subject.Statement.t) : Path.Stm.t Opt_gen.t =
-    try_gen_recursively m ~kind:"transform_stm_list"
-      ~if_stm:(If.try_gen_transform_stm_list ?filter)
-      ~flow:(Flow.try_gen_transform_stm_list ?filter)
-
-  let this_stm_if_ok (stm : Subject.Statement.t) ~(filter : Path_filter.t) :
-      Path.Stm.t Opt_gen.t =
-    Or_error.Let_syntax.(
-      let%bind () =
-        Or_error.tag
-          (Path_filter.check_final_statement filter ~stm)
-          ~tag:"Generated 'this-statement' path failed filtering checks"
-      in
-      Opt_gen.return Path.Stm.this_stm)
-
-  let try_gen_transform_stm ?(filter : Path_filter.t = Path_filter.empty)
-      (stm : Subject.Statement.t) : Path.Stm.t Opt_gen.t =
-    let gen_base = this_stm_if_ok stm ~filter in
-    let gen_rec =
-      try_gen_recursively stm ~kind:"transform_stm"
-        ~if_stm:(If.try_gen_transform_stm ~filter)
-        ~flow:(Flow.try_gen_transform_stm ~filter)
-    in
-    Opt_gen.union [gen_base; gen_rec]
-end
-
-and Block :
-  (S_producer with type t = Path.stm_list and type target = Subject.Block.t) =
-struct
-  type t = Path.stm_list
-
-  let in_stm (index : int) : Path.Stm.t Opt_gen.t -> Path.Stms.t Opt_gen.t =
-    Opt_gen.map ~f:(Path.Stms.in_stm index)
-
-  type target = Subject.Block.t
-
-  module Insert (I : sig
-    val filter : Path_filter.t
-  end) =
-  struct
-    let filter = I.filter
-
-    let try_gen_here (index : int) : Path.stm_list Opt_gen.t =
-      check_ok ~filter (Q.Generator.return (Path.Stms.insert index))
-
-    let try_gen_inside (index : int) (single_dest : Subject.Statement.t) :
-        Path.stm_list Opt_gen.t =
-      single_dest |> Statement.try_gen_insert_stm ~filter |> in_stm index
-
-    let try_gen_at (index : int) (single_dest : Subject.Statement.t) :
-        t Opt_gen.t list =
-      let insert_after = try_gen_here (index + 1) in
-      let insert_inside = try_gen_inside index single_dest in
-      [insert_after; insert_inside]
-
-    let try_gen_at_each : target -> t Opt_gen.t list =
-      Fn.compose (List.concat_mapi ~f:try_gen_at) Act_fir.Block.statements
+module Block = struct
+  module Self_insert = struct
+    (** [produce stms ~ctx] produces a statement-list path sequence producing
+        every insert path targeting statements [stms]. *)
+    let produce (stms : Subject.Statement.t list) ~(ctx : ctx) :
+        Path.Stms.t t =
+      (* All of these insertion sequences have the same metadata, and, so, we
+         need only do the filter check once for all positions. *)
+      Sequence.(
+        lift_err (Path_context.check_filter ctx)
+        >>= fun () ->
+        (* Both ends are inclusive to let us insert at the end of the list. *)
+        Sequence.range 0 ~start:`inclusive (List.length stms)
+          ~stop:`inclusive
+        |> Sequence.map ~f:(fun pos ->
+               Path_context.lift_path ctx ~path:(Path.Stms.insert pos) ))
   end
 
-  let try_gen_insert_stm ?(filter : Path_filter.t = Path_filter.empty)
-      (dest : target) : Path.stm_list Opt_gen.t =
-    let module I = Insert (struct
-      let filter =
-        Path_filter.update_with_block_metadata filter
-          (Act_fir.Block.metadata dest)
-    end) in
-    Opt_gen.union (I.try_gen_here 0 :: I.try_gen_at_each dest)
+  module Self_transform_list = struct
+    let make_on_range (i : int) (width : int) ~(ctx : ctx) :
+        Path.Stms.t Path_flag.Flagged.t =
+      Path_context.lift_path ctx ~path:(Path.Stms.on_range i width)
 
-  let gen_transform_stm_on ?(filter : Path_filter.t option) (index : int)
-      (single_dest : Subject.Statement.t) : t Opt_gen.t =
-    single_dest |> Statement.try_gen_transform_stm ?filter |> in_stm index
+    (** [step i width ~stms ~ctx] produces one step of the transform-list
+        path generator over [stms] and [ctx].
 
-  let try_gen_transform_stm ?(filter : Path_filter.t = Path_filter.empty)
-      (dest : target) : Path.stm_list Opt_gen.t =
-    let filter =
-      Path_filter.update_with_block_metadata filter
-        (Act_fir.Block.metadata dest)
-    in
-    let stms = Act_fir.Block.statements dest in
-    Opt_gen.union (List.mapi ~f:(gen_transform_stm_on ~filter) stms)
+        This step considers expanding a [width]-long slice at [i] to a
+        [width+1]-long slice. *)
+    let step (i : int) (width : int) ~(stms : Subject.Statement.t list)
+        ~(ctx : ctx) : (Path.Stms.t Path_flag.Flagged.t, int) Sequence.Step.t
+        =
+      let next_stm = List.nth stms (i + width) in
+      let width' = width + 1 in
+      Option.value_map next_stm ~default:Sequence.Step.Done ~f:(fun stm ->
+          if Result.is_ok (Path_context.check_filter_stm ctx ~stm) then
+            Sequence.Step.Yield (make_on_range i width' ~ctx, width')
+          else Sequence.Step.Skip width' )
 
-  let gen_transform_stm_list_here_populated (stms : Subject.Statement.t list)
-      ~(filter : Path_filter.t) : t Q.Generator.t =
-    let flt = filter in
-    Q.Generator.(
-      create (fun ~size ~random ->
-          ignore size ;
-          Option.value_exn (Act_utils.My_list.Random.stride stms ~random) )
-      |> filter ~f:(fun (pos, len) ->
-             Path_filter.are_final_statements_ok flt ~pos ~len ~all_stms:stms )
-      >>| fun (p, d) -> Path.Stms.on_range p d)
+    (** [from i ~stms ~ctx] produces a statement-list path sequence producing
+        every valid transform-list path targeting statement list [stms] and
+        starting at position [i]. *)
+    let from (i : int) ~(stms : Subject.Statement.t list) ~(ctx : ctx) :
+        Path.Stms.t t =
+      let ind = Sequence.unfold_step ~init:0 ~f:(step i ~stms ~ctx) in
+      Sequence.shift_right ind (make_on_range i 0 ~ctx)
 
-  let gen_transform_stm_list_here (stms : Subject.Statement.t list)
-      ~(filter : Path_filter.t) : t Q.Generator.t =
-    let len = List.length stms in
-    let after = Q.Generator.return (Path.Stms.on_range len 0) in
-    let inner =
-      if len = 0 then []
-      else [gen_transform_stm_list_here_populated stms ~filter]
-    in
-    Q.Generator.union (after :: inner)
+    (** [produce stms ~ctx] produces a statement-list path sequence producing
+        every transform-list path targeting statements [stms]. *)
+    let produce (stms : Subject.Statement.t list) ~(ctx : ctx) :
+        Path.Stms.t t =
+      Sequence.(
+        lift_err (Path_context.check_filter ctx)
+        >>= fun () ->
+        (* As with insertion, both ends are inclusive; this is because
+           transforming the 0 statements at the end of a list is always
+           allowed. *)
+        let len = List.length stms in
+        let indices = List.range 0 ~start:`inclusive len ~stop:`inclusive in
+        let seqs = List.map indices ~f:(from ~stms ~ctx) in
+        Sequence.round_robin seqs)
+  end
 
-  let gen_transform_stm_list_on (index : int)
-      (single_dest : Subject.Statement.t) ~(filter : Path_filter.t) :
-      t Opt_gen.t =
-    let f = filter in
-    single_dest
-    |> Statement.try_gen_transform_stm_list ~filter:f
-    |> in_stm index
+  (** [in_stm i s ~mu ~ctx] produces a statement-list path sequence recursing
+      into statement number [i], with body [s]. *)
+  let in_stm (i : int) (s : Subject.Statement.t) ~(mu : mu) ~(ctx : ctx) :
+      Path.Stms.t t =
+    s |> mu ~ctx |> map_path ~f:(Path.Stms.in_stm i)
 
-  let try_gen_transform_stm_list
-      ?(filter : Path_filter.t = Path_filter.empty) (dest : target) :
-      t Opt_gen.t =
-    let filter =
-      Path_filter.update_with_block_metadata filter
-        (Act_fir.Block.metadata dest)
-    in
-    let stms = Act_fir.Block.statements dest in
-    Opt_gen.union
-      ( check_ok ~filter (gen_transform_stm_list_here ~filter stms)
-      :: List.mapi stms ~f:(gen_transform_stm_list_on ~filter) )
+  (** [in_stms b ~mu ~ctx] produces a statement-list path sequence recursing
+      into every statement in [b]. *)
+  let in_stms (xs : Subject.Statement.t list) ~(mu : mu) ~(ctx : ctx) :
+      Path.Stms.t t =
+    xs |> List.mapi ~f:(in_stm ~mu ~ctx) |> Sequence.round_robin
+
+  let produce_stms (b : Subject.Statement.t list) ~(mu : mu) ~(ctx : ctx) :
+      Path.Stms.t t =
+    branch b
+      [ if_kind Insert ~f:Self_insert.produce ~ctx
+      ; if_kind Transform_list ~f:Self_transform_list.produce ~ctx
+        (* All 'transform' targets are inside this block's statements. *)
+      ; in_stms ~ctx ~mu ]
+
+  let produce (b : Subject.Block.t) ~(mu : mu) : ctx:ctx -> Path.Stms.t t =
+    with_flags (Path_flag.flags_of_block b) ~f:(fun ctx ->
+        produce_stms (Act_fir.Block.statements b) ~mu ~ctx )
 end
 
-and If :
-  (S_producer
-    with type t = Path.If.t
-     and type target = Subject.Statement.If.t) = struct
-  type t = Path.If.t
+(** If blocks and flow blocks both share the same path structure, with some
+    minor differences relating to branching. This functor abstracts over
+    both. *)
+module Make_flow (F : sig
+  (** Type of targets. *)
+  type t
 
-  type target = Subject.Statement.If.t
+  (** Type of branches. *)
+  type branch [@@deriving enumerate]
 
-  let gen_opt_over_block ?(filter : Path_filter.t = Path_filter.empty)
-      (branch : bool) (block : Subject.Block.t)
-      ~(f :
-         ?filter:Path_filter.t -> Subject.Block.t -> Path.Stms.t Opt_gen.t) :
-      Path.If.t Opt_gen.t =
-    Opt_gen.map (f ~filter block) ~f:(Path.If.in_branch branch)
+  val sel_branch : branch -> t -> Subject.Block.t
+  (** [sel_branch branch x] focuses down on the branch [branch] in [x]. *)
 
-  let gen_opt_over_blocks ?(filter : Path_filter.t option)
-      (ifs : Metadata.t Stm.If.t)
-      ~(f :
-         ?filter:Path_filter.t -> Subject.Block.t -> Path.stm_list Opt_gen.t)
-      : Path.If.t Opt_gen.t =
-    Opt_gen.union
-      [ gen_opt_over_block ?filter ~f true (Act_fir.If.t_branch ifs)
-      ; gen_opt_over_block ?filter ~f false (Act_fir.If.f_branch ifs) ]
+  val lift_path : branch -> Path.Stms.t -> Path.Stm.t
+  (** [lift_path branch p] lifts the block path [b] into a statement path,
+      going through branch [branch]. *)
 
-  let try_gen_insert_stm :
-      ?filter:Path_filter.t -> Subject.Statement.If.t -> Path.If.t Opt_gen.t
-      =
-    gen_opt_over_blocks ~f:Block.try_gen_insert_stm
-
-  let try_gen_transform_stm :
-      ?filter:Path_filter.t -> Subject.Statement.If.t -> Path.If.t Opt_gen.t
-      =
-    gen_opt_over_blocks ~f:Block.try_gen_transform_stm
-
-  let try_gen_transform_stm_list :
-      ?filter:Path_filter.t -> Subject.Statement.If.t -> Path.If.t Opt_gen.t
-      =
-    gen_opt_over_blocks ~f:Block.try_gen_transform_stm_list
-end
-
-and Flow :
-  (S_producer
-    with type t = Path.Flow.t
-     and type target = Subject.Statement.Flow.t) = struct
-  type t = Path.Flow.t
-
-  type target = Subject.Statement.Flow.t
-
-  let gen_opt_over_body ?(filter : Path_filter.t = Path_filter.empty)
-      (flow : Subject.Statement.Flow.t)
-      ~(f :
-         ?filter:Path_filter.t -> Subject.Block.t -> Path.Stms.t Opt_gen.t) :
-      Path.Flow.t Opt_gen.t =
-    let body = Act_fir.Flow_block.body flow in
-    let flow = Act_fir.Statement_class.Flow.classify flow in
-    let filter = Path_filter.update_with_flow ?flow filter in
-    Opt_gen.map (f ~filter body) ~f:Path.Flow.in_body
-
-  let try_gen_insert_stm :
-         ?filter:Path_filter.t
-      -> Subject.Statement.Flow.t
-      -> Path.Flow.t Opt_gen.t =
-    gen_opt_over_body ~f:Block.try_gen_insert_stm
-
-  let try_gen_transform_stm :
-         ?filter:Path_filter.t
-      -> Subject.Statement.Flow.t
-      -> Path.Flow.t Opt_gen.t =
-    gen_opt_over_body ~f:Block.try_gen_transform_stm
-
-  let try_gen_transform_stm_list :
-         ?filter:Path_filter.t
-      -> Subject.Statement.Flow.t
-      -> Path.Flow.t Opt_gen.t =
-    gen_opt_over_body ~f:Block.try_gen_transform_stm_list
-end
-
-module Thread :
-  S_producer with type t = Path.Thread.t and type target = Subject.Thread.t =
+  val thru_flags : t -> Set.M(Path_flag).t
+  (** [thru_flags x] gets any flags that should activate on passing through
+      [x]. *)
+end) =
 struct
-  type t = Path.Thread.t
+  let produce_branch (b : F.branch) (i : F.t) ~(mu : mu) :
+      ctx:ctx -> Path.Stm.t t =
+    with_flags (F.thru_flags i) ~f:(fun ctx ->
+        i |> F.sel_branch b |> Block.produce ~mu ~ctx
+        |> map_path ~f:(F.lift_path b) )
 
-  type target = Subject.Thread.t
-
-  let gen_opt_over_stms ({stms; _} : target)
-      ~(f : Subject.Block.t -> Path.stm_list Opt_gen.t) :
-      Path.Thread.t Opt_gen.t =
-    (* TODO(@MattWindsor91): get rid of this hack. *)
-    let block = Subject.Block.make_existing ~statements:stms () in
-    Opt_gen.map (f block) ~f:Path.Thread.in_stms
-
-  let try_gen_insert_stm ?(filter : Path_filter.t option) :
-      target -> Path.Thread.t Opt_gen.t =
-    gen_opt_over_stms ~f:(Block.try_gen_insert_stm ?filter)
-
-  let try_gen_transform_stm ?(filter : Path_filter.t option) :
-      target -> Path.Thread.t Opt_gen.t =
-    gen_opt_over_stms ~f:(Block.try_gen_transform_stm ?filter)
-
-  let try_gen_transform_stm_list ?(filter : Path_filter.t option) :
-      target -> Path.Thread.t Opt_gen.t =
-    gen_opt_over_stms ~f:(Block.try_gen_transform_stm_list ?filter)
+  let produce (i : F.t) ~(mu : mu) ~(ctx : ctx) : Path.Stm.t t =
+    (* No metadata on if statement headers. *)
+    branch i (List.map F.all_of_branch ~f:(produce_branch ~mu ~ctx))
 end
 
-type target = Subject.Test.t
+module If = Make_flow (struct
+  type t = Subject.Statement.If.t
 
-let map_threads (test : target) ~(f : int -> Subject.Thread.t -> 'a option) :
-    'a list =
-  List.filter_mapi (Act_litmus.Test.Raw.threads test) ~f
+  type branch = bool [@@deriving enumerate]
 
-let gen_opt_over_threads ?(filter : Path_filter.t = Path_filter.empty)
-    (test : target)
-    ~(f :
-       ?filter:Path_filter.t -> Subject.Thread.t -> Path.Thread.t Opt_gen.t)
-    : Path.Test.t Opt_gen.t =
-  test
-  |> map_threads ~f:(fun thread prog ->
-         if Path_filter.is_thread_ok filter ~thread then
-           Some
-             (Opt_gen.map (f ~filter prog) ~f:(Path.Test.in_thread thread))
-         else None )
-  |> Opt_gen.union
+  let sel_branch (b : bool) : Subject.Statement.If.t -> Subject.Block.t =
+    if b then Act_fir.If.t_branch else Act_fir.If.f_branch
 
-let try_gen_insert_stm ?(filter : Path_filter.t option) :
-    target -> Path.Test.t Opt_gen.t =
-  gen_opt_over_threads ?filter ~f:Thread.try_gen_insert_stm
+  let lift_path b rest = Path.Stm.in_if @@ Path.If.in_branch b @@ rest
 
-let try_gen_transform_stm ?(filter : Path_filter.t option) :
-    target -> Path.Test.t Opt_gen.t =
-  gen_opt_over_threads ?filter ~f:Thread.try_gen_transform_stm
+  let thru_flags _ = Set.empty (module Path_flag)
+end)
 
-let try_gen_transform_stm_list ?(filter : Path_filter.t option) :
-    target -> Path.Test.t Opt_gen.t =
-  gen_opt_over_threads ?filter ~f:Thread.try_gen_transform_stm_list
+module Flow = Make_flow (struct
+  type t = Subject.Statement.Flow.t
+
+  type branch = unit [@@deriving enumerate]
+
+  let sel_branch () = Act_fir.Flow_block.body
+
+  let lift_path () rest = Path.Stm.in_flow @@ Path.Flow.in_body @@ rest
+
+  let thru_flags = Path_flag.flags_of_flow
+end)
+
+module Stm = struct
+  let self (stm : Subject.Statement.t) ~(ctx : ctx) : Path.Stm.t t =
+    Sequence.(
+      lift_err (Path_context.check_filter ctx)
+      >>= fun () ->
+      lift_err (Path_context.check_filter_stm ctx ~stm)
+      >>| fun () -> Path_context.lift_path ctx ~path:Path.Stm.this_stm)
+
+  let recursive (s : Subject.Statement.t) ~(mu : mu) ~(ctx : ctx) :
+      Path.Stm.t t =
+    Act_fir.Statement.reduce_step s ~prim:(Fn.const Sequence.empty)
+      ~if_stm:(If.produce ~mu ~ctx) ~flow:(Flow.produce ~mu ~ctx)
+
+  let produce (s : Subject.Statement.t) ~(ctx : ctx) : Path.Stm.t t =
+    let rec mu s =
+      with_flags (Path_flag.flags_of_stm s) ~f:(fun ctx ->
+          branch s [if_kind Transform ~f:self ~ctx; recursive ~mu ~ctx] )
+    in
+    mu s ~ctx
+end
+
+let thread (tid : int) (s : Subject.Thread.t) ~(ctx : ctx) : Path.Test.t t =
+  Sequence.(
+    lift_err (Path_context.check_thread_ok ctx ~thread:tid)
+    >>= fun () ->
+    s.stms
+    |> Block.produce_stms ~ctx ~mu:Stm.produce
+    |> map_path ~f:(Fn.compose (Path.Test.in_thread tid) Path.Thread.in_stms))
+
+let produce (test : Subject.Test.t) ~(ctx : ctx) : Path.Test.t t =
+  test |> Act_litmus.Test.Raw.threads
+  |> List.mapi ~f:(thread ~ctx)
+  |> Sequence.round_robin
+
+let produce_seq ?(filter : Path_filter.t option) (test : Subject.Test.t)
+    ~(kind : Path_kind.t) : Path.Test.t Path_flag.Flagged.t Sequence.t =
+  let ctx = Path_context.init kind ?filter in
+  produce test ~ctx
+
+let is_constructible ?(filter : Path_filter.t option) (test : Subject.Test.t)
+    ~(kind : Path_kind.t) : bool =
+  not (Sequence.is_empty (produce_seq test ?filter ~kind))
+
+let try_gen_with_flags ?(filter : Path_filter.t option)
+    (test : Subject.Test.t) ~(kind : Path_kind.t) :
+    Path.Test.t Path_flag.Flagged.t Opt_gen.t =
+  match Sequence.to_list_rev (produce_seq test ~kind ?filter) with
+  | [] ->
+      Or_error.error_string "No valid paths generated"
+  | xs ->
+      Ok (Base_quickcheck.Generator.of_list xs)
+
+let try_gen ?(filter : Path_filter.t option) (test : Subject.Test.t)
+    ~(kind : Path_kind.t) : Path.Test.t Opt_gen.t =
+  Opt_gen.map
+    (try_gen_with_flags ?filter ~kind test)
+    ~f:Path_flag.Flagged.path

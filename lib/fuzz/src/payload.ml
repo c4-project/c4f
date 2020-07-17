@@ -37,14 +37,14 @@ module Helpers = struct
       in
       lift_quickcheck gen ~random)
 
-  let lift_path_gen (test : Subject.Test.t)
-      ~(random : Splittable_random.State.t) ~(action_id : Act_common.Id.t)
-      ~(filter : Path_filter.t State.Monad.t)
-      ~(f : ?filter:Path_filter.t -> Subject.Test.t -> Path.Test.t Opt_gen.t)
-      : Path.Test.t State.Monad.t =
+  let gen_path (test : Subject.Test.t) ~(random : Splittable_random.State.t)
+      ~(action_id : Act_common.Id.t) ~(filter : Path_filter.t State.Monad.t)
+      ~(kind : Path_kind.t) : Path.Test.t State.Monad.t =
     State.Monad.Let_syntax.(
       let%bind filter = filter in
-      lift_quickcheck_opt (f test ~filter) ~random ~action_id)
+      lift_quickcheck_opt
+        (Path_producers.try_gen test ~filter ~kind)
+        ~random ~action_id)
 end
 
 module Insertion = struct
@@ -68,8 +68,8 @@ module Insertion = struct
     type t = Basic.t ins [@@deriving sexp]
 
     let gen_path test =
-      Helpers.lift_path_gen test ~filter:Basic.path_filter
-        ~action_id:Basic.name ~f:Path_producers.try_gen_insert_stm
+      Helpers.gen_path test ~filter:Basic.path_filter ~action_id:Basic.name
+        ~kind:Insert
 
     let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
         ~(param_map : Param_map.t) : t State.Monad.t =
@@ -114,8 +114,8 @@ module Cond_surround = struct
       Let_syntax.(
         let%bind () = add_cond_dependencies where cond in
         Monadic.return
-          (Path_consumers.transform_stm_list where ~target:test
-             ~f:(fun test -> Ok [f cond test]))))
+          (Path_consumers.consume test ~path:where
+             ~action:(Transform_list (fun test -> Ok [f cond test])))))
 
   let cond_env (vars : Var.Map.t) ~(tid : int) : Act_fir.Env.t =
     Var.Map.env_satisfying_all ~scope:(Local tid) ~predicates:[] vars
@@ -135,8 +135,8 @@ module Cond_surround = struct
     include Body
 
     let gen_path test =
-      Helpers.lift_path_gen test ~filter:Basic.path_filter
-        ~action_id:Basic.name ~f:Path_producers.try_gen_transform_stm_list
+      Helpers.gen_path test ~filter:Basic.path_filter ~action_id:Basic.name
+        ~kind:Transform_list
 
     let quickcheck_cond (path : Path.Test.t) :
         Act_fir.Expression.t Q.Generator.t State.Monad.t =

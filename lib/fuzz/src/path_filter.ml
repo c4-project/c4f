@@ -81,36 +81,16 @@ module End_check = struct
 end
 
 type t =
-  { obs_flags: Set.M(Path_flag).t
-  ; req_flags: Set.M(Path_flag).t
+  { req_flags: Set.M(Path_flag).t
   ; not_flags: Set.M(Path_flag).t
   ; end_checks: Set.M(End_check).t
   ; threads: Set.M(Int).t option }
 
 let empty : t =
-  { obs_flags= Set.empty (module Path_flag)
-  ; req_flags= Set.empty (module Path_flag)
+  { req_flags= Set.empty (module Path_flag)
   ; not_flags= Set.empty (module Path_flag)
   ; end_checks= Set.empty (module End_check)
   ; threads= None }
-
-module Obs_flags = struct
-  let observe_flags (existing : t) ~(flags : Set.M(Path_flag).t) : t =
-    {existing with obs_flags= Set.union existing.obs_flags flags}
-
-  let update_with_flow ?(flow : Act_fir.Statement_class.Flow.t option)
-      (x : t) : t =
-    let flags =
-      Option.value_map flow ~f:Path_flag.flags_of_flow
-        ~default:(Set.empty (module Path_flag))
-    in
-    observe_flags x ~flags
-
-  let update_with_block_metadata (existing : t) (m : Metadata.t) : t =
-    observe_flags existing ~flags:(Path_flag.flags_of_metadata m)
-end
-
-include Obs_flags
 
 module Req_flags = struct
   let require_flag (existing : t) ~(flag : Path_flag.t) : t =
@@ -149,12 +129,6 @@ let in_threads_only (filter : t) ~(threads : Set.M(Int).t) : t =
   in
   {filter with threads= Some threads'}
 
-let unmet_req_flags (filter : t) : Set.M(Path_flag).t =
-  Set.diff filter.req_flags filter.obs_flags
-
-let unmet_not_flags (filter : t) : Set.M(Path_flag).t =
-  Set.inter filter.not_flags filter.obs_flags
-
 let error_of_flag (flag : Path_flag.t) ~(polarity : string) : unit Or_error.t
     =
   Or_error.errorf "Unmet %s flag condition: %s" polarity
@@ -168,16 +142,11 @@ let error_of_flags (flags : Set.M(Path_flag).t) ~(polarity : string) :
 let is_thread_ok (filter : t) ~(thread : int) : bool =
   Option.for_all ~f:(fun t -> Set.mem t thread) filter.threads
 
-let check_req : t -> unit Or_error.t =
-  Fn.compose (error_of_flags ~polarity:"required") unmet_req_flags
+let check_req (filter : t) ~(flags : Set.M(Path_flag).t) : unit Or_error.t =
+  error_of_flags ~polarity:"required" (Set.diff filter.req_flags flags)
 
-let check_not : t -> unit Or_error.t =
-  Fn.compose (error_of_flags ~polarity:"forbidden") unmet_not_flags
-
-let check (filter : t) : unit Or_error.t =
-  Or_error.Let_syntax.(
-    let%bind () = check_req filter in
-    check_not filter)
+let check_not (filter : t) ~(flags : Set.M(Path_flag).t) : unit Or_error.t =
+  error_of_flags ~polarity:"forbidden" (Set.inter filter.not_flags flags)
 
 let end_checks_for_statement (filter : t) (stm : Subject.Statement.t) :
     unit Or_error.t list =
@@ -185,16 +154,7 @@ let end_checks_for_statement (filter : t) (stm : Subject.Statement.t) :
 
 let check_final_statement (filter : t) ~(stm : Subject.Statement.t) :
     unit Or_error.t =
-  let end_checks = end_checks_for_statement filter stm in
-  Or_error.combine_errors_unit (check filter :: end_checks)
-
-let are_final_statements_ok (filter : t)
-    ~(all_stms : Subject.Statement.t list) ~(pos : int) ~(len : int) : bool =
-  Set.is_empty filter.end_checks
-  ||
-  let stms' = Sequence.(sub (of_list all_stms) ~pos ~len) in
-  Sequence.for_all stms' ~f:(fun stm ->
-      Set.for_all filter.end_checks ~f:(End_check.is_ok ~stm) )
+  stm |> end_checks_for_statement filter |> Or_error.combine_errors_unit
 
 module Construct_checks = struct
   let is_constructible_req (filter : t) ~(subject : Subject.Test.t) : bool =

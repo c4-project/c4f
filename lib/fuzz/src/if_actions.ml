@@ -150,7 +150,7 @@ module Invert : Action_types.S with type Payload.t = Path.Test.t = struct
     type t = Path.Test.t [@@deriving sexp]
 
     let quickcheck_path (test : Subject.Test.t) : Path.Test.t Opt_gen.t =
-      Path_producers.try_gen_transform_stm ~filter:path_filter test
+      Path_producers.try_gen test ~filter:path_filter ~kind:Transform
 
     let gen (test : Subject.Test.t) ~(random : Splittable_random.State.t)
         ~(param_map : Param_map.t) : Path.Test.t State.Monad.t =
@@ -185,5 +185,6 @@ module Invert : Action_types.S with type Payload.t = Path.Test.t = struct
   let run (test : Subject.Test.t) ~(payload : Payload.t) :
       Subject.Test.t State.Monad.t =
     State.Monad.Monadic.return
-      (Path_consumers.transform_stm payload ~target:test ~f:invert_stm)
+      (Path_consumers.consume test ~filter:path_filter ~path:payload
+         ~action:(Transform invert_stm))
 end

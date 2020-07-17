@@ -27,22 +27,36 @@ let%test_module "sample path output on example code" =
           let quickcheck_shrinker = Shrinker.atomic
         end )
 
-    let test
-        (gen :
-          Act_fuzz.Subject.Test.t -> Act_fuzz.Path.Test.t Act_fuzz.Opt_gen.t)
+    let test (kind : Act_fuzz.Path_kind.t) (filter : Act_fuzz.Path_filter.t)
         : unit =
       let test = Lazy.force Subject.Test_data.test in
-      print_sample (Or_error.ok_exn (gen test))
+      let paths = Act_fuzz.Path_producers.try_gen test ~filter ~kind in
+      print_sample (Or_error.ok_exn paths)
 
     let%expect_test "try_gen_insert_stm with no filtering" =
-      test Act_fuzz.Path_producers.try_gen_insert_stm ;
+      test Insert Act_fuzz.Path_filter.empty ;
       [%expect
         {|
+              P0!Stms!Insert[0]
+              P0!Stms!Insert[1]
               P0!Stms!Insert[4]
               P0!Stms!Insert[6]
+              P0!Stms!Stm[3]!If!False!Insert[0]
               P0!Stms!Stm[3]!If!True!Insert[0]
               P0!Stms!Stm[3]!If!True!Insert[1]
+              P0!Stms!Stm[4]!If!False!Insert[0]
+              P0!Stms!Stm[4]!If!True!Insert[1]
+              P0!Stms!Stm[5]!Flow-block!Body!Insert[0]
               P0!Stms!Stm[5]!Flow-block!Body!Insert[1]
+              P1!Stms!Insert[1]
+              P1!Stms!Stm[1]!If!True!Insert[0] |}]
+
+    let%expect_test "try_gen_insert_stm with thread filtering" =
+      test Insert
+        Act_fuzz.Path_filter.(
+          empty |> in_threads_only ~threads:(Set.singleton (module Int) 1)) ;
+      [%expect
+        {|
               P1!Stms!Insert[0]
               P1!Stms!Insert[1]
               P1!Stms!Insert[2]
@@ -50,25 +64,8 @@ let%test_module "sample path output on example code" =
               P1!Stms!Stm[1]!If!False!Insert[1]
               P1!Stms!Stm[1]!If!True!Insert[0] |}]
 
-    let%expect_test "try_gen_insert_stm with thread filtering" =
-      test
-        (Act_fuzz.Path_producers.try_gen_insert_stm
-           ~filter:
-             Act_fuzz.Path_filter.(
-               empty
-               |> in_threads_only ~threads:(Set.singleton (module Int) 1))) ;
-      [%expect
-        {|
-              P1!Stms!Insert[0]
-              P1!Stms!Insert[1]
-              P1!Stms!Insert[2]
-              P1!Stms!Stm[1]!If!False!Insert[1]
-              P1!Stms!Stm[1]!If!True!Insert[0] |}]
-
     let%expect_test "try_gen_insert_stm with dead-code filtering" =
-      test
-        (Act_fuzz.Path_producers.try_gen_insert_stm
-           ~filter:Act_fuzz.Path_filter.(empty |> in_dead_code_only)) ;
+      test Insert Act_fuzz.Path_filter.(empty |> in_dead_code_only) ;
       [%expect
         {|
             P0!Stms!Stm[3]!If!False!Insert[0]
@@ -76,16 +73,17 @@ let%test_module "sample path output on example code" =
             P0!Stms!Stm[4]!If!True!Insert[1]
             P0!Stms!Stm[5]!Flow-block!Body!Insert[0]
             P0!Stms!Stm[5]!Flow-block!Body!Insert[1]
-            P1!Stms!Stm[1]!If!False!Insert[0]
             P1!Stms!Stm[1]!If!False!Insert[1] |}]
 
     let%expect_test "try_gen_transform_stm with no filtering" =
-      test Act_fuzz.Path_producers.try_gen_transform_stm ;
+      test Transform Act_fuzz.Path_filter.empty ;
       [%expect
         {|
+            P0!Stms!Stm[0]!This
             P0!Stms!Stm[1]!This
             P0!Stms!Stm[2]!This
             P0!Stms!Stm[3]!This
+            P0!Stms!Stm[4]!If!True!Stm[0]!This
             P0!Stms!Stm[4]!This
             P0!Stms!Stm[5]!Flow-block!Body!Stm[0]!This
             P0!Stms!Stm[5]!This
@@ -94,11 +92,9 @@ let%test_module "sample path output on example code" =
             P1!Stms!Stm[1]!This |}]
 
     let%expect_test "try_gen_transform_stm with filtering to if statements" =
-      test
-        (Act_fuzz.Path_producers.try_gen_transform_stm
-           ~filter:
-             Act_fuzz.Path_filter.(
-               empty |> require_end_check ~check:(Is_of_class [If]))) ;
+      test Transform
+        Act_fuzz.Path_filter.(
+          empty |> require_end_check ~check:(Is_of_class [If])) ;
       [%expect
         {|
             P0!Stms!Stm[3]!This
@@ -106,9 +102,7 @@ let%test_module "sample path output on example code" =
             P1!Stms!Stm[1]!This |}]
 
     let%expect_test "try_gen_transform_stm with filtering to dead code" =
-      test
-        (Act_fuzz.Path_producers.try_gen_transform_stm
-           ~filter:Act_fuzz.Path_filter.(empty |> in_dead_code_only)) ;
+      test Transform Act_fuzz.Path_filter.(empty |> in_dead_code_only) ;
       [%expect
         {|
               P0!Stms!Stm[4]!If!True!Stm[0]!This
@@ -116,39 +110,43 @@ let%test_module "sample path output on example code" =
               P1!Stms!Stm[1]!If!False!Stm[0]!This |}]
 
     let%expect_test "try_gen_transform_stm with filtering to loops" =
-      test
-        (Act_fuzz.Path_producers.try_gen_transform_stm
-           ~filter:Act_fuzz.Path_filter.(empty |> in_loop_only)) ;
+      test Transform Act_fuzz.Path_filter.(empty |> in_loop_only) ;
       [%expect {| P0!Stms!Stm[5]!Flow-block!Body!Stm[0]!This |}]
 
     let%expect_test "try_gen_transform_stm_list" =
-      test Act_fuzz.Path_producers.try_gen_transform_stm_list ;
+      test Transform_list Act_fuzz.Path_filter.empty ;
       [%expect
         {|
-              P0!Stms!Stm[3]!If!False!Range[0, 0]
-              P0!Stms!Stm[3]!If!True!Range[1, 1]
-              P0!Stms!Stm[4]!If!False!Range[0, 0]
+              P0!Stms!Stm[3]!If!True!Range[0, 1]
+              P0!Stms!Stm[3]!If!True!Range[1, 0]
+              P0!Stms!Stm[4]!If!True!Range[0, 0]
               P0!Stms!Stm[5]!Flow-block!Body!Range[0, 0]
+              P0!Stms!Range[0, 0]
+              P0!Stms!Range[0, 2]
+              P0!Stms!Range[0, 3]
+              P0!Stms!Range[1, 1]
+              P0!Stms!Range[1, 2]
               P0!Stms!Range[1, 4]
+              P0!Stms!Range[1, 5]
               P0!Stms!Range[2, 0]
-              P0!Stms!Range[6, 0]
-              P1!Stms!Stm[1]!If!False!Range[0, 1]
-              P1!Stms!Stm[1]!If!True!Range[0, 0]
-              P1!Stms!Range[0, 0]
-              P1!Stms!Range[1, 1]
+              P0!Stms!Range[2, 4]
+              P0!Stms!Range[3, 0]
+              P0!Stms!Range[3, 2]
+              P1!Stms!Range[0, 1]
+              P1!Stms!Range[0, 2]
+              P1!Stms!Range[1, 0]
               P1!Stms!Range[2, 0] |}]
 
     let%expect_test "try_gen_transform_stm_list with filtering to dead code"
         =
-      test
-        (Act_fuzz.Path_producers.try_gen_transform_stm_list
-           ~filter:Act_fuzz.Path_filter.(empty |> in_dead_code_only)) ;
+      test Transform_list Act_fuzz.Path_filter.(empty |> in_dead_code_only) ;
       [%expect
         {|
               P0!Stms!Stm[3]!If!False!Range[0, 0]
               P0!Stms!Stm[4]!If!True!Range[0, 0]
               P0!Stms!Stm[4]!If!True!Range[0, 1]
               P0!Stms!Stm[4]!If!True!Range[1, 0]
+              P0!Stms!Stm[5]!Flow-block!Body!Range[0, 0]
               P0!Stms!Stm[5]!Flow-block!Body!Range[0, 1]
               P0!Stms!Stm[5]!Flow-block!Body!Range[1, 0]
               P1!Stms!Stm[1]!If!False!Range[0, 0]
@@ -157,47 +155,45 @@ let%test_module "sample path output on example code" =
 
     let%expect_test "try_gen_transform_stm_list with filtering to if \
                      statements" =
-      test
-        (Act_fuzz.Path_producers.try_gen_transform_stm_list
-           ~filter:
-             Act_fuzz.Path_filter.(
-               empty |> require_end_check ~check:(Is_of_class [If]))) ;
+      test Transform_list
+        Act_fuzz.Path_filter.(
+          empty |> require_end_check ~check:(Is_of_class [If])) ;
       [%expect
         {|
               P0!Stms!Stm[3]!If!False!Range[0, 0]
-              P0!Stms!Stm[4]!If!True!Range[0, 0]
+              P0!Stms!Stm[4]!If!False!Range[0, 0]
               P0!Stms!Stm[5]!Flow-block!Body!Range[0, 0]
               P0!Stms!Stm[5]!Flow-block!Body!Range[1, 0]
-              P0!Stms!Range[2, 0]
-              P0!Stms!Range[6, 0]
-              P1!Stms!Stm[1]!If!False!Range[0, 0]
-              P1!Stms!Stm[1]!If!False!Range[1, 0]
-              P1!Stms!Stm[1]!If!True!Range[0, 0]
+              P0!Stms!Range[0, 0]
+              P0!Stms!Range[0, 5]
+              P0!Stms!Range[1, 0]
+              P0!Stms!Range[2, 3]
+              P0!Stms!Range[3, 1]
+              P0!Stms!Range[4, 0]
+              P0!Stms!Range[4, 1]
               P1!Stms!Range[0, 0]
-              P1!Stms!Range[1, 1]
+              P1!Stms!Range[1, 0]
               P1!Stms!Range[2, 0] |}]
 
     let%expect_test "try_gen_transform_stm_list with filtering to non-labels"
         =
-      test
-        (Act_fuzz.Path_producers.try_gen_transform_stm_list
-           ~filter:
-             Act_fuzz.Path_filter.(
-               empty
-               |> require_end_check
-                    ~check:(Is_not_of_class [Prim (Some Label)]))) ;
+      test Transform_list
+        Act_fuzz.Path_filter.(
+          empty
+          |> require_end_check ~check:(Is_not_of_class [Prim (Some Label)])) ;
       [%expect
         {|
-              P0!Stms!Stm[3]!If!False!Range[0, 0]
-              P0!Stms!Stm[3]!If!True!Range[0, 0]
-              P0!Stms!Stm[4]!If!True!Range[0, 0]
-              P0!Stms!Stm[5]!Flow-block!Body!Range[0, 0]
+              P0!Stms!Stm[3]!If!True!Range[0, 1]
+              P0!Stms!Stm[3]!If!True!Range[2, 0]
+              P0!Stms!Stm[4]!If!True!Range[0, 1]
+              P0!Stms!Stm[5]!Flow-block!Body!Range[1, 0]
+              P0!Stms!Range[0, 0]
+              P0!Stms!Range[0, 3]
               P0!Stms!Range[1, 4]
-              P0!Stms!Range[2, 1]
-              P0!Stms!Range[6, 0]
-              P1!Stms!Stm[1]!If!False!Range[0, 1]
-              P1!Stms!Stm[1]!If!True!Range[0, 0]
-              P1!Stms!Range[0, 0]
-              P1!Stms!Range[1, 1]
-              P1!Stms!Range[2, 0] |}]
+              P0!Stms!Range[2, 0]
+              P0!Stms!Range[2, 2]
+              P0!Stms!Range[3, 2]
+              P0!Stms!Range[5, 0]
+              P1!Stms!Stm[1]!If!False!Range[0, 0]
+              P1!Stms!Range[1, 1] |}]
   end )

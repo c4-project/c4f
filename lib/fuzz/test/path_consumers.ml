@@ -23,17 +23,15 @@ let%test_module "Statement_list" =
         end
 
         let test (path : F.Path.Test.t Lazy.t)
-            ~(f :
-                  F.Path.Test.t
-               -> target:F.Subject.Test.t
-               -> F.Subject.Test.t Or_error.t) : unit =
+            ~(action : F.Path_kind.With_action.t) : unit =
           let vars = F.State.vars (Lazy.force Subject.Test_data.state) in
           Fmt.(
             pr "@[<v>%a@]@."
               (Act_utils.My_format.pp_or_error
                  Action.Test_utils.(using (Fn.flip reify_test vars) pp_tu))
-              (f (Lazy.force path)
-                 ~target:(Lazy.force Subject.Test_data.test)))
+              (F.Path_consumers.consume
+                 (Lazy.force Subject.Test_data.test)
+                 ~path:(Lazy.force path) ~action))
 
         let example_stm : F.Subject.Statement.t =
           Act_fir.(
@@ -46,19 +44,21 @@ let%test_module "Statement_list" =
         let%test_module "insert_stm" =
           ( module struct
             let test_insert : F.Path.Test.t Lazy.t -> unit =
-              test ~f:(F.Path_consumers.insert_stm ~to_insert:example_stm)
+              test ~action:(Insert [example_stm])
 
             let%expect_test "insert onto statement (invalid)" =
               test_insert P.in_stm ;
-              [%expect {| ("Can't insert statement here" (path This_stm)) |}]
+              [%expect
+                {|
+                ("Unexpected kind of action associated with this path" (got insert)
+                 (want transform)) |}]
 
             let%expect_test "insert onto range (invalid)" =
               test_insert P.surround_atomic ;
               [%expect
                 {|
-          ("Can't use this statement-list path here"
-           (here lib/fuzz/src/path_consumers.ml:227:65) (context insert_stm)
-           (path (On_range 0 2))) |}]
+          ("Unexpected kind of action associated with this path" (got insert)
+           (want transform_list)) |}]
 
             let%expect_test "insert into list" =
               test_insert P.insert_live ;
@@ -120,10 +120,7 @@ let%test_module "Statement_list" =
         let%test_module "transform_stm" =
           ( module struct
             let test_transform : F.Path.Test.t Lazy.t -> unit =
-              test
-                ~f:
-                  (F.Path_consumers.transform_stm
-                     ~f:(Fn.const (Ok example_stm)))
+              test ~action:(Transform (Fn.const (Ok example_stm)))
 
             let%expect_test "transform a statement" =
               test_transform P.in_stm ;
@@ -183,9 +180,8 @@ let%test_module "Statement_list" =
               test_transform P.insert_live ;
               [%expect
                 {|
-          ("Can't use this statement-list path here"
-           (here lib/fuzz/src/path_consumers.ml:246:68) (context transform_stm)
-           (path (Insert 2))) |}]
+          ("Unexpected kind of action associated with this path" (got transform)
+           (want insert)) |}]
           end )
 
         let%test_module "transform_stm_list" =
@@ -201,12 +197,14 @@ let%test_module "Statement_list" =
                        ~f_branch:(F.Subject.Block.make_generated ())) ]
 
             let test_transform_list : F.Path.Test.t Lazy.t -> unit =
-              test ~f:(F.Path_consumers.transform_stm_list ~f:iffify)
+              test ~action:(Transform_list iffify)
 
             let%expect_test "try to list-transform a statement (invalid)" =
               test_transform_list P.in_stm ;
               [%expect
-                {| ("Can't transform multiple statements here" (path This_stm)) |}]
+                {|
+                  ("Unexpected kind of action associated with this path" (got transform_list)
+                   (want transform)) |}]
 
             let%expect_test "list-transform a range" =
               test_transform_list P.surround_atomic ;
@@ -238,9 +236,8 @@ let%test_module "Statement_list" =
               test_transform_list P.insert_live ;
               [%expect
                 {|
-                  ("Can't use this statement-list path here"
-                   (here lib/fuzz/src/path_consumers.ml:259:16) (context transform_stm_list)
-                   (path (Insert 2))) |}]
+                  ("Unexpected kind of action associated with this path" (got transform_list)
+                   (want insert)) |}]
 
             let%test_unit "generator over stm-list produces valid paths" =
               Test.run_exn
@@ -249,7 +246,7 @@ let%test_module "Statement_list" =
 
                   let quickcheck_generator =
                     Or_error.ok_exn
-                      (F.Path_producers.try_gen_transform_stm_list
+                      (F.Path_producers.try_gen ~kind:Transform_list
                          (Lazy.force Subject.Test_data.test))
 
                   let quickcheck_shrinker =
@@ -260,9 +257,9 @@ let%test_module "Statement_list" =
                   [%test_result: unit Or_error.t] ~here:[[%here]]
                     ~expect:(Or_error.return ())
                     (Or_error.map ~f:(Fn.const ())
-                       (F.Path_consumers.transform_stm_list path
-                          ~f:Or_error.return
-                          ~target:(Lazy.force Subject.Test_data.test))) )
+                       (F.Path_consumers.consume ~path
+                          ~action:(Transform_list Or_error.return)
+                          (Lazy.force Subject.Test_data.test))) )
           end )
       end )
   end )

@@ -217,7 +217,7 @@ module Xchgify : Action_types.S with type Payload.t = Path.Test.t = struct
       ignore param_map ;
       let filter = Lazy.force path_filter in
       Payload.Helpers.lift_quickcheck_opt
-        (Path_producers.try_gen_transform_stm test ~filter)
+        (Path_producers.try_gen test ~filter ~kind:Transform)
         ~random ~action_id:name
   end
 
@@ -254,5 +254,6 @@ module Xchgify : Action_types.S with type Payload.t = Path.Test.t = struct
   let run (subject : Subject.Test.t) ~(payload : Path.Test.t) :
       Subject.Test.t State.Monad.t =
     State.Monad.Monadic.return
-      (Path_consumers.transform_stm payload ~f:xchgify ~target:subject)
+      (Path_consumers.consume subject ~filter:(Lazy.force path_filter)
+         ~path:payload ~action:(Transform xchgify))
 end

@@ -58,7 +58,7 @@ struct
     in
     (* We don't need to do any bookkeeping on fences. *)
     State.Monad.Monadic.return
-      (Path_consumers.insert_stm path ~to_insert:fence_stm ~target:subject)
+      (Path_consumers.consume subject ~path ~action:(Insert [fence_stm]))
 end
 
 let unsafe_weaken_orders_flag_key : Ac.Id.t =
@@ -107,7 +107,7 @@ module Strengthen :
         ~(random : Splittable_random.State.t) : Path.Test.t State.Monad.t =
       log o "generating path" ;
       Payload.Helpers.lift_quickcheck_opt ~random ~action_id:name
-        (Path_producers.try_gen_transform_stm subject ~filter)
+        (Path_producers.try_gen subject ~filter ~kind:Transform)
 
     let gen_mo (o : Ac.Output.t) ~(random : Splittable_random.State.t) :
         Act_fir.Mem_order.t State.Monad.t =
@@ -149,6 +149,6 @@ module Strengthen :
       ~payload:({path; mo; can_weaken} : Payload.t) :
       Subject.Test.t State.Monad.t =
     State.Monad.Monadic.return
-      (Path_consumers.transform_stm path ~target:subject
-         ~f:(change_mo ~mo ~can_weaken))
+      (Path_consumers.consume subject ~path ~filter
+         ~action:(Transform (change_mo ~mo ~can_weaken)))
 end

@@ -78,21 +78,6 @@ val require_end_check : t -> check:End_check.t -> t
 (** [require_end_check filter ~check] adds the check expression [check] to
     the set of things to be checked on statements reached by this path. *)
 
-(** {1 Callbacks for the path producers} *)
-
-val update_with_flow : ?flow:Act_fir.Statement_class.Flow.t -> t -> t
-(** [update_with_flow ?flow filter] updates the internal filter compliance
-    records in [filter] with the fact that the path just passed into a flow
-    block with class [flow]. If [flow] is missing (which it may be, for
-    compatibility with the classifier returning [None]), we just return
-    [filter]. *)
-
-val update_with_block_metadata : t -> Metadata.t -> t
-(** [update_with_block_metadata filter block_metadata] updates the internal
-    filter compliance records in [filter] with the block metadata
-    [block_metadata]. This propagates information such as whether the block
-    is dead-code. *)
-
 (** {1 Consuming filters} *)
 
 (** {2 Checking paths} *)
@@ -102,25 +87,21 @@ val is_thread_ok : t -> thread:int -> bool
     thread [thread]. This check is done early in the path production process,
     to avoid spurious generation of large amounts of dead paths. *)
 
-val check : t -> unit Or_error.t
-(** [check filter ~stm] should be applied before constructing a path that
-    doesn't have any more specific filter consume function, and checks
-    whether the path has been constructed correctly according to the
-    predicates in [filter]. *)
+val check_not : t -> flags:Set.M(Path_flag).t -> unit Or_error.t
+(** [check_not filter ~flags] should be applied when adding new flags to a
+    path, and checks to make sure the [flags] so far obey the reject
+    conditions in [filter]. *)
+
+val check_req : t -> flags:Set.M(Path_flag).t -> unit Or_error.t
+(** [check_req filter ~flags] should be applied before constructing any path,
+    and checks whether the path's [flags] satisfy the require conditions in
+    [filter]. *)
 
 val check_final_statement : t -> stm:Subject.Statement.t -> unit Or_error.t
 (** [check_final_statement filter ~stm] should be applied before constructing
     a [This_stm] reference to [stm], and checks whether such a final
     statement destination is ok according to the predicates in [filter]. It
-    subsumes [check]. *)
-
-val are_final_statements_ok :
-  t -> all_stms:Subject.Statement.t list -> pos:int -> len:int -> bool
-(** [are_final_statements_ok filter ~all_stms ~pos ~len] should be used to
-    filter all statement-list paths with position [pos] and length [len] with
-    respect to statements [all_stms]. It checks whether every statement in
-    the given subrange meets the statement predicates in [filter] (as per
-    {!check_final_statement}).) *)
+    does not subsume [check]. *)
 
 (** {2 Checking to see if paths are constructible} *)
 

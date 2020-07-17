@@ -14,28 +14,37 @@
     These take the form of partial functions from fuzzer subjects to
     Quickcheck generators over paths. *)
 
-(** {1 Path producers} *)
+open Base
 
-val try_gen_insert_stm :
-  ?filter:Path_filter.t -> Subject.Test.t -> Path.Test.t Opt_gen.t
-(** [try_gen_insert_stm dest] tries to create a Quickcheck-style generator
-    for statement insertion paths targeting [dest]. These paths can also be
-    used for inserting statement lists.
+(** {1 Path producers proper} *)
 
-    It can return an error if [dest] has no position at which statements can
-    be inserted. *)
+val produce_seq :
+     ?filter:Path_filter.t
+  -> Subject.Test.t
+  -> kind:Path_kind.t
+  -> Path.Test.t Path_flag.Flagged.t Sequence.t
+(** [produce_seq ?filter test ~kind] produces a lazy sequence of all paths of
+    kind [kind] over test [test] that match filter [filter]. *)
 
-val try_gen_transform_stm_list :
-  ?filter:Path_filter.t -> Subject.Test.t -> Path.Test.t Opt_gen.t
-(** [try_gen_transform_stm dest] tries to create a Quickcheck-style generator
-    for statement list transformation paths targeting [dest].
+val is_constructible :
+  ?filter:Path_filter.t -> Subject.Test.t -> kind:Path_kind.t -> bool
+(** [is_constructible ?filter test ~kind] checks whether there exists at
+    least one valid path of kind [kind] over test [test] that matches filter
+    [filter]. *)
 
-    It can return an error if [dest] has no position at which statement lists
-    can be transformed. *)
+val try_gen :
+     ?filter:Path_filter.t
+  -> Subject.Test.t
+  -> kind:Path_kind.t
+  -> Path.Test.t Opt_gen.t
+(** [try_gen ?filter test ~kind] tries to choose a random path of kind [kind]
+    over test [test] that matches filter [filter]. It fails if such a path is
+    not constructible. *)
 
-val try_gen_transform_stm :
-  ?filter:Path_filter.t -> Subject.Test.t -> Path.Test.t Opt_gen.t
-(** [try_gen_transform_stm ?predicate dest] tries to create a
-    Quickcheck-style generator for statement transformation paths targeting
-    [dest], and, optionally, satisfying [filter]. It returns an error if the
-    container is empty or no such statements were found. *)
+val try_gen_with_flags :
+     ?filter:Path_filter.t
+  -> Subject.Test.t
+  -> kind:Path_kind.t
+  -> Path.Test.t Path_flag.Flagged.t Opt_gen.t
+(** [try_gen_with_flags ?filter test ~kind] behaves as {!try_gen}, but also
+    returns the flags of the path generated. *)

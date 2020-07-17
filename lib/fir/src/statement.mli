@@ -48,6 +48,11 @@ val reduce :
     those given to [stm]. Unlike {!reduce_step}, it _does_ recursively reduce
     statements inside blocks. *)
 
+val own_metadata : 'meta t -> 'meta Option.t
+(** [own_meta stm] gets any metadata directly held by [stm]. It doesn't
+    recurse into other nodes (such as blocks); since not all statement types
+    directly hold metadata, it returns an option. *)
+
 (** {1 Constructors} *)
 
 val if_stm : ('meta, 'meta t) If.t -> 'meta t

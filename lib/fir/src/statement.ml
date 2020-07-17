@@ -55,6 +55,11 @@ let reduce (type meta result) (x : meta t)
   in
   mu x
 
+let own_metadata (type meta) (x : meta t) : meta Option.t =
+  reduce_step x
+    ~prim:(Fn.compose Option.return fst)
+    ~if_stm:(Fn.const None) ~flow:(Fn.const None)
+
 (** Shorthand for lifting a predicate on primitives. *)
 let is_prim_and (t : 'meta t) ~(f : Prim_statement.t -> bool) : bool =
   reduce_step t ~if_stm:(Fn.const false) ~flow:(Fn.const false)

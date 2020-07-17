@@ -43,16 +43,16 @@ module Helpers : sig
       the state monad if not. The caller must provide the ID of the action
       whose payload is being generated as [action_id]. *)
 
-  val lift_path_gen :
+  val gen_path :
        Subject.Test.t
     -> random:Splittable_random.State.t
     -> action_id:Act_common.Id.t
     -> filter:Path_filter.t State.Monad.t
-    -> f:(?filter:Path_filter.t -> Subject.Test.t -> Path.Test.t Opt_gen.t)
+    -> kind:Path_kind.t
     -> Path.Test.t State.Monad.t
-  (** [lift_path_gen subject ~random ~action_id ~filter ~f] lifts [f], a path
-      producer, into a monadic action that generates a path for an action
-      payload. *)
+  (** [gen_path subject ~random ~action_id ~filter ~kind] is a a monadic
+      action that generates a path of kind [kind] and with filter [filter]
+      for an action payload. *)
 end
 
 (** {1 Stock payloads and functors for building them} *)
