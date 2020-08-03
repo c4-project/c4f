@@ -63,12 +63,10 @@ val transaction_safe : t -> t
 module End_check : sig
   (** Type of end checks. *)
   type t =
-    | Is_of_class of Act_fir.Statement_class.t list
-        (** Requires the path to reach a statement of any of the given
-            classes. *)
-    | Is_not_of_class of Act_fir.Statement_class.t list
-        (** Requires the path to reach a statement not of any of the given
-            classes. *)
+    | Stm_class of
+        Act_fir.Class_constraint.t * Act_fir.Statement_class.t list
+        (** Requires the path to reach a statement satisfying the given
+            statement class constraint. *)
     | Has_no_expressions_of_class of Act_fir.Expression_class.t list
         (** Requires the path to reach a statement that has no expressions of
             any of the given classes. *)
@@ -102,10 +100,3 @@ val check_final_statement : t -> stm:Subject.Statement.t -> unit Or_error.t
     a [This_stm] reference to [stm], and checks whether such a final
     statement destination is ok according to the predicates in [filter]. It
     does not subsume [check]. *)
-
-(** {2 Checking to see if paths are constructible} *)
-
-val is_constructible : t -> subject:Subject.Test.t -> bool
-(** [is_constructible filter ~subject] checks whether it is possible, in
-    theory, to construct at least one path over [subject] that satisfies
-    [filter]. It returns [true] if so and [false] otherwise. *)

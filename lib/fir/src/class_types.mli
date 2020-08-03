@@ -73,4 +73,9 @@ module type S_ext = sig
   (** [rec_unmatches_any elt ~templates] checks whether [elt]'s class
       recursively contains a classification that fails to match at least one
       of the templates in [templates]. *)
+
+  val satisfies :
+    'e elt -> req:Class_constraint.t -> templates:t list -> bool
+  (** [satisfies elt ~req ~templates] carries out the appropriate class
+      membership test over [templates] and [req]. *)
 end

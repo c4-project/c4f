@@ -68,7 +68,7 @@ module Surround = struct
     end)
 
     let available : Availability.t =
-      Availability.is_filter_constructible Basic.path_filter
+      Availability.is_filter_constructible Basic.path_filter ~kind:Transform
 
     let wrap_in_if (statements : Metadata.t Act_fir.Statement.t list)
         ~(cond : Act_fir.Expression.t) : Metadata.t Act_fir.Statement.t =
@@ -107,7 +107,7 @@ module Surround = struct
     let path_filter : Path_filter.t =
       Path_filter.(
         require_end_check empty
-          ~check:(Is_not_of_class [Act_fir.Statement_class.label]))
+          ~check:(Stm_class (Is_not_any, [Act_fir.Statement_class.label])))
   end)
 
   module Tautology : S = Make (struct
@@ -142,10 +142,10 @@ module Invert : Action_types.S with type Payload.t = Path.Test.t = struct
       {| Flips the conditional and branches of an if statement. |}
 
   let path_filter =
-    Path_filter.(require_end_check empty ~check:(Is_of_class [If]))
+    Path_filter.(require_end_check empty ~check:(Stm_class (Is, [If])))
 
   let available : Availability.t =
-    Availability.is_filter_constructible path_filter
+    Availability.is_filter_constructible path_filter ~kind:Transform
 
   module Payload = struct
     type t = Path.Test.t [@@deriving sexp]

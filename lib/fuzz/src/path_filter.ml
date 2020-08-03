@@ -20,28 +20,12 @@ end
    flag-based approach to give better error messages when paths fail
    validation. *)
 
-let is_flag_constructible (flag : Path_flag.t) ~(subject : Subject.Test.t) :
-    bool =
-  (* TODO(@MattWindsor91): unsound: see GitHub issue #187 *)
-  match flag with
-  | In_loop ->
-      Subject.Test.has_statements subject
-        ~matching:[Act_fir.Statement_class.while_loop ()]
-  | In_dead_code ->
-      Subject.Test.exists_top_statement subject
-        ~f:
-          (Act_fir.Statement.has_blocks_with_metadata
-             ~predicate:Metadata.is_dead_code)
-  | In_atomic ->
-      Subject.Test.has_statements subject
-        ~matching:[Act_fir.Statement_class.lock_block ~specifically:Atomic ()]
-
 (** Checks that can only be carried out at the end of a statement path. *)
 module End_check = struct
   module M = struct
     type t =
-      | Is_of_class of Act_fir.Statement_class.t list
-      | Is_not_of_class of Act_fir.Statement_class.t list
+      | Stm_class of
+          Act_fir.Class_constraint.t * Act_fir.Statement_class.t list
       | Has_no_expressions_of_class of Act_fir.Expression_class.t list
     [@@deriving compare, equal, sexp]
   end
@@ -52,27 +36,12 @@ module End_check = struct
   let is_ok (check : t) ~(stm : Subject.Statement.t) : bool =
     Act_fir.Statement_class.(
       match check with
-      | Is_of_class templates ->
-          matches_any stm ~templates
-      | Is_not_of_class templates ->
-          not (matches_any stm ~templates)
+      | Stm_class (req, templates) ->
+          satisfies stm ~req ~templates
       | Has_no_expressions_of_class templates ->
           not
             (Subject.Statement.On_expressions.exists stm
                ~f:(Act_fir.Expression_class.rec_matches_any ~templates)))
-
-  let is_constructible (flag : t) ~(subject : Subject.Test.t) : bool =
-    (* TODO(@MattWindsor91): unsound: see GitHub issue #187 *)
-    match flag with
-    | Is_of_class matching ->
-        Subject.Test.has_statements subject ~matching
-    | Is_not_of_class one_of ->
-        Subject.Test.has_statements_not_matching subject ~one_of
-    | Has_no_expressions_of_class templates ->
-        Subject.Test.exists_top_statement subject
-          ~f:
-            (Subject.Statement.On_expressions.exists
-               ~f:(Act_fir.Expression_class.rec_unmatches_any ~templates))
 
   let check (check : t) ~(stm : Subject.Statement.t) : unit Or_error.t =
     Tx.Or_error.unless_m (is_ok check ~stm) ~f:(fun () ->
@@ -118,7 +87,7 @@ let require_end_check (existing : t) ~(check : End_check.t) : t =
 let transaction_safe (filter : t) : t =
   (* TODO(@MattWindsor91): add things to this as we go along. *)
   require_end_check
-    ~check:(Is_not_of_class [Act_fir.Statement_class.atomic ()])
+    ~check:(Stm_class (Has_not_any, [Act_fir.Statement_class.atomic ()]))
   @@ require_end_check
        ~check:(Has_no_expressions_of_class [Atomic None])
        filter
@@ -155,48 +124,3 @@ let end_checks_for_statement (filter : t) (stm : Subject.Statement.t) :
 let check_final_statement (filter : t) ~(stm : Subject.Statement.t) :
     unit Or_error.t =
   stm |> end_checks_for_statement filter |> Or_error.combine_errors_unit
-
-module Construct_checks = struct
-  let is_constructible_req (filter : t) ~(subject : Subject.Test.t) : bool =
-    Set.for_all filter.req_flags ~f:(is_flag_constructible ~subject)
-
-  let is_constructible_end (filter : t) ~(subject : Subject.Test.t) : bool =
-    Set.for_all filter.end_checks ~f:(End_check.is_constructible ~subject)
-
-  let threads_to_remove (threads_to_keep : Set.M(Int).t)
-      ~(subject : Subject.Test.t) : Set.M(Int).t =
-    let num_all_threads =
-      List.length (Act_litmus.Test.Raw.threads subject)
-    in
-    let all_threads =
-      Set.of_increasing_iterator_unchecked
-        (module Int)
-        ~len:num_all_threads ~f:Fn.id
-    in
-    Set.diff all_threads threads_to_keep
-
-  let filter_to_threads (threads : Set.M(Int).t) ~(subject : Subject.Test.t)
-      : Subject.Test.t =
-    (* Decreasing order to avoid downwards thread ID changes rippling through
-       as we try to remove threads. *)
-    (* TODO(@MattWindsor91): this is a little heavyweight!! *)
-    threads
-    |> threads_to_remove ~subject
-    |> Set.to_sequence ~order:`Decreasing
-    |> Sequence.fold ~init:subject ~f:(fun subject' index ->
-           subject'
-           |> Act_litmus.Test.Raw.remove_thread ~index
-           |> Result.ok
-           |> Option.value ~default:subject' )
-
-  let is_constructible (filter : t) ~(subject : Subject.Test.t) : bool =
-    let subject =
-      Option.value_map filter.threads
-        ~f:(filter_to_threads ~subject)
-        ~default:subject
-    in
-    is_constructible_req filter ~subject
-    && is_constructible_end filter ~subject
-end
-
-include Construct_checks

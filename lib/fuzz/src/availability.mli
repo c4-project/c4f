@@ -57,7 +57,7 @@ val has_threads : t
 (** [has_threads] is an availability check that returns true when at least
     one thread exists. *)
 
-val is_filter_constructible : Path_filter.t -> t
-(** [is_filter_constructible filter] is an availability check that returns
-    true if at least one path is constructible from the subject that
-    satisfies [filter]. *)
+val is_filter_constructible : Path_filter.t -> kind:Path_kind.t -> t
+(** [is_filter_constructible filter ~kind] is an availability check that
+    returns true if at least one path of kind [kind] is constructible from
+    the subject that satisfies [filter]. *)

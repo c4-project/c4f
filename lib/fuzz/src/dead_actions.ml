@@ -76,7 +76,7 @@ struct
     Path_filter.(in_dead_code_only empty)
 
   let available : Availability.t =
-    Availability.is_filter_constructible base_path_filter
+    Availability.is_filter_constructible base_path_filter ~kind:Insert
 
   module Payload = Early_out_payload
 
@@ -161,7 +161,8 @@ struct
 
   let available (ctx : Availability.Context.t) : bool Or_error.t =
     let labels = ctx |> Availability.Context.state |> State.labels in
-    Availability.is_filter_constructible (path_filter' labels) ctx
+    Availability.is_filter_constructible (path_filter' labels) ~kind:Insert
+      ctx
 
   let run (subject : Subject.Test.t) ~(payload : Payload.t) :
       Subject.Test.t State.Monad.t =

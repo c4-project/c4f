@@ -135,7 +135,7 @@ let%test_module "Surround" =
             (Surround.Duplicate.run test ~payload:label_direct_payload)
             ~initial_state:state ;
           [%expect
-            {| ("Statement failed check" (check (Is_not_of_class ((Prim (Label)))))) |}]
+            {| ("Statement failed check" (check (Stm_class Is_not_any ((Prim (Label)))))) |}]
 
         let label_indirect : Src.Path.Test.t =
           Lazy.force Subject.Test_data.Path.surround_label_indirect

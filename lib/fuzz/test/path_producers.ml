@@ -94,7 +94,7 @@ let%test_module "sample path output on example code" =
     let%expect_test "try_gen_transform_stm with filtering to if statements" =
       test Transform
         Act_fuzz.Path_filter.(
-          empty |> require_end_check ~check:(Is_of_class [If])) ;
+          empty |> require_end_check ~check:(Stm_class (Is, [If]))) ;
       [%expect
         {|
             P0!Stms!Stm[3]!This
@@ -137,8 +137,7 @@ let%test_module "sample path output on example code" =
               P1!Stms!Range[1, 0]
               P1!Stms!Range[2, 0] |}]
 
-    let%expect_test "try_gen_transform_stm_list with filtering to dead code"
-        =
+    let%expect_test "transform-list with filtering to dead code" =
       test Transform_list Act_fuzz.Path_filter.(empty |> in_dead_code_only) ;
       [%expect
         {|
@@ -153,11 +152,10 @@ let%test_module "sample path output on example code" =
               P1!Stms!Stm[1]!If!False!Range[0, 1]
               P1!Stms!Stm[1]!If!False!Range[1, 0] |}]
 
-    let%expect_test "try_gen_transform_stm_list with filtering to if \
-                     statements" =
+    let%expect_test "transform-list with filtering to if statements" =
       test Transform_list
         Act_fuzz.Path_filter.(
-          empty |> require_end_check ~check:(Is_of_class [If])) ;
+          empty |> require_end_check ~check:(Stm_class (Is, [If]))) ;
       [%expect
         {|
               P0!Stms!Stm[3]!If!False!Range[0, 0]
@@ -175,12 +173,12 @@ let%test_module "sample path output on example code" =
               P1!Stms!Range[1, 0]
               P1!Stms!Range[2, 0] |}]
 
-    let%expect_test "try_gen_transform_stm_list with filtering to non-labels"
-        =
+    let%expect_test "transform-list with filtering to non-labels" =
       test Transform_list
         Act_fuzz.Path_filter.(
           empty
-          |> require_end_check ~check:(Is_not_of_class [Prim (Some Label)])) ;
+          |> require_end_check
+               ~check:(Stm_class (Is_not_any, [Prim (Some Label)]))) ;
       [%expect
         {|
               P0!Stms!Stm[3]!If!True!Range[0, 1]

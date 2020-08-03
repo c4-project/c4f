@@ -164,9 +164,8 @@ end) : Action_types.S with type Payload.t = B.t P.Insertion.t = struct
   let available (ctx : Availability.Context.t) : bool Or_error.t =
     let vars = State.vars (Availability.Context.state ctx) in
     let param_map = Availability.Context.param_map ctx in
-    let subject = Availability.Context.subject ctx in
     Or_error.Let_syntax.(
-      let%map faw_flag = forbid_already_written_flag param_map in
+      let%bind faw_flag = forbid_already_written_flag param_map in
       (* If the flag is stochastic, then we can't tell whether its value will
          be the same in the payload check. As such, we need to be pessimistic
          and assume that we _can't_ make writes to already-written variables
@@ -180,7 +179,10 @@ end) : Action_types.S with type Payload.t = B.t P.Insertion.t = struct
         Var.Map.exists_satisfying_all vars ~scope:Ac.Scope.Global
           ~predicates:(dst_restrictions ~forbid_already_written)
       in
-      has_vars && Path_filter.is_constructible B.path_filter ~subject)
+      let%map is_constructible =
+        Availability.is_filter_constructible B.path_filter ctx ~kind:Insert
+      in
+      has_vars && is_constructible)
 
   let bookkeep_dst (x : Ac.C_id.t) ~(tid : int) : unit State.Monad.t =
     State.Monad.(

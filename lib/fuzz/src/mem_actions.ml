@@ -98,7 +98,7 @@ module Strengthen :
     Path_filter.(
       empty
       |> require_end_check
-           ~check:(End_check.Is_of_class Cm.Statement_class.[atomic ()]))
+           ~check:(End_check.Stm_class (Is, Cm.Statement_class.[atomic ()])))
 
   module Payload = struct
     include Strengthen_payload
@@ -127,7 +127,7 @@ module Strengthen :
   end
 
   let available : Availability.t =
-    Availability.is_filter_constructible filter
+    Availability.is_filter_constructible filter ~kind:Transform
 
   module On_atomics =
     Travesty.Traversable.Chain0

@@ -207,7 +207,8 @@ module Xchgify : Action_types.S with type Payload.t = Path.Test.t = struct
         empty
         |> require_end_check
              ~check:
-               (Is_of_class [Cm.Statement_class.atomic ~specifically:Store ()]))
+               (Stm_class
+                  (Is, [Cm.Statement_class.atomic ~specifically:Store ()])))
 
   module Payload = struct
     type t = Path.Test.t [@@deriving sexp]
@@ -223,6 +224,7 @@ module Xchgify : Action_types.S with type Payload.t = Path.Test.t = struct
 
   let available : Availability.t =
     Availability.is_filter_constructible (Lazy.force path_filter)
+      ~kind:Transform
 
   module Atoms =
     Travesty.Traversable.Chain0
