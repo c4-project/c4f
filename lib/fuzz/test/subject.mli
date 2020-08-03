@@ -74,5 +74,13 @@ module Test_data : sig
     (** [surround_txsafe] is a full path that points to a statement range
         containing only transaction-safe statements (if any), ready for
         surrounding. *)
+
+    val surround_label_direct : Act_fuzz.Path.Test.t Lazy.t
+    (** [surround_label_direct] is a full path that points to a statement
+        range directly containing labels. *)
+
+    val surround_label_indirect : Act_fuzz.Path.Test.t Lazy.t
+    (** [surround_label_indirect] is a full path that points to a statement
+        range indirectly containing labels. *)
   end
 end

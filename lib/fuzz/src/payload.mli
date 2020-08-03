@@ -127,16 +127,18 @@ module Cond_surround : sig
   (** [where payload] retrieves the generated path inside [payload]. *)
 
   val apply :
-       t
+       ?filter:Path_filter.t
+    -> t
     -> test:Subject.Test.t
     -> f:
          (   Act_fir.Expression.t
           -> Subject.Statement.t list
           -> Subject.Statement.t)
     -> Subject.Test.t State.Monad.t
-  (** [apply payload ~test ~f] lifts a surrounding function [f] over a
-      payload [payload], supplying the test [test] to transform, and lifting
-      the computation into the fuzzer state monad. *)
+  (** [apply ?filter payload ~test ~f] lifts a surrounding function [f] over
+      a payload [payload], supplying the test [test] to transform, and
+      lifting the computation into the fuzzer state monad. If [filter] is
+      given, the path in [payload] will be checked for compliance with it. *)
 
   (** {3 Using as a payload module} *)
 

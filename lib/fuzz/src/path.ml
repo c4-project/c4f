@@ -121,6 +121,11 @@ module Stms = struct
 
   let on_range (i : index) (stride : length) : t = On_range (i, stride)
 
+  let between (start : index) (finish : index) : t =
+    on_range start (finish - start)
+
+  let singleton (i : index) : t = On_range (i, 1)
+
   let pp : t Fmt.t = pp_stms
 end
 

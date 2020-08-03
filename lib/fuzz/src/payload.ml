@@ -105,7 +105,8 @@ module Cond_surround = struct
     State.Monad.add_expression_dependencies cond
       ~scope:(Local (Path.Test.tid path))
 
-  let apply ({cond; where} : t) ~(test : Subject.Test.t)
+  let apply ?(filter : Path_filter.t option) ({cond; where} : t)
+      ~(test : Subject.Test.t)
       ~(f :
             Act_fir.Expression.t
          -> Subject.Statement.t list
@@ -114,7 +115,7 @@ module Cond_surround = struct
       Let_syntax.(
         let%bind () = add_cond_dependencies where cond in
         Monadic.return
-          (Path_consumers.consume test ~path:where
+          (Path_consumers.consume test ?filter ~path:where
              ~action:(Transform_list (fun test -> Ok [f cond test])))))
 
   let cond_env (vars : Var.Map.t) ~(tid : int) : Act_fir.Env.t =

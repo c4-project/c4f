@@ -23,7 +23,10 @@ let test_fragment : unit Src.Statement.t Lazy.t =
             Src.
               [ mkafetch Add
                   Address.(of_variable_str_exn "x")
-                  Expression.(int_lit 42) ]
+                  Expression.(int_lit 42)
+              ; Src.Statement.prim ()
+                  (Src.Prim_statement.label
+                     (Act_common.C_id.of_string "foo")) ]
             Src.
               [ mkastore
                   Address.(of_variable_str_exn "y")
@@ -44,6 +47,10 @@ let%test_module "matches_any" =
     let%expect_test "if statements" =
       test [If] ;
       [%expect {| true |}]
+
+    let%expect_test "labels" =
+      test [Prim (Some Label)] ;
+      [%expect {| false |}]
 
     let%expect_test "while loops" =
       test [Src.Statement_class.while_loop ()] ;
@@ -73,6 +80,10 @@ let%test_module "unmatches_any" =
     let%expect_test "if statements" =
       test [If] ;
       [%expect {| false |}]
+
+    let%expect_test "labels" =
+      test [Prim (Some Label)] ;
+      [%expect {| true |}]
 
     let%expect_test "while loops" =
       test [Src.Statement_class.while_loop ()] ;

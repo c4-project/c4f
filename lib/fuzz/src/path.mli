@@ -142,6 +142,13 @@ module Stms : sig
       statement list starting at [index]. [length] may be 0, in which case
       the path targets the space just before any statement at [index];
       consequently, [on_range (List.length stms) 0] is a valid path. *)
+
+  val between : index -> index -> t
+  (** [between x y] is [on_range x (y-x)], ie the range starting at [x] and
+      ending just before [y]. *)
+
+  val singleton : index -> t
+  (** [singleton x] is [on_range x 1], ie a range containing just one item. *)
 end
 
 (** A path focusing on a single thread. *)

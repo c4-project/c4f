@@ -33,7 +33,7 @@ let%test_module "Surround" =
             (of_variable_str_exn "a")))
 
     let where : Src.Path.Test.t =
-      Src.Path.(Test.in_thread 0 @@ Thread.in_stms @@ Stms.on_range 0 2)
+      Lazy.force Subject.Test_data.Path.surround_atomic
 
     let payload : Src.Payload.Cond_surround.t =
       Src.Payload.Cond_surround.make ~cond ~where
@@ -123,6 +123,67 @@ let%test_module "Surround" =
           [%expect {|
           a
           x |}]
+
+        let label_direct : Src.Path.Test.t =
+          Lazy.force Subject.Test_data.Path.surround_label_direct
+
+        let label_direct_payload : Src.Payload.Cond_surround.t =
+          Src.Payload.Cond_surround.make ~cond ~where:label_direct
+
+        let%expect_test "direct-label AST (should fail)" =
+          Action.Test_utils.run_and_dump_test
+            (Surround.Duplicate.run test ~payload:label_direct_payload)
+            ~initial_state:state ;
+          [%expect
+            {| ("Statement failed check" (check (Is_not_of_class ((Prim (Label)))))) |}]
+
+        let label_indirect : Src.Path.Test.t =
+          Lazy.force Subject.Test_data.Path.surround_label_indirect
+
+        let label_indirect_payload : Src.Payload.Cond_surround.t =
+          Src.Payload.Cond_surround.make ~cond ~where:label_indirect
+
+        let%expect_test "indirect-label AST (should fail)" =
+          Action.Test_utils.run_and_dump_test
+            (Surround.Duplicate.run test ~payload:label_indirect_payload)
+            ~initial_state:state ;
+          [%expect
+            {|
+          void
+          P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
+             atomic_int y)
+          {
+              atomic_int r0 = 4004;
+              atomic_store_explicit(x, 42, memory_order_seq_cst);
+              ;
+              atomic_store_explicit(y, foo, memory_order_relaxed);
+              if (x == 27 && a)
+              {
+                  if (foo == y)
+                  { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ;
+                  }
+              } else
+              {
+                  if (foo == y)
+                  { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ;
+                  }
+              }
+              if (false)
+              {
+                  atomic_store_explicit(y,
+                                        atomic_load_explicit(x, memory_order_seq_cst),
+                                        memory_order_seq_cst);
+              }
+              do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
+              5);
+          }
+
+          void
+          P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
+             atomic_int y)
+          { loop: ; if (true) {  } else { goto loop; } } |}]
       end )
   end )
 
