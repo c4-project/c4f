@@ -135,7 +135,7 @@ let%test_module "Surround" =
             (Surround.Duplicate.run test ~payload:label_direct_payload)
             ~initial_state:state ;
           [%expect
-            {| ("Statement failed check" (check (Stm_class Is_not_any ((Prim (Label)))))) |}]
+            {| ("Statement failed check" (check (Stm_class Has_not_any ((Prim (Label)))))) |}]
 
         let label_indirect : Src.Path.Test.t =
           Lazy.force Subject.Test_data.Path.surround_label_indirect
@@ -149,41 +149,7 @@ let%test_module "Surround" =
             ~initial_state:state ;
           [%expect
             {|
-          void
-          P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
-             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
-             atomic_int y)
-          {
-              atomic_int r0 = 4004;
-              atomic_store_explicit(x, 42, memory_order_seq_cst);
-              ;
-              atomic_store_explicit(y, foo, memory_order_relaxed);
-              if (x == 27 && a)
-              {
-                  if (foo == y)
-                  { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ;
-                  }
-              } else
-              {
-                  if (foo == y)
-                  { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ;
-                  }
-              }
-              if (false)
-              {
-                  atomic_store_explicit(y,
-                                        atomic_load_explicit(x, memory_order_seq_cst),
-                                        memory_order_seq_cst);
-              }
-              do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
-              5);
-          }
-
-          void
-          P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
-             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
-             atomic_int y)
-          { loop: ; if (true) {  } else { goto loop; } } |}]
+          ("Statement failed check" (check (Stm_class Has_not_any ((Prim (Label)))))) |}]
       end )
   end )
 

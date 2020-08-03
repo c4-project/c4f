@@ -107,7 +107,7 @@ module Surround = struct
     let path_filter : Path_filter.t =
       Path_filter.(
         require_end_check empty
-          ~check:(Stm_class (Is_not_any, [Act_fir.Statement_class.label])))
+          ~check:(Stm_class (Has_not_any, [Act_fir.Statement_class.label])))
   end)
 
   module Tautology : S = Make (struct
