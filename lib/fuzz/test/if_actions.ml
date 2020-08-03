@@ -135,7 +135,10 @@ let%test_module "Surround" =
             (Surround.Duplicate.run test ~payload:label_direct_payload)
             ~initial_state:state ;
           [%expect
-            {| ("Statement failed check" (check (Stm_class Has_not_any ((Prim (Label)))))) |}]
+            {|
+              ("in on-range transform-list"
+               ("while checking statements"
+                ("Statement failed check" (check (Stm_class Has_not_any ((Prim (Label)))))))) |}]
 
         let label_indirect : Src.Path.Test.t =
           Lazy.force Subject.Test_data.Path.surround_label_indirect
@@ -149,7 +152,9 @@ let%test_module "Surround" =
             ~initial_state:state ;
           [%expect
             {|
-          ("Statement failed check" (check (Stm_class Has_not_any ((Prim (Label)))))) |}]
+          ("in on-range transform-list"
+           ("while checking statements"
+            ("Statement failed check" (check (Stm_class Has_not_any ((Prim (Label)))))))) |}]
       end )
   end )
 

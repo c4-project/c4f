@@ -63,7 +63,7 @@ module Block = struct
       (* All of these insertion sequences have the same metadata, and, so, we
          need only do the filter check once for all positions. *)
       Sequence.(
-        lift_err (Path_context.check_filter ctx)
+        lift_err (Path_context.check_filter_req ctx)
         >>= fun () ->
         (* Both ends are inclusive to let us insert at the end of the list. *)
         Sequence.range 0 ~start:`inclusive (List.length stms)
@@ -105,7 +105,7 @@ module Block = struct
     let produce (stms : Subject.Statement.t list) ~(ctx : ctx) :
         Path.Stms.t t =
       Sequence.(
-        lift_err (Path_context.check_filter ctx)
+        lift_err (Path_context.check_filter_req ctx)
         >>= fun () ->
         (* As with insertion, both ends are inclusive; this is because
            transforming the 0 statements at the end of a list is always
@@ -202,7 +202,7 @@ end)
 module Stm = struct
   let self (stm : Subject.Statement.t) ~(ctx : ctx) : Path.Stm.t t =
     Sequence.(
-      lift_err (Path_context.check_filter ctx)
+      lift_err (Path_context.check_filter_req ctx)
       >>= fun () ->
       lift_err (Path_context.check_filter_stm ctx ~stm)
       >>| fun () -> Path_context.lift_path ctx ~path:Path.Stm.this_stm)

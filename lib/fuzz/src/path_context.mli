@@ -37,12 +37,18 @@ val kind : 'k t -> 'k
 
 (** {2 Checking the path filter} *)
 
-val check_filter : _ t -> unit Or_error.t
-(** [check_filter ctx] checks [ctx]'s filter flags against those it holds. *)
+val check_filter_req : _ t -> unit Or_error.t
+(** [check_filter_req ctx] checks [ctx]'s filter flags against those it
+    holds. *)
 
 val check_filter_stm : _ t -> stm:Subject.Statement.t -> unit Or_error.t
-(** [check_filter_stm ctx ~stm] behaves as {!check_filter}, but also performs
-    statement end-checks on [stm]. *)
+(** [check_filter_stm ctx ~stm] performs [ctx]'s statement end-checks on
+    [stm]. *)
+
+val check_filter_stms :
+  _ t -> stms:Subject.Statement.t list -> unit Or_error.t
+(** [check_filter_stms ctx ~stms] performs [ctx]'s statement end-checks on
+    every statement in [stms]. *)
 
 val check_thread_ok : _ t -> thread:int -> unit Or_error.t
 (** [check_thread_ok ctx] checks [ctx]'s filter allows entering thread

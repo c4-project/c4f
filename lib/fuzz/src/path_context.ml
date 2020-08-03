@@ -11,6 +11,10 @@
 
 open Base
 
+open struct
+  module Tx = Travesty_base_exts
+end
+
 type 'k t = {kind: 'k; flags: Set.M(Path_flag).t; filter: Path_filter.t}
 [@@deriving fields]
 
@@ -22,12 +26,16 @@ let add_flags (x : 'k t) (flags : Set.M(Path_flag).t) : 'k t Or_error.t =
     let%map () = Path_filter.check_not x.filter ~flags in
     {x with flags= Set.union x.flags flags})
 
-let check_filter (x : 'k t) : unit Or_error.t =
+let check_filter_req (x : 'k t) : unit Or_error.t =
   Path_filter.check_req x.filter ~flags:x.flags
 
 let check_filter_stm (x : 'k t) ~(stm : Subject.Statement.t) :
     unit Or_error.t =
   Path_filter.check_final_statement x.filter ~stm
+
+let check_filter_stms (x : 'k t) ~(stms : Subject.Statement.t list) :
+    unit Or_error.t =
+  Tx.Or_error.combine_map_unit stms ~f:(fun stm -> check_filter_stm x ~stm)
 
 let check_thread_ok (x : _ t) ~(thread : int) : unit Or_error.t =
   (* TODO(@MattWindsor91): push error into Path_filter? *)

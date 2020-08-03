@@ -48,6 +48,22 @@ module Helpers = struct
           ~want:(want : Act_fir.Statement_class.t)]
 end
 
+let checked_transform (stm : Subject.Statement.t) ~(ctx : ctx)
+    ~(f : Subject.Statement.t -> Subject.Statement.t Or_error.t)
+    ~(tag : string) : Subject.Statement.t Or_error.t =
+  Or_error.tag ~tag
+    Or_error.(
+      Let_syntax.(
+        let%bind () =
+          tag (Path_context.check_filter_req ctx) ~tag:"while checking flags"
+        in
+        let%bind () =
+          tag
+            (Path_context.check_filter_stm ctx ~stm)
+            ~tag:"while checking statements"
+        in
+        f stm))
+
 open Helpers
 
 module Block = struct
@@ -59,34 +75,42 @@ module Block = struct
     match Path_context.kind ctx with
     | Insert stms ->
         Or_error.(
-          Path_context.check_filter ctx
+          tag
+            (Path_context.check_filter_req ctx)
+            ~tag:"checking flags on insertion"
           >>= fun () ->
           Act_utils.My_list.splice b ~pos ~len:0 ~replace_f:(Fn.const stms))
     | x ->
         bad_kind x ~want:Insert
 
+  let checked_transform_list_on_range (stms : Subject.Statement.t list)
+      ~(ctx : ctx)
+      ~(f : Subject.Statement.t list -> Subject.Statement.t list Or_error.t)
+      : Subject.Statement.t list Or_error.t =
+    Or_error.(
+      tag ~tag:"in on-range transform-list"
+        Let_syntax.(
+          let%bind () =
+            tag
+              (Path_context.check_filter_req ctx)
+              ~tag:"while checking flags"
+          in
+          let%bind () =
+            tag
+              (Path_context.check_filter_stms ctx ~stms)
+              ~tag:"while checking statements"
+          in
+          f stms))
+
   let on_range (b : Subject.Statement.t list) ~(pos : int) ~(len : int)
       ~(ctx : ctx) : Subject.Statement.t list Or_error.t =
     match Path_context.kind ctx with
     | Transform f ->
-        let f stm =
-          Or_error.Let_syntax.(
-            let%bind () = Path_context.check_filter ctx in
-            let%bind () = Path_context.check_filter_stm ctx ~stm in
-            f stm)
-        in
-        Act_utils.My_list.try_map_sub b ~pos ~len ~f
+        Act_utils.My_list.try_map_sub b ~pos ~len
+          ~f:(checked_transform ~ctx ~f ~tag:"in on-range transform")
     | Transform_list f ->
-        let replace_f stms =
-          Or_error.Let_syntax.(
-            let%bind () = Path_context.check_filter ctx in
-            let%bind () =
-              Tx.Or_error.combine_map_unit stms ~f:(fun stm ->
-                  Path_context.check_filter_stm ctx ~stm )
-            in
-            f stms)
-        in
-        Act_utils.My_list.try_splice b ~pos ~len ~replace_f
+        Act_utils.My_list.try_splice b ~pos ~len
+          ~replace_f:(checked_transform_list_on_range ~ctx ~f)
     | x ->
         bad_kind x ~want:Transform_list
 
@@ -204,10 +228,7 @@ module Stm = struct
       Subject.Statement.t Or_error.t =
     match Path_context.kind ctx with
     | Transform f ->
-        Or_error.Let_syntax.(
-          let%bind () = Path_context.check_filter_stm ctx ~stm in
-          let%bind () = Path_context.check_filter ctx in
-          f stm)
+        checked_transform stm ~ctx ~f ~tag:"on transform"
     | k ->
         bad_kind k ~want:Transform
 
