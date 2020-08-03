@@ -63,8 +63,9 @@ let%test_module "Early_out" =
 
     let%expect_test "invalid break on example program" =
       test_on_example_program if_path Break ;
-      [%expect {|
-      "Unmet required flag condition: in loop" |}]
+      [%expect
+        {|
+      ("checking flags on insertion" "Unmet required flag condition: in loop") |}]
 
     let%expect_test "valid return on example program" =
       test_on_example_program if_path Return ;

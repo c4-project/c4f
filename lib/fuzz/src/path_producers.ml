@@ -83,21 +83,19 @@ module Block = struct
         This step considers expanding a [width]-long slice at [i] to a
         [width+1]-long slice. *)
     let step (i : int) (width : int) ~(stms : Subject.Statement.t list)
-        ~(ctx : ctx) : (Path.Stms.t Path_flag.Flagged.t, int) Sequence.Step.t
-        =
-      let next_stm = List.nth stms (i + width) in
+        ~(ctx : ctx) : (Path.Stms.t Path_flag.Flagged.t * int) option =
       let width' = width + 1 in
-      Option.value_map next_stm ~default:Sequence.Step.Done ~f:(fun stm ->
-          if Result.is_ok (Path_context.check_filter_stm ctx ~stm) then
-            Sequence.Step.Yield (make_on_range i width' ~ctx, width')
-          else Sequence.Step.Skip width' )
+      Option.Let_syntax.(
+        let%bind stm = List.nth stms (i + width) in
+        let%map () = Result.ok (Path_context.check_filter_stm ctx ~stm) in
+        (make_on_range i width' ~ctx, width'))
 
     (** [from i ~stms ~ctx] produces a statement-list path sequence producing
         every valid transform-list path targeting statement list [stms] and
         starting at position [i]. *)
     let from (i : int) ~(stms : Subject.Statement.t list) ~(ctx : ctx) :
         Path.Stms.t t =
-      let ind = Sequence.unfold_step ~init:0 ~f:(step i ~stms ~ctx) in
+      let ind = Sequence.unfold ~init:0 ~f:(step i ~stms ~ctx) in
       Sequence.shift_right ind (make_on_range i 0 ~ctx)
 
     (** [produce stms ~ctx] produces a statement-list path sequence producing

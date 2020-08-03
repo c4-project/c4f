@@ -239,14 +239,16 @@ let%test_module "Statement_list" =
                   ("Unexpected kind of action associated with this path" (got transform_list)
                    (want insert)) |}]
 
-            let%test_unit "generator over stm-list produces valid paths" =
+            let test_produce_consume ?(filter : F.Path_filter.t option)
+                (action : F.Path_kind.With_action.t) : unit =
+              let kind = F.Path_kind.With_action.to_kind action in
               Test.run_exn
                 ( module struct
                   type t = F.Path.Test.t [@@deriving sexp]
 
                   let quickcheck_generator =
                     Or_error.ok_exn
-                      (F.Path_producers.try_gen ~kind:Transform_list
+                      (F.Path_producers.try_gen ?filter ~kind
                          (Lazy.force Subject.Test_data.test))
 
                   let quickcheck_shrinker =
@@ -257,9 +259,21 @@ let%test_module "Statement_list" =
                   [%test_result: unit Or_error.t] ~here:[[%here]]
                     ~expect:(Or_error.return ())
                     (Or_error.map ~f:(Fn.const ())
-                       (F.Path_consumers.consume ~path
-                          ~action:(Transform_list Or_error.return)
+                       (F.Path_consumers.consume ~path ?filter ~action
                           (Lazy.force Subject.Test_data.test))) )
+
+            let%test_unit "unfiltered transform-stm produces valid paths" =
+              test_produce_consume (Transform_list Or_error.return)
+
+            let%test_unit "filter-to-no-rec-labels transform-stm produces \
+                           valid paths" =
+              test_produce_consume
+                ~filter:
+                  F.Path_filter.(
+                    require_end_check
+                      ~check:(Stm_class (Has_not_any, [Prim (Some Label)]))
+                      empty)
+                (Transform_list Or_error.return)
           end )
       end )
   end )

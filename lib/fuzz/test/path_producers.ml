@@ -158,22 +158,24 @@ let%test_module "sample path output on example code" =
           empty |> require_end_check ~check:(Stm_class (Is, [If]))) ;
       [%expect
         {|
-              P0!Stms!Stm[3]!If!False!Range[0, 0]
+              P0!Stms!Stm[3]!If!True!Range[1, 0]
               P0!Stms!Stm[4]!If!False!Range[0, 0]
-              P0!Stms!Stm[5]!Flow-block!Body!Range[0, 0]
-              P0!Stms!Stm[5]!Flow-block!Body!Range[1, 0]
+              P0!Stms!Stm[4]!If!True!Range[1, 0]
               P0!Stms!Range[0, 0]
-              P0!Stms!Range[0, 5]
               P0!Stms!Range[1, 0]
-              P0!Stms!Range[2, 3]
+              P0!Stms!Range[2, 0]
+              P0!Stms!Range[3, 0]
               P0!Stms!Range[3, 1]
+              P0!Stms!Range[3, 2]
               P0!Stms!Range[4, 0]
-              P0!Stms!Range[4, 1]
-              P1!Stms!Range[0, 0]
+              P0!Stms!Range[5, 0]
+              P1!Stms!Stm[1]!If!False!Range[1, 0]
               P1!Stms!Range[1, 0]
+              P1!Stms!Range[1, 1]
               P1!Stms!Range[2, 0] |}]
 
     let%expect_test "transform-list with filtering to non-labels" =
+      (* TODO(@MattWindsor91): should this be excluding [0, 0]? *)
       test Transform_list
         Act_fuzz.Path_filter.(
           empty
@@ -181,17 +183,45 @@ let%test_module "sample path output on example code" =
                ~check:(Stm_class (Is_not_any, [Prim (Some Label)]))) ;
       [%expect
         {|
+              P0!Stms!Stm[3]!If!True!Range[0, 0]
               P0!Stms!Stm[3]!If!True!Range[0, 1]
+              P0!Stms!Stm[3]!If!True!Range[1, 0]
               P0!Stms!Stm[3]!If!True!Range[2, 0]
+              P0!Stms!Stm[4]!If!True!Range[0, 0]
               P0!Stms!Stm[4]!If!True!Range[0, 1]
-              P0!Stms!Stm[5]!Flow-block!Body!Range[1, 0]
-              P0!Stms!Range[0, 0]
-              P0!Stms!Range[0, 3]
-              P0!Stms!Range[1, 4]
-              P0!Stms!Range[2, 0]
+              P0!Stms!Stm[4]!If!True!Range[1, 0]
+              P0!Stms!Stm[5]!Flow-block!Body!Range[0, 1]
+              P0!Stms!Range[1, 1]
               P0!Stms!Range[2, 2]
+              P0!Stms!Range[2, 4]
+              P0!Stms!Range[3, 0]
               P0!Stms!Range[3, 2]
-              P0!Stms!Range[5, 0]
+              P0!Stms!Range[3, 3]
+              P0!Stms!Range[5, 1]
+              P1!Stms!Stm[1]!If!False!Range[0, 0] |}]
+
+    let%expect_test "transform-list with filtering to recursive non-labels" =
+      test Transform_list
+        Act_fuzz.Path_filter.(
+          empty
+          |> require_end_check
+               ~check:(Stm_class (Has_not_any, [Prim (Some Label)]))) ;
+      [%expect
+        {|
+              P0!Stms!Stm[3]!If!False!Range[0, 0]
+              P0!Stms!Stm[3]!If!True!Range[0, 0]
+              P0!Stms!Stm[3]!If!True!Range[0, 1]
+              P0!Stms!Stm[3]!If!True!Range[1, 0]
+              P0!Stms!Stm[4]!If!True!Range[0, 0]
+              P0!Stms!Stm[5]!Flow-block!Body!Range[0, 1]
+              P0!Stms!Stm[5]!Flow-block!Body!Range[1, 0]
+              P0!Stms!Range[0, 2]
+              P0!Stms!Range[2, 0]
+              P0!Stms!Range[3, 0]
+              P0!Stms!Range[4, 1]
+              P0!Stms!Range[4, 2]
+              P0!Stms!Range[5, 1]
               P1!Stms!Stm[1]!If!False!Range[0, 0]
-              P1!Stms!Range[1, 1] |}]
+              P1!Stms!Stm[1]!If!False!Range[1, 0]
+              P1!Stms!Stm[1]!If!True!Range[0, 0] |}]
   end )
