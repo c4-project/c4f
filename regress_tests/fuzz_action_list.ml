@@ -18,7 +18,7 @@ open Core
 
 let run (_test_dir : Fpath.t) : unit Or_error.t =
   Or_error.(
-    Act_fuzz.Config.(make () |> summarise)
+    Act_fuzz_run.Config.(make () |> summarise)
     >>| Fmt.pr "@[<v>%a@]@." Act_fuzz.Action.Summary.pp_map)
 
 let command : Command.t =

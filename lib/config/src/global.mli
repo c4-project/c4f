@@ -21,7 +21,7 @@ type t
 
 val make :
      ?defaults:Default.t
-  -> ?fuzz:Act_fuzz.Config.t
+  -> ?fuzz:Act_fuzz_run.Config.t
   -> machines:Act_machine.Spec.Set.t
   -> unit
   -> t
@@ -33,4 +33,11 @@ module Load : Plumbing.Loadable_types.S with type t = t
 
 (** {2 Projections} *)
 
-include Global_types.S with type t := t
+val defaults : t -> Default.t
+(** [defaults c] gets the defaults set specified by configuration [c]. *)
+
+val fuzz : t -> Act_fuzz_run.Config.t
+(** [fuzz c] gets the fuzzer config, if any, to use for configuration [c]. *)
+
+val machines : t -> Act_machine.Spec.Set.t
+(** [machines c] gets the set of all active machines in configuration [c]. *)

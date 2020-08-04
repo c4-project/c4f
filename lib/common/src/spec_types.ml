@@ -62,7 +62,7 @@ module type S = sig
         through a type alias in {{!Spec} Spec}. *)
     type t [@@deriving equal]
 
-    val group : t -> f:(With_id.t -> Id.t) -> t Id.Map.t
+    val group : t -> f:(With_id.t -> Id.t) -> t Map.M(Id).t
     (** [group specs ~f] groups [specs] into buckets according to some
         grouping function [f]. [f] returns specification IDs; the idea is
         that this allows grouping of specifications by references to other,

@@ -21,7 +21,8 @@ module M_spec = Act_machine.Spec
 
 type t =
   { defaults: Default.t [@default Default.make ()] [@sexp.drop_if_default]
-  ; fuzz: Act_fuzz.Config.t [@sexp.option] [@default Act_fuzz.Config.make ()]
+  ; fuzz: Act_fuzz_run.Config.t
+        [@sexp.option] [@default Act_fuzz_run.Config.make ()]
   ; machines: M_spec.Set.t }
 [@@deriving make, fields]
 
@@ -171,7 +172,8 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
       | Set _ | Action _ ->
           None
 
-    let fuzz_of_ast (ast : Ast.Fuzz.t list) : Act_fuzz.Config.t Or_error.t =
+    let fuzz_of_ast (ast : Ast.Fuzz.t list) :
+        Act_fuzz_run.Config.t Or_error.t =
       let weight_alist = List.filter_map ast ~f:to_weight_opt in
       let param_alist = List.filter_map ast ~f:to_param_opt in
       Or_error.Let_syntax.(
@@ -187,9 +189,9 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
         let%map flags =
           Map.of_alist_or_error (module Act_common.Id) flag_alist
         in
-        Act_fuzz.Config.make ~weights ~flags ~params ())
+        Act_fuzz_run.Config.make ~weights ~flags ~params ())
 
-    let build_fuzz : Ast.t -> Act_fuzz.Config.t option Or_error.t =
+    let build_fuzz : Ast.t -> Act_fuzz_run.Config.t option Or_error.t =
       Tx.Or_error.(
         Au.My_list.find_one_opt ~item_name:"fuzz" ~f:Ast.Top.as_fuzz
         >=> Tx.Option.With_errors.map_m ~f:fuzz_of_ast)

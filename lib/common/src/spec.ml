@@ -141,7 +141,7 @@ module Make (B : Basic) :
       t
       |> List.map ~f:(fun (id, spec) ->
              (f (With_id.make ~id ~spec), (id, spec)))
-      |> Id.Map.of_alist_multi
+      |> Map.of_alist_multi (module Id)
   end
 end
 

@@ -100,7 +100,7 @@ let pp_pair (ppe : 'e Fmt.t) : (t * 'e) Fmt.t =
 let pp_alist (ppe : 'e Fmt.t) : (t, 'e) List.Assoc.t Fmt.t =
   Fmt.(vbox (list ~sep:cut (pp_pair ppe)))
 
-let pp_map (ppe : 'e Fmt.t) : 'e Map.t Fmt.t =
+let pp_map (ppe : 'e Fmt.t) : (t, 'e, comparator_witness) Base.Map.t Fmt.t =
   Fmt.using Map.to_alist (pp_alist ppe)
 
 module Property = struct

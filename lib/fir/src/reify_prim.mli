@@ -36,3 +36,8 @@ val address : Address.t -> Act_litmus_c.Ast.Expr.t
 
 val constant : Constant.t -> Act_litmus_c.Ast.Expr.t
 (** [constant k] reifies the constant [k] into the C AST. *)
+
+(** {1 Pretty-printing} *)
+
+val pp_constant : Constant.t Fmt.t
+(** [pp_constant] pretty-prints constants via {!constant}. *)

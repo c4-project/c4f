@@ -1,0 +1,11 @@
+;; -*- mode: lisp; -*-
+
+(library
+ (name act_fuzz_actions)
+ (public_name act.fuzz_actions)
+ (synopsis "Automagic Compiler Tormentor: FIR fuzzer action implementations")
+ (preprocess
+  (pps ppx_deriving.std ppx_jane))
+ (modules_without_implementation storelike_types)
+ (libraries sexplib0 base base.caml stdio splittable_random travesty
+   travesty.base_exts act.common act.litmus act.utils act.fuzz act.fir))

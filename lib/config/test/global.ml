@@ -11,31 +11,35 @@
 
 open Base
 open Stdio
-open Act_config
-module Ac = Act_common
-module Am = Act_machine
+
+open struct
+  module Src = Act_config
+  module Ac = Act_common
+  module Am = Act_machine
+end
 
 module Data = struct
-  let fuzz : Act_fuzz.Config.t Lazy.t = Lazy.from_fun Act_fuzz.Config.make
+  let fuzz : Act_fuzz_run.Config.t Lazy.t =
+    Lazy.from_fun Act_fuzz_run.Config.make
 
   (* These defaults should line up with the ones in Machine.Test.Qualified.
 
      TODO(@MattWindsor91): unify them. *)
 
-  let defaults : Default.t Lazy.t =
+  let defaults : Src.Default.t Lazy.t =
     Lazy.from_fun
       Ac.Id.(
-        Default.make
+        Src.Default.make
           ~machines:[of_string "foo"; of_string "bar"; of_string "localhost"]
           ~arches:[of_string "x86.att"])
 
   let machines : Am.Spec.Set.t Lazy.t =
     Act_machine_test.Data.Spec_sets.single_local_machine
 
-  let global : Global.t Lazy.t =
+  let global : Src.Global.t Lazy.t =
     Lazy.Let_syntax.(
       let%map fuzz = fuzz and defaults = defaults and machines = machines in
-      Global.make ~fuzz ~defaults ~machines ())
+      Src.Global.make ~fuzz ~defaults ~machines ())
 end
 
 let%test_module "accessors" =
@@ -43,18 +47,18 @@ let%test_module "accessors" =
     let global = Lazy.force Data.global
 
     let%expect_test "defaults" =
-      print_s [%sexp (Global.defaults global : Default.t)] ;
+      print_s [%sexp (Src.Global.defaults global : Src.Default.t)] ;
       [%expect
         {|
           ((arches ((x86 att))) (machines ((foo) (bar) (localhost))) (backends ())) |}]
 
     let%expect_test "fuzz" =
-      print_s [%sexp (Global.fuzz global : Act_fuzz.Config.t)] ;
+      print_s [%sexp (Src.Global.fuzz global : Act_fuzz_run.Config.t)] ;
       [%expect {| ((weights ()) (params ()) (flags ())) |}]
 
     let%expect_test "machines" =
       let machines =
-        global |> Global.machines |> Act_common.Spec.Set.to_list
+        global |> Src.Global.machines |> Act_common.Spec.Set.to_list
       in
       Fmt.(
         pr "@[%a@]@."

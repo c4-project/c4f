@@ -14,7 +14,7 @@
     Identifiers contain an ordered list of case-insensitive elements, called
     'tags'. *)
 
-open Core_kernel
+open Base
 
 (** [t] is the type of compiler and machine identifiers. *)
 type t
@@ -87,7 +87,7 @@ val pp_alist : 'e Fmt.t -> (t, 'e) List.Assoc.t Fmt.t
 (** [pp_alist ppe] vertically pretty-prints an associative list from
     identifiers to values printable by [ppe]. *)
 
-val pp_map : 'e Fmt.t -> 'e Map.t Fmt.t
+val pp_map : 'e Fmt.t -> (t, 'e, comparator_witness) Map.t Fmt.t
 (** [pp_map ppe] vertically pretty-prints a map from identifiers to values
     printable by [ppe]. *)
 

@@ -17,8 +17,8 @@ open struct
   module Qx = Act_utils.My_quickcheck
 end
 
-let printer (e : Src.Expression.t) : unit =
-  e |> Src.Reify_expr.reify |> Fmt.(pr "@[%a@]@." Act_litmus_c.Ast.Expr.pp)
+let printer : Src.Expression.t -> unit =
+  Fmt.(pr "@[%a@]@." Act_fir.Reify_expr.pp)
 
 let print_sample (module G : Src.Expression_gen.S) : unit =
   (* Expressions are quite big, so we tone down the generation parameters a

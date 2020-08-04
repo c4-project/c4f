@@ -69,3 +69,6 @@ let decl (init : Initialiser.t Ac.C_named.t) : Ast.Decl.t =
   ; declarator=
       [ { declarator= id_declarator ty id
         ; initialiser= Option.map ~f:to_initialiser value } ] }
+
+let pp_constant : Constant.t Fmt.t =
+  Fmt.using constant Act_litmus_c.Ast.Expr.pp

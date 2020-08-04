@@ -16,7 +16,6 @@
     in action replays. *)
 
 open Core
-module Ac = Act_common
 
 let litmus_path_of (trace_path : Fpath.t) : Fpath.t =
   trace_path |> Fpath.rem_ext ~multi:true |> Fpath.add_ext "litmus"
@@ -26,9 +25,9 @@ let run_on_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t =
   let litmus_path = litmus_path_of path in
   Or_error.Let_syntax.(
     let%bind trace = Act_fuzz.Trace.load (Plumbing.Input.of_fpath path) in
-    let config = Act_fuzz.Config.make () in
-    let aux = Act_fuzz.Filter.Aux.make ~config trace in
-    Act_fuzz.Filter.Replay.run aux
+    let config = Act_fuzz_run.Config.make () in
+    let aux = Act_fuzz_run.Filter.Aux.make ~config trace in
+    Act_fuzz_run.Filter.Replay.run aux
       (Plumbing.Input.of_fpath litmus_path)
       Plumbing.Output.stdout)
 

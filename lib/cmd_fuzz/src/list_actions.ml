@@ -29,7 +29,7 @@ let list_fuzzer_actions_readme () : string =
 
 let summaries_of_config (cfg : Act_config.Global.t) :
     Act_fuzz.Action.Summary.t Map.M(Ac.Id).t Or_error.t =
-  cfg |> Act_config.Global.fuzz |> Act_fuzz.Config.summarise
+  cfg |> Act_config.Global.fuzz |> Act_fuzz_run.Config.summarise
 
 let print (o : Ac.Output.t) (map : Act_fuzz.Action.Summary.t Map.M(Ac.Id).t)
     : unit =

@@ -15,64 +15,43 @@
 open Base
 
 open struct
-  module Tx = Travesty_base_exts
+  module Ac = Act_common
 end
 
-let actions : Action.With_default_weight.t list Lazy.t =
-  lazy
-    Action.With_default_weight.
-      [ make ~action:(module Dead_actions.Early_out) ~default_weight:20
-      ; make ~action:(module Dead_actions.Goto) ~default_weight:20
-      ; make ~action:(module If_actions.Invert) ~default_weight:10
-      ; make
-          ~action:(module If_actions.Surround.Tautology)
-          ~default_weight:15
-      ; make
-          ~action:(module If_actions.Surround.Duplicate)
-          ~default_weight:15
-      ; make ~action:(module Loop_actions.Surround) ~default_weight:15
-      ; make ~action:(module Mem_actions.Fence) ~default_weight:15
-      ; make ~action:(module Mem_actions.Strengthen) ~default_weight:15
-      ; make ~action:(module Program_actions.Make_empty) ~default_weight:10
-      ; make ~action:(module Program_actions.Label) ~default_weight:15
-      ; make
-          ~action:(module Cmpxchg_actions.Int_always_succeed)
-          ~default_weight:30
-      ; make ~action:(module Store_actions.Int) ~default_weight:20
-      ; make ~action:(module Store_actions.Int_dead) ~default_weight:20
-      ; make ~action:(module Store_actions.Int_redundant) ~default_weight:15
-      ; make ~action:(module Store_actions.Xchgify) ~default_weight:15
-      ; make ~action:(module Fetch_actions.Int_dead) ~default_weight:20
-      ; make ~action:(module Fetch_actions.Int_redundant) ~default_weight:20
-      ; make ~action:(module Var_actions.Make) ~default_weight:20
-      ; make ~action:(module Var_actions.Volatile) ~default_weight:25
-        (* These are disabled by default because they induce transactions.
-           TODO(@MattWindsor91): gate them in another way. *)
-      ; make ~action:(module Lock_actions.Atomic_surround) ~default_weight:0
-      ; make ~action:(module Lock_actions.Sync_surround) ~default_weight:0 ]
+let forbid_already_written_flag_key : Ac.Id.t =
+  Ac.Id.("store" @: "forbid-already-written" @: empty)
 
-let action_map : Action.With_default_weight.t Map.M(Act_common.Id).t Lazy.t =
-  Lazy.(
-    actions
-    >>| List.map ~f:(fun a -> (Action.With_default_weight.name a, a))
-    >>| Map.of_alist_exn (module Act_common.Id))
+let forbid_already_written_flag (param_map : Param_map.t) : Flag.t Or_error.t
+    =
+  Param_map.get_flag param_map ~id:forbid_already_written_flag_key
 
-let make_param_spec_map
-    (xs : (Act_common.Id.t, 'a Param_spec.t) List.Assoc.t) :
-    'a Param_spec.t Map.M(Act_common.Id).t =
-  xs |> Map.of_alist_exn (module Act_common.Id)
+let unsafe_weaken_orders_flag_key : Ac.Id.t =
+  Ac.Id.("mem" @: "unsafe-weaken-orders" @: empty)
 
-let param_map : Param_spec.Int.t Map.M(Act_common.Id).t Lazy.t =
+let unsafe_weaken_orders_flag (param_map : Param_map.t) : Flag.t Or_error.t =
+  Param_map.get_flag param_map ~id:unsafe_weaken_orders_flag_key
+
+let make_global_flag_key : Ac.Id.t =
+  Ac.Id.("var" @: "make" @: "global" @: empty)
+
+let make_global_flag (param_map : Param_map.t) : Flag.t Or_error.t =
+  Param_map.get_flag param_map ~id:make_global_flag_key
+
+let make_param_spec_map (xs : (Ac.Id.t, 'a Param_spec.t) List.Assoc.t) :
+    'a Param_spec.t Map.M(Ac.Id).t =
+  xs |> Map.of_alist_exn (module Ac.Id)
+
+let param_map : Param_spec.Int.t Map.M(Ac.Id).t Lazy.t =
   lazy
     (make_param_spec_map
-       [ ( Act_common.Id.("cap" @: "actions" @: empty)
+       [ ( Ac.Id.("cap" @: "actions" @: empty)
          , Param_spec.make ~default:30
              ~description:
                {|
               Caps the number of action passes that the fuzzer will run.
             |}
          )
-       ; ( Act_common.Id.("cap" @: "threads" @: empty)
+       ; ( Ac.Id.("cap" @: "threads" @: empty)
          , Param_spec.make ~default:16
              ~description:
                {|
@@ -88,10 +67,10 @@ let param_map : Param_spec.Int.t Map.M(Act_common.Id).t Lazy.t =
             |}
          ) ])
 
-let flag_map : Param_spec.Bool.t Map.M(Act_common.Id).t Lazy.t =
+let flag_map : Param_spec.Bool.t Map.M(Ac.Id).t Lazy.t =
   lazy
     (make_param_spec_map
-       [ ( Storelike.forbid_already_written_flag_key
+       [ ( forbid_already_written_flag_key
          , Param_spec.make ~default:(Flag.exact false)
              ~description:
                {|
@@ -105,7 +84,7 @@ let flag_map : Param_spec.Bool.t Map.M(Act_common.Id).t Lazy.t =
               itself to already-written variables).
             |}
          )
-       ; ( Mem_actions.unsafe_weaken_orders_flag_key
+       ; ( unsafe_weaken_orders_flag_key
          , Param_spec.make ~default:(Flag.exact false)
              ~description:
                {|
@@ -114,7 +93,7 @@ let flag_map : Param_spec.Bool.t Map.M(Act_common.Id).t Lazy.t =
               ways).
             |}
          )
-       ; ( Var_actions.make_global_flag_key
+       ; ( make_global_flag_key
          , Param_spec.make
              ~default:(Or_error.ok_exn (Flag.try_make ~wins:1 ~losses:1))
              ~description:

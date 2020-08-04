@@ -98,8 +98,9 @@ module Pool = struct
                ~default:(With_default_weight.default_weight act) ))
     |> Weighted_list.from_alist
 
-  let summarise : t -> Summary.t Id.Map.t =
-    Weighted_list.fold ~init:Id.Map.empty
+  let summarise : t -> Summary.t Map.M(Id).t =
+    Weighted_list.fold
+      ~init:(Map.empty (module Id))
       ~f:(fun map (action : With_default_weight.t) weight ->
         (* TODO(@MattWindsor91): see TODO above, as it pertains to this bit
            too. *)

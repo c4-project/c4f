@@ -122,3 +122,5 @@ let uop (op : Op.Unary.t) (x : Ast.Expr.t) : Ast.Expr.t =
 let reify (x : Expression.t) : Ast.Expr.t =
   let atomic = Reify_atomic.reify_expr ~expr:Fn.id in
   Reify_prim.(Expression.reduce x ~constant ~address ~atomic ~bop ~uop)
+
+let pp : Expression.t Fmt.t = Fmt.using reify Act_litmus_c.Ast.Expr.pp

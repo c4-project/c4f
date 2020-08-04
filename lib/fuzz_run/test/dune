@@ -1,0 +1,10 @@
+;; -*- mode: lisp; -*-
+
+(library
+ (name act_fuzz_run_test)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane))
+ (libraries sexplib0 expect_test_helpers_core ppx_expect.common
+   ppx_expect.config ppx_expect.config_types ppx_inline_test.config base
+   base.caml fmt act.fuzz act.fuzz_run))

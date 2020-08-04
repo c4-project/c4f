@@ -15,3 +15,6 @@
 
 val reify : Expression.t -> Act_litmus_c.Ast.Expr.t
 (** [reify e] reifies the mini-expression [e] into the C AST. *)
+
+val pp : Expression.t Fmt.t
+(** [pp] is a pretty-printer via {!reify}. *)

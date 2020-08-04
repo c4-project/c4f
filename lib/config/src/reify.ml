@@ -57,12 +57,12 @@ module Fuzz = struct
       =
     Fn.compose reify_flag_alist Map.to_alist
 
-  let reify (fuzz : Act_fuzz.Config.t) : Ast.t =
+  let reify (fuzz : Act_fuzz_run.Config.t) : Ast.t =
     [ Fuzz
         (List.concat
-           [ reify_weights (Act_fuzz.Config.weights fuzz)
-           ; reify_params (Act_fuzz.Config.params fuzz)
-           ; reify_flags (Act_fuzz.Config.flags fuzz) ]) ]
+           [ reify_weights (Act_fuzz_run.Config.weights fuzz)
+           ; reify_params (Act_fuzz_run.Config.params fuzz)
+           ; reify_flags (Act_fuzz_run.Config.flags fuzz) ]) ]
 end
 
 module Machines = struct

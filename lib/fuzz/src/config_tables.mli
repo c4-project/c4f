@@ -14,12 +14,7 @@
 
 open Base
 
-val actions : Action.With_default_weight.t list Lazy.t
-(** [actions] is a listing of all actions with their default weights. *)
-
-val action_map : Action.With_default_weight.t Map.M(Act_common.Id).t Lazy.t
-(** [module_map] lazily evaluates to a map from action IDs to their actions.
-    It is, effectively, a rearrangement of the data available in [actions]. *)
+(** {1 Tables} *)
 
 val param_map : Param_spec.Int.t Map.M(Act_common.Id).t Lazy.t
 (** [param_map] lazily evaluates to a map from integer parameter IDs to their
@@ -28,3 +23,25 @@ val param_map : Param_spec.Int.t Map.M(Act_common.Id).t Lazy.t
 val flag_map : Param_spec.Bool.t Map.M(Act_common.Id).t Lazy.t
 (** [flag_map] lazily evaluates to a map from Boolean flag IDs to their
     specifications, including their default values. *)
+
+(** {1 Flag accessors} *)
+
+val forbid_already_written_flag : Param_map.t -> Flag.t Or_error.t
+(** [forbid_already_written_flag pm] gets from [pm] the flag that, when true,
+    stops store actions from considering variables with existing writes. *)
+
+val forbid_already_written_flag_key : Act_common.Id.t
+(** [forbid_already_written_flag_key] is the key ID for
+    {!forbidden_already_written_flag}. *)
+
+val make_global_flag : Param_map.t -> Flag.t Or_error.t
+(** [make_global_flag pm] gets from [pm] a flag that decides whether variable
+    creation actions should make globals if true (and locals if false). This
+    flag is usually stochastic, to let such actions pick globals sometimes
+    and locals at other times. *)
+
+(** {2 Unsafe flags} *)
+
+val unsafe_weaken_orders_flag : Param_map.t -> Flag.t Or_error.t
+(** [unsafe_weaken_orders_flag pm] gets from [pm] an unsafe flag that, when
+    true, lets memory-order modifying actions weaken memory orders. *)

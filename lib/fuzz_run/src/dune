@@ -1,0 +1,10 @@
+;; -*- mode: lisp; -*-
+
+(library
+ (name act_fuzz_run)
+ (public_name act.fuzz_run)
+ (synopsis "Automagic Compiler Tormentor: FIR fuzzer runner")
+ (preprocess
+  (pps ppx_deriving.std ppx_jane))
+ (libraries sexplib0 base stdio splittable_random travesty plumbing act.utils
+   act.common act.fir act.fuzz act.fuzz_actions))
