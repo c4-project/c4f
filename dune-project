@@ -2,7 +2,7 @@
 (name act)
 
 ; Doesn't work well with the latest jane street, so disabling for now.
-; (implicit_transitive_deps false)
+(implicit_transitive_deps false)
 (generate_opam_files true)
 (formatting (enabled_for dune ocaml))
 

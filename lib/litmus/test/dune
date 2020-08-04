@@ -5,6 +5,6 @@
  (inline_tests)
  (preprocess
   (pps ppx_jane))
- (libraries fmt ppx_expect.common ppx_expect.config ppx_inline_test.config
-   base base.caml stdio parsexp yojson act.common act.litmus act.utils
-   sexplib0))
+ (libraries fmt ppx_expect.common ppx_expect.config ppx_expect.config_types
+   ppx_inline_test.config base base.caml stdio parsexp yojson act.common
+   act.litmus act.utils sexplib0))

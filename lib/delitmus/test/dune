@@ -6,5 +6,6 @@
  (inline_tests)
  (preprocess
   (pps ppx_jane))
- (libraries ppx_inline_test.config ppx_expect.config ppx_expect.common base
-   base.caml stdio fmt act.fir act.litmus_c act.common act.delitmus))
+ (libraries ppx_inline_test.config ppx_expect.config ppx_expect.config_types
+   ppx_expect.common base base.caml stdio fmt act.fir act.litmus_c act.common
+   act.delitmus))
