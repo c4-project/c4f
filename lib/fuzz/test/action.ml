@@ -22,7 +22,7 @@ module Test_utils = struct
         Act_fir.(
           Reify.func
             (Act_common.C_named.name fn)
-            (Act_common.C_named.value fn)) )
+            (Act_common.C_named.value fn)))
 
   let pp_tu : Act_litmus_c.Ast.Translation_unit.t Fmt.t =
     Fmt.(list ~sep:(sp ++ sp) Act_litmus_c.Ast.External_decl.pp)

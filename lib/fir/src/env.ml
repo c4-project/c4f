@@ -54,7 +54,7 @@ let of_maps : Type.t Map.M(Ac.C_id).t -> Constant.t Map.M(Ac.C_id).t -> t =
       | `Both (type_of, known_value) ->
           Some (Record.make ~type_of ~known_value ())
       | `Right _ ->
-          None )
+          None)
 
 let typing : t -> Type.t Map.M(Ac.C_id).t = Map.map ~f:Record.type_of
 
@@ -66,11 +66,11 @@ let variables_with_known_values :
   Map.filter_map ~f:(fun (data : Record.t) ->
       Option.(
         data |> Record.known_value
-        >>| fun const -> (Record.type_of data, const)) )
+        >>| fun const -> (Record.type_of data, const)))
 
 let filter_to_known_values : t -> t =
   Map.filter ~f:(fun (data : Record.t) ->
-      data |> Record.known_value |> Option.is_some )
+      data |> Record.known_value |> Option.is_some)
 
 let type_of_known_value (env : t) ~(id : Ac.C_id.t) : Type.t Or_error.t =
   Or_error.(type_of env ~id >>| Type.basic_type >>| Type.make)

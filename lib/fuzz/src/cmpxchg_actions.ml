@@ -62,7 +62,7 @@ Storelike.Make (struct
         let%bind out_var = Var.Map.gen_fresh_var vars in
         let%map exp_var =
           filter (Var.Map.gen_fresh_var vars) ~f:(fun id ->
-              not (Ac.C_id.equal id out_var) )
+              not (Ac.C_id.equal id out_var))
         in
         (out_var, exp_var)))
 
@@ -78,7 +78,7 @@ Storelike.Make (struct
           | Ok (Some v) ->
               Some (obj, v)
           | _ ->
-              None ))
+              None))
 
   let gen_mos : (Cm.Mem_order.t * Cm.Mem_order.t) Base_quickcheck.Generator.t
       =
@@ -87,7 +87,7 @@ Storelike.Make (struct
         let%bind succ = Cm.Mem_order.quickcheck_generator in
         let%map fail =
           filter Cm.Mem_order.gen_cmpxchg_fail ~f:(fun fail ->
-              Cm.Mem_order.(fail <= succ) )
+              Cm.Mem_order.(fail <= succ))
         in
         (succ, fail)))
 

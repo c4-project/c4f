@@ -26,7 +26,7 @@ let%test_module "sift_decls" =
                     | `Decl _ ->
                         "DECL"
                     | `Ndecl x ->
-                        x )))
+                        x)))
       in
       Stdio.print_s [%sexp (result : (string list * string list) Or_error.t)] ;
       [%expect {| (Ok ((foo bar) (baz barbaz))) |}]

@@ -109,7 +109,7 @@ module Q : Quickcheck.S with type t := t = struct
     Quickcheck.Shrinker.create (fun ident ->
         ident |> raw
         |> Quickcheck.Shrinker.shrink String.quickcheck_shrinker
-        |> Sequence.filter_map ~f:create_opt )
+        |> Sequence.filter_map ~f:create_opt)
 end
 
 module Json : Plumbing.Jsonable_types.S with type t := t = struct

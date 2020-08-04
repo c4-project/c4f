@@ -32,7 +32,7 @@ module Test_data = struct
           { cmpxchg
           ; exp_val= Act_fir.Constant.int 12345
           ; exp_var= Act_common.Litmus_id.of_string "0:expected"
-          ; out_var= Act_common.Litmus_id.of_string "0:out" } )
+          ; out_var= Act_common.Litmus_id.of_string "0:out" })
 end
 
 let%test_module "cmpxchg.make.int.always-succeed" =

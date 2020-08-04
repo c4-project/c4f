@@ -116,13 +116,13 @@ end = struct
     Observer.(
       fixed_point (fun mu ->
           unmap ~f:anonymise
-            [%quickcheck.observer: [`A of Lv.t | `B of [%custom mu]]] ))
+            [%quickcheck.observer: [`A of Lv.t | `B of [%custom mu]]]))
 
   let quickcheck_shrinker : t Shrinker.t =
     Shrinker.(
       fixed_point (fun mu ->
           map ~f:deanonymise ~f_inverse:anonymise
-            [%quickcheck.shrinker: [`A of Lv.t | `B of [%custom mu]]] ))
+            [%quickcheck.shrinker: [`A of Lv.t | `B of [%custom mu]]]))
 end
 
 module Quickcheck_main = Quickcheck_generic (Lvalue)

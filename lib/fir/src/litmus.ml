@@ -54,7 +54,7 @@ module Lang :
     let listing (np : t) : Statement.t list =
       let fn = Named.value np in
       List.map (Function.body_decls fn) ~f:(fun (name, value) ->
-          `Decl (Named.make value ~name) )
+          `Decl (Named.make value ~name))
       @ List.map (Function.body_stms fn) ~f:(fun x -> `Stm x)
 
     let pp : t Fmt.t =

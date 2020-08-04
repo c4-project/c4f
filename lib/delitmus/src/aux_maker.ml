@@ -50,7 +50,7 @@ module Make (B : Runner_types.Basic) = struct
     Or_error.(
       test |> Act_fir.Litmus_vars.make_type_alist
       >>| List.mapi ~f:(fun index (id, ty) ->
-              make_var_record index id ty >>| fun rc -> (id, rc) )
+              make_var_record index id ty >>| fun rc -> (id, rc))
       >>= Or_error.combine_errors
       >>= Map.of_alist_or_error (module Ac.Litmus_id)
       >>| Ac.Scoped_map.of_litmus_id_map)

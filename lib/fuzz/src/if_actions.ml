@@ -80,7 +80,7 @@ module Surround = struct
     let run (test : Subject.Test.t) ~(payload : Payload.t) :
         Subject.Test.t State.Monad.t =
       Surround.apply ~filter:path_filter payload ~test ~f:(fun cond ->
-          wrap_in_if ~cond )
+          wrap_in_if ~cond)
   end
 
   module Duplicate : S = Make (struct

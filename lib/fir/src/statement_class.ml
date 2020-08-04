@@ -75,15 +75,14 @@ include Class.Make_ext (struct
   let classify_rec (type e) (stm : e Statement.t) : t list =
     Statement.reduce stm
       ~prim:(fun (_, x) ->
-        List.map ~f:(fun t -> Prim (Some t)) (Prim.classify_rec x) )
+        List.map ~f:(fun t -> Prim (Some t)) (Prim.classify_rec x))
       ~if_stm:(fun ifs ->
         If
-        :: (unfold_block (If.t_branch ifs) @ unfold_block (If.f_branch ifs))
-        )
+        :: (unfold_block (If.t_branch ifs) @ unfold_block (If.f_branch ifs)))
       ~flow:(fun f ->
         Option.to_list
           (Option.map ~f:(fun t -> Flow (Some t)) (Flow.classify' f))
-        @ unfold_block (Flow_block.body f) )
+        @ unfold_block (Flow_block.body f))
 
   let class_matches (clazz : t) ~(template : t) : bool =
     match (template, clazz) with

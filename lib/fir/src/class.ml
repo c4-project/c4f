@@ -21,7 +21,7 @@ struct
 
   let class_unmatches_any (clazz : t) ~(templates : t list) : bool =
     List.exists templates ~f:(fun template ->
-        not (class_matches clazz ~template) )
+        not (class_matches clazz ~template))
 
   let matches_any (type e) (stm : e elt) ~(templates : t list) : bool =
     Option.exists (classify stm) ~f:(class_matches_any ~templates)

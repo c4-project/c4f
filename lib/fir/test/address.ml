@@ -23,7 +23,7 @@ let%test_module "normalise" =
           [%test_result: Act_fir.Address.t] ~here:[[%here]]
             ~equal:[%equal: Act_fir.Address.t]
             Act_fir.Address.(normalise (normalise addr))
-            ~expect:(normalise addr) )
+            ~expect:(normalise addr))
   end )
 
 let%test_module "variable_of" =
@@ -33,7 +33,7 @@ let%test_module "variable_of" =
         (module Act_fir.Address)
         ~f:(fun x ->
           [%test_eq: Act_common.C_id.t] ~here:[[%here]] (variable_of x)
-            (variable_of (ref x)) )
+            (variable_of (ref x)))
 
     let%expect_test "variable_of: nested example" =
       let example =
@@ -77,7 +77,7 @@ let%test_module "deref" =
           [%test_result: Act_fir.Address.t] ~here:[[%here]]
             ~equal:[%equal: Act_fir.Address.t]
             Act_fir.Address.(deref (ref addr))
-            ~expect:(normalise addr) )
+            ~expect:(normalise addr))
   end )
 
 let%test_unit "on_address_of_typed_id: always takes pointer type" =
@@ -95,4 +95,4 @@ let%test_unit "on_address_of_typed_id: always takes pointer type" =
         (Tc.type_of (on_address_of_typed_id r))
         ~expect:
           (Or_error.return
-             Act_fir.Type.(make ~is_pointer:true (basic_type ty))) )
+             Act_fir.Type.(make ~is_pointer:true (basic_type ty))))

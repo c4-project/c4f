@@ -159,7 +159,7 @@ struct
     if Ac.C_id.equal target (Ac.C_named.name d) then
       Ac.C_named.map_right d ~f:(fun init ->
           Cm.Initialiser.(
-            make ~ty:(Cm.Type.as_volatile (ty init)) ?value:(value init) ()) )
+            make ~ty:(Cm.Type.as_volatile (ty init)) ?value:(value init) ()))
     else d
 
   let update_decls (id : Ac.Litmus_id.t) (subject : Subject.Test.t) :
@@ -167,7 +167,7 @@ struct
     match Ac.Litmus_id.as_local id with
     | Some (index, target) ->
         Act_litmus.Test.Raw.try_map_thread subject ~index ~f:(fun x ->
-            Ok (Subject.Thread.map_decls x ~f:(update_thread_decl ~target)) )
+            Ok (Subject.Thread.map_decls x ~f:(update_thread_decl ~target)))
     | None ->
         Or_error.error_s
           [%message

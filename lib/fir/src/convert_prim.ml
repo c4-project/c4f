@@ -51,7 +51,7 @@ let partition_qualifiers :
     | #Astb.Storage_class_spec.t as ss ->
         Second ss
     | #Astb.Type_qual.t as qs ->
-        Second qs )
+        Second qs)
 
 let type_specs_to_basic (specs : [> Ast.Type_spec.t] list) :
     Type.Basic.t Or_error.t =

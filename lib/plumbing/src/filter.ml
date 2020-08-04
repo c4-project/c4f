@@ -33,7 +33,7 @@ let copy (ic : Stdio.In_channel.t) (oc : Stdio.Out_channel.t) :
     unit Or_error.t =
   Or_error.try_with (fun () ->
       Stdio.In_channel.iter_lines ic
-        ~f:(Fn.compose (Stdio.Out_channel.output_lines oc) List.return) )
+        ~f:(Fn.compose (Stdio.Out_channel.output_lines oc) List.return))
 
 (** [route_input_to_file src] creates a temporary file, copies [src]'s
     contents into it, and returns it (provided that no errors occur). *)
@@ -101,7 +101,7 @@ module Make_files_only (B : Basic_files_only) :
       Or_error.Let_syntax.(
         let%bind infile = ensure_input_file input in
         ensure_output_file output ~f:(fun outfile ->
-            B.run ctx ~infile ~outfile ))
+            B.run ctx ~infile ~outfile))
 end
 
 module Adapt (B : Basic_adapt) :

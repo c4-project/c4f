@@ -42,7 +42,7 @@ let test_all_expressions_have_type
     ~f:(fun e ->
       [%test_result: Src.Type.t Or_error.t] (Ty.type_of e) ~here:[[%here]]
         ~equal:[%compare.equal: Src.Type.t Or_error.t]
-        ~expect:(Or_error.return ty) )
+        ~expect:(Or_error.return ty))
 
 module Exp_lvalues =
   Travesty.Traversable.Chain0
@@ -72,9 +72,9 @@ let test_all_expressions_evaluate
     ~f:(fun e ->
       [%test_result: bool Or_error.t]
         (let k_result = Src.Expression_eval.as_constant ~env:heap e in
-         Or_error.map ~f:pred k_result )
+         Or_error.map ~f:pred k_result)
         ~expect:(Or_error.return true)
-        ~equal:[%compare.equal: bool Or_error.t] ~here:[[%here]] )
+        ~equal:[%compare.equal: bool Or_error.t] ~here:[[%here]])
 
 let%test_module "Int_values" =
   ( module struct
@@ -125,14 +125,14 @@ let%test_module "Int_values" =
         (fun e ->
           ( module Src.Expression_gen.Int_values (struct
             let env = e
-          end) ) )
+          end) ))
         Src.Type.(int ())
 
     let%test_unit "all referenced variables in environment" =
       test_all_expressions_in_env (fun e ->
           ( module Src.Expression_gen.Int_values (struct
             let env = e
-          end) ) )
+          end) ))
   end )
 
 let%test_module "Int zeroes" =
@@ -164,13 +164,13 @@ let%test_module "Int zeroes" =
 
     let%test_unit "all expressions evaluate to 0" =
       test_all_expressions_evaluate test_fun ~pred:(fun x ->
-          match Src.Constant.as_int x with Ok 0 -> true | _ -> false )
+          match Src.Constant.as_int x with Ok 0 -> true | _ -> false)
 
     let%test_unit "all referenced variables in environment" =
       test_all_expressions_in_env (fun e ->
           ( module Src.Expression_gen.Int_zeroes (struct
             let env = e
-          end) ) )
+          end) ))
   end )
 
 let%test_module "Atomic int nops" =
@@ -227,7 +227,7 @@ let%test_module "Atomic int nops" =
       test_all_expressions_in_env (fun e ->
           ( module Src.Expression_gen.Int_zeroes (struct
             let env = e
-          end) ) )
+          end) ))
   end )
 
 let%test_module "Bool_values" =
@@ -296,7 +296,7 @@ let%test_module "Bool_values" =
       test_all_expressions_in_env (fun e ->
           ( module Src.Expression_gen.Bool_values (struct
             let env = e
-          end) ) )
+          end) ))
   end )
 
 let%test_module "Bool falsehoods" =
@@ -329,13 +329,13 @@ let%test_module "Bool falsehoods" =
 
     let%test_unit "all expressions evaluate to 'false'" =
       test_all_expressions_evaluate test_fun ~pred:(fun x ->
-          match Src.Constant.as_bool x with Ok b -> not b | _ -> false )
+          match Src.Constant.as_bool x with Ok b -> not b | _ -> false)
 
     let%test_unit "all referenced variables in environment" =
       test_all_expressions_in_env (fun e ->
           ( module Src.Expression_gen.Bool_values (struct
             let env = e
-          end) ) )
+          end) ))
   end )
 
 let%test_module "Bool tautologies" =
@@ -369,11 +369,11 @@ let%test_module "Bool tautologies" =
 
     let%test_unit "all expressions evaluate to 'true'" =
       test_all_expressions_evaluate test_fun ~pred:(fun x ->
-          match Src.Constant.as_bool x with Ok b -> b | _ -> false )
+          match Src.Constant.as_bool x with Ok b -> b | _ -> false)
 
     let%test_unit "all referenced variables in environment" =
       test_all_expressions_in_env (fun e ->
           ( module Src.Expression_gen.Bool_values (struct
             let env = e
-          end) ) )
+          end) ))
   end )

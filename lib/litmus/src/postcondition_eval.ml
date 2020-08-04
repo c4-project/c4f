@@ -44,4 +44,4 @@ let eval (pc : 'const Postcondition.t)
   let predicate = Postcondition.predicate pc in
   let quantifier = Postcondition.quantifier pc in
   eval_quantifier quantifier ~subjects ~f:(fun a ->
-      eval_pred predicate ~elt:(elt a) )
+      eval_pred predicate ~elt:(elt a))

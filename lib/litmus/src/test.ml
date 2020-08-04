@@ -35,7 +35,7 @@ module Raw = struct
   let bump_tids (type const) (header : const Header.t) ~(from : int)
       ~(delta : int) : const Header.t =
     Header.map_tids header ~f:(fun tid ->
-        if from <= tid then tid + delta else tid )
+        if from <= tid then tid + delta else tid)
 
   let has_threads (type const prog) (test : (const, prog) t) : bool =
     not (List.is_empty (threads test))
@@ -86,7 +86,7 @@ module Raw = struct
     Or_error.Let_syntax.(
       let%map threads' =
         Tx.List.With_errors.replace_m threads index ~f:(fun x ->
-            x |> f >>| Option.some )
+            x |> f >>| Option.some)
       in
       {test with threads= threads'})
 
@@ -110,7 +110,7 @@ let check_init_against_globals (type k t)
           [%message
             "Program global variables aren't compatible with init."
               ~in_program:(globals_keys : Set.M(Ac.C_id).t)
-              ~in_init:(init_keys : Set.M(Ac.C_id).t)] ))
+              ~in_init:(init_keys : Set.M(Ac.C_id).t)]))
 
 module Make (Lang : Test_types.Basic) :
   Test_types.S with module Lang = Lang and type raw = Raw.M(Lang).t = struct
@@ -169,7 +169,7 @@ module Make (Lang : Test_types.Basic) :
       Validate.booltest
         (fun t ->
           Option.is_some (Header.locations t)
-          || Option.is_some (Header.postcondition t) )
+          || Option.is_some (Header.postcondition t))
         ~if_false:"Test must have a postcondition or location stanza."
 
     let variables_in_init (header : _ Header.t) : Set.M(Ac.C_id).t =
@@ -223,11 +223,11 @@ module Make (Lang : Test_types.Basic) :
                 Option.equal
                   (Map.equal Lang.Type.equal)
                   s
-                  (Lang.Program.global_vars x') )
+                  (Lang.Program.global_vars x'))
           in
           Or_error.(
             Tx.Or_error.unless_m is_uniform ~f:(fun () ->
-                error_string "Threads disagree on global variables sets." )
+                error_string "Threads disagree on global variables sets.")
             >>| fun () -> s)
 
     (** [validate_globals] checks an incoming Litmus test to ensure that, if
@@ -242,7 +242,7 @@ module Make (Lang : Test_types.Basic) :
           | Some gs ->
               check_init_against_globals
                 (Header.init (Raw.header candidate))
-                gs )
+                gs)
 
     let validate : t Validate.check =
       Validate.all [validate_fields; validate_globals]

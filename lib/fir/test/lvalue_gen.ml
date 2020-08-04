@@ -35,7 +35,7 @@ let test_type (env : Src.Env.t)
     (module Qc)
     ~f:(fun lv ->
       [%test_result: Src.Type.t Or_error.t] ~here:[[%here]] (Tc.type_of lv)
-        ~expect:(Or_error.return expected) )
+        ~expect:(Or_error.return expected))
 
 let%test_module "On_env" =
   ( module struct

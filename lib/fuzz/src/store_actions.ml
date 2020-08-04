@@ -190,7 +190,7 @@ module Int_redundant : S = Make (struct
              values works here, because there's no way we can safely return
              an error if not. *)
           let src = Or_error.ok_exn (known_value_expr_of_dest dst) in
-          Cm.Atomic_store.make ~src ~dst ~mo )
+          Cm.Atomic_store.make ~src ~dst ~mo)
   end
 end)
 

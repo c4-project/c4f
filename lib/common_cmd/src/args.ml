@@ -81,7 +81,7 @@ module Other = struct
         ; map
             ~f:
               (Option.map ~f:(fun x ->
-                   Act_backend.Arch.C {underlying_arch= Some x} ))
+                   Act_backend.Arch.C {underlying_arch= Some x}))
             (arch ~name:"-carch"
                ~doc:
                  "tells the backend to treat the input as C, with the given \

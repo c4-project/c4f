@@ -113,7 +113,7 @@ struct
            (Act_common.Litmus_id.t, Var_map.Record.t) List.Assoc.t
         -> (Act_common.Litmus_id.t, Var_map.Record.t) List.Assoc.t =
       List.filter ~f:(fun (k, _) ->
-          Act_common.Litmus_id.is_in_local_scope k ~from:Ctx.T.tid )
+          Act_common.Litmus_id.is_in_local_scope k ~from:Ctx.T.tid)
 
     let expand_parameter (record : Var_map.Record.t) :
         (Act_common.C_id.t * C.Type.t) Or_error.t =

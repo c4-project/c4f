@@ -56,7 +56,7 @@ include Class.Make_ext (struct
       ~address:(Fn.const [Address])
       ~atomic:(fun x ->
         let inner = Atomic_expression.On_expressions.to_list x in
-        List.concat ([Atomic (Atomic_class.classify_expr x)] :: inner) )
+        List.concat ([Atomic (Atomic_class.classify_expr x)] :: inner))
       ~bop:(fun o l r -> Bop (Some o) :: (l @ r))
       ~uop:(fun o x -> Uop (Some o) :: x)
 end)

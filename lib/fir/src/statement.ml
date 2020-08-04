@@ -96,7 +96,7 @@ let rec has_while_loops (m : 'meta t) : bool =
     ~if_stm:(true_of_any_if_branch_stm ~predicate:has_while_loops)
     ~flow:(fun f ->
       Flow_block.is_while_loop f
-      || true_of_any_flow_body_stm f ~predicate:has_while_loops )
+      || true_of_any_flow_body_stm f ~predicate:has_while_loops)
 
 let has_blocks_with_metadata (m : 'meta t) ~(predicate : 'meta -> bool) :
     bool =
@@ -107,7 +107,7 @@ let has_blocks_with_metadata (m : 'meta t) ~(predicate : 'meta -> bool) :
     is_not_prim_and x
       ~flow:(fun l -> true_of_block (Flow_block.body l))
       ~if_stm:(fun ifs ->
-        true_of_block (If.t_branch ifs) || true_of_block (If.f_branch ifs) )
+        true_of_block (If.t_branch ifs) || true_of_block (If.f_branch ifs))
   in
   mu m
 

@@ -71,7 +71,7 @@ let%test_unit "conversion to/from JSON is the identity" =
     ~f:(fun id ->
       [%test_result: Act_common.C_id.t] ~here:[[%here]]
         Act_common.C_id.(t_of_yojson (yojson_of_t id))
-        ~expect:id ~equal:[%equal: Act_common.C_id.t] )
+        ~expect:id ~equal:[%equal: Act_common.C_id.t])
 
 let%test_module "is_string_safe (standard)" =
   ( module struct

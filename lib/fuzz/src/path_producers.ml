@@ -69,7 +69,7 @@ module Block = struct
         Sequence.range 0 ~start:`inclusive (List.length stms)
           ~stop:`inclusive
         |> Sequence.map ~f:(fun pos ->
-               Path_context.lift_path ctx ~path:(Path.Stms.insert pos) ))
+               Path_context.lift_path ctx ~path:(Path.Stms.insert pos)))
   end
 
   module Self_transform_list = struct
@@ -136,7 +136,7 @@ module Block = struct
 
   let produce (b : Subject.Block.t) ~(mu : mu) : ctx:ctx -> Path.Stms.t t =
     with_flags (Path_flag.flags_of_block b) ~f:(fun ctx ->
-        produce_stms (Act_fir.Block.statements b) ~mu ~ctx )
+        produce_stms (Act_fir.Block.statements b) ~mu ~ctx)
 end
 
 (** If blocks and flow blocks both share the same path structure, with some
@@ -165,7 +165,7 @@ struct
       ctx:ctx -> Path.Stm.t t =
     with_flags (F.thru_flags i) ~f:(fun ctx ->
         i |> F.sel_branch b |> Block.produce ~mu ~ctx
-        |> map_path ~f:(F.lift_path b) )
+        |> map_path ~f:(F.lift_path b))
 
   let produce (i : F.t) ~(mu : mu) ~(ctx : ctx) : Path.Stm.t t =
     (* No metadata on if statement headers. *)
@@ -213,7 +213,7 @@ module Stm = struct
   let produce (s : Subject.Statement.t) ~(ctx : ctx) : Path.Stm.t t =
     let rec mu s =
       with_flags (Path_flag.flags_of_stm s) ~f:(fun ctx ->
-          branch s [if_kind Transform ~f:self ~ctx; recursive ~mu ~ctx] )
+          branch s [if_kind Transform ~f:self ~ctx; recursive ~mu ~ctx])
     in
     mu s ~ctx
 end

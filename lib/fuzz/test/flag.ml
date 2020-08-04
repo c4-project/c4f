@@ -85,7 +85,7 @@ let%test_module "exact-flag recognition" =
         ~f:(fun f ->
           [%test_result: bool option] ~here:[[%here]]
             ~equal:[%equal: bool option] ~expect:(Some true)
-            (Src.Flag.to_exact_opt f) )
+            (Src.Flag.to_exact_opt f))
 
     let%test_unit "flags with positive losses and 0 wins are always \
                    exact-false" =
@@ -94,7 +94,7 @@ let%test_module "exact-flag recognition" =
         ~f:(fun f ->
           [%test_result: bool option] ~here:[[%here]]
             ~equal:[%equal: bool option] ~expect:(Some false)
-            (Src.Flag.to_exact_opt f) )
+            (Src.Flag.to_exact_opt f))
   end )
 
 module To_bool_generator (G : sig

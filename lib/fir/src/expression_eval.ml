@@ -150,7 +150,7 @@ let eval_atomic_fetch (f : Expression.t Atomic_fetch.t) ~(mu : mu) :
     ~desired_f:(fun obj_old ->
       let arg = Atomic_fetch.arg f in
       let op = Atomic_fetch.op f in
-      atomic_fetch_op ~op ~obj_old ~arg )
+      atomic_fetch_op ~op ~obj_old ~arg)
 
 let eval_atomic_load (atomic_load : Atomic_load.t) : Constant.t Heap.Monad.t
     =
@@ -159,7 +159,7 @@ let eval_atomic_load (atomic_load : Atomic_load.t) : Constant.t Heap.Monad.t
 let eval_atomic_xchg (x : Expression.t Atomic_xchg.t) ~(mu : mu) :
     Constant.t Heap.Monad.t =
   eval_atomic_fetch_xchg_common (Atomic_xchg.obj x) ~mu ~desired_f:(fun _ ->
-      Atomic_xchg.desired x )
+      Atomic_xchg.desired x)
 
 let eval_atomic (a : Expression.t Atomic_expression.t) ~(mu : mu) :
     Constant.t Heap.Monad.t =

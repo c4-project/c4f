@@ -64,7 +64,7 @@ struct
         t State.Monad.t =
       ignore param_map ;
       State.Monad.with_labels_m (fun labels ->
-          Payload.Helpers.lift_quickcheck (Label.gen_fresh labels) ~random )
+          Payload.Helpers.lift_quickcheck (Label.gen_fresh labels) ~random)
   end)
 
   let run (subject : Subject.Test.t) ~(payload : Payload.t) :

@@ -85,7 +85,7 @@ let%test_module "trace playback" =
       let computation =
         Src.Trace.(
           run empty test ~resolve:(fun _ ->
-              Or_error.unimplemented "shouldn't run this" ))
+              Or_error.unimplemented "shouldn't run this"))
       in
       Action.Test_utils.run_and_dump_test computation ~initial_state ;
       [%expect

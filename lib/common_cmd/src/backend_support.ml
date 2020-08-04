@@ -32,7 +32,7 @@ let resolve :
   Act_machine.Qualified.Backend.lift_resolver
     ~f:(fun (sspec : Act_backend.Spec.With_id.t) ->
       sspec |> Act_common.Spec.With_id.spec |> Act_backend.Spec.style
-      |> try_get_backend )
+      |> try_get_backend)
 
 module Lookup = struct
   include Act_machine.Lookup.Backend (struct

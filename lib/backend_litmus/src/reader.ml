@@ -63,7 +63,7 @@ let parse_tag_opt (tt : Shc.Reader.Test_type.t) :
 include Shc.Reader.Make (struct
   let try_parse_state_count (line : string) : int option =
     Option.try_with (fun () ->
-        Caml.Scanf.sscanf line "Histogram (%d states)" Fn.id )
+        Caml.Scanf.sscanf line "Histogram (%d states)" Fn.id)
 
   let try_split_state_line (tt : Shc.Reader.Test_type.t) (line : string) :
       string Shc.Reader.State_line.t Or_error.t =

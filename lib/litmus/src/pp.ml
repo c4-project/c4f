@@ -38,7 +38,7 @@ module Make_common (B : Basic) = struct
     Act_utils.My_format.pp_c_braces
       Fmt.(
         list ~sep:sp (fun f (l, c) ->
-            pf f "@[%a = %a;@]" Ac.C_id.pp l B.Test.Lang.Constant.pp c ))
+            pf f "@[%a = %a;@]" Ac.C_id.pp l B.Test.Lang.Constant.pp c))
 
   let pp_post : B.Test.Lang.Constant.t Postcondition.t Fmt.t =
     Postcondition.pp ~pp_const:B.Test.Lang.Constant.pp

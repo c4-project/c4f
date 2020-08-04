@@ -25,7 +25,7 @@ type 'e t =
 
 let quickcheck_generator e =
   Base_quickcheck.Generator.filter (quickcheck_generator e) ~f:(fun x ->
-      Mem_order.(x.fail <= x.succ) )
+      Mem_order.(x.fail <= x.succ))
 
 let ensure_mo_compat (old : 'a t) (succ : Mem_order.t) (fail : Mem_order.t) :
     Mem_order.t * Mem_order.t =

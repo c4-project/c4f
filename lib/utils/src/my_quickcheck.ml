@@ -63,4 +63,4 @@ let print_sample (type a) ?(test_count : int = 20)
     ~f:(fun sequence ->
       sequence |> Sequence.to_list
       |> List.dedup_and_sort ~compare:M.compare
-      |> List.iter ~f:print )
+      |> List.iter ~f:print)

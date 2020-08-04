@@ -145,8 +145,8 @@ struct
                  Option.some_if
                    (Ac.Litmus_id.is_in_local_scope x
                       ~from:(Path.Test.tid path))
-                   (Ac.Litmus_id.variable_name x) )
-          |> Set.to_list )
+                   (Ac.Litmus_id.variable_name x))
+          |> Set.to_list)
 
     let gen (path : Path.Test.t) (_ : Subject.Test.t)
         ~(random : Splittable_random.State.t) ~(param_map : Param_map.t) :

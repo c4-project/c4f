@@ -20,7 +20,6 @@
   (description "'act' is a toolkit for testing memory-model behaviour of compilers.")
   (depends
     (ocaml (and (>= 4.09) (< 4.11)))
-    (dune (and (>= 2.0) (< 3)))
     (expect_test_helpers_core (and (>= v0.14) (< v0.15)))
     ppx_deriving
     ppx_jane

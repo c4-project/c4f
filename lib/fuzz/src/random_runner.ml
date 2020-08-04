@@ -71,7 +71,7 @@ let log_action (type p)
     (action : (module Action_types.S with type Payload.t = p)) (payload : p)
     : unit Runner_state.Monad.t =
   Runner_state.Monad.modify (fun x ->
-      {x with trace= Trace.add x.trace ~action ~payload} )
+      {x with trace= Trace.add x.trace ~action ~payload})
 
 let run_action (module Action : Action_types.S) (subject : Subject.Test.t) :
     Subject.Test.t Runner_state.Monad.t =
@@ -92,7 +92,7 @@ let mutate_subject_step (subject : Subject.Test.t) :
     Ac.Output.pv o "fuzz: done; now running action...@." ;
     run_action action subject
     >>= Runner_state.Monad.tee ~f:(fun _ ->
-            Ac.Output.pv o "fuzz: action done.@." ))
+            Ac.Output.pv o "fuzz: action done.@."))
 
 let get_cap () : int Runner_state.Monad.t =
   Runner_state.Monad.Let_syntax.(
@@ -110,7 +110,7 @@ let mutate_subject (subject : Subject.Test.t) :
           if Int.(remaining = 0) then return (remaining, subject')
           else
             let%bind subject'' = mutate_subject_step subject' in
-            mu (remaining - 1, subject'') )
+            mu (remaining - 1, subject''))
     in
     subject')
 

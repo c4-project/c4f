@@ -10,8 +10,8 @@ homepage: "https://github.com/MattWindsor91/act"
 doc: "https://automagic-compiler-tormentor.readthedocs.io"
 bug-reports: "https://github.com/MattWindsor91/act/issues"
 depends: [
+  "dune" {>= "2.0"}
   "ocaml" {>= "4.09" & < "4.11"}
-  "dune" {>= "2.0" & < "3"}
   "expect_test_helpers_core" {>= "v0.14" & < "v0.15"}
   "ppx_deriving"
   "ppx_jane"

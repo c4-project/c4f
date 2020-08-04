@@ -260,7 +260,7 @@ let%test_module "Statement_list" =
                     ~expect:(Or_error.return ())
                     (Or_error.map ~f:(Fn.const ())
                        (F.Path_consumers.consume ~path ?filter ~action
-                          (Lazy.force Subject.Test_data.test))) )
+                          (Lazy.force Subject.Test_data.test))))
 
             let%test_unit "unfiltered transform-stm produces valid paths" =
               test_produce_consume (Transform_list Or_error.return)

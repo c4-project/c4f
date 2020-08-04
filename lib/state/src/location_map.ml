@@ -36,4 +36,4 @@ let output (map : t) ~(onto : Plumbing.Output.t) : unit Or_error.t =
   Plumbing.Output.with_output onto ~f:(fun oc ->
       map |> yojson_of_t |> Yojson.Safe.pretty_to_channel oc ;
       Stdio.Out_channel.newline oc ;
-      Ok () )
+      Ok ())

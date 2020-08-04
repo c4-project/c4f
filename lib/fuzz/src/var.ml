@@ -112,7 +112,7 @@ module Map = struct
     Or_error.Let_syntax.(
       let%map () =
         Tx.Or_error.when_m (has_dependencies map ~id) ~f:(fun () ->
-            dependency_error id )
+            dependency_error id)
       in
       erase_value_inner map ~id)
 

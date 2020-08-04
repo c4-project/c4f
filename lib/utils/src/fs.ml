@@ -80,14 +80,14 @@ module Unix : Fs_types.S = struct
     check ?on_absent ~on_dir:(Fn.const (Ok ())) ~on_file:(fun path ->
         Or_error.error_s
           [%message
-            "path exists, but is a file" ~path:(Fpath.to_string path)] )
+            "path exists, but is a file" ~path:(Fpath.to_string path)])
 
   let check_is_file ?(on_absent : (Fpath.t -> unit Or_error.t) option) :
       Fpath.t -> unit Or_error.t =
     check ?on_absent ~on_file:(Fn.const (Ok ())) ~on_dir:(fun path ->
         Or_error.error_s
           [%message
-            "path exists, but is a directory" ~path:(Fpath.to_string path)] )
+            "path exists, but is a directory" ~path:(Fpath.to_string path)])
 
   let actually_mkdir (path : Fpath.t) : unit Or_error.t =
     let path_s = Fpath.to_string path in

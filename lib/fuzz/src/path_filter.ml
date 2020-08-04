@@ -46,7 +46,7 @@ module End_check = struct
   let check (check : t) ~(stm : Subject.Statement.t) : unit Or_error.t =
     Tx.Or_error.unless_m (is_ok check ~stm) ~f:(fun () ->
         Or_error.error_s
-          [%message "Statement failed check" ~check:(check : t)] )
+          [%message "Statement failed check" ~check:(check : t)])
 end
 
 type t =

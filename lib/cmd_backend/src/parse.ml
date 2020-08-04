@@ -25,7 +25,7 @@ let run ?(fqid : Id.t = Id.of_string "herd")
     Plumbing.Output.with_output output ~f:(fun oc ->
         Or_error.return
           (Yojson.Safe.pretty_to_channel oc
-             (Act_state.Observation.yojson_of_t obs)) ))
+             (Act_state.Observation.yojson_of_t obs))))
 
 let command : Command.t =
   Command.basic ~summary:"parse native output from a configured test backend"

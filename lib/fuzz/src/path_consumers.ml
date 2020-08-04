@@ -137,7 +137,7 @@ module Block = struct
           let%map statements =
             consume_stms (Act_fir.Block.statements b) ~path ~mu ~ctx
           in
-          Act_fir.Block.make ~statements ~metadata ()) )
+          Act_fir.Block.make ~statements ~metadata ()))
 end
 
 (** If blocks and flow blocks both share the same path structure, with some
@@ -183,7 +183,7 @@ struct
         | This_cond ->
             this_cond x ~ctx
         | In_block rest ->
-            in_block x ~rest ~mu ~ctx )
+            in_block x ~rest ~mu ~ctx)
 end
 
 module If = Make_flow (struct
@@ -252,7 +252,7 @@ module Stm = struct
           | In_flow path ->
               in_flow s ~path ~mu ~ctx
           | In_if path ->
-              in_if s ~path ~mu ~ctx )
+              in_if s ~path ~mu ~ctx)
     in
     mu s ~path ~ctx
 end
