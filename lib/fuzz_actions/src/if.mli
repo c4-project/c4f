@@ -23,7 +23,7 @@ module Surround : sig
   (** Each if statement generator has this type. *)
   module type S =
     Act_fuzz.Action_types.S
-      with type Payload.t = Act_fuzz.Payload.Cond_surround.t
+      with type Payload.t = Act_fuzz.Payload_impl.Cond_surround.t
 
   (** Generates if statements where the expression is arbitrary and both
       blocks contain the original statement span. *)

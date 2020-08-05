@@ -26,7 +26,7 @@ end
 
 module Int_always_succeed :
   F.Action_types.S
-    with type Payload.t = Inner_payload.t F.Payload.Insertion.t =
+    with type Payload.t = Inner_payload.t F.Payload_impl.Insertion.t =
 Storelike.Make (struct
   let name =
     Act_common.Id.("cmpxchg" @: "make" @: "int" @: "always-succeed" @: empty)

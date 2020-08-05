@@ -12,38 +12,17 @@
 (** Signatures of actions and their components. *)
 
 open Base
-open Act_common
-
-(** Module type of payload modules.
-
-    Each action takes in a payload record that can be:
-
-    - converted to and from S-expressions;
-    - generated, in the context of a fuzzer state, subject, and RNG. *)
-module type S_payload = sig
-  (** The type of the payload. *)
-  type t [@@deriving sexp]
-
-  val gen :
-       Subject.Test.t
-    -> random:Splittable_random.State.t
-    -> param_map:Param_map.t
-    -> t State.Monad.t
-  (** [gen subject ~random ~param_map] is a stateful computation that, given
-      subject [subject], RNG [random], fuzzer parameter map [param_map], and
-      the current state, returns a payload. *)
-end
 
 (** Module type of fuzzer actions. *)
 module type S = sig
-  val name : Id.t
+  val name : Act_common.Id.t
   (** The name of the action, as an act identifier. *)
 
   val readme : unit -> string
   (** [readme ()] builds a long synopsis of this action. *)
 
   (** The type of any payload on which this action depends. *)
-  module Payload : S_payload
+  module Payload : Payload_types.S
 
   val available : Availability.t
   (** [available] is an availability check that must hold before the action

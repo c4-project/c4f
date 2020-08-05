@@ -42,12 +42,8 @@ F.Action.Make_surround (struct
 
     let where : t -> F.Path.Test.t = Fn.id
 
-    let gen (test : F.Subject.Test.t) ~(random : Splittable_random.State.t)
-        ~(param_map : F.Param_map.t) : t F.State.Monad.t =
-      ignore param_map ;
-      F.Payload.Helpers.gen_path test ~action_id:name
-        ~filter:(F.State.Monad.return Basic.path_filter)
-        ~kind:Transform_list ~random
+    let gen : t F.Payload_gen.t =
+      F.Payload_gen.path Transform_list ~filter:Basic.path_filter
   end
 
   let wrap (statements : F.Metadata.t Fir.Statement.t list)

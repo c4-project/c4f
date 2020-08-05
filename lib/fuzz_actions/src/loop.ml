@@ -17,7 +17,8 @@ open struct
 end
 
 module Surround :
-  F.Action_types.S with type Payload.t = F.Payload.Cond_surround.t = struct
+  F.Action_types.S with type Payload.t = F.Payload_impl.Cond_surround.t =
+struct
   let name = Act_common.Id.of_string_list ["flow"; "loop"; "surround"]
 
   let readme () : string =
@@ -33,17 +34,15 @@ module Surround :
     Ok
       (ctx |> F.Availability.Context.subject |> F.Subject.Test.has_statements)
 
-  module Surround = F.Payload.Cond_surround
+  module Surround = F.Payload_impl.Cond_surround
 
   module Payload = Surround.Make (struct
-    let name = name
-
     let cond_gen : Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t
         =
       Fir.Expression_gen.gen_falsehoods
 
-    let path_filter : F.Path_filter.t F.State.Monad.t =
-      F.State.Monad.return F.Path_filter.empty
+    let path_filter (_ : F.Availability.Context.t) : F.Path_filter.t =
+      F.Path_filter.empty
   end)
 
   let wrap_in_loop (cond : Fir.Expression.t)

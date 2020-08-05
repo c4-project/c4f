@@ -30,7 +30,7 @@ let readme_faw : string Lazy.t =
     select a previously-stored variable.  This is a limitation of the flag
     system.)
   |}
-       (Ac.Id.to_string F.Config_tables.forbid_already_written_flag_key))
+       (Ac.Id.to_string F.Config_tables.forbid_already_written_flag))
 
 (** Lists the restrictions we put on source variables. *)
 let basic_src_restrictions : (F.Var.Record.t -> bool) list Lazy.t = lazy []
@@ -80,7 +80,8 @@ module Make (B : sig
   module Flags : Storelike_types.Flags
 
   include Storelike_types.Basic
-end) : F.Action_types.S with type Payload.t = B.t F.Payload.Insertion.t =
+end) :
+  F.Action_types.S with type Payload.t = B.t F.Payload_impl.Insertion.t =
 struct
   let name = B.name
 
@@ -111,12 +112,10 @@ struct
     let predicates = dst_restrictions ~forbid_already_written in
     F.Var.Map.env_satisfying_all ~predicates ~scope:(Local tid) vars
 
-  module Payload = F.Payload.Insertion.Make (struct
+  module Payload = F.Payload_impl.Insertion.Make (struct
     type t = B.t [@@deriving sexp]
 
-    let name = B.name
-
-    let path_filter = F.State.Monad.return B.path_filter
+    let path_filter _ = B.path_filter
 
     module G = Base_quickcheck.Generator
 
@@ -142,20 +141,13 @@ struct
         let%map () = check_envs src dst in
         B.gen ~src ~dst ~vars ~tid)
 
-    let gen (where : F.Path.Test.t) (_ : F.Subject.Test.t)
-        ~(random : Splittable_random.State.t) ~(param_map : F.Param_map.t) :
-        t F.State.Monad.t =
-      F.State.Monad.(
-        Let_syntax.(
-          let%bind faw_flag =
-            Monadic.return
-              (F.Config_tables.forbid_already_written_flag param_map)
-          in
-          let forbid_already_written = F.Flag.eval faw_flag ~random in
-          with_vars_m (fun vars ->
-              F.Payload.Helpers.lift_quickcheck_opt
-                (gen' vars ~where ~forbid_already_written)
-                ~random ~action_id:name)))
+    let gen (where : F.Path.Test.t) : t F.Payload_gen.t =
+      F.Payload_gen.(
+        let* forbid_already_written =
+          flag F.Config_tables.forbid_already_written_flag
+        in
+        let* vars = vars in
+        lift_opt_gen (gen' vars ~where ~forbid_already_written))
   end)
 
   let available (ctx : F.Availability.Context.t) : bool Or_error.t =
@@ -163,7 +155,8 @@ struct
     let param_map = F.Availability.Context.param_map ctx in
     Or_error.Let_syntax.(
       let%bind faw_flag =
-        F.Config_tables.forbid_already_written_flag param_map
+        F.Param_map.get_flag param_map
+          ~id:F.Config_tables.forbid_already_written_flag
       in
       (* If the flag is stochastic, then we can't tell whether its value will
          be the same in the payload check. As such, we need to be pessimistic
@@ -235,10 +228,11 @@ struct
       in
       insert_vars target' (B.new_locals to_insert) ~tid)
 
-  let run (subject : F.Subject.Test.t) ~(payload : B.t F.Payload.Insertion.t)
-      : F.Subject.Test.t F.State.Monad.t =
-    let to_insert = F.Payload.Insertion.to_insert payload in
-    let path = F.Payload.Insertion.where payload in
+  let run (subject : F.Subject.Test.t)
+      ~(payload : B.t F.Payload_impl.Insertion.t) :
+      F.Subject.Test.t F.State.Monad.t =
+    let to_insert = F.Payload_impl.Insertion.to_insert payload in
+    let path = F.Payload_impl.Insertion.where payload in
     let tid = F.Path.Test.tid path in
     F.State.Monad.(
       Let_syntax.(

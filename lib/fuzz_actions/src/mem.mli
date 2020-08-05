@@ -29,7 +29,8 @@ end
 (** [Fence] is an action that inserts random memory fences. *)
 module Fence :
   Act_fuzz.Action_types.S
-    with type Payload.t = Act_fir.Atomic_fence.t Act_fuzz.Payload.Insertion.t
+    with type Payload.t =
+          Act_fir.Atomic_fence.t Act_fuzz.Payload_impl.Insertion.t
 
 (** {1 Memory order strengthening} *)
 

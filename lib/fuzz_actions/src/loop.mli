@@ -20,4 +20,4 @@
     See also {!If_actions.Surround}. *)
 module Surround :
   Act_fuzz.Action_types.S
-    with type Payload.t = Act_fuzz.Payload.Cond_surround.t
+    with type Payload.t = Act_fuzz.Payload_impl.Cond_surround.t

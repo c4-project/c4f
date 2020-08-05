@@ -24,36 +24,31 @@ end
 
 module Fence :
   F.Action_types.S
-    with type Payload.t = Fir.Atomic_fence.t F.Payload.Insertion.t = struct
+    with type Payload.t = Fir.Atomic_fence.t F.Payload_impl.Insertion.t =
+struct
   let name : Ac.Id.t = Ac.Id.of_string "mem.fence"
 
   let readme () : string =
     Act_utils.My_string.format_for_readme
       {| Inserts a randomly generated memory fence into the test. |}
 
-  module Payload = F.Payload.Insertion.Make (struct
+  module Payload = F.Payload_impl.Insertion.Make (struct
     type t = Fir.Atomic_fence.t [@@deriving sexp]
 
-    let name = name
+    let path_filter _ = F.Path_filter.empty
 
-    let path_filter = F.State.Monad.return F.Path_filter.empty
-
-    let gen (_ : F.Path.Test.t) (_ : F.Subject.Test.t)
-        ~(random : Splittable_random.State.t) ~(param_map : F.Param_map.t) :
-        Fir.Atomic_fence.t F.State.Monad.t =
-      ignore param_map ;
-      F.Payload.Helpers.lift_quickcheck Fir.Atomic_fence.quickcheck_generator
-        ~random
+    let gen (_ : F.Path.Test.t) : Fir.Atomic_fence.t F.Payload_gen.t =
+      F.Payload_gen.lift_quickcheck Fir.Atomic_fence.quickcheck_generator
   end)
 
   let available = F.Availability.has_threads
 
   let run (subject : F.Subject.Test.t)
-      ~(payload : Fir.Atomic_fence.t F.Payload.Insertion.t) :
+      ~(payload : Fir.Atomic_fence.t F.Payload_impl.Insertion.t) :
       F.Subject.Test.t F.State.Monad.t =
-    let path = F.Payload.Insertion.where payload in
+    let path = F.Payload_impl.Insertion.where payload in
     let fence_stm =
-      payload |> F.Payload.Insertion.to_insert
+      payload |> F.Payload_impl.Insertion.to_insert
       |> Act_fir.Prim_statement.atomic_fence
       |> Act_fir.Statement.prim F.Metadata.generated
     in
@@ -83,7 +78,9 @@ module Strengthen :
 
          Usually, this will only perform the replacement when the new memory
          order is compatible with the atomic action and also stronger than the
-         old one.  If 'mem.unsafe-weaken-orders' is true, this action will
+         old one.  If '|}
+    ^ Ac.Id.to_string F.Config_tables.unsafe_weaken_orders_flag
+    ^ {|' is true, this action will
          permit weakening of memory orders, likely resulting in a loss of
          semantics preservation.
       |}
@@ -97,33 +94,12 @@ module Strengthen :
   module Payload = struct
     include Strengthen_payload
 
-    let gen_path (o : Ac.Output.t) (subject : F.Subject.Test.t)
-        ~(random : Splittable_random.State.t) : F.Path.Test.t F.State.Monad.t
-        =
-      log o "generating path" ;
-      F.Payload.Helpers.lift_quickcheck_opt ~random ~action_id:name
-        (F.Path_producers.try_gen subject ~filter ~kind:Transform)
-
-    let gen_mo (o : Ac.Output.t) ~(random : Splittable_random.State.t) :
-        Fir.Mem_order.t F.State.Monad.t =
-      log o "generating memory order" ;
-      F.Payload.Helpers.lift_quickcheck ~random
-        Fir.Mem_order.quickcheck_generator
-
-    let gen (subject : F.Subject.Test.t)
-        ~(random : Splittable_random.State.t) ~(param_map : F.Param_map.t) :
-        t F.State.Monad.t =
-      F.State.Monad.(
-        Let_syntax.(
-          let%bind weaken_flag =
-            Monadic.return
-              (F.Config_tables.unsafe_weaken_orders_flag param_map)
-          in
-          let can_weaken = F.Flag.eval weaken_flag ~random in
-          let%bind o = output () in
-          let%bind path = gen_path o subject ~random in
-          let%map mo = gen_mo o ~random in
-          {path; mo; can_weaken}))
+    let gen : t F.Payload_gen.t =
+      F.Payload_gen.(
+        let* can_weaken = flag F.Config_tables.unsafe_weaken_orders_flag in
+        let* path = path Transform ~filter in
+        let+ mo = lift_quickcheck Fir.Mem_order.quickcheck_generator in
+        {path; mo; can_weaken})
   end
 
   let available : F.Availability.t =

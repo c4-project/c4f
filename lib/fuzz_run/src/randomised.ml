@@ -41,6 +41,14 @@ module Runner_state = struct
 
     module Inner = F.State.Monad
   end)
+
+  let make_gen_context (action_id : Ac.Id.t) (subject : F.Subject.Test.t)
+      (st : t) : F.Payload_gen.Context.t F.State.Monad.t =
+    let param_map = param_map st in
+    let random = random st in
+    F.State.Monad.peek (fun state ->
+        F.Payload_gen.Context.make ~action_id ~subject ~param_map ~state
+          ~random)
 end
 
 let output () : Ac.Output.t Runner_state.Monad.t =
@@ -49,18 +57,20 @@ let output () : Ac.Output.t Runner_state.Monad.t =
 let generate_payload (type rs)
     (module Act : F.Action_types.S with type Payload.t = rs)
     (subject : F.Subject.Test.t) : rs Runner_state.Monad.t =
-  Runner_state.Monad.Let_syntax.(
-    let%bind o = output () in
-    let%bind param_map = Runner_state.Monad.peek Runner_state.param_map in
-    let%bind random = Runner_state.Monad.peek Runner_state.random in
-    Ac.Output.pv o "fuzz: generating random state for %a...@." Ac.Id.pp
-      Act.name ;
-    let%map g =
-      Runner_state.Monad.Monadic.return
-        (Act.Payload.gen subject ~random ~param_map)
-    in
-    Ac.Output.pv o "fuzz: done generating random state.@." ;
-    g)
+  Runner_state.(
+    Monad.(
+      Let_syntax.(
+        let%bind o = output () in
+        let%bind ctx = Monadic.peek (make_gen_context Act.name subject) in
+        Ac.Output.pv o "fuzz: generating random state for %a...@." Ac.Id.pp
+          Act.name ;
+        let%map g =
+          Monadic.return
+            (F.State.Monad.Monadic.return
+               (F.Payload_gen.run Act.Payload.gen ~ctx))
+        in
+        Ac.Output.pv o "fuzz: done generating random state.@." ;
+        g)))
 
 let pick_action (subject : F.Subject.Test.t) :
     (module F.Action_types.S) Runner_state.Monad.t =

@@ -149,7 +149,7 @@ module Make_surround (Basic : sig
   val surround_with : string
 
   module Payload : sig
-    include Action_types.S_payload
+    include Payload_types.S
 
     val where : t -> Path.Test.t
   end

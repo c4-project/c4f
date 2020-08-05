@@ -55,10 +55,6 @@ let add_write (s : t) ~(id : Ac.Litmus_id.t) : t =
 let erase_var_value (s : t) ~(id : Ac.Litmus_id.t) : t Or_error.t =
   try_map_vars s ~f:(Var.Map.erase_value ~id)
 
-let vars_satisfying_all (s : t) ~(scope : Ac.Scope.t)
-    ~(predicates : (Var.Record.t -> bool) list) : Ac.C_id.t list =
-  Var.Map.satisfying_all s.vars ~scope ~predicates
-
 module Monad = struct
   module M = Travesty.State_transform.Make (struct
     module Inner = Or_error

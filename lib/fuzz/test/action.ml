@@ -42,8 +42,8 @@ module Test_utils = struct
     let r =
       Or_error.(
         Src.State.Monad.run' action initial_state
-        >>| fst
-        >>| Src.State.vars_satisfying_all ~scope:Global
+        >>| fst >>| Src.State.vars
+        >>| Src.Var.Map.satisfying_all ~scope:Act_common.Scope.Global
               ~predicates:[Src.Var.Record.has_dependencies])
     in
     Fmt.(pr "%a@." (result ~ok:(list Act_common.C_id.pp) ~error:Error.pp)) r

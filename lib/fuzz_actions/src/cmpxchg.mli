@@ -32,4 +32,4 @@ end
     local Boolean variable that receives its result. *)
 module Int_always_succeed :
   Act_fuzz.Action_types.S
-    with type Payload.t = Inner_payload.t Act_fuzz.Payload.Insertion.t
+    with type Payload.t = Inner_payload.t Act_fuzz.Payload_impl.Insertion.t

@@ -34,10 +34,10 @@ let%test_module "program.label" =
   ( module struct
     let path : F.Path.Test.t Lazy.t = FT.Subject.Test_data.Path.insert_live
 
-    let random_state : Act_common.C_id.t F.Payload.Insertion.t Lazy.t =
+    let random_state : Act_common.C_id.t F.Payload_impl.Insertion.t Lazy.t =
       Lazy.Let_syntax.(
         let%map where = path in
-        F.Payload.Insertion.make
+        F.Payload_impl.Insertion.make
           ~to_insert:(Act_common.C_id.of_string "label_mclabelface")
           ~where)
 

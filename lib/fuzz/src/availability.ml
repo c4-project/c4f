@@ -30,8 +30,11 @@ let is_filter_constructible (filter : Path_filter.t) ~(kind : Path_kind.t)
   let subject = Context.subject ctx in
   Ok (Path_producers.is_constructible ~filter ~kind subject)
 
-include (struct
-  let zero : t = always
-  let (+) (f : t) (g : t) : t =
-    fun ctx -> Or_error.map2 (f ctx) (g ctx) ~f:(fun x y -> x && y)
-end : Container.Summable with type t := t)
+include (
+  struct
+    let zero : t = always
+
+    let ( + ) (f : t) (g : t) : t =
+     fun ctx -> Or_error.map2 (f ctx) (g ctx) ~f:(fun x y -> x && y)
+  end :
+    Container.Summable with type t := t )

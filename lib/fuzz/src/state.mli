@@ -47,15 +47,6 @@ val vars : t -> Var.Map.t
 val map_vars : t -> f:(Var.Map.t -> Var.Map.t) -> t
 (** [map_vars state ~f] maps [f] over the state's variable map. *)
 
-val vars_satisfying_all :
-     t
-  -> scope:Act_common.Scope.t
-  -> predicates:(Var.Record.t -> bool) list
-  -> Act_common.C_id.t list
-(** [vars_satisfying_all state ~scope ~predicates] returns the list of all
-    variables in [state]'s variable list that are in scope at [scope] and
-    satisfy [predicates]. *)
-
 (** The state monad. *)
 module Monad : sig
   include

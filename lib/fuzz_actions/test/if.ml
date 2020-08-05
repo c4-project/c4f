@@ -40,8 +40,8 @@ let%test_module "Surround" =
     let where : F.Path.Test.t =
       Lazy.force FT.Subject.Test_data.Path.surround_atomic
 
-    let payload : F.Payload.Cond_surround.t =
-      F.Payload.Cond_surround.make ~cond ~where
+    let payload : F.Payload_impl.Cond_surround.t =
+      F.Payload_impl.Cond_surround.make ~cond ~where
 
     let%test_module "Tautology" =
       ( module struct
@@ -132,8 +132,8 @@ let%test_module "Surround" =
         let label_direct : F.Path.Test.t =
           Lazy.force FT.Subject.Test_data.Path.surround_label_direct
 
-        let label_direct_payload : F.Payload.Cond_surround.t =
-          F.Payload.Cond_surround.make ~cond ~where:label_direct
+        let label_direct_payload : F.Payload_impl.Cond_surround.t =
+          F.Payload_impl.Cond_surround.make ~cond ~where:label_direct
 
         let%expect_test "direct-label AST (should fail)" =
           FT.Action.Test_utils.run_and_dump_test
@@ -148,8 +148,8 @@ let%test_module "Surround" =
         let label_indirect : F.Path.Test.t =
           Lazy.force FT.Subject.Test_data.Path.surround_label_indirect
 
-        let label_indirect_payload : F.Payload.Cond_surround.t =
-          F.Payload.Cond_surround.make ~cond ~where:label_indirect
+        let label_indirect_payload : F.Payload_impl.Cond_surround.t =
+          F.Payload_impl.Cond_surround.make ~cond ~where:label_indirect
 
         let%expect_test "indirect-label AST (should fail)" =
           FT.Action.Test_utils.run_and_dump_test

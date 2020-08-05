@@ -23,7 +23,7 @@ let%test_module "Early_out" =
         Lazy.force FT.Subject.Test_data.state
       in
       let test : F.Subject.Test.t = Lazy.force FT.Subject.Test_data.test in
-      let payload = F.Payload.Insertion.make ~where ~to_insert in
+      let payload = F.Payload_impl.Insertion.make ~where ~to_insert in
       FT.Action.Test_utils.run_and_dump_test
         (Src.Dead.Early_out.run test ~payload)
         ~initial_state

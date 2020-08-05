@@ -27,7 +27,7 @@ module Dummy_action :
   let readme () =
     {| This is a module that is almost, but not quite, entirely unlike a fuzzer action. |}
 
-  module Payload = Src.Payload.Pure (Dummy_payload)
+  module Payload = Src.Payload_impl.Pure (Dummy_payload)
 
   let run subject ~(payload : Dummy_payload.t) =
     ignore payload ;
@@ -43,7 +43,7 @@ struct
   let readme () =
     {| This is also a module that is almost, but not quite, entirely unlike a fuzzer action. |}
 
-  module Payload = Src.Payload.None
+  module Payload = Src.Payload_impl.None
 
   let run subject ~(payload : unit) =
     ignore payload ;

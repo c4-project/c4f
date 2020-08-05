@@ -38,8 +38,8 @@ let%test_module "Surround" =
             (eq (of_variable_str_exn "y") (int_lit 27))
             (of_variable_str_exn "a")))
 
-    let payload : F.Payload.Cond_surround.t =
-      F.Payload.Cond_surround.make ~cond
+    let payload : F.Payload_impl.Cond_surround.t =
+      F.Payload_impl.Cond_surround.make ~cond
         ~where:(Lazy.force FT.Subject.Test_data.Path.surround_atomic)
 
     let action = Surround.run test ~payload

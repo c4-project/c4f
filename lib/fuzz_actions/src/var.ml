@@ -74,19 +74,15 @@ module Make : F.Action_types.S with type Payload.t = Make_payload.t = struct
         else
           map ~f:(fun x -> Ac.Scope.Local x) (int_inclusive 0 (nthreads - 1)))
 
-    let gen (subject : F.Subject.Test.t)
-        ~(random : Splittable_random.State.t) ~(param_map : F.Param_map.t) :
-        t F.State.Monad.t =
-      F.State.Monad.(
-        Let_syntax.(
-          let%bind global_flag =
-            Monadic.return (F.Config_tables.make_global_flag param_map)
-          in
-          let is_global = F.Flag.eval global_flag ~random in
-          let nthreads = Act_litmus.Test.Raw.num_threads subject in
-          let gen_scope = gen_scope nthreads is_global in
-          let%bind generator = with_vars (generator ~gen_scope) in
-          F.Payload.Helpers.lift_quickcheck ~random generator))
+    let gen : t F.Payload_gen.t =
+      F.Payload_gen.(
+        let* is_global = flag F.Config_tables.make_global_flag in
+        let* nthreads =
+          lift (Fn.compose Act_litmus.Test.Raw.num_threads Context.subject)
+        in
+        let* vars = lift (Fn.compose F.State.vars Context.state) in
+        let gen_scope = gen_scope nthreads is_global in
+        lift_quickcheck (generator vars ~gen_scope))
   end
 
   let available : F.Availability.t = F.Availability.has_threads
@@ -131,13 +127,8 @@ struct
       |> Ac.Scoped_map.filter ~f:is_viable
       |> Ac.Scoped_map.to_litmus_id_map |> Map.keys |> Q.Generator.of_list
 
-    let gen (_ : F.Subject.Test.t) ~(random : Splittable_random.State.t)
-        ~(param_map : F.Param_map.t) : t F.State.Monad.t =
-      ignore param_map ;
-      F.State.Monad.(
-        Let_syntax.(
-          let%bind generator = with_vars gen_on_vars in
-          F.Payload.Helpers.lift_quickcheck ~random generator))
+    let gen : t F.Payload_gen.t =
+      F.Payload_gen.(vars >>| gen_on_vars >>= lift_quickcheck)
   end
 
   let available (ctx : F.Availability.Context.t) : bool Or_error.t =

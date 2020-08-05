@@ -18,7 +18,7 @@ end
 
 module Surround = struct
   module type S =
-    F.Action_types.S with type Payload.t = F.Payload.Cond_surround.t
+    F.Action_types.S with type Payload.t = F.Payload_impl.Cond_surround.t
 
   let readme_prelude : string =
     {| Removes a sublist of statements from the program, replacing them
@@ -60,14 +60,12 @@ module Surround = struct
       let raw = readme_prelude ^ "\n\n" ^ readme_suffix in
       Act_utils.My_string.format_for_readme raw
 
-    module Surround = F.Payload.Cond_surround
+    module Surround = F.Payload_impl.Cond_surround
 
     module Payload = Surround.Make (struct
       include Basic
 
-      let name = name
-
-      let path_filter = F.State.Monad.return path_filter
+      let path_filter _ = path_filter
     end)
 
     let available : F.Availability.t =
@@ -154,15 +152,8 @@ module Invert : F.Action_types.S with type Payload.t = F.Path.Test.t = struct
   module Payload = struct
     type t = F.Path.Test.t [@@deriving sexp]
 
-    let quickcheck_path (test : F.Subject.Test.t) : F.Path.Test.t F.Opt_gen.t
-        =
-      F.Path_producers.try_gen test ~filter:path_filter ~kind:Transform
-
-    let gen (test : F.Subject.Test.t) ~(random : Splittable_random.State.t)
-        ~(param_map : F.Param_map.t) : F.Path.Test.t F.State.Monad.t =
-      ignore (param_map : F.Param_map.t) ;
-      F.Payload.Helpers.lift_quickcheck_opt (quickcheck_path test) ~random
-        ~action_id:name
+    let gen : F.Path.Test.t F.Payload_gen.t =
+      F.Payload_gen.path Transform ~filter:path_filter
   end
 
   let invert_if (ifs : F.Subject.Statement.If.t) : F.Subject.Statement.If.t =

@@ -26,7 +26,7 @@ module Make_empty : F.Action_types.S with type Payload.t = unit = struct
     with other actions that construct statements and control flows.
     |}
 
-  module Payload = F.Payload.None
+  module Payload = F.Payload_impl.None
 
   let available (ctx : F.Availability.Context.t) : bool Or_error.t =
     let subject = F.Availability.Context.subject ctx in
@@ -43,7 +43,8 @@ end
 
 module Label :
   F.Action_types.S
-    with type Payload.t = Act_common.C_id.t F.Payload.Insertion.t = struct
+    with type Payload.t = Act_common.C_id.t F.Payload_impl.Insertion.t =
+struct
   let name = Act_common.Id.of_string "program.label"
 
   let available : F.Availability.t = F.Availability.has_threads
@@ -52,27 +53,21 @@ module Label :
     Act_utils.My_string.format_for_readme
       {| Inserts a new, random label into the program. |}
 
-  module Payload = F.Payload.Insertion.Make (struct
+  module Payload = F.Payload_impl.Insertion.Make (struct
     type t = Act_common.C_id.t [@@deriving sexp]
 
-    let name = name
+    let path_filter _ = F.Path_filter.empty
 
-    let path_filter = F.State.Monad.return F.Path_filter.empty
-
-    let gen (_ : F.Path.Test.t) (_ : F.Subject.Test.t)
-        ~(random : Splittable_random.State.t) ~(param_map : F.Param_map.t) :
-        t F.State.Monad.t =
-      ignore param_map ;
-      F.State.Monad.with_labels_m (fun labels ->
-          F.Payload.Helpers.lift_quickcheck
-            (F.Label.gen_fresh labels)
-            ~random)
+    let gen (_ : F.Path.Test.t) : t F.Payload_gen.t =
+      F.Payload_gen.(
+        let* labels = lift (Fn.compose F.State.labels Context.state) in
+        lift_quickcheck (F.Label.gen_fresh labels))
   end)
 
   let run (subject : F.Subject.Test.t) ~(payload : Payload.t) :
       F.Subject.Test.t F.State.Monad.t =
-    let path = F.Payload.Insertion.where payload in
-    let name = F.Payload.Insertion.to_insert payload in
+    let path = F.Payload_impl.Insertion.where payload in
+    let name = F.Payload_impl.Insertion.to_insert payload in
     let tid = F.Path.Test.tid path in
     let lid = Act_common.Litmus_id.local tid name in
     let label_stm =

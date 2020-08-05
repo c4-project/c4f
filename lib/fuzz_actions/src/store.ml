@@ -19,7 +19,7 @@ end
 
 module type S =
   F.Action_types.S
-    with type Payload.t = Fir.Atomic_store.t F.Payload.Insertion.t
+    with type Payload.t = Fir.Atomic_store.t F.Payload_impl.Insertion.t
 
 let readme_preamble : string =
   {|
@@ -214,13 +214,9 @@ struct
   module Payload = struct
     type t = F.Path.Test.t [@@deriving sexp]
 
-    let gen (test : F.Subject.Test.t) ~(random : Splittable_random.State.t)
-        ~(param_map : F.Param_map.t) : t F.State.Monad.t =
-      ignore param_map ;
+    let gen : t F.Payload_gen.t =
       let filter = Lazy.force path_filter in
-      F.Payload.Helpers.lift_quickcheck_opt
-        (F.Path_producers.try_gen test ~filter ~kind:Transform)
-        ~random ~action_id:name
+      F.Payload_gen.path Transform ~filter
   end
 
   let available : F.Availability.t =

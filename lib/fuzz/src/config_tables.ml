@@ -18,24 +18,13 @@ open struct
   module Ac = Act_common
 end
 
-let forbid_already_written_flag_key : Ac.Id.t =
+let forbid_already_written_flag : Ac.Id.t =
   Ac.Id.("store" @: "forbid-already-written" @: empty)
 
-let forbid_already_written_flag (param_map : Param_map.t) : Flag.t Or_error.t
-    =
-  Param_map.get_flag param_map ~id:forbid_already_written_flag_key
-
-let unsafe_weaken_orders_flag_key : Ac.Id.t =
+let unsafe_weaken_orders_flag : Ac.Id.t =
   Ac.Id.("mem" @: "unsafe-weaken-orders" @: empty)
 
-let unsafe_weaken_orders_flag (param_map : Param_map.t) : Flag.t Or_error.t =
-  Param_map.get_flag param_map ~id:unsafe_weaken_orders_flag_key
-
-let make_global_flag_key : Ac.Id.t =
-  Ac.Id.("var" @: "make" @: "global" @: empty)
-
-let make_global_flag (param_map : Param_map.t) : Flag.t Or_error.t =
-  Param_map.get_flag param_map ~id:make_global_flag_key
+let make_global_flag : Ac.Id.t = Ac.Id.("var" @: "make" @: "global" @: empty)
 
 let make_param_spec_map (xs : (Ac.Id.t, 'a Param_spec.t) List.Assoc.t) :
     'a Param_spec.t Map.M(Ac.Id).t =
@@ -70,7 +59,7 @@ let param_map : Param_spec.Int.t Map.M(Ac.Id).t Lazy.t =
 let flag_map : Param_spec.Bool.t Map.M(Ac.Id).t Lazy.t =
   lazy
     (make_param_spec_map
-       [ ( forbid_already_written_flag_key
+       [ ( forbid_already_written_flag
          , Param_spec.make ~default:(Flag.exact false)
              ~description:
                {|
@@ -84,7 +73,7 @@ let flag_map : Param_spec.Bool.t Map.M(Ac.Id).t Lazy.t =
               itself to already-written variables).
             |}
          )
-       ; ( unsafe_weaken_orders_flag_key
+       ; ( unsafe_weaken_orders_flag
          , Param_spec.make ~default:(Flag.exact false)
              ~description:
                {|
@@ -93,7 +82,7 @@ let flag_map : Param_spec.Bool.t Map.M(Ac.Id).t Lazy.t =
               ways).
             |}
          )
-       ; ( make_global_flag_key
+       ; ( make_global_flag
          , Param_spec.make
              ~default:(Or_error.ok_exn (Flag.try_make ~wins:1 ~losses:1))
              ~description:

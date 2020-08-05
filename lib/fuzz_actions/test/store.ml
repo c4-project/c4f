@@ -65,7 +65,7 @@ let%test_module "store.make.int.normal" =
       Lazy.Let_syntax.(
         let%bind to_insert = store in
         let%map where = path in
-        F.Payload.Insertion.make ~to_insert ~where)
+        F.Payload_impl.Insertion.make ~to_insert ~where)
 
     let test_action (store : Fir.Atomic_store.t Lazy.t) :
         F.Subject.Test.t F.State.Monad.t =
@@ -249,7 +249,7 @@ let%test_module "store.make.int.dead" =
       Lazy.Let_syntax.(
         let%bind to_insert = Test_data.store "gen1" in
         let%map where = path in
-        F.Payload.Insertion.make ~to_insert ~where)
+        F.Payload_impl.Insertion.make ~to_insert ~where)
 
     let test_action : F.Subject.Test.t F.State.Monad.t =
       F.State.Monad.(
@@ -327,7 +327,7 @@ let%test_module "store.make.int.redundant" =
       Lazy.Let_syntax.(
         let%bind to_insert = redundant_store in
         let%map where = path in
-        F.Payload.Insertion.make ~to_insert ~where)
+        F.Payload_impl.Insertion.make ~to_insert ~where)
 
     let test_action : F.Subject.Test.t F.State.Monad.t =
       F.State.Monad.(

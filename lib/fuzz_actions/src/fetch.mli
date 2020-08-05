@@ -16,7 +16,7 @@ module type S =
   Act_fuzz.Action_types.S
     with type Payload.t =
           Act_fir.Expression.t Act_fir.Atomic_fetch.t
-          Act_fuzz.Payload.Insertion.t
+          Act_fuzz.Payload_impl.Insertion.t
 
 (* TODO(@MattWindsor91): add Int. *)
 

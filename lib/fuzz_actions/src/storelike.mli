@@ -59,4 +59,4 @@ module Make (B : sig
   include Storelike_types.Basic
 end) :
   Act_fuzz.Action_types.S
-    with type Payload.t = B.t Act_fuzz.Payload.Insertion.t
+    with type Payload.t = B.t Act_fuzz.Payload_impl.Insertion.t
