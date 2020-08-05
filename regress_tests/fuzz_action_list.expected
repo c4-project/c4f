@@ -109,6 +109,11 @@ flow.loop.surround:
     
     The condition of the `do... while` loop is statically guaranteed to be
     false.
+flow.loop.while.insert-false:
+  Weight: 15x
+  Summary:
+    Inserts an empty while loop whose condition is known to be false, and
+    whose body is marked as dead-code for future actions.
 mem.fence:
   Weight: 15x
   Summary: Inserts a randomly generated memory fence into the test.

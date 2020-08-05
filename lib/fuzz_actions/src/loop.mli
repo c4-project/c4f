@@ -11,6 +11,16 @@
 
 (** Actions that introduce, or rearrange, loops. *)
 
+(** {1 Insertion} *)
+
+(** This action inserts a while loop with a known-false expression in a
+    random statement position; its body begins empty but is marked as
+    dead-code. *)
+module While_insert_false :
+  Act_fuzz.Action_types.S
+    with type Payload.t =
+          Act_fir.Expression.t Act_fuzz.Payload_impl.Insertion.t
+
 (** {1 Surround statements in do-while loops}
 
     This action removes a sublist of statements from the program, replacing

@@ -13,7 +13,6 @@ open Base
 
 open struct
   module F = Act_fuzz
-  module Tx = Travesty_base_exts
 end
 
 let actions : F.Action.With_default_weight.t list Lazy.t =
@@ -24,6 +23,7 @@ let actions : F.Action.With_default_weight.t list Lazy.t =
       ; make ~action:(module If.Invert) ~default_weight:10
       ; make ~action:(module If.Surround.Tautology) ~default_weight:15
       ; make ~action:(module If.Surround.Duplicate) ~default_weight:15
+      ; make ~action:(module Loop.While_insert_false) ~default_weight:15
       ; make ~action:(module Loop.Surround) ~default_weight:15
       ; make ~action:(module Mem.Fence) ~default_weight:15
       ; make ~action:(module Mem.Strengthen) ~default_weight:15
