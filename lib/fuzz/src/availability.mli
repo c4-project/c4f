@@ -45,6 +45,9 @@ end
 (** [t] is the type of availability checks. *)
 type t = Context.t -> bool Or_error.t
 
+(** Availability checks can be composed together monoidically. *)
+include Container.Summable with type t := t
+
 (** {2 Common checks} *)
 
 val always : t
