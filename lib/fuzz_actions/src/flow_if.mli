@@ -35,7 +35,11 @@ module Surround : sig
   module Tautology : S
 end
 
-(** {1 Inverting existing if statements} *)
+module Transform : sig
+  (** Basic transform generators have this type. *)
+  module type S =
+    Act_fuzz.Action_types.S with type Payload.t = Act_fuzz.Path.Test.t
 
-module Invert :
-  Act_fuzz.Action_types.S with type Payload.t = Act_fuzz.Path.Test.t
+  (** Inverts existing if statements. *)
+  module Invert : S
+end

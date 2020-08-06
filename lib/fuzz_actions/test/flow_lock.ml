@@ -17,9 +17,9 @@ open struct
   module FT = Act_fuzz_test
 end
 
-let%test_module "Sync_surround" =
+let%test_module "Surround.Sync" =
   ( module struct
-    module Surround = Src.Lock.Sync_surround
+    module Surround = Src.Flow_lock.Surround.Sync
 
     (* TODO(@MattWindsor91): sort out the discrepancy between the subject
        example and var map. *)
@@ -64,9 +64,9 @@ let%test_module "Sync_surround" =
           { loop: ; if (true) {  } else { goto loop; } } |}]
   end )
 
-let%test_module "Atomic_surround" =
+let%test_module "Surround.Atomic" =
   ( module struct
-    module Surround = Src.Lock.Atomic_surround
+    module Surround = Src.Flow_lock.Surround.Atomic
 
     (* TODO(@MattWindsor91): sort out the discrepancy between the subject
        example and var map. *)

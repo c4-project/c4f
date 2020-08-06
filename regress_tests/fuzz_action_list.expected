@@ -110,12 +110,12 @@ atomic.store.transform.xchgify:
   Summary:
     Promotes a random atomic store to an atomic exchange whose value is
     discarded.
-flow.dead.early-out:
+flow.dead.insert.early-out:
   Weight: 20x
   Summary:
     Inserts a valid 'early-out' statement (break or return) into a random
     dead-code location.
-flow.dead.goto:
+flow.dead.insert.goto:
   Weight: 20x
   Summary:
     Inserts a jump to a random thread-local label inside a dead-code
@@ -123,7 +123,7 @@ flow.dead.goto:
     
     This action only fires in dead-code blocks for which there are available
     labels in the same thread; it does not jump outside the thread.
-flow.if.duplicate:
+flow.if.surround.duplicate:
   Weight: 15x
   Summary:
     Removes a sublist of statements from the program, replacing them with an
@@ -134,7 +134,7 @@ flow.if.duplicate:
     initialises both branches of the `if` statement with the original
     statements. It cannot fire if the statements contain any labels, to avoid
     duplicating them.
-flow.if.tautology:
+flow.if.surround.tautology:
   Weight: 15x
   Summary:
     Removes a sublist of statements from the program, replacing them with an
@@ -144,7 +144,7 @@ flow.if.tautology:
     This version of the action generates an always-true condition, puts the
     original statements in the true block, and marks the false block as
     dead-code.
-flow.invert-if:
+flow.if.transform.invert:
   Weight: 10x
   Summary: Flips the conditional and branches of an if statement.
 flow.lock.surround.atomic:

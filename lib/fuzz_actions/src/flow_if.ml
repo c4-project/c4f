@@ -12,9 +12,12 @@
 open Base
 
 open struct
+  module Ac = Act_common
   module Fir = Act_fir
   module F = Act_fuzz
 end
+
+let prefix_name (rest : Ac.Id.t) : Ac.Id.t = Ac.Id.("flow" @: "if" @: rest)
 
 module Surround = struct
   module type S =
@@ -54,7 +57,7 @@ module Surround = struct
   end) : S = struct
     include Basic
 
-    let name = Act_common.Id.of_string_list ["flow"; "if"; name_suffix]
+    let name = prefix_name Ac.Id.("surround" @: name_suffix @: empty)
 
     let readme () =
       let raw = readme_prelude ^ "\n\n" ^ readme_suffix in
@@ -136,51 +139,56 @@ module Surround = struct
   end)
 end
 
-module Invert : F.Action_types.S with type Payload.t = F.Path.Test.t = struct
-  let name = Act_common.Id.of_string_list ["flow"; "invert-if"]
+module Transform = struct
+  module type S = F.Action_types.S with type Payload.t = F.Path.Test.t
 
-  let readme () =
-    Act_utils.My_string.format_for_readme
-      {| Flips the conditional and branches of an if statement. |}
+  module Invert : S = struct
+    let name = prefix_name Ac.Id.("transform" @: "invert" @: empty)
 
-  let path_filter : F.Path_filter.t =
-    F.Path_filter.(require_end_check empty ~check:(Stm_class (Is, [If])))
+    let readme () =
+      Act_utils.My_string.format_for_readme
+        {| Flips the conditional and branches of an if statement. |}
 
-  let available : F.Availability.t =
-    F.Availability.is_filter_constructible path_filter ~kind:Transform
+    let path_filter : F.Path_filter.t =
+      F.Path_filter.(require_end_check empty ~check:(Stm_class (Is, [If])))
 
-  module Payload = struct
-    type t = F.Path.Test.t [@@deriving sexp]
+    let available : F.Availability.t =
+      F.Availability.is_filter_constructible path_filter ~kind:Transform
 
-    let gen : F.Path.Test.t F.Payload_gen.t =
-      F.Payload_gen.path Transform ~filter:path_filter
+    module Payload = struct
+      type t = F.Path.Test.t [@@deriving sexp]
+
+      let gen : F.Path.Test.t F.Payload_gen.t =
+        F.Payload_gen.path Transform ~filter:path_filter
+    end
+
+    let invert_if (ifs : F.Subject.Statement.If.t) : F.Subject.Statement.If.t
+        =
+      Fir.If.(
+        make
+          ~cond:(Fir.Expression.l_not (cond ifs))
+          ~t_branch:(f_branch ifs) (* intentional inversion *)
+          ~f_branch:(t_branch ifs)
+        (* as above *))
+
+    let not_an_if (type leg) (stm : F.Subject.Statement.t) (_ : leg) :
+        leg Or_error.t =
+      Or_error.error_s
+        [%message
+          "Tried to if-invert an invalid statement"
+            ~stm:(stm : F.Subject.Statement.t)]
+
+    module Bm = Fir.Statement_traverse.Base_map (Or_error)
+
+    let invert_stm (stm : F.Subject.Statement.t) :
+        F.Subject.Statement.t Or_error.t =
+      Bm.bmap stm ~prim:(not_an_if stm) ~flow:(not_an_if stm)
+        ~if_stm:(Fn.compose Or_error.return invert_if)
+
+    let run (test : F.Subject.Test.t) ~(payload : Payload.t) :
+        F.Subject.Test.t F.State.Monad.t =
+      F.State.Monad.Monadic.return
+        (F.Path_consumers.consume test ~filter:path_filter ~path:payload
+           ~action:(Transform invert_stm))
   end
-
-  let invert_if (ifs : F.Subject.Statement.If.t) : F.Subject.Statement.If.t =
-    Fir.If.(
-      make
-        ~cond:(Fir.Expression.l_not (cond ifs))
-        ~t_branch:(f_branch ifs) (* intentional inversion *)
-        ~f_branch:(t_branch ifs)
-      (* as above *))
-
-  let not_an_if (type leg) (stm : F.Subject.Statement.t) (_ : leg) :
-      leg Or_error.t =
-    Or_error.error_s
-      [%message
-        "Tried to if-invert an invalid statement"
-          ~stm:(stm : F.Subject.Statement.t)]
-
-  module Bm = Fir.Statement_traverse.Base_map (Or_error)
-
-  let invert_stm (stm : F.Subject.Statement.t) :
-      F.Subject.Statement.t Or_error.t =
-    Bm.bmap stm ~prim:(not_an_if stm) ~flow:(not_an_if stm)
-      ~if_stm:(Fn.compose Or_error.return invert_if)
-
-  let run (test : F.Subject.Test.t) ~(payload : Payload.t) :
-      F.Subject.Test.t F.State.Monad.t =
-    F.State.Monad.Monadic.return
-      (F.Path_consumers.consume test ~filter:path_filter ~path:payload
-         ~action:(Transform invert_stm))
 end

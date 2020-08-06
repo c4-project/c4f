@@ -35,11 +35,11 @@ let actions : F.Action.With_default_weight.t list Lazy.t =
       ; make
           ~action:(module Atomic_fetch.Insert.Int_redundant)
           ~default_weight:20
-      ; make ~action:(module Dead.Early_out) ~default_weight:20
-      ; make ~action:(module Dead.Goto) ~default_weight:20
-      ; make ~action:(module If.Invert) ~default_weight:10
-      ; make ~action:(module If.Surround.Tautology) ~default_weight:15
-      ; make ~action:(module If.Surround.Duplicate) ~default_weight:15
+      ; make ~action:(module Flow_dead.Insert.Early_out) ~default_weight:20
+      ; make ~action:(module Flow_dead.Insert.Goto) ~default_weight:20
+      ; make ~action:(module Flow_if.Surround.Tautology) ~default_weight:15
+      ; make ~action:(module Flow_if.Surround.Duplicate) ~default_weight:15
+      ; make ~action:(module Flow_if.Transform.Invert) ~default_weight:10
       ; make ~action:(module Flow_loop.Insert.While_false) ~default_weight:15
       ; make ~action:(module Flow_loop.Surround.Do_false) ~default_weight:15
       ; make ~action:(module Mem.Fence) ~default_weight:15
@@ -50,8 +50,8 @@ let actions : F.Action.With_default_weight.t list Lazy.t =
       ; make ~action:(module Var.Volatile) ~default_weight:25
         (* These are disabled by default because they induce transactions.
            TODO(@MattWindsor91): gate them in another way. *)
-      ; make ~action:(module Lock.Atomic_surround) ~default_weight:0
-      ; make ~action:(module Lock.Sync_surround) ~default_weight:0 ]
+      ; make ~action:(module Flow_lock.Surround.Atomic) ~default_weight:0
+      ; make ~action:(module Flow_lock.Surround.Sync) ~default_weight:0 ]
 
 let action_map : F.Action.With_default_weight.t Map.M(Act_common.Id).t Lazy.t
     =

@@ -25,7 +25,7 @@ let%test_module "Early_out" =
       let test : F.Subject.Test.t = Lazy.force FT.Subject.Test_data.test in
       let payload = F.Payload_impl.Insertion.make ~where ~to_insert in
       FT.Action.Test_utils.run_and_dump_test
-        (Src.Dead.Early_out.run test ~payload)
+        (Src.Flow_dead.Insert.Early_out.run test ~payload)
         ~initial_state
 
     let if_path : F.Path.Test.t =

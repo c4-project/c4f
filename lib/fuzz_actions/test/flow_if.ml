@@ -19,7 +19,7 @@ end
 
 let%test_module "Surround" =
   ( module struct
-    module Surround = Src.If.Surround
+    module Surround = Src.Flow_if.Surround
 
     (* TODO(@MattWindsor91): sort out the discrepancy between the subject
        example and var map. *)
@@ -175,7 +175,7 @@ let%test_module "Invert" =
 
     let%expect_test "resulting AST" =
       FT.Action.Test_utils.run_and_dump_test
-        (Src.If.Invert.run test ~payload)
+        (Src.Flow_if.Transform.Invert.run test ~payload)
         ~initial_state ;
       [%expect
         {|
