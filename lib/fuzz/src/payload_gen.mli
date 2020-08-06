@@ -86,6 +86,10 @@ val path : Path_kind.t -> filter:Path_filter.t -> Path.Test.t t
 (** [path kind ~filter] generates a path of kind [kind] and respecting filter
     [filter]. *)
 
+val path_with_flags : Path_kind.t -> filter:Path_filter.t -> Path.Test.t Path_flag.Flagged.t t
+(** [path_with_flags kind ~filter] generates a path of kind [kind] respecting filter
+    [filter], and returns it with its flags. *)
+
 (** {3 Common queries} *)
 
 val vars : Var.Map.t t

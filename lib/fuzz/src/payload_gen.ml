@@ -81,10 +81,12 @@ let lift_quickcheck (type a) (g : a Base_quickcheck.Generator.t) : a t =
   lift_opt_gen (Ok g)
 
 let path (kind : Path_kind.t) ~(filter : Path_filter.t) : Path.Test.t t =
-  let* s = lift Context.subject in
-  lift_opt_gen (Path_producers.try_gen s ~filter ~kind)
+  lift Context.subject >>| Path_producers.try_gen  ~filter ~kind >>= lift_opt_gen
 
-let flag (id : Act_common.Id.t) : bool t =
+let path_with_flags (kind : Path_kind.t) ~(filter : Path_filter.t) : Path.Test.t Path_flag.Flagged.t t =
+  lift Context.subject >>| Path_producers.try_gen_with_flags ~filter ~kind >>= lift_opt_gen
+
+  let flag (id : Act_common.Id.t) : bool t =
   let* param_map = lift Context.param_map in
   let* random = lift Context.random in
   let+ f = Inner.return (Param_map.get_flag param_map ~id) in
