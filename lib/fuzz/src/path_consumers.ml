@@ -280,3 +280,11 @@ let consume ?(filter : Path_filter.t option) (test : Subject.Test.t)
     Subject.Test.t Or_error.t =
   let ctx = Path_context.init action ?filter in
   consume' test ~path ~ctx
+
+let consume_with_flags ?(filter : Path_filter.t = Path_filter.empty)
+    (test : Subject.Test.t) ~(path : Path.t Path_flag.Flagged.t)
+    ~(action : Path_kind.With_action.t) : Subject.Test.t Or_error.t =
+  let flags = Path_flag.Flagged.flags path in
+  let path = Path_flag.Flagged.path path in
+  let filter = Path_filter.req filter ~flags in
+  consume test ~filter ~path ~action

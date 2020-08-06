@@ -90,7 +90,8 @@ let%test_module "test runs" =
 
         let payload : F.Payload_impl.Cond_surround.t =
           F.Payload_impl.Cond_surround.make ~cond
-            ~where:(Lazy.force FT.Subject.Test_data.Path.surround_atomic)
+            ~where:
+              (Lazy.force FT.Subject.Test_data.Path.surround_atomic_flagged)
 
         let action = Surround.run test ~payload
 
@@ -142,7 +143,8 @@ let%test_module "test runs" =
 
         let payload : F.Payload_impl.Cond_surround.t =
           F.Payload_impl.Cond_surround.make ~cond
-            ~where:(Lazy.force FT.Subject.Test_data.Path.surround_dead)
+            ~where:
+              (Lazy.force FT.Subject.Test_data.Path.surround_dead_flagged)
 
         let action = Surround.run test ~payload
 
@@ -184,9 +186,7 @@ let%test_module "test runs" =
         let%expect_test "global dependencies after running" =
           FT.Action.Test_utils.run_and_dump_global_deps action
             ~initial_state:state ;
-          [%expect {|
-          a
-          y |}]
+          [%expect {| |}]
       end )
 
     let%test_module "Surround.While_dead" =
@@ -195,7 +195,8 @@ let%test_module "test runs" =
 
         let payload : F.Payload_impl.Cond_surround.t =
           F.Payload_impl.Cond_surround.make ~cond
-            ~where:(Lazy.force FT.Subject.Test_data.Path.surround_dead)
+            ~where:
+              (Lazy.force FT.Subject.Test_data.Path.surround_dead_flagged)
 
         let action = Surround.run test ~payload
 
@@ -237,8 +238,6 @@ let%test_module "test runs" =
         let%expect_test "global dependencies after running" =
           FT.Action.Test_utils.run_and_dump_global_deps action
             ~initial_state:state ;
-          [%expect {|
-          a
-          y |}]
+          [%expect {| |}]
       end )
   end )

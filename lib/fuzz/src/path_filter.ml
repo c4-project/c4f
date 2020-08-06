@@ -65,6 +65,9 @@ module Req_flags = struct
   let require_flag (existing : t) ~(flag : Path_flag.t) : t =
     {existing with req_flags= Set.add existing.req_flags flag}
 
+  let req (existing : t) ~(flags : Set.M(Path_flag).t) : t =
+    {existing with req_flags= Set.union existing.req_flags flags}
+
   let in_dead_code_only : t -> t = require_flag ~flag:In_dead_code
 
   let in_loop_only : t -> t = require_flag ~flag:In_loop

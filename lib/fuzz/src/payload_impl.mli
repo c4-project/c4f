@@ -70,7 +70,8 @@ module Cond_surround : sig
 
   (** {3 Constructors} *)
 
-  val make : cond:Act_fir.Expression.t -> where:Path.t -> t
+  val make :
+    cond:Act_fir.Expression.t -> where:Path.t Path_flag.Flagged.t -> t
   (** [make ~cond ~where] makes a payload given a specific condition
       expression [cond] and statement-list selecting path [where]. *)
 
@@ -79,7 +80,7 @@ module Cond_surround : sig
   val cond : t -> Act_fir.Expression.t
   (** [cond payload] retrieves the generated condition inside [payload]. *)
 
-  val where : t -> Path.t
+  val where : t -> Path.t Path_flag.Flagged.t
   (** [where payload] retrieves the generated path inside [payload]. *)
 
   val apply :

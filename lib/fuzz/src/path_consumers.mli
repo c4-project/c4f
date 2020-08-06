@@ -29,3 +29,14 @@ val consume :
     the path filter. This is the same check as used in {!Path_producers}; its
     use here is to safeguard against broken path production or replaying of
     ill-formed traces. *)
+
+val consume_with_flags :
+     ?filter:Path_filter.t
+  -> Subject.Test.t
+  -> path:Path.t Path_flag.Flagged.t
+  -> action:Path_kind.With_action.t
+  -> Subject.Test.t Or_error.t
+(** [consume_with_flags ?filter target ~path ~action] behaves as {!consume},
+    but adds to the path filter the requirement that the flags attached to
+    [path] must hold. This safeguards against traces mistakenly attributing
+    flags, for instance. *)

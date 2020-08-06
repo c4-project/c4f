@@ -11,10 +11,6 @@
 
 open Base
 
-open struct
-  module Tx = Travesty_base_exts
-end
-
 (* This module gymnastics brought to you by needing to have a comparator
    module below. *)
 module M = struct
@@ -67,7 +63,7 @@ let flags_of_flow (f : Subject.Statement.Flow.t) : Set.M(M).t =
   |> option_map ~f:flags_of_flow_class
 
 module Flagged = struct
-  type 'p t = {path: 'p; flags: Set.M(M).t} [@@deriving make, fields]
+  type 'p t = {path: 'p; flags: Set.M(M).t} [@@deriving make, fields, sexp]
 
   include (
     Travesty.Bi_traversable.Make1_left (struct

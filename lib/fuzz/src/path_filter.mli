@@ -34,6 +34,9 @@ val empty : t
 
 (** {2 Require predicates} *)
 
+val req : t -> flags:Set.M(Path_flag).t -> t
+(** [req filter ~flags] adds [flags] to those required by [filter]. *)
+
 val in_dead_code_only : t -> t
 (** [in_dead_code_only filter] adds to [filter] the restriction that any path
     must travel through at least one dead-code block. *)

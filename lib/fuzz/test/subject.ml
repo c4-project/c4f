@@ -225,18 +225,38 @@ module Test_data = struct
 
     let in_stm : Src.Path.t Lazy.t = Src.Path.(thread_0_stms @@ Stms.stm 2)
 
+    let flag (fs : Src.Path_flag.t list) (p : Src.Path.t Lazy.t) :
+        Src.Path.t Src.Path_flag.Flagged.t Lazy.t =
+      Lazy.map p ~f:(fun path ->
+          let flags = Set.of_list (module Src.Path_flag) fs in
+          Src.Path_flag.Flagged.make ~path ~flags)
+
     let surround_atomic : Src.Path.t Lazy.t =
       Src.Path.(
         thread_0_stms @@ Stms.between pos_0_first_atom pos_0_last_atom)
 
+    let surround_atomic_flagged : Src.Path.t Src.Path_flag.Flagged.t Lazy.t =
+      flag [] surround_atomic
+
     let surround_label_direct : Src.Path.t Lazy.t =
       Src.Path.(known_true_if @@ If.in_branch true @@ Stms.on_range 0 2)
+
+    let surround_label_direct_flagged :
+        Src.Path.t Src.Path_flag.Flagged.t Lazy.t =
+      flag [] surround_label_direct
 
     let surround_label_indirect : Src.Path.t Lazy.t =
       Src.Path.(thread_0_stms @@ Stms.between pos_0_true_if pos_0_false_if)
 
+    let surround_label_indirect_flagged :
+        Src.Path.t Src.Path_flag.Flagged.t Lazy.t =
+      flag [] surround_label_indirect
+
     let surround_dead : Src.Path.t Lazy.t =
       Src.Path.(known_false_if @@ If.in_branch true @@ Stms.on_range 0 1)
+
+    let surround_dead_flagged : Src.Path.t Src.Path_flag.Flagged.t Lazy.t =
+      flag [In_dead_code] surround_dead
 
     let surround_txsafe : Src.Path.t Lazy.t =
       Src.Path.(thread_0_stms @@ Stms.singleton pos_0_nop)

@@ -45,7 +45,7 @@ end
 
 module Cond_surround = struct
   module Body = struct
-    type t = {cond: Act_fir.Expression.t; where: Path.t}
+    type t = {cond: Act_fir.Expression.t; where: Path.t Path_flag.Flagged.t}
     [@@deriving make, sexp, fields]
   end
 
@@ -66,6 +66,15 @@ module Cond_surround = struct
     State.Monad.add_expression_dependencies cond
       ~scope:(Local (Path.tid path))
 
+  (** [maybe_add_cond_dependencies fpath cond] uses [add_cond_dependencies]
+      to add dependencies if the path flags do not situate [fpath] inside
+      dead code. *)
+  let add_cond_dependencies (fpath : Path.t Path_flag.Flagged.t)
+      (cond : Act_fir.Expression.t) : unit State.Monad.t =
+    let flags = Path_flag.Flagged.flags fpath in
+    State.Monad.unless_m (Set.mem flags Path_flag.In_dead_code) ~f:(fun () ->
+        add_cond_dependencies (Path_flag.Flagged.path fpath) cond)
+
   let apply ?(filter : Path_filter.t option) ({cond; where} : t)
       ~(test : Subject.Test.t)
       ~(f :
@@ -76,7 +85,7 @@ module Cond_surround = struct
       Let_syntax.(
         let%bind () = add_cond_dependencies where cond in
         Monadic.return
-          (Path_consumers.consume test ?filter ~path:where
+          (Path_consumers.consume_with_flags test ?filter ~path:where
              ~action:(Transform_list (fun test -> Ok [f cond test])))))
 
   let cond_env (vars : Var.Map.t) ~(tid : int) : Act_fir.Env.t =
@@ -106,8 +115,8 @@ module Cond_surround = struct
         let* filter =
           lift (Fn.compose Basic.path_filter Context.to_availability)
         in
-        let* where = Payload_gen.path Transform_list ~filter in
-        let+ cond = gen_cond where in
+        let* where = Payload_gen.path_with_flags Transform_list ~filter in
+        let+ cond = gen_cond (Path_flag.Flagged.path where) in
         Body.make ~cond ~where)
   end
 end
