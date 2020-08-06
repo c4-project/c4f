@@ -37,6 +37,10 @@ module Test_data : sig
     (** [known_true_if rest] constructs a path that visits an if statement
         with a known-true conditional. *)
 
+    val known_false_if : Act_fuzz.Path.If.t -> Act_fuzz.Path.Test.t Lazy.t
+    (** [known_false_if rest] constructs a path that visits an if statement
+        with a known-false conditional. *)
+
     val dead_else : Act_fuzz.Path.Stms.t -> Act_fuzz.Path.Test.t Lazy.t
     (** [dead_else rest] constructs a path that visits a dead 'else' leg of
         an if statement. *)
@@ -69,6 +73,10 @@ module Test_data : sig
     val surround_atomic : Act_fuzz.Path.Test.t Lazy.t
     (** [surround_atomic] is a full path that points to a statement range
         containing atomics, ready for surrounding. *)
+
+    val surround_dead : Act_fuzz.Path.Test.t Lazy.t
+    (** [surround_dead] is a full path that points to a statement range
+        inside dead-code, ready for surrounding. *)
 
     val surround_txsafe : Act_fuzz.Path.Test.t Lazy.t
     (** [surround_txsafe] is a full path that points to a statement range

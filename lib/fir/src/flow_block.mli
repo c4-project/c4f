@@ -28,7 +28,8 @@ open Base
 module While : sig
   (** Enumeration of types of while loop. *)
   type t = Do_while  (** A do-while loop. *) | While  (** A while loop. *)
-  [@@deriving sexp, compare, equal]
+
+  include Act_utils.Enum_types.Extension_table with type t := t
 end
 
 module Lock : sig

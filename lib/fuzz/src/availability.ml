@@ -25,6 +25,8 @@ let has_threads (ctx : Context.t) : bool Or_error.t =
     ( ctx |> Context.subject |> Act_litmus.Test.Raw.threads |> List.is_empty
     |> not )
 
+let with_context (f : Context.t -> t) : t = fun ctx -> f ctx ctx
+
 let is_filter_constructible (filter : Path_filter.t) ~(kind : Path_kind.t)
     (ctx : Context.t) : bool Or_error.t =
   let subject = Context.subject ctx in

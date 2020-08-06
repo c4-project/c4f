@@ -157,20 +157,36 @@ flow.lock.surround.sync:
   Summary:
     This action removes a sublist of statements from the program, replacing
     them with a synchronised block containing those statements.
-flow.loop.surround:
-  Weight: 15x
-  Summary:
-    Removes a sublist of statements from the program, replacing them with a
-    `do... while` statement containing some transformation of the removed
-    statements.
-    
-    The condition of the `do... while` loop is statically guaranteed to be
-    false.
-flow.loop.while.insert-false:
+flow.loop.insert.while.false:
   Weight: 15x
   Summary:
     Inserts an empty while loop whose condition is known to be false, and
     whose body is marked as dead-code for future actions.
+flow.loop.surround.do.dead:
+  Weight: 10x
+  Summary:
+    Removes a sublist of statements from the program, replacing them with ado
+    statement containing some transformation of the removed statements.
+    
+    This action will only surround portions of dead code, but the condition
+    of the `do... while` loop can be anything.
+flow.loop.surround.do.false:
+  Weight: 15x
+  Summary:
+    Removes a sublist of statements from the program, replacing them with ado
+    statement containing some transformation of the removed statements.
+    
+    The condition of the `do... while` loop is statically guaranteed to be
+    false, meaning the loop will iterate only once.
+flow.loop.surround.while.dead:
+  Weight: 10x
+  Summary:
+    Removes a sublist of statements from the program, replacing them with
+    awhile statement containing some transformation of the removed
+    statements.
+    
+    This action will only surround portions of dead code, but the condition
+    of the `while` loop can be anything.
 mem.fence:
   Weight: 15x
   Summary: Inserts a randomly generated memory fence into the test.

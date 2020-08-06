@@ -12,9 +12,12 @@
 open Base
 
 open struct
+  module Ac = Act_common
   module Fir = Act_fir
   module F = Act_fuzz
 end
+
+let prefix_name (rest : Ac.Id.t) : Ac.Id.t = Ac.Id.("flow" @: "loop" @: rest)
 
 module Insert = struct
   module type S =
@@ -22,8 +25,7 @@ module Insert = struct
       with type Payload.t = Fir.Expression.t F.Payload_impl.Insertion.t
 
   module While_false : S = struct
-    let name =
-      Act_common.Id.("flow" @: "loop" @: "while" @: "insert-false" @: empty)
+    let name = prefix_name Ac.Id.("insert" @: "while" @: "false" @: empty)
 
     let readme () : string =
       Act_utils.My_string.format_for_readme
@@ -76,43 +78,122 @@ module Surround = struct
   module type S =
     F.Action_types.S with type Payload.t = F.Payload_impl.Cond_surround.t
 
-  module Do_false : S = struct
-    let name = Act_common.Id.of_string_list ["flow"; "loop"; "surround"]
+  module Make (Basic : sig
+    val kind : Fir.Flow_block.While.t
+    (** [kind] is the kind of loop to make. *)
+
+    val kind_name : string
+    (** [kind_name] is the name of the kind of loop to make, as it should
+        appear in the identifier. *)
+
+    val name_suffix : string
+    (** [name_suffix] becomes the last tag of the action name. *)
+
+    val readme_suffix : string
+    (** [readme_suffix] gets appended onto the end of the readme. *)
+
+    val path_filter : F.Availability.Context.t -> F.Path_filter.t
+    (** [path_filter ctx] generates the filter for the loop path. *)
+
+    val cond_gen : Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t
+    (** [cond_gen] generates the conditional for the loop. *)
+  end) : S = struct
+    let name =
+      prefix_name
+        Ac.Id.("surround" @: Basic.kind_name @: Basic.name_suffix @: empty)
 
     let readme () : string =
       Act_utils.My_string.format_for_readme
         {| Removes a sublist
-        of statements from the program, replacing them with a `do... while`
+        of statements from the program, replacing them with a |}
+      ^ Basic.kind_name
+      ^ {| 
         statement containing some transformation of the removed statements.
 
-        The condition of the `do... while` loop is statically guaranteed to be
-        false. |}
+        |}
+      ^ Basic.readme_suffix
 
-    let available (ctx : F.Availability.Context.t) : bool Or_error.t =
-      Ok
-        ( ctx |> F.Availability.Context.subject
-        |> F.Subject.Test.has_statements )
+    let available : F.Availability.t =
+      F.Availability.(
+        has_threads
+        + with_context (fun ctx ->
+              is_filter_constructible (Basic.path_filter ctx)
+                ~kind:Transform_list))
 
     module Surround = F.Payload_impl.Cond_surround
 
     module Payload = Surround.Make (struct
-      let cond_gen :
-          Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t =
-        Fir.Expression_gen.gen_falsehoods
+      let cond_gen = Basic.cond_gen
 
-      let path_filter (_ : F.Availability.Context.t) : F.Path_filter.t =
-        F.Path_filter.empty
+      let path_filter = Basic.path_filter
     end)
 
     let wrap_in_loop (cond : Fir.Expression.t)
         (statements : F.Metadata.t Fir.Statement.t list) :
         F.Metadata.t Fir.Statement.t =
       Fir.Statement.flow
-        (Fir.Flow_block.while_loop ~kind:Do_while ~cond
+        (Fir.Flow_block.while_loop ~kind:Basic.kind ~cond
            ~body:(F.Subject.Block.make_generated ~statements ()))
 
     let run (test : F.Subject.Test.t) ~(payload : Payload.t) :
         F.Subject.Test.t F.State.Monad.t =
       Surround.apply payload ~test ~f:wrap_in_loop
   end
+
+  module Do_false : S = Make (struct
+    let kind = Fir.Flow_block.While.Do_while
+
+    let kind_name = "do"
+
+    let name_suffix = "false"
+
+    let readme_suffix =
+      {| The condition of the `do... while` loop is statically guaranteed to be
+         false, meaning the loop will iterate only once. |}
+
+    let cond_gen : Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t
+        =
+      Fir.Expression_gen.gen_falsehoods
+
+    let path_filter (_ : F.Availability.Context.t) : F.Path_filter.t =
+      F.Path_filter.empty
+  end)
+
+  module Do_dead : S = Make (struct
+    let kind = Fir.Flow_block.While.Do_while
+
+    let kind_name = "do"
+
+    let name_suffix = "dead"
+
+    let readme_suffix =
+      {| This action will only surround portions of dead code, but the condition
+         of the `do... while` loop can be anything. |}
+
+    let cond_gen : Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t
+        =
+      Fir.Expression_gen.gen_bools
+
+    let path_filter (_ : F.Availability.Context.t) : F.Path_filter.t =
+      F.Path_filter.(in_dead_code_only empty)
+  end)
+
+  module While_dead : S = Make (struct
+    let kind = Fir.Flow_block.While.While
+
+    let kind_name = "while"
+
+    let name_suffix = "dead"
+
+    let readme_suffix =
+      {| This action will only surround portions of dead code, but the condition
+         of the `while` loop can be anything. |}
+
+    let cond_gen : Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t
+        =
+      Fir.Expression_gen.gen_bools
+
+    let path_filter (_ : F.Availability.Context.t) : F.Path_filter.t =
+      F.Path_filter.(in_dead_code_only empty)
+  end)
 end

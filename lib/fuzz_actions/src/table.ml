@@ -41,7 +41,11 @@ let actions : F.Action.With_default_weight.t list Lazy.t =
       ; make ~action:(module Flow_if.Surround.Duplicate) ~default_weight:15
       ; make ~action:(module Flow_if.Transform.Invert) ~default_weight:10
       ; make ~action:(module Flow_loop.Insert.While_false) ~default_weight:15
+      ; make ~action:(module Flow_loop.Surround.Do_dead) ~default_weight:10
       ; make ~action:(module Flow_loop.Surround.Do_false) ~default_weight:15
+      ; make
+          ~action:(module Flow_loop.Surround.While_dead)
+          ~default_weight:10
       ; make ~action:(module Mem.Fence) ~default_weight:15
       ; make ~action:(module Mem.Strengthen) ~default_weight:15
       ; make ~action:(module Program.Make_empty) ~default_weight:10

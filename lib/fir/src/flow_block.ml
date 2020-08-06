@@ -12,7 +12,15 @@
 open Base
 
 module While = struct
-  type t = Do_while | While [@@deriving sexp, compare, equal]
+  module M = struct
+    type t = Do_while | While [@@deriving enum]
+
+    let table : (t, string) List.Assoc.t =
+      [(Do_while, "do-while"); (While, "while")]
+  end
+
+  include M
+  include Act_utils.Enum.Extend_table (M)
 end
 
 module Lock = struct

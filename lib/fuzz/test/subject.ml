@@ -213,6 +213,10 @@ module Test_data = struct
       Src.Path.(
         thread_0_stms @@ Stms.in_stm pos_0_true_if @@ Stm.in_if @@ path)
 
+    let known_false_if (path : Src.Path.If.t) : Src.Path.Test.t Lazy.t =
+      Src.Path.(
+        thread_0_stms @@ Stms.in_stm pos_0_false_if @@ Stm.in_if @@ path)
+
     let dead_else (path : Src.Path.Stms.t) : Src.Path.Test.t Lazy.t =
       Src.Path.(known_true_if @@ If.in_branch false @@ path)
 
@@ -231,6 +235,9 @@ module Test_data = struct
 
     let surround_label_indirect : Src.Path.Test.t Lazy.t =
       Src.Path.(thread_0_stms @@ Stms.between pos_0_true_if pos_0_false_if)
+
+    let surround_dead : Src.Path.Test.t Lazy.t =
+      Src.Path.(known_false_if @@ If.in_branch true @@ Stms.on_range 0 1)
 
     let surround_txsafe : Src.Path.Test.t Lazy.t =
       Src.Path.(thread_0_stms @@ Stms.singleton pos_0_nop)

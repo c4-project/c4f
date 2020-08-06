@@ -22,9 +22,8 @@ module Insert : sig
       with type Payload.t =
             Act_fir.Expression.t Act_fuzz.Payload_impl.Insertion.t
 
-  (** This action inserts a while loop with a known-false expression in a
-      random statement position; its body begins empty but is marked as
-      dead-code. *)
+  (** This action inserts a while loop with a falsy expression in a random
+      statement position; its body begins empty but is marked as dead-code. *)
   module While_false : S
 end
 
@@ -39,7 +38,15 @@ module Surround : sig
   (** This action removes a sublist of statements from the program, replacing
       them with a `do... while` statement containing some transformation of
       the removed statements and a falsy expression. *)
-  module Do_false :
-    Act_fuzz.Action_types.S
-      with type Payload.t = Act_fuzz.Payload_impl.Cond_surround.t
+  module Do_false : S
+
+  (** This action removes a sublist of dead-code statements from the program,
+      replacing them with a `do... while` statement containing some
+      transformation of the removed statements and an arbitrary expression. *)
+  module Do_dead : S
+
+  (** This action removes a sublist of dead-code statements from the program,
+      replacing them with a `while` statement containing some transformation
+      of the removed statements and an arbitrary expression. *)
+  module While_dead : S
 end
