@@ -9,26 +9,32 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Actions that generate store instructions. *)
+(** Store instruction instructions. *)
 
-(** Shorthand type for store insertion actions. *)
-module type S_insert =
-  Act_fuzz.Action_types.S
-    with type Payload.t =
-          Act_fir.Atomic_store.t Act_fuzz.Payload_impl.Insertion.t
+(** {1 Actions that generate store} *)
+module Insert : sig
+  (** Shorthand type for store insertion actions. *)
+  module type S =
+    Act_fuzz.Action_types.S
+      with type Payload.t =
+            Act_fir.Atomic_store.t Act_fuzz.Payload_impl.Insertion.t
 
-(** [Insert_int_normal] is a fuzzer action that generates a random atomic-int
-    store instruction. *)
-module Insert_int_normal : S_insert
+  (** [Int_normal] is a fuzzer action that generates a random atomic-int
+      store instruction. *)
+  module Int_normal : S
 
-(** [Insert_int_dead] is an insertion action that only targets dead-code,
-    and, in turn, requires and adds fewer constraints on the destination. *)
-module Insert_int_dead : S_insert
+  (** [Int_dead] is an insertion action that only targets dead-code, and, in
+      turn, requires and adds fewer constraints on the destination. *)
+  module Int_dead : S
 
-(** [Insert_int_redundant] is an insertion action that only stores a
-    destination's known value back to itself. *)
-module Insert_int_redundant : S_insert
+  (** [Int_redundant] is an insertion action that only stores a destination's
+      known value back to itself. *)
+  module Int_redundant : S
+end
 
-(** [Xchgify] converts store actions to exchange actions. *)
-module Xchgify :
-  Act_fuzz.Action_types.S with type Payload.t = Act_fuzz.Path.Test.t
+(** {1 Actions that transform store} *)
+module Transform : sig
+  (** [Xchgify] converts store actions to exchange actions. *)
+  module Xchgify :
+    Act_fuzz.Action_types.S with type Payload.t = Act_fuzz.Path.Test.t
+end

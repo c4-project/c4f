@@ -19,27 +19,29 @@ let actions : F.Action.With_default_weight.t list Lazy.t =
   lazy
     F.Action.With_default_weight.
       [ make
-          ~action:(module Atomic_cmpxchg.Insert_int_always_succeed)
+          ~action:(module Atomic_cmpxchg.Insert.Int_always_succeed)
           ~default_weight:30
-      ; make ~action:(module Atomic_store.Insert_int_dead) ~default_weight:20
+      ; make ~action:(module Atomic_store.Insert.Int_dead) ~default_weight:20
       ; make
-          ~action:(module Atomic_store.Insert_int_normal)
+          ~action:(module Atomic_store.Insert.Int_normal)
           ~default_weight:20
       ; make
-          ~action:(module Atomic_store.Insert_int_redundant)
+          ~action:(module Atomic_store.Insert.Int_redundant)
           ~default_weight:15
-      ; make ~action:(module Atomic_store.Xchgify) ~default_weight:15
-      ; make ~action:(module Atomic_fetch.Insert_int_dead) ~default_weight:20
       ; make
-          ~action:(module Atomic_fetch.Insert_int_redundant)
+          ~action:(module Atomic_store.Transform.Xchgify)
+          ~default_weight:15
+      ; make ~action:(module Atomic_fetch.Insert.Int_dead) ~default_weight:20
+      ; make
+          ~action:(module Atomic_fetch.Insert.Int_redundant)
           ~default_weight:20
       ; make ~action:(module Dead.Early_out) ~default_weight:20
       ; make ~action:(module Dead.Goto) ~default_weight:20
       ; make ~action:(module If.Invert) ~default_weight:10
       ; make ~action:(module If.Surround.Tautology) ~default_weight:15
       ; make ~action:(module If.Surround.Duplicate) ~default_weight:15
-      ; make ~action:(module Loop.While_insert_false) ~default_weight:15
-      ; make ~action:(module Loop.Surround) ~default_weight:15
+      ; make ~action:(module Flow_loop.Insert.While_false) ~default_weight:15
+      ; make ~action:(module Flow_loop.Surround.Do_false) ~default_weight:15
       ; make ~action:(module Mem.Fence) ~default_weight:15
       ; make ~action:(module Mem.Strengthen) ~default_weight:15
       ; make ~action:(module Program.Make_empty) ~default_weight:10

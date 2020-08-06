@@ -36,11 +36,11 @@ let%test_module "While_insert_false" =
             (eq (of_variable_str_exn "y") (int_lit 27))
             (of_variable_str_exn "a")))
 
-    let payload : Src.Loop.While_insert_false.Payload.t =
+    let payload : Src.Flow_loop.Insert.While_false.Payload.t =
       F.Payload_impl.Insertion.make ~to_insert
         ~where:(Lazy.force FT.Subject.Test_data.Path.insert_live)
 
-    let action = Src.Loop.While_insert_false.run test ~payload
+    let action = Src.Flow_loop.Insert.While_false.run test ~payload
 
     let%expect_test "resulting AST" =
       FT.Action.Test_utils.run_and_dump_test action ~initial_state:state ;
@@ -82,9 +82,9 @@ let%test_module "While_insert_false" =
           y |}]
   end )
 
-let%test_module "Surround" =
+let%test_module "Surround.Do_false" =
   ( module struct
-    module Surround = Src.Loop.Surround
+    module Surround = Src.Flow_loop.Surround.Do_false
 
     (* TODO(@MattWindsor91): sort out the discrepancy between the subject
        example and var map. *)

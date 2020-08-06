@@ -11,19 +11,22 @@
 
 (** Actions that generate fetch statements. *)
 
-(** Shorthand type for fetch insertion actions. *)
-module type S_insert =
-  Act_fuzz.Action_types.S
-    with type Payload.t =
-          Act_fir.Expression.t Act_fir.Atomic_fetch.t
-          Act_fuzz.Payload_impl.Insertion.t
+(** {1 Insertion} *)
 
-(* TODO(@MattWindsor91): add Int. *)
+module Insert : sig
+  (** Shorthand type for fetch insertion actions. *)
+  module type S =
+    Act_fuzz.Action_types.S
+      with type Payload.t =
+            Act_fir.Expression.t Act_fir.Atomic_fetch.t
+            Act_fuzz.Payload_impl.Insertion.t
 
-(** [Insert_int_dead] is an insert action that only targets dead-code, and,
-    in turn, requires and adds fewer constraints on the destination. *)
-module Insert_int_dead : S_insert
+  (* TODO(@MattWindsor91): add Int. *)
 
-(** [Insert_int_redundant] is an insert action that only fetches with a bias
-    of 0. *)
-module Insert_int_redundant : S_insert
+  (** [Int_dead] is an insert action that only targets dead-code, and, in
+      turn, requires and adds fewer constraints on the destination. *)
+  module Int_dead : S
+
+  (** [Int_redundant] is an insert action that only fetches with a bias of 0. *)
+  module Int_redundant : S
+end
