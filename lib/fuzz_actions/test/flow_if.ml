@@ -37,7 +37,7 @@ let%test_module "Surround" =
             (eq (of_variable_str_exn "x") (int_lit 27))
             (of_variable_str_exn "a")))
 
-    let where : F.Path.Test.t =
+    let where : F.Path.t =
       Lazy.force FT.Subject.Test_data.Path.surround_atomic
 
     let payload : F.Payload_impl.Cond_surround.t =
@@ -129,7 +129,7 @@ let%test_module "Surround" =
           a
           x |}]
 
-        let label_direct : F.Path.Test.t =
+        let label_direct : F.Path.t =
           Lazy.force FT.Subject.Test_data.Path.surround_label_direct
 
         let label_direct_payload : F.Payload_impl.Cond_surround.t =
@@ -145,7 +145,7 @@ let%test_module "Surround" =
                ("while checking statements"
                 ("Statement failed check" (check (Stm_class Has_not_any ((Prim (Label)))))))) |}]
 
-        let label_indirect : F.Path.Test.t =
+        let label_indirect : F.Path.t =
           Lazy.force FT.Subject.Test_data.Path.surround_label_indirect
 
         let label_indirect_payload : F.Payload_impl.Cond_surround.t =
@@ -169,9 +169,8 @@ let%test_module "Invert" =
 
     let test : F.Subject.Test.t = Lazy.force FT.Subject.Test_data.test
 
-    let payload : F.Path.Test.t =
-      F.Path.(
-        Test.in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 3 @@ Stm.this_stm)
+    let payload : F.Path.t =
+      F.Path.(in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 3 @@ Stm.this_stm)
 
     let%expect_test "resulting AST" =
       FT.Action.Test_utils.run_and_dump_test

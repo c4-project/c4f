@@ -268,7 +268,7 @@ let thread (tid : int) (s : Subject.Thread.t) ~(path : Path.Thread.t)
         |> Block.consume_stms ~path ~ctx ~mu:Stm.consume
         >>| fun stms' -> {s with stms= stms'})
 
-let consume' (test : Subject.Test.t) ~(path : Path.Test.t) ~(ctx : ctx) :
+let consume' (test : Subject.Test.t) ~(path : Path.t) ~(ctx : ctx) :
     Subject.Test.t Or_error.t =
   match path with
   | In_thread (index, path) ->
@@ -276,7 +276,7 @@ let consume' (test : Subject.Test.t) ~(path : Path.Test.t) ~(ctx : ctx) :
         ~f:(thread index ~path ~ctx)
 
 let consume ?(filter : Path_filter.t option) (test : Subject.Test.t)
-    ~(path : Path.Test.t) ~(action : Path_kind.With_action.t) :
+    ~(path : Path.t) ~(action : Path_kind.With_action.t) :
     Subject.Test.t Or_error.t =
   let ctx = Path_context.init action ?filter in
   consume' test ~path ~ctx

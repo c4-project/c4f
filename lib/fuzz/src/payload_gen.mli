@@ -82,13 +82,14 @@ val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
 val lift : (Context.t -> 'a) -> 'a t
 (** [peek f] projects a value from the context using [f]. *)
 
-val path : Path_kind.t -> filter:Path_filter.t -> Path.Test.t t
+val path : Path_kind.t -> filter:Path_filter.t -> Path.t t
 (** [path kind ~filter] generates a path of kind [kind] and respecting filter
     [filter]. *)
 
-val path_with_flags : Path_kind.t -> filter:Path_filter.t -> Path.Test.t Path_flag.Flagged.t t
-(** [path_with_flags kind ~filter] generates a path of kind [kind] respecting filter
-    [filter], and returns it with its flags. *)
+val path_with_flags :
+  Path_kind.t -> filter:Path_filter.t -> Path.t Path_flag.Flagged.t t
+(** [path_with_flags kind ~filter] generates a path of kind [kind] respecting
+    filter [filter], and returns it with its flags. *)
 
 (** {3 Common queries} *)
 

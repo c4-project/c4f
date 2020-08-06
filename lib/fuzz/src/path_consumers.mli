@@ -19,7 +19,7 @@ open Base
 val consume :
      ?filter:Path_filter.t
   -> Subject.Test.t
-  -> path:Path.Test.t
+  -> path:Path.t
   -> action:Path_kind.With_action.t
   -> Subject.Test.t Or_error.t
 (** [consume ?filter target ~path ~action] consumes [path] over [target],

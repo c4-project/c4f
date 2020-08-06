@@ -22,7 +22,7 @@ let%test_module "Statement_list" =
           module P = Subject.Test_data.Path
         end
 
-        let test (path : F.Path.Test.t Lazy.t)
+        let test (path : F.Path.t Lazy.t)
             ~(action : F.Path_kind.With_action.t) : unit =
           let vars = F.State.vars (Lazy.force Subject.Test_data.state) in
           Fmt.(
@@ -43,7 +43,7 @@ let%test_module "Statement_list" =
 
         let%test_module "insert_stm" =
           ( module struct
-            let test_insert : F.Path.Test.t Lazy.t -> unit =
+            let test_insert : F.Path.t Lazy.t -> unit =
               test ~action:(Insert [example_stm])
 
             let%expect_test "insert onto statement (invalid)" =
@@ -119,7 +119,7 @@ let%test_module "Statement_list" =
 
         let%test_module "transform_stm" =
           ( module struct
-            let test_transform : F.Path.Test.t Lazy.t -> unit =
+            let test_transform : F.Path.t Lazy.t -> unit =
               test ~action:(Transform (Fn.const (Ok example_stm)))
 
             let%expect_test "transform a statement" =
@@ -196,7 +196,7 @@ let%test_module "Statement_list" =
                          (F.Subject.Block.make_generated ~statements ())
                        ~f_branch:(F.Subject.Block.make_generated ())) ]
 
-            let test_transform_list : F.Path.Test.t Lazy.t -> unit =
+            let test_transform_list : F.Path.t Lazy.t -> unit =
               test ~action:(Transform_list iffify)
 
             let%expect_test "try to list-transform a statement (invalid)" =
@@ -244,7 +244,7 @@ let%test_module "Statement_list" =
               let kind = F.Path_kind.With_action.to_kind action in
               Test.run_exn
                 ( module struct
-                  type t = F.Path.Test.t [@@deriving sexp]
+                  type t = F.Path.t [@@deriving sexp]
 
                   let quickcheck_generator =
                     Or_error.ok_exn

@@ -12,15 +12,14 @@
 open Base
 
 module Insertion = struct
-  type 'a t = {to_insert: 'a; where: Path.Test.t}
-  [@@deriving make, fields, sexp]
+  type 'a t = {to_insert: 'a; where: Path.t} [@@deriving make, fields, sexp]
 
   module Make (Basic : sig
     type t [@@deriving sexp]
 
     val path_filter : Availability.Context.t -> Path_filter.t
 
-    val gen : Path.Test.t -> t Payload_gen.t
+    val gen : Path.t -> t Payload_gen.t
   end) =
   struct
     open struct
@@ -46,7 +45,7 @@ end
 
 module Cond_surround = struct
   module Body = struct
-    type t = {cond: Act_fir.Expression.t; where: Path.Test.t}
+    type t = {cond: Act_fir.Expression.t; where: Path.t}
     [@@deriving make, sexp, fields]
   end
 
@@ -58,14 +57,14 @@ module Cond_surround = struct
 
       This is a considerable over-approximation of the actual needed
       dependencies. *)
-  let add_cond_dependencies (path : Path.Test.t)
-      (cond : Act_fir.Expression.t) : unit State.Monad.t =
+  let add_cond_dependencies (path : Path.t) (cond : Act_fir.Expression.t) :
+      unit State.Monad.t =
     (* TODO(@MattWindsor91): it would be pretty cool for the lvalues to track
        whether or not they are being used in a tautology, once we add
        metadata tracking to the expression. In this case, we could skip
        adding dependencies where not necessary. *)
     State.Monad.add_expression_dependencies cond
-      ~scope:(Local (Path.Test.tid path))
+      ~scope:(Local (Path.tid path))
 
   let apply ?(filter : Path_filter.t option) ({cond; where} : t)
       ~(test : Subject.Test.t)
@@ -95,8 +94,8 @@ module Cond_surround = struct
   end) : Payload_types.S with type t = Body.t = struct
     include Body
 
-    let gen_cond (path : Path.Test.t) : Act_fir.Expression.t Payload_gen.t =
-      let tid = Path.Test.tid path in
+    let gen_cond (path : Path.t) : Act_fir.Expression.t Payload_gen.t =
+      let tid = Path.tid path in
       Payload_gen.(
         let* vars = lift (Fn.compose State.vars Context.state) in
         let env = cond_env vars ~tid in

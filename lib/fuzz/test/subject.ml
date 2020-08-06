@@ -196,50 +196,49 @@ module Test_data = struct
   module Path = struct
     (* These will need manually synchronising with the statements above. *)
 
-    let thread_0_stms (path : Src.Path.Stms.t) : Src.Path.Test.t Lazy.t =
-      lazy Src.Path.(Test.in_thread 0 @@ Thread.in_stms @@ path)
+    let thread_0_stms (path : Src.Path.Stms.t) : Src.Path.t Lazy.t =
+      lazy Src.Path.(in_thread 0 @@ Thread.in_stms @@ path)
 
-    let insert_live : Src.Path.Test.t Lazy.t =
+    let insert_live : Src.Path.t Lazy.t =
       Src.Path.(thread_0_stms @@ Stms.insert pos_0_last_atom)
 
-    let insert_start : Src.Path.Test.t Lazy.t =
+    let insert_start : Src.Path.t Lazy.t =
       Src.Path.(thread_0_stms @@ Stms.insert 0)
 
-    let insert_end : Src.Path.Test.t Lazy.t =
+    let insert_end : Src.Path.t Lazy.t =
       Lazy.bind body_stms ~f:(fun stms ->
           Src.Path.(thread_0_stms @@ Stms.insert (List.length stms)))
 
-    let known_true_if (path : Src.Path.If.t) : Src.Path.Test.t Lazy.t =
+    let known_true_if (path : Src.Path.If.t) : Src.Path.t Lazy.t =
       Src.Path.(
         thread_0_stms @@ Stms.in_stm pos_0_true_if @@ Stm.in_if @@ path)
 
-    let known_false_if (path : Src.Path.If.t) : Src.Path.Test.t Lazy.t =
+    let known_false_if (path : Src.Path.If.t) : Src.Path.t Lazy.t =
       Src.Path.(
         thread_0_stms @@ Stms.in_stm pos_0_false_if @@ Stm.in_if @@ path)
 
-    let dead_else (path : Src.Path.Stms.t) : Src.Path.Test.t Lazy.t =
+    let dead_else (path : Src.Path.Stms.t) : Src.Path.t Lazy.t =
       Src.Path.(known_true_if @@ If.in_branch false @@ path)
 
-    let insert_dead : Src.Path.Test.t Lazy.t =
+    let insert_dead : Src.Path.t Lazy.t =
       Src.Path.(dead_else @@ Stms.insert 0)
 
-    let in_stm : Src.Path.Test.t Lazy.t =
-      Src.Path.(thread_0_stms @@ Stms.stm 2)
+    let in_stm : Src.Path.t Lazy.t = Src.Path.(thread_0_stms @@ Stms.stm 2)
 
-    let surround_atomic : Src.Path.Test.t Lazy.t =
+    let surround_atomic : Src.Path.t Lazy.t =
       Src.Path.(
         thread_0_stms @@ Stms.between pos_0_first_atom pos_0_last_atom)
 
-    let surround_label_direct : Src.Path.Test.t Lazy.t =
+    let surround_label_direct : Src.Path.t Lazy.t =
       Src.Path.(known_true_if @@ If.in_branch true @@ Stms.on_range 0 2)
 
-    let surround_label_indirect : Src.Path.Test.t Lazy.t =
+    let surround_label_indirect : Src.Path.t Lazy.t =
       Src.Path.(thread_0_stms @@ Stms.between pos_0_true_if pos_0_false_if)
 
-    let surround_dead : Src.Path.Test.t Lazy.t =
+    let surround_dead : Src.Path.t Lazy.t =
       Src.Path.(known_false_if @@ If.in_branch true @@ Stms.on_range 0 1)
 
-    let surround_txsafe : Src.Path.Test.t Lazy.t =
+    let surround_txsafe : Src.Path.t Lazy.t =
       Src.Path.(thread_0_stms @@ Stms.singleton pos_0_nop)
   end
 end

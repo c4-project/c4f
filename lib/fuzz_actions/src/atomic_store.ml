@@ -202,8 +202,7 @@ module Insert = struct
 end
 
 module Transform = struct
-  module Xchgify : F.Action_types.S with type Payload.t = F.Path.Test.t =
-  struct
+  module Xchgify : F.Action_types.S with type Payload.t = F.Path.t = struct
     let name = prefix_name Ac.Id.("transform" @: "xchgify" @: empty)
 
     let readme () =
@@ -220,7 +219,7 @@ module Transform = struct
                     (Is, [Fir.Statement_class.atomic ~specifically:Store ()])))
 
     module Payload = struct
-      type t = F.Path.Test.t [@@deriving sexp]
+      type t = F.Path.t [@@deriving sexp]
 
       let gen : t F.Payload_gen.t =
         let filter = Lazy.force path_filter in
@@ -259,7 +258,7 @@ module Transform = struct
         -> F.Metadata.t Fir.Statement.t Or_error.t =
       AtomsM.map_m ~f:xchgify_atomic
 
-    let run (subject : F.Subject.Test.t) ~(payload : F.Path.Test.t) :
+    let run (subject : F.Subject.Test.t) ~(payload : F.Path.t) :
         F.Subject.Test.t F.State.Monad.t =
       F.State.Monad.Monadic.return
         (F.Path_consumers.consume subject ~filter:(Lazy.force path_filter)

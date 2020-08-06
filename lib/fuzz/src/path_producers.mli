@@ -22,7 +22,7 @@ val produce_seq :
      ?filter:Path_filter.t
   -> Subject.Test.t
   -> kind:Path_kind.t
-  -> Path.Test.t Path_flag.Flagged.t Sequence.t
+  -> Path.t Path_flag.Flagged.t Sequence.t
 (** [produce_seq ?filter test ~kind] produces a lazy sequence of all paths of
     kind [kind] over test [test] that match filter [filter]. *)
 
@@ -36,7 +36,7 @@ val try_gen :
      ?filter:Path_filter.t
   -> Subject.Test.t
   -> kind:Path_kind.t
-  -> Path.Test.t Opt_gen.t
+  -> Path.t Opt_gen.t
 (** [try_gen ?filter test ~kind] tries to choose a random path of kind [kind]
     over test [test] that matches filter [filter]. It fails if such a path is
     not constructible. *)
@@ -45,6 +45,6 @@ val try_gen_with_flags :
      ?filter:Path_filter.t
   -> Subject.Test.t
   -> kind:Path_kind.t
-  -> Path.Test.t Path_flag.Flagged.t Opt_gen.t
+  -> Path.t Path_flag.Flagged.t Opt_gen.t
 (** [try_gen_with_flags ?filter test ~kind] behaves as {!try_gen}, but also
     returns the flags of the path generated. *)

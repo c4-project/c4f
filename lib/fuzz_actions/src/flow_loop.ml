@@ -39,10 +39,10 @@ module Insert = struct
 
       let path_filter _ = F.Path_filter.empty
 
-      let gen (ins_path : F.Path.Test.t) : t F.Payload_gen.t =
+      let gen (ins_path : F.Path.t) : t F.Payload_gen.t =
         F.Payload_gen.(
           let* vars = vars in
-          let tid = F.Path.Test.tid ins_path in
+          let tid = F.Path.tid ins_path in
           let env =
             F.Var.Map.env_satisfying_all vars ~scope:(Local tid)
               ~predicates:[]
@@ -66,7 +66,7 @@ module Insert = struct
       F.State.Monad.(
         (* NB: See discussion in Surround's apply function. *)
         add_expression_dependencies to_insert
-          ~scope:(Local (F.Path.Test.tid path))
+          ~scope:(Local (F.Path.tid path))
         >>= fun () ->
         Monadic.return
           (F.Path_consumers.consume subject ~path

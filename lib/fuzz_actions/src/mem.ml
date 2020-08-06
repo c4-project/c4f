@@ -18,7 +18,7 @@ open struct
 end
 
 module Fence_payload = struct
-  type t = {path: F.Path.Test.t; fence: Fir.Atomic_fence.t}
+  type t = {path: F.Path.t; fence: Fir.Atomic_fence.t}
   [@@deriving sexp, make]
 end
 
@@ -37,7 +37,7 @@ struct
 
     let path_filter _ = F.Path_filter.empty
 
-    let gen (_ : F.Path.Test.t) : Fir.Atomic_fence.t F.Payload_gen.t =
+    let gen (_ : F.Path.t) : Fir.Atomic_fence.t F.Payload_gen.t =
       F.Payload_gen.lift_quickcheck Fir.Atomic_fence.quickcheck_generator
   end)
 
@@ -58,7 +58,7 @@ struct
 end
 
 module Strengthen_payload = struct
-  type t = {path: F.Path.Test.t; mo: Fir.Mem_order.t; can_weaken: bool}
+  type t = {path: F.Path.t; mo: Fir.Mem_order.t; can_weaken: bool}
   [@@deriving sexp, make]
 end
 

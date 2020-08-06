@@ -140,7 +140,7 @@ module Surround = struct
 end
 
 module Transform = struct
-  module type S = F.Action_types.S with type Payload.t = F.Path.Test.t
+  module type S = F.Action_types.S with type Payload.t = F.Path.t
 
   module Invert : S = struct
     let name = prefix_name Ac.Id.("transform" @: "invert" @: empty)
@@ -156,9 +156,9 @@ module Transform = struct
       F.Availability.is_filter_constructible path_filter ~kind:Transform
 
     module Payload = struct
-      type t = F.Path.Test.t [@@deriving sexp]
+      type t = F.Path.t [@@deriving sexp]
 
-      let gen : F.Path.Test.t F.Payload_gen.t =
+      let gen : F.Path.t F.Payload_gen.t =
         F.Payload_gen.path Transform ~filter:path_filter
     end
 

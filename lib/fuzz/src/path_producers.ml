@@ -218,21 +218,21 @@ module Stm = struct
     mu s ~ctx
 end
 
-let thread (tid : int) (s : Subject.Thread.t) ~(ctx : ctx) : Path.Test.t t =
+let thread (tid : int) (s : Subject.Thread.t) ~(ctx : ctx) : Path.t t =
   Sequence.(
     lift_err (Path_context.check_thread_ok ctx ~thread:tid)
     >>= fun () ->
     s.stms
     |> Block.produce_stms ~ctx ~mu:Stm.produce
-    |> map_path ~f:(Fn.compose (Path.Test.in_thread tid) Path.Thread.in_stms))
+    |> map_path ~f:(Fn.compose (Path.in_thread tid) Path.Thread.in_stms))
 
-let produce (test : Subject.Test.t) ~(ctx : ctx) : Path.Test.t t =
+let produce (test : Subject.Test.t) ~(ctx : ctx) : Path.t t =
   test |> Act_litmus.Test.Raw.threads
   |> List.mapi ~f:(thread ~ctx)
   |> Sequence.round_robin
 
 let produce_seq ?(filter : Path_filter.t option) (test : Subject.Test.t)
-    ~(kind : Path_kind.t) : Path.Test.t Path_flag.Flagged.t Sequence.t =
+    ~(kind : Path_kind.t) : Path.t Path_flag.Flagged.t Sequence.t =
   let ctx = Path_context.init kind ?filter in
   produce test ~ctx
 
@@ -242,7 +242,7 @@ let is_constructible ?(filter : Path_filter.t option) (test : Subject.Test.t)
 
 let try_gen_with_flags ?(filter : Path_filter.t option)
     (test : Subject.Test.t) ~(kind : Path_kind.t) :
-    Path.Test.t Path_flag.Flagged.t Opt_gen.t =
+    Path.t Path_flag.Flagged.t Opt_gen.t =
   match Sequence.to_list_rev (produce_seq test ~kind ?filter) with
   | [] ->
       Or_error.error_string "No valid paths generated"
@@ -250,7 +250,7 @@ let try_gen_with_flags ?(filter : Path_filter.t option)
       Ok (Base_quickcheck.Generator.of_list xs)
 
 let try_gen ?(filter : Path_filter.t option) (test : Subject.Test.t)
-    ~(kind : Path_kind.t) : Path.Test.t Opt_gen.t =
+    ~(kind : Path_kind.t) : Path.t Opt_gen.t =
   Opt_gen.map
     (try_gen_with_flags ?filter ~kind test)
     ~f:Path_flag.Flagged.path

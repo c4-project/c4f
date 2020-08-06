@@ -21,7 +21,7 @@ let%test_module "running payloads on test subject" =
         F.Subject.Test.t F.State.Monad.t =
       Src.Mem.Strengthen.run (Lazy.force FT.Subject.Test_data.test) ~payload
 
-    let test (lpath : F.Path.Test.t Lazy.t) (mo : Act_fir.Mem_order.t)
+    let test (lpath : F.Path.t Lazy.t) (mo : Act_fir.Mem_order.t)
         (can_weaken : bool) : unit =
       let path = Lazy.force lpath in
       let pld = Src.Mem.Strengthen_payload.make ~path ~mo ~can_weaken in
@@ -29,13 +29,13 @@ let%test_module "running payloads on test subject" =
       FT.Action.Test_utils.run_and_dump_test action
         ~initial_state:(Lazy.force FT.Subject.Test_data.state)
 
-    let sc_action : F.Path.Test.t Lazy.t =
+    let sc_action : F.Path.t Lazy.t =
       F.Path.(FT.Subject.Test_data.Path.thread_0_stms @@ Stms.stm 0)
 
-    let rlx_action : F.Path.Test.t Lazy.t =
+    let rlx_action : F.Path.t Lazy.t =
       F.Path.(FT.Subject.Test_data.Path.thread_0_stms @@ Stms.stm 2)
 
-    let nest_action : F.Path.Test.t Lazy.t =
+    let nest_action : F.Path.t Lazy.t =
       F.Path.(
         FT.Subject.Test_data.Path.thread_0_stms @@ Stms.in_stm 4 @@ Stm.in_if
         @@ If.in_branch true @@ Stms.stm 0)

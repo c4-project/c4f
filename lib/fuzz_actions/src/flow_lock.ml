@@ -17,7 +17,7 @@ open struct
 end
 
 module Surround = struct
-  module type S = F.Action_types.S with type Payload.t = F.Path.Test.t
+  module type S = F.Action_types.S with type Payload.t = F.Path.t
 
   module Make (Basic : sig
     val subname : string
@@ -41,9 +41,9 @@ module Surround = struct
     let surround_with : string = Basic.lock_type_name ^ " block"
 
     module Payload = struct
-      type t = F.Path.Test.t [@@deriving sexp]
+      type t = F.Path.t [@@deriving sexp]
 
-      let where : t -> F.Path.Test.t = Fn.id
+      let where : t -> F.Path.t = Fn.id
 
       let gen : t F.Payload_gen.t =
         F.Payload_gen.path Transform_list ~filter:Basic.path_filter

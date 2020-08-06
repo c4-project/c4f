@@ -14,11 +14,11 @@ open Base_quickcheck
 
 let%test_module "sample path output on example code" =
   ( module struct
-    let print_sample (generator : Act_fuzz.Path.Test.t Generator.t) : unit =
+    let print_sample (generator : Act_fuzz.Path.t Generator.t) : unit =
       Act_utils.My_quickcheck.print_sample
-        ~printer:(Fmt.pr "@[%a@]@." Act_fuzz.Path.Test.pp)
+        ~printer:(Fmt.pr "@[%a@]@." Act_fuzz.Path.pp)
         ( module struct
-          type t = Act_fuzz.Path.Test.t [@@deriving compare, sexp]
+          type t = Act_fuzz.Path.t [@@deriving compare, sexp]
 
           let quickcheck_generator = generator
 

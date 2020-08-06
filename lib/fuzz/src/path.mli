@@ -162,18 +162,18 @@ module Thread : sig
   val in_stms : stm_list -> t
 end
 
-(** A path focusing on a whole test. *)
-module Test : sig
-  type t = In_thread of index * Thread.t [@@deriving sexp, compare, equal]
+(** {2 Complete paths} *)
 
-  include Pretty_printer.S with type t := t
+(** A path focusing on a whole subject. *)
+type t = In_thread of index * Thread.t [@@deriving sexp, compare, equal]
 
-  (** {3 Constructors} *)
+include Pretty_printer.S with type t := t
 
-  val in_thread : index -> Thread.t -> t
+(** {3 Constructors} *)
 
-  (** {3 Accessors} *)
+val in_thread : index -> Thread.t -> t
 
-  val tid : t -> int
-  (** [tid] gets the thread ID of a program path. *)
-end
+(** {3 Accessors} *)
+
+val tid : t -> int
+(** [tid] gets the thread ID of a program path. *)

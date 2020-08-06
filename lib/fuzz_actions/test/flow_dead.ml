@@ -17,7 +17,7 @@ end
 
 let%test_module "Early_out" =
   ( module struct
-    let test_on_example_program (where : F.Path.Test.t)
+    let test_on_example_program (where : F.Path.t)
         (to_insert : Act_fir.Early_out.t) : unit =
       let initial_state : F.State.t =
         Lazy.force FT.Subject.Test_data.state
@@ -28,14 +28,14 @@ let%test_module "Early_out" =
         (Src.Flow_dead.Insert.Early_out.run test ~payload)
         ~initial_state
 
-    let if_path : F.Path.Test.t =
+    let if_path : F.Path.t =
       F.Path.(
-        Test.in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 3 @@ Stm.in_if
+        in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 3 @@ Stm.in_if
         @@ If.in_branch false @@ Stms.insert 0)
 
-    let loop_path : F.Path.Test.t =
+    let loop_path : F.Path.t =
       F.Path.(
-        Test.in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 5 @@ Stm.in_flow
+        in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 5 @@ Stm.in_flow
         @@ Flow.in_body @@ Stms.insert 0)
 
     (* TODO(@MattWindsor91): invalid paths *)

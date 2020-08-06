@@ -34,7 +34,7 @@ module Insert = struct
 
     let quickcheck_path (test : F.Subject.Test.t)
         ~(filter_f : F.Path_filter.t -> F.Path_filter.t) :
-        F.Path.Test.t F.Opt_gen.t =
+        F.Path.t F.Opt_gen.t =
       let filter = F.Path_filter.(empty |> in_dead_code_only |> filter_f) in
       F.Path_producers.try_gen test ~filter ~kind:Insert
 
@@ -94,7 +94,7 @@ module Insert = struct
       Fir.(
         Statement.prim F.Metadata.generated (Prim_statement.early_out kind))
 
-    let run_inner (test : F.Subject.Test.t) (path : F.Path.Test.t)
+    let run_inner (test : F.Subject.Test.t) (path : F.Path.t)
         (kind : Fir.Early_out.t) : F.Subject.Test.t Or_error.t =
       let f = Staged.unstage (kind_filter kind) in
       let filter = f base_path_filter in
@@ -138,19 +138,18 @@ module Insert = struct
 
       let path_filter = path_filter
 
-      let reachable_labels (labels : Set.M(Ac.Litmus_id).t)
-          (path : F.Path.Test.t) : Ac.C_id.t list =
+      let reachable_labels (labels : Set.M(Ac.Litmus_id).t) (path : F.Path.t)
+          : Ac.C_id.t list =
         labels
         |> Set.filter_map
              (module Ac.C_id)
              ~f:(fun x ->
                Option.some_if
-                 (Ac.Litmus_id.is_in_local_scope x
-                    ~from:(F.Path.Test.tid path))
+                 (Ac.Litmus_id.is_in_local_scope x ~from:(F.Path.tid path))
                  (Ac.Litmus_id.variable_name x))
         |> Set.to_list
 
-      let gen (ins_path : F.Path.Test.t) : t F.Payload_gen.t =
+      let gen (ins_path : F.Path.t) : t F.Payload_gen.t =
         F.Payload_gen.(
           let* labels = lift (Fn.compose F.State.labels Context.state) in
           let labels_in_tid = reachable_labels labels ins_path in
