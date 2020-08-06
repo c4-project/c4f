@@ -56,12 +56,12 @@ module Test_data = struct
           ~mo:Seq_cst)
 end
 
-let%test_module "store.make.int.normal" =
+let%test_module "atomic.store.insert.int.normal" =
   ( module struct
     let path : F.Path.Test.t Lazy.t = FT.Subject.Test_data.Path.insert_live
 
     let random_state (store : Fir.Atomic_store.t Lazy.t) :
-        Src.Store.Int.Payload.t Lazy.t =
+        Src.Atomic_store.Insert_int_normal.Payload.t Lazy.t =
       Lazy.Let_syntax.(
         let%bind to_insert = store in
         let%map where = path in
@@ -72,7 +72,7 @@ let%test_module "store.make.int.normal" =
       F.State.Monad.(
         Storelike.Test_common.prepare_fuzzer_state ()
         >>= fun () ->
-        Src.Store.Int.run
+        Src.Atomic_store.Insert_int_normal.run
           (Lazy.force FT.Subject.Test_data.test)
           ~payload:(Lazy.force (random_state store)))
 
@@ -245,7 +245,7 @@ let%test_module "store.make.int.dead" =
   ( module struct
     let path : F.Path.Test.t Lazy.t = FT.Subject.Test_data.Path.insert_dead
 
-    let random_state : Src.Store.Int.Payload.t Lazy.t =
+    let random_state : Src.Atomic_store.Insert_int_dead.Payload.t Lazy.t =
       Lazy.Let_syntax.(
         let%bind to_insert = Test_data.store "gen1" in
         let%map where = path in
@@ -255,7 +255,7 @@ let%test_module "store.make.int.dead" =
       F.State.Monad.(
         Storelike.Test_common.prepare_fuzzer_state ()
         >>= fun () ->
-        Src.Store.Int_dead.run
+        Src.Atomic_store.Insert_int_dead.run
           (Lazy.force FT.Subject.Test_data.test)
           ~payload:(Lazy.force random_state))
 
@@ -323,7 +323,8 @@ let%test_module "store.make.int.redundant" =
             ~dst:(Address.of_variable (Act_common.C_id.of_string "gen1"))
             ~mo:Mem_order.Seq_cst)
 
-    let random_state : Src.Store.Int.Payload.t Lazy.t =
+    let random_state : Src.Atomic_store.Insert_int_redundant.Payload.t Lazy.t
+        =
       Lazy.Let_syntax.(
         let%bind to_insert = redundant_store in
         let%map where = path in
@@ -333,7 +334,7 @@ let%test_module "store.make.int.redundant" =
       F.State.Monad.(
         Storelike.Test_common.prepare_fuzzer_state ()
         >>= fun () ->
-        Src.Store.Int_redundant.run
+        Src.Atomic_store.Insert_int_redundant.run
           (Lazy.force FT.Subject.Test_data.test)
           ~payload:(Lazy.force random_state))
 
@@ -386,7 +387,9 @@ let%test_module "xchgify" =
   ( module struct
     let test_action (payload : F.Path.Test.t) :
         F.Subject.Test.t F.State.Monad.t =
-      Src.Store.Xchgify.run (Lazy.force FT.Subject.Test_data.test) ~payload
+      Src.Atomic_store.Xchgify.run
+        (Lazy.force FT.Subject.Test_data.test)
+        ~payload
 
     let test (lpath : F.Path.Test.t Lazy.t) : unit =
       let path = Lazy.force lpath in

@@ -15,6 +15,9 @@ open struct
   module F = Act_fuzz
 end
 
+let prefix_name (rest : Ac.Id.t) : Ac.Id.t =
+  Ac.Id.("atomic" @: "cmpxchg" @: rest)
+
 module Inner_payload = struct
   type t =
     { out_var: Ac.Litmus_id.t
@@ -24,12 +27,12 @@ module Inner_payload = struct
   [@@deriving compare, sexp]
 end
 
-module Int_always_succeed :
+module Insert_int_always_succeed :
   F.Action_types.S
     with type Payload.t = Inner_payload.t F.Payload_impl.Insertion.t =
 Storelike.Make (struct
   let name =
-    Act_common.Id.("cmpxchg" @: "make" @: "int" @: "always-succeed" @: empty)
+    prefix_name Ac.Id.("insert" @: "int" @: "always-succeed" @: empty)
 
   let readme_preamble : string list =
     [ {| Inserts an atomic int compare-exchange that always succeeds, and a new

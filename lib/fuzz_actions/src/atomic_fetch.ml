@@ -17,7 +17,10 @@ open struct
   module F = Act_fuzz
 end
 
-module type S =
+let prefix_name (rest : Ac.Id.t) : Ac.Id.t =
+  Ac.Id.("atomic" @: "fetch" @: rest)
+
+module type S_insert =
   F.Action_types.S
     with type Payload.t =
           Act_fir.Expression.t Act_fir.Atomic_fetch.t
@@ -30,7 +33,7 @@ let readme_preamble : string =
   |}
 
 (** Functor for generating variants of the fetch action. *)
-module Make (B : sig
+module Make_insert (B : sig
   val name_suffix : Ac.Id.t
   (** [name_suffix] is the name of the action, less 'fetch.make'. *)
 
@@ -57,8 +60,8 @@ module Make (B : sig
   module Quickcheck (Src : Fir.Env_types.S) (Dst : Fir.Env_types.S) :
     Act_utils.My_quickcheck.S_with_sexp
       with type t := Fir.Expression.t Fir.Atomic_fetch.t
-end) : S = Storelike.Make (struct
-  let name = Act_common.Id.("fetch" @: "make" @: B.name_suffix)
+end) : S_insert = Storelike.Make (struct
+  let name = prefix_name Ac.Id.("insert" @: B.name_suffix)
 
   let readme_preamble : string list = [readme_preamble; B.readme_insert]
 
@@ -98,8 +101,8 @@ end)
 (* TODO(@MattWindsor91): 'Int' module, which would need some care in order to
    be overflow-safe. *)
 
-module Int_dead : S = Make (struct
-  let name_suffix = Ac.Id.of_string "int.dead"
+module Insert_int_dead : S_insert = Make_insert (struct
+  let name_suffix = Ac.Id.("int" @: "dead" @: empty)
 
   let readme_insert : string =
     {| This variant can target any source and destination, but only inserts
@@ -121,8 +124,8 @@ module Int_dead : S = Make (struct
   module Quickcheck = Fir.Expression_gen.Atomic_fetch_int_values
 end)
 
-module Int_redundant : S = Make (struct
-  let name_suffix = Ac.Id.of_string "int.redundant"
+module Insert_int_redundant : S_insert = Make_insert (struct
+  let name_suffix = Ac.Id.("int" @: "redundant" @: empty)
 
   let readme_insert : string =
     {| This variant can insert anywhere, but only fetches the known value of

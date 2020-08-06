@@ -18,7 +18,22 @@ end
 let actions : F.Action.With_default_weight.t list Lazy.t =
   lazy
     F.Action.With_default_weight.
-      [ make ~action:(module Dead.Early_out) ~default_weight:20
+      [ make
+          ~action:(module Atomic_cmpxchg.Insert_int_always_succeed)
+          ~default_weight:30
+      ; make ~action:(module Atomic_store.Insert_int_dead) ~default_weight:20
+      ; make
+          ~action:(module Atomic_store.Insert_int_normal)
+          ~default_weight:20
+      ; make
+          ~action:(module Atomic_store.Insert_int_redundant)
+          ~default_weight:15
+      ; make ~action:(module Atomic_store.Xchgify) ~default_weight:15
+      ; make ~action:(module Atomic_fetch.Insert_int_dead) ~default_weight:20
+      ; make
+          ~action:(module Atomic_fetch.Insert_int_redundant)
+          ~default_weight:20
+      ; make ~action:(module Dead.Early_out) ~default_weight:20
       ; make ~action:(module Dead.Goto) ~default_weight:20
       ; make ~action:(module If.Invert) ~default_weight:10
       ; make ~action:(module If.Surround.Tautology) ~default_weight:15
@@ -29,13 +44,6 @@ let actions : F.Action.With_default_weight.t list Lazy.t =
       ; make ~action:(module Mem.Strengthen) ~default_weight:15
       ; make ~action:(module Program.Make_empty) ~default_weight:10
       ; make ~action:(module Program.Label) ~default_weight:15
-      ; make ~action:(module Cmpxchg.Int_always_succeed) ~default_weight:30
-      ; make ~action:(module Store.Int) ~default_weight:20
-      ; make ~action:(module Store.Int_dead) ~default_weight:20
-      ; make ~action:(module Store.Int_redundant) ~default_weight:15
-      ; make ~action:(module Store.Xchgify) ~default_weight:15
-      ; make ~action:(module Fetch.Int_dead) ~default_weight:20
-      ; make ~action:(module Fetch.Int_redundant) ~default_weight:20
       ; make ~action:(module Var.Make) ~default_weight:20
       ; make ~action:(module Var.Volatile) ~default_weight:25
         (* These are disabled by default because they induce transactions.

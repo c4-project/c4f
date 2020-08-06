@@ -28,9 +28,9 @@ module Test_data = struct
           ~desired:(Expression.int_lit 54321)
           ~succ:Seq_cst ~fail:Relaxed)
 
-  let cmpxchg_payload : Src.Cmpxchg.Inner_payload.t Lazy.t =
+  let cmpxchg_payload : Src.Atomic_cmpxchg.Inner_payload.t Lazy.t =
     Lazy.map cmpxchg ~f:(fun cmpxchg ->
-        Src.Cmpxchg.Inner_payload.
+        Src.Atomic_cmpxchg.Inner_payload.
           { cmpxchg
           ; exp_val= Act_fir.Constant.int 12345
           ; exp_var= Act_common.Litmus_id.of_string "0:expected"
@@ -41,7 +41,8 @@ let%test_module "cmpxchg.make.int.always-succeed" =
   ( module struct
     let path : F.Path.Test.t Lazy.t = FT.Subject.Test_data.Path.insert_dead
 
-    let random_state : Src.Cmpxchg.Int_always_succeed.Payload.t Lazy.t =
+    let random_state :
+        Src.Atomic_cmpxchg.Insert_int_always_succeed.Payload.t Lazy.t =
       Lazy.Let_syntax.(
         let%bind to_insert = Test_data.cmpxchg_payload in
         let%map where = path in
@@ -51,7 +52,7 @@ let%test_module "cmpxchg.make.int.always-succeed" =
       F.State.Monad.(
         Storelike.Test_common.prepare_fuzzer_state ()
         >>= fun () ->
-        Src.Cmpxchg.Int_always_succeed.run
+        Src.Atomic_cmpxchg.Insert_int_always_succeed.run
           (Lazy.force FT.Subject.Test_data.test)
           ~payload:(Lazy.force random_state))
 

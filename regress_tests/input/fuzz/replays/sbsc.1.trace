@@ -13,7 +13,7 @@
   (payload ((basic_type int) (initial_value (Int -123)) (var BNFKW))))
  ((name (var make))
   (payload ((basic_type int) (initial_value (Int 13)) (var cP))))
- ((name (store make int normal))
+ ((name (atomic store insert int normal))
   (payload
    ((to_insert
      ((src (Constant (Int 59774975))) (dst (Lvalue (Variable Is9Qk0n4Rhat)))

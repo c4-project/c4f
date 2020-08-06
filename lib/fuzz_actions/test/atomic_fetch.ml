@@ -38,7 +38,7 @@ let%test_module "fetch.make.int.dead" =
   ( module struct
     let path : F.Path.Test.t Lazy.t = FT.Subject.Test_data.Path.insert_dead
 
-    let random_state : Src.Fetch.Int_dead.Payload.t Lazy.t =
+    let random_state : Src.Atomic_fetch.Insert_int_dead.Payload.t Lazy.t =
       Lazy.Let_syntax.(
         let%bind to_insert = Test_data.fadd in
         let%map where = path in
@@ -48,7 +48,7 @@ let%test_module "fetch.make.int.dead" =
       F.State.Monad.(
         Storelike.Test_common.prepare_fuzzer_state ()
         >>= fun () ->
-        Src.Fetch.Int_dead.run
+        Src.Atomic_fetch.Insert_int_dead.run
           (Lazy.force FT.Subject.Test_data.test)
           ~payload:(Lazy.force random_state))
 
@@ -101,7 +101,8 @@ let%test_module "fetch.make.int.redundant" =
   ( module struct
     let path : F.Path.Test.t Lazy.t = FT.Subject.Test_data.Path.insert_live
 
-    let random_state : Src.Fetch.Int_redundant.Payload.t Lazy.t =
+    let random_state : Src.Atomic_fetch.Insert_int_redundant.Payload.t Lazy.t
+        =
       Lazy.Let_syntax.(
         let%bind to_insert = Test_data.fadd_redundant in
         let%map where = path in
@@ -111,7 +112,7 @@ let%test_module "fetch.make.int.redundant" =
       F.State.Monad.(
         Storelike.Test_common.prepare_fuzzer_state ()
         >>= fun () ->
-        Src.Fetch.Int_redundant.run
+        Src.Atomic_fetch.Insert_int_redundant.run
           (Lazy.force FT.Subject.Test_data.test)
           ~payload:(Lazy.force random_state))
 

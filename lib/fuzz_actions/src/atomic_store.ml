@@ -17,18 +17,21 @@ open struct
   module F = Act_fuzz
 end
 
-module type S =
+module type S_insert =
   F.Action_types.S
     with type Payload.t = Fir.Atomic_store.t F.Payload_impl.Insertion.t
+
+let prefix_name (rest : Ac.Id.t) : Ac.Id.t =
+  Ac.Id.("atomic" @: "store" @: rest)
 
 let readme_preamble : string =
   {|
     Generates a store operation on a randomly selected fuzzer-generated
-    global variable.
+    global atomic variable.
   |}
 
 (** Functor for generating variants of the store action. *)
-module Make (B : sig
+module Make_insert (B : sig
   val name_suffix : Ac.Id.t
   (** [name_suffix] is the name of the action, less 'store.make'. *)
 
@@ -54,8 +57,8 @@ module Make (B : sig
       source and destination variable environments. *)
   module Quickcheck (Src : Fir.Env_types.S) (Dst : Fir.Env_types.S) :
     Act_utils.My_quickcheck.S_with_sexp with type t := Fir.Atomic_store.t
-end) : S = Storelike.Make (struct
-  let name = Act_common.Id.("store" @: "make" @: B.name_suffix)
+end) : S_insert = Storelike.Make (struct
+  let name = prefix_name Ac.Id.("insert" @: B.name_suffix)
 
   let readme_preamble : string list = [readme_preamble; B.readme_insert]
 
@@ -92,8 +95,8 @@ end) : S = Storelike.Make (struct
     [Fir.Atomic_store.src x]
 end)
 
-module Int : S = Make (struct
-  let name_suffix = Ac.Id.of_string "int.normal"
+module Insert_int_normal : S_insert = Make_insert (struct
+  let name_suffix = Ac.Id.("int" @: "normal" @: empty)
 
   let readme_insert : string =
     "This variant can insert anywhere and target any source and destination."
@@ -113,8 +116,8 @@ module Int : S = Make (struct
   module Quickcheck = Fir.Atomic_store.Quickcheck_ints
 end)
 
-module Int_dead : S = Make (struct
-  let name_suffix = Ac.Id.of_string "int.dead"
+module Insert_int_dead : S_insert = Make_insert (struct
+  let name_suffix = Ac.Id.("int" @: "dead" @: empty)
 
   let readme_insert : string =
     {| This variant can target any source and destination, but only inserts
@@ -136,8 +139,8 @@ module Int_dead : S = Make (struct
   module Quickcheck = Fir.Atomic_store.Quickcheck_ints
 end)
 
-module Int_redundant : S = Make (struct
-  let name_suffix = Ac.Id.of_string "int.redundant"
+module Insert_int_redundant : S_insert = Make_insert (struct
+  let name_suffix = Ac.Id.("int" @: "redundant" @: empty)
 
   let readme_insert : string =
     {| This variant can insert anywhere, but only stores the known value of
@@ -196,7 +199,7 @@ end)
 
 module Xchgify : F.Action_types.S with type Payload.t = F.Path.Test.t =
 struct
-  let name = Act_common.Id.("store" @: "xchgify" @: empty)
+  let name = prefix_name Ac.Id.("xchgify" @: empty)
 
   let readme () =
     {| Promotes a random atomic store to an atomic exchange whose value is
