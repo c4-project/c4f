@@ -18,7 +18,8 @@
    ((to_insert
      ((src (Constant (Int 59774975))) (dst (Lvalue (Variable Is9Qk0n4Rhat)))
       (mo memory_order_relaxed)))
-    (where (In_thread 1 (In_stms (Insert 2)))))))
+    (where ((path (In_thread 1 (In_stms (Insert 2))))
+            (flags ()))))))
  ((name (var make))
   (payload ((basic_type int) (initial_value (Int -29491608)) (var u))))
  ((name (var make))

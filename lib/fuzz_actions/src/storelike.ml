@@ -189,10 +189,10 @@ struct
       =
     xs |> List.map ~f:(bookkeep_dst ~tid) |> F.State.Monad.all_unit
 
-  let bookkeep_srcs (srcs : Fir.Expression.t list) ~(tid : int) :
-      unit F.State.Monad.t =
+  let bookkeep_srcs (srcs : Fir.Expression.t list) ~(tid : int)
+      ~(in_dead_code : bool) : unit F.State.Monad.t =
     F.State.Monad.(
-      when_m B.Flags.respect_src_dependencies ~f:(fun () ->
+      when_m (not in_dead_code) ~f:(fun () ->
           add_multiple_expression_dependencies srcs ~scope:(Local tid)))
 
   module MList = Tx.List.On_monad (F.State.Monad)
@@ -202,11 +202,17 @@ struct
     MList.iter_m nls ~f:(fun (name, init) ->
         F.State.Monad.register_var (Ac.Litmus_id.local tid name) init)
 
-  let do_bookkeeping (item : B.t) ~(tid : int) : unit F.State.Monad.t =
+  let do_bookkeeping (item : B.t) ~(path : F.Path.Flagged.t) :
+      unit F.State.Monad.t =
+    let tid = path |> F.Path_flag.Flagged.path |> F.Path.tid in
+    let in_dead_code =
+      path |> F.Path_flag.Flagged.flags
+      |> Fn.flip Set.mem F.Path_flag.In_dead_code
+    in
     F.State.Monad.Let_syntax.(
       let%bind () = bookkeep_new_locals ~tid (B.new_locals item) in
       let%bind () = bookkeep_dsts ~tid (B.dst_ids item) in
-      bookkeep_srcs ~tid (B.src_exprs item))
+      bookkeep_srcs ~in_dead_code ~tid (B.src_exprs item))
 
   let insert_vars (target : F.Subject.Test.t)
       (new_locals : Fir.Initialiser.t Ac.C_named.Alist.t) ~(tid : int) :
@@ -216,7 +222,8 @@ struct
         F.Subject.Test.declare_var subject (Ac.Litmus_id.local tid id) init)
 
   let do_insertions (target : F.Subject.Test.t) ~(path : F.Path.Flagged.t)
-      ~(tid : int) ~(to_insert : B.t) : F.Subject.Test.t Or_error.t =
+      ~(to_insert : B.t) : F.Subject.Test.t Or_error.t =
+    let tid = F.Path.tid (F.Path_flag.Flagged.path path) in
     let stms =
       Fir.(
         to_insert |> B.to_stms
@@ -234,9 +241,8 @@ struct
       F.Subject.Test.t F.State.Monad.t =
     let to_insert = F.Payload_impl.Insertion.to_insert payload in
     let path = F.Payload_impl.Insertion.where payload in
-    let tid = F.Path.tid (F.Path_flag.Flagged.path path) in
     F.State.Monad.(
       Let_syntax.(
-        let%bind () = do_bookkeeping to_insert ~tid in
-        Monadic.return (do_insertions subject ~path ~tid ~to_insert)))
+        let%bind () = do_bookkeeping to_insert ~path in
+        Monadic.return (do_insertions subject ~path ~to_insert)))
 end

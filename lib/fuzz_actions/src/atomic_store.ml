@@ -110,8 +110,6 @@ module Insert = struct
 
     module Flags = struct
       let erase_known_values = true
-
-      let respect_src_dependencies = true
     end
 
     let dst_type = Fir.Type.Basic.int ~is_atomic:true ()
@@ -133,8 +131,6 @@ module Insert = struct
 
     module Flags = struct
       let erase_known_values = false
-
-      let respect_src_dependencies = false
     end
 
     let dst_type = Fir.Type.Basic.int ~is_atomic:true ()
@@ -155,8 +151,6 @@ module Insert = struct
 
     module Flags = struct
       let erase_known_values = false
-
-      let respect_src_dependencies = true
     end
 
     let dst_type = Fir.Type.Basic.int ~is_atomic:true ()

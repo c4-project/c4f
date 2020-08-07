@@ -14,10 +14,6 @@
 (** Type of modules that set various flags characterising a storelike
     action's behaviour. *)
 module type Flags = sig
-  val respect_src_dependencies : bool
-  (** [respect_src_dependencies] is a flag that, when true, causes the action
-      to mark dependencies on source variables when finished. *)
-
   val erase_known_values : bool
   (** [erase_known_values] is a flag that, when true, causes the action to
       erase the known value when finished. *)

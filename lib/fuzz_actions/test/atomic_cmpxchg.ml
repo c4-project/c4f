@@ -37,16 +37,13 @@ module Test_data = struct
           ; out_var= Act_common.Litmus_id.of_string "0:out" })
 end
 
-let%test_module "cmpxchg.make.int.always-succeed" =
+let%test_module "cmpxchg.make.int.succeed" =
   ( module struct
-    let path : F.Path.Flagged.t Lazy.t =
-      FT.Subject.Test_data.Path.insert_dead
-
     let random_state : Src.Atomic_cmpxchg.Insert.Int_succeed.Payload.t Lazy.t
         =
       Lazy.Let_syntax.(
         let%bind to_insert = Test_data.cmpxchg_payload in
-        let%map where = path in
+        let%map where = FT.Subject.Test_data.Path.insert_live in
         F.Payload_impl.Insertion.make ~to_insert ~where)
 
     let test_action : F.Subject.Test.t F.State.Monad.t =
@@ -70,16 +67,13 @@ let%test_module "cmpxchg.make.int.always-succeed" =
           atomic_int r0 = 4004;
           atomic_store_explicit(x, 42, memory_order_seq_cst);
           ;
+          out =
+          atomic_compare_exchange_strong_explicit(gen1, &expected, 54321,
+                                                  memory_order_seq_cst,
+                                                  memory_order_relaxed);
           atomic_store_explicit(y, foo, memory_order_relaxed);
           if (foo == y)
           { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
-          else
-          {
-              out =
-              atomic_compare_exchange_strong_explicit(gen1, &expected, 54321,
-                                                      memory_order_seq_cst,
-                                                      memory_order_relaxed);
-          }
           if (false)
           {
               atomic_store_explicit(y,
@@ -106,6 +100,27 @@ let%test_module "cmpxchg.make.int.always-succeed" =
 
     let%expect_test "variables with dependencies" =
       Storelike.Test_common.run_and_dump_deps test_action
+        ~initial_state:(Lazy.force FT.Subject.Test_data.state) ;
+      [%expect {| expected=12345 gen1= |}]
+
+    (* TODO(@MattWindsor91): dedupe this with the above *)
+    let payload_dead : Src.Atomic_cmpxchg.Insert.Int_succeed.Payload.t Lazy.t
+        =
+      Lazy.Let_syntax.(
+        let%bind to_insert = Test_data.cmpxchg_payload in
+        let%map where = FT.Subject.Test_data.Path.insert_dead in
+        F.Payload_impl.Insertion.make ~to_insert ~where)
+
+    let test_action_dead : F.Subject.Test.t F.State.Monad.t =
+      F.State.Monad.(
+        Storelike.Test_common.prepare_fuzzer_state ()
+        >>= fun () ->
+        Src.Atomic_cmpxchg.Insert.Int_succeed.run
+          (Lazy.force FT.Subject.Test_data.test)
+          ~payload:(Lazy.force payload_dead))
+
+    let%expect_test "variables with dependencies, in dead-code" =
+      Storelike.Test_common.run_and_dump_deps test_action_dead
         ~initial_state:(Lazy.force FT.Subject.Test_data.state) ;
       [%expect {| expected=12345 gen1= |}]
   end )

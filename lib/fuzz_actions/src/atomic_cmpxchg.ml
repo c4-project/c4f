@@ -56,8 +56,6 @@ module Insert = struct
 
     module Flags = struct
       let erase_known_values = true
-
-      let respect_src_dependencies = true
     end
 
     let gen_vars ~(vars : F.Var.Map.t) :
