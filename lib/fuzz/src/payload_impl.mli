@@ -30,15 +30,15 @@ module Insertion : sig
   (** Opaque type of insertion payloads. *)
   type 'a t [@@deriving sexp]
 
-  val make : to_insert:'a -> where:Path.t -> 'a t
+  val make : to_insert:'a -> where:Path.Flagged.t -> 'a t
   (** [make ~to_insert ~where] makes a payload that expresses the desire to
       insert [to_insert] using path [where]. *)
 
   val to_insert : 'a t -> 'a
   (** [to_insert x] gets the insertion candidate of [x]. *)
 
-  val where : _ t -> Path.t
-  (** [where x] gets the program path to which [x] is inserting. *)
+  val where : _ t -> Path.Flagged.t
+  (** [where x] gets the flagged program path to which [x] is inserting. *)
 
   (** Constructs a payload for inserting a statement. *)
   module Make (To_insert : sig
@@ -48,7 +48,7 @@ module Insertion : sig
     (** [path_filter ctx] should generate the path filter needed for the
         action, given the availability context [ctx]. *)
 
-    val gen : Path.t -> t Payload_gen.t
+    val gen : Path.Flagged.t -> t Payload_gen.t
     (** [gen where] generates the inner payload given the generated path
         [where]. *)
   end) : Payload_types.S with type t = To_insert.t t
@@ -70,8 +70,7 @@ module Cond_surround : sig
 
   (** {3 Constructors} *)
 
-  val make :
-    cond:Act_fir.Expression.t -> where:Path.t Path_flag.Flagged.t -> t
+  val make : cond:Act_fir.Expression.t -> where:Path.Flagged.t -> t
   (** [make ~cond ~where] makes a payload given a specific condition
       expression [cond] and statement-list selecting path [where]. *)
 
@@ -80,7 +79,7 @@ module Cond_surround : sig
   val cond : t -> Act_fir.Expression.t
   (** [cond payload] retrieves the generated condition inside [payload]. *)
 
-  val where : t -> Path.t Path_flag.Flagged.t
+  val where : t -> Path.Flagged.t
   (** [where payload] retrieves the generated path inside [payload]. *)
 
   val apply :

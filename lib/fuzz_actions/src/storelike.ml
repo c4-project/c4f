@@ -141,12 +141,13 @@ struct
         let%map () = check_envs src dst in
         B.gen ~src ~dst ~vars ~tid)
 
-    let gen (where : F.Path.t) : t F.Payload_gen.t =
+    let gen (wheref : F.Path.Flagged.t) : t F.Payload_gen.t =
       F.Payload_gen.(
         let* forbid_already_written =
           flag F.Config_tables.forbid_already_written_flag
         in
         let* vars = vars in
+        let where = F.Path_flag.Flagged.path wheref in
         lift_opt_gen (gen' vars ~where ~forbid_already_written))
   end)
 
@@ -214,7 +215,7 @@ struct
       ~f:(fun subject (id, init) ->
         F.Subject.Test.declare_var subject (Ac.Litmus_id.local tid id) init)
 
-  let do_insertions (target : F.Subject.Test.t) ~(path : F.Path.t)
+  let do_insertions (target : F.Subject.Test.t) ~(path : F.Path.Flagged.t)
       ~(tid : int) ~(to_insert : B.t) : F.Subject.Test.t Or_error.t =
     let stms =
       Fir.(
@@ -223,8 +224,8 @@ struct
     in
     Or_error.Let_syntax.(
       let%bind target' =
-        F.Path_consumers.consume target ~filter:B.path_filter ~path
-          ~action:(Insert stms)
+        F.Path_consumers.consume_with_flags target ~filter:B.path_filter
+          ~path ~action:(Insert stms)
       in
       insert_vars target' (B.new_locals to_insert) ~tid)
 
@@ -233,7 +234,7 @@ struct
       F.Subject.Test.t F.State.Monad.t =
     let to_insert = F.Payload_impl.Insertion.to_insert payload in
     let path = F.Payload_impl.Insertion.where payload in
-    let tid = F.Path.tid path in
+    let tid = F.Path.tid (F.Path_flag.Flagged.path path) in
     F.State.Monad.(
       Let_syntax.(
         let%bind () = do_bookkeeping to_insert ~tid in

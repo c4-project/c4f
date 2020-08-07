@@ -54,7 +54,7 @@ val flags_of_stm : Subject.Statement.t -> set
 
 module Flagged : sig
   (** Opaque type of flagged paths, predicated on the path type [p]. *)
-  type 'p t [@@deriving sexp]
+  type 'p t [@@deriving sexp, compare, equal]
 
   (** {2 Constructors} *)
 

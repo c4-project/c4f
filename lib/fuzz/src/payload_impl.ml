@@ -12,14 +12,15 @@
 open Base
 
 module Insertion = struct
-  type 'a t = {to_insert: 'a; where: Path.t} [@@deriving make, fields, sexp]
+  type 'a t = {to_insert: 'a; where: Path.Flagged.t}
+  [@@deriving make, fields, sexp]
 
   module Make (Basic : sig
     type t [@@deriving sexp]
 
     val path_filter : Availability.Context.t -> Path_filter.t
 
-    val gen : Path.t -> t Payload_gen.t
+    val gen : Path.t Path_flag.Flagged.t -> t Payload_gen.t
   end) =
   struct
     open struct
@@ -37,7 +38,7 @@ module Insertion = struct
             (Fn.compose Basic.path_filter
                Payload_gen.Context.to_availability)
         in
-        let* where = path Insert ~filter in
+        let* where = path_with_flags Insert ~filter in
         let+ to_insert = Basic.gen where in
         make ~to_insert ~where)
   end

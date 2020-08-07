@@ -22,14 +22,14 @@ let%test_module "Statement_list" =
           module P = Subject.Test_data.Path
         end
 
-        let test (path : F.Path.t Lazy.t)
+        let test (path : F.Path.Flagged.t Lazy.t)
             ~(action : F.Path_kind.With_action.t) : unit =
           let vars = F.State.vars (Lazy.force Subject.Test_data.state) in
           Fmt.(
             pr "@[<v>%a@]@."
               (Act_utils.My_format.pp_or_error
                  Action.Test_utils.(using (Fn.flip reify_test vars) pp_tu))
-              (F.Path_consumers.consume
+              (F.Path_consumers.consume_with_flags
                  (Lazy.force Subject.Test_data.test)
                  ~path:(Lazy.force path) ~action))
 
@@ -43,18 +43,18 @@ let%test_module "Statement_list" =
 
         let%test_module "insert_stm" =
           ( module struct
-            let test_insert : F.Path.t Lazy.t -> unit =
+            let test_insert : F.Path.Flagged.t Lazy.t -> unit =
               test ~action:(Insert [example_stm])
 
             let%expect_test "insert onto statement (invalid)" =
-              test_insert P.in_stm ;
+              test_insert P.in_stm_flagged ;
               [%expect
                 {|
                 ("Unexpected kind of action associated with this path" (got insert)
                  (want transform)) |}]
 
             let%expect_test "insert onto range (invalid)" =
-              test_insert P.surround_atomic ;
+              test_insert P.surround_atomic_flagged ;
               [%expect
                 {|
           ("Unexpected kind of action associated with this path" (got insert)
@@ -119,11 +119,11 @@ let%test_module "Statement_list" =
 
         let%test_module "transform_stm" =
           ( module struct
-            let test_transform : F.Path.t Lazy.t -> unit =
+            let test_transform : F.Path.Flagged.t Lazy.t -> unit =
               test ~action:(Transform (Fn.const (Ok example_stm)))
 
             let%expect_test "transform a statement" =
-              test_transform P.in_stm ;
+              test_transform P.in_stm_flagged ;
               [%expect
                 {|
                   void
@@ -150,7 +150,7 @@ let%test_module "Statement_list" =
                   { loop: ; if (true) {  } else { goto loop; } } |}]
 
             let%expect_test "transform a range" =
-              test_transform P.surround_atomic ;
+              test_transform P.surround_atomic_flagged ;
               [%expect
                 {|
           void
@@ -196,18 +196,18 @@ let%test_module "Statement_list" =
                          (F.Subject.Block.make_generated ~statements ())
                        ~f_branch:(F.Subject.Block.make_generated ())) ]
 
-            let test_transform_list : F.Path.t Lazy.t -> unit =
+            let test_transform_list : F.Path.Flagged.t Lazy.t -> unit =
               test ~action:(Transform_list iffify)
 
             let%expect_test "try to list-transform a statement (invalid)" =
-              test_transform_list P.in_stm ;
+              test_transform_list P.in_stm_flagged ;
               [%expect
                 {|
                   ("Unexpected kind of action associated with this path" (got transform_list)
                    (want transform)) |}]
 
             let%expect_test "list-transform a range" =
-              test_transform_list P.surround_atomic ;
+              test_transform_list P.surround_atomic_flagged ;
               [%expect
                 {|
                   void

@@ -32,39 +32,27 @@ module Insert = struct
 
     type t = Fir.Early_out.t F.Payload_impl.Insertion.t [@@deriving sexp]
 
-    let quickcheck_path (test : F.Subject.Test.t)
-        ~(filter_f : F.Path_filter.t -> F.Path_filter.t) :
-        F.Path.t F.Opt_gen.t =
-      let filter = F.Path_filter.(empty |> in_dead_code_only |> filter_f) in
-      F.Path_producers.try_gen test ~filter ~kind:Insert
+    let quickcheck_path (test : F.Subject.Test.t) :
+        F.Path.Flagged.t F.Opt_gen.t =
+      let filter = F.Path_filter.(in_dead_code_only empty) in
+      F.Path_producers.try_gen_with_flags test ~filter ~kind:Insert
 
-    let quickcheck_generic_payload (test : F.Subject.Test.t)
-        ~(kind_pred : Fir.Early_out.t -> bool)
-        ~(filter_f : F.Path_filter.t -> F.Path_filter.t) : t F.Opt_gen.t =
-      F.Opt_gen.map2
-        (quickcheck_path test ~filter_f)
-        (Or_error.return
-           (Base_quickcheck.Generator.filter ~f:kind_pred
-              Fir.Early_out.quickcheck_generator))
-        ~f:(fun where to_insert ->
-          F.Payload_impl.Insertion.make ~where ~to_insert)
+    let kind_pred (path : F.Path.Flagged.t) : Fir.Early_out.t -> bool =
+      let flags = F.Path_flag.Flagged.flags path in
+      if Set.mem flags In_loop then Fn.const true
+      else Fn.non Fir.Early_out.in_loop_only
 
-    let quickcheck_loop_payload : F.Subject.Test.t -> t F.Opt_gen.t =
-      quickcheck_generic_payload ~kind_pred:Fir.Early_out.in_loop_only
-        ~filter_f:F.Path_filter.in_loop_only
-
-    let quickcheck_non_loop_payload : F.Subject.Test.t -> t F.Opt_gen.t =
-      quickcheck_generic_payload
-        ~kind_pred:(Fn.non Fir.Early_out.in_loop_only)
-        ~filter_f:Fn.id
-
-    let quickcheck_payload (test : F.Subject.Test.t) : t F.Opt_gen.t =
-      F.Opt_gen.union
-        [quickcheck_loop_payload test; quickcheck_non_loop_payload test]
+    let quickcheck_early_out (path : F.Path.Flagged.t) :
+        Fir.Early_out.t Base_quickcheck.Generator.t =
+      Base_quickcheck.Generator.(
+        filter Fir.Early_out.quickcheck_generator ~f:(kind_pred path))
 
     let gen : t F.Payload_gen.t =
       F.Payload_gen.(
-        lift Context.subject >>| quickcheck_payload >>= lift_opt_gen)
+        let* subject = lift Context.subject in
+        let* where = lift_opt_gen (quickcheck_path subject) in
+        let+ to_insert = lift_quickcheck (quickcheck_early_out where) in
+        F.Payload_impl.Insertion.make ~where ~to_insert)
   end
 
   module Early_out :
@@ -94,11 +82,11 @@ module Insert = struct
       Fir.(
         Statement.prim F.Metadata.generated (Prim_statement.early_out kind))
 
-    let run_inner (test : F.Subject.Test.t) (path : F.Path.t)
+    let run_inner (test : F.Subject.Test.t) (path : F.Path.Flagged.t)
         (kind : Fir.Early_out.t) : F.Subject.Test.t Or_error.t =
       let f = Staged.unstage (kind_filter kind) in
       let filter = f base_path_filter in
-      F.Path_consumers.consume test ~filter ~path
+      F.Path_consumers.consume_with_flags test ~filter ~path
         ~action:(Insert [make_early_out kind])
 
     let run (test : F.Subject.Test.t) ~(payload : Payload.t) :
@@ -138,18 +126,19 @@ module Insert = struct
 
       let path_filter = path_filter
 
-      let reachable_labels (labels : Set.M(Ac.Litmus_id).t) (path : F.Path.t)
-          : Ac.C_id.t list =
+      let reachable_labels (labels : Set.M(Ac.Litmus_id).t)
+          (path : F.Path.Flagged.t) : Ac.C_id.t list =
+        let from = F.Path.tid (F.Path_flag.Flagged.path path) in
         labels
         |> Set.filter_map
              (module Ac.C_id)
              ~f:(fun x ->
                Option.some_if
-                 (Ac.Litmus_id.is_in_local_scope x ~from:(F.Path.tid path))
+                 (Ac.Litmus_id.is_in_local_scope x ~from)
                  (Ac.Litmus_id.variable_name x))
         |> Set.to_list
 
-      let gen (ins_path : F.Path.t) : t F.Payload_gen.t =
+      let gen (ins_path : F.Path.Flagged.t) : t F.Payload_gen.t =
         F.Payload_gen.(
           let* labels = lift (Fn.compose F.State.labels Context.state) in
           let labels_in_tid = reachable_labels labels ins_path in
@@ -173,7 +162,7 @@ module Insert = struct
         Let_syntax.(
           let%bind filter = with_labels path_filter' in
           Monadic.return
-            (F.Path_consumers.consume subject ~filter ~path
+            (F.Path_consumers.consume_with_flags subject ~filter ~path
                ~action:(Insert [goto_stm]))))
   end
 end

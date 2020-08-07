@@ -37,7 +37,7 @@ struct
 
     let path_filter _ = F.Path_filter.empty
 
-    let gen (_ : F.Path.t) : Fir.Atomic_fence.t F.Payload_gen.t =
+    let gen (_ : F.Path.Flagged.t) : Fir.Atomic_fence.t F.Payload_gen.t =
       F.Payload_gen.lift_quickcheck Fir.Atomic_fence.quickcheck_generator
   end)
 
@@ -54,7 +54,8 @@ struct
     in
     (* We don't need to do any bookkeeping on fences. *)
     F.State.Monad.Monadic.return
-      (F.Path_consumers.consume subject ~path ~action:(Insert [fence_stm]))
+      (F.Path_consumers.consume_with_flags subject ~path
+         ~action:(Insert [fence_stm]))
 end
 
 module Strengthen_payload = struct

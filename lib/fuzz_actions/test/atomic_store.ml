@@ -58,7 +58,8 @@ end
 
 let%test_module "atomic.store.insert.int.normal" =
   ( module struct
-    let path : F.Path.t Lazy.t = FT.Subject.Test_data.Path.insert_live
+    let path : F.Path.Flagged.t Lazy.t =
+      FT.Subject.Test_data.Path.insert_live
 
     let random_state (store : Fir.Atomic_store.t Lazy.t) :
         Src.Atomic_store.Insert.Int_normal.Payload.t Lazy.t =
@@ -243,7 +244,8 @@ let%test_module "atomic.store.insert.int.normal" =
 
 let%test_module "store.make.int.dead" =
   ( module struct
-    let path : F.Path.t Lazy.t = FT.Subject.Test_data.Path.insert_dead
+    let path : F.Path.Flagged.t Lazy.t =
+      FT.Subject.Test_data.Path.insert_dead
 
     let random_state : Src.Atomic_store.Insert.Int_dead.Payload.t Lazy.t =
       Lazy.Let_syntax.(
@@ -312,7 +314,8 @@ let%test_module "store.make.int.dead" =
 
 let%test_module "store.make.int.redundant" =
   ( module struct
-    let path : F.Path.t Lazy.t = FT.Subject.Test_data.Path.insert_live
+    let path : F.Path.Flagged.t Lazy.t =
+      FT.Subject.Test_data.Path.insert_live
 
     (* TODO(@MattWindsor91): this is, ironically, overly redundant. *)
     let redundant_store : Fir.Atomic_store.t Lazy.t =

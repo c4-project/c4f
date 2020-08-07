@@ -63,7 +63,8 @@ let flags_of_flow (f : Subject.Statement.Flow.t) : Set.M(M).t =
   |> option_map ~f:flags_of_flow_class
 
 module Flagged = struct
-  type 'p t = {path: 'p; flags: Set.M(M).t} [@@deriving make, fields, sexp]
+  type 'p t = {path: 'p; flags: Set.M(M).t}
+  [@@deriving make, fields, sexp, compare, equal]
 
   include (
     Travesty.Bi_traversable.Make1_left (struct

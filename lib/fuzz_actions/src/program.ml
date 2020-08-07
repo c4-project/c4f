@@ -58,7 +58,7 @@ struct
 
     let path_filter _ = F.Path_filter.empty
 
-    let gen (_ : F.Path.t) : t F.Payload_gen.t =
+    let gen (_ : F.Path.Flagged.t) : t F.Payload_gen.t =
       F.Payload_gen.(
         let* labels = lift (Fn.compose F.State.labels Context.state) in
         lift_quickcheck (F.Label.gen_fresh labels))
@@ -66,7 +66,8 @@ struct
 
   let run (subject : F.Subject.Test.t) ~(payload : Payload.t) :
       F.Subject.Test.t F.State.Monad.t =
-    let path = F.Payload_impl.Insertion.where payload in
+    let pathf = F.Payload_impl.Insertion.where payload in
+    let path = F.Path_flag.Flagged.path pathf in
     let name = F.Payload_impl.Insertion.to_insert payload in
     let tid = F.Path.tid path in
     let lid = Act_common.Litmus_id.local tid name in

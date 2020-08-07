@@ -177,3 +177,10 @@ val in_thread : index -> Thread.t -> t
 
 val tid : t -> int
 (** [tid] gets the thread ID of a program path. *)
+
+(** {2 Flagged paths} *)
+
+module Flagged : sig
+  (** A type synonym for flagged complete paths. *)
+  type nonrec t = t Path_flag.Flagged.t [@@deriving sexp, compare, equal]
+end

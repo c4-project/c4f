@@ -17,8 +17,9 @@ end
 
 let%test_module "Early_out" =
   ( module struct
-    let test_on_example_program (where : F.Path.t)
+    let test_on_example_program (wherez : F.Path.Flagged.t Lazy.t)
         (to_insert : Act_fir.Early_out.t) : unit =
+      let where = Lazy.force wherez in
       let initial_state : F.State.t =
         Lazy.force FT.Subject.Test_data.state
       in
@@ -28,20 +29,11 @@ let%test_module "Early_out" =
         (Src.Flow_dead.Insert.Early_out.run test ~payload)
         ~initial_state
 
-    let if_path : F.Path.t =
-      F.Path.(
-        in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 3 @@ Stm.in_if
-        @@ If.in_branch false @@ Stms.insert 0)
-
-    let loop_path : F.Path.t =
-      F.Path.(
-        in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 5 @@ Stm.in_flow
-        @@ Flow.in_body @@ Stms.insert 0)
-
     (* TODO(@MattWindsor91): invalid paths *)
 
     let%expect_test "valid break on example program" =
-      test_on_example_program loop_path Break ;
+      test_on_example_program FT.Subject.Test_data.Path.insert_dead_loop
+        Break ;
       [%expect
         {|
       void
@@ -68,13 +60,13 @@ let%test_module "Early_out" =
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "invalid break on example program" =
-      test_on_example_program if_path Break ;
+      test_on_example_program FT.Subject.Test_data.Path.insert_dead Break ;
       [%expect
         {|
       ("checking flags on insertion" "Unmet required flag condition: in loop") |}]
 
     let%expect_test "valid return on example program" =
-      test_on_example_program if_path Return ;
+      test_on_example_program FT.Subject.Test_data.Path.insert_dead Return ;
       [%expect
         {|
       void

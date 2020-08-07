@@ -160,7 +160,7 @@ module Test_data = struct
 
   let pos_0_false_if = 4
 
-  (* let pos_0_do_while = 5 *)
+  let pos_0_do_while = 5
 
   let thread0 : Src.Subject.Thread.t Lazy.t =
     Lazy.Let_syntax.(
@@ -196,18 +196,25 @@ module Test_data = struct
   module Path = struct
     (* These will need manually synchronising with the statements above. *)
 
+    let flag (fs : Src.Path_flag.t list) (p : Src.Path.t Lazy.t) :
+        Src.Path.t Src.Path_flag.Flagged.t Lazy.t =
+      Lazy.map p ~f:(fun path ->
+          let flags = Set.of_list (module Src.Path_flag) fs in
+          Src.Path_flag.Flagged.make ~path ~flags)
+
     let thread_0_stms (path : Src.Path.Stms.t) : Src.Path.t Lazy.t =
       lazy Src.Path.(in_thread 0 @@ Thread.in_stms @@ path)
 
-    let insert_live : Src.Path.t Lazy.t =
-      Src.Path.(thread_0_stms @@ Stms.insert pos_0_last_atom)
+    let insert_live : Src.Path.Flagged.t Lazy.t =
+      flag [] Src.Path.(thread_0_stms @@ Stms.insert pos_0_last_atom)
 
-    let insert_start : Src.Path.t Lazy.t =
-      Src.Path.(thread_0_stms @@ Stms.insert 0)
+    let insert_start : Src.Path.Flagged.t Lazy.t =
+      flag [] Src.Path.(thread_0_stms @@ Stms.insert 0)
 
-    let insert_end : Src.Path.t Lazy.t =
-      Lazy.bind body_stms ~f:(fun stms ->
-          Src.Path.(thread_0_stms @@ Stms.insert (List.length stms)))
+    let insert_end : Src.Path.Flagged.t Lazy.t =
+      flag []
+        (Lazy.bind body_stms ~f:(fun stms ->
+             Src.Path.(thread_0_stms @@ Stms.insert (List.length stms))))
 
     let known_true_if (path : Src.Path.If.t) : Src.Path.t Lazy.t =
       Src.Path.(
@@ -220,16 +227,20 @@ module Test_data = struct
     let dead_else (path : Src.Path.Stms.t) : Src.Path.t Lazy.t =
       Src.Path.(known_true_if @@ If.in_branch false @@ path)
 
-    let insert_dead : Src.Path.t Lazy.t =
-      Src.Path.(dead_else @@ Stms.insert 0)
+    let insert_dead : Src.Path.Flagged.t Lazy.t =
+      flag [In_dead_code] Src.Path.(dead_else @@ Stms.insert 0)
+
+    let dead_loop (path : Src.Path.Flow.t) : Src.Path.t Lazy.t =
+      Src.Path.(
+        thread_0_stms @@ Stms.in_stm pos_0_do_while @@ Stm.in_flow @@ path)
+
+    let insert_dead_loop : Src.Path.Flagged.t Lazy.t =
+      flag [In_dead_code; In_loop]
+        Src.Path.(dead_loop @@ Flow.in_body @@ Stms.insert 0)
 
     let in_stm : Src.Path.t Lazy.t = Src.Path.(thread_0_stms @@ Stms.stm 2)
 
-    let flag (fs : Src.Path_flag.t list) (p : Src.Path.t Lazy.t) :
-        Src.Path.t Src.Path_flag.Flagged.t Lazy.t =
-      Lazy.map p ~f:(fun path ->
-          let flags = Set.of_list (module Src.Path_flag) fs in
-          Src.Path_flag.Flagged.make ~path ~flags)
+    let in_stm_flagged : Src.Path.Flagged.t Lazy.t = flag [] in_stm
 
     let surround_atomic : Src.Path.t Lazy.t =
       Src.Path.(

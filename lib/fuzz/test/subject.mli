@@ -46,25 +46,33 @@ module Test_data : sig
         an if statement. *)
 
     (** {3 Statement paths} *)
+
     val in_stm : Act_fuzz.Path.t Lazy.t
     (** [in_stm] is a full path that points to an arbitrary primitive
         statement. *)
 
+    val in_stm_flagged : Act_fuzz.Path.Flagged.t Lazy.t
+    (** [in_stm_flagged] is a flagged version of {!in_stm}. *)
+
     (** {3 Insertion paths} *)
 
-    val insert_dead : Act_fuzz.Path.t Lazy.t
+    val insert_dead : Act_fuzz.Path.Flagged.t Lazy.t
     (** [insert_dead] is a full path that points to somewhere in dead code
-        that can take statement insertions. *)
+        that can take statement insertions, but is not in a loop. *)
 
-    val insert_live : Act_fuzz.Path.t Lazy.t
+    val insert_dead_loop : Act_fuzz.Path.Flagged.t Lazy.t
+    (** [insert_dead_loop] is a full path that points to somewhere in dead
+        code that can take statement insertions, and is in a loop. *)
+
+    val insert_live : Act_fuzz.Path.Flagged.t Lazy.t
     (** [insert_live] is a full path that points to somewhere in live code
         that can take statement insertions. *)
 
-    val insert_start : Act_fuzz.Path.t Lazy.t
+    val insert_start : Act_fuzz.Path.Flagged.t Lazy.t
     (** [insert_start] is a full path that points to the start of a block of
         live code, for statement insertions. *)
 
-    val insert_end : Act_fuzz.Path.t Lazy.t
+    val insert_end : Act_fuzz.Path.Flagged.t Lazy.t
     (** [insert_end] is a full path that points to the end of a block of live
         code, for statement insertions. *)
 

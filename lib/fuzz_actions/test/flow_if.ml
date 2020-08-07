@@ -37,7 +37,7 @@ let%test_module "Surround" =
             (eq (of_variable_str_exn "x") (int_lit 27))
             (of_variable_str_exn "a")))
 
-    let where : F.Path.t F.Path_flag.Flagged.t =
+    let where : F.Path.Flagged.t =
       Lazy.force FT.Subject.Test_data.Path.surround_atomic_flagged
 
     let payload : F.Payload_impl.Cond_surround.t =
@@ -129,7 +129,7 @@ let%test_module "Surround" =
           a
           x |}]
 
-        let label_direct : F.Path.t F.Path_flag.Flagged.t =
+        let label_direct : F.Path.Flagged.t =
           Lazy.force FT.Subject.Test_data.Path.surround_label_direct_flagged
 
         let label_direct_payload : F.Payload_impl.Cond_surround.t =
@@ -145,7 +145,7 @@ let%test_module "Surround" =
                ("while checking statements"
                 ("Statement failed check" (check (Stm_class Has_not_any ((Prim (Label)))))))) |}]
 
-        let label_indirect : F.Path.t F.Path_flag.Flagged.t =
+        let label_indirect : F.Path.Flagged.t =
           Lazy.force
             FT.Subject.Test_data.Path.surround_label_indirect_flagged
 

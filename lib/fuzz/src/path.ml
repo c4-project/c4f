@@ -139,14 +139,23 @@ module Thread = struct
         Fmt.(styled (`Fg `Yellow) (any "Stms") ++ bang ++ Stms.pp) f rest
 end
 
-type t = In_thread of index * Thread.t [@@deriving sexp, compare, equal]
+(* Defined in a separate module to make defining Flagged easier. *)
+module Complete = struct
+  type t = In_thread of index * Thread.t [@@deriving sexp, compare, equal]
 
-let in_thread (i : index) (rest : Thread.t) : t = In_thread (i, rest)
+  let in_thread (i : index) (rest : Thread.t) : t = In_thread (i, rest)
 
-let tid : t -> int = function In_thread (t, _) -> t
+  let tid : t -> int = function In_thread (t, _) -> t
 
-let pp_tid : int Fmt.t = Fmt.(styled (`Fg `Red) (any "P" ++ int))
+  let pp_tid : int Fmt.t = Fmt.(styled (`Fg `Red) (any "P" ++ int))
 
-let pp (f : Formatter.t) : t -> unit = function
-  | In_thread (tid, rest) ->
-      Fmt.(pair ~sep:bang pp_tid Thread.pp) f (tid, rest)
+  let pp (f : Formatter.t) : t -> unit = function
+    | In_thread (tid, rest) ->
+        Fmt.(pair ~sep:bang pp_tid Thread.pp) f (tid, rest)
+end
+
+include Complete
+
+module Flagged = struct
+  type t = Complete.t Path_flag.Flagged.t [@@deriving sexp, compare, equal]
+end
