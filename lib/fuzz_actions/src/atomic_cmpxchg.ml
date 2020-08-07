@@ -28,12 +28,11 @@ module Insert = struct
     [@@deriving compare, sexp]
   end
 
-  module Int_always_succeed :
+  module Int_succeed :
     F.Action_types.S
       with type Payload.t = Inner_payload.t F.Payload_impl.Insertion.t =
   Storelike.Make (struct
-    let name =
-      prefix_name Ac.Id.("insert" @: "int" @: "always-succeed" @: empty)
+    let name = prefix_name Ac.Id.("insert" @: "int" @: "succeed" @: empty)
 
     let readme_preamble : string list =
       [ {| Inserts an atomic int compare-exchange that always succeeds, and a new

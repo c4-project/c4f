@@ -19,7 +19,7 @@ let actions : F.Action.With_default_weight.t list Lazy.t =
   lazy
     F.Action.With_default_weight.
       [ make
-          ~action:(module Atomic_cmpxchg.Insert.Int_always_succeed)
+          ~action:(module Atomic_cmpxchg.Insert.Int_succeed)
           ~default_weight:30
       ; make ~action:(module Atomic_store.Insert.Int_dead) ~default_weight:20
       ; make

@@ -1,4 +1,4 @@
-atomic.cmpxchg.insert.int.always-succeed:
+atomic.cmpxchg.insert.int.succeed:
   Weight: 30x
   Summary:
     Inserts an atomic int compare-exchange that always succeeds, and a new
