@@ -33,7 +33,8 @@ let%test_unit "Pretty-printing and parsing postconditions is idempotent" =
           [%compare.equal:
             Act_litmus_c.Ast.Litmus_lang.Constant.t
             Act_litmus.Postcondition.t
-            Or_error.t] ~expect:(Or_error.return pcond)
+            Or_error.t]
+        ~expect:(Or_error.return pcond)
         ~message:
           (Printf.sprintf
              "Pretty-printing/parsing round-trip through '%s' failed"

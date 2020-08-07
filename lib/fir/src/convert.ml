@@ -24,8 +24,7 @@ let sift_decls (maybe_decl_list : ([> `Decl of 'd] as 'a) list) :
     ('d list * 'a list) Or_error.t =
   Or_error.(
     Tx.List.With_errors.fold_m maybe_decl_list
-      ~init:(Fqueue.empty, Fqueue.empty) ~f:(fun (decls, rest) ->
-      function
+      ~init:(Fqueue.empty, Fqueue.empty) ~f:(fun (decls, rest) -> function
       | `Decl d ->
           if Fqueue.is_empty rest then return (Fqueue.enqueue decls d, rest)
           else error_string "Declarations must go before code."
