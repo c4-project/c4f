@@ -9,9 +9,11 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Core_kernel
-module Ac = Act_common
-module Identifier = Act_litmus_c.Ast_basic.Identifier
+open Base
+
+open struct
+  module Ac = Act_common
+end
 
 module P = struct
   type t =
@@ -50,7 +52,7 @@ let anonymise =
     ~uop:(fun u x -> `E (u, x))
 
 let quickcheck_observer : t Base_quickcheck.Observer.t =
-  Quickcheck.Observer.(
+  Base_quickcheck.Observer.(
     fixed_point (fun mu ->
         unmap ~f:anonymise
           [%quickcheck.observer:

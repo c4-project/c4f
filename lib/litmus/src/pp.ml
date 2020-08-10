@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,69 +10,45 @@
    project root for more information. *)
 
 open Base
-open Stdio
-module Ac = Act_common
-open Pp_intf
 
-module Generic = struct
-  let pp_location_stanza : Ac.C_id.t list option Fmt.t =
+open struct
+  module Ac = Act_common
+end
+
+let pp_location_stanza : Ac.C_id.t list Fmt.t =
+  Fmt.(
+    hbox (any "locations@ " ++ brackets (box (list ~sep:semi Ac.C_id.pp))))
+
+let pp_init (ppk : 'k Fmt.t) : (Ac.C_id.t, 'k) List.Assoc.t Fmt.t =
+  Act_utils.My_format.pp_c_braces
     Fmt.(
-      option
-        (hbox
-           (any "locations@ " ++ brackets (box (list ~sep:semi Ac.C_id.pp)))))
-end
+      list ~sep:sp (fun f (l, c) -> pf f "@[%a = %a;@]" Ac.C_id.pp l ppk c))
 
-module type Basic = sig
-  module Test : Test_types.S
+let spsp : type a. a Fmt.t = fun x -> Fmt.(sp ++ sp) x
 
-  val print_programs_inner :
-    Out_channel.t -> Test.Lang.Program.t list -> unit
-end
+let pp_threads (ppt : 't Fmt.t) : ('k, 't) Test.Raw.t Fmt.t =
+  Fmt.(using Test.Raw.threads (list ~sep:spsp ppt))
 
-(** Makes the bits of a litmus AST that are common to all styles. *)
-module Make_common (B : Basic) = struct
-  let print_programs (oc : Out_channel.t) (ast : B.Test.t) : unit =
-    B.print_programs_inner oc (B.Test.threads ast)
+let pp_top_line (langname : string) : _ Header.t Fmt.t =
+  Fmt.(hbox (const string langname ++ sp ++ using Header.name string))
 
-  let pp_init : (Ac.C_id.t, B.Test.Lang.Constant.t) List.Assoc.t Fmt.t =
-    Act_utils.My_format.pp_c_braces
-      Fmt.(
-        list ~sep:sp (fun f (l, c) ->
-            pf f "@[%a = %a;@]" Ac.C_id.pp l B.Test.Lang.Constant.pp c))
+let pp_header_top (langname : string) (ppk : 'k Fmt.t) : 'k Header.t Fmt.t =
+  Fmt.(
+    concat ~sep:spsp [pp_top_line langname; using Header.init (pp_init ppk)])
 
-  let pp_post : B.Test.Lang.Constant.t Postcondition.t Fmt.t =
-    Postcondition.pp ~pp_const:B.Test.Lang.Constant.pp
+let pp_header_bot (ppk : 'k Fmt.t) : 'k Header.t Fmt.t =
+  Fmt.(
+    concat ~sep:nop
+      [ using Header.locations (option (spsp ++ pp_location_stanza))
+      ; using Header.postcondition
+          (option (spsp ++ Postcondition.pp ~pp_const:ppk)) ])
 
-  let print_body (oc : Out_channel.t) (litmus : B.Test.t) : unit =
-    let f = Caml.Format.formatter_of_out_channel oc in
-    pp_init f (B.Test.init litmus) ;
-    Fmt.pf f "@.@." ;
-    print_programs oc litmus ;
-    Fmt.pf f "@." ;
-    Generic.pp_location_stanza f (B.Test.locations litmus) ;
-    Fmt.(option (any "@,@," ++ pp_post)) f (B.Test.postcondition litmus) ;
-    Fmt.flush f ()
-
-  let print (oc : Out_channel.t) (litmus : B.Test.t) : unit =
-    let lang_name = B.Test.Lang.name in
-    let test_name = B.Test.name litmus in
-    Out_channel.fprintf oc "%s %s\n\n%a" lang_name test_name print_body
-      litmus
-end
-
-module Make_sequential (Test : Test_types.S) : S with module Test = Test =
-struct
-  module Test = Test
-
-  module Specific = struct
-    let print_programs_inner (oc : Stdio.Out_channel.t) :
-        Test.Lang.Program.t list -> unit =
-      Fmt.(vbox (list ~sep:(cut ++ cut) Test.Lang.Program.pp) ++ flush)
-        (Caml.Format.formatter_of_out_channel oc)
-  end
-
-  include Make_common (struct
-    module Test = Test
-    include Specific
-  end)
-end
+let pp (langname : string) (ppk : 'k Fmt.t) (ppt : 't Fmt.t) :
+    ('k, 't) Test.Raw.t Fmt.t =
+  Fmt.(
+    vbox
+      (concat ~sep:nop
+         [ using Test.Raw.header (pp_header_top langname ppk)
+         ; spsp
+         ; pp_threads ppt
+         ; using Test.Raw.header (pp_header_bot ppk) ]))

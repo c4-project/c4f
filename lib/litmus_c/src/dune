@@ -6,9 +6,9 @@
  (synopsis "Automagic Compiler Tormentor: Litmus/C AST and frontend")
  (modules_without_implementation ast_basic_types ast_types)
  (preprocess
-  (pps ppx_deriving.std ppx_jane sedlex.ppx))
- (libraries sexplib0 base.caml core_kernel fmt menhirLib plumbing act.common
-   act.litmus act.utils sedlex travesty.base_exts))
+  (pps ppx_deriving.std ppx_jane ppx_yojson_conv sedlex.ppx))
+ (libraries sexplib0 stdio base base.caml core_kernel fmt menhirLib plumbing
+   act.common yojson act.fir act.litmus act.utils sedlex travesty.base_exts))
 
 (menhir
  (infer false)

@@ -10,39 +10,43 @@
    project root for more information. *)
 
 open Base
-module Src = Act_fir
+
+open struct
+  module Fir = Act_fir
+  module Src = Act_litmus_c
+end
 
 let%test_module "examples" =
   ( module struct
-    let test : Src.Expression.t -> unit = Fmt.pr "@[%a@]@." Src.Reify_expr.pp
+    let test : Fir.Expression.t -> unit = Fmt.pr "@[%a@]@." Src.Reify_expr.pp
 
     let%expect_test "subtract bracketing 1" =
       test
-        Src.Expression.(
+        Fir.Expression.(
           sub (sub (int_lit 1) (int_lit 1)) (sub (int_lit 1) (int_lit 1))) ;
       [%expect {| 1 - 1 - (1 - 1) |}]
 
     let%expect_test "subtract bracketing 2" =
       test
-        Src.Expression.(
+        Fir.Expression.(
           sub (sub (sub (int_lit 1) (int_lit 1)) (int_lit 1)) (int_lit 1)) ;
       [%expect {| 1 - 1 - 1 - 1 |}]
 
     let%expect_test "subtract bracketing 3" =
       test
-        Src.Expression.(
+        Fir.Expression.(
           sub (int_lit 1) (sub (int_lit 1) (sub (int_lit 1) (int_lit 1)))) ;
       [%expect {| 1 - (1 - (1 - 1)) |}]
 
     let%expect_test "add-subtract bracketing" =
       test
-        Src.Expression.(
+        Fir.Expression.(
           sub (add (sub (int_lit 1) (int_lit 2)) (int_lit 3)) (int_lit 4)) ;
       [%expect {| 1 - 2 + 3 - 4 |}]
 
     let%expect_test "atomic_load of referenced variable" =
       test
-        Src.(
+        Fir.(
           Expression.atomic_load
             (Atomic_load.make
                ~src:(Address.of_variable_ref (Act_common.C_id.of_string "x"))
@@ -54,42 +58,42 @@ let%test_module "round trips" =
   ( module struct
     let test_round_trip
         (module Qc : Act_utils.My_quickcheck.S_with_sexp
-          with type t = Src.Expression.t) : unit =
+          with type t = Fir.Expression.t) : unit =
       Base_quickcheck.Test.run_exn
         (module Qc)
         ~f:(fun exp ->
-          [%test_result: Src.Expression.t Or_error.t] ~here:[[%here]]
+          [%test_result: Fir.Expression.t Or_error.t] ~here:[[%here]]
             ~expect:(Ok exp)
-            (Src.Convert.expr (Src.Reify_expr.reify exp)))
+            (Src.Abstract.expr (Src.Reify_expr.reify exp)))
 
-    module Make (F : functor (A : Src.Env_types.S) ->
-      Act_utils.My_quickcheck.S_with_sexp with type t = Src.Expression.t) =
+    module Make (F : functor (A : Fir.Env_types.S) ->
+      Act_utils.My_quickcheck.S_with_sexp with type t = Fir.Expression.t) =
     struct
       let run_round_trip () : unit =
-        let env = Lazy.force Env.test_env in
+        let env = Lazy.force Act_fir_test.Env.test_env in
         let module Qc = F (struct
           let env = env
         end) in
         test_round_trip (module Qc)
     end
 
-    module Int_values = Make (Src.Expression_gen.Int_values)
+    module Int_values = Make (Fir.Expression_gen.Int_values)
 
     let%test_unit "round-trip on integer expressions" =
       Int_values.run_round_trip ()
 
-    module Int_zeroes = Make (Src.Expression_gen.Int_zeroes)
+    module Int_zeroes = Make (Fir.Expression_gen.Int_zeroes)
 
     let%test_unit "round-trip on integer zeroes" =
       Int_zeroes.run_round_trip ()
 
-    module Bool_values = Make (Src.Expression_gen.Bool_values)
+    module Bool_values = Make (Fir.Expression_gen.Bool_values)
 
     let%test_unit "round-trip on Boolean expressions" =
       Bool_values.run_round_trip ()
 
-    module Bool_tautologies_in (E : Src.Env_types.S) = struct
-      module K = Src.Expression_gen.Bool_known (E)
+    module Bool_tautologies_in (E : Fir.Env_types.S) = struct
+      module K = Fir.Expression_gen.Bool_known (E)
       include K.Tautologies
     end
 
@@ -98,8 +102,8 @@ let%test_module "round trips" =
     let%test_unit "round-trip on Boolean tautologies" =
       Bool_tautologies.run_round_trip ()
 
-    module Bool_falsehoods_in (E : Src.Env_types.S) = struct
-      module K = Src.Expression_gen.Bool_known (E)
+    module Bool_falsehoods_in (E : Fir.Env_types.S) = struct
+      module K = Fir.Expression_gen.Bool_known (E)
       include K.Tautologies
     end
 

@@ -15,13 +15,11 @@
     this should be {!Reify_expr.reify}. *)
 
 val reify_expr :
-     'e Atomic_expression.t
-  -> expr:('e -> Act_litmus_c.Ast.Expr.t)
-  -> Act_litmus_c.Ast.Expr.t
+  'e Act_fir.Atomic_expression.t -> expr:('e -> Ast.Expr.t) -> Ast.Expr.t
 (** [reify_expr x ~expr] reifies an atomic expression. *)
 
 val reify_stm :
-     Atomic_statement.t
-  -> expr:(Expression.t -> Act_litmus_c.Ast.Expr.t)
-  -> Act_litmus_c.Ast.Stm.t
+     Act_fir.Atomic_statement.t
+  -> expr:(Act_fir.Expression.t -> Ast.Expr.t)
+  -> Ast.Stm.t
 (** [reify_stm x ~expr] reifies an atomic statement. *)

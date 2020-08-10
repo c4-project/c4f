@@ -23,15 +23,11 @@ module type Basic = sig
   (** Abstract type of constant syntax *)
   module Constant : sig
     type t [@@deriving compare, equal, sexp, quickcheck]
-
-    include Pretty_printer.S with type t := t
   end
 
   (** Abstract type of statements. *)
   module Statement : sig
     type t [@@deriving sexp]
-
-    include Pretty_printer.S with type t := t
 
     val make_uniform : t list list -> t list list
     (** [make_uniform listings] pads each listing in [listing] to the same
@@ -56,8 +52,6 @@ module type Basic = sig
     val global_vars : t -> Type.t Map.M(Act_common.C_id).t option
     (** [global_vars program] gets the set of global variables referenced by
         [program], if this makes sense for this particular litmus language. *)
-
-    include Pretty_printer.S with type t := t
   end
 end
 

@@ -30,8 +30,3 @@ end
 
 val scrape : Litmus.Test.t -> Statset.t
 (** [scrape test] extracts statistics from [test]. *)
-
-(** Lifting of [scrape] to a filter from litmus test files to statistic
-    outputs. *)
-module Filter :
-  Plumbing.Filter_types.S with type aux_i = unit and type aux_o = unit

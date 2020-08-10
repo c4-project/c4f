@@ -13,8 +13,8 @@ open Core_kernel (* for Fqueue *)
 
 open struct
   module Ac = Act_common
+  module Fir = Act_fir
   module Tx = Travesty_base_exts
-  module Ast = Act_litmus_c.Ast
   module Named = Ac.C_named
 end
 
@@ -71,18 +71,18 @@ let validate_func : Ast.Function_def.t Validate.check =
   Validate.all [validate_func_void_type; validate_func_no_knr]
 
 let param_type_list :
-    Ast.Param_type_list.t -> Type.t Named.Alist.t Or_error.t = function
+    Ast.Param_type_list.t -> Fir.Type.t Named.Alist.t Or_error.t = function
   | {style= `Variadic; _} ->
       Or_error.error_string "Variadic arguments not supported"
   | {style= `Normal; params} ->
       Or_error.(
         params
-        |> Tx.Or_error.combine_map ~f:Convert_prim.param_decl
+        |> Tx.Or_error.combine_map ~f:Abstract_prim.param_decl
         >>| Named.alist_of_list)
 
 let func_signature :
-    Ast.Declarator.t -> (Act_common.C_id.t * Type.t Named.Alist.t) Or_error.t
-    = function
+       Ast.Declarator.t
+    -> (Act_common.C_id.t * Fir.Type.t Named.Alist.t) Or_error.t = function
   | {pointer= Some _; _} ->
       Or_error.error_string "Pointers not supported yet"
   | {pointer= None; direct= Fun_decl (Id name, param_list)} ->
@@ -94,48 +94,53 @@ let func_signature :
             ~got:(x.direct : Ast.Direct_declarator.t)]
 
 let model_atomic_cmpxchg_expr (args : Ast.Expr.t list)
-    ~(expr : Ast.Expr.t -> Expression.t Or_error.t) : Expression.t Or_error.t
-    =
+    ~(expr : Ast.Expr.t -> Fir.Expression.t Or_error.t) :
+    Fir.Expression.t Or_error.t =
   Or_error.(
-    args |> Convert_atomic.model_cmpxchg ~expr >>| Expression.atomic_cmpxchg)
+    args
+    |> Abstract_atomic.model_cmpxchg ~expr
+    >>| Fir.Expression.atomic_cmpxchg)
 
-let model_atomic_fetch_expr (args : Ast.Expr.t list) ~(op : Op.Fetch.t)
-    ~(expr : Ast.Expr.t -> Expression.t Or_error.t) : Expression.t Or_error.t
-    =
+let model_atomic_fetch_expr (args : Ast.Expr.t list) ~(op : Fir.Op.Fetch.t)
+    ~(expr : Ast.Expr.t -> Fir.Expression.t Or_error.t) :
+    Fir.Expression.t Or_error.t =
   Or_error.(
-    args |> Convert_atomic.model_fetch ~expr ~op >>| Expression.atomic_fetch)
+    args
+    |> Abstract_atomic.model_fetch ~expr ~op
+    >>| Fir.Expression.atomic_fetch)
 
 let model_atomic_load_expr (args : Ast.Expr.t list)
-    ~(expr : Ast.Expr.t -> Expression.t Or_error.t) : Expression.t Or_error.t
-    =
+    ~(expr : Ast.Expr.t -> Fir.Expression.t Or_error.t) :
+    Fir.Expression.t Or_error.t =
   ignore expr ;
-  Or_error.(args |> Convert_atomic.model_load >>| Expression.atomic_load)
+  Or_error.(
+    args |> Abstract_atomic.model_load >>| Fir.Expression.atomic_load)
 
-let fetch_call_alist (modeller : Ast.Expr.t list -> op:Op.Fetch.t -> 'a) :
-    (Ac.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t =
-  List.map (Op.Fetch.all_list ()) ~f:(fun op ->
-      let name = Ac.C_id.of_string (Convert_atomic.fetch_name op) in
+let fetch_call_alist (modeller : Ast.Expr.t list -> op:Fir.Op.Fetch.t -> 'a)
+    : (Ac.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t =
+  List.map (Fir.Op.Fetch.all_list ()) ~f:(fun op ->
+      let name = Ac.C_id.of_string (Abstract_atomic.fetch_name op) in
       (name, modeller ~op))
 
 let expr_call_table :
     (   Ast.Expr.t list
-     -> expr:(Ast.Expr.t -> Expression.t Or_error.t)
-     -> Expression.t Or_error.t)
+     -> expr:(Ast.Expr.t -> Fir.Expression.t Or_error.t)
+     -> Fir.Expression.t Or_error.t)
     Map.M(Ac.C_id).t
     Lazy.t =
   lazy
     (Map.of_alist_exn
        (module Ac.C_id)
        ( fetch_call_alist model_atomic_fetch_expr
-       @ [ ( Ac.C_id.of_string Convert_atomic.cmpxchg_name
+       @ [ ( Ac.C_id.of_string Abstract_atomic.cmpxchg_name
            , model_atomic_cmpxchg_expr )
-         ; ( Ac.C_id.of_string Convert_atomic.load_name
+         ; ( Ac.C_id.of_string Abstract_atomic.load_name
            , model_atomic_load_expr ) ] ))
 
 let expr_call_handler (func_name : Ac.C_id.t) :
     (   Ast.Expr.t list
-     -> expr:(Ast.Expr.t -> Expression.t Or_error.t)
-     -> Expression.t Or_error.t)
+     -> expr:(Ast.Expr.t -> Fir.Expression.t Or_error.t)
+     -> Fir.Expression.t Or_error.t)
     Or_error.t =
   func_name
   |> Map.find (Lazy.force expr_call_table)
@@ -147,65 +152,63 @@ let expr_call_handler (func_name : Ac.C_id.t) :
                 ~got:(func_name : Ac.C_id.t)])
 
 let function_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list)
-    ~(expr : Ast.Expr.t -> Expression.t Or_error.t) : Expression.t Or_error.t
-    =
+    ~(expr : Ast.Expr.t -> Fir.Expression.t Or_error.t) :
+    Fir.Expression.t Or_error.t =
   Or_error.Let_syntax.(
-    let%bind func_name = Convert_prim.expr_to_identifier func in
+    let%bind func_name = Abstract_prim.expr_to_identifier func in
     let%bind call_handler = expr_call_handler func_name in
     call_handler arguments ~expr)
 
-let identifier_to_expr (id : Ac.C_id.t) : Expression.t =
-  match Convert_prim.identifier_to_constant id with
+let identifier_to_expr (id : Ac.C_id.t) : Fir.Expression.t =
+  match Abstract_prim.identifier_to_constant id with
   | Some k ->
-      Expression.constant k
+      Fir.Expression.constant k
   | None ->
-      Expression.lvalue (Lvalue.variable id)
+      Fir.Expression.variable id
 
-let bop : Act_litmus_c.Operators.Bin.t -> Op.Binary.t Or_error.t =
+let bop : Operators.Bin.t -> Fir.Op.Binary.t Or_error.t =
   Or_error.(
     function
     | `Add ->
-        return Op.Binary.add
+        return Fir.Op.Binary.add
     | `Eq ->
-        return Op.Binary.eq
+        return Fir.Op.Binary.eq
     | `Land ->
-        return Op.Binary.l_and
+        return Fir.Op.Binary.l_and
     | `Lor ->
-        return Op.Binary.l_or
+        return Fir.Op.Binary.l_or
     | `Sub ->
-        return Op.Binary.sub
+        return Fir.Op.Binary.sub
     | `And ->
-        return Op.Binary.b_and
+        return Fir.Op.Binary.b_and
     | `Or ->
-        return Op.Binary.b_or
+        return Fir.Op.Binary.b_or
     | `Xor ->
-        return Op.Binary.b_xor
+        return Fir.Op.Binary.b_xor
     | op ->
         error_s
           [%message
-            "Unsupported binary operator"
-              ~got:(op : Act_litmus_c.Operators.Bin.t)])
+            "Unsupported binary operator" ~got:(op : Operators.Bin.t)])
 
-let prefix_op : Act_litmus_c.Operators.Pre.t -> Op.Unary.t Or_error.t =
+let prefix_op : Operators.Pre.t -> Fir.Op.Unary.t Or_error.t =
   Or_error.(
     function
     | `Lnot ->
-        return Op.Unary.l_not
+        return Fir.Op.Unary.l_not
     | op ->
         error_s
           [%message
-            "Unsupported prefix operator"
-              ~got:(op : Act_litmus_c.Operators.Pre.t)])
+            "Unsupported prefix operator" ~got:(op : Operators.Pre.t)])
 
-let rec expr : Ast.Expr.t -> Expression.t Or_error.t =
+let rec expr : Ast.Expr.t -> Fir.Expression.t Or_error.t =
   Or_error.Let_syntax.(
     let model_binary l op r =
       let%map l' = expr l and r' = expr r and op' = bop op in
-      Expression.bop op' l' r'
+      Fir.Expression.bop op' l' r'
     in
     let model_prefix op x =
       let%map x' = expr x and op' = prefix_op op in
-      Expression.uop op' x'
+      Fir.Expression.uop op' x'
     in
     function
     | Brackets e ->
@@ -213,13 +216,13 @@ let rec expr : Ast.Expr.t -> Expression.t Or_error.t =
     | Binary (l, op, r) ->
         model_binary l op r
     | Constant k ->
-        Or_error.map ~f:Expression.constant (Convert_prim.constant k)
+        Or_error.map ~f:Fir.Expression.constant (Abstract_prim.constant k)
     | Identifier id ->
-        Or_error.return (identifier_to_expr id)
+        Ok (identifier_to_expr id)
     | Prefix (`Deref, expr) ->
         Or_error.(
-          expr |> Convert_prim.expr_to_lvalue >>| Lvalue.deref
-          >>| Expression.lvalue)
+          expr |> Abstract_prim.expr_to_lvalue >>| Fir.Lvalue.deref
+          >>| Fir.Expression.lvalue)
     | Prefix (op, expr) ->
         model_prefix op expr
     | Call {func; arguments} ->
@@ -234,88 +237,94 @@ let rec expr : Ast.Expr.t -> Expression.t Or_error.t =
         Or_error.error_s
           [%message "Unsupported expression" ~got:(e : Ast.Expr.t)])
 
+let prim : Fir.Prim_statement.t -> unit Fir.Statement.t =
+  Fir.Statement.prim ()
+
 let model_atomic_cmpxchg_stm (args : Ast.Expr.t list) :
-    unit Statement.t Or_error.t =
+    unit Fir.Statement.t Or_error.t =
   Or_error.(
     args
-    |> Convert_atomic.model_cmpxchg ~expr
-    >>| Prim_statement.atomic_cmpxchg >>| Statement.prim ())
+    |> Abstract_atomic.model_cmpxchg ~expr
+    >>| Fir.Prim_statement.atomic_cmpxchg >>| prim)
 
 let model_atomic_fence_stm (args : Ast.Expr.t list)
-    ~(mode : Atomic_fence.Mode.t) : unit Statement.t Or_error.t =
+    ~(mode : Fir.Atomic_fence.Mode.t) : unit Fir.Statement.t Or_error.t =
   Or_error.(
     args
-    |> Convert_atomic.model_fence ~mode
-    >>| Prim_statement.atomic_fence >>| Statement.prim ())
+    |> Abstract_atomic.model_fence ~mode
+    >>| Fir.Prim_statement.atomic_fence >>| prim)
 
 let fence_call_alist :
-    (Ac.C_id.t, Ast.Expr.t list -> unit Statement.t Or_error.t) List.Assoc.t
+    ( Ac.C_id.t
+    , Ast.Expr.t list -> unit Fir.Statement.t Or_error.t )
+    List.Assoc.t
     Lazy.t =
   lazy
-    (List.map (Atomic_fence.Mode.all_list ()) ~f:(fun mode ->
-         let name = Ac.C_id.of_string (Convert_atomic.fence_name mode) in
+    (List.map (Fir.Atomic_fence.Mode.all_list ()) ~f:(fun mode ->
+         let name = Ac.C_id.of_string (Abstract_atomic.fence_name mode) in
          (name, model_atomic_fence_stm ~mode)))
 
-let model_atomic_fetch_stm (args : Ast.Expr.t list) ~(op : Op.Fetch.t) :
-    unit Statement.t Or_error.t =
+let model_atomic_fetch_stm (args : Ast.Expr.t list) ~(op : Fir.Op.Fetch.t) :
+    unit Fir.Statement.t Or_error.t =
   Or_error.(
     args
-    |> Convert_atomic.model_fetch ~expr ~op
-    >>| Prim_statement.atomic_fetch >>| Statement.prim ())
+    |> Abstract_atomic.model_fetch ~expr ~op
+    >>| Fir.Prim_statement.atomic_fetch >>| prim)
 
 let model_atomic_store_stm (args : Ast.Expr.t list) :
-    unit Statement.t Or_error.t =
+    unit Fir.Statement.t Or_error.t =
   Or_error.(
     args
-    |> Convert_atomic.model_store ~expr
-    >>| Prim_statement.atomic_store >>| Statement.prim ())
+    |> Abstract_atomic.model_store ~expr
+    >>| Fir.Prim_statement.atomic_store >>| prim)
 
 let model_atomic_xchg_stm (args : Ast.Expr.t list) :
-    unit Statement.t Or_error.t =
+    unit Fir.Statement.t Or_error.t =
   Or_error.(
     args
-    |> Convert_atomic.model_xchg ~expr
-    >>| Prim_statement.atomic_xchg >>| Statement.prim ())
+    |> Abstract_atomic.model_xchg ~expr
+    >>| Fir.Prim_statement.atomic_xchg >>| prim)
 
 let expr_stm_call_table :
-    (Ast.Expr.t list -> unit Statement.t Or_error.t) Map.M(Ac.C_id).t Lazy.t
-    =
+    (Ast.Expr.t list -> unit Fir.Statement.t Or_error.t) Map.M(Ac.C_id).t
+    Lazy.t =
   Lazy.Let_syntax.(
     let%map fence_call_alist = fence_call_alist in
     Map.of_alist_exn
       (module Ac.C_id)
       ( fetch_call_alist model_atomic_fetch_stm
       @ fence_call_alist
-      @ [ ( Ac.C_id.of_string Convert_atomic.cmpxchg_name
+      @ [ ( Ac.C_id.of_string Abstract_atomic.cmpxchg_name
           , model_atomic_cmpxchg_stm )
-        ; ( Ac.C_id.of_string Convert_atomic.store_name
+        ; ( Ac.C_id.of_string Abstract_atomic.store_name
           , model_atomic_store_stm )
-        ; (Ac.C_id.of_string Convert_atomic.xchg_name, model_atomic_xchg_stm)
+        ; (Ac.C_id.of_string Abstract_atomic.xchg_name, model_atomic_xchg_stm)
         ] ))
 
 let arbitrary_procedure_call (function_id : Ac.C_id.t)
-    (raw_arguments : Ast.Expr.t list) : unit Statement.t Or_error.t =
+    (raw_arguments : Ast.Expr.t list) : unit Fir.Statement.t Or_error.t =
   Or_error.Let_syntax.(
     let%map arguments = Tx.Or_error.combine_map ~f:expr raw_arguments in
-    let call = Call.make ~arguments ~function_id () in
-    call |> Prim_statement.procedure_call |> Statement.prim ())
+    let call = Fir.Call.make ~arguments ~function_id () in
+    call |> Fir.Prim_statement.procedure_call |> prim)
 
 let procedure_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list) :
-    unit Statement.t Or_error.t =
+    unit Fir.Statement.t Or_error.t =
   Or_error.Let_syntax.(
-    let%bind function_id = Convert_prim.expr_to_identifier func in
+    let%bind function_id = Abstract_prim.expr_to_identifier func in
     match Map.find (Lazy.force expr_stm_call_table) function_id with
     | Some call_handler ->
         call_handler arguments
     | None ->
         arbitrary_procedure_call function_id arguments)
 
-let expr_stm : Ast.Expr.t -> unit Statement.t Or_error.t = function
+let expr_stm : Ast.Expr.t -> unit Fir.Statement.t Or_error.t = function
   | Binary (l, `Assign, r) ->
       Or_error.Let_syntax.(
-        let%map lvalue = Convert_prim.expr_to_lvalue l and rvalue = expr r in
-        let assign = Assign.make ~lvalue ~rvalue in
-        assign |> Prim_statement.assign |> Statement.prim ())
+        let%map lvalue = Abstract_prim.expr_to_lvalue l
+        and rvalue = expr r in
+        let assign = Fir.Assign.make ~lvalue ~rvalue in
+        assign |> Fir.Prim_statement.assign |> prim)
   | Call {func; arguments} ->
       procedure_call func arguments
   | ( Brackets _
@@ -343,58 +352,58 @@ let possible_compound_to_list : Ast.Stm.t -> Ast.Stm.t list Or_error.t =
       Or_error.return [stm]
 
 (** Type of recursive statement converters. *)
-type mu_stm = Ast.Stm.t -> unit Statement.t Or_error.t
+type mu_stm = Ast.Stm.t -> unit Fir.Statement.t Or_error.t
 
 let block_list (model_stm : mu_stm) (old_block : Ast.Stm.t list) :
-    (unit, unit Statement.t) Block.t Or_error.t =
+    (unit, unit Fir.Statement.t) Fir.Block.t Or_error.t =
   Or_error.(
     Tx.Or_error.combine_map ~f:model_stm old_block
-    >>| Block.of_statement_list)
+    >>| Fir.Block.of_statement_list)
 
 let block (model_stm : mu_stm) (old_block : Ast.Stm.t) :
-    (unit, unit Statement.t) Block.t Or_error.t =
+    (unit, unit Fir.Statement.t) Fir.Block.t Or_error.t =
   Or_error.(old_block |> possible_compound_to_list >>= block_list model_stm)
 
 let model_if (model_stm : mu_stm) (old_cond : Ast.Expr.t)
     (old_t_branch : Ast.Stm.t) (old_f_branch : Ast.Stm.t option) :
-    unit Statement.t Or_error.t =
+    unit Fir.Statement.t Or_error.t =
   Or_error.Let_syntax.(
     let%bind cond = expr old_cond in
     let%bind t_branch = block model_stm old_t_branch in
     let%map f_branch =
       Option.value_map old_f_branch ~f:(block model_stm)
-        ~default:(Or_error.return (Block.of_statement_list []))
+        ~default:(Ok (Fir.Block.of_statement_list []))
     in
-    let ifs = If.make ~cond ~t_branch ~f_branch in
-    Statement.if_stm ifs)
+    let ifs = Fir.If.make ~cond ~t_branch ~f_branch in
+    Fir.Statement.if_stm ifs)
 
 let loop (model_stm : mu_stm) (old_cond : Ast.Expr.t) (old_body : Ast.Stm.t)
-    (kind : Flow_block.While.t) : unit Statement.t Or_error.t =
+    (kind : Fir.Flow_block.While.t) : unit Fir.Statement.t Or_error.t =
   Or_error.Let_syntax.(
     let%map cond = expr old_cond and body = block model_stm old_body in
-    Statement.flow (Flow_block.while_loop ~cond ~body ~kind))
+    Fir.Statement.flow (Fir.Flow_block.while_loop ~cond ~body ~kind))
 
 let lock (model_stm : mu_stm) (old_body : Ast.Compound_stm.t)
-    (kind : Flow_block.Lock.t) : unit Statement.t Or_error.t =
+    (kind : Fir.Flow_block.Lock.t) : unit Fir.Statement.t Or_error.t =
   Or_error.Let_syntax.(
     (* TODO(@MattWindsor91): we should really support declarations here. *)
     let%bind ast_stms = ensure_statements old_body in
     let%map body = block_list model_stm ast_stms in
-    Statement.flow (Flow_block.lock_block ~body ~kind))
+    Fir.Statement.flow (Fir.Flow_block.lock_block ~body ~kind))
 
-let rec stm : Ast.Stm.t -> unit Statement.t Or_error.t = function
+let rec stm : Ast.Stm.t -> unit Fir.Statement.t Or_error.t = function
   | Expr None ->
-      Or_error.return (Statement.prim () Prim_statement.nop)
+      Ok (prim Fir.Prim_statement.nop)
   | Expr (Some e) ->
       expr_stm e
   | If {cond; t_branch; f_branch} ->
       model_if stm cond t_branch f_branch
   | Continue ->
-      Or_error.return (Statement.prim () Prim_statement.continue)
+      Ok (prim Fir.Prim_statement.continue)
   | Break ->
-      Or_error.return (Statement.prim () Prim_statement.break)
+      Ok (prim Fir.Prim_statement.break)
   | Return None ->
-      Or_error.return (Statement.prim () Prim_statement.return)
+      Ok (prim Fir.Prim_statement.return)
   | Return (Some _) as s ->
       Or_error.error_s
         [%message "Value returns not supported in FIR" ~got:(s : Ast.Stm.t)]
@@ -409,40 +418,42 @@ let rec stm : Ast.Stm.t -> unit Statement.t Or_error.t = function
   | Label (Normal l, Expr None) ->
       (* This is a particularly weird subset of the labels, but I'm not sure
          how best to expand it. *)
-      Or_error.return (Statement.prim () (Prim_statement.label l))
+      Ok (prim (Fir.Prim_statement.label l))
   | Goto l ->
-      Or_error.return (Statement.prim () (Prim_statement.goto l))
+      Ok (prim (Fir.Prim_statement.goto l))
   | (Label _ | Compound _ | Switch _ | For _) as s ->
       Or_error.error_s
         [%message "Unsupported statement" ~got:(s : Ast.Stm.t)]
 
 let func_body (body : Ast.Compound_stm.t) :
-    (Initialiser.t Named.Alist.t * unit Statement.t list) Or_error.t =
+    (Fir.Initialiser.t Named.Alist.t * unit Fir.Statement.t list) Or_error.t
+    =
   Or_error.Let_syntax.(
     let%bind ast_decls, ast_nondecls = sift_decls body in
     let%bind ast_stms = ensure_statements ast_nondecls in
-    let%map decls = Tx.Or_error.combine_map ~f:Convert_prim.decl ast_decls
+    let%map decls = Tx.Or_error.combine_map ~f:Abstract_prim.decl ast_decls
     and stms = Tx.Or_error.combine_map ~f:stm ast_stms in
     (Named.alist_of_list decls, stms))
 
-let func (f : Ast.Function_def.t) : unit Function.t Named.t Or_error.t =
+let func (f : Ast.Function_def.t) : unit Fir.Function.t Named.t Or_error.t =
   Or_error.Let_syntax.(
     let%bind () = Validate.result (validate_func f) in
     let%map name, parameters = func_signature f.signature
     and body_decls, body_stms = func_body f.body in
-    Named.make ~name (Function.make ~parameters ~body_decls ~body_stms ()))
+    Named.make ~name
+      (Fir.Function.make ~parameters ~body_decls ~body_stms ()))
 
 let translation_unit (prog : Ast.Translation_unit.t) :
-    unit Program.t Or_error.t =
+    unit Fir.Program.t Or_error.t =
   Or_error.Let_syntax.(
     let%bind ast_decls, ast_nondecls = sift_decls prog in
     let%bind ast_funs = ensure_functions ast_nondecls in
     let%map global_list =
-      Tx.Or_error.combine_map ~f:Convert_prim.decl ast_decls
+      Tx.Or_error.combine_map ~f:Abstract_prim.decl ast_decls
     and function_list = Tx.Or_error.combine_map ~f:func ast_funs in
     let globals = Named.alist_of_list global_list in
     let functions = Named.alist_of_list function_list in
-    Program.make ~globals ~functions)
+    Fir.Program.make ~globals ~functions)
 
 module Litmus_conv = Act_litmus.Convert.Make (struct
   module From = struct
@@ -450,21 +461,21 @@ module Litmus_conv = Act_litmus.Convert.Make (struct
     module Lang = Ast.Litmus_lang
   end
 
-  module To = Litmus.Test
+  module To = Fir.Litmus.Test
 
   let program : From.Lang.Program.t -> To.Lang.Program.t Or_error.t = func
 
   let constant : From.Lang.Constant.t -> To.Lang.Constant.t Or_error.t =
-    Convert_prim.constant
+    Abstract_prim.constant
 end)
 
 let litmus_post :
-       Act_litmus_c.Ast_basic.Constant.t Act_litmus.Postcondition.t
-    -> Constant.t Act_litmus.Postcondition.t Or_error.t =
+       Ast_basic.Constant.t Act_litmus.Postcondition.t
+    -> Fir.Constant.t Act_litmus.Postcondition.t Or_error.t =
   Litmus_conv.convert_post
 
-let litmus : Ast.Litmus.t -> Litmus.Test.t Or_error.t = Litmus_conv.convert
+let litmus : Ast.Litmus.t -> Fir.Litmus.Test.t Or_error.t =
+  Litmus_conv.convert
 
-let litmus_of_raw_ast
-    (ast : Act_litmus.Ast.M(Act_litmus_c.Ast.Litmus_lang).t) =
+let litmus_of_raw_ast (ast : Act_litmus.Ast.M(Ast.Litmus_lang).t) =
   Or_error.(ast |> Ast.Litmus.of_ast >>= litmus)

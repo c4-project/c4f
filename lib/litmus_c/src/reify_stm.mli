@@ -9,10 +9,13 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Frontend for FIR litmus tests.
+(** Functions for reifying a FIR statement into an AST.
 
-    This module allows code to read FIR litmus tests in directly, rather than
-    reading a full C litmus test then converting manually. It also therefore
-    insulates against future changes in the abstract/full C representation. *)
+    For the big picture, see {!Reify}. *)
 
-include Plumbing.Loadable_types.S with type t = Litmus.Test.t
+val reify : _ Act_fir.Statement.t -> Ast.Stm.t
+(** [reify s] reifies the mini-statement [s] into the C AST. *)
+
+val reify_compound : _ Act_fir.Statement.t list -> Ast.Compound_stm.t
+(** [reify_compound xs] reifies a list [xs] of statements into a C AST
+    compound statement. *)

@@ -18,35 +18,34 @@ open Base
 
 (** {1 Constants} *)
 
-val constant : Act_litmus_c.Ast_basic.Constant.t -> Constant.t Or_error.t
+val constant : Ast_basic.Constant.t -> Act_fir.Constant.t Or_error.t
 (** [constant ast] tries to interpret a C constant AST as a FIR constant. *)
 
-val identifier_to_constant : Act_common.C_id.t -> Constant.t option
+val identifier_to_constant : Act_common.C_id.t -> Act_fir.Constant.t option
 (** [identifier_to_constant id] tries to interpret [id] as a (Boolean)
     constant. *)
 
 (** {1 Declarators and declarations} *)
 
 val decl :
-  Act_litmus_c.Ast.Decl.t -> Initialiser.t Act_common.C_named.t Or_error.t
+  Ast.Decl.t -> Act_fir.Initialiser.t Act_common.C_named.t Or_error.t
 (** [decl d] translates a declaration into an identifier-initialiser pair. *)
 
 val param_decl :
-  Act_litmus_c.Ast.Param_decl.t -> Type.t Act_common.C_named.t Or_error.t
+  Ast.Param_decl.t -> Act_fir.Type.t Act_common.C_named.t Or_error.t
 (** [param_decl d] translates a parameter declarator into an identifier-type
     pair. *)
 
 (** {1 Converting expressions to lvalues, addresses, and so on} *)
 
-val expr_to_identifier :
-  Act_litmus_c.Ast.Expr.t -> Act_common.C_id.t Or_error.t
+val expr_to_identifier : Ast.Expr.t -> Act_common.C_id.t Or_error.t
 (** [expr_to_identifier e] tries to interpret [e] as an identifier. *)
 
-val expr_to_lvalue : Act_litmus_c.Ast.Expr.t -> Lvalue.t Or_error.t
+val expr_to_lvalue : Ast.Expr.t -> Act_fir.Lvalue.t Or_error.t
 (** [expr_to_lvalue e] tries to interpret [e] as an lvalue. *)
 
-val expr_to_address : Act_litmus_c.Ast.Expr.t -> Address.t Or_error.t
+val expr_to_address : Ast.Expr.t -> Act_fir.Address.t Or_error.t
 (** [expr_to_address e] tries to interpret [e] as an address. *)
 
-val expr_to_memory_order : Act_litmus_c.Ast.Expr.t -> Mem_order.t Or_error.t
+val expr_to_memory_order : Ast.Expr.t -> Act_fir.Mem_order.t Or_error.t
 (** [expr_to_memory_order e] tries to interpret [e] as a memory order. *)

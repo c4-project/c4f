@@ -53,3 +53,12 @@ module Litmus_post = Act_utils.Frontend.Make (struct
 
   let message = C_messages.message
 end)
+
+module Fir =
+  Plumbing.Loadable.Make_chain
+    (Litmus)
+    (struct
+      type dst = Act_fir.Litmus.Test.t
+
+      let f = Abstract.litmus_of_raw_ast
+    end)

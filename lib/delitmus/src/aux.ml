@@ -11,14 +11,9 @@
 
 open Base
 
-open struct
-  module Tx = Travesty_base_exts
-end
-
 module M = struct
   type t =
-    { litmus_header: Act_fir.Litmus_header.t
-          [@default Act_litmus.Header.empty]
+    { litmus_header: Act_litmus_c.Header.t [@default Act_litmus.Header.empty]
     ; function_map: Function_map.t
           [@default Map.empty (module Act_common.C_id)]
     ; var_map: Var_map.t [@default Act_common.Scoped_map.empty] }

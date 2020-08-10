@@ -122,5 +122,5 @@ let%test_module "cmpxchg.make.int.succeed" =
     let%expect_test "variables with dependencies, in dead-code" =
       Storelike.Test_common.run_and_dump_deps test_action_dead
         ~initial_state:(Lazy.force FT.Subject.Test_data.state) ;
-      [%expect {| expected=12345 gen1= |}]
+      [%expect {| |}]
   end )

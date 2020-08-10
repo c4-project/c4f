@@ -29,15 +29,6 @@ module Lang :
     type t = [`Stm of unit Statement.t | `Decl of Initialiser.t Named.t]
     [@@deriving sexp]
 
-    let reify : t -> _ = function
-      | `Decl named_init ->
-          `Decl (Reify_prim.decl named_init)
-      | `Stm stm ->
-          `Stm (Reify_stm.reify stm)
-
-    let pp : t Fmt.t =
-      Fmt.using reify Act_litmus_c.Ast.Litmus_lang.Statement.pp
-
     let empty () : t = `Stm (Statement.prim () Prim_statement.nop)
 
     let make_uniform = Tx.List.right_pad ~padding:(empty ())
@@ -57,12 +48,6 @@ module Lang :
           `Decl (Named.make value ~name))
       @ List.map (Function.body_stms fn) ~f:(fun x -> `Stm x)
 
-    let pp : t Fmt.t =
-      Fmt.(
-        using
-          (fun np -> Reify.func (Named.name np) (Named.value np))
-          Act_litmus_c.Ast.External_decl.pp)
-
     let global_vars (np : t) =
       np |> Named.value |> Function.parameters
       |> Map.of_alist_or_error (module Ac.C_id)
@@ -73,4 +58,3 @@ module Lang :
 end
 
 module Test = Act_litmus.Test.Make (Lang)
-module Pp = Act_litmus.Pp.Make_sequential (Test)

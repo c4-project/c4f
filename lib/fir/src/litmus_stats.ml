@@ -219,23 +219,3 @@ let scrape (t : Litmus.Test.t) : Statset.t =
   let threads = List.length ts in
   let state = Statset.init threads in
   fst (Monad.run' (probe_threads ts) state)
-
-module Filter :
-  Plumbing.Filter_types.S with type aux_i = unit and type aux_o = unit =
-Plumbing.Filter.Make (struct
-  let name = "dump-stats"
-
-  type aux_i = unit
-
-  type aux_o = unit
-
-  let run (ctx : aux_i Plumbing.Filter_context.t) (ic : Stdio.In_channel.t)
-      (oc : Stdio.Out_channel.t) : aux_o Or_error.t =
-    Or_error.Let_syntax.(
-      let%map test =
-        Frontend.load_from_ic ic
-          ~path:(Plumbing.Filter_context.input_path_string ctx)
-      in
-      let f = Caml.Format.formatter_of_out_channel oc in
-      Fmt.pf f "@[<v>%a@]@." Statset.pp (scrape test))
-end)

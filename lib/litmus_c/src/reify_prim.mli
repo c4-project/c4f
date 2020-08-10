@@ -15,29 +15,28 @@
 
 (** {1 Primitives} *)
 
-val type_to_specs : Type.t -> [> Act_litmus_c.Ast.Decl_spec.t] list
+val type_to_specs : Act_fir.Type.t -> [> Ast.Decl_spec.t] list
 (** [type_to_specs ty] reifies the type [ty] to C declarator specs. *)
 
-val decl : Initialiser.t Act_common.C_named.t -> Act_litmus_c.Ast.Decl.t
+val decl : Act_fir.Initialiser.t Act_common.C_named.t -> Ast.Decl.t
 (** [decl id d] reifies the mini-declaration [d] into the C AST. *)
 
-val id_declarator :
-  Type.t -> Act_common.C_id.t -> Act_litmus_c.Ast.Declarator.t
+val id_declarator : Act_fir.Type.t -> Act_common.C_id.t -> Ast.Declarator.t
 (** [id_declarator ty id] constructs a declarator with a type [ty] and ID
     [id]. *)
 
 (** {1 Expression sub-components} *)
 
-val lvalue : Lvalue.t -> Act_litmus_c.Ast.Expr.t
+val lvalue : Act_fir.Lvalue.t -> Ast.Expr.t
 (** [lvalue l] reifies the lvalue [l] into the C AST. *)
 
-val address : Address.t -> Act_litmus_c.Ast.Expr.t
+val address : Act_fir.Address.t -> Ast.Expr.t
 (** [address a] reifies the address [a] into the C AST. *)
 
-val constant : Constant.t -> Act_litmus_c.Ast.Expr.t
+val constant : Act_fir.Constant.t -> Ast.Expr.t
 (** [constant k] reifies the constant [k] into the C AST. *)
 
 (** {1 Pretty-printing} *)
 
-val pp_constant : Constant.t Fmt.t
+val pp_constant : Act_fir.Constant.t Fmt.t
 (** [pp_constant] pretty-prints constants via {!constant}. *)

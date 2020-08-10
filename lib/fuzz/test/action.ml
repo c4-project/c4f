@@ -19,10 +19,7 @@ module Test_utils = struct
       Act_litmus_c.Ast.Translation_unit.t =
     List.mapi (Act_litmus.Test.Raw.threads test) ~f:(fun id p ->
         let fn = Src.Subject.Thread.to_function ~vars ~id p in
-        Act_fir.(
-          Reify.func
-            (Act_common.C_named.name fn)
-            (Act_common.C_named.value fn)))
+        Act_litmus_c.Reify.func fn)
 
   let pp_tu : Act_litmus_c.Ast.Translation_unit.t Fmt.t =
     Fmt.(list ~sep:(sp ++ sp) Act_litmus_c.Ast.External_decl.pp)

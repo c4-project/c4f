@@ -9,10 +9,12 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-include Plumbing.Loadable.Make_chain
-          (Act_litmus_c.Frontend.Litmus)
-          (struct
-            type dst = Litmus.Test.t
+(** Reifying a FIR expression into an AST.
 
-            let f = Convert.litmus_of_raw_ast
-          end)
+    For the big picture, see {!Reify}. *)
+
+val reify : Act_fir.Expression.t -> Ast.Expr.t
+(** [reify e] reifies the mini-expression [e] into the C AST. *)
+
+val pp : Act_fir.Expression.t Fmt.t
+(** [pp] is a pretty-printer via {!reify}. *)

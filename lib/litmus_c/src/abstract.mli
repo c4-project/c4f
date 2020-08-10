@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -22,35 +22,34 @@ val sift_decls :
 (** [sift_decls maybe_decl_list] tries to separate [maybe_decl_list] into a
     list of declarations followed immediately by a list of code, C89-style. *)
 
-val stm : Act_litmus_c.Ast.Stm.t -> unit Statement.t Or_error.t
+val stm : Ast.Stm.t -> unit Act_fir.Statement.t Or_error.t
 (** [stm ast] tries to interpret a C statement AST as a FIR statement. *)
 
-val expr : Act_litmus_c.Ast.Expr.t -> Expression.t Or_error.t
+val expr : Ast.Expr.t -> Act_fir.Expression.t Or_error.t
 (** [expr ast] tries to interpret a C expression AST as a FIR statement. *)
 
 val func :
-     Act_litmus_c.Ast.Function_def.t
-  -> unit Function.t Act_common.C_named.t Or_error.t
+     Ast.Function_def.t
+  -> unit Act_fir.Function.t Act_common.C_named.t Or_error.t
 (** [func ast] tries to interpret a C function definition AST as a FIR
     function. *)
 
 val translation_unit :
-  Act_litmus_c.Ast.Translation_unit.t -> unit Program.t Or_error.t
+  Ast.Translation_unit.t -> unit Act_fir.Program.t Or_error.t
 (** [translation_unit ast] tries to interpret a C translation unit AST as a
     FIR program. *)
 
 val litmus_post :
-     Act_litmus_c.Ast_basic.Constant.t Act_litmus.Postcondition.t
-  -> Constant.t Act_litmus.Postcondition.t Or_error.t
+     Ast_basic.Constant.t Act_litmus.Postcondition.t
+  -> Act_fir.Constant.t Act_litmus.Postcondition.t Or_error.t
 (** [litmus_post pc] tries to interpret a Litmus postcondition [pc] over the
     full C AST as one over FIR. *)
 
-val litmus : Act_litmus_c.Ast.Litmus.t -> Litmus.Test.t Or_error.t
+val litmus : Ast.Litmus.t -> Act_fir.Litmus.Test.t Or_error.t
 (** [litmus test] tries to interpret a Litmus test over the full C AST as one
     over FIR. *)
 
 val litmus_of_raw_ast :
-     Act_litmus.Ast.M(Act_litmus_c.Ast.Litmus_lang).t
-  -> Litmus.Test.t Or_error.t
+  Act_litmus.Ast.M(Ast.Litmus_lang).t -> Act_fir.Litmus.Test.t Or_error.t
 (** [litmus_of_raw_ast test] applies [litmus] to the validated form, if
     available, of [test]. *)

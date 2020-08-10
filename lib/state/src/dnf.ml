@@ -32,10 +32,8 @@ let convert : Observation.t -> string Act_litmus.Postcondition.t =
 
 let print_postcondition (oc : Stdio.Out_channel.t) :
     string Act_litmus.Postcondition.t -> unit =
-  Fmt.pf
-    (Caml.Format.formatter_of_out_channel oc)
-    "@[<h>%a@]@."
-    (Act_litmus.Postcondition.pp ~pp_const:String.pp)
+  Act_utils.My_format.fdump oc
+    (Fmt.hbox (Act_litmus.Postcondition.pp ~pp_const:String.pp))
 
 module Filter :
   Plumbing.Filter_types.S with type aux_i = unit and type aux_o = unit =

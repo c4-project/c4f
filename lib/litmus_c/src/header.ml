@@ -10,35 +10,37 @@
    project root for more information. *)
 
 open Base
-module Tx = Travesty_base_exts
+
+open struct
+  module Fir = Act_fir
+end
 
 module J :
-  Plumbing.Jsonable_types.S with type t = Constant.t Act_litmus.Header.t =
+  Plumbing.Jsonable_types.S with type t = Fir.Constant.t Act_litmus.Header.t =
 Act_litmus.Header.Json (struct
-  include Constant
+  include Fir.Constant
 
   let parse_post_string (s : string) :
-      Constant.t Act_litmus.Postcondition.t Or_error.t =
+      Fir.Constant.t Act_litmus.Postcondition.t Or_error.t =
     Or_error.(
-      s |> Act_litmus_c.Frontend.Litmus_post.load_from_string
+      s |> Frontend.Litmus_post.load_from_string
       >>= Act_litmus.Postcondition.With_errors.map_right_m
-            ~f:Convert_prim.constant)
+            ~f:Abstract_prim.constant)
 end)
 
 include J
 include Plumbing.Loadable.Of_jsonable (J)
 include Plumbing.Storable.Of_jsonable (J)
 
-let equal = Act_litmus.Header.equal Constant.equal
+let equal = Act_litmus.Header.equal Fir.Constant.equal
 
 module Change_set = struct
-  type t = Constant.t Act_litmus.Header.Change_set.t
+  type t = Fir.Constant.t Act_litmus.Header.Change_set.t
 
   let parse_pc (pc : string) :
-      Constant.t Act_litmus.Postcondition.t Or_error.t =
+      Fir.Constant.t Act_litmus.Postcondition.t Or_error.t =
     Or_error.(
-      pc |> Act_litmus_c.Frontend.Litmus_post.load_from_string
-      >>= Convert.litmus_post)
+      pc |> Frontend.Litmus_post.load_from_string >>= Abstract.litmus_post)
 
   let try_map_keep_clear_replace (type a b)
       (x : [`Keep | `Clear | `Replace_with of a]) ~(f : a -> b Or_error.t) :
@@ -69,14 +71,14 @@ module Filters = struct
     let aux = Plumbing.Filter_context.aux ctx in
     Or_error.Let_syntax.(
       let%bind test =
-        Frontend.load_from_ic ic
+        Frontend.Fir.load_from_ic ic
           ~path:(Plumbing.Filter_context.input_path_string ctx)
       in
       let%map test' =
-        Litmus.Test.try_map_header test ~f:(fun header ->
+        Fir.Litmus.Test.try_map_header test ~f:(fun header ->
             Or_error.return (f aux header))
       in
-      Litmus.Pp.print oc test')
+      Act_utils.My_format.fdump oc (Fmt.vbox Reify.pp_litmus) test')
 
   module Dump = Plumbing.Filter.Make (struct
     let name = "dump-header"
@@ -89,10 +91,10 @@ module Filters = struct
         (oc : Stdio.Out_channel.t) : aux_o Or_error.t =
       Or_error.Let_syntax.(
         let%bind test =
-          Frontend.load_from_ic ic
+          Frontend.Fir.load_from_ic ic
             ~path:(Plumbing.Filter_context.input_path_string ctx)
         in
-        store_to_oc ~dest:oc (Litmus.Test.header test))
+        store_to_oc ~dest:oc (Fir.Litmus.Test.header test))
   end)
 
   module Modify = Plumbing.Filter.Make (struct

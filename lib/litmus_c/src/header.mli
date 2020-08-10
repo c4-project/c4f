@@ -14,7 +14,7 @@ open Base
 (** A specialisation of {!Act_litmus.Header} that includes JSON serialisation
     and deserialisation. *)
 
-type t = Constant.t Act_litmus.Header.t [@@deriving equal, yojson]
+type t = Act_fir.Constant.t Act_litmus.Header.t [@@deriving equal, yojson]
 
 (** {1 JSON} *)
 
@@ -29,7 +29,7 @@ include Plumbing.Storable_types.S with type t := t
     This module contains helpers for making change sets over FIR litmus
     headers. *)
 module Change_set : sig
-  type t = Constant.t Act_litmus.Header.Change_set.t
+  type t = Act_fir.Constant.t Act_litmus.Header.Change_set.t
 
   val of_args :
        ?name:[`Keep | `Replace_with of string]

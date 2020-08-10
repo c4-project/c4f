@@ -127,7 +127,7 @@ let%test_module "On_lvalues and On_addresses" =
 
     let%expect_test "coalesce addresses to list" =
       stm |> M.On_addresses.to_list
-      |> List.map ~f:Src.Reify_prim.address
+      |> List.map ~f:Act_litmus_c.Reify_prim.address
       |> print_exprs ;
       [%expect
         {|
@@ -166,7 +166,7 @@ let%test_module "On_expressions" =
       let stm' =
         M.On_expressions.map stm ~f:(fun _ -> Src.Expression.int_lit 2)
       in
-      let rp = Src.Reify_stm.reify stm' in
+      let rp = Act_litmus_c.Reify_stm.reify stm' in
       Fmt.pr "@[%a@]@." Act_litmus_c.Ast.Stm.pp rp ;
       [%expect
         {|
@@ -206,7 +206,7 @@ let%test_module "On_primitives" =
       let stm' =
         M.On_primitives.map stm ~f:(fun _ -> Src.Prim_statement.return)
       in
-      let rp = Src.Reify_stm.reify stm' in
+      let rp = Act_litmus_c.Reify_stm.reify stm' in
       Fmt.pr "@[%a@]@." Act_litmus_c.Ast.Stm.pp rp ;
       [%expect
         {|

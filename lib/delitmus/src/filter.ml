@@ -24,7 +24,7 @@ let pp_unit : Act_litmus_c.Ast.Translation_unit.t Fmt.t =
   Fmt.(vbox (pp_prelude ++ Act_litmus_c.Ast.Translation_unit.pp))
 
 let c_of_output : Output.t -> Act_litmus_c.Ast.Translation_unit.t =
-  Fn.compose Act_fir.Reify.program Output.program
+  Fn.compose Act_litmus_c.Reify.program Output.program
 
 let pp_del : Output.t Fmt.t = Fmt.(using c_of_output pp_unit)
 
@@ -33,7 +33,7 @@ let delitmusify_and_print (test : Act_fir.Litmus.Test.t)
   let (module R) = Config.to_runner config in
   Or_error.Let_syntax.(
     let%map dl = R.run test in
-    Fmt.pf (Caml.Format.formatter_of_out_channel oc) "%a@." pp_del dl ;
+    Act_utils.My_format.fdump oc (Fmt.vbox pp_del) dl ;
     dl)
 
 include Pb.Filter.Make (struct
@@ -48,7 +48,9 @@ include Pb.Filter.Make (struct
     let input = Pb.Filter_context.input ctx in
     Or_error.Let_syntax.(
       let%bind vast =
-        Act_fir.Frontend.load_from_ic ~path:(Pb.Input.to_string input) ic
+        Act_litmus_c.Frontend.Fir.load_from_ic
+          ~path:(Pb.Input.to_string input)
+          ic
       in
       delitmusify_and_print vast oc ~config)
 end)

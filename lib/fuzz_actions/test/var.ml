@@ -30,7 +30,8 @@ let%test_module "Make" =
             unit =
           Fmt.pr "@[%s@ %a@ =@ %a;@]@."
             (Fir.Type.Basic.to_string basic_type)
-            Ac.Litmus_id.pp var Fir.Reify_prim.pp_constant initial_value
+            Ac.Litmus_id.pp var Act_litmus_c.Reify_prim.pp_constant
+            initial_value
 
         let make_gen (scope : Ac.Scope.t) :
             (module Qx.S_sample with type t = Src.Var.Make_payload.t) =

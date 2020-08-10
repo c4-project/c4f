@@ -25,3 +25,11 @@ let pp_if (t : unit Fmt.t) (f : unit Fmt.t) : bool Fmt.t =
 
 let pp_or_error (ok : 'a Fmt.t) : 'a Or_error.t Fmt.t =
   Fmt.result ~ok ~error:Error.pp
+
+let poc (type a) (oc : Stdio.Out_channel.t) :
+    (a, Formatter.t, unit) format -> a =
+  let f = Caml.Format.formatter_of_out_channel oc in
+  Fmt.pf f
+
+let fdump (type a) (oc : Stdio.Out_channel.t) (fmt : a Fmt.t) : a -> unit =
+  poc oc "@[%a@]@." fmt

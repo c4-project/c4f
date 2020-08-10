@@ -13,31 +13,31 @@ open Base
 
 open struct
   module Ac = Act_common
-  module Ast = Act_litmus_c.Ast
+  module Fir = Act_fir
 end
 
 let bool_lit (b : bool) : Ast.Expr.t =
   Ast.Expr.Identifier
     (Act_common.C_id.of_string (if b then "true" else "false"))
 
-let constant : Constant.t -> Ast.Expr.t =
-  Constant.reduce
+let constant : Fir.Constant.t -> Ast.Expr.t =
+  Fir.Constant.reduce
     ~int:(fun i -> Ast.Expr.Constant (Integer i))
     ~bool:bool_lit
 
-let lvalue : Lvalue.t -> Ast.Expr.t =
-  Lvalue.reduce
+let lvalue : Fir.Lvalue.t -> Ast.Expr.t =
+  Fir.Lvalue.reduce
     ~variable:(fun x -> Ast.Expr.Identifier x)
     ~deref:(fun l -> Prefix (`Deref, l))
 
-let address : Address.t -> Ast.Expr.t =
-  Address.reduce ~lvalue ~ref:(fun l -> Prefix (`Ref, l))
+let address : Fir.Address.t -> Ast.Expr.t =
+  Fir.Address.reduce ~lvalue ~ref:(fun l -> Prefix (`Ref, l))
 
-let to_initialiser (value : Constant.t) : Ast.Initialiser.t =
+let to_initialiser (value : Fir.Constant.t) : Ast.Initialiser.t =
   Assign (constant value)
 
-let basic_type_to_spec (b : Type.Basic.t) : [> Ast.Type_spec.t] =
-  match Type.Basic.(prim b, is_atomic b) with
+let basic_type_to_spec (b : Fir.Type.Basic.t) : [> Ast.Type_spec.t] =
+  match Fir.Type.Basic.(prim b, is_atomic b) with
   | Int, false ->
       `Int
   | Int, true ->
@@ -47,28 +47,27 @@ let basic_type_to_spec (b : Type.Basic.t) : [> Ast.Type_spec.t] =
   | Bool, true ->
       `Defined_type (Ac.C_id.of_string "atomic_bool")
 
-let type_to_specs (ty : Type.t) : [> Act_litmus_c.Ast.Decl_spec.t] list =
+let type_to_specs (ty : Fir.Type.t) : [> Ast.Decl_spec.t] list =
   (* We translate the level of indirection separately, in [type_to_pointer]. *)
   List.filter_opt
-    [ Some (basic_type_to_spec (Type.basic_type ty))
-    ; Option.some_if (Type.is_volatile ty) `Volatile ]
+    [ Some (basic_type_to_spec (Fir.Type.basic_type ty))
+    ; Option.some_if (Fir.Type.is_volatile ty) `Volatile ]
 
-let type_to_pointer (ty : Type.t) : Act_litmus_c.Ast_basic.Pointer.t option =
+let type_to_pointer (ty : Fir.Type.t) : Ast_basic.Pointer.t option =
   (* We translate the actual underlying type separately, in [type_to_specs]. *)
-  Option.some_if (Type.is_pointer ty) [[]]
+  Option.some_if (Fir.Type.is_pointer ty) [[]]
 
-let id_declarator (ty : Type.t) (id : Ac.C_id.t) : Ast.Declarator.t =
+let id_declarator (ty : Fir.Type.t) (id : Ac.C_id.t) : Ast.Declarator.t =
   {pointer= type_to_pointer ty; direct= Id id}
 
-let decl (init : Initialiser.t Ac.C_named.t) : Ast.Decl.t =
+let decl (init : Fir.Initialiser.t Ac.C_named.t) : Ast.Decl.t =
   let id = Ac.C_named.name init in
   let elt = Ac.C_named.value init in
-  let ty = Initialiser.ty elt in
-  let value = Initialiser.value elt in
+  let ty = Fir.Initialiser.ty elt in
+  let value = Fir.Initialiser.value elt in
   { qualifiers= type_to_specs ty
   ; declarator=
       [ { declarator= id_declarator ty id
         ; initialiser= Option.map ~f:to_initialiser value } ] }
 
-let pp_constant : Constant.t Fmt.t =
-  Fmt.using constant Act_litmus_c.Ast.Expr.pp
+let pp_constant : Fir.Constant.t Fmt.t = Fmt.using constant Ast.Expr.pp

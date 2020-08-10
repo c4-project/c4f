@@ -42,6 +42,7 @@ P1(int *BNFKW, atomic_int *Is9Qk0n4Rhat, atomic_int *UcoE3gzvYko,
     atomic_store_explicit(Is9Qk0n4Rhat, 59774975, memory_order_relaxed);
 }
 
-exists (0:a == 0 /\ 1:a == 0)```
+exists (0:a == 0 /\ 1:a == 0)
+```
 
 Ran 1 test(s).

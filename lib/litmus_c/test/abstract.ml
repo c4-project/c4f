@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -9,9 +9,13 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Core_kernel
-module Ac = Act_common
-module Src = Act_fir
+open Base
+
+open struct
+  module Ac = Act_common
+  module Fir = Act_fir
+  module Src = Act_litmus_c
+end
 
 let%test_module "sift_decls" =
   ( module struct
@@ -19,14 +23,9 @@ let%test_module "sift_decls" =
       let result =
         Or_error.(
           [`Decl "foo"; `Decl "bar"; `Ndecl "baz"; `Ndecl "barbaz"]
-          |> Src.Convert.sift_decls
-          >>| Tuple2.map_snd
-                ~f:
-                  (List.map ~f:(function
-                    | `Decl _ ->
-                        "DECL"
-                    | `Ndecl x ->
-                        x)))
+          |> Src.Abstract.sift_decls
+          >>| fun (x, y) ->
+          (x, List.map y ~f:(function `Decl _ -> "DECL" | `Ndecl x -> x)))
       in
       Stdio.print_s [%sexp (result : (string list * string list) Or_error.t)] ;
       [%expect {| (Ok ((foo bar) (baz barbaz))) |}]
@@ -37,8 +36,8 @@ let%test_module "stm" =
     let%expect_test "model atomic_store_explicit" =
       Stdio.print_s
         [%sexp
-          ( Src.Convert.stm
-              Act_litmus_c.Ast.(
+          ( Src.Abstract.stm
+              Src.Ast.(
                 Stm.Expr
                   (Some
                      (Expr.Call
@@ -52,7 +51,7 @@ let%test_module "stm" =
                             ; Identifier
                                 (Ac.C_id.of_string "memory_order_relaxed") ]
                         })))
-            : unit Src.Statement.t Or_error.t )] ;
+            : unit Fir.Statement.t Or_error.t )] ;
       [%expect
         {|
       (Ok
@@ -65,7 +64,7 @@ let%test_module "stm" =
     let%expect_test "model atomic cmpxchg" =
       Stdio.print_s
         [%sexp
-          ( Src.Convert.stm
+          ( Src.Abstract.stm
               Act_litmus_c.Ast.(
                 Stm.Expr
                   (Some
@@ -85,7 +84,7 @@ let%test_module "stm" =
                             ; Identifier
                                 (Ac.C_id.of_string "memory_order_relaxed") ]
                         })))
-            : unit Src.Statement.t Or_error.t )] ;
+            : unit Fir.Statement.t Or_error.t )] ;
       [%expect
         {|
       (Ok
@@ -99,9 +98,9 @@ let%test_module "stm" =
 
 let%test_module "expr" =
   ( module struct
-    let test (expr : Act_litmus_c.Ast.Expr.t) : unit =
+    let test (expr : Src.Ast.Expr.t) : unit =
       Stdio.print_s
-        [%sexp (Src.Convert.expr expr : Src.Expression.t Or_error.t)]
+        [%sexp (Src.Abstract.expr expr : Fir.Expression.t Or_error.t)]
 
     let%expect_test "model basic logical expression" =
       test

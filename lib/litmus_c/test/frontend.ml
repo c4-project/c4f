@@ -23,7 +23,7 @@ let%test_unit "Pretty-printing and parsing postconditions is idempotent" =
       let pcond_str : string =
         Fmt.str "@[%a@]"
           (Act_litmus.Postcondition.pp
-             ~pp_const:Act_litmus_c.Ast.Litmus_lang.Constant.pp)
+             ~pp_const:Act_litmus_c.Ast_basic.Constant.pp)
           pcond
       in
       [%test_result:

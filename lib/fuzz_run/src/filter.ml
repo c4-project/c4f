@@ -44,9 +44,11 @@ let run_with_channels ?(path : string option) (ic : In_channel.t)
     ~(f : F.Subject.Test.t -> 'm F.Output.t F.State.Monad.t) : 'm Or_error.t
     =
   Or_error.Let_syntax.(
-    let%bind test = Fir.Frontend.load_from_ic ?path ic in
+    let%bind test = Act_litmus_c.Frontend.Fir.load_from_ic ?path ic in
     let%map test', metadata = run_on_litmus ~o ~f test in
-    Fir.Litmus.Pp.print oc test' ;
+    Act_utils.My_format.fdump oc
+      (Fmt.vbox Act_litmus_c.Reify.pp_litmus)
+      test' ;
     metadata)
 
 module Randomised = Pb.Filter.Make (struct

@@ -17,7 +17,7 @@ module Ac = Act_common
 let dump_header_of_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t
     =
   ignore file ;
-  Act_fir.Litmus_header.Filters.Dump.run ()
+  Act_litmus_c.Header.Filters.Dump.run ()
     (Plumbing.Input.of_fpath path)
     Plumbing.Output.stdout
 

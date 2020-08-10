@@ -151,5 +151,7 @@ Plumbing.Filter.Make (struct
           ic
       in
       let%map stub = make aux in
-      Act_fir.Litmus.Pp.print oc stub)
+      Act_utils.My_format.fdump oc
+        (Fmt.vbox Act_litmus_c.Reify.pp_litmus)
+        stub)
 end)

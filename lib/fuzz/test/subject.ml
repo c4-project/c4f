@@ -329,8 +329,7 @@ let%test_module "list_to_litmus" =
 
     let test programs =
       let res = Src.Subject.Thread.list_to_litmus programs ~vars in
-      Fmt.(
-        pr "@[<v>%a@]@." (list ~sep:sp Act_fir.Litmus.Lang.Program.pp) res)
+      Fmt.(pr "@[<v>%a@]@." (list ~sep:sp Act_litmus_c.Reify.pp_func) res)
 
     let%expect_test "list_to_litmus: empty test" = test [] ; [%expect {| |}]
 

@@ -805,7 +805,6 @@ end
 module Litmus = struct
   module A = Act_litmus.Test.Make (Litmus_lang)
   include A
-  include Act_litmus.Pp.Make_sequential (A)
   module Id = Act_common.Litmus_id
 end
 

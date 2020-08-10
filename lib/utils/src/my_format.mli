@@ -30,3 +30,10 @@ val pp_if : unit Fmt.t -> unit Fmt.t -> bool Fmt.t
 
 val pp_or_error : 'elem Fmt.t -> 'elem Or_error.t Fmt.t
 (** [pp_or_error f] lifts the formatter [f] over [Or_error]. *)
+
+val poc : Stdio.Out_channel.t -> ('a, Formatter.t, unit) format -> 'a
+(** [poc oc] is like [pr], but outputting via [oc]. *)
+
+val fdump : Stdio.Out_channel.t -> 'a Fmt.t -> 'a -> unit
+(** [fdump oc ppx x] dumps [x] to [oc] with a newline, using [ppx] to print
+    it. *)
