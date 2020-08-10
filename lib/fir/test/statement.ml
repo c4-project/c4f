@@ -68,30 +68,6 @@ let%test_module "has_if_statements" =
       [%expect {| true |}]
   end )
 
-let%test_module "has_while_loops" =
-  ( module struct
-    let test (s : unit Src.Statement.t) : unit =
-      Act_utils.Io.print_bool (Src.Statement.has_while_loops s)
-
-    let%expect_test "nop" = test nop ; [%expect {| false |}]
-
-    let%expect_test "naked while loop" =
-      test (mkwhile []) ;
-      [%expect {| true |}]
-
-    let%expect_test "if statement without while loop" =
-      test (mkif [] []) ;
-      [%expect {| false |}]
-
-    let%expect_test "if statement with while loop in true branch" =
-      test (mkif [nop; mkwhile []; nop] []) ;
-      [%expect {| true |}]
-
-    let%expect_test "if statement with while loop in false branch" =
-      test (mkif [] [nop; mkwhile []; nop]) ;
-      [%expect {| true |}]
-  end )
-
 let%test_module "On_lvalues and On_addresses" =
   ( module struct
     module M = Src.Statement_traverse.With_meta (Unit)

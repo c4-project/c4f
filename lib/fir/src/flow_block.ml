@@ -11,6 +11,41 @@
 
 open Base
 
+module For = struct
+  module Access = struct
+    type t =
+      { lvalue: Lvalue.t
+      ; init_value: Expression.t
+      ; cmp_value: Expression.t
+      ; cmp_range: [`Inclusive | `Exclusive]
+      ; direction: [`Down_to | `To] }
+    [@@deriving accessors, make, sexp, compare, equal]
+  end
+
+  include Access
+
+  let on_expressions_many (x : t) :
+      (t, Expression.t, Expression.t) Accessor.Many.t =
+    Accessor.Many.(
+      map2 (access x.init_value) (access x.cmp_value)
+        ~f:(fun init_value' cmp_value' ->
+          {x with init_value= init_value'; cmp_value= cmp_value'}))
+
+  let on_expressions :
+      (unit -> Expression.t -> Expression.t, _ -> t -> t, _) Accessor.t =
+    [%accessor Accessor.many on_expressions_many]
+
+  let lvalue = Accessor.get lvalue
+
+  let init_value = Accessor.get init_value
+
+  let cmp_value = Accessor.get cmp_value
+
+  let cmp_range = Accessor.get cmp_range
+
+  let direction = Accessor.get direction
+end
+
 module While = struct
   module M = struct
     type t = Do_while | While [@@deriving enum]
@@ -30,20 +65,8 @@ end
 (** {2 Headers proper} *)
 
 module Header = struct
-  type t = Lock of Lock.t | While of While.t * Expression.t
-  [@@deriving sexp, compare, equal]
-
-  let is_lock_block : t -> bool = function
-    | Lock _ ->
-        true
-    | While _ ->
-        false
-
-  let is_while_loop : t -> bool = function
-    | While _ ->
-        true
-    | Lock _ ->
-        false
+  type t = For of For.t | Lock of Lock.t | While of While.t * Expression.t
+  [@@deriving accessors, sexp, compare, equal]
 
   (** Traversal over the expressions inside a header. *)
   module On_expressions :
@@ -55,8 +78,16 @@ module Header = struct
     module Elt = Expression
 
     module On_monad (M : Monad.S) = struct
+      module AccM = Accessor.Of_monad (struct
+        include M
+
+        let apply = `Define_using_bind
+      end)
+
       let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
         match x with
+        | For fr ->
+            M.(AccM.map For.on_expressions fr ~f >>| fun x -> For x)
         | Lock l ->
             M.return (Lock l)
         | While (w, e) ->
@@ -73,15 +104,9 @@ let while_loop ~(cond : Expression.t) ~(body : ('meta, 'stm) Block.t)
     ~(kind : While.t) : ('meta, 'stm) t =
   make ~body ~header:(Header.While (kind, cond))
 
-let is_while_loop (x : ('meta, 'stm) t) : bool =
-  Header.is_while_loop (header x)
-
 let lock_block ~(body : ('meta, 'stm) Block.t) ~(kind : Lock.t) :
     ('meta, 'stm) t =
   make ~body ~header:(Header.Lock kind)
-
-let is_lock_block (x : ('meta, 'stm) t) : bool =
-  Header.is_lock_block (header x)
 
 module Base_map (A : Applicative.S) = struct
   let bmap (type m1 s1 m2 s2) (flow : (m1, s1) t)

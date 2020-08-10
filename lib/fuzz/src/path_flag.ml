@@ -36,7 +36,7 @@ let metadata_predicates : (t, Metadata.t -> bool) List.Assoc.t =
 
 let flags_of_flow_class : Act_fir.Statement_class.Flow.t -> Set.M(M).t =
   function
-  | While _ ->
+  | For | While _ ->
       Set.singleton (module M) In_loop
   | Lock (Some Atomic) ->
       Set.singleton (module M) In_atomic

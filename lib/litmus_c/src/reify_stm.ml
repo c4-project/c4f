@@ -69,6 +69,47 @@ let if_stm (ifs : (_, Ast.Stm.t) Fir.If.t) : Ast.Stm.t =
     ; t_branch= block (Fir.If.t_branch ifs)
     ; f_branch= ne_block (Fir.If.f_branch ifs) }
 
+let for_init (lv : Ast.Expr.t) (header : Fir.Flow_block.For.t) : Ast.Expr.t =
+  let init = Reify_expr.reify (Fir.Flow_block.For.init_value header) in
+  Ast.Expr.Binary (lv, `Eq, init)
+
+let for_cond_op (header : Fir.Flow_block.For.t) : Operators.Bin.t =
+  match Fir.Flow_block.For.(direction header, cmp_range header) with
+  | `To, `Exclusive ->
+      `Lt
+  | `To, `Inclusive ->
+      `Le
+  | `Down_to, `Exclusive ->
+      `Gt
+  | `Down_to, `Inclusive ->
+      `Ge
+
+let for_cond (lv : Ast.Expr.t) (header : Fir.Flow_block.For.t) : Ast.Expr.t =
+  let op = for_cond_op header in
+  let cmp = Reify_expr.reify (Fir.Flow_block.For.cmp_value header) in
+  Ast.Expr.Binary (lv, op, cmp)
+
+let for_update_op (header : Fir.Flow_block.For.t) : Operators.Post.t =
+  match Fir.Flow_block.For.direction header with
+  | `To ->
+      `Inc
+  | `Down_to ->
+      `Dec
+
+let for_update (lv : Ast.Expr.t) (header : Fir.Flow_block.For.t) : Ast.Expr.t
+    =
+  let op = for_update_op header in
+  Ast.Expr.Postfix (lv, op)
+
+let for_loop (header : Fir.Flow_block.For.t) (body : Ast.Compound_stm.t) :
+    Ast.Stm.t =
+  let lv = Reify_prim.lvalue (Fir.Flow_block.For.lvalue header) in
+  let init = Some (for_init lv header) in
+  let cond = Some (for_cond lv header) in
+  let update = Some (for_update lv header) in
+  let body = Ast.Stm.Compound body in
+  For {init; cond; update; body}
+
 let while_loop (kind : Fir.Flow_block.While.t) (cond : Fir.Expression.t)
     (body : Ast.Compound_stm.t) : Ast.Stm.t =
   let cond' = Reify_expr.reify cond in
@@ -86,6 +127,8 @@ let lock (kind : Fir.Flow_block.Lock.t) (body : Ast.Compound_stm.t) :
 let flow (fb : (_, Ast.Stm.t) Fir.Flow_block.t) : Ast.Stm.t =
   let body = block_compound (Fir.Flow_block.body fb) in
   match Fir.Flow_block.header fb with
+  | For f ->
+      for_loop f body
   | Lock l ->
       lock l body
   | While (w, c) ->

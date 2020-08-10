@@ -8,7 +8,7 @@
  (modules_without_implementation class_types env_types expression_types types
    op_types statement_types)
  (preprocess
-  (pps ppx_deriving.std ppx_yojson_conv ppx_jane))
- (libraries splittable_random sexplib0 stdio base.caml core_kernel fmt
-   travesty travesty.base_exts travesty.containers plumbing act.common
-   act.litmus act.utils yojson))
+  (pps ppx_deriving.std ppx_accessor ppx_jane))
+ (libraries splittable_random sexplib0 stdio base.caml accessor fmt travesty
+   travesty.base_exts travesty.containers plumbing act.common act.litmus
+   act.utils yojson))

@@ -39,6 +39,7 @@ end
 module Flow : sig
   (** Enumeration of flow statement classes. *)
   type t =
+    | For
     | Lock of Flow_block.Lock.t option
     | While of Flow_block.While.t option
   [@@deriving compare, equal, sexp]

@@ -15,6 +15,7 @@
     with an additional 'header' specifying how control flows into and out of
     it. Examples include:
 
+    - for loops;
     - while loops;
     - locks;
     - transactions. *)
@@ -22,6 +23,41 @@
 open Base
 
 (** {1 Flow block headers} *)
+
+module For : sig
+  (** Opaque type of (constrained) for-loop headers. *)
+  type t [@@deriving sexp, compare, equal]
+
+  val make :
+       lvalue:Lvalue.t
+    -> init_value:Expression.t
+    -> cmp_value:Expression.t
+    -> cmp_range:[`Inclusive | `Exclusive]
+    -> direction:[`Down_to | `To]
+    -> t
+  (** [make ~lvalue ~init_value ~cmp_value ~cmp_range ~direction] constructs
+      an arithmetic for-loop header over [lvalue], which starts at
+      [init_value], moves in [direction] towards [cmp_value], and behaves as
+      per [cmp_range]. *)
+
+  (* TODO(@MattWindsor91): declarations inside for loops *)
+
+  val lvalue : t -> Lvalue.t
+  (** [lvalue hdr] gets [hdr]'s counter lvalue. *)
+
+  val init_value : t -> Expression.t
+  (** [init_value hdr] gets [hdr]'s initial value. *)
+
+  val cmp_value : t -> Expression.t
+  (** [cmp_value hdr] gets [hdr]'s compare-against value. *)
+
+  val cmp_range : t -> [`Inclusive | `Exclusive]
+  (** [cmp_range hdr] gets whether [hdr] should iterate when it reaches
+      {!cmp_value}. *)
+
+  val direction : t -> [`Down_to | `To]
+  (** [direction hdr] gets [hdr]'s direction. *)
+end
 
 (** {2 Kinds of flow} *)
 
@@ -46,21 +82,11 @@ end
 module Header : sig
   (** Enumeration of flow block headers. *)
   type t =
+    | For of For.t  (** A for-loop head. *)
     | Lock of Lock.t  (** A lock block. *)
     | While of While.t * Expression.t
         (** A while or do-while loop, alongside its condition. *)
   [@@deriving sexp, compare, equal]
-
-  (** {3 Accessors}
-
-      Also see below the convenience forms defined over flow blocks. *)
-
-  val is_lock_block : t -> bool
-  (** [is_lock_block h] gets whether [h] represents a lock block. *)
-
-  val is_while_loop : t -> bool
-  (** [is_while_loop h] gets whether [h] represents a while (or do-while)
-      loop. *)
 
   (** {3 Traversals} *)
 
@@ -101,17 +127,6 @@ val body : ('meta, 'stm) t -> ('meta, 'stm) Block.t
 
 val header : (_, _) t -> Header.t
 (** [header i] gets [i]'s header. *)
-
-(** {3 Convenience header checks}
-
-    These are all shorthand for the corresponding check in {!Header},
-    composed with {!header}. *)
-
-val is_lock_block : (_, _) t -> bool
-(** [is_lock_block i] gets whether [i] is a lock block. *)
-
-val is_while_loop : (_, _) t -> bool
-(** [is_while_loop i] gets whether [i] is a while (or do-while) loop. *)
 
 (** {2 Traversal helpers} *)
 

@@ -81,11 +81,6 @@ val has_if_statements : 'meta t -> bool
     or a composite statement for which [has_if_statements] is true for at
     least one sub-statement. *)
 
-val has_while_loops : 'meta t -> bool
-(** [has_while_loops stm] is true provided that [stm] is a while (or
-    do-while) loop, or a composite statement for which [has_while_loops] is
-    true for at least one sub-statement. *)
-
 val has_blocks_with_metadata : 'meta t -> predicate:('meta -> bool) -> bool
 (** [has_blocks_with_metadata stm ~predicate] is true provided that [stm] has
     at least one block for which [predicate] is true on that block's

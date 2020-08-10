@@ -70,12 +70,6 @@ let is_not_prim_and (type meta) ~(if_stm : (meta, meta t) If.t -> bool)
     ~(flow : (meta, meta t) Flow_block.t -> bool) : meta t -> bool =
   reduce_step ~if_stm ~flow ~prim:(Fn.const false)
 
-let true_of_any_if_branch_stm (m : ('meta, 'meta t) If.t)
-    ~(predicate : 'meta t -> bool) : bool =
-  List.exists
-    If.(Block.statements (t_branch m) @ Block.statements (f_branch m))
-    ~f:predicate
-
 let true_of_any_block_stm (b : ('meta, 'meta t) Block.t)
     ~(predicate : 'meta t -> bool) : bool =
   List.exists (Block.statements b) ~f:predicate
@@ -90,13 +84,6 @@ let is_if_statement (m : 'meta t) : bool =
 let rec has_if_statements (m : 'meta t) : bool =
   is_not_prim_and m ~if_stm:(Fn.const true)
     ~flow:(true_of_any_flow_body_stm ~predicate:has_if_statements)
-
-let rec has_while_loops (m : 'meta t) : bool =
-  is_not_prim_and m
-    ~if_stm:(true_of_any_if_branch_stm ~predicate:has_while_loops)
-    ~flow:(fun f ->
-      Flow_block.is_while_loop f
-      || true_of_any_flow_body_stm f ~predicate:has_while_loops)
 
 let has_blocks_with_metadata (m : 'meta t) ~(predicate : 'meta -> bool) :
     bool =

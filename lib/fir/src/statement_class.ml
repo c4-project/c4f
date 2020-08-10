@@ -26,12 +26,15 @@ end
 
 module Flow = struct
   type t =
+    | For
     | Lock of Flow_block.Lock.t option
     | While of Flow_block.While.t option
   [@@deriving compare, equal, sexp]
 
   let classify' (f : ('a, 'b) Flow_block.t) : t option =
     match Flow_block.header f with
+    | For _ ->
+        Some For
     | Lock lk ->
         Some (Lock (Some lk))
     | While (wk, _) ->
