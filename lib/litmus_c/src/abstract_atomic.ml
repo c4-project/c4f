@@ -14,7 +14,6 @@ open Base
 open struct
   module Ac = Act_common
   module Fir = Act_fir
-  module Named = Ac.C_named
 end
 
 let cmpxchg_name : string = "atomic_compare_exchange_strong_explicit"
@@ -30,6 +29,19 @@ let load_name : string = "atomic_load_explicit"
 let store_name : string = "atomic_store_explicit"
 
 let xchg_name : string = "atomic_exchange_explicit"
+
+let fence_call_alist
+    (modeller : Ast.Expr.t list -> mode:Fir.Atomic_fence.Mode.t -> 'a) :
+    (Ac.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t =
+  List.map (Fir.Atomic_fence.Mode.all_list ()) ~f:(fun mode ->
+      let name = Ac.C_id.of_string (fence_name mode) in
+      (name, modeller ~mode))
+
+let fetch_call_alist (modeller : Ast.Expr.t list -> op:Fir.Op.Fetch.t -> 'a)
+    : (Ac.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t =
+  List.map (Fir.Op.Fetch.all_list ()) ~f:(fun op ->
+      let name = Ac.C_id.of_string (fetch_name op) in
+      (name, modeller ~op))
 
 let model_cmpxchg_with_args ~(raw_obj : Ast.Expr.t)
     ~(raw_expected : Ast.Expr.t) ~(raw_desired : Ast.Expr.t)

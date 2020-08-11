@@ -93,152 +93,10 @@ let func_signature :
           "Unsupported function declarator"
             ~got:(x.direct : Ast.Direct_declarator.t)]
 
-let model_atomic_cmpxchg_expr (args : Ast.Expr.t list)
-    ~(expr : Ast.Expr.t -> Fir.Expression.t Or_error.t) :
-    Fir.Expression.t Or_error.t =
-  Or_error.(
-    args
-    |> Abstract_atomic.model_cmpxchg ~expr
-    >>| Fir.Expression.atomic_cmpxchg)
-
-let model_atomic_fetch_expr (args : Ast.Expr.t list) ~(op : Fir.Op.Fetch.t)
-    ~(expr : Ast.Expr.t -> Fir.Expression.t Or_error.t) :
-    Fir.Expression.t Or_error.t =
-  Or_error.(
-    args
-    |> Abstract_atomic.model_fetch ~expr ~op
-    >>| Fir.Expression.atomic_fetch)
-
-let model_atomic_load_expr (args : Ast.Expr.t list)
-    ~(expr : Ast.Expr.t -> Fir.Expression.t Or_error.t) :
-    Fir.Expression.t Or_error.t =
-  ignore expr ;
-  Or_error.(
-    args |> Abstract_atomic.model_load >>| Fir.Expression.atomic_load)
-
-let fetch_call_alist (modeller : Ast.Expr.t list -> op:Fir.Op.Fetch.t -> 'a)
-    : (Ac.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t =
-  List.map (Fir.Op.Fetch.all_list ()) ~f:(fun op ->
-      let name = Ac.C_id.of_string (Abstract_atomic.fetch_name op) in
-      (name, modeller ~op))
-
-let expr_call_table :
-    (   Ast.Expr.t list
-     -> expr:(Ast.Expr.t -> Fir.Expression.t Or_error.t)
-     -> Fir.Expression.t Or_error.t)
-    Map.M(Ac.C_id).t
-    Lazy.t =
-  lazy
-    (Map.of_alist_exn
-       (module Ac.C_id)
-       ( fetch_call_alist model_atomic_fetch_expr
-       @ [ ( Ac.C_id.of_string Abstract_atomic.cmpxchg_name
-           , model_atomic_cmpxchg_expr )
-         ; ( Ac.C_id.of_string Abstract_atomic.load_name
-           , model_atomic_load_expr ) ] ))
-
-let expr_call_handler (func_name : Ac.C_id.t) :
-    (   Ast.Expr.t list
-     -> expr:(Ast.Expr.t -> Fir.Expression.t Or_error.t)
-     -> Fir.Expression.t Or_error.t)
-    Or_error.t =
-  func_name
-  |> Map.find (Lazy.force expr_call_table)
-  |> Result.of_option
-       ~error:
-         (Error.create_s
-            [%message
-              "Unsupported function in expression position"
-                ~got:(func_name : Ac.C_id.t)])
-
-let function_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list)
-    ~(expr : Ast.Expr.t -> Fir.Expression.t Or_error.t) :
-    Fir.Expression.t Or_error.t =
-  Or_error.Let_syntax.(
-    let%bind func_name = Abstract_prim.expr_to_identifier func in
-    let%bind call_handler = expr_call_handler func_name in
-    call_handler arguments ~expr)
-
-let identifier_to_expr (id : Ac.C_id.t) : Fir.Expression.t =
-  match Abstract_prim.identifier_to_constant id with
-  | Some k ->
-      Fir.Expression.constant k
-  | None ->
-      Fir.Expression.variable id
-
-let bop : Operators.Bin.t -> Fir.Op.Binary.t Or_error.t =
-  Or_error.(
-    function
-    | `Add ->
-        return Fir.Op.Binary.add
-    | `Eq ->
-        return Fir.Op.Binary.eq
-    | `Land ->
-        return Fir.Op.Binary.l_and
-    | `Lor ->
-        return Fir.Op.Binary.l_or
-    | `Sub ->
-        return Fir.Op.Binary.sub
-    | `And ->
-        return Fir.Op.Binary.b_and
-    | `Or ->
-        return Fir.Op.Binary.b_or
-    | `Xor ->
-        return Fir.Op.Binary.b_xor
-    | op ->
-        error_s
-          [%message
-            "Unsupported binary operator" ~got:(op : Operators.Bin.t)])
-
-let prefix_op : Operators.Pre.t -> Fir.Op.Unary.t Or_error.t =
-  Or_error.(
-    function
-    | `Lnot ->
-        return Fir.Op.Unary.l_not
-    | op ->
-        error_s
-          [%message
-            "Unsupported prefix operator" ~got:(op : Operators.Pre.t)])
-
-let rec expr : Ast.Expr.t -> Fir.Expression.t Or_error.t =
-  Or_error.Let_syntax.(
-    let model_binary l op r =
-      let%map l' = expr l and r' = expr r and op' = bop op in
-      Fir.Expression.bop op' l' r'
-    in
-    let model_prefix op x =
-      let%map x' = expr x and op' = prefix_op op in
-      Fir.Expression.uop op' x'
-    in
-    function
-    | Brackets e ->
-        expr e
-    | Binary (l, op, r) ->
-        model_binary l op r
-    | Constant k ->
-        Or_error.map ~f:Fir.Expression.constant (Abstract_prim.constant k)
-    | Identifier id ->
-        Ok (identifier_to_expr id)
-    | Prefix (`Deref, expr) ->
-        Or_error.(
-          expr |> Abstract_prim.expr_to_lvalue >>| Fir.Lvalue.deref
-          >>| Fir.Expression.lvalue)
-    | Prefix (op, expr) ->
-        model_prefix op expr
-    | Call {func; arguments} ->
-        function_call func arguments ~expr
-    | ( Postfix _
-      | Ternary _
-      | Cast _
-      | Subscript _
-      | Field _
-      | Sizeof_type _
-      | String _ ) as e ->
-        Or_error.error_s
-          [%message "Unsupported expression" ~got:(e : Ast.Expr.t)])
-
 let prim : Fir.Prim_statement.t -> unit Fir.Statement.t =
   Fir.Statement.prim ()
+
+let expr = Abstract_expr.model
 
 let model_atomic_cmpxchg_stm (args : Ast.Expr.t list) :
     unit Fir.Statement.t Or_error.t =
@@ -253,16 +111,6 @@ let model_atomic_fence_stm (args : Ast.Expr.t list)
     args
     |> Abstract_atomic.model_fence ~mode
     >>| Fir.Prim_statement.atomic_fence >>| prim)
-
-let fence_call_alist :
-    ( Ac.C_id.t
-    , Ast.Expr.t list -> unit Fir.Statement.t Or_error.t )
-    List.Assoc.t
-    Lazy.t =
-  lazy
-    (List.map (Fir.Atomic_fence.Mode.all_list ()) ~f:(fun mode ->
-         let name = Ac.C_id.of_string (Abstract_atomic.fence_name mode) in
-         (name, model_atomic_fence_stm ~mode)))
 
 let model_atomic_fetch_stm (args : Ast.Expr.t list) ~(op : Fir.Op.Fetch.t) :
     unit Fir.Statement.t Or_error.t =
@@ -288,18 +136,15 @@ let model_atomic_xchg_stm (args : Ast.Expr.t list) :
 let expr_stm_call_table :
     (Ast.Expr.t list -> unit Fir.Statement.t Or_error.t) Map.M(Ac.C_id).t
     Lazy.t =
-  Lazy.Let_syntax.(
-    let%map fence_call_alist = fence_call_alist in
-    Map.of_alist_exn
-      (module Ac.C_id)
-      ( fetch_call_alist model_atomic_fetch_stm
-      @ fence_call_alist
-      @ [ ( Ac.C_id.of_string Abstract_atomic.cmpxchg_name
-          , model_atomic_cmpxchg_stm )
-        ; ( Ac.C_id.of_string Abstract_atomic.store_name
-          , model_atomic_store_stm )
-        ; (Ac.C_id.of_string Abstract_atomic.xchg_name, model_atomic_xchg_stm)
-        ] ))
+  lazy
+    Abstract_atomic.(
+      Map.of_alist_exn
+        (module Ac.C_id)
+        ( fetch_call_alist model_atomic_fetch_stm
+        @ fence_call_alist model_atomic_fence_stm
+        @ [ (Ac.C_id.of_string cmpxchg_name, model_atomic_cmpxchg_stm)
+          ; (Ac.C_id.of_string store_name, model_atomic_store_stm)
+          ; (Ac.C_id.of_string xchg_name, model_atomic_xchg_stm) ] ))
 
 let arbitrary_procedure_call (function_id : Ac.C_id.t)
     (raw_arguments : Ast.Expr.t list) : unit Fir.Statement.t Or_error.t =

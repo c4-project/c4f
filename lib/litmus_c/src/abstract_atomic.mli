@@ -37,6 +37,22 @@ val store_name : string
 val xchg_name : string
 (** [xchg_name] is the name of the atomic exchange function. *)
 
+(** {1 Modeller helpers} *)
+
+val fence_call_alist :
+     (Ast.Expr.t list -> mode:Act_fir.Atomic_fence.Mode.t -> 'a)
+  -> (Act_common.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t
+(** [fence_call_alist f] builds an associative list mapping fence known-calls
+    to modellers over their argument lists, using [f] to construct those
+    modellers. *)
+
+val fetch_call_alist :
+     (Ast.Expr.t list -> op:Act_fir.Op.Fetch.t -> 'a)
+  -> (Act_common.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t
+(** [fetch_call_alist f] builds an associative list mapping fetch known-calls
+    to modellers over their argument lists, using [f] to construct those
+    modellers. *)
+
 (** {1 Modellers} *)
 
 val model_fence :
