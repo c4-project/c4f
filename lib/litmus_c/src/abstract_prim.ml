@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Base
+open Core_kernel (* for Fqueue *)
 
 open struct
   module Ac = Act_common
@@ -207,3 +207,15 @@ let expr_to_memory_order (expr : Ast.Expr.t) : Fir.Mem_order.t Or_error.t =
            (Error.create_s
               [%message
                 "Unsupported memory order" ~got:(id : Act_common.C_id.t)]))
+
+let sift_decls (maybe_decl_list : ([> `Decl of 'd] as 'a) list) :
+    ('d list * 'a list) Or_error.t =
+  Or_error.(
+    Tx.List.With_errors.fold_m maybe_decl_list
+      ~init:(Fqueue.empty, Fqueue.empty) ~f:(fun (decls, rest) -> function
+      | `Decl d ->
+          if Fqueue.is_empty rest then return (Fqueue.enqueue decls d, rest)
+          else error_string "Declarations must go before code."
+      | item ->
+          return (decls, Fqueue.enqueue rest item))
+    >>| fun (decls, rest) -> (Fqueue.to_list decls, Fqueue.to_list rest))

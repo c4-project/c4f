@@ -27,6 +27,11 @@ val identifier_to_constant : Act_common.C_id.t -> Act_fir.Constant.t option
 
 (** {1 Declarators and declarations} *)
 
+val sift_decls :
+  ([> `Decl of 'd] as 'a) list -> ('d list * 'a list) Or_error.t
+(** [sift_decls maybe_decl_list] tries to separate [maybe_decl_list] into a
+    list of declarations followed immediately by a list of code, C89-style. *)
+
 val decl :
   Ast.Decl.t -> Act_fir.Initialiser.t Act_common.C_named.t Or_error.t
 (** [decl d] translates a declaration into an identifier-initialiser pair. *)

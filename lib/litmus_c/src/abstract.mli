@@ -17,14 +17,6 @@
 
 open Base
 
-val sift_decls :
-  ([> `Decl of 'd] as 'a) list -> ('d list * 'a list) Or_error.t
-(** [sift_decls maybe_decl_list] tries to separate [maybe_decl_list] into a
-    list of declarations followed immediately by a list of code, C89-style. *)
-
-val stm : Ast.Stm.t -> unit Act_fir.Statement.t Or_error.t
-(** [stm ast] tries to interpret a C statement AST as a FIR statement. *)
-
 val func :
      Ast.Function_def.t
   -> unit Act_fir.Function.t Act_common.C_named.t Or_error.t

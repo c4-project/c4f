@@ -9,11 +9,4 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Abstracting expression ASTs into FIR.
-
-    See {!Abstract} for the big picture. *)
-
-open Base
-
-val model : Ast.Expr.t -> Act_fir.Expression.t Or_error.t
-(** [model ast] tries to model a C expression AST as a FIR expression. *)
+(** This interface intentionally left blank. *)

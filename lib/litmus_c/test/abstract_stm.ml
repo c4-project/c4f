@@ -17,26 +17,12 @@ open struct
   module Src = Act_litmus_c
 end
 
-let%test_module "sift_decls" =
-  ( module struct
-    let%expect_test "sift_decls: mixed example" =
-      let result =
-        Or_error.(
-          [`Decl "foo"; `Decl "bar"; `Ndecl "baz"; `Ndecl "barbaz"]
-          |> Src.Abstract.sift_decls
-          >>| fun (x, y) ->
-          (x, List.map y ~f:(function `Decl _ -> "DECL" | `Ndecl x -> x)))
-      in
-      Stdio.print_s [%sexp (result : (string list * string list) Or_error.t)] ;
-      [%expect {| (Ok ((foo bar) (baz barbaz))) |}]
-  end )
-
-let%test_module "stm" =
+let%test_module "model" =
   ( module struct
     let%expect_test "model atomic_store_explicit" =
       Stdio.print_s
         [%sexp
-          ( Src.Abstract.stm
+          ( Src.Abstract_stm.model
               Src.Ast.(
                 Stm.Expr
                   (Some
@@ -64,7 +50,7 @@ let%test_module "stm" =
     let%expect_test "model atomic cmpxchg" =
       Stdio.print_s
         [%sexp
-          ( Src.Abstract.stm
+          ( Src.Abstract_stm.model
               Act_litmus_c.Ast.(
                 Stm.Expr
                   (Some

@@ -9,11 +9,16 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Abstracting expression ASTs into FIR.
+(** Abstracting statement ASTs into FIR.
 
     See {!Abstract} for the big picture. *)
 
 open Base
 
-val model : Ast.Expr.t -> Act_fir.Expression.t Or_error.t
-(** [model ast] tries to model a C expression AST as a FIR expression. *)
+val ensure_statements :
+  Ast.Compound_stm.Elt.t list -> Ast.Stm.t list Or_error.t
+(** [ensure_statements xs] makes sure that each member of [xs] is a
+    statement. *)
+
+val model : Ast.Stm.t -> unit Act_fir.Statement.t Or_error.t
+(** [model ast] tries to model a C statement AST as a FIR statement. *)
