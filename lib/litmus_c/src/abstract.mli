@@ -25,9 +25,6 @@ val sift_decls :
 val stm : Ast.Stm.t -> unit Act_fir.Statement.t Or_error.t
 (** [stm ast] tries to interpret a C statement AST as a FIR statement. *)
 
-val expr : Ast.Expr.t -> Act_fir.Expression.t Or_error.t
-(** [expr ast] tries to interpret a C expression AST as a FIR statement. *)
-
 val func :
      Ast.Function_def.t
   -> unit Act_fir.Function.t Act_common.C_named.t Or_error.t
