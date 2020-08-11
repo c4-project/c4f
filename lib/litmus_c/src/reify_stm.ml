@@ -71,17 +71,17 @@ let if_stm (ifs : (_, Ast.Stm.t) Fir.If.t) : Ast.Stm.t =
 
 let for_init (lv : Ast.Expr.t) (header : Fir.Flow_block.For.t) : Ast.Expr.t =
   let init = Reify_expr.reify (Fir.Flow_block.For.init_value header) in
-  Ast.Expr.Binary (lv, `Eq, init)
+  Ast.Expr.Binary (lv, `Assign, init)
 
 let for_cond_op (header : Fir.Flow_block.For.t) : Operators.Bin.t =
-  match Fir.Flow_block.For.(direction header, cmp_range header) with
-  | `To, `Exclusive ->
+  match Fir.Flow_block.For.direction header with
+  | Up_exclusive ->
       `Lt
-  | `To, `Inclusive ->
+  | Up_inclusive ->
       `Le
-  | `Down_to, `Exclusive ->
+  | Down_exclusive ->
       `Gt
-  | `Down_to, `Inclusive ->
+  | Down_inclusive ->
       `Ge
 
 let for_cond (lv : Ast.Expr.t) (header : Fir.Flow_block.For.t) : Ast.Expr.t =
@@ -91,9 +91,9 @@ let for_cond (lv : Ast.Expr.t) (header : Fir.Flow_block.For.t) : Ast.Expr.t =
 
 let for_update_op (header : Fir.Flow_block.For.t) : Operators.Post.t =
   match Fir.Flow_block.For.direction header with
-  | `To ->
+  | Up_exclusive | Up_inclusive ->
       `Inc
-  | `Down_to ->
+  | Down_exclusive | Down_inclusive ->
       `Dec
 
 let for_update (lv : Ast.Expr.t) (header : Fir.Flow_block.For.t) : Ast.Expr.t
@@ -136,6 +136,9 @@ let flow (fb : (_, Ast.Stm.t) Fir.Flow_block.t) : Ast.Stm.t =
 
 let reify (type meta) (m : meta Fir.Statement.t) : Ast.Stm.t =
   Fir.Statement.reduce m ~prim ~if_stm ~flow
+
+let pp : type meta. meta Fir.Statement.t Fmt.t =
+ fun x -> Fmt.using reify Ast.Stm.pp x
 
 (* Yay, value restriction... *)
 let reify_compound (type meta) (m : meta Fir.Statement.t list) :

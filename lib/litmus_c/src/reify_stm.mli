@@ -19,3 +19,6 @@ val reify : _ Act_fir.Statement.t -> Ast.Stm.t
 val reify_compound : _ Act_fir.Statement.t list -> Ast.Compound_stm.t
 (** [reify_compound xs] reifies a list [xs] of statements into a C AST
     compound statement. *)
+
+val pp : 'meta Act_fir.Statement.t Fmt.t
+(** [pp] pretty-prints statements using {!reify}. *)

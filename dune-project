@@ -21,6 +21,7 @@
   (depends
     (ocaml (and (>= 4.09) (< 4.11)))
     (accessor (and (>= v0.14) (< v0.15)))
+    (accessor_base (and (>= v0.14) (< v0.15)))
     (ppx_accessor (and (>= v0.14) (< v0.15)))
     (expect_test_helpers_core (and (>= v0.14) (< v0.15)))
     ppx_deriving

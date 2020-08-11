@@ -10,8 +10,11 @@
    project root for more information. *)
 
 open Base
-module Src = Act_fir
-module Stm = Statement
+
+open struct
+  module Src = Act_fir
+  module Stm = Statement
+end
 
 let%test_module "On_lvalues and On_addresses" =
   ( module struct
@@ -93,8 +96,7 @@ let%test_module "On_expressions" =
       let stm' =
         M.On_expressions.map stm ~f:(fun _ -> Src.Expression.int_lit 2)
       in
-      let rp = Act_litmus_c.Reify_stm.reify stm' in
-      Fmt.pr "@[%a@]@." Act_litmus_c.Ast.Stm.pp rp ;
+      Fmt.pr "@[%a@]@." Act_litmus_c.Reify_stm.pp stm' ;
       [%expect
         {|
         while (2)
@@ -133,8 +135,7 @@ let%test_module "On_primitives" =
       let stm' =
         M.On_primitives.map stm ~f:(fun _ -> Src.Prim_statement.return)
       in
-      let rp = Act_litmus_c.Reify_stm.reify stm' in
-      Fmt.pr "@[%a@]@." Act_litmus_c.Ast.Stm.pp rp ;
+      Fmt.pr "@[%a@]@." Act_litmus_c.Reify_stm.pp stm' ;
       [%expect
         {|
         while (true)

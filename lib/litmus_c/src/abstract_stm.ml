@@ -155,8 +155,98 @@ let model_if (model_stm : mu_stm) (old_cond : Ast.Expr.t)
     let ifs = Fir.If.make ~cond ~t_branch ~f_branch in
     Fir.Statement.if_stm ifs)
 
-let loop (model_stm : mu_stm) (old_cond : Ast.Expr.t) (old_body : Ast.Stm.t)
-    (kind : Fir.Flow_block.While.t) : unit Fir.Statement.t Or_error.t =
+let for_loop_lvalue_unify (ilv : Fir.Lvalue.t) (clv : Fir.Lvalue.t)
+    (ulv : Fir.Lvalue.t) : Fir.Lvalue.t Or_error.t =
+  if not ([%equal: Fir.Lvalue.t] ilv clv) then
+    Or_error.error_s
+      [%message
+        "Init and comparison lvalues differ; not supported in FIR"
+          ~init:(ilv : Fir.Lvalue.t)
+          ~comparison:(clv : Fir.Lvalue.t)]
+  else if not ([%equal: Fir.Lvalue.t] ilv ulv) then
+    Or_error.error_s
+      [%message
+        "Init and update lvalues differ; not supported in FIR"
+          ~init:(ilv : Fir.Lvalue.t)
+          ~update:(ulv : Fir.Lvalue.t)]
+  else Ok ilv
+
+let for_loop_lvalue (ilv : Ast.Expr.t) (clv : Ast.Expr.t) (ulv : Ast.Expr.t)
+    : Fir.Lvalue.t Or_error.t =
+  Or_error.Let_syntax.(
+    let%bind ilv' = Abstract_prim.expr_to_lvalue ilv in
+    let%bind clv' = Abstract_prim.expr_to_lvalue clv in
+    let%bind ulv' = Abstract_prim.expr_to_lvalue ulv in
+    for_loop_lvalue_unify ilv' clv' ulv')
+
+let for_loop_direction (cop : Operators.Bin.t) (uop : Operators.Post.t) :
+    Fir.Flow_block.For.Direction.t Or_error.t =
+  match (cop, uop) with
+  | `Lt, `Inc ->
+      Ok Up_exclusive
+  | `Lt, _ ->
+      Or_error.error_string "if comparison op is <, update must be ++"
+  | `Le, `Inc ->
+      Ok Up_inclusive
+  | `Le, _ ->
+      Or_error.error_string "if comparison op is <=, update must be ++"
+  | `Gt, `Dec ->
+      Ok Down_exclusive
+  | `Gt, _ ->
+      Or_error.error_string "if comparison op is >, update must be --"
+  | `Ge, `Dec ->
+      Ok Down_inclusive
+  | `Ge, _ ->
+      Or_error.error_string "if comparison op is >=, update must be --"
+  | _, _ ->
+      Or_error.error_s
+        [%message
+          "unsupported comparison/update operators"
+            ~comparison:(cop : Operators.Bin.t)
+            ~update:(uop : Operators.Post.t)]
+
+let for_loop_structured (model_stm : mu_stm) (ilv : Ast.Expr.t)
+    (clv : Ast.Expr.t) (ulv : Ast.Expr.t) (init : Ast.Expr.t)
+    (cmp : Ast.Expr.t) (cop : Operators.Bin.t) (uop : Operators.Post.t)
+    (body : Ast.Stm.t) : unit Fir.Statement.t Or_error.t =
+  Or_error.Let_syntax.(
+    let%bind lvalue = for_loop_lvalue ilv clv ulv in
+    let%bind direction = for_loop_direction cop uop in
+    let%bind init_value = expr init in
+    let%bind cmp_value = expr cmp in
+    let%map body = block model_stm body in
+    let control =
+      Fir.Flow_block.For.make ~lvalue ~init_value ~cmp_value ~direction
+    in
+    Fir.Statement.flow (Fir.Flow_block.for_loop ~control ~body))
+
+let for_loop (model_stm : mu_stm) (old_init_opt : Ast.Expr.t option)
+    (old_cond_opt : Ast.Expr.t option) (old_update_opt : Ast.Expr.t option)
+    (body : Ast.Stm.t) : unit Fir.Statement.t Or_error.t =
+  match (old_init_opt, old_cond_opt, old_update_opt) with
+  | ( Some (Binary (ilv, `Assign, init))
+    , Some (Binary (clv, cop, cmp))
+    , Some (Postfix (ulv, uop)) ) ->
+      for_loop_structured model_stm ilv clv ulv init cmp cop uop body
+  | None, _, _ ->
+      Or_error.error_string "FIR for loops must have an initialiser"
+  | _, None, _ ->
+      Or_error.error_string "FIR for loops must have a condition"
+  | _, _, None ->
+      Or_error.error_string "FIR for loops must have an updater"
+  | Some (Binary (_, `Assign, _)), Some (Binary _), Some _ ->
+      Or_error.error_string
+        "Fir for loop updaters must be of the form (x++) or (x--)"
+  | Some (Binary (_, `Assign, _)), Some _, Some _ ->
+      Or_error.error_string
+        "Fir for loop conditions must be of the form (x OP y)"
+  | Some _, Some _, Some _ ->
+      Or_error.error_string
+        "Fir for loop initialisers must be of the form (x = y)"
+
+let while_loop (model_stm : mu_stm) (old_cond : Ast.Expr.t)
+    (old_body : Ast.Stm.t) (kind : Fir.Flow_block.While.t) :
+    unit Fir.Statement.t Or_error.t =
   Or_error.Let_syntax.(
     let%map cond = expr old_cond and body = block model_stm old_body in
     Fir.Statement.flow (Fir.Flow_block.while_loop ~cond ~body ~kind))
@@ -189,16 +279,18 @@ let rec model : Ast.Stm.t -> unit Fir.Statement.t Or_error.t = function
       lock model b Atomic
   | Synchronized b ->
       lock model b Synchronized
+  | For {init; cond; update; body} ->
+      for_loop model init cond update body
   | While (c, b) ->
-      loop model c b While
+      while_loop model c b While
   | Do_while (b, c) ->
-      loop model c b Do_while
+      while_loop model c b Do_while
   | Label (Normal l, Expr None) ->
       (* This is a particularly weird subset of the labels, but I'm not sure
          how best to expand it. *)
       Ok (prim (Fir.Prim_statement.label l))
   | Goto l ->
       Ok (prim (Fir.Prim_statement.goto l))
-  | (Label _ | Compound _ | Switch _ | For _) as s ->
+  | (Label _ | Compound _ | Switch _) as s ->
       Or_error.error_s
         [%message "Unsupported statement" ~got:(s : Ast.Stm.t)]

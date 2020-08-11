@@ -19,25 +19,82 @@ end
 
 let%test_module "model" =
   ( module struct
-    let%expect_test "model atomic_store_explicit" =
+    let test (stm : Src.Ast.Stm.t) : unit =
       Stdio.print_s
         [%sexp
-          ( Src.Abstract_stm.model
-              Src.Ast.(
-                Stm.Expr
-                  (Some
-                     (Expr.Call
-                        { func=
-                            Identifier
-                              (Ac.C_id.of_string "atomic_store_explicit")
-                        ; arguments=
-                            [ Prefix
-                                (`Ref, Identifier (Ac.C_id.of_string "x"))
-                            ; Constant (Integer 42)
-                            ; Identifier
-                                (Ac.C_id.of_string "memory_order_relaxed") ]
-                        })))
-            : unit Fir.Statement.t Or_error.t )] ;
+          (Src.Abstract_stm.model stm : unit Fir.Statement.t Or_error.t)]
+
+    let%expect_test "model upwards for loop" =
+      test
+        Src.Ast.(
+          Stm.For
+            { init=
+                Some
+                  (Binary
+                     ( Identifier (Ac.C_id.of_string "x")
+                     , `Assign
+                     , Constant (Integer 0) ))
+            ; cond=
+                Some
+                  (Binary
+                     ( Identifier (Ac.C_id.of_string "x")
+                     , `Lt
+                     , Constant (Integer 42) ))
+            ; update=
+                Some (Postfix (Identifier (Ac.C_id.of_string "x"), `Inc))
+            ; body= Stm.Expr None }) ;
+      [%expect
+        {|
+        (Ok
+         (Flow
+          ((header
+            (For
+             ((lvalue (Variable x)) (init_value (Constant (Int 0)))
+              (cmp_value (Constant (Int 42))) (direction Up_exclusive))))
+           (body ((statements ((Prim () Nop))) (metadata ())))))) |}]
+
+    let%expect_test "model downwards-inclusive for loop" =
+      test
+        Src.Ast.(
+          Stm.For
+            { init=
+                Some
+                  (Binary
+                     ( Identifier (Ac.C_id.of_string "x")
+                     , `Assign
+                     , Constant (Integer 42) ))
+            ; cond=
+                Some
+                  (Binary
+                     ( Identifier (Ac.C_id.of_string "x")
+                     , `Ge
+                     , Constant (Integer 0) ))
+            ; update=
+                Some (Postfix (Identifier (Ac.C_id.of_string "x"), `Dec))
+            ; body= Stm.Expr None }) ;
+      [%expect
+        {|
+        (Ok
+         (Flow
+          ((header
+            (For
+             ((lvalue (Variable x)) (init_value (Constant (Int 42)))
+              (cmp_value (Constant (Int 0))) (direction Down_inclusive))))
+           (body ((statements ((Prim () Nop))) (metadata ())))))) |}]
+
+    let%expect_test "model atomic_store_explicit" =
+      test
+        Src.Ast.(
+          Stm.Expr
+            (Some
+               (Expr.Call
+                  { func=
+                      Identifier (Ac.C_id.of_string "atomic_store_explicit")
+                  ; arguments=
+                      [ Prefix (`Ref, Identifier (Ac.C_id.of_string "x"))
+                      ; Constant (Integer 42)
+                      ; Identifier (Ac.C_id.of_string "memory_order_relaxed")
+                      ] }))) ;
       [%expect
         {|
       (Ok
@@ -48,29 +105,22 @@ let%test_module "model" =
            (mo memory_order_relaxed)))))) |}]
 
     let%expect_test "model atomic cmpxchg" =
-      Stdio.print_s
-        [%sexp
-          ( Src.Abstract_stm.model
-              Act_litmus_c.Ast.(
-                Stm.Expr
-                  (Some
-                     (Expr.Call
-                        { func=
-                            Identifier
-                              (Ac.C_id.of_string
-                                 "atomic_compare_exchange_strong_explicit")
-                        ; arguments=
-                            [ Prefix
-                                (`Ref, Identifier (Ac.C_id.of_string "x"))
-                            ; Prefix
-                                (`Ref, Identifier (Ac.C_id.of_string "y"))
-                            ; Constant (Integer 42)
-                            ; Identifier
-                                (Ac.C_id.of_string "memory_order_relaxed")
-                            ; Identifier
-                                (Ac.C_id.of_string "memory_order_relaxed") ]
-                        })))
-            : unit Fir.Statement.t Or_error.t )] ;
+      test
+        Act_litmus_c.Ast.(
+          Stm.Expr
+            (Some
+               (Expr.Call
+                  { func=
+                      Identifier
+                        (Ac.C_id.of_string
+                           "atomic_compare_exchange_strong_explicit")
+                  ; arguments=
+                      [ Prefix (`Ref, Identifier (Ac.C_id.of_string "x"))
+                      ; Prefix (`Ref, Identifier (Ac.C_id.of_string "y"))
+                      ; Constant (Integer 42)
+                      ; Identifier (Ac.C_id.of_string "memory_order_relaxed")
+                      ; Identifier (Ac.C_id.of_string "memory_order_relaxed")
+                      ] }))) ;
       [%expect
         {|
       (Ok

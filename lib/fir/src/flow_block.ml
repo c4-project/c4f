@@ -12,13 +12,17 @@
 open Base
 
 module For = struct
+  module Direction = struct
+    type t = Down_exclusive | Down_inclusive | Up_exclusive | Up_inclusive
+    [@@deriving sexp, compare, equal]
+  end
+
   module Access = struct
     type t =
       { lvalue: Lvalue.t
       ; init_value: Expression.t
       ; cmp_value: Expression.t
-      ; cmp_range: [`Inclusive | `Exclusive]
-      ; direction: [`Down_to | `To] }
+      ; direction: Direction.t }
     [@@deriving accessors, make, sexp, compare, equal]
   end
 
@@ -40,8 +44,6 @@ module For = struct
   let init_value = Accessor.get init_value
 
   let cmp_value = Accessor.get cmp_value
-
-  let cmp_range = Accessor.get cmp_range
 
   let direction = Accessor.get direction
 end
@@ -99,6 +101,10 @@ end
 (** Opaque type of while loops. *)
 type ('meta, 'stm) t = {header: Header.t; body: ('meta, 'stm) Block.t}
 [@@deriving sexp, make, fields, compare, equal]
+
+let for_loop ~(control : For.t) ~(body : ('meta, 'stm) Block.t) :
+    ('meta, 'stm) t =
+  make ~body ~header:(Header.For control)
 
 let while_loop ~(cond : Expression.t) ~(body : ('meta, 'stm) Block.t)
     ~(kind : While.t) : ('meta, 'stm) t =

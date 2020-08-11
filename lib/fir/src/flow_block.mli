@@ -25,6 +25,12 @@ open Base
 (** {1 Flow block headers} *)
 
 module For : sig
+  module Direction : sig
+    (** Type of directions of for loops. *)
+    type t = Down_exclusive | Down_inclusive | Up_exclusive | Up_inclusive
+    [@@deriving sexp, compare, equal]
+  end
+
   (** Opaque type of (constrained) for-loop headers. *)
   type t [@@deriving sexp, compare, equal]
 
@@ -32,13 +38,11 @@ module For : sig
        lvalue:Lvalue.t
     -> init_value:Expression.t
     -> cmp_value:Expression.t
-    -> cmp_range:[`Inclusive | `Exclusive]
-    -> direction:[`Down_to | `To]
+    -> direction:Direction.t
     -> t
-  (** [make ~lvalue ~init_value ~cmp_value ~cmp_range ~direction] constructs
-      an arithmetic for-loop header over [lvalue], which starts at
-      [init_value], moves in [direction] towards [cmp_value], and behaves as
-      per [cmp_range]. *)
+  (** [make ~lvalue ~init_value ~cmp_value ~direction] constructs an
+      arithmetic for-loop header over [lvalue], which starts at [init_value]
+      and moves in [direction] towards [cmp_value]. *)
 
   (* TODO(@MattWindsor91): declarations inside for loops *)
 
@@ -51,11 +55,7 @@ module For : sig
   val cmp_value : t -> Expression.t
   (** [cmp_value hdr] gets [hdr]'s compare-against value. *)
 
-  val cmp_range : t -> [`Inclusive | `Exclusive]
-  (** [cmp_range hdr] gets whether [hdr] should iterate when it reaches
-      {!cmp_value}. *)
-
-  val direction : t -> [`Down_to | `To]
+  val direction : t -> Direction.t
   (** [direction hdr] gets [hdr]'s direction. *)
 end
 
@@ -116,6 +116,10 @@ val while_loop :
   -> ('meta, 'stm) t
 (** [while ~cond ~body ~kind] makes a while loop with the given body,
     conditional, and kind. *)
+
+val for_loop : control:For.t -> body:('meta, 'stm) Block.t -> ('meta, 'stm) t
+(** [for_loop ~control ~body] makes a for loop with control block [control]
+    and body [body]. *)
 
 val lock_block : body:('meta, 'stm) Block.t -> kind:Lock.t -> ('meta, 'stm) t
 (** [lock_block ~body ~kind] makes a lock block with the given body and kind. *)
