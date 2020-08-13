@@ -7,5 +7,7 @@
  (preprocess
   (pps ppx_deriving.std ppx_jane))
  (modules_without_implementation storelike_types)
- (libraries sexplib0 base base.caml stdio splittable_random travesty
+ (libraries sexplib0 base base.caml stdio splittable_random
+	    accessor accessor_base
+travesty
    travesty.base_exts act.common act.litmus act.utils act.fuzz act.fir))

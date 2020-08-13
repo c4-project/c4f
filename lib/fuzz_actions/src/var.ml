@@ -140,7 +140,13 @@ struct
         (map_vars
            ~f:
              (Ac.Scoped_map.map_record ~id
-                ~f:(F.Var.Record.map_type ~f:Fir.Type.as_volatile))))
+                ~f:(
+                  Accessor.(set (
+                      F.Var.Record.Access.ty
+                      @> Fir.Type.Access.is_volatile)
+                      ~to_:true
+                  ))
+                )))
 
   let update_thread_decl (d : Fir.Initialiser.t Ac.C_named.t)
       ~(target : Ac.C_id.t) : Fir.Initialiser.t Ac.C_named.t =

@@ -5,8 +5,10 @@
  (public_name act.fuzz)
  (synopsis "Automagic Compiler Tormentor: FIR fuzzer")
  (preprocess
-  (pps ppx_deriving.std ppx_jane))
+  (pps ppx_deriving.std ppx_accessor ppx_jane))
  (modules_without_implementation action_types payload_types)
- (libraries splittable_random bin_prot.shape sexplib0 stdio base.caml
+ (libraries splittable_random bin_prot.shape sexplib0 stdio
+	    accessor accessor_base
+base.caml
    core_kernel fmt travesty travesty.base_exts plumbing act.common act.litmus
    act.utils act.litmus_c act.fir))

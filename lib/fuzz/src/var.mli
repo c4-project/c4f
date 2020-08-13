@@ -35,14 +35,17 @@ module Record : sig
       for a fuzzer-generated variable of scope [scope] and type [ty], with
       initial value [value]. *)
 
+  (** {3 Accessors} *)
+
+  module Access : sig
+    val ty : (_, Act_fir.Type.t, t, [< Accessor.field]) Accessor.Simple.t
+    (** [ty] allows field access to the record's type. *)
+  end
+
   (** {3 Predicates} *)
 
   val is_global : t -> bool
   (** [is_global vr] returns whether [vr] is a global variable. *)
-
-  val has_basic_type : t -> basic:Act_fir.Type.Basic.t -> bool
-  (** [has_type vr t] returns whether [vr] is known to have the basic type
-      [t]. *)
 
   val is_atomic : t -> bool
   (** [is_atomic vr] returns whether [vr] is an atomic variable. *)
@@ -70,9 +73,6 @@ module Record : sig
       If [vr] doesn't have one, an error occurs. *)
 
   (** {3 Actions} *)
-
-  val map_type : t -> f:(Act_fir.Type.t -> Act_fir.Type.t) -> t
-  (** [map_type record ~f] maps [f] over the type of [record]. *)
 
   val add_dependency : t -> t
   (** [add_dependency record] adds a dependency flag to the known-value field

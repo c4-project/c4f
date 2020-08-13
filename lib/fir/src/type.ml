@@ -12,18 +12,29 @@
 open Base
 
 open struct
-  module Ac = Act_common
   module Au = Act_utils
 end
 
 module Prim = struct
   type t = Bool | Int [@@deriving variants, equal, enumerate]
+
+  let eq (type x) (acc : (unit, t, x, [> Accessor.getter]) Accessor.Simple.t)
+      (x : x) ~(to_: t) : bool =
+    x |> Accessor.get acc |> equal to_
 end
 
+let to_non_atomic (acc : (_, bool, 't, [< Accessor.field]) Accessor.Simple.t)
+ : 't -> 't Or_error.t =
+  Accessor_base.Or_error.map acc
+    ~f:(function
+        | true -> Ok false
+        | false ->
+          Or_error.error_string "already non-atomic")
+
 module Basic = struct
-  module M = struct
+  module Access = struct
     type t = {is_atomic: bool; prim: Prim.t}
-    [@@deriving equal, fields, enumerate]
+    [@@deriving accessors, equal, enumerate]
 
     let int ?(is_atomic : bool = false) () : t = {is_atomic; prim= Int}
 
@@ -37,32 +48,35 @@ module Basic = struct
   end
 
   module M_enum = struct
-    include M
-    include Au.Enum.Make_from_enumerate (M)
+    include Access
+    include Au.Enum.Make_from_enumerate (Access)
   end
 
-  include M
+  include Access
   include Au.Enum.Extend_table (M_enum)
 
-  let as_atomic (t : t) : t = {t with is_atomic= true}
+  let eq (type x) (acc : (unit, t, x, [> Accessor.getter]) Accessor.Simple.t)
+      (x : x) ~(to_: t) : bool =
+    x |> Accessor.get acc |> equal to_
 
-  let strip_atomic (t : t) : t = {t with is_atomic= false}
+  let is_atomic = Accessor.get Access.is_atomic
 
-  let to_non_atomic : t -> t Or_error.t = function
-    | {is_atomic= true; prim} ->
-        Or_error.return {is_atomic= false; prim}
-    | _ ->
-        Or_error.error_string "already non-atomic"
+  let prim = Accessor.get Access.prim
+
+  (* TODO(@MattWindsor91): replace these with the accessor. *)
+  let as_atomic : t -> t = Accessor.set Access.is_atomic ~to_:true
+  let strip_atomic : t -> t = Accessor.set Access.is_atomic ~to_:false
+  let to_non_atomic : t -> t Or_error.t = to_non_atomic Access.is_atomic
 end
 
-module M1 = struct
+module Access = struct
   open Base_quickcheck
 
   type t =
     { basic_type: Basic.t [@main]
     ; is_pointer: bool [@default false]
     ; is_volatile: bool [@default false] }
-  [@@deriving make, fields, equal, compare, quickcheck]
+  [@@deriving make, accessors, equal, compare, quickcheck]
 
   let volatile_frag : string = "volatile "
 
@@ -86,17 +100,21 @@ module M1 = struct
   let to_string (ty : t) : string =
     String.concat
       (List.filter_opt
-         [ Option.some_if (is_volatile ty) volatile_frag
-         ; Some (Basic.to_string (basic_type ty))
-         ; Option.some_if (is_pointer ty) pointer_frag ])
+         [ Option.some_if (Accessor.get is_volatile ty) volatile_frag
+         ; Some (Basic.to_string (Accessor.get basic_type ty))
+         ; Option.some_if (Accessor.get is_pointer ty) pointer_frag ])
 end
 
 module M = struct
-  include M1
-  include Sexpable.Of_stringable (M1)
+  include Access
+  include Sexpable.Of_stringable (Access)
 end
 
 include M
+
+let basic_type = Accessor.get Access.basic_type
+let is_volatile = Accessor.get Access.is_volatile
+let is_pointer = Accessor.get Access.is_pointer
 
 let basic_type_is (ty : t) ~(basic : Basic.t) : bool =
   Basic.equal (basic_type ty) basic
@@ -113,22 +131,16 @@ let ref (ty : t) : t Or_error.t =
   if not ty.is_pointer then Ok {ty with is_pointer= true}
   else Or_error.error_string "already a pointer type"
 
-let is_atomic (ty : t) : bool = Basic.is_atomic (basic_type ty)
-
-(* for now *)
-
-let strip_atomic (ty : t) : t =
-  {ty with basic_type= Basic.strip_atomic ty.basic_type}
-
-let as_atomic (ty : t) : t =
-  {ty with basic_type= Basic.as_atomic ty.basic_type}
+(* TODO(@MattWindsor91): phase the below out and just export the atomicity lens *)
+let atomicity = Accessor.(Access.basic_type @> Basic.Access.is_atomic)
+let is_atomic : t -> bool = Accessor.get atomicity
+let strip_atomic : t -> t = Accessor.set atomicity ~to_:false
+let as_atomic : t -> t = Accessor.set atomicity ~to_:true
 
 let as_volatile (t : t) : t = {t with is_volatile= true}
 
-let to_non_atomic (ty : t) : t Or_error.t =
-  Or_error.(
-    ty |> basic_type |> Basic.to_non_atomic
-    >>| fun b -> {ty with basic_type= b})
+let to_non_atomic : t -> t Or_error.t =
+  to_non_atomic atomicity
 
 let bool ?(is_atomic : bool option) ?(is_pointer : bool option)
     ?(is_volatile : bool option) () : t =
@@ -139,7 +151,7 @@ let int ?(is_atomic : bool option) ?(is_pointer : bool option)
   make (Basic.int ?is_atomic ()) ?is_pointer ?is_volatile
 
 module Json : Plumbing.Jsonable_types.S with type t := t =
-  Plumbing.Jsonable.Of_stringable (M1)
+  Plumbing.Jsonable.Of_stringable (Access)
 
 include Json
 

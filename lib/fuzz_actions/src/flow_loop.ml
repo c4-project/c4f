@@ -202,7 +202,16 @@ module Surround = struct
       ; where: F.Path.Flagged.t }
     [@@deriving sexp, fields]
 
-    let src_exprs (x : t) : Fir.Expression.t list = [x.kv_expr]
+    let lc_expr (x : t) : Fir.Expression.t =
+      let name = Ac.Litmus_id.variable_name x.lc_var in
+      let lc_tvar = Ac.C_named.make x.lc_type ~name in
+      Fir.Expression.lvalue (Fir.Lvalue.on_value_of_typed_id lc_tvar)
+
+    let src_exprs (x : t) : Fir.Expression.t list = [
+      x.kv_expr;
+      (* The loop counter is effectively being read from as well as written to
+         each iteration. *)
+      lc_expr x]
   end
 
   module For_kv_once :
@@ -217,8 +226,13 @@ module Surround = struct
         (fresh) counter to the known value of an existing variable and
         compares it in such a way as to execute only once. |}
 
-    (* TODO(@MattWindsor91): is integer *)
-    let var_preds = [F.Var.Record.has_known_value]
+    let is_int : F.Var.Record.t -> bool =
+      Fir.Type.Prim.eq ~to_:Int
+      Accessor.(
+        F.Var.Record.Access.ty @> Fir.Type.Access.basic_type @> Fir.Type.Basic.Access.prim
+      )
+
+    let var_preds = [F.Var.Record.has_known_value; is_int]
 
     (* These may induce atomic loads, and so can't be in atomic blocks. *)
     let path_filter (ctx : F.Availability.Context.t) =

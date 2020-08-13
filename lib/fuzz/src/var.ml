@@ -17,23 +17,29 @@ open struct
 end
 
 module Record = struct
-  type t =
-    { ty: Act_fir.Type.t
-    ; source: [`Existing | `Generated]
-    ; scope: Ac.Scope.t
-    ; known_value: Act_fir.Constant.t option
-    ; has_dependencies: bool [@default false]
-    ; has_writes: bool [@default false] }
-  [@@deriving fields, make, equal]
+  module Access = struct
+    type t =
+      { ty: Act_fir.Type.t
+      ; source: [`Existing | `Generated]
+      ; scope: Ac.Scope.t
+      ; known_value: Act_fir.Constant.t option
+      ; has_dependencies: bool [@default false]
+      ; has_writes: bool [@default false] }
+    [@@deriving accessors, make, equal]
+  end
+  include Access
+
+  let ty = Accessor.get Access.ty
+  let scope = Accessor.get Access.scope
+  let known_value = Accessor.get Access.known_value
+  let has_dependencies = Accessor.get Access.has_dependencies
+  let has_writes = Accessor.get Access.has_writes
 
   let env_record (r : t) : Act_fir.Env.Record.t =
     (* TODO(@MattWindsor91): nest this directly instead *)
     Act_fir.Env.Record.make ~type_of:(ty r) ?known_value:(known_value r) ()
 
   let is_global (r : t) : bool = Ac.Scope.is_global (scope r)
-
-  let has_basic_type (r : t) ~(basic : Act_fir.Type.Basic.t) : bool =
-    Act_fir.Type.basic_type_is ~basic (ty r)
 
   let is_atomic (r : t) : bool = Act_fir.Type.is_atomic (ty r)
 
@@ -49,9 +55,6 @@ module Record = struct
   let try_get_known_value (record : t) : Act_fir.Constant.t Or_error.t =
     Result.of_option (known_value record)
       ~error:(Error.of_string "No known value for this record.")
-
-  let map_type (record : t) ~(f : Act_fir.Type.t -> Act_fir.Type.t) : t =
-    {record with ty= f record.ty}
 
   let add_dependency (record : t) : t = {record with has_dependencies= true}
 

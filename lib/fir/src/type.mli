@@ -20,6 +20,10 @@ open Act_utils
 (** {1 Primitive types} *)
 module Prim : sig
   type t = Bool | Int  (** Type of primitive types. *)
+
+  val eq : (unit, t, 'x, [> Accessor.getter]) Accessor.Simple.t -> 'x -> to_:t -> bool
+  (** [eq acc x ~to_] checks that the primitive type of [x], found via [acc], is
+      equal to [to_]. *)
 end
 
 (** {1 Basic types}
@@ -40,6 +44,20 @@ module Basic : sig
   (** [int] is the int, or C11 atomic_int, type. *)
 
   (** {2 Accessors} *)
+
+  module Access : sig
+    val prim : (_, Prim.t, t, [< Accessor.field]) Accessor.Simple.t
+    (** [prim] accesses the primitive type of a basic type. *)
+
+    val is_atomic : (_, bool, t, [< Accessor.field]) Accessor.Simple.t
+    (** [is_atomic] accesses the atomicity of a basic type. *)
+  end
+
+  val eq : (unit, t, 'x, [> Accessor.getter]) Accessor.Simple.t -> 'x -> to_:t -> bool
+  (** [eq acc x ~to_] checks that the primitive type of [x], found via [acc], is
+      equal to [to_]. *)
+
+  (** {2 Getters} *)
 
   val prim : t -> Prim.t
   (** [prim btype] gets the primitive type of [btype]. *)
@@ -89,6 +107,19 @@ val int :
     according to the flags [is_atomic], [is_pointer], and [is_volatile], all
     of which default to [false]. *)
 
+(** {2 Accessors} *)
+
+module Access : sig
+  val basic_type : (_, Basic.t, t, [< Accessor.field]) Accessor.Simple.t
+  (** [basic_type] accesses the basic type of a type. *)
+
+  val is_pointer : (_, bool, t, [< Accessor.field]) Accessor.Simple.t
+  (** [is_pointer] accesses the pointerness of a type. *)
+
+  val is_volatile : (_, bool, t, [< Accessor.field]) Accessor.Simple.t
+  (** [is_volatile] accesses the volatility of a type. *)
+end
+
 (** {2 Modifiers} *)
 
 (** {3 Pointers} *)
@@ -121,7 +152,7 @@ val as_volatile : t -> t
 (** [as_volatile ty] returns [ty] if it is volatile, or the volatile
     equivalent of [ty] if not. *)
 
-(** {2 Accessors and predicates} *)
+(** {2 Getters and predicates} *)
 
 val basic_type : t -> Basic.t
 (** [basic_type ty] gets [ty]'s underlying basic type. *)
