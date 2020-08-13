@@ -32,7 +32,9 @@ module With_default_weight = struct
           peek (fun state ->
               Availability.Context.make ~state ~subject ~param_map)
         in
-        if%map Monadic.return (available action ctx) then weight else 0))
+        if%map Monadic.return (Availability.M.run (available action) ~ctx)
+        then weight
+        else 0))
 end
 
 module Adjusted_weight = struct
@@ -148,11 +150,20 @@ module Make_surround (Basic : sig
 
   val surround_with : string
 
+  val readme_suffix : string
+
   module Payload : sig
     include Payload_types.S
 
-    val where : t -> Path.t
+    val where : t -> Path.Flagged.t
+
+    val src_exprs : t -> Act_fir.Expression.t list
   end
+
+  val available : Availability.t
+
+  val run_pre :
+    Subject.Test.t -> payload:Payload.t -> Subject.Test.t State.Monad.t
 
   val wrap :
     Subject.Statement.t list -> payload:Payload.t -> Subject.Statement.t
@@ -165,19 +176,32 @@ end) : Action_types.S with type Payload.t = Basic.Payload.t = struct
          [ {| This action removes a sublist of statements from the program, replacing
           them with |}
          ; Basic.surround_with
-         ; {| containing those statements. |} ])
+         ; {| containing those statements. |}
+         ; "\n\n"
+         ; readme_suffix ])
 
-  (* Surround actions are always available if there is at least one thread.
-     This is because they can always surround a block of zero statements,
-     which trivially fulfils any path filter used on surrounds at time of
-     writing. *)
-  let available : Availability.t = Availability.has_threads
+  (** [add_cond_dependencies payload] marks every variable in
+      [dep_exprs payload] as having a read dependency, using [where payload]
+      to resolve the scope and dead-code status.
+
+      This is a considerable over-approximation of the actual needed
+      dependencies. *)
+  let add_dependencies (payload : Payload.t) : unit State.Monad.t =
+    let path = Payload.where payload in
+    let src_exprs = Payload.src_exprs payload in
+    State.Monad.add_expression_dependencies_at_path src_exprs ~path
 
   let run (test : Subject.Test.t) ~(payload : Payload.t) :
       Subject.Test.t State.Monad.t =
-    State.Monad.Monadic.return
-      (Path_consumers.consume test ~path:(Payload.where payload)
-         ~action:(Transform_list (fun test -> Ok [Basic.wrap test ~payload])))
+    State.Monad.(
+      Let_syntax.(
+        let%bind () = add_dependencies payload in
+        let%bind test' = Basic.run_pre test ~payload in
+        Monadic.return
+          (Path_consumers.consume_with_flags test'
+             ~path:(Payload.where payload)
+             ~action:
+               (Transform_list (fun test -> Ok [Basic.wrap test ~payload])))))
 end
 
 module Make_log (B : sig

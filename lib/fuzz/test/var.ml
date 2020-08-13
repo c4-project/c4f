@@ -59,6 +59,22 @@ module Test_data = struct
       |> Ac.Scoped_map.of_litmus_id_map )
 end
 
+let%test_module "scopes_with_vars" =
+  ( module struct
+
+    let test (predicates : (Src.Var.Record.t -> bool) list) : unit =
+      let scopes =
+        Test_data.test_map
+        |> Lazy.force
+        |> Src.Var.Map.scopes_with_vars ~predicates
+      in
+      print_s [%sexp (scopes : Set.M(Ac.Scope).t)]
+
+    let%expect_test "all vars" =
+      test [];
+      [%expect {| ((Local 1) (Local 2) (Local 3) Global) |}]
+  end)
+
 let%test_module "environment modules in a test map" =
   ( module struct
     let test_variables_of_basic_type (scope : Ac.Scope.t)

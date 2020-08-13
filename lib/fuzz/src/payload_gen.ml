@@ -27,42 +27,7 @@ module Context = struct
     Availability.Context.make ~subject ~param_map ~state
 end
 
-type 'a t = (Context.t -> 'a Or_error.t) Staged.t
-
-(* Thus named in case this gets ported to travesty *)
-module Inner = struct
-  let lift = Staged.stage
-
-  let return (x : 'a Or_error.t) : 'a t = lift (Fn.const x)
-end
-
-let lift (type a) (f : Context.t -> a) : a t = Inner.lift (fun x -> Ok (f x))
-
-let run (f : 'a t) ~(ctx : Context.t) : 'a Or_error.t = Staged.unstage f ctx
-
-(* Reader monad *)
-include (
-  Monad.Make (struct
-    type nonrec 'a t = 'a t
-
-    let return (x : 'a) : 'a t = Inner.return (Ok x)
-
-    let bind (g : 'a t) ~(f : 'a -> 'b t) : 'b t =
-      Inner.lift (fun ctx ->
-          Or_error.Let_syntax.(
-            let%bind x = run g ~ctx in
-            run (f x) ~ctx))
-
-    let map' (g : 'a t) ~(f : 'a -> 'b) : 'b t =
-      Inner.lift (fun ctx -> Or_error.(run g ~ctx >>| f))
-
-    let map = `Custom map'
-  end) :
-    Monad.S with type 'a t := 'a t )
-
-let ( let+ ) x f = map x ~f
-
-let ( let* ) x f = bind x ~f
+include Act_utils.Reader.Fix_context (Act_utils.Reader.With_errors) (Context)
 
 let lift_opt_gen (type a) (g : a Opt_gen.t) : a t =
   Inner.lift (fun ctx ->
@@ -98,3 +63,19 @@ let flag (id : Act_common.Id.t) : bool t =
   Flag.eval f ~random
 
 let vars : Var.Map.t t = lift (Fn.compose State.vars Context.state)
+
+let fresh_var ?(such_that : (Act_common.Litmus_id.t -> bool) option)
+    (scope : Act_common.Scope.t) : Act_common.Litmus_id.t t =
+  let* v = vars in
+  let cgen = Var.Map.gen_fresh_var v in
+  let gen' =
+    Base_quickcheck.Generator.(
+      match such_that with
+      | None ->
+          map cgen ~f:(fun id -> Act_common.Litmus_id.make ~id ~scope)
+      | Some f ->
+          filter_map cgen ~f:(fun id ->
+              let id' = Act_common.Litmus_id.make ~id ~scope in
+              Option.some_if (f id') id'))
+  in
+  lift_quickcheck gen'

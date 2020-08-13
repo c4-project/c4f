@@ -131,4 +131,11 @@ module Monad : sig
       that adds dependency flags for any known-variable records for variables
       mentioned in each expression in [exprs], resolving each variable from
       the perspective of scope [scope]. *)
+
+  val add_expression_dependencies_at_path :
+    Act_fir.Expression.t list -> path:Path.Flagged.t -> unit t
+  (** [add_expression_dependencies_at_path expr ~path] behaves as
+      {!act_multiple_expression_dependencies}, but takes the scope from
+      [path], and does not add dependencies if [path] is flagged as being
+      inside dead code. *)
 end

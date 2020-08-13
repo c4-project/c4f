@@ -78,43 +78,25 @@ module Test_data : sig
 
     (** {3 Surround paths} *)
 
-    val surround_atomic : Act_fuzz.Path.t Lazy.t
+    val surround_atomic : Act_fuzz.Path.Flagged.t Lazy.t
     (** [surround_atomic] is a full path that points to a statement range
         containing atomics, ready for surrounding. *)
 
-    val surround_atomic_flagged :
-      Act_fuzz.Path.t Act_fuzz.Path_flag.Flagged.t Lazy.t
-    (** [surround_atomic_flagged] is a flagged form of {!surround_atomic}. *)
-
-    val surround_dead : Act_fuzz.Path.t Lazy.t
+    val surround_dead : Act_fuzz.Path.Flagged.t Lazy.t
     (** [surround_dead] is a full path that points to a statement range
         inside dead-code, ready for surrounding. *)
 
-    val surround_dead_flagged :
-      Act_fuzz.Path.t Act_fuzz.Path_flag.Flagged.t Lazy.t
-    (** [surround_dead_flagged] is a flagged form of {!surround_dead}. *)
-
-    val surround_txsafe : Act_fuzz.Path.t Lazy.t
+    val surround_txsafe : Act_fuzz.Path.Flagged.t Lazy.t
     (** [surround_txsafe] is a full path that points to a statement range
         containing only transaction-safe statements (if any), ready for
         surrounding. *)
 
-    val surround_label_direct : Act_fuzz.Path.t Lazy.t
+    val surround_label_direct : Act_fuzz.Path.Flagged.t Lazy.t
     (** [surround_label_direct] is a full path that points to a statement
         range directly containing labels. *)
 
-    val surround_label_direct_flagged :
-      Act_fuzz.Path.t Act_fuzz.Path_flag.Flagged.t Lazy.t
-    (** [surround_label_direct_flagged] is a flagged form of
-        {!surround_label_direct}. *)
-
-    val surround_label_indirect : Act_fuzz.Path.t Lazy.t
+    val surround_label_indirect : Act_fuzz.Path.Flagged.t Lazy.t
     (** [surround_label_indirect] is a full path that points to a statement
         range indirectly containing labels. *)
-
-    val surround_label_indirect_flagged :
-      Act_fuzz.Path.t Act_fuzz.Path_flag.Flagged.t Lazy.t
-    (** [surround_label_indirect_flagged] is a flagged form of
-        {!surround_label_indirect}. *)
   end
 end

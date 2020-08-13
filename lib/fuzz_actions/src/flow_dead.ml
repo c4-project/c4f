@@ -145,10 +145,13 @@ module Insert = struct
           lift_quickcheck (Base_quickcheck.Generator.of_list labels_in_tid))
     end)
 
-    let available (ctx : F.Availability.Context.t) : bool Or_error.t =
-      let labels = ctx |> F.Availability.Context.state |> F.State.labels in
-      F.Availability.is_filter_constructible (path_filter' labels)
-        ~kind:Insert ctx
+    let available : F.Availability.t =
+      F.Availability.(
+        M.(
+          lift (fun ctx ->
+              ctx |> F.Availability.Context.state |> F.State.labels)
+          >>| path_filter'
+          >>= F.Availability.is_filter_constructible ~kind:Insert))
 
     let run (subject : F.Subject.Test.t) ~(payload : Payload.t) :
         F.Subject.Test.t F.State.Monad.t =

@@ -42,15 +42,17 @@ end
 
 (** {1 Availability checks} *)
 
-(** [t] is the type of availability checks. *)
-type t = Context.t -> bool Or_error.t
+(** Reader monad useful for constructing availability checks. *)
+module M :
+  Act_utils.Reader_types.S
+    with type 'r Inner.t = 'r Or_error.t
+     and type ctx = Context.t
+
+(** Type of availability checks. *)
+type t = bool M.t
 
 (** Availability checks can be composed together monoidically. *)
 include Container.Summable with type t := t
-
-val with_context : (Context.t -> t) -> t
-(** [with_context f] lowers an availability check explicitly dependent on a
-    context to one that isn't. *)
 
 (** {2 Common checks} *)
 
@@ -68,3 +70,8 @@ val is_filter_constructible : Path_filter.t -> kind:Path_kind.t -> t
 (** [is_filter_constructible filter ~kind] is an availability check that
     returns true if at least one path of kind [kind] is constructible from
     the subject that satisfies [filter]. *)
+
+val has_variables : predicates:(Var.Record.t -> bool) list -> t
+(** [has_variables ~predicates] is an availability check that returns true if
+    there exists at least one variable in the current map that satisfies all
+    of [predicates]. *)

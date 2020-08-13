@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,7 +10,10 @@
    project root for more information. *)
 
 open Base
-module Src = Act_fuzz
+
+open struct
+  module Src = Act_fuzz
+end
 
 module Test_data = struct
   let init : Act_fir.Constant.t Act_common.C_named.Alist.t Lazy.t =
@@ -242,35 +245,25 @@ module Test_data = struct
 
     let in_stm_flagged : Src.Path.Flagged.t Lazy.t = flag [] in_stm
 
-    let surround_atomic : Src.Path.t Lazy.t =
-      Src.Path.(
-        thread_0_stms @@ Stms.between pos_0_first_atom pos_0_last_atom)
+    let surround_atomic : Src.Path.Flagged.t Lazy.t =
+      flag []
+        Src.Path.(
+          thread_0_stms @@ Stms.between pos_0_first_atom pos_0_last_atom)
 
-    let surround_atomic_flagged : Src.Path.t Src.Path_flag.Flagged.t Lazy.t =
-      flag [] surround_atomic
+    let surround_label_direct : Src.Path.Flagged.t Lazy.t =
+      flag []
+        Src.Path.(known_true_if @@ If.in_branch true @@ Stms.on_range 0 2)
 
-    let surround_label_direct : Src.Path.t Lazy.t =
-      Src.Path.(known_true_if @@ If.in_branch true @@ Stms.on_range 0 2)
+    let surround_label_indirect : Src.Path.Flagged.t Lazy.t =
+      flag []
+        Src.Path.(thread_0_stms @@ Stms.between pos_0_true_if pos_0_false_if)
 
-    let surround_label_direct_flagged :
-        Src.Path.t Src.Path_flag.Flagged.t Lazy.t =
-      flag [] surround_label_direct
+    let surround_dead : Src.Path.Flagged.t Lazy.t =
+      flag [In_dead_code]
+        Src.Path.(known_false_if @@ If.in_branch true @@ Stms.on_range 0 1)
 
-    let surround_label_indirect : Src.Path.t Lazy.t =
-      Src.Path.(thread_0_stms @@ Stms.between pos_0_true_if pos_0_false_if)
-
-    let surround_label_indirect_flagged :
-        Src.Path.t Src.Path_flag.Flagged.t Lazy.t =
-      flag [] surround_label_indirect
-
-    let surround_dead : Src.Path.t Lazy.t =
-      Src.Path.(known_false_if @@ If.in_branch true @@ Stms.on_range 0 1)
-
-    let surround_dead_flagged : Src.Path.t Src.Path_flag.Flagged.t Lazy.t =
-      flag [In_dead_code] surround_dead
-
-    let surround_txsafe : Src.Path.t Lazy.t =
-      Src.Path.(thread_0_stms @@ Stms.singleton pos_0_nop)
+    let surround_txsafe : Src.Path.Flagged.t Lazy.t =
+      flag [] Src.Path.(thread_0_stms @@ Stms.singleton pos_0_nop)
   end
 end
 

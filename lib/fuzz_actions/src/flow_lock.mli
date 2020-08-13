@@ -15,7 +15,7 @@
 module Surround : sig
   (** Type of surround modules. *)
   module type S =
-    Act_fuzz.Action_types.S with type Payload.t = Act_fuzz.Path.t
+    Act_fuzz.Action_types.S with type Payload.t = Act_fuzz.Path.Flagged.t
 
   (** This action removes a sublist of statements from the program, replacing
       them with an `synchronized` statement containing those statements. *)

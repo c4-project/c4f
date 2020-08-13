@@ -30,6 +30,8 @@ end
 (** {1 Surround} *)
 
 module Surround : sig
+  (** {2 While-loop surrounds} *)
+
   (** Module type of surround actions. *)
   module type S =
     Act_fuzz.Action_types.S
@@ -49,4 +51,22 @@ module Surround : sig
       replacing them with a `while` statement containing some transformation
       of the removed statements and an arbitrary expression. *)
   module While_dead : S
+
+  (** {2 For-loop surrounds} *)
+
+  module For_kv_payload : sig
+    (** Type of payloads for known-value for-loop actions. *)
+    type t =
+      { lc_var: Act_common.Litmus_id.t
+      ; lc_type: Act_fir.Type.t
+      ; kv_val: Act_fir.Constant.t
+      ; kv_expr: Act_fir.Expression.t
+      ; where: Act_fuzz.Path.Flagged.t }
+    [@@deriving sexp]
+  end
+
+  (** Action that surrounds things with for-loops guaranteed statically to
+      evaluate only once. *)
+  module For_kv_once :
+    Act_fuzz.Action_types.S with type Payload.t = For_kv_payload.t
 end

@@ -97,48 +97,44 @@ module Surround = struct
 
     val cond_gen : Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t
     (** [cond_gen] generates the conditional for the loop. *)
-  end) : S = struct
+  end) : S = F.Action.Make_surround (struct
     let name =
       prefix_name
         Ac.Id.("surround" @: Basic.kind_name @: Basic.name_suffix @: empty)
 
-    let readme () : string =
-      Act_utils.My_string.format_for_readme
-        {| Removes a sublist
-        of statements from the program, replacing them with a |}
-      ^ Basic.kind_name
-      ^ {| 
-        statement containing some transformation of the removed statements.
+    let surround_with = Basic.kind_name ^ " loops"
 
-        |}
-      ^ Basic.readme_suffix
+    let readme_suffix = Basic.readme_suffix
 
     let available : F.Availability.t =
       F.Availability.(
-        has_threads
-        + with_context (fun ctx ->
-              is_filter_constructible (Basic.path_filter ctx)
-                ~kind:Transform_list))
+        M.(
+          lift Basic.path_filter
+          >>= is_filter_constructible ~kind:Transform_list))
 
-    module Surround = F.Payload_impl.Cond_surround
+    module Payload = struct
+      include F.Payload_impl.Cond_surround.Make (struct
+        let cond_gen = Basic.cond_gen
 
-    module Payload = Surround.Make (struct
-      let cond_gen = Basic.cond_gen
+        let path_filter = Basic.path_filter
+      end)
 
-      let path_filter = Basic.path_filter
-    end)
+      let where = F.Payload_impl.Cond_surround.where
 
-    let wrap_in_loop (cond : Fir.Expression.t)
-        (statements : F.Metadata.t Fir.Statement.t list) :
-        F.Metadata.t Fir.Statement.t =
+      let src_exprs x = [F.Payload_impl.Cond_surround.cond x]
+    end
+
+    let run_pre (test : F.Subject.Test.t) ~(payload : Payload.t) :
+        F.Subject.Test.t F.State.Monad.t =
+      ignore payload ; F.State.Monad.return test
+
+    let wrap (statements : F.Metadata.t Fir.Statement.t list)
+        ~(payload : Payload.t) : F.Metadata.t Fir.Statement.t =
+      let cond = F.Payload_impl.Cond_surround.cond payload in
       Fir.Statement.flow
         (Fir.Flow_block.while_loop ~kind:Basic.kind ~cond
            ~body:(F.Subject.Block.make_generated ~statements ()))
-
-    let run (test : F.Subject.Test.t) ~(payload : Payload.t) :
-        F.Subject.Test.t F.State.Monad.t =
-      Surround.apply payload ~test ~f:wrap_in_loop
-  end
+  end)
 
   module Do_false : S = Make (struct
     let kind = Fir.Flow_block.While.Do_while
@@ -195,5 +191,149 @@ module Surround = struct
 
     let path_filter (_ : F.Availability.Context.t) : F.Path_filter.t =
       F.Path_filter.(in_dead_code_only empty)
+  end)
+
+  module For_kv_payload = struct
+    type t =
+      { lc_var: Ac.Litmus_id.t
+      ; lc_type: Fir.Type.t
+      ; kv_val: Fir.Constant.t
+      ; kv_expr: Fir.Expression.t
+      ; where: F.Path.Flagged.t }
+    [@@deriving sexp, fields]
+
+    let src_exprs (x : t) : Fir.Expression.t list = [x.kv_expr]
+  end
+
+  module For_kv_once :
+    F.Action_types.S with type Payload.t = For_kv_payload.t =
+  F.Action.Make_surround (struct
+    let name = prefix_name Ac.Id.("surround" @: "for" @: "once-kv" @: empty)
+
+    let surround_with : string = "for-loops"
+
+    let readme_suffix : string =
+      {| The for loop initialises its
+        (fresh) counter to the known value of an existing variable and
+        compares it in such a way as to execute only once. |}
+
+    (* These may induce atomic loads, and so can't be in atomic blocks. *)
+    let path_filter' = F.Path_filter.(not_in_atomic_block empty)
+
+    (* TODO(@MattWindsor91): is integer *)
+    let var_preds = [F.Var.Record.has_known_value]
+
+    let available : F.Availability.t =
+      F.Availability.(
+        has_variables ~predicates:var_preds
+        + is_filter_constructible path_filter' ~kind:Transform_list)
+
+    module Payload = struct
+      include For_kv_payload
+
+      let access_of_var (vrec : Fir.Env.Record.t Ac.C_named.t) :
+          Fir.Expression.t F.Payload_gen.t =
+        let var = Ac.C_named.map_right ~f:Fir.Env.Record.type_of vrec in
+        let ty = Ac.C_named.value var in
+        (* TODO(@MattWindsor91): is this duplicating something? *)
+        F.Payload_gen.(
+          if Fir.Type.is_atomic ty then
+            let+ mo = lift_quickcheck Fir.Mem_order.gen_load in
+            Fir.Expression.atomic_load
+              (Fir.Atomic_load.make
+                 ~src:(Fir.Address.on_address_of_typed_id var)
+                 ~mo)
+          else
+            return
+              (Fir.Expression.lvalue (Fir.Lvalue.on_value_of_typed_id var)))
+
+      let known_value_val (vrec : Fir.Env.Record.t Ac.C_named.t) :
+          Fir.Constant.t F.Payload_gen.t =
+        vrec |> Ac.C_named.value |> Fir.Env.Record.known_value
+        |> Result.of_option
+             ~error:
+               (Error.of_string "chosen value should have a known value")
+        |> F.Payload_gen.Inner.return
+
+      let known_value_var (scope : Ac.Scope.t) :
+          Fir.Env.Record.t Ac.C_named.t F.Payload_gen.t =
+        (* TODO(@MattWindsor91): this shares a lot of DNA with atomic_store
+           redundant. *)
+        F.Payload_gen.(
+          let* vs = vars in
+          let env =
+            F.Var.Map.env_satisfying_all ~scope vs
+              ~predicates:var_preds
+          in
+          lift_quickcheck (Fir.Env.gen_random_var_with_record env))
+
+      let counter_type (vrec : Fir.Env.Record.t Ac.C_named.t) : Fir.Type.t =
+        vrec |> Ac.C_named.value |> Fir.Env.Record.type_of
+        |> Fir.Type.strip_atomic |> Fir.Type.basic_type
+        |> Fir.Type.make ~is_pointer:false ~is_volatile:false
+
+      let threads_of : Set.M(Ac.Scope).t -> Set.M(Int).t =
+        Set.filter_map (module Int)
+          ~f:(function
+              | Ac.Scope.Global -> None
+              | Local i -> Some i)
+
+      let path_filter : F.Path_filter.t F.Payload_gen.t =
+        (* We have to restrict path generation to only consider threads that
+           have variables we can access as our known value source. *)
+        (* TODO(@MattWindsor91): this surely must be duplicating something. *)
+        F.Payload_gen.(lift (fun ctx ->
+            let vars = F.State.vars (Context.state ctx) in
+            let scopes = F.Var.Map.scopes_with_vars vars ~predicates:var_preds in
+            if Set.mem scopes Global
+            then path_filter'
+            else F.Path_filter.in_threads_only ~threads:(threads_of scopes) path_filter'
+          ))
+
+      let gen : t F.Payload_gen.t =
+        F.Payload_gen.(
+          let* filter = path_filter in
+          let* where = path_with_flags Transform_list ~filter in
+          let scope =
+            Ac.Scope.Local (F.Path.tid (F.Path_flag.Flagged.path where))
+          in
+          let* lc_var = fresh_var scope in
+          let* kv_var = known_value_var scope in
+          let lc_type = counter_type kv_var in
+          let* kv_val = known_value_val kv_var in
+          let+ kv_expr = access_of_var kv_var in
+          {lc_var; lc_type; kv_val; kv_expr; where})
+    end
+
+    let run_pre (test : F.Subject.Test.t) ~(payload : Payload.t) :
+        F.Subject.Test.t F.State.Monad.t =
+      let init = Fir.Initialiser.make ~ty:payload.lc_type () in
+      F.State.Monad.(
+        register_var payload.lc_var init
+        >>= fun () ->
+        Monadic.return (F.Subject.Test.declare_var test payload.lc_var init))
+
+    let direction (payload : Payload.t) : Act_fir.Flow_block.For.Direction.t
+        =
+      (* Try to avoid overflows by only going up if we're negative. *)
+      match Fir.Constant.as_int payload.kv_val with
+      | Ok x when x < 0 ->
+          Up_inclusive
+      | _ ->
+          Down_inclusive
+
+    let control (payload : Payload.t) : Act_fir.Flow_block.For.t =
+      Fir.Flow_block.For.make
+        ~lvalue:
+          (Fir.Lvalue.variable (Ac.Litmus_id.variable_name payload.lc_var))
+        ~direction:(direction payload)
+        ~init_value:(Fir.Expression.constant payload.kv_val)
+        ~cmp_value:payload.kv_expr
+
+    let wrap (statements : F.Subject.Statement.t list) ~(payload : Payload.t)
+        : F.Subject.Statement.t =
+      let control = control payload in
+      let body = F.Subject.Block.make_generated ~statements () in
+      Fir.(Statement.flow (Flow_block.for_loop ~control ~body))
   end)
 end

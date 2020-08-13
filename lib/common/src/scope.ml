@@ -11,9 +11,13 @@
 
 open Base
 
-type t = Local of int | Global [@@deriving compare, equal]
+module M = struct
+  type t = Local of int | Global [@@deriving compare, equal, sexp]
+end
+include M
+include Comparable.Make(M)
 
 let is_global : t -> bool = function Local _ -> false | Global -> true
 
 let reduce (type a) (l : t * a) (r : t * a) : t * a =
-  if Comparable.lift ~f:fst [%compare: t] l r <= 0 then l else r
+  if Int.(Comparable.lift ~f:fst [%compare: M.t] l r <= 0) then l else r

@@ -59,11 +59,10 @@ end
 
     Think of the generator monad as a sort of reader monad over {!Context.t}. *)
 
-(** Type of generators over ['a]. *)
-type 'a t
-
-(** The generator monad is, indeed, a monad. *)
-include Monad.S with type 'a t := 'a t
+include
+  Act_utils.Reader_types.S
+    with type 'a Inner.t = 'a Or_error.t
+     and type ctx = Context.t
 
 (** {2 Let syntax}
 
@@ -90,6 +89,13 @@ val path_with_flags :
   Path_kind.t -> filter:Path_filter.t -> Path.t Path_flag.Flagged.t t
 (** [path_with_flags kind ~filter] generates a path of kind [kind] respecting
     filter [filter], and returns it with its flags. *)
+
+val fresh_var :
+     ?such_that:(Act_common.Litmus_id.t -> bool)
+  -> Act_common.Scope.t
+  -> Act_common.Litmus_id.t t
+(** [fresh_var ?such_that scope] generates a fresh variable at [scope],
+    optionally satisfying the predicate [such_that]. *)
 
 (** {3 Common queries} *)
 

@@ -90,8 +90,7 @@ let%test_module "test runs" =
 
         let payload : F.Payload_impl.Cond_surround.t =
           F.Payload_impl.Cond_surround.make ~cond
-            ~where:
-              (Lazy.force FT.Subject.Test_data.Path.surround_atomic_flagged)
+            ~where:(Lazy.force FT.Subject.Test_data.Path.surround_atomic)
 
         let action = Surround.run test ~payload
 
@@ -143,8 +142,7 @@ let%test_module "test runs" =
 
         let payload : F.Payload_impl.Cond_surround.t =
           F.Payload_impl.Cond_surround.make ~cond
-            ~where:
-              (Lazy.force FT.Subject.Test_data.Path.surround_dead_flagged)
+            ~where:(Lazy.force FT.Subject.Test_data.Path.surround_dead)
 
         let action = Surround.run test ~payload
 
@@ -195,8 +193,7 @@ let%test_module "test runs" =
 
         let payload : F.Payload_impl.Cond_surround.t =
           F.Payload_impl.Cond_surround.make ~cond
-            ~where:
-              (Lazy.force FT.Subject.Test_data.Path.surround_dead_flagged)
+            ~where:(Lazy.force FT.Subject.Test_data.Path.surround_dead)
 
         let action = Surround.run test ~payload
 
@@ -239,5 +236,60 @@ let%test_module "test runs" =
           FT.Action.Test_utils.run_and_dump_global_deps action
             ~initial_state:state ;
           [%expect {| |}]
+      end )
+
+    let%test_module "Surround.For_kv_once" =
+      ( module struct
+        module Surround = Src.Flow_loop.Surround.For_kv_once
+
+        let payload : Src.Flow_loop.Surround.For_kv_payload.t =
+          { lc_var= Act_common.Litmus_id.of_string "0:i"
+          ; lc_type= Fir.Type.int ()
+          ; kv_val= Fir.Constant.int 27
+          ; kv_expr=
+              Fir.(
+                Expression.atomic_load
+                  (Atomic_load.make ~mo:Seq_cst
+                     ~src:(Address.of_variable_str_exn "x")))
+          ; where= Lazy.force FT.Subject.Test_data.Path.surround_atomic }
+
+        let action = Surround.run test ~payload
+
+        let%expect_test "resulting AST" =
+          FT.Action.Test_utils.run_and_dump_test action ~initial_state:state ;
+          [%expect
+            {|
+          void
+          P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
+             atomic_int y)
+          {
+              int i;
+              atomic_int r0 = 4004;
+              for (i = 27; i >= atomic_load_explicit(x, memory_order_seq_cst); i--)
+              { atomic_store_explicit(x, 42, memory_order_seq_cst); ; }
+              atomic_store_explicit(y, foo, memory_order_relaxed);
+              if (foo == y)
+              { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
+              if (false)
+              {
+                  atomic_store_explicit(y,
+                                        atomic_load_explicit(x, memory_order_seq_cst),
+                                        memory_order_seq_cst);
+              }
+              do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
+              5);
+          }
+
+          void
+          P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
+             atomic_int y)
+          { loop: ; if (true) {  } else { goto loop; } } |}]
+
+        let%expect_test "global dependencies after running" =
+          FT.Action.Test_utils.run_and_dump_global_deps action
+            ~initial_state:state ;
+          [%expect {| x |}]
       end )
   end )

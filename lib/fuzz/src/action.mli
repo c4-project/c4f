@@ -126,10 +126,7 @@ end) : sig
   val log : Ac.Output.t -> ('a, Formatter.t, unit) format -> 'a
 end
 
-(** Makes a surrounding action.
-
-    This action template expects that the surrounding action is sound if it
-    surrounds zero statements. *)
+(** Makes a surrounding action. *)
 module Make_surround (Basic : sig
   val name : Act_common.Id.t
   (** [name] is the full name of the surround action. *)
@@ -138,12 +135,30 @@ module Make_surround (Basic : sig
   (** [surround_with] is a phrase that specifies with what construct we're
       surrounding the statements. *)
 
+  val readme_suffix : string
+  (** [readme_suffix] gives a suffix to append onto the readme; this can be
+      the empty string. *)
+
+  val available : Availability.t
+  (** [available] is the availability check for this action. It is required
+      because, while many surround actions need only the existence of a
+      thread, some have more complex needs. *)
+
   module Payload : sig
     include Payload_types.S
 
-    val where : t -> Path.t
+    val where : t -> Path.Flagged.t
     (** [where pld] gets the transformation path from [pld]. *)
+
+    val src_exprs : t -> Act_fir.Expression.t list
+    (** [src_exprs pld] gets the list of source expressions, if any, from
+        [pld]. These are flagged as having dependencies. *)
   end
+
+  val run_pre :
+    Subject.Test.t -> payload:Payload.t -> Subject.Test.t State.Monad.t
+  (** [run_pre test ~payload] performs any actions required before wrapping;
+      for instance, declaring new variables. *)
 
   val wrap :
     Subject.Statement.t list -> payload:Payload.t -> Subject.Statement.t

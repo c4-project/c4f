@@ -151,31 +151,32 @@ struct
         lift_opt_gen (gen' vars ~where ~forbid_already_written))
   end)
 
-  let available (ctx : F.Availability.Context.t) : bool Or_error.t =
-    let vars = F.State.vars (F.Availability.Context.state ctx) in
-    let param_map = F.Availability.Context.param_map ctx in
-    Or_error.Let_syntax.(
-      let%bind faw_flag =
-        F.Param_map.get_flag param_map
-          ~id:F.Config_tables.forbid_already_written_flag
-      in
-      (* If the flag is stochastic, then we can't tell whether its value will
-         be the same in the payload check. As such, we need to be pessimistic
-         and assume that we _can't_ make writes to already-written variables
-         if we can't guarantee an exact value.
+  let has_vars : F.Availability.t =
+    (* TODO(@MattWindsor91): a lot of the plumbing in actions like this is
+       the same as plumbing in generators, so it might be worth unifying it. *)
+    F.Availability.(
+      M.(
+        let* faw_flag =
+          Inner.lift (fun ctx ->
+              F.Param_map.get_flag (Context.param_map ctx)
+                ~id:F.Config_tables.forbid_already_written_flag)
+        in
+        (* If the flag is stochastic, then we can't tell whether its value
+           will be the same in the payload check. As such, we need to be
+           pessimistic and assume that we _can't_ make writes to
+           already-written variables if we can't guarantee an exact value.
 
-         See https://github.com/MattWindsor91/act/issues/172. *)
-      let forbid_already_written =
-        Option.value (F.Flag.to_exact_opt faw_flag) ~default:true
-      in
-      let has_vars =
-        F.Var.Map.exists_satisfying_all vars ~scope:Ac.Scope.Global
-          ~predicates:(dst_restrictions ~forbid_already_written)
-      in
-      let%map is_constructible =
-        F.Availability.is_filter_constructible B.path_filter ctx ~kind:Insert
-      in
-      has_vars && is_constructible)
+           See https://github.com/MattWindsor91/act/issues/172. *)
+        let forbid_already_written =
+          Option.value (F.Flag.to_exact_opt faw_flag) ~default:true
+        in
+        has_variables ~predicates:(dst_restrictions ~forbid_already_written)))
+
+  let is_constructible : F.Availability.t =
+    F.Availability.is_filter_constructible B.path_filter ~kind:Insert
+
+  let available : F.Availability.t =
+    F.Availability.(has_vars + is_constructible)
 
   let bookkeep_dst (x : Ac.C_id.t) ~(tid : int) : unit F.State.Monad.t =
     F.State.Monad.(
@@ -189,12 +190,6 @@ struct
       =
     xs |> List.map ~f:(bookkeep_dst ~tid) |> F.State.Monad.all_unit
 
-  let bookkeep_srcs (srcs : Fir.Expression.t list) ~(tid : int)
-      ~(in_dead_code : bool) : unit F.State.Monad.t =
-    F.State.Monad.(
-      when_m (not in_dead_code) ~f:(fun () ->
-          add_multiple_expression_dependencies srcs ~scope:(Local tid)))
-
   module MList = Tx.List.On_monad (F.State.Monad)
 
   let bookkeep_new_locals (nls : Fir.Initialiser.t Ac.C_named.Alist.t)
@@ -205,14 +200,11 @@ struct
   let do_bookkeeping (item : B.t) ~(path : F.Path.Flagged.t) :
       unit F.State.Monad.t =
     let tid = path |> F.Path_flag.Flagged.path |> F.Path.tid in
-    let in_dead_code =
-      path |> F.Path_flag.Flagged.flags
-      |> Fn.flip Set.mem F.Path_flag.In_dead_code
-    in
-    F.State.Monad.Let_syntax.(
-      let%bind () = bookkeep_new_locals ~tid (B.new_locals item) in
-      let%bind () = bookkeep_dsts ~tid (B.dst_ids item) in
-      bookkeep_srcs ~in_dead_code ~tid (B.src_exprs item))
+    F.State.Monad.(
+      Let_syntax.(
+        let%bind () = bookkeep_new_locals ~tid (B.new_locals item) in
+        let%bind () = bookkeep_dsts ~tid (B.dst_ids item) in
+        add_expression_dependencies_at_path ~path (B.src_exprs item)))
 
   let insert_vars (target : F.Subject.Test.t)
       (new_locals : Fir.Initialiser.t Ac.C_named.Alist.t) ~(tid : int) :

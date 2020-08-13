@@ -17,7 +17,7 @@ open struct
 end
 
 module Surround = struct
-  module type S = F.Action_types.S with type Payload.t = F.Path.t
+  module type S = F.Action_types.S with type Payload.t = F.Path.Flagged.t
 
   module Make (Basic : sig
     val subname : string
@@ -40,14 +40,29 @@ module Surround = struct
 
     let surround_with : string = Basic.lock_type_name ^ " block"
 
-    module Payload = struct
-      type t = F.Path.t [@@deriving sexp]
+    let readme_suffix = ""
 
-      let where : t -> F.Path.t = Fn.id
+    (* Lock surrounds are always available if there is at least one thread.
+       This is because they can always surround a block of zero statements,
+       which trivially fulfils any path filter used on surrounds at time of
+       writing. *)
+    let available : F.Availability.t = F.Availability.has_threads
+
+    module Payload = struct
+      type t = F.Path.Flagged.t [@@deriving sexp]
+
+      let where : t -> F.Path.Flagged.t = Fn.id
+
+      let src_exprs : t -> Fir.Expression.t list = Fn.const []
 
       let gen : t F.Payload_gen.t =
-        F.Payload_gen.path Transform_list ~filter:Basic.path_filter
+        F.Payload_gen.path_with_flags Transform_list
+          ~filter:Basic.path_filter
     end
+
+    let run_pre (test : F.Subject.Test.t) ~(payload : Payload.t) :
+        F.Subject.Test.t F.State.Monad.t =
+      ignore payload ; F.State.Monad.return test
 
     let wrap (statements : F.Metadata.t Fir.Statement.t list)
         ~(payload : Payload.t) : F.Metadata.t Fir.Statement.t =

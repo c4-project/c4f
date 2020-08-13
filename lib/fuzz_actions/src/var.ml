@@ -131,11 +131,8 @@ struct
       F.Payload_gen.(vars >>| gen_on_vars >>= lift_quickcheck)
   end
 
-  let available (ctx : F.Availability.Context.t) : bool Or_error.t =
-    (* TODO(@MattWindsor91): this is quite circuitous. *)
-    Ok
-      ( ctx |> F.Availability.Context.state |> F.State.vars
-      |> Ac.Scoped_map.to_litmus_id_map |> Map.exists ~f:is_viable )
+  let available : F.Availability.t =
+    F.Availability.has_variables ~predicates:[is_viable]
 
   let update_state (id : Ac.Litmus_id.t) : unit F.State.Monad.t =
     F.State.(

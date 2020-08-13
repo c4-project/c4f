@@ -28,12 +28,13 @@ module Make_empty : F.Action_types.S with type Payload.t = unit = struct
 
   module Payload = F.Payload_impl.None
 
-  let available (ctx : F.Availability.Context.t) : bool Or_error.t =
-    let subject = F.Availability.Context.subject ctx in
-    let param_map = F.Availability.Context.param_map ctx in
-    Or_error.Let_syntax.(
-      let%map cap = F.Param_map.get_thread_cap param_map in
-      List.length (Act_litmus.Test.Raw.threads subject) < cap)
+  let available : F.Availability.t =
+    F.Availability.M.Inner.lift (fun ctx ->
+        let subject = F.Availability.Context.subject ctx in
+        let param_map = F.Availability.Context.param_map ctx in
+        Or_error.Let_syntax.(
+          let%map cap = F.Param_map.get_thread_cap param_map in
+          List.length (Act_litmus.Test.Raw.threads subject) < cap))
 
   let run (subject : F.Subject.Test.t) ~(payload : Payload.t) :
       F.Subject.Test.t F.State.Monad.t =

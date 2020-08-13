@@ -16,27 +16,41 @@ module Context = struct
   [@@deriving fields, make]
 end
 
-type t = Context.t -> bool Or_error.t
+module M =
+  Act_utils.Reader.Fix_context (Act_utils.Reader.With_errors) (Context)
 
-let always : t = Fn.const (Ok true)
+type t = bool M.t
 
-let has_threads (ctx : Context.t) : bool Or_error.t =
-  Ok
-    ( ctx |> Context.subject |> Act_litmus.Test.Raw.threads |> List.is_empty
-    |> not )
+let always : t = M.return true
 
-let with_context (f : Context.t -> t) : t = fun ctx -> f ctx ctx
+let has_threads : t =
+  M.lift (fun ctx ->
+      ctx |> Context.subject |> Act_litmus.Test.Raw.threads |> List.is_empty
+      |> not)
 
-let is_filter_constructible (filter : Path_filter.t) ~(kind : Path_kind.t)
-    (ctx : Context.t) : bool Or_error.t =
-  let subject = Context.subject ctx in
-  Ok (Path_producers.is_constructible ~filter ~kind subject)
+let is_filter_constructible (filter : Path_filter.t) ~(kind : Path_kind.t) :
+    t =
+  M.lift (fun ctx ->
+      let subject = Context.subject ctx in
+      Path_producers.is_constructible ~filter ~kind subject)
+
+let has_variables ~(predicates : (Var.Record.t -> bool) list) : t =
+  (* TODO(@MattWindsor91): this is quite circuitous. Ideally, it should be
+     unified with the separate but slightly different 'exists_satisfying_all'
+     path. *)
+  let f = Travesty_base_exts.List.all ~predicates in
+  M.lift (fun ctx ->
+      ctx |> Context.state |> State.vars
+      |> Act_common.Scoped_map.to_litmus_id_map |> Map.exists ~f)
 
 include (
   struct
     let zero : t = always
 
     let ( + ) (f : t) (g : t) : t =
-     fun ctx -> Or_error.map2 (f ctx) (g ctx) ~f:(fun x y -> x && y)
+      M.(
+        let* x = f in
+        let+ y = g in
+        x && y)
   end :
     Container.Summable with type t := t )

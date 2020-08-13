@@ -54,7 +54,7 @@ let%test_module "Statement_list" =
                  (want transform)) |}]
 
             let%expect_test "insert onto range (invalid)" =
-              test_insert P.surround_atomic_flagged ;
+              test_insert P.surround_atomic ;
               [%expect
                 {|
           ("Unexpected kind of action associated with this path" (got insert)
@@ -150,7 +150,7 @@ let%test_module "Statement_list" =
                   { loop: ; if (true) {  } else { goto loop; } } |}]
 
             let%expect_test "transform a range" =
-              test_transform P.surround_atomic_flagged ;
+              test_transform P.surround_atomic ;
               [%expect
                 {|
           void
@@ -207,7 +207,7 @@ let%test_module "Statement_list" =
                    (want transform)) |}]
 
             let%expect_test "list-transform a range" =
-              test_transform_list P.surround_atomic_flagged ;
+              test_transform_list P.surround_atomic ;
               [%expect
                 {|
                   void
