@@ -217,16 +217,21 @@ module Surround = struct
         (fresh) counter to the known value of an existing variable and
         compares it in such a way as to execute only once. |}
 
-    (* These may induce atomic loads, and so can't be in atomic blocks. *)
-    let path_filter' = F.Path_filter.(not_in_atomic_block empty)
-
     (* TODO(@MattWindsor91): is integer *)
     let var_preds = [F.Var.Record.has_known_value]
+
+    (* These may induce atomic loads, and so can't be in atomic blocks. *)
+    let path_filter (ctx : F.Availability.Context.t) =
+      F.Path_filter.(
+        not_in_atomic_block
+        @@ F.Availability.in_thread_with_variables ~predicates:var_preds ctx
+        @@ empty)
 
     let available : F.Availability.t =
       F.Availability.(
         has_variables ~predicates:var_preds
-        + is_filter_constructible path_filter' ~kind:Transform_list)
+        + M.(
+            lift path_filter >>= is_filter_constructible ~kind:Transform_list))
 
     module Payload = struct
       include For_kv_payload
@@ -262,8 +267,7 @@ module Surround = struct
         F.Payload_gen.(
           let* vs = vars in
           let env =
-            F.Var.Map.env_satisfying_all ~scope vs
-              ~predicates:var_preds
+            F.Var.Map.env_satisfying_all ~scope vs ~predicates:var_preds
           in
           lift_quickcheck (Fir.Env.gen_random_var_with_record env))
 
@@ -272,27 +276,11 @@ module Surround = struct
         |> Fir.Type.strip_atomic |> Fir.Type.basic_type
         |> Fir.Type.make ~is_pointer:false ~is_volatile:false
 
-      let threads_of : Set.M(Ac.Scope).t -> Set.M(Int).t =
-        Set.filter_map (module Int)
-          ~f:(function
-              | Ac.Scope.Global -> None
-              | Local i -> Some i)
-
-      let path_filter : F.Path_filter.t F.Payload_gen.t =
-        (* We have to restrict path generation to only consider threads that
-           have variables we can access as our known value source. *)
-        (* TODO(@MattWindsor91): this surely must be duplicating something. *)
-        F.Payload_gen.(lift (fun ctx ->
-            let vars = F.State.vars (Context.state ctx) in
-            let scopes = F.Var.Map.scopes_with_vars vars ~predicates:var_preds in
-            if Set.mem scopes Global
-            then path_filter'
-            else F.Path_filter.in_threads_only ~threads:(threads_of scopes) path_filter'
-          ))
-
       let gen : t F.Payload_gen.t =
         F.Payload_gen.(
-          let* filter = path_filter in
+          let* filter =
+            lift (Fn.compose path_filter Context.to_availability)
+          in
           let* where = path_with_flags Transform_list ~filter in
           let scope =
             Ac.Scope.Local (F.Path.tid (F.Path_flag.Flagged.path where))

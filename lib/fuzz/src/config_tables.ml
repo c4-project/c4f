@@ -34,7 +34,7 @@ let param_map : Param_spec.Int.t Map.M(Ac.Id).t Lazy.t =
   lazy
     (make_param_spec_map
        [ ( Ac.Id.("cap" @: "actions" @: empty)
-         , Param_spec.make ~default:30
+         , Param_spec.make ~default:40
              ~description:
                {|
               Caps the number of action passes that the fuzzer will run.

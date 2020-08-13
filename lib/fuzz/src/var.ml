@@ -136,12 +136,11 @@ module Map = struct
       ~(predicates : (Record.t -> bool) list) : bool =
     not (Map.is_empty (records_satisfying_all vars ~scope ~predicates))
 
-  let scopes_with_vars (vars : t)
-      ~(predicates : (Record.t -> bool) list) : Set.M(Ac.Scope).t =
+  let scopes_with_vars (vars : t) ~(predicates : (Record.t -> bool) list) :
+      Set.M(Ac.Scope).t =
     vars
     |> Ac.Scoped_map.filter ~f:(Tx.List.all ~predicates)
-    |> Ac.Scoped_map.to_litmus_id_map
-    |> Map.keys
+    |> Ac.Scoped_map.to_litmus_id_map |> Map.keys
     |> List.map ~f:Ac.Litmus_id.scope
     |> Set.of_list (module Ac.Scope)
 

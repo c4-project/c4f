@@ -112,10 +112,36 @@ struct
     let predicates = dst_restrictions ~forbid_already_written in
     F.Var.Map.env_satisfying_all ~predicates ~scope:(Local tid) vars
 
+  let approx_forbid_already_written (ctx : F.Availability.Context.t) :
+      bool Or_error.t =
+    (* If the flag is stochastic, then we can't tell whether its value will
+       be the same in the payload check. As such, we need to be pessimistic
+       and assume that we _can't_ make writes to already-written variables if
+       we can't guarantee an exact value.
+
+       See https://github.com/MattWindsor91/act/issues/172. *)
+    Or_error.(
+      F.Param_map.get_flag
+        (F.Availability.Context.param_map ctx)
+        ~id:F.Config_tables.forbid_already_written_flag
+      >>| F.Flag.to_exact_opt
+      >>| Option.value ~default:true)
+
+  let path_filter ctx =
+    let forbid_already_written =
+      ctx |> approx_forbid_already_written |> Result.ok
+      |> Option.value ~default:true
+    in
+    F.Availability.in_thread_with_variables ctx
+      ~predicates:(dst_restrictions ~forbid_already_written)
+    @@ F.Availability.in_thread_with_variables ctx
+         ~predicates:(Lazy.force basic_src_restrictions)
+    @@ B.path_filter
+
   module Payload = F.Payload_impl.Insertion.Make (struct
     type t = B.t [@@deriving sexp]
 
-    let path_filter _ = B.path_filter
+    let path_filter = path_filter
 
     module G = Base_quickcheck.Generator
 
@@ -151,32 +177,12 @@ struct
         lift_opt_gen (gen' vars ~where ~forbid_already_written))
   end)
 
-  let has_vars : F.Availability.t =
-    (* TODO(@MattWindsor91): a lot of the plumbing in actions like this is
-       the same as plumbing in generators, so it might be worth unifying it. *)
-    F.Availability.(
-      M.(
-        let* faw_flag =
-          Inner.lift (fun ctx ->
-              F.Param_map.get_flag (Context.param_map ctx)
-                ~id:F.Config_tables.forbid_already_written_flag)
-        in
-        (* If the flag is stochastic, then we can't tell whether its value
-           will be the same in the payload check. As such, we need to be
-           pessimistic and assume that we _can't_ make writes to
-           already-written variables if we can't guarantee an exact value.
-
-           See https://github.com/MattWindsor91/act/issues/172. *)
-        let forbid_already_written =
-          Option.value (F.Flag.to_exact_opt faw_flag) ~default:true
-        in
-        has_variables ~predicates:(dst_restrictions ~forbid_already_written)))
-
-  let is_constructible : F.Availability.t =
-    F.Availability.is_filter_constructible B.path_filter ~kind:Insert
-
   let available : F.Availability.t =
-    F.Availability.(has_vars + is_constructible)
+    (* The path filter requires the path to be in a thread that has access to
+       variables satisfying both source and destination restrictions, so we
+       need not specify those restrictions separately. *)
+    F.Availability.(
+      M.(lift path_filter >>= is_filter_constructible ~kind:Insert))
 
   let bookkeep_dst (x : Ac.C_id.t) ~(tid : int) : unit F.State.Monad.t =
     F.State.Monad.(

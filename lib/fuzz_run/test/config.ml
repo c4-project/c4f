@@ -27,7 +27,7 @@ let%test_module "default param map" =
 
     let%expect_test "action cap is present" =
       Fmt.pr "@[%a@]@." pp_param (F.Param_map.get_action_cap map) ;
-      [%expect {| 30 |}]
+      [%expect {| 40 |}]
 
     let%expect_test "thread cap is present" =
       Fmt.pr "@[%a@]@." pp_param (F.Param_map.get_thread_cap map) ;

@@ -137,9 +137,8 @@ module Map : sig
       exists at least one variable in [map] in scope with regards to [scope]
       and for which all predicates in [predicates] are true. *)
 
-  val scopes_with_vars : t
-    -> predicates:(Record.t -> bool) list
-    -> Set.M(Act_common.Scope).t
+  val scopes_with_vars :
+    t -> predicates:(Record.t -> bool) list -> Set.M(Act_common.Scope).t
   (** [scopes_with_vars map ~predicates] gets a set of all scopes that
       contain variables satisfying [predicates]. *)
 

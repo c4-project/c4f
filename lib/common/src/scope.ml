@@ -14,8 +14,9 @@ open Base
 module M = struct
   type t = Local of int | Global [@@deriving compare, equal, sexp]
 end
+
 include M
-include Comparable.Make(M)
+include Comparable.Make (M)
 
 let is_global : t -> bool = function Local _ -> false | Global -> true
 
