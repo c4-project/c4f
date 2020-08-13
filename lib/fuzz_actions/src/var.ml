@@ -93,10 +93,7 @@ module Make : F.Action_types.S with type Payload.t = Make_payload.t = struct
     let is_global = Ac.Litmus_id.is_global var in
     let ty = Fir.Type.make basic_type ~is_pointer:is_global in
     let init = Fir.Initialiser.make ~ty ~value:initial_value () in
-    F.State.Monad.(
-      Let_syntax.(
-        let%bind () = register_var var init in
-        Monadic.return (F.Subject.Test.declare_var subject var init)))
+    F.State.Monad.register_and_declare_var var init subject
 end
 
 module Volatile : F.Action_types.S with type Payload.t = Ac.Litmus_id.t =
@@ -140,13 +137,11 @@ struct
         (map_vars
            ~f:
              (Ac.Scoped_map.map_record ~id
-                ~f:(
-                  Accessor.(set (
-                      F.Var.Record.Access.ty
-                      @> Fir.Type.Access.is_volatile)
-                      ~to_:true
-                  ))
-                )))
+                ~f:
+                  Accessor.(
+                    set
+                      (F.Var.Record.Access.ty @> Fir.Type.Access.is_volatile)
+                      ~to_:true))))
 
   let update_thread_decl (d : Fir.Initialiser.t Ac.C_named.t)
       ~(target : Ac.C_id.t) : Fir.Initialiser.t Ac.C_named.t =

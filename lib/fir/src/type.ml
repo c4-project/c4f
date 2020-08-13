@@ -19,17 +19,17 @@ module Prim = struct
   type t = Bool | Int [@@deriving variants, equal, enumerate]
 
   let eq (type x) (acc : (unit, t, x, [> Accessor.getter]) Accessor.Simple.t)
-      (x : x) ~(to_: t) : bool =
+      (x : x) ~(to_ : t) : bool =
     x |> Accessor.get acc |> equal to_
 end
 
 let to_non_atomic (acc : (_, bool, 't, [< Accessor.field]) Accessor.Simple.t)
- : 't -> 't Or_error.t =
-  Accessor_base.Or_error.map acc
-    ~f:(function
-        | true -> Ok false
-        | false ->
-          Or_error.error_string "already non-atomic")
+    : 't -> 't Or_error.t =
+  Accessor_base.Or_error.map acc ~f:(function
+    | true ->
+        Ok false
+    | false ->
+        Or_error.error_string "already non-atomic")
 
 module Basic = struct
   module Access = struct
@@ -56,7 +56,7 @@ module Basic = struct
   include Au.Enum.Extend_table (M_enum)
 
   let eq (type x) (acc : (unit, t, x, [> Accessor.getter]) Accessor.Simple.t)
-      (x : x) ~(to_: t) : bool =
+      (x : x) ~(to_ : t) : bool =
     x |> Accessor.get acc |> equal to_
 
   let is_atomic = Accessor.get Access.is_atomic
@@ -65,7 +65,9 @@ module Basic = struct
 
   (* TODO(@MattWindsor91): replace these with the accessor. *)
   let as_atomic : t -> t = Accessor.set Access.is_atomic ~to_:true
+
   let strip_atomic : t -> t = Accessor.set Access.is_atomic ~to_:false
+
   let to_non_atomic : t -> t Or_error.t = to_non_atomic Access.is_atomic
 end
 
@@ -113,7 +115,9 @@ end
 include M
 
 let basic_type = Accessor.get Access.basic_type
+
 let is_volatile = Accessor.get Access.is_volatile
+
 let is_pointer = Accessor.get Access.is_pointer
 
 let basic_type_is (ty : t) ~(basic : Basic.t) : bool =
@@ -131,16 +135,19 @@ let ref (ty : t) : t Or_error.t =
   if not ty.is_pointer then Ok {ty with is_pointer= true}
   else Or_error.error_string "already a pointer type"
 
-(* TODO(@MattWindsor91): phase the below out and just export the atomicity lens *)
+(* TODO(@MattWindsor91): phase the below out and just export the atomicity
+   lens *)
 let atomicity = Accessor.(Access.basic_type @> Basic.Access.is_atomic)
+
 let is_atomic : t -> bool = Accessor.get atomicity
+
 let strip_atomic : t -> t = Accessor.set atomicity ~to_:false
+
 let as_atomic : t -> t = Accessor.set atomicity ~to_:true
 
 let as_volatile (t : t) : t = {t with is_volatile= true}
 
-let to_non_atomic : t -> t Or_error.t =
-  to_non_atomic atomicity
+let to_non_atomic : t -> t Or_error.t = to_non_atomic atomicity
 
 let bool ?(is_atomic : bool option) ?(is_pointer : bool option)
     ?(is_volatile : bool option) () : t =

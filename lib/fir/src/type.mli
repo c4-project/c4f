@@ -21,9 +21,13 @@ open Act_utils
 module Prim : sig
   type t = Bool | Int  (** Type of primitive types. *)
 
-  val eq : (unit, t, 'x, [> Accessor.getter]) Accessor.Simple.t -> 'x -> to_:t -> bool
-  (** [eq acc x ~to_] checks that the primitive type of [x], found via [acc], is
-      equal to [to_]. *)
+  val eq :
+       (unit, t, 'x, [> Accessor.getter]) Accessor.Simple.t
+    -> 'x
+    -> to_:t
+    -> bool
+  (** [eq acc x ~to_] checks that the primitive type of [x], found via [acc],
+      is equal to [to_]. *)
 end
 
 (** {1 Basic types}
@@ -53,9 +57,13 @@ module Basic : sig
     (** [is_atomic] accesses the atomicity of a basic type. *)
   end
 
-  val eq : (unit, t, 'x, [> Accessor.getter]) Accessor.Simple.t -> 'x -> to_:t -> bool
-  (** [eq acc x ~to_] checks that the primitive type of [x], found via [acc], is
-      equal to [to_]. *)
+  val eq :
+       (unit, t, 'x, [> Accessor.getter]) Accessor.Simple.t
+    -> 'x
+    -> to_:t
+    -> bool
+  (** [eq acc x ~to_] checks that the primitive type of [x], found via [acc],
+      is equal to [to_]. *)
 
   (** {2 Getters} *)
 

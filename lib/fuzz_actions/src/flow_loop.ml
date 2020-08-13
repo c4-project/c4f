@@ -207,11 +207,11 @@ module Surround = struct
       let lc_tvar = Ac.C_named.make x.lc_type ~name in
       Fir.Expression.lvalue (Fir.Lvalue.on_value_of_typed_id lc_tvar)
 
-    let src_exprs (x : t) : Fir.Expression.t list = [
-      x.kv_expr;
-      (* The loop counter is effectively being read from as well as written to
-         each iteration. *)
-      lc_expr x]
+    let src_exprs (x : t) : Fir.Expression.t list =
+      [ x.kv_expr
+      ; (* The loop counter is effectively being read from as well as written
+           to each iteration. *)
+        lc_expr x ]
   end
 
   module For_kv_once :
@@ -228,9 +228,9 @@ module Surround = struct
 
     let is_int : F.Var.Record.t -> bool =
       Fir.Type.Prim.eq ~to_:Int
-      Accessor.(
-        F.Var.Record.Access.ty @> Fir.Type.Access.basic_type @> Fir.Type.Basic.Access.prim
-      )
+        Accessor.(
+          F.Var.Record.Access.ty @> Fir.Type.Access.basic_type
+          @> Fir.Type.Basic.Access.prim)
 
     let var_preds = [F.Var.Record.has_known_value; is_int]
 
@@ -310,10 +310,7 @@ module Surround = struct
     let run_pre (test : F.Subject.Test.t) ~(payload : Payload.t) :
         F.Subject.Test.t F.State.Monad.t =
       let init = Fir.Initialiser.make ~ty:payload.lc_type () in
-      F.State.Monad.(
-        register_var payload.lc_var init
-        >>= fun () ->
-        Monadic.return (F.Subject.Test.declare_var test payload.lc_var init))
+      F.State.Monad.register_and_declare_var payload.lc_var init test
 
     let direction (payload : Payload.t) : Act_fir.Flow_block.For.Direction.t
         =

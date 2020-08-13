@@ -80,6 +80,12 @@ module Monad = struct
       unit t =
     modify (fun s -> register_var s var init)
 
+  let register_and_declare_var (var : Ac.Litmus_id.t)
+      (init : Act_fir.Initialiser.t) (subject : Subject.Test.t) :
+      Subject.Test.t t =
+    register_var var init
+    >>= fun () -> Monadic.return (Subject.Test.declare_var subject var init)
+
   let register_label (label : Ac.Litmus_id.t) : unit t =
     modify (register_label ~label)
 

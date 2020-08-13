@@ -27,12 +27,17 @@ module Record = struct
       ; has_writes: bool [@default false] }
     [@@deriving accessors, make, equal]
   end
+
   include Access
 
   let ty = Accessor.get Access.ty
+
   let scope = Accessor.get Access.scope
+
   let known_value = Accessor.get Access.known_value
+
   let has_dependencies = Accessor.get Access.has_dependencies
+
   let has_writes = Accessor.get Access.has_writes
 
   let env_record (r : t) : Act_fir.Env.Record.t =

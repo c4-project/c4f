@@ -90,6 +90,15 @@ module Monad : sig
       variable [var] with initialiser [init] into the state, overwriting any
       existing variable of the same name. *)
 
+  val register_and_declare_var :
+       Act_common.Litmus_id.t
+    -> Act_fir.Initialiser.t
+    -> Subject.Test.t
+    -> Subject.Test.t t
+  (** [register_and_declare_var var init test] is a stateful action that
+      registers [var] and [init], then inserts a matching declaration into
+      [test]. *)
+
   val register_label : Act_common.Litmus_id.t -> unit t
   (** [register_label label] is a stateful action that registers a label
       [label], given as a Litmus ID (pair of label name and thread ID), as
