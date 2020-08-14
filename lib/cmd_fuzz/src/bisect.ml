@@ -72,21 +72,21 @@ let command : Command.t =
       and want =
         choose_one
           Common_cmd.Args.
-            [ flag_to_enum_choice `Last_on_left "last-left"
+            [ flag_to_enum_choice `Last_on_left "-last-left"
                 ~doc:
                   "Return the largest trace for which the oracle returned \
                    'left' (success)"
-            ; flag_to_enum_choice `First_on_right "first-right"
+            ; flag_to_enum_choice `First_on_right "-first-right"
                 ~doc:
                   "Return the small trace for which the oracle returned \
                    'right' (failure)" ]
           ~if_nothing_chosen:Return_none
       and cmd =
-        flag "command" (required string)
+        flag "-command" (required string)
           ~doc:"NAME the name of the command to run on intermediate traces"
       and argv =
-        flag "arg" (listed string)
-          ~doc:"ARG an argument to pass to the named command"
+        flag "--" (map_flag ~f:(Option.value ~default:[]) escape)
+          ~doc:"ARGS all further arguments are passed to the oracle"
       in
       fun () ->
         Common_cmd.Args.Standard.lift_command
