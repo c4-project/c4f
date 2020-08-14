@@ -148,10 +148,12 @@ let decl (d : Ast.Decl.t) : Fir.Initialiser.t Named.t Or_error.t =
     let%bind idecl = Tx.List.one d.declarator in
     let%bind name, is_pointer = declarator_to_id idecl.declarator in
     let%bind ty = qualifiers_to_type d.qualifiers ~is_pointer in
-    let%map value =
-      Tx.Option.With_errors.map_m idecl.initialiser ~f:value_of_initialiser
+    let%bind init =
+      Result.of_option idecl.initialiser
+        ~error:(Error.of_string "Empty initialisers not supported")
     in
-    Named.make ~name (Fir.Initialiser.make ~ty ?value ()))
+    let%map value = value_of_initialiser init in
+    Named.make ~name (Fir.Initialiser.make ~ty ~value))
 
 let param_decl : Ast.Param_decl.t -> Fir.Type.t Named.t Or_error.t = function
   | {declarator= `Abstract _; _} ->

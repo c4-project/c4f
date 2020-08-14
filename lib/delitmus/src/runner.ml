@@ -13,7 +13,6 @@ open Base
 
 open struct
   module Ac = Act_common
-  module Tx = Travesty_base_exts
 end
 
 module Make (B : Runner_types.Basic) : Runner_types.S = struct
@@ -21,10 +20,15 @@ module Make (B : Runner_types.Basic) : Runner_types.S = struct
 
   let make_global (ctx : Context.t) (id : Ac.Litmus_id.t)
       (record : Var_map.Record.t) : Ac.C_id.t * Act_fir.Initialiser.t =
-    let value = Context.lookup_initial_value ~id ctx in
-    let cid = Var_map.Record.c_id record in
     let ty = Var_map.Record.c_type record in
-    (cid, Act_fir.Initialiser.make ~ty ?value ())
+    (* TODO(@MattWindsor91): is this correct? *)
+    let value =
+      Option.value
+        (Context.lookup_initial_value ~id ctx)
+        ~default:(Act_fir.Constant.zero_of_type ty)
+    in
+    let cid = Var_map.Record.c_id record in
+    (cid, Act_fir.Initialiser.make ~ty ~value)
 
   let make_globals (ctx : Context.t) :
       (Act_common.C_id.t, Act_fir.Initialiser.t) List.Assoc.t =
@@ -46,8 +50,8 @@ module Make (B : Runner_types.Basic) : Runner_types.S = struct
   let make_local_init (fn : unit Act_fir.Function.t) :
       (Act_common.C_id.t, Act_fir.Constant.t) List.Assoc.t =
     fn |> Act_fir.Function.body_decls
-    |> List.filter_map ~f:(fun (id, init) ->
-           Option.(init |> Act_fir.Initialiser.value >>| fun v -> (id, v)))
+    |> Accessor_base.(
+         map (List.each @> Tuple2.snd) ~f:(get Act_fir.Initialiser.value))
 
   let make_local_inits :
          unit Act_fir.Function.t list

@@ -23,16 +23,14 @@ module Test_common = struct
         Act_fir.(
           Initialiser.make
             ~ty:Type.(int ~is_pointer:true ~is_atomic:true ())
-            ~value:(Act_fir.Constant.int 1337)
-            ())
+            ~value:(Act_fir.Constant.int 1337))
       >>= fun () ->
       register_var
         (Act_common.Litmus_id.of_string "gen2")
         Act_fir.(
           Initialiser.make
             ~ty:Type.(int ~is_pointer:true ~is_atomic:true ())
-            ~value:(Act_fir.Constant.int (-55))
-            ()))
+            ~value:(Act_fir.Constant.int (-55))))
 
   let pp_vars :
       (Act_common.C_id.t, Act_fir.Constant.t option) List.Assoc.t Fmt.t =

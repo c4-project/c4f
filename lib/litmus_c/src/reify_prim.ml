@@ -63,11 +63,11 @@ let id_declarator (ty : Fir.Type.t) (id : Ac.C_id.t) : Ast.Declarator.t =
 let decl (init : Fir.Initialiser.t Ac.C_named.t) : Ast.Decl.t =
   let id = Ac.C_named.name init in
   let elt = Ac.C_named.value init in
-  let ty = Fir.Initialiser.ty elt in
-  let value = Fir.Initialiser.value elt in
+  let ty = Accessor.get Fir.Initialiser.ty elt in
+  let value = Accessor.get Fir.Initialiser.value elt in
   { qualifiers= type_to_specs ty
   ; declarator=
       [ { declarator= id_declarator ty id
-        ; initialiser= Option.map ~f:to_initialiser value } ] }
+        ; initialiser= Some (to_initialiser value) } ] }
 
 let pp_constant : Fir.Constant.t Fmt.t = Fmt.using constant Ast.Expr.pp

@@ -6,13 +6,13 @@ C SBSC
 }
 
 void P0(atomic_int *x, atomic_int *y) {
-  int a;
+  int a = 0;
   atomic_store_explicit(x, 1, memory_order_relaxed);
   a = atomic_load_explicit(y, memory_order_relaxed);
 }
 
 void P1(atomic_int *x, atomic_int *y) {
-  int a;
+  int a = 0;
   atomic_store_explicit(y, 1, memory_order_relaxed);
   a = atomic_load_explicit(x, memory_order_relaxed);
 }

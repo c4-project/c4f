@@ -30,6 +30,14 @@ let type_of : t -> Type.t = function
   | Int _ ->
       Type.int ()
 
+let zero_of_type (t : Type.t) : t =
+  if
+    Type.(
+      is_pointer t
+      || Prim.eq Accessor.(Access.basic_type @> Basic.Access.prim) t ~to_:Int)
+  then Int 0
+  else Bool false
+
 let is_bool : t -> bool = function Bool _ -> true | Int _ -> false
 
 let is_int : t -> bool = function Int _ -> true | Bool _ -> false

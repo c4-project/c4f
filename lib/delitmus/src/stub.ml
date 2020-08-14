@@ -76,7 +76,11 @@ let local_decls (tid : int) :
     -> (Ac.C_id.t, Act_fir.Initialiser.t) List.Assoc.t =
   List.filter_map ~f:(fun (id, ty) ->
       if [%equal: int option] (Ac.Litmus_id.tid id) (Some tid) then
-        Some (Ac.Litmus_id.variable_name id, Act_fir.Initialiser.make ~ty ())
+        Some
+          ( Ac.Litmus_id.variable_name id
+          , Act_fir.Initialiser.make
+              ~ty (* TODO(@MattWindsor91): fix this properly. *)
+              ~value:(Act_fir.Constant.int 0) )
       else None)
 
 let inner_call_argument (lid : Ac.Litmus_id.t) (ty : Act_fir.Type.t) :

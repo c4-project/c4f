@@ -52,7 +52,7 @@ let make_local_var_alist (tid : int) (prog : Litmus.Test.Lang.Program.t) :
   prog |> Named.value |> Function.body_decls
   |> Tx.Alist.bi_map
        ~left:(Act_common.Litmus_id.local tid)
-       ~right:Initialiser.ty
+       ~right:(Accessor.get Initialiser.ty)
 
 let make_local_var_alists :
        Litmus.Test.Lang.Program.t list

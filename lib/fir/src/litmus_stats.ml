@@ -94,7 +94,7 @@ module K =
 
 let probe_fn_decl (decl : Initialiser.t) : unit Monad.t =
   let literal_bools =
-    Option.count (Initialiser.value decl) ~f:Constant.is_bool
+    Accessor.count Initialiser.value decl ~f:Constant.is_bool
   in
   up_counter Statset.Fields.literal_bools literal_bools
 

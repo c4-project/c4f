@@ -85,7 +85,8 @@ let command : Command.t =
         flag "-command" (required string)
           ~doc:"NAME the name of the command to run on intermediate traces"
       and argv =
-        flag "--" (map_flag ~f:(Option.value ~default:[]) escape)
+        flag "--"
+          (map_flag ~f:(Option.value ~default:[]) escape)
           ~doc:"ARGS all further arguments are passed to the oracle"
       in
       fun () ->

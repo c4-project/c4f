@@ -92,7 +92,7 @@ module Make : F.Action_types.S with type Payload.t = Make_payload.t = struct
       F.Subject.Test.t F.State.Monad.t =
     let is_global = Ac.Litmus_id.is_global var in
     let ty = Fir.Type.make basic_type ~is_pointer:is_global in
-    let init = Fir.Initialiser.make ~ty ~value:initial_value () in
+    let init = Fir.Initialiser.make ~ty ~value:initial_value in
     F.State.Monad.register_and_declare_var var init subject
 end
 
@@ -146,15 +146,18 @@ struct
   let update_thread_decl (d : Fir.Initialiser.t Ac.C_named.t)
       ~(target : Ac.C_id.t) : Fir.Initialiser.t Ac.C_named.t =
     if Ac.C_id.equal target (Ac.C_named.name d) then
-      Ac.C_named.map_right d ~f:(fun init ->
-          Fir.Initialiser.(
-            make ~ty:(Fir.Type.as_volatile (ty init)) ?value:(value init) ()))
+      Accessor.(
+        set
+          ( Ac.C_named.Access.value @> Fir.Initialiser.ty
+          @> Fir.Type.Access.is_volatile )
+          d ~to_:true)
     else d
 
   let update_decls (id : Ac.Litmus_id.t) (subject : F.Subject.Test.t) :
       F.Subject.Test.t Or_error.t =
     match Ac.Litmus_id.as_local id with
     | Some (index, target) ->
+        (* TODO(@MattWindsor91): surely this can be cleaned up *)
         Act_litmus.Test.Raw.try_map_thread subject ~index ~f:(fun x ->
             Ok (F.Subject.Thread.map_decls x ~f:(update_thread_decl ~target)))
     | None ->

@@ -14,7 +14,6 @@ open Base
 open struct
   module Ac = Act_common
   module Fir = Act_fir
-  module Tx = Travesty_base_exts
 end
 
 module Statement = struct
@@ -159,15 +158,9 @@ module Test = struct
 
   let add_var_to_init (subject : t) (name : Ac.C_id.t)
       (init : Fir.Initialiser.t) : t Or_error.t =
-    match Fir.Initialiser.value init with
-    | Some initial_value ->
-        Act_litmus.Test.Raw.try_map_header subject
-          ~f:(Act_litmus.Header.add_global ~name ~initial_value)
-    | None ->
-        Or_error.error_s
-          [%message
-            "Can't add global variable without initial value"
-              ~name:(name : Ac.C_id.t)]
+    let initial_value = Accessor.get Fir.Initialiser.value init in
+    Act_litmus.Test.Raw.try_map_header subject
+      ~f:(Act_litmus.Header.add_global ~name ~initial_value)
 
   let add_var_to_thread (subject : t) (index : int) (name : Ac.C_id.t)
       (init : Fir.Initialiser.t) : t Or_error.t =

@@ -13,15 +13,24 @@ open Base
 
 open struct
   module Ac = Act_common
-  module Tx = Travesty_base_exts
   module Named = Ac.C_named
 end
 
-type 'meta t =
-  { parameters: Type.t Named.Alist.t
-  ; body_decls: Initialiser.t Named.Alist.t
-  ; body_stms: 'meta Statement.t list }
-[@@deriving sexp, fields, make, equal]
+module Access = struct
+  type 'meta t =
+    { parameters: Type.t Named.Alist.t
+    ; body_decls: Initialiser.t Named.Alist.t
+    ; body_stms: 'meta Statement.t list }
+  [@@deriving sexp, accessors, make, equal]
+end
+
+include Access
+
+let parameters x = Accessor.get Access.parameters x
+
+let body_decls x = Accessor.get Access.body_decls x
+
+let body_stms x = Accessor.get Access.body_stms x
 
 let with_body_stms (type m1 m2) (func : m1 t)
     (new_stms : m2 Statement.t list) : m2 t =

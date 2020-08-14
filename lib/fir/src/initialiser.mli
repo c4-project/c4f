@@ -9,16 +9,19 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** FIR: initialisers. *)
+(** FIR: initialisers.
+
+    In FIR, all initialisers must have a value; this is to simplify against
+    uninitialised value UB. *)
 
 (** Opaque type of initialisers. *)
 type t [@@deriving sexp, compare, equal, quickcheck]
 
 (** {1 Constructors} *)
 
-val make : ty:Type.t -> ?value:Constant.t -> unit -> t
-(** [make ~ty ?value ()] makes an initialiser with type [ty] and optional
-    initialised value [value]. *)
+val make : ty:Type.t -> value:Constant.t -> t
+(** [make ~ty ~value] makes an initialiser with type [ty] and initialised
+    value [value]. *)
 
 (** {2 Shortcuts} *)
 
@@ -30,8 +33,8 @@ val of_int : ?is_atomic:bool -> ?is_volatile:bool -> int -> t
 
 (** {1 Accessors} *)
 
-val ty : t -> Type.t
-(** [ty init] gets the type of [init]. *)
+val ty : (_, Type.t, t, [< Accessor.field]) Accessor.Simple.t
+(** [ty] accesses the type of an initialiser. *)
 
-val value : t -> Constant.t option
-(** [value init] gets the initialised value of [init], if it has one. *)
+val value : (_, Constant.t, t, [< Accessor.field]) Accessor.Simple.t
+(** [value] accesses the value of an initialiser. *)

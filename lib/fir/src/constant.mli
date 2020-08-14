@@ -33,6 +33,9 @@ val bool : bool -> t
 val int : int -> t
 (** [int b] lifts the integer value [i] to a constant. *)
 
+val zero_of_type : Type.t -> t
+(** [zero_of_type ty] gets the appropriate zero value for the type [ty]. *)
+
 (** {3 Shorthand for specific values} *)
 
 val truth : t

@@ -122,9 +122,9 @@ module Insert = struct
         Fir.Initialiser.t Ac.C_named.Alist.t =
       [ ( Ac.Litmus_id.variable_name x.out_var
         , Fir.Initialiser.make ~ty:(Fir.Type.bool ())
-            ~value:Fir.Constant.truth () )
+            ~value:Fir.Constant.truth )
       ; ( Ac.Litmus_id.variable_name x.exp_var
-        , Fir.Initialiser.make ~ty:(Fir.Type.int ()) ~value:x.exp_val () ) ]
+        , Fir.Initialiser.make ~ty:(Fir.Type.int ()) ~value:x.exp_val ) ]
 
     let src_exprs (x : Inner_payload.t) : Fir.Expression.t list =
       [ Fir.Atomic_cmpxchg.desired x.cmpxchg

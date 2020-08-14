@@ -26,8 +26,7 @@ module Test_data = struct
       [ ( Act_common.C_id.of_string "r0"
         , Act_fir.Initialiser.make
             ~ty:(Act_fir.Type.int ~is_atomic:true ())
-            ~value:(Act_fir.Constant.int 4004)
-            () ) ]
+            ~value:(Act_fir.Constant.int 4004) ) ]
 
   let globals : Act_fir.Type.t Act_common.C_named.Alist.t Lazy.t =
     lazy
@@ -45,9 +44,9 @@ module Test_data = struct
              let scope = Act_common.Scope.Local 0 in
              ( Act_common.Litmus_id.make ~scope ~id
              , Act_fuzz.Var.Record.make_generated
-                 ?initial_value:(Act_fir.Initialiser.value v)
+                 ~initial_value:(Accessor.get Act_fir.Initialiser.value v)
                  scope
-                 (Act_fir.Initialiser.ty v) )))
+                 (Accessor.get Act_fir.Initialiser.ty v) )))
 
   let state : Act_fuzz.State.t Lazy.t =
     (* TODO(@MattWindsor91): labels? *)

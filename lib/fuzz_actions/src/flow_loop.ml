@@ -309,7 +309,9 @@ module Surround = struct
 
     let run_pre (test : F.Subject.Test.t) ~(payload : Payload.t) :
         F.Subject.Test.t F.State.Monad.t =
-      let init = Fir.Initialiser.make ~ty:payload.lc_type () in
+      let ty = payload.lc_type in
+      let value = Fir.Constant.zero_of_type ty in
+      let init = Fir.Initialiser.make ~ty ~value in
       F.State.Monad.register_and_declare_var payload.lc_var init test
 
     let direction (payload : Payload.t) : Act_fir.Flow_block.For.Direction.t

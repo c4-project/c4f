@@ -11,14 +11,18 @@
 
 open Base
 
-module Parametric = struct
+module Access = struct
   type 'a t = {name: C_id.t; value: 'a}
-  [@@deriving sexp, compare, equal, fields, quickcheck]
+  [@@deriving sexp, compare, equal, accessors, quickcheck]
 end
 
-include Parametric
+include Access
 
-let make (value : 'a) ~(name : C_id.t) : 'a t = Fields.create ~value ~name
+let make (value : 'a) ~(name : C_id.t) : 'a t = {name; value}
+
+let name (x : 'a t) = Accessor.get name x
+
+let value (x : 'a t) = Accessor.get value x
 
 let seq_of_alist (xs : (C_id.t, 'a) List.Assoc.t) : 'a t Sequence.t =
   xs |> Sequence.of_list
@@ -58,11 +62,11 @@ module Alist = struct
   module As_named (A : Equal.S) :
     Travesty.Traversable_types.S0
       with type t = A.t t
-       and type Elt.t = A.t Parametric.t = Travesty.Traversable.Make0 (struct
+       and type Elt.t = A.t Access.t = Travesty.Traversable.Make0 (struct
     type nonrec t = A.t t
 
     module Elt = struct
-      type t = A.t Parametric.t [@@deriving equal]
+      type t = A.t Access.t [@@deriving equal]
     end
 
     module On_monad (M : Monad.S) = struct

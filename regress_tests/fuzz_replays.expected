@@ -25,7 +25,7 @@ P0(int *BNFKW, atomic_int *Is9Qk0n4Rhat, atomic_int *UcoE3gzvYko,
    atomic_bool *cQpyaUbj5gR, bool *kx0hFmyY7lL6, int *u, atomic_int *x,
    atomic_int *y)
 {
-    int a;
+    int a = 0;
     atomic_store_explicit(x, 1, memory_order_relaxed);
     a = atomic_load_explicit(y, memory_order_relaxed);
 }
@@ -36,7 +36,7 @@ P1(int *BNFKW, atomic_int *Is9Qk0n4Rhat, atomic_int *UcoE3gzvYko,
    atomic_bool *cQpyaUbj5gR, bool *kx0hFmyY7lL6, int *u, atomic_int *x,
    atomic_int *y)
 {
-    int a;
+    int a = 0;
     atomic_store_explicit(y, 1, memory_order_relaxed);
     a = atomic_load_explicit(x, memory_order_relaxed);
     atomic_store_explicit(Is9Qk0n4Rhat, 59774975, memory_order_relaxed);

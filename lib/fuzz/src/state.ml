@@ -41,9 +41,9 @@ let register_label (s : t) ~(label : Ac.Litmus_id.t) : t =
 
 let register_var (s : t) (var : Ac.Litmus_id.t)
     (init : Act_fir.Initialiser.t) : t =
-  let ty = Act_fir.Initialiser.ty init in
-  let initial_value = Act_fir.Initialiser.value init in
-  map_vars s ~f:(fun v -> Var.Map.register_var v ?initial_value var ty)
+  let ty = Accessor.get Act_fir.Initialiser.ty init in
+  let initial_value = Accessor.get Act_fir.Initialiser.value init in
+  map_vars s ~f:(fun v -> Var.Map.register_var v ~initial_value var ty)
 
 let add_dependency (s : t) ~(id : Ac.Litmus_id.t) : t =
   map_vars s ~f:(Var.Map.add_dependency ~id)

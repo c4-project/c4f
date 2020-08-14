@@ -28,6 +28,33 @@ val make :
 
 (** {2 Accessors} *)
 
+module Access : sig
+  val parameters :
+    ( _
+    , (Act_common.C_id.t, Type.t) List.Assoc.t
+    , _ t
+    , [< Accessor.field] )
+    Accessor.Simple.t
+  (** [parameters] accesses a function's parameter list. *)
+
+  val body_decls :
+    ( _
+    , (Act_common.C_id.t, Initialiser.t) List.Assoc.t
+    , _ t
+    , [< Accessor.field] )
+    Accessor.Simple.t
+  (** [body_decls] accesses a function's in-body variable declarations. *)
+
+  val body_stms :
+    ( 'i -> 'm1 Statement.t list -> 'm2 Statement.t list
+    , 'i -> 'm1 t -> 'm2 t
+    , [< Accessor.field] )
+    Accessor.t
+  (** [body_stms] accesses a function's statements. *)
+end
+
+(** {2 Getters} *)
+
 val parameters : _ t -> (Act_common.C_id.t, Type.t) List.Assoc.t
 (** [parameters func] gets [func]'s parameter list. *)
 

@@ -28,20 +28,20 @@ let%test_module "decls" =
           let rx = Src.Reify_prim.decl x in
           Fmt.pr "@[%a@]@." Act_litmus_c.Ast.Decl.pp rx
 
-        let%expect_test "atomic bool without known value" =
+        let%expect_test "atomic bool" =
           test
             (Ac.C_named.make ~name:(Ac.C_id.of_string "bar")
                (Fir.Initialiser.make
                   ~ty:(Fir.Type.bool ~is_atomic:true ())
-                  ())) ;
-          [%expect {| atomic_bool bar; |}]
+                  ~value:Fir.Constant.truth)) ;
+          [%expect {| atomic_bool bar = true; |}]
 
-        let%expect_test "volatile int with known value" =
+        let%expect_test "volatile int" =
           test
             (Ac.C_named.make ~name:(Ac.C_id.of_string "foo")
                (Fir.Initialiser.make
                   ~ty:(Fir.Type.int ~is_volatile:true ())
-                  ~value:(Fir.Constant.int 42) ())) ;
+                  ~value:(Fir.Constant.int 42))) ;
           [%expect {| int volatile foo = 42; |}]
       end )
 

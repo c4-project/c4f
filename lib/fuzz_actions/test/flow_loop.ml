@@ -264,7 +264,7 @@ let%test_module "test runs" =
              bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
              atomic_int y)
           {
-              int i;
+              int i = 0;
               atomic_int r0 = 4004;
               for (i = 27; i >= atomic_load_explicit(x, memory_order_seq_cst); i--)
               { atomic_store_explicit(x, 42, memory_order_seq_cst); ; }
