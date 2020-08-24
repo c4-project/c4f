@@ -289,5 +289,11 @@ let%test_module "test runs" =
           FT.Action.Test_utils.run_and_dump_global_deps action
             ~initial_state:state ;
           [%expect {| x=27 |}]
+
+        let%expect_test "known values in thread 0 after running" =
+          FT.Action.Test_utils.run_and_dump_vars action ~initial_state:state
+            ~scope:(Local 0)
+            ~predicates:[Act_fuzz.Var.Record.has_known_value];
+          [%expect {| a=false b=true i=0 x=27 y=53 |}]
       end )
   end )
