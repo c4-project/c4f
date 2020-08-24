@@ -307,12 +307,24 @@ module Surround = struct
           {lc_var; lc_type; kv_val; kv_expr; where})
     end
 
-    let run_pre (test : F.Subject.Test.t) ~(payload : Payload.t) :
-        F.Subject.Test.t F.State.Monad.t =
-      let ty = payload.lc_type in
+    let register_loop_counter (v : Ac.Litmus_id.t) (ty : Fir.Type.t)
+        (test : F.Subject.Test.t) : F.Subject.Test.t F.State.Monad.t =
+      (* Note that this sets the known value of the loop counter to 0, so we
+         have to erase it again; otherwise, the for loop's activity on the
+         loop counter would be ignored by the rest of the fuzzer and lead to
+         semantic violations. *)
       let value = Fir.Constant.zero_of_type ty in
       let init = Fir.Initialiser.make ~ty ~value in
-      F.State.Monad.register_and_declare_var payload.lc_var init test
+      F.State.Monad.register_and_declare_var v init test
+
+    let run_pre (test : F.Subject.Test.t) ~(payload : Payload.t) :
+        F.Subject.Test.t F.State.Monad.t =
+      F.State.Monad.Let_syntax.(
+        let%bind test' =
+          register_loop_counter payload.lc_var payload.lc_type test
+        in
+        let%map () = F.State.Monad.erase_var_value payload.lc_var in
+        test')
 
     let direction (payload : Payload.t) : Act_fir.Flow_block.For.Direction.t
         =
