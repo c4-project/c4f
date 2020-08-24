@@ -32,25 +32,8 @@ module Test_common = struct
             ~ty:Type.(int ~is_pointer:true ~is_atomic:true ())
             ~value:(Act_fir.Constant.int (-55))))
 
-  let pp_vars :
-      (Act_common.C_id.t, Act_fir.Constant.t option) List.Assoc.t Fmt.t =
-    Fmt.(
-      list ~sep:sp
-        (pair ~sep:(any "=") Act_common.C_id.pp (option Act_fir.Constant.pp)))
-
-  let run_and_dump_vars (test_action : Src.Subject.Test.t Src.State.Monad.t)
-      ~(predicates : (Src.Var.Record.t -> bool) list)
-      ~(initial_state : Src.State.t) : unit =
-    let result =
-      Or_error.(
-        Src.State.Monad.(run' test_action initial_state)
-        >>| fst >>| Src.State.vars
-        >>| Src.Var.Map.env_satisfying_all ~scope:(Local 0) ~predicates
-        >>| Map.to_alist
-        >>| Travesty_base_exts.Alist.map_right
-              ~f:Act_fir.Env.Record.known_value)
-    in
-    Fmt.(pr "@[%a@]@." (result ~error:Error.pp ~ok:pp_vars)) result
+  let run_and_dump_vars =
+    Act_fuzz_test.Action.Test_utils.run_and_dump_vars ~scope:(Local 0)
 
   let run_and_dump_globals =
     run_and_dump_vars ~predicates:[Src.Var.Record.is_global]

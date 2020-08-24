@@ -10,8 +10,10 @@
    project root for more information. *)
 
 open Base
-module Src = Act_fuzz
-open Act_fuzz.Action
+
+open struct
+  module Src = Act_fuzz
+end
 
 module Test_utils = struct
   let reify_test (test : Src.Subject.Test.t)
@@ -33,17 +35,31 @@ module Test_utils = struct
     let r = Src.State.Monad.(run (action >>= reify_test_m) initial_state) in
     Fmt.(pr "@[<v>%a@]@." (result ~ok:pp_tu ~error:Error.pp)) r
 
+  let pp_vars :
+      (Act_common.C_id.t, Act_fir.Constant.t option) List.Assoc.t Fmt.t =
+    Fmt.(
+      list ~sep:sp
+        (pair ~sep:(any "=") Act_common.C_id.pp (option Act_fir.Constant.pp)))
+
+  let run_and_dump_vars (action : Src.Subject.Test.t Src.State.Monad.t)
+      ~(predicates : (Src.Var.Record.t -> bool) list)
+      ~(scope : Act_common.Scope.t) ~(initial_state : Src.State.t) : unit =
+    let result =
+      Or_error.(
+        Src.State.Monad.(run' action initial_state)
+        >>| fst >>| Src.State.vars
+        >>| Src.Var.Map.env_satisfying_all ~scope ~predicates
+        >>| Map.to_alist
+        >>| Travesty_base_exts.Alist.map_right
+              ~f:Act_fir.Env.Record.known_value)
+    in
+    Fmt.(pr "@[%a@]@." (result ~error:Error.pp ~ok:pp_vars)) result
+
   let run_and_dump_global_deps
       (action : Src.Subject.Test.t Src.State.Monad.t)
       ~(initial_state : Src.State.t) : unit =
-    let r =
-      Or_error.(
-        Src.State.Monad.run' action initial_state
-        >>| fst >>| Src.State.vars
-        >>| Src.Var.Map.satisfying_all ~scope:Act_common.Scope.Global
-              ~predicates:[Src.Var.Record.has_dependencies])
-    in
-    Fmt.(pr "%a@." (result ~ok:(list Act_common.C_id.pp) ~error:Error.pp)) r
+    run_and_dump_vars action ~initial_state ~scope:Act_common.Scope.Global
+      ~predicates:[Src.Var.Record.has_dependencies]
 end
 
 let%test_module "Summary" =
@@ -51,7 +67,9 @@ let%test_module "Summary" =
     open Act_fuzz.Action.Summary
 
     let%expect_test "pp: example summary" =
-      let weight = Adjusted_weight.(Adjusted {original= 27; actual= 53}) in
+      let weight =
+        Src.Action.Adjusted_weight.(Adjusted {original= 27; actual= 53})
+      in
       let readme =
         {|
         Why, hello there!  This is an example README.

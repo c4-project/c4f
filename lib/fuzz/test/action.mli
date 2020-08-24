@@ -32,6 +32,17 @@ module Test_utils : sig
       [action] (representing a fuzzer action) on [initial_state], then dumps
       the resulting C to stdout. *)
 
+  val run_and_dump_vars :
+       Act_fuzz.Subject.Test.t Act_fuzz.State.Monad.t
+    -> predicates:(Act_fuzz.Var.Record.t -> bool) list
+    -> scope:Act_common.Scope.t
+    -> initial_state:Act_fuzz.State.t
+    -> unit
+  (** [run_and_dump_vars action ~initial_state] runs the monadic computation
+      [action] (representing a fuzzer action) on [initial_state], then dumps
+      a list of variable bindings accessible from [scope] and matching
+      [predicates] to stdout. *)
+
   val run_and_dump_global_deps :
        Act_fuzz.Subject.Test.t Act_fuzz.State.Monad.t
     -> initial_state:Act_fuzz.State.t

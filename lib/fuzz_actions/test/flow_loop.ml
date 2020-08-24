@@ -80,8 +80,7 @@ let%test_module "test runs" =
           FT.Action.Test_utils.run_and_dump_global_deps action
             ~initial_state:state ;
           [%expect {|
-          a
-          y |}]
+          a=false y=53 |}]
       end )
 
     let%test_module "Surround.Do_false" =
@@ -129,8 +128,7 @@ let%test_module "test runs" =
           FT.Action.Test_utils.run_and_dump_global_deps action
             ~initial_state:state ;
           [%expect {|
-          a
-          y |}]
+          a=false y=53 |}]
       end )
 
     let%test_module "Surround.Do_dead" =
@@ -290,6 +288,6 @@ let%test_module "test runs" =
         let%expect_test "global dependencies after running" =
           FT.Action.Test_utils.run_and_dump_global_deps action
             ~initial_state:state ;
-          [%expect {| x |}]
+          [%expect {| x=27 |}]
       end )
   end )

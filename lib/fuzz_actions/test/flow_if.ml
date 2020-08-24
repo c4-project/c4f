@@ -82,8 +82,7 @@ let%test_module "Surround" =
           FT.Action.Test_utils.run_and_dump_global_deps action
             ~initial_state:state ;
           [%expect {|
-          a
-          x |}]
+          a=false x=27 |}]
       end )
 
     let%test_module "Duplicate" =
@@ -126,8 +125,7 @@ let%test_module "Surround" =
           FT.Action.Test_utils.run_and_dump_global_deps action
             ~initial_state:state ;
           [%expect {|
-          a
-          x |}]
+          a=false x=27 |}]
 
         let label_direct : F.Path.Flagged.t =
           Lazy.force FT.Subject.Test_data.Path.surround_label_direct
