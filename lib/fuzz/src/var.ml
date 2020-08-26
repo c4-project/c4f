@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module Acc = Accessor_base
   module Ac = Act_common
   module Tx = Travesty_base_exts
 end
@@ -19,34 +20,34 @@ end
 module Record = struct
   module Access = struct
     type t =
-      { ty: Act_fir.Type.t
+      { env_record: Act_fir.Env.Record.t
       ; source: [`Existing | `Generated]
       ; scope: Ac.Scope.t
-      ; known_value: Act_fir.Constant.t option
       ; has_dependencies: bool [@default false]
       ; has_writes: bool [@default false] }
     [@@deriving accessors, make, equal]
+
+    let type_of = [%accessor Acc.(env_record @> Act_fir.Env.Record.type_of)]
+
+    let known_value =
+      [%accessor Acc.(env_record @> Act_fir.Env.Record.known_value)]
   end
 
   include Access
 
-  let ty = Accessor.get Access.ty
+  let type_of = Acc.get Access.type_of
 
-  let scope = Accessor.get Access.scope
+  let scope = Acc.get Access.scope
 
-  let known_value = Accessor.get Access.known_value
+  let known_value = Acc.get_option Access.known_value
 
-  let has_dependencies = Accessor.get Access.has_dependencies
+  let has_dependencies = Acc.get Access.has_dependencies
 
-  let has_writes = Accessor.get Access.has_writes
+  let has_writes = Acc.get Access.has_writes
 
-  let env_record (r : t) : Act_fir.Env.Record.t =
-    (* TODO(@MattWindsor91): nest this directly instead *)
-    Act_fir.Env.Record.make ~type_of:(ty r) ?known_value:(known_value r) ()
+  let env_record : t -> Act_fir.Env.Record.t = Acc.get Access.env_record
 
   let is_global (r : t) : bool = Ac.Scope.is_global (scope r)
-
-  let is_atomic (r : t) : bool = Act_fir.Type.is_atomic (ty r)
 
   let was_generated : t -> bool = function
     | {source= `Generated; _} ->
@@ -61,18 +62,25 @@ module Record = struct
     Result.of_option (known_value record)
       ~error:(Error.of_string "No known value for this record.")
 
-  let add_dependency (record : t) : t = {record with has_dependencies= true}
+  let add_dependency : t -> t = Acc.set Access.has_dependencies ~to_:true
 
-  let add_write (record : t) : t = {record with has_writes= true}
+  let add_write : t -> t = Acc.set Access.has_writes ~to_:true
 
-  let erase_value (record : t) : t = {record with known_value= None}
+  let erase_value : t -> t =
+    Acc.(set (Access.env_record @> Act_fir.Env.Record.known_value_opt))
+      ~to_:None
 
-  let make_existing (scope : Ac.Scope.t) (ty : Act_fir.Type.t) : t =
-    make ~source:`Existing ~scope ~ty ()
+  let make_existing (scope : Ac.Scope.t) (type_of : Act_fir.Type.t) : t =
+    make ~source:`Existing ~scope
+      ~env_record:(Act_fir.Env.Record.make ~type_of ())
+      ()
 
   let make_generated ?(initial_value : Act_fir.Constant.t option)
-      (scope : Ac.Scope.t) (ty : Act_fir.Type.t) : t =
-    make ~ty ~source:`Generated ~scope ?known_value:initial_value ()
+      (scope : Ac.Scope.t) (type_of : Act_fir.Type.t) : t =
+    make ~source:`Generated ~scope
+      ~env_record:
+        (Act_fir.Env.Record.make ~type_of ?known_value:initial_value ())
+      ()
 end
 
 module Map = struct

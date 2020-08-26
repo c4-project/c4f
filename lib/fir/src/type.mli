@@ -41,6 +41,9 @@ module Basic : sig
 
   (** {2 Constructors} *)
 
+  val make : ?is_atomic:bool -> Prim.t -> t
+  (** [make ?is_atomic p] lifts [p] to a basic type of atomicity [is_atomic]. *)
+
   val bool : ?is_atomic:bool -> unit -> t
   (** [bool ?is_atomic ()] is the (C99?) Boolean, or C11 atomic_bool, type. *)
 

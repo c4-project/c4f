@@ -51,7 +51,7 @@ module Test_utils = struct
         >>| Src.Var.Map.env_satisfying_all ~scope ~predicates
         >>| Map.to_alist
         >>| Travesty_base_exts.Alist.map_right
-              ~f:Act_fir.Env.Record.known_value)
+              ~f:(Accessor.get_option Act_fir.Env.Record.known_value))
     in
     Fmt.(pr "@[%a@]@." (result ~error:Error.pp ~ok:pp_vars)) result
 

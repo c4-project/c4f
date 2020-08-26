@@ -31,10 +31,7 @@ module M = struct
 end
 
 (* There is a _lot_ of module acrobatics here to make sure we only define 't'
-   once.
-
-   TODO(@MattWindsor91): when 4.08 arrives, check to see if this is really
-   necessary. *)
+   once. *)
 include M
 
 module Spec_common = struct

@@ -39,12 +39,11 @@ module Dst_restriction = struct
   type t = F.Var.Record.t -> bool
 
   let basic (dst_type : Fir.Type.Basic.t) : t list =
-    F.Var.Record.
-      [ is_atomic
-      ; Fir.(
-          Type.Basic.eq
-            Accessor.(Access.ty @> Type.Access.basic_type)
-            ~to_:dst_type) ]
+    let bt =
+      Accessor.(F.Var.Record.Access.type_of @> Fir.Type.Access.basic_type)
+    in
+    [ Accessor.(get (bt @> Fir.Type.Basic.Access.is_atomic))
+    ; Fir.Type.Basic.eq bt ~to_:dst_type ]
 
   let with_user_flags ~(dst_type : Fir.Type.Basic.t)
       ~(forbid_already_written : bool) : t list =

@@ -315,7 +315,7 @@ let%test_module "list_to_litmus" =
            (module Act_common.Litmus_id)
            ~f:(fun ~key ~data ->
              let lit = Act_common.Litmus_id.global key in
-             let ty = Act_fir.Env.Record.type_of data in
+             let ty = Accessor.get Act_fir.Env.Record.type_of data in
              (lit, Src.Var.Record.make_existing Global ty))
       |> Or_error.ok_exn |> Act_common.Scoped_map.of_litmus_id_map
 

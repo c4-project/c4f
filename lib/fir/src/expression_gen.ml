@@ -95,8 +95,8 @@ module Int_prims (E : Env_types.S) = struct
     Q.Generator.Let_syntax.(
       let%bind op = gen_op in
       Q.Generator.filter_map gen_load ~f:(fun (l, r) ->
-          Option.map (Env.Record.known_value r) ~f:(fun r ->
-              op l (Expression.constant r))))
+          Option.map (Accessor.get_option Env.Record.known_value r)
+            ~f:(fun r -> op l (Expression.constant r))))
 
   let gen_load ~(gen_zero : t Q.Generator.t) : t Q.Generator.t list =
     List.map ~f:(Q.Generator.map ~f:fst) (base_load_with_record ~gen_zero)

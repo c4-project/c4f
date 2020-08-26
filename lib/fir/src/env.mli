@@ -23,7 +23,7 @@ open Base
 
 module Record : sig
   (** Opaque type of records. *)
-  type t [@@deriving sexp]
+  type t [@@deriving equal, sexp]
 
   val make : ?known_value:Constant.t -> type_of:Type.t -> unit -> t
   (** [make ?known_value ~type_of ()] creates a new record with the given
@@ -31,11 +31,17 @@ module Record : sig
 
   (** {2 Accessors} *)
 
-  val known_value : t -> Constant.t option
-  (** [known_value r] gets any known value stored in [r]. *)
+  val known_value :
+    ('a, Constant.t, t, [< Accessor.optional]) Accessor.Simple.t
+  (** [known_value] accesses a record's known value. *)
 
-  val type_of : t -> Type.t
-  (** [type_of r] gets the type stored in [r]. *)
+  val known_value_opt :
+    ('a, Constant.t option, t, [< Accessor.field]) Accessor.Simple.t
+  (** [known_value_opt] accesses a record's known value, but makes the
+      optionality explicit. *)
+
+  val type_of : ('a, Type.t, t, [< Accessor.field]) Accessor.Simple.t
+  (** [type_of] accesses a record's type. *)
 end
 
 (** {1 Environment maps} *)

@@ -229,7 +229,7 @@ module Surround = struct
     let is_int : F.Var.Record.t -> bool =
       Fir.Type.Prim.eq ~to_:Int
         Accessor.(
-          F.Var.Record.Access.ty @> Fir.Type.Access.basic_type
+          F.Var.Record.Access.type_of @> Fir.Type.Access.basic_type
           @> Fir.Type.Basic.Access.prim)
 
     let var_preds = [F.Var.Record.has_known_value; is_int]
@@ -252,7 +252,11 @@ module Surround = struct
 
       let access_of_var (vrec : Fir.Env.Record.t Ac.C_named.t) :
           Fir.Expression.t F.Payload_gen.t =
-        let var = Ac.C_named.map_right ~f:Fir.Env.Record.type_of vrec in
+        let var =
+          Ac.C_named.map_right
+            ~f:(Accessor_base.get Fir.Env.Record.type_of)
+            vrec
+        in
         let ty = Ac.C_named.value var in
         (* TODO(@MattWindsor91): is this duplicating something? *)
         F.Payload_gen.(
@@ -268,7 +272,8 @@ module Surround = struct
 
       let known_value_val (vrec : Fir.Env.Record.t Ac.C_named.t) :
           Fir.Constant.t F.Payload_gen.t =
-        vrec |> Ac.C_named.value |> Fir.Env.Record.known_value
+        vrec |> Ac.C_named.value
+        |> Accessor_base.get_option Fir.Env.Record.known_value
         |> Result.of_option
              ~error:
                (Error.of_string "chosen value should have a known value")
@@ -286,9 +291,15 @@ module Surround = struct
           lift_quickcheck (Fir.Env.gen_random_var_with_record env))
 
       let counter_type (vrec : Fir.Env.Record.t Ac.C_named.t) : Fir.Type.t =
-        vrec |> Ac.C_named.value |> Fir.Env.Record.type_of
-        |> Fir.Type.strip_atomic |> Fir.Type.basic_type
-        |> Fir.Type.make ~is_pointer:false ~is_volatile:false
+        let acc =
+          Accessor_base.(
+            Fir.Env.Record.type_of @> Fir.Type.Access.basic_type
+            @> Fir.Type.Basic.Access.prim)
+        in
+        let prim = Accessor_base.get acc (Ac.C_named.value vrec) in
+        Fir.Type.make
+          (Fir.Type.Basic.make prim ~is_atomic:false)
+          ~is_pointer:false ~is_volatile:false
 
       let gen : t F.Payload_gen.t =
         F.Payload_gen.(

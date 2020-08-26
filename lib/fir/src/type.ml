@@ -33,12 +33,12 @@ let to_non_atomic (acc : (_, bool, 't, [< Accessor.field]) Accessor.Simple.t)
 
 module Basic = struct
   module Access = struct
-    type t = {is_atomic: bool; prim: Prim.t}
-    [@@deriving accessors, equal, enumerate]
+    type t = {is_atomic: bool [@default false]; prim: Prim.t [@main]}
+    [@@deriving accessors, equal, make, enumerate]
 
-    let int ?(is_atomic : bool = false) () : t = {is_atomic; prim= Int}
+    let int ?(is_atomic : bool option) () : t = make Int ?is_atomic
 
-    let bool ?(is_atomic : bool = false) () : t = {is_atomic; prim= Bool}
+    let bool ?(is_atomic : bool option) () : t = make Bool ?is_atomic
 
     let table : (t, string) List.Assoc.t =
       [ (int (), "int")

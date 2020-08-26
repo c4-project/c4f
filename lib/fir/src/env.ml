@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module Acc = Accessor_base
   module Ac = Act_common
   module Q = Base_quickcheck
 end
@@ -25,22 +26,42 @@ module Record = struct
   open Q
 
   type t = {known_value: Constant.t option; type_of: Type.t}
-  [@@deriving sexp, fields, make, quickcheck]
+  [@@deriving equal, sexp, accessors, make, quickcheck]
+
+  let known_value_opt = known_value
+
+  let known_value : type a. (a, Constant.t, t, [< Acc.optional]) Acc.Simple.t
+      =
+    [%accessor Acc.(known_value_opt @> Option.some)]
 end
 
 type t = Record.t Map.M(Ac.C_id).t [@@deriving sexp]
 
+let basic_type = Acc.(Record.type_of @> Type.Access.basic_type)
+
 let has_variables_of_basic_type (env : t) ~(basic : Type.Basic.t) : bool =
-  Map.exists env ~f:(fun r -> Type.basic_type_is ~basic (Record.type_of r))
+  Map.exists env ~f:(Type.Basic.eq basic_type ~to_:basic)
 
 let variables_of_basic_type (env : t) ~(basic : Type.Basic.t) : t =
-  Map.filter env ~f:(fun r -> Type.basic_type_is ~basic (Record.type_of r))
+  Map.filter env ~f:(Type.Basic.eq basic_type ~to_:basic)
+
+let or_not_found (id : Ac.C_id.t) : 'a option -> 'a Or_error.t =
+  Result.of_option ~error:(not_found id)
+
+let get_or_not_found (type a) (acc : ('i, a, t, _) Accessor.Simple.t)
+    (env : t) ~(id : Ac.C_id.t) : a Or_error.t =
+  Accessor_base.get_option acc env |> or_not_found id
 
 let record_of (env : t) ~(id : Ac.C_id.t) : Record.t Or_error.t =
-  Result.of_option (Map.find env id) ~error:(not_found id)
+  get_or_not_found (Accessor_base.Map.found id) env ~id
 
 let type_of (env : t) ~(id : Ac.C_id.t) : Type.t Or_error.t =
-  Or_error.map (record_of env ~id) ~f:Record.type_of
+  let f = Acc.Map.found id in
+  get_or_not_found Acc.(f @> Record.type_of) env ~id
+
+let known_value (env : t) ~(id : Ac.C_id.t) : Constant.t option Or_error.t =
+  let f = Acc.Map.found id in
+  get_or_not_found Acc.(f @> Record.known_value_opt) env ~id
 
 let of_typing : Type.t Map.M(Ac.C_id).t -> t =
   Map.map ~f:(fun type_of -> Record.make ~type_of ())
@@ -56,21 +77,20 @@ let of_maps : Type.t Map.M(Ac.C_id).t -> Constant.t Map.M(Ac.C_id).t -> t =
       | `Right _ ->
           None)
 
-let typing : t -> Type.t Map.M(Ac.C_id).t = Map.map ~f:Record.type_of
-
-let known_value (env : t) ~(id : Ac.C_id.t) : Constant.t option Or_error.t =
-  Or_error.map ~f:Record.known_value (record_of env ~id)
+let typing : t -> Type.t Map.M(Ac.C_id).t =
+  Map.map ~f:(Acc.get Record.type_of)
 
 let variables_with_known_values :
     t -> (Type.t * Constant.t) Map.M(Act_common.C_id).t =
   Map.filter_map ~f:(fun (data : Record.t) ->
-      Option.(
-        data |> Record.known_value
-        >>| fun const -> (Record.type_of data, const)))
+      Option.Let_syntax.(
+        let%map kv = Acc.get_option Record.known_value data in
+        let ty = Acc.get Record.type_of data in
+        (ty, kv)))
 
 let filter_to_known_values : t -> t =
   Map.filter ~f:(fun (data : Record.t) ->
-      data |> Record.known_value |> Option.is_some)
+      not (Acc.is_empty Record.known_value_opt data))
 
 let type_of_known_value (env : t) ~(id : Ac.C_id.t) : Type.t Or_error.t =
   Or_error.(type_of env ~id >>| Type.basic_type >>| Type.make)
@@ -91,7 +111,7 @@ let gen_random_var_with_record (env : t) :
 
 let gen_random_var_with_type : t -> Type.t Ac.C_named.t Q.Generator.t =
   Fn.compose
-    (Q.Generator.map ~f:(Ac.C_named.map_right ~f:Record.type_of))
+    (Q.Generator.map ~f:(Ac.C_named.map_right ~f:(Acc.get Record.type_of)))
     gen_random_var_with_record
 
 let gen_random_var : t -> Ac.C_id.t Q.Generator.t =

@@ -140,7 +140,8 @@ struct
                 ~f:
                   Accessor.(
                     set
-                      (F.Var.Record.Access.ty @> Fir.Type.Access.is_volatile)
+                      ( F.Var.Record.Access.type_of
+                      @> Fir.Type.Access.is_volatile )
                       ~to_:true))))
 
   let update_thread_decl (d : Fir.Initialiser.t Ac.C_named.t)
