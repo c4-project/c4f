@@ -90,7 +90,7 @@ let variables_with_known_values :
 
 let filter_to_known_values : t -> t =
   Map.filter ~f:(fun (data : Record.t) ->
-      not (Acc.is_empty Record.known_value_opt data))
+      not (Acc.is_empty Record.known_value data))
 
 let type_of_known_value (env : t) ~(id : Ac.C_id.t) : Type.t Or_error.t =
   Or_error.(type_of env ~id >>| Type.basic_type >>| Type.make)
