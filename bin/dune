@@ -23,12 +23,6 @@
  (libraries base core_kernel core common_cmd cmd_fuzz))
 
 (executable
- (name act_machine)
- (public_name act-machine)
- (modules act_machine)
- (libraries base core_kernel core common_cmd cmd_machine))
-
-(executable
  (name act_state)
  (public_name act-state)
  (modules act_state)
