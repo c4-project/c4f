@@ -29,6 +29,8 @@ module Prim : sig
   type t =
     | Atomic of Atomic_class.t option
         (** An atomic action with the given atomic class information. *)
+    | Early_out of Early_out.t option
+        (** An early-out with the given specific classification. *)
     | Label  (** A label. *)
   [@@deriving compare, equal, sexp]
 

@@ -1,25 +1,30 @@
 open Base
 
 module Prim = struct
-  type t = Atomic of Atomic_class.t option | Label
+  type t =
+    | Atomic of Atomic_class.t option
+    | Early_out of Early_out.t option
+    | Label
   [@@deriving compare, equal, sexp]
 
   let classify : Prim_statement.t -> t option =
     Prim_statement.value_map ~assign:(Fn.const None)
       ~atomic:(fun x -> Some (Atomic (Atomic_class.classify_stm x)))
-      ~early_out:(Fn.const None) ~goto:(Fn.const None)
-      ~procedure_call:(Fn.const None) ~label:(Fn.const (Some Label))
-      ~nop:(Fn.const None)
+      ~early_out:(fun x -> Some (Early_out (Some x)))
+      ~goto:(Fn.const None) ~procedure_call:(Fn.const None)
+      ~label:(Fn.const (Some Label)) ~nop:(Fn.const None)
 
   let classify_rec : Prim_statement.t -> t list =
     Class.lift_classify_rec classify
 
   let class_matches (clazz : t) ~(template : t) : bool =
     match (template, clazz) with
-    | Atomic None, Atomic _ | Label, Label ->
+    | Atomic None, Atomic _ | Early_out None, Early_out _ | Label, Label ->
         true
     | Atomic (Some template), Atomic (Some clazz) ->
         Atomic_class.matches clazz ~template
+    | Early_out (Some e), Early_out (Some e') ->
+        Early_out.equal e e'
     | _, _ ->
         false
 end

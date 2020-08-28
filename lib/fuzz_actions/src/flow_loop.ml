@@ -136,6 +136,18 @@ module Surround = struct
            ~body:(F.Subject.Block.make_generated ~statements ()))
   end)
 
+  let live_surround_path_filter _ : F.Path_filter.t =
+    (* Don't surround breaks and continues in live code; doing so causes them
+       to affect the new surrounding loop, which is a semantic change. *)
+    F.Path_filter.(
+      require_end_check empty
+        ~check:
+          (Stm_class
+             ( Has_not_any
+             , Fir.Statement_class.
+                 [ Prim (Some (Early_out (Some Break)))
+                 ; Prim (Some (Early_out (Some Continue))) ] )))
+
   module Do_false : S = Make (struct
     let kind = Fir.Flow_block.While.Do_while
 
@@ -151,8 +163,8 @@ module Surround = struct
         =
       Fir.Expression_gen.gen_falsehoods
 
-    let path_filter (_ : F.Availability.Context.t) : F.Path_filter.t =
-      F.Path_filter.empty
+    let path_filter : F.Availability.Context.t -> F.Path_filter.t =
+      live_surround_path_filter
   end)
 
   module Do_dead : S = Make (struct
@@ -239,7 +251,7 @@ module Surround = struct
       F.Path_filter.(
         not_in_atomic_block
         @@ F.Availability.in_thread_with_variables ~predicates:var_preds ctx
-        @@ empty)
+        @@ live_surround_path_filter ctx)
 
     let available : F.Availability.t =
       F.Availability.(

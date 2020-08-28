@@ -198,6 +198,8 @@ end) : Action_types.S with type Payload.t = Basic.Payload.t = struct
         let%bind () = add_dependencies payload in
         let%bind test' = Basic.run_pre test ~payload in
         Monadic.return
+          (* TODO(@MattWindsor91): work out how to get the path filter over
+             here *)
           (Path_consumers.consume_with_flags test'
              ~path:(Payload.where payload)
              ~action:

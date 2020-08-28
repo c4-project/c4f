@@ -98,8 +98,7 @@ let for_update_op (header : Fir.Flow_block.For.t) : Operators.Post.t =
 
 let for_update (lv : Ast.Expr.t) (header : Fir.Flow_block.For.t) : Ast.Expr.t
     =
-  let op = for_update_op header in
-  Reify_expr.postfix op lv
+  Reify_expr.postfix (for_update_op header) lv
 
 let for_loop (header : Fir.Flow_block.For.t) (body : Ast.Compound_stm.t) :
     Ast.Stm.t =
