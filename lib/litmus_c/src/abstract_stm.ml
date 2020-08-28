@@ -105,7 +105,7 @@ let expr_stm : Ast.Expr.t -> unit Fir.Statement.t Or_error.t = function
         assign |> Fir.Prim_statement.assign |> prim)
   | Call {func; arguments} ->
       procedure_call func arguments
-  | ( Brackets _
+  | ( Brackets _ (* should've been debracketed already *)
     | Constant _
     | Prefix _
     | Postfix _
@@ -220,10 +220,17 @@ let for_loop_structured (model_stm : mu_stm) (ilv : Ast.Expr.t)
     in
     Fir.Statement.flow (Fir.Flow_block.for_loop ~control ~body))
 
+let rec debracket (x : Ast.Expr.t) : Ast.Expr.t =
+  (* We do this inline in the abstraction for ordinary expressions, so this
+     purely exists for statement/for-loop component expressions. *)
+  match x with
+  | Brackets x -> debracket x
+  | y -> y
+
 let for_loop (model_stm : mu_stm) (old_init_opt : Ast.Expr.t option)
     (old_cond_opt : Ast.Expr.t option) (old_update_opt : Ast.Expr.t option)
     (body : Ast.Stm.t) : unit Fir.Statement.t Or_error.t =
-  match (old_init_opt, old_cond_opt, old_update_opt) with
+  match (Option.map ~f:debracket old_init_opt, Option.map ~f:debracket old_cond_opt, Option.map ~f:debracket old_update_opt) with
   | ( Some (Binary (ilv, `Assign, init))
     , Some (Binary (clv, cop, cmp))
     , Some (Postfix (ulv, uop)) ) ->
@@ -263,7 +270,7 @@ let rec model : Ast.Stm.t -> unit Fir.Statement.t Or_error.t = function
   | Expr None ->
       Ok (prim Fir.Prim_statement.nop)
   | Expr (Some e) ->
-      expr_stm e
+      expr_stm (debracket e)
   | If {cond; t_branch; f_branch} ->
       model_if model cond t_branch f_branch
   | Continue ->

@@ -2160,7 +2160,7 @@ litmus_postcondition: LIT_FORALL LPAR IDENTIFIER EQ_OP XOR_EQ
 ## litmus_identifier EQ_OP
 ##
 
-<274 YOUR SYNTAX ERROR MESSAGE HERE>
+Expected a valid constant after '=='
 
 litmus_postcondition: LIT_FORALL LPAR IDENTIFIER XOR_EQ
 ##
@@ -2172,7 +2172,7 @@ litmus_postcondition: LIT_FORALL LPAR IDENTIFIER XOR_EQ
 ## litmus_identifier
 ##
 
-<273 YOUR SYNTAX ERROR MESSAGE HERE>
+Expected '==' here
 
 litmus_postcondition: LIT_FORALL LPAR INT_LIT COLON XOR_EQ
 ##
@@ -2184,7 +2184,7 @@ litmus_postcondition: LIT_FORALL LPAR INT_LIT COLON XOR_EQ
 ## INT_LIT COLON
 ##
 
-<269 YOUR SYNTAX ERROR MESSAGE HERE>
+Expected a valid identifier after the thread selector
 
 litmus_postcondition: LIT_FORALL LPAR INT_LIT XOR_EQ
 ##
@@ -2196,7 +2196,7 @@ litmus_postcondition: LIT_FORALL LPAR INT_LIT XOR_EQ
 ## INT_LIT
 ##
 
-Expected a valid identifier after the thread selector
+Expected a colon, followed by a valid identifier, after the thread selector
 
 litmus_postcondition: LIT_FORALL LPAR LIT_TRUE LIT_AND XOR_EQ
 ##
