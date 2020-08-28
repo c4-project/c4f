@@ -223,14 +223,16 @@ let for_loop_structured (model_stm : mu_stm) (ilv : Ast.Expr.t)
 let rec debracket (x : Ast.Expr.t) : Ast.Expr.t =
   (* We do this inline in the abstraction for ordinary expressions, so this
      purely exists for statement/for-loop component expressions. *)
-  match x with
-  | Brackets x -> debracket x
-  | y -> y
+  match x with Brackets x -> debracket x | y -> y
 
 let for_loop (model_stm : mu_stm) (old_init_opt : Ast.Expr.t option)
     (old_cond_opt : Ast.Expr.t option) (old_update_opt : Ast.Expr.t option)
     (body : Ast.Stm.t) : unit Fir.Statement.t Or_error.t =
-  match (Option.map ~f:debracket old_init_opt, Option.map ~f:debracket old_cond_opt, Option.map ~f:debracket old_update_opt) with
+  match
+    ( Option.map ~f:debracket old_init_opt
+    , Option.map ~f:debracket old_cond_opt
+    , Option.map ~f:debracket old_update_opt )
+  with
   | ( Some (Binary (ilv, `Assign, init))
     , Some (Binary (clv, cop, cmp))
     , Some (Postfix (ulv, uop)) ) ->

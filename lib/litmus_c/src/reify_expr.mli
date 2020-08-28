@@ -18,3 +18,10 @@ val reify : Act_fir.Expression.t -> Ast.Expr.t
 
 val pp : Act_fir.Expression.t Fmt.t
 (** [pp] is a pretty-printer via {!reify}. *)
+
+(** {1 Helpers for reifying expressions}
+
+    We expose these because they are useful in for-loop reification. *)
+val postfix : Operators.Post.t -> Ast.Expr.t -> Ast.Expr.t
+(** [postfix op x] builds a postfix expression with operator [op] and
+    appropriately bracketed expression [x]. *)

@@ -41,32 +41,30 @@ let uop_pre : Fir.Op.Unary.t -> Operators.Pre.t = function L_not -> `Lnot
     Working out where brackets need to go is a fairly complicated interaction
     of C operator precedence and associativity rules. *)
 module Needs_brackets = struct
-  let uop_pre : Ast.Expr.t -> bool = function
+  let uop (x : Ast.Expr.t) ~(is_postfix : bool) : bool =
+    match x with
     | Brackets _ ->
         (* Already has brackets. *)
         false
     | Identifier _ | Constant _ | String _ ->
         (* These are all primitives. *)
         false
-    | Postfix _ ->
-        (* All postfix operators bind tighter than prefixes. *)
+    | Call _ | Subscript _ | Field _ | Postfix _ ->
+        (* These always bind tighter than, or at the same level as, the
+           operator; as a result, they need no brackets. *)
         false
-    | Binary _ ->
-        (* All binary operators bind looser than prefixes, and so need
-           brackets. *)
+    | Prefix _ | Sizeof_type _ | Cast _ ->
+        (* If we're prefix, then these bind equally tightly, and we don't
+           need brackets. If we're postfix, they bind looser than us, so we
+           need brackets. *)
+        is_postfix
+    | Binary _ | Ternary _ ->
+        (* These bind looser than prefixes and postfixes, so need brackets. *)
         true
-    | Ternary _ ->
-        (* These bind looser than prefixes. *)
-        true
-    | Prefix _ ->
-        (* All prefixes bind equally tightly, and I'm not convinced there are
-           any cases in which brackets are needed, even when the . *)
-        false
-    | Cast _ | Call _ | Subscript _ | Field _ | Sizeof_type _ ->
-        (* These bind equally tightly to prefixes, but at time of writing I
-           was a little confused as to if and when brackets were needed, so
-           this is a conservative overapproximation. *)
-        true
+
+  let uop_pre : Ast.Expr.t -> bool = uop ~is_postfix:false
+
+  let uop_post : Ast.Expr.t -> bool = uop ~is_postfix:true
 
   (* NB: This works ATM because all of the bops are left-associative and have
      the same precedence, and will need refining if any right-associative
@@ -126,3 +124,6 @@ let reify (x : Fir.Expression.t) : Ast.Expr.t =
   Reify_prim.(Fir.Expression.reduce x ~constant ~address ~atomic ~bop ~uop)
 
 let pp : Fir.Expression.t Fmt.t = Fmt.using reify Ast.Expr.pp
+
+let postfix (op : Operators.Post.t) (x : Ast.Expr.t) : Ast.Expr.t =
+  Postfix (Needs_brackets.(maybe_bracket ~f:uop_post x), op)

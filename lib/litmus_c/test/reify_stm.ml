@@ -50,4 +50,19 @@ let%test_module "reify/pp" =
                      ~direction:Down_inclusive)
                 ~body:(Block.make ~metadata:() ()))) ;
       [%expect {| for (x = 53; x >= 27; x--) {  } |}]
+
+    let%expect_test "upwards-inclusive for loop with pointers" =
+      test
+        Fir.(
+          Statement.flow
+            Flow_block.(
+              for_loop
+                ~control:
+                  (For.make
+                     ~lvalue:(Lvalue.deref (Lvalue.of_variable_str_exn "x"))
+                     ~init_value:(Expression.int_lit 0)
+                     ~cmp_value:(Expression.int_lit 100)
+                     ~direction:Up_inclusive)
+                ~body:(Block.make ~metadata:() ()))) ;
+      [%expect {| for (*x = 0; *x <= 100; (*x)++) {  } |}]
   end )
