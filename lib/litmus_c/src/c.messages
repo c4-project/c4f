@@ -300,7 +300,7 @@ translation_unit: IDENTIFIER LBRACE DO XOR_EQ
 ## DO
 ##
 
-<341 YOUR SYNTAX ERROR MESSAGE HERE>
+Expected a valid statement as the body of this 'do...while' loop
 
 translation_unit: IDENTIFIER LBRACE FOR LPAR SEMI SEMI RPAR XOR_EQ
 ##
@@ -313,7 +313,7 @@ translation_unit: IDENTIFIER LBRACE FOR LPAR SEMI SEMI RPAR XOR_EQ
 ## FOR LPAR option(expression) SEMI option(expression) SEMI option(expression) RPAR
 ##
 
-<340 YOUR SYNTAX ERROR MESSAGE HERE>
+Expected a valid statement as the body of this 'for' loop
 
 translation_unit: IDENTIFIER LBRACE FOR LPAR SEMI SEMI STRING RETURN
 ##
@@ -347,7 +347,7 @@ translation_unit: IDENTIFIER LBRACE FOR LPAR SEMI SEMI STRING RETURN
 ## In state 326, spurious reduction of production option(expression) -> expression 
 ##
 
-<339 YOUR SYNTAX ERROR MESSAGE HERE>
+Expected a right parenthesis after the update section of this 'for' loop
 
 translation_unit: IDENTIFIER LBRACE FOR LPAR SEMI SEMI XOR_EQ
 ##
@@ -360,7 +360,7 @@ translation_unit: IDENTIFIER LBRACE FOR LPAR SEMI SEMI XOR_EQ
 ## FOR LPAR option(expression) SEMI option(expression) SEMI
 ##
 
-<338 YOUR SYNTAX ERROR MESSAGE HERE>
+Expected a valid expression (or blank) in the update section of this 'for' loop
 
 translation_unit: IDENTIFIER LBRACE FOR LPAR SEMI STRING RPAR
 ##
@@ -394,7 +394,8 @@ translation_unit: IDENTIFIER LBRACE FOR LPAR SEMI STRING RPAR
 ## In state 326, spurious reduction of production option(expression) -> expression 
 ##
 
-<337 YOUR SYNTAX ERROR MESSAGE HERE>
+Expected a semicolon after the condition section of this 'for' loop
+(followed by an update section)
 
 translation_unit: IDENTIFIER LBRACE FOR LPAR SEMI XOR_EQ
 ##
@@ -407,7 +408,7 @@ translation_unit: IDENTIFIER LBRACE FOR LPAR SEMI XOR_EQ
 ## FOR LPAR option(expression) SEMI
 ##
 
-<336 YOUR SYNTAX ERROR MESSAGE HERE>
+Expected a valid expression (or blank) in the condition section of this 'for' loop
 
 translation_unit: IDENTIFIER LBRACE FOR LPAR STRING RPAR
 ##
@@ -441,7 +442,8 @@ translation_unit: IDENTIFIER LBRACE FOR LPAR STRING RPAR
 ## In state 326, spurious reduction of production option(expression) -> expression 
 ##
 
-<335 YOUR SYNTAX ERROR MESSAGE HERE>
+Expected a semicolon after the initialiser section of this 'for' loop
+(followed by condition and update sections)
 
 translation_unit: IDENTIFIER LBRACE FOR LPAR XOR_EQ
 ##
@@ -454,7 +456,8 @@ translation_unit: IDENTIFIER LBRACE FOR LPAR XOR_EQ
 ## FOR LPAR
 ##
 
-<334 YOUR SYNTAX ERROR MESSAGE HERE>
+Expected a valid expression (or blank) in the initialiser section of this 'for' loop
+(note that C99-style arbitrary initialisers are not yet supported)
 
 translation_unit: IDENTIFIER LBRACE FOR XOR_EQ
 ##
@@ -467,7 +470,7 @@ translation_unit: IDENTIFIER LBRACE FOR XOR_EQ
 ## FOR
 ##
 
-<333 YOUR SYNTAX ERROR MESSAGE HERE>
+Expected an opening parenthesis after 'for'
 
 translation_unit: IDENTIFIER LBRACE GOTO XOR_EQ
 ##
