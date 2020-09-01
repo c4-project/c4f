@@ -17,35 +17,29 @@ open struct
   module Named = Ac.C_named
 end
 
-let parameter_list_equal :
-       (Ac.C_id.t, Type.t) List.Assoc.t
-    -> (Ac.C_id.t, Type.t) List.Assoc.t
-    -> bool =
-  [%equal: (Ac.C_id.t * Type.t) list]
-
-let check_parameters_consistent (params : Type.t Named.Alist.t)
-    (next : unit Function.t) : unit Or_error.t =
-  let params' = Function.parameters next in
-  if parameter_list_equal params params' then Ok ()
-  else
-    Or_error.error_s
-      [%message
-        "Functions do not agree on parameter lists"
-          ~first_example:(params : Type.t Named.Alist.t)
-          ~second_example:(params' : Type.t Named.Alist.t)]
+let merge_parameters (pss : Type.t Named.Alist.t list) :
+    Type.t Named.Alist.t Or_error.t =
+  Or_error.(
+    pss
+    |> Tx.Or_error.combine_map ~f:(Map.of_alist_or_error (module Ac.C_id))
+    >>= Act_utils.My_map.merge_with_overlap ~compare:Type.compare
+    >>| Map.to_alist)
 
 let make_global_var_alist (progs : Litmus.Test.Lang.Program.t list) :
     (Ac.Litmus_id.t, Type.t) List.Assoc.t Or_error.t =
   match progs with
   | [] ->
       Or_error.error_string "need at least one function"
-  | x :: xs ->
-      let params = Function.parameters (Named.value x) in
+  | xs ->
       Or_error.(
         xs
-        |> Tx.Or_error.combine_map_unit
-             ~f:(Fn.compose (check_parameters_consistent params) Named.value)
-        >>| fun () -> Tx.Alist.map_left params ~f:Act_common.Litmus_id.global)
+        |> Accessor_base.(
+             to_list
+               ( List.each @> Ac.C_named.Access.value
+               @> Function.Access.parameters ))
+        |> merge_parameters
+        |> Or_error.tag ~tag:"Functions do not agree on parameter lists"
+        >>| Tx.Alist.map_left ~f:Act_common.Litmus_id.global)
 
 let make_local_var_alist (tid : int) (prog : Litmus.Test.Lang.Program.t) :
     (Ac.Litmus_id.t, Type.t) List.Assoc.t =

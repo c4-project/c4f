@@ -14,7 +14,6 @@
 open Core
 
 open struct
-  module Ac = Act_common
   module Tx = Travesty_base_exts
 end
 

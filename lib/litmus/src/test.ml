@@ -11,8 +11,10 @@
 
 open Core_kernel (* for Validated *)
 
-module Ac = Act_common
-module Tx = Travesty_base_exts
+open struct
+  module Ac = Act_common
+  module Tx = Travesty_base_exts
+end
 
 module Raw = struct
   type ('const, 'prog) t = {header: 'const Header.t; threads: 'prog list}
@@ -105,7 +107,9 @@ let check_init_against_globals (type k t)
   let init_keys = init |> List.map ~f:fst |> Set.of_list (module Ac.C_id) in
   let globals_keys = globals |> Map.keys |> Set.of_list (module Ac.C_id) in
   Or_error.(
-    Tx.Or_error.unless_m (Set.equal init_keys globals_keys) ~f:(fun () ->
+    (* TODO(@MattWindsor91): really not sure what the correct direction is
+       here, now. *)
+    Tx.Or_error.unless_m (Set.equal globals_keys init_keys) ~f:(fun () ->
         error_s
           [%message
             "Program global variables aren't compatible with init."
@@ -125,7 +129,6 @@ module Make (Lang : Test_types.Basic) :
 
     (** [validate_init init] validates an incoming litmus test's init block. *)
     let validate_init (init : (Ac.C_id.t, Lang.Constant.t) List.Assoc.t) =
-      let module Tr = Travesty in
       let module V = Validate in
       let dup =
         List.find_a_dup ~compare:(Tx.Fn.on fst ~f:Ac.C_id.compare) init
@@ -211,38 +214,34 @@ module Make (Lang : Test_types.Basic) :
         (Raw.Fields.fold ~init:[] ~header:(w validate_header)
            ~threads:(w validate_threads))
 
-    let get_uniform_globals :
+    let uniform_globals :
         Lang.Program.t list -> Lang.Type.t Map.M(Ac.C_id).t option Or_error.t
         = function
       | [] ->
           Or_error.error_string "empty threads"
-      | x :: xs ->
-          let s = Lang.Program.global_vars x in
-          let is_uniform =
-            List.for_all xs ~f:(fun x' ->
-                Option.equal
-                  (Map.equal Lang.Type.equal)
-                  s
-                  (Lang.Program.global_vars x'))
-          in
-          Or_error.(
-            Tx.Or_error.unless_m is_uniform ~f:(fun () ->
-                error_string "Threads disagree on global variables sets.")
-            >>| fun () -> s)
+      | xs ->
+          (* Working on the assumption that global_vars either maps variables
+             for all threads, or for none. *)
+          xs
+          |> List.map ~f:Lang.Program.global_vars
+          |> Option.all
+          |> Tx.Option.With_errors.map_m
+               ~f:
+                 (Act_utils.My_map.merge_with_overlap
+                    ~compare:Lang.Type.compare)
+          |> Or_error.tag ~tag:"Threads disagree on global variables sets."
 
     (** [validate_globals] checks an incoming Litmus test to ensure that, if
         its threads explicitly reference global variables, then they
         reference the same variables as both each other and the init block. *)
     let validate_globals : t Validate.check =
       Validate.of_error (fun (candidate : t) ->
-          let open Or_error.Let_syntax in
-          match%bind get_uniform_globals (Raw.threads candidate) with
-          | None ->
-              Ok ()
-          | Some gs ->
-              check_init_against_globals
-                (Header.init (Raw.header candidate))
-                gs)
+          let threads = Raw.threads candidate in
+          let header = Raw.header candidate in
+          Or_error.(
+            threads |> uniform_globals
+            >>= Tx.Option.With_errors.iter_m
+                  ~f:(check_init_against_globals (Header.init header))))
 
     let validate : t Validate.check =
       Validate.all [validate_fields; validate_globals]

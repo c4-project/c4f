@@ -32,3 +32,12 @@ val find_or_error :
     [Or_error] error. By passing [sexp_of_key], one can add the key to the
     returned error; by passing [map_name], one can customise the name given
     to the map in the error. *)
+
+val merge_with_overlap :
+     ('k, 'v, 'w) Map.t list
+  -> compare:('v -> 'v -> int)
+  -> ('k, 'v, 'w) Map.t Or_error.t
+(** [merge_with_overlap maps ~compare] merges [maps] into a single map,
+    permitting overlap between two maps' entries where [compare] returns
+    equality for the entries' values. It fails if there is not at least one
+    map in [maps], or if two maps map the same key to different values. *)
