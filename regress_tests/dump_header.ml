@@ -12,7 +12,6 @@
 (** Tests the output of the 'act-c dump-header' command. *)
 
 open Core
-module Ac = Act_common
 
 let dump_header_of_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t
     =

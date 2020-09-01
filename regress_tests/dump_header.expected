@@ -1,5 +1,15 @@
 # Dump-header tests
 
+## deacon.c.litmus
+
+```
+{
+  "name": "deacon2018_big",
+  "locations": null,
+  "init": { "x": 0, "y": 0 },
+  "postcondition": "exists (1:r0 == 0 /\\ 2:r1 == 2)"
+}
+```
 ## fuzz_local_bools.c.litmus
 
 ```
@@ -16,7 +26,8 @@
   },
   "postcondition":
     "forall\n((x == 1 /\\ (y == 1 /\\ 0:r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ 0:r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ 0:r0 == 0))))"
-}```
+}
+```
 ## iriw.c.litmus
 
 ```
@@ -26,7 +37,8 @@
   "init": { "x": 0, "y": 0 },
   "postcondition":
     "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
-}```
+}
+```
 ## iriw_fuzz_redundant.c.litmus
 
 ```
@@ -46,7 +58,8 @@
   },
   "postcondition":
     "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
-}```
+}
+```
 ## memalloy_cmpxchg.c.litmus
 
 ```
@@ -55,7 +68,8 @@
   "locations": null,
   "init": { "x": 0 },
   "postcondition": "exists (0:r0 == 0 /\\ x == 2)"
-}```
+}
+```
 ## memalloy_na_int.c.litmus
 
 ```
@@ -64,7 +78,8 @@
   "locations": null,
   "init": { "x": 0 },
   "postcondition": "exists (0:r0 == 0 /\\ x == 1)"
-}```
+}
+```
 ## rwc.c.litmus
 
 ```
@@ -73,6 +88,7 @@
   "locations": null,
   "init": { "x": 0, "y": 0 },
   "postcondition": "exists (1:r0 == 1 /\\ 1:r1 == 0 /\\ 2:r0 == 0)"
-}```
+}
+```
 
-Ran 6 test(s).
+Ran 7 test(s).

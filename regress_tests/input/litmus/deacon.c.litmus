@@ -1,0 +1,28 @@
+C deacon2018_big
+
+// Will Deacon's example from
+// https://gcc.gnu.org/legacy-ml/gcc-patches/2018-10/msg02042.html
+// (used to test non-uniform parameter lists, etc.)
+
+{ x = 0; y = 0; }
+
+void P0(atomic_int *x, atomic_int *y) {
+  atomic_store_explicit(x, 1, memory_order_relaxed);
+  atomic_thread_fence(memory_order_release);
+  atomic_store_explicit(y, 1, memory_order_relaxed);
+}
+
+void P1(atomic_int *x, atomic_int *y) {
+  int r0 = 0;
+
+  atomic_fetch_add_explicit(y, 1, memory_order_relaxed);  // STADD
+  atomic_thread_fence(memory_order_acquire);
+  r0 = atomic_load_explicit(x, memory_order_relaxed);
+}
+
+void P2(atomic_int *y) {
+  int r1 = 0;
+  r1 = atomic_load_explicit(y, memory_order_relaxed);
+}
+
+exists (1:r0 == 0 /\ 2:r1 == 2)

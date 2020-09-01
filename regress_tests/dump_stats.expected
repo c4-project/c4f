@@ -1,5 +1,36 @@
 # Dump-stats tests
 
+## deacon.c.litmus
+
+```
+threads 3
+returns 0
+literals.bool 0
+atomics.expression.cmpxchg 0
+atomics.expression.fence 0
+atomics.expression.fetch 0
+atomics.expression.load 2
+atomics.expression.store 0
+atomics.expression.xchg 0
+mem-orders.expression.memory_order_relaxed 2
+mem-orders.expression.memory_order_consume 0
+mem-orders.expression.memory_order_acquire 0
+mem-orders.expression.memory_order_release 0
+mem-orders.expression.memory_order_acq_rel 0
+mem-orders.expression.memory_order_seq_cst 0
+atomics.statement.cmpxchg 0
+atomics.statement.fence 2
+atomics.statement.fetch 1
+atomics.statement.load 0
+atomics.statement.store 2
+atomics.statement.xchg 0
+mem-orders.statement.memory_order_relaxed 3
+mem-orders.statement.memory_order_consume 0
+mem-orders.statement.memory_order_acquire 1
+mem-orders.statement.memory_order_release 1
+mem-orders.statement.memory_order_acq_rel 0
+mem-orders.statement.memory_order_seq_cst 0
+```
 ## fuzz_local_bools.c.litmus
 
 ```
@@ -187,4 +218,4 @@ mem-orders.statement.memory_order_acq_rel 0
 mem-orders.statement.memory_order_seq_cst 2
 ```
 
-Ran 6 test(s).
+Ran 7 test(s).
