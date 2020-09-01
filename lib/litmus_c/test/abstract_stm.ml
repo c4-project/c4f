@@ -53,6 +53,35 @@ let%test_module "model" =
               (cmp_value (Constant (Int 42))) (direction Up_exclusive))))
            (body ((statements ((Prim () Nop))) (metadata ())))))) |}]
 
+    let%expect_test "model downwards not-equal for loop" =
+      test
+        Src.Ast.(
+          Stm.For
+            { init=
+                Some
+                  (Binary
+                     ( Identifier (Ac.C_id.of_string "x")
+                     , `Assign
+                     , Constant (Integer 53) ))
+            ; cond=
+                Some
+                  (Binary
+                     ( Identifier (Ac.C_id.of_string "x")
+                     , `Ne
+                     , Constant (Integer 27) ))
+            ; update=
+                Some (Postfix (Identifier (Ac.C_id.of_string "x"), `Dec))
+            ; body= Stm.Expr None }) ;
+      [%expect
+        {|
+        (Ok
+         (Flow
+          ((header
+            (For
+             ((lvalue (Variable x)) (init_value (Constant (Int 53)))
+              (cmp_value (Constant (Int 27))) (direction Down_exclusive))))
+           (body ((statements ((Prim () Nop))) (metadata ())))))) |}]
+
     let%expect_test "model downwards-inclusive for loop" =
       test
         Src.Ast.(

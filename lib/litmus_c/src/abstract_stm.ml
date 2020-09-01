@@ -182,7 +182,7 @@ let for_loop_lvalue (ilv : Ast.Expr.t) (clv : Ast.Expr.t) (ulv : Ast.Expr.t)
 let for_loop_direction (cop : Operators.Bin.t) (uop : Operators.Post.t) :
     Fir.Flow_block.For.Direction.t Or_error.t =
   match (cop, uop) with
-  | `Lt, `Inc ->
+  | `Lt, `Inc | `Ne, `Inc ->
       Ok Up_exclusive
   | `Lt, _ ->
       Or_error.error_string "if comparison op is <, update must be ++"
@@ -190,7 +190,7 @@ let for_loop_direction (cop : Operators.Bin.t) (uop : Operators.Post.t) :
       Ok Up_inclusive
   | `Le, _ ->
       Or_error.error_string "if comparison op is <=, update must be ++"
-  | `Gt, `Dec ->
+  | `Gt, `Dec | `Ne, `Dec ->
       Ok Down_exclusive
   | `Gt, _ ->
       Or_error.error_string "if comparison op is >, update must be --"
