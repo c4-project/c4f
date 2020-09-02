@@ -146,12 +146,11 @@ let%test_module "trace bisection" =
       [%expect {|
         () |}]
 
-    let%expect_test "right bisection always returning right returns trace \
-                     of length 1" =
+    let%expect_test "right bisection always returning right returns empty \
+                     trace" =
       test ~want:`First_on_right ~f:(Fn.const `Right) ;
-      [%expect
-        {|
-        (((name (dummy action)) (payload ((foo 27) (bar true) (baz hello))))) |}]
+      [%expect {|
+        () |}]
 
     let towards_length (n : int) (t : Src.Trace.t) : [`Left | `Right] =
       if n < Src.Trace.length t then `Right else `Left

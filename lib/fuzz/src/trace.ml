@@ -84,9 +84,11 @@ let take (trace : t) (n : int) : t =
 
 let bisect_index (trace : t) ~(want : [`Last_on_left | `First_on_right])
     ~(f : t -> [`Left | `Right]) : int option =
-  Binary_search.binary_search_segmented trace want ~length
-    ~get:(fun t n -> take t (n + 1))
-    ~segment_of:f
+  (* Taking length+1 is an artefact of trying to use something that finds one
+     element of a list to find a sublist of a list; it lets us consider all
+     traces from empty up to full. *)
+  Binary_search.binary_search_segmented trace want
+    ~length:(Fn.compose succ length) ~get:take ~segment_of:f
 
 let default_for (trace : t) ~(want : [`Last_on_left | `First_on_right]) : t =
   match want with `Last_on_left -> empty | `First_on_right -> trace
@@ -94,5 +96,5 @@ let default_for (trace : t) ~(want : [`Last_on_left | `First_on_right]) : t =
 let bisect (trace : t) ~(want : [`Last_on_left | `First_on_right])
     ~(f : t -> [`Left | `Right]) : t =
   trace |> bisect_index ~f ~want
-  |> Option.map ~f:(fun n -> take trace (n + 1))
+  |> Option.map ~f:(take trace)
   |> Option.value ~default:(default_for trace ~want)
