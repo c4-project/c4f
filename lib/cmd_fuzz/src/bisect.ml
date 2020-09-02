@@ -22,17 +22,19 @@ let store_trace (trace : Af.Trace.t) : Fpath.t Or_error.t =
       Ok tmpfile)
 
 let run_with_trace (trace : Af.Trace.t) ~(cmd : string) ~(argv : string list)
-    : bool =
+    ~(verbose : bool) : bool =
   match store_trace trace with
   | Ok name ->
-      Shell.test cmd (Fpath.to_string name :: argv)
+      Shell.test ~verbose cmd (Fpath.to_string name :: argv)
   | Error e ->
       Stdio.eprint_s (Error.sexp_of_t e) ;
       false
 
 let bisector (o : Act_common.Output.t) (trace : Af.Trace.t) ~(cmd : string)
     ~(argv : string list) : [`Left | `Right] =
-  if run_with_trace trace ~cmd ~argv then (
+  if
+    run_with_trace trace ~cmd ~argv ~verbose:(Act_common.Output.is_verbose o)
+  then (
     Act_common.Output.pv o "%d <-\n" (Af.Trace.length trace) ;
     `Left )
   else (
@@ -58,7 +60,7 @@ let run ~(cmd : string) ~(argv : string list)
 let readme () : string =
   Act_utils.My_string.format_for_readme
     {|
-      Reads in the given trace file and bisects it sending it as standard input
+      Reads in the given trace file and bisects it, sending each partial trace
       to the given command and presuming that success means the trace
       should shrink (move leftwards) and failure means it should grow
       (move rightwards).
