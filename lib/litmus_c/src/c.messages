@@ -1236,7 +1236,7 @@ translation_unit: IDENTIFIER LBRACK STRING LPAR STRING WHILE
 ## In state 191, spurious reduction of production assignment_expression -> conditional_expression 
 ##
 
-<211 YOUR SYNTAX ERROR MESSAGE HERE>
+Expected parenthesis, comma, or a valid continuation of this argument expression
 
 translation_unit: IDENTIFIER LBRACK STRING LPAR XOR_EQ
 ##
