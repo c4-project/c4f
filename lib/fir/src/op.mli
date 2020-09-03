@@ -78,11 +78,25 @@ module Binary : sig
     include Op_types.S_binary with type t := t
   end
 
+  (** {3 Relational binary operators} *)
+
+  module Rel : sig
+    (** Enumeration of relational binary operators. *)
+    type t =
+      | Eq (** An equality operator. *)
+      | Ne (** A non-equality operator. *)
+    [@@deriving sexp, compare, equal, quickcheck]
+
+    include Op_types.S_binary with type t := t
+  end
+
+
+
   (** {3 Main enumeration} *)
 
   (** Enumeration of binary operators. *)
   type t =
-    | Eq  (** An equality operator. *)
+    | Rel of Rel.t  (** Lifts a relational operator to a binary operator. *)
     | Arith of Arith.t
         (** Lifts an arithmetic operator to a binary operator. *)
     | Bitwise of Bitwise.t
@@ -97,6 +111,9 @@ module Binary : sig
 
   val eq : t
   (** [eq] is the equality operator. *)
+
+  val ne : t
+  (** [ne] is the non-equality operator. *)
 
   val add : t
   (** [add] is the addition operator. *)

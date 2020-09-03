@@ -48,6 +48,9 @@ val atomic_load : Atomic_load.t -> t
 val eq : t -> t -> t
 (** [eq l r] builds an equality expression. *)
 
+val ne : t -> t -> t
+(** [ne l r] builds a non-equality expression. *)
+
 (** {2 Logical connectives} *)
 
 val l_and : t -> t -> t

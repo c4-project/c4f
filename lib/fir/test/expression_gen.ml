@@ -10,9 +10,9 @@
    project root for more information. *)
 
 open Base
-module Src = Act_fir
 
 open struct
+  module Src = Act_fir
   module Q = Base_quickcheck
   module Qx = Act_utils.My_quickcheck
 end

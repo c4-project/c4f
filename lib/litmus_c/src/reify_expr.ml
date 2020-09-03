@@ -16,8 +16,10 @@ open struct
 end
 
 let bop : Fir.Op.Binary.t -> Operators.Bin.t = function
-  | Eq ->
+  | Rel Eq ->
       `Eq
+  | Rel Ne ->
+      `Ne
   | Arith Add ->
       `Add
   | Arith Sub ->

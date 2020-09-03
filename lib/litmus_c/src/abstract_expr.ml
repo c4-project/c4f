@@ -85,6 +85,8 @@ let bop : Operators.Bin.t -> Fir.Op.Binary.t Or_error.t =
           return add
       | `Eq ->
           return eq
+      | `Ne ->
+          return ne
       | `Land ->
           return l_and
       | `Lor ->

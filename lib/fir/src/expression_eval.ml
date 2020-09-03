@@ -18,40 +18,47 @@ type mu = expr -> Constant.t Heap.Monad.t
 let expr_as_bool (x : expr) ~(mu : mu) : bool Heap.Monad.t =
   Heap.Monad.Let_syntax.(
     let%bind const = mu x in
-    Heap.Monad.Monadic.return (Constant.as_bool const))
+    Heap.Monad.Monadic.return (Constant.convert_as_bool const))
 
 let expr_as_int (x : expr) ~(mu : mu) : int Heap.Monad.t =
   Heap.Monad.Let_syntax.(
     let%bind const = mu x in
-    Heap.Monad.Monadic.return (Constant.as_int const))
+    Heap.Monad.Monadic.return (Constant.convert_as_int const))
 
-let eval_logical (l : expr) (r : expr) ~(short_value : bool) ~(mu : mu) :
+let logical_op_sv : Op.Binary.Logical.t -> bool = function
+  | And -> false
+  | Or -> true
+
+let eval_logical (op : Op.Binary.Logical.t) (l : expr) (r : expr) ~(mu : mu) :
     Constant.t Heap.Monad.t =
   Heap.Monad.Let_syntax.(
     let%bind l_value = expr_as_bool ~mu l in
+    let short_value = logical_op_sv op in
     if Bool.equal l_value short_value then
       Heap.Monad.return (Constant.bool l_value)
     else mu r)
 
-let eval_land = eval_logical ~short_value:false
+let rel_op_sem : Op.Binary.Rel.t -> Constant.t -> Constant.t -> bool = function
+  | Eq -> Constant.equal
+  | Ne -> fun l r -> not (Constant.equal l r)
 
-let eval_lor = eval_logical ~short_value:true
+let promote_constant_types (l : Constant.t) (r : Constant.t) : Type.t Or_error.t =
+  Or_error.tag_s
+    (Type.check (Constant.type_of l) (Constant.type_of r))
+    ~tag:[%message "types of constant in relational expression are incompatible"
+          ~left:(l: Constant.t) ~right:(r: Constant.t)]
 
-let eval_eq (l : expr) (r : expr) ~(mu : mu) : Constant.t Heap.Monad.t =
+let eval_rel' (op : Op.Binary.Rel.t) (l_const : Constant.t) (r_const : Constant.t) : Constant.t Or_error.t =
+  Or_error.Let_syntax.(
+      let%map _ = promote_constant_types l_const r_const in
+      Constant.bool (rel_op_sem op l_const r_const))
+
+let eval_rel (op : Op.Binary.Rel.t) (l : expr) (r : expr)
+  ~(mu : mu) : Constant.t Heap.Monad.t =
   Heap.Monad.Let_syntax.(
     let%bind l_const = mu l in
     let%bind r_const = mu r in
-    if Comparable.lift [%equal: Type.t] ~f:Constant.type_of l_const r_const
-    then
-      Heap.Monad.return
-        (Constant.bool ([%equal: Constant.t] l_const r_const))
-    else
-      Heap.Monad.Monadic.return
-        (Or_error.error_s
-           [%message
-             "eq: types of constants are incompatible"
-               ~left:(l_const : Constant.t)
-               ~right:(r_const : Constant.t)]))
+    Heap.Monad.Monadic.return (eval_rel' op l_const r_const))
 
 let eval_int_op (op : 'a) (l : expr) (r : expr)
     ~(op_sem : 'a -> int -> int -> int) ~(mu : mu) : Constant.t Heap.Monad.t
@@ -85,16 +92,14 @@ let eval_bitwise :
 
 let eval_bop (mu : mu) :
     Op.Binary.t -> expr -> expr -> Constant.t Heap.Monad.t = function
+  | Rel op ->
+      eval_rel op ~mu
   | Arith op ->
       eval_arith op ~mu
   | Bitwise op ->
       eval_bitwise op ~mu
-  | Logical And ->
-      eval_land ~mu
-  | Logical Or ->
-      eval_lor ~mu
-  | Eq ->
-      eval_eq ~mu
+  | Logical op ->
+      eval_logical op ~mu
 
 let eval_lnot (x : expr) ~(mu : mu) : Constant.t Heap.Monad.t =
   Heap.Monad.(x |> expr_as_bool ~mu >>| not >>| Constant.bool)

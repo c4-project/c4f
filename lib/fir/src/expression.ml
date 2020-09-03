@@ -77,7 +77,9 @@ let truth : t = bool_lit true
 
 let falsehood : t = bool_lit false
 
-let eq : t -> t -> t = bop Op.Binary.Eq
+let eq : t -> t -> t = bop Op.Binary.eq
+
+let ne : t -> t -> t = bop Op.Binary.ne
 
 let add : t -> t -> t = bop Op.Binary.add
 
@@ -166,7 +168,7 @@ module Type_check (E : Env_types.S) = struct
                 ~right:(r_type : Type.t)]
       in
       match b with
-      | Eq ->
+      | Rel _ ->
           return Type.(bool ())
       | Arith _ | Bitwise _ ->
           require_unified_bop_type b ~want:Type.(int ()) ~got:u_type

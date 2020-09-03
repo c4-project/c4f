@@ -320,7 +320,7 @@ end = struct
     (* TODO(@MattWindsor91): do more here? *)
     Q.Generator.Let_syntax.(
       let%map op =
-        Q.Generator.of_list Op.Binary.[Eq]
+        Q.Generator.of_list Op.Binary.[eq]
         (* TODO(@MattWindsor91): inequalities *)
       in
       Expression.(bop op var_ref (int_lit value)))

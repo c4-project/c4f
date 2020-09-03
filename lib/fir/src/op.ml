@@ -30,6 +30,20 @@ module Unary = struct
 end
 
 module Binary = struct
+  module Rel = struct
+    type t = Eq | Ne [@@deriving sexp, compare, equal, quickcheck]
+
+    let zero_lhs : t -> [`Idem | `Zero] option = Fn.const None
+
+    (* (0 == x) == ?; (x != 0) == ? *)
+
+    let zero_rhs : t -> [`Idem | `Zero] option = Fn.const None
+
+    (* (x == 0) == ?; (x != 0) == ? *)
+
+    let refl : t -> [`Idem | `Zero] option = Fn.const None
+  end
+
   module Arith = struct
     type t = Add | Sub [@@deriving sexp, compare, equal, quickcheck]
 
@@ -78,9 +92,14 @@ module Binary = struct
   module Logical = struct
     type t = And | Or [@@deriving sexp, compare, equal, quickcheck]
 
-    (* TODO(@MattWindsor91): can we rely on properties for any logical
-       operators? *)
-    let zero_lhs : t -> [`Idem | `Zero] option = Fn.const None
+    (* As above, note that zero is Boolean false in C. *)
+
+    (* TODO(@MattWindsor91): do these operations preserve specific
+       truthy values? *)
+
+    let zero_lhs : t -> [`Idem | `Zero] option = function
+    | And -> Some `Zero
+    | Or -> None
 
     let zero_rhs = zero_lhs
 
@@ -88,11 +107,15 @@ module Binary = struct
   end
 
   type t =
-    | Eq
+    | Rel of Rel.t
     | Arith of Arith.t
     | Bitwise of Bitwise.t
     | Logical of Logical.t
   [@@deriving sexp, variants, compare, equal, quickcheck]
+
+  let eq : t = Rel Eq
+
+  let ne : t = Rel Ne
 
   let add : t = Arith Add
 
@@ -109,8 +132,8 @@ module Binary = struct
   let b_xor : t = Bitwise Xor
 
   let zero_lhs : t -> [`Idem | `Zero] option = function
-    | Eq ->
-        None
+    | Rel o ->
+        Rel.zero_lhs o
     | Arith o ->
         Arith.zero_lhs o
     | Bitwise o ->
@@ -119,8 +142,8 @@ module Binary = struct
         Logical.zero_lhs o
 
   let zero_rhs : t -> [`Idem | `Zero] option = function
-    | Eq ->
-        None
+    | Rel o ->
+        Rel.zero_rhs o
     | Arith o ->
         Arith.zero_rhs o
     | Bitwise o ->
@@ -129,8 +152,8 @@ module Binary = struct
         Logical.zero_rhs o
 
   let refl : t -> [`Idem | `Zero] option = function
-    | Eq ->
-        None
+    | Rel o ->
+        Rel.refl o
     | Arith o ->
         Arith.refl o
     | Bitwise o ->
