@@ -83,14 +83,12 @@ module Binary : sig
   module Rel : sig
     (** Enumeration of relational binary operators. *)
     type t =
-      | Eq (** An equality operator. *)
-      | Ne (** A non-equality operator. *)
+      | Eq  (** An equality operator. *)
+      | Ne  (** A non-equality operator. *)
     [@@deriving sexp, compare, equal, quickcheck]
 
     include Op_types.S_binary with type t := t
   end
-
-
 
   (** {3 Main enumeration} *)
 

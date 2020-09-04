@@ -37,7 +37,7 @@ val zero_of_type : Type.t -> t
 (** [zero_of_type ty] gets the appropriate zero value for the type [ty]. *)
 
 val convert : t -> to_:Type.Prim.t -> t Or_error.t
-(** [convert k ~to_] tries to convert [k] to the primitive type [to_].  It
+(** [convert k ~to_] tries to convert [k] to the primitive type [to_]. It
     fails if the conversion is impossible. *)
 
 (** {3 Shorthand for specific values} *)
@@ -71,14 +71,12 @@ val as_int : t -> int Or_error.t
     error otherwise. *)
 
 val convert_as_bool : t -> bool Or_error.t
-(** [convert_as_bool k] returns [Some b] if [k] is convertible to a Boolean constant [b]; and an
-    error otherwise. *)
+(** [convert_as_bool k] returns [Some b] if [k] is convertible to a Boolean
+    constant [b]; and an error otherwise. *)
 
 val convert_as_int : t -> int Or_error.t
-(** [convert_as_int k] returns [Some i] if [k] is  convertible to an integer constant [i]; and an
-    error otherwise. *)
-
-
+(** [convert_as_int k] returns [Some i] if [k] is convertible to an integer
+    constant [i]; and an error otherwise. *)
 
 (** {2 Type checking}
 

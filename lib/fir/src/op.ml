@@ -94,12 +94,14 @@ module Binary = struct
 
     (* As above, note that zero is Boolean false in C. *)
 
-    (* TODO(@MattWindsor91): do these operations preserve specific
-       truthy values? *)
+    (* TODO(@MattWindsor91): do these operations preserve specific truthy
+       values? *)
 
     let zero_lhs : t -> [`Idem | `Zero] option = function
-    | And -> Some `Zero
-    | Or -> None
+      | And ->
+          Some `Zero
+      | Or ->
+          None
 
     let zero_rhs = zero_lhs
 

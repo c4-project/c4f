@@ -278,8 +278,11 @@ end = struct
     Q.Generator.map ~f:Expression.lvalue [%quickcheck.generator: L.t]
 
   let gen_int_relational : t Q.Generator.t =
-    Q.Generator.map2 [%quickcheck.generator: Iv.t]
-      [%quickcheck.generator: Iv.t] ~f:Expression.eq
+    Q.Generator.Let_syntax.(
+      let%map l = [%quickcheck.generator: Iv.t]
+      and r = [%quickcheck.generator: Iv.t]
+      and op = Q.Generator.of_list [Expression.eq; Expression.ne] in
+      op l r)
 
   let gen_const : t Q.Generator.t =
     Q.Generator.map ~f:Expression.bool_lit Q.([%quickcheck.generator: bool])

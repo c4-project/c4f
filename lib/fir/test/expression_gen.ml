@@ -89,8 +89,10 @@ let%test_module "Int_values" =
       [%expect
         {|
       0
-      atomic_load_explicit(&x, memory_order_seq_cst)
-      foo - foo
+      (atomic_load_explicit(&x, memory_order_consume) | 0) &
+      (-914050481 & (atomic_fetch_sub_explicit(bar, 0, memory_order_release) ^ 0) ^
+       0)
+      -149248401 ^ -149248401
       53 ^ atomic_load_explicit(&y, memory_order_consume)
       atomic_load_explicit(&x, memory_order_acquire) ^ 1129 |}]
 
@@ -148,9 +150,9 @@ let%test_module "Int zeroes" =
       [%expect
         {|
           0
-          foo - foo
+          -149248401 ^ -149248401
           53 ^ atomic_load_explicit(&y, memory_order_consume)
-          57357 ^ 57357
+          99 ^ *blep
           atomic_load_explicit(&y, memory_order_relaxed) ^ 53 |}]
 
     let test_fun (env : Src.Env.t) :
@@ -198,19 +200,14 @@ let%test_module "Atomic int nops" =
       print_sample (Lazy.force Env.test_env) ;
       [%expect
         {|
-          atomic_fetch_sub_explicit(bar,
-                                    atomic_fetch_or_explicit(bar, 53 ^
-                                                             atomic_fetch_add_explicit
-                                                             (&y, 0,
-                                                              memory_order_acq_rel),
-                                                             memory_order_relaxed)
-                                    - 95, memory_order_seq_cst)
-          atomic_fetch_sub_explicit(&x, 99 - *blep, memory_order_consume)
-          atomic_fetch_add_explicit(&x, 53 ^
-                                    atomic_load_explicit(&y, memory_order_consume),
-                                    memory_order_relaxed)
-          atomic_fetch_xor_explicit(&x, 57357 ^ 57357, memory_order_consume)
-          atomic_fetch_add_explicit(&y, 0, memory_order_acquire) |}]
+          atomic_fetch_or_explicit(bar, 95, memory_order_consume)
+          atomic_fetch_or_explicit(&x, 27, memory_order_relaxed)
+          atomic_fetch_add_explicit(&x,
+                                    atomic_fetch_or_explicit(&y, 0,
+                                                             memory_order_acquire)
+                                    - 53, memory_order_relaxed)
+          atomic_fetch_add_explicit(&y, 0, memory_order_acquire)
+          atomic_fetch_or_explicit(&y, 53, memory_order_acquire) |}]
 
     let test_fun (env : Src.Env.t) :
         (module Q.Test.S with type t = Src.Expression.t) =
@@ -243,41 +240,43 @@ let%test_module "Bool_values" =
       [%expect
         {|
       barbaz
-      -190264 == foo
-      (22551631 ^ 22551631) == (-153 | 0)
-      !((barbaz && 0 == 0 || 0 == 0 && true) &&
-        (!false || atomic_load_explicit(bar, memory_order_relaxed) - 95 == *blep)) |}]
+      atomic_load_explicit(bar, memory_order_consume) ==
+      atomic_load_explicit(&x, memory_order_seq_cst)
+      (-149248401 ^ -149248401) ==
+      ((atomic_load_explicit(&x, memory_order_consume) | 0) &
+       (-914050481 & (atomic_fetch_sub_explicit(bar, 0, memory_order_release) ^ 0)
+        ^ 0))
+      -190264 != foo
+      !barbaz |}]
 
     let%expect_test "sample (environment has only atomic_int*)" =
       print_sample (Lazy.force Env.test_env_atomic_ptrs_only) ;
       [%expect
         {|
-        atomic_fetch_sub_explicit(bar, 0, memory_order_seq_cst) == -5530953
-        atomic_load_explicit(bar, memory_order_consume) ==
-        (atomic_load_explicit(bar, memory_order_acquire) - 95 & -245825 & 590 - 590 ^
-         (0 ^ 95 - atomic_load_explicit(bar, memory_order_consume) &
-          atomic_fetch_or_explicit(bar, 95 ^
-                                   atomic_fetch_or_explicit(bar, 0,
-                                                            memory_order_acquire),
-                                   memory_order_relaxed)))
-        (95 ^ atomic_load_explicit(bar, memory_order_acquire)) ==
-        atomic_load_explicit(bar, memory_order_relaxed) - 95 &&
-        (atomic_fetch_xor_explicit(bar, 0, memory_order_relaxed) -
-         atomic_fetch_xor_explicit(bar, 0, memory_order_relaxed) == 0 && 2147483647
-         == atomic_load_explicit(bar, memory_order_relaxed) - 95)
-        (0 == 0 || atomic_load_explicit(bar, memory_order_consume) == 0) && !true
-        0 == 22551631 || 0 == atomic_load_explicit(bar, memory_order_relaxed) |}]
+        true
+        atomic_fetch_sub_explicit(bar, 0, memory_order_seq_cst) != -5530953
+        atomic_fetch_or_explicit(bar, 0, memory_order_acq_rel) -
+        atomic_fetch_or_explicit(bar, 0, memory_order_acq_rel) != (0 | 0)
+        (atomic_load_explicit(bar, memory_order_consume) ^
+         atomic_load_explicit(bar, memory_order_consume))
+        != 0
+        (95 ^ atomic_load_explicit(bar, memory_order_relaxed)) !=
+        ((0 ^ 0 ^ -50348097) & 19482) &&
+        (!!(atomic_fetch_xor_explicit(bar, 0, memory_order_relaxed) != 0) &&
+         ((0 & 0) != (atomic_load_explicit(bar, memory_order_seq_cst) ^ 95) &&
+          (atomic_load_explicit(bar, memory_order_seq_cst) ^ 102631) !=
+          atomic_load_explicit(bar, memory_order_acquire))) |}]
 
     let%expect_test "sample (environment is empty)" =
       print_sample (Lazy.force Env.empty_env) ;
       [%expect
         {|
-        -190264 == -5530953
-        7998 == 0
-        0 == 22551631 || 0 == -15464318
-        -502 - -502 == (0 | 2147483647) || true && 0 == 57529197
-        0 == (-4713 ^ 0) && (0 == 14202 && 0 == 1508833144) ||
-        (0 ^ -2147483648 | -127350 ^ 0) == ((1330530 | 0) & (0 & -245825)) |}]
+        -190264 != -5530953
+        -37287526 - -37287526 != (0 | 0)
+        (0 | 61684972 - 61684972 | 411341 - 411341) != 0
+        (-149248401 ^ -149248401) != ((0 | 0) & (7627 ^ 0))
+        0 != 0 && false || 0 == 1 && 33209 != 0 || (0 & 0) ==
+        (1308564345 ^ 1308564345) && !(-127350 == 0) |}]
 
     let test_fun (env : Src.Env.t) =
       ( module Src.Expression_gen.Bool_values (struct
@@ -313,9 +312,8 @@ let%test_module "Bool falsehoods" =
         {|
           false
           false && barbaz
-          (barbaz || atomic_load_explicit(bar, memory_order_consume) == 0) && barbaz &&
-          ((false || false) && barbaz)
-          !(atomic_load_explicit(&x, memory_order_seq_cst) == 27) |}]
+          (barbaz || atomic_load_explicit(bar, memory_order_consume) != 0) && !barbaz
+          && (0 != 0 && false && true) |}]
 
     let test_fun (env : Src.Env.t) :
         (module Q.Test.S with type t = Src.Expression.t) =
@@ -351,11 +349,21 @@ let%test_module "Bool tautologies" =
       [%expect
         {|
           true
-          atomic_load_explicit(bar, memory_order_seq_cst) == 95
           atomic_load_explicit(&z, memory_order_seq_cst) == false
+          !(false && barbaz) &&
+          (barbaz && atomic_fetch_xor_explicit(&x, 0, memory_order_relaxed) != 0 ||
+           true && foo == 4)
+          &&
+          (0 ==
+           (27 ^ atomic_fetch_add_explicit(&x, 0, memory_order_consume) | -127350 ^ 0)
+           || true)
           true || barbaz
-          (22551631 ^ 22551631) == (-153 | 0) || barbaz || true &&
-          (barbaz || atomic_load_explicit(&x, memory_order_seq_cst) == 27) |}]
+          atomic_load_explicit(&x, memory_order_consume) -
+          atomic_load_explicit(&x, memory_order_consume) !=
+          atomic_load_explicit(&x, memory_order_acquire) || (-149248401 ^ -149248401)
+          == (atomic_fetch_xor_explicit(&x, 0, memory_order_consume) & 0) ||
+          (-914050481 != (atomic_fetch_sub_explicit(bar, 0, memory_order_release) ^ 0)
+           || true) |}]
 
     let test_fun (env : Src.Env.t) :
         (module Q.Test.S with type t = Src.Expression.t) =

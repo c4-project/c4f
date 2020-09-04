@@ -26,11 +26,13 @@ let expr_as_int (x : expr) ~(mu : mu) : int Heap.Monad.t =
     Heap.Monad.Monadic.return (Constant.convert_as_int const))
 
 let logical_op_sv : Op.Binary.Logical.t -> bool = function
-  | And -> false
-  | Or -> true
+  | And ->
+      false
+  | Or ->
+      true
 
-let eval_logical (op : Op.Binary.Logical.t) (l : expr) (r : expr) ~(mu : mu) :
-    Constant.t Heap.Monad.t =
+let eval_logical (op : Op.Binary.Logical.t) (l : expr) (r : expr) ~(mu : mu)
+    : Constant.t Heap.Monad.t =
   Heap.Monad.Let_syntax.(
     let%bind l_value = expr_as_bool ~mu l in
     let short_value = logical_op_sv op in
@@ -38,23 +40,31 @@ let eval_logical (op : Op.Binary.Logical.t) (l : expr) (r : expr) ~(mu : mu) :
       Heap.Monad.return (Constant.bool l_value)
     else mu r)
 
-let rel_op_sem : Op.Binary.Rel.t -> Constant.t -> Constant.t -> bool = function
-  | Eq -> Constant.equal
-  | Ne -> fun l r -> not (Constant.equal l r)
+let rel_op_sem : Op.Binary.Rel.t -> Constant.t -> Constant.t -> bool =
+  function
+  | Eq ->
+      Constant.equal
+  | Ne ->
+      fun l r -> not (Constant.equal l r)
 
-let promote_constant_types (l : Constant.t) (r : Constant.t) : Type.t Or_error.t =
+let promote_constant_types (l : Constant.t) (r : Constant.t) :
+    Type.t Or_error.t =
   Or_error.tag_s
     (Type.check (Constant.type_of l) (Constant.type_of r))
-    ~tag:[%message "types of constant in relational expression are incompatible"
-          ~left:(l: Constant.t) ~right:(r: Constant.t)]
+    ~tag:
+      [%message
+        "types of constant in relational expression are incompatible"
+          ~left:(l : Constant.t)
+          ~right:(r : Constant.t)]
 
-let eval_rel' (op : Op.Binary.Rel.t) (l_const : Constant.t) (r_const : Constant.t) : Constant.t Or_error.t =
+let eval_rel' (op : Op.Binary.Rel.t) (l_const : Constant.t)
+    (r_const : Constant.t) : Constant.t Or_error.t =
   Or_error.Let_syntax.(
-      let%map _ = promote_constant_types l_const r_const in
-      Constant.bool (rel_op_sem op l_const r_const))
+    let%map _ = promote_constant_types l_const r_const in
+    Constant.bool (rel_op_sem op l_const r_const))
 
-let eval_rel (op : Op.Binary.Rel.t) (l : expr) (r : expr)
-  ~(mu : mu) : Constant.t Heap.Monad.t =
+let eval_rel (op : Op.Binary.Rel.t) (l : expr) (r : expr) ~(mu : mu) :
+    Constant.t Heap.Monad.t =
   Heap.Monad.Let_syntax.(
     let%bind l_const = mu l in
     let%bind r_const = mu r in
