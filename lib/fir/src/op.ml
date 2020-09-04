@@ -10,14 +10,8 @@
    project root for more information. *)
 
 open Base
-open struct
-  module A = Accessor_base
-end
 
-let idem = A.construct Op_rule.idem
-let unknown = A.construct Op_rule.unknown
-let zero = A.construct Op_rule.zero
-let always_unknown _ = unknown ()
+let always_unknown _ = Op_rule.mk_unknown ()
 
 module Unary = struct
   type t = L_not [@@deriving sexp, variants, compare, equal, quickcheck]
@@ -35,7 +29,9 @@ module Binary = struct
 
     (* (x == 0) == ?; (x != 0) == ? *)
 
-    let refl : t -> Op_rule.t = always_unknown
+    let refl : t -> Op_rule.t = function
+      | Eq -> Op_rule.mk_true () (* x == x -> always true *)
+      | Ne -> Op_rule.mk_false () (* x != x -> always false *)
   end
 
   module Arith = struct
@@ -43,23 +39,23 @@ module Binary = struct
 
     let zero_lhs : t -> Op_rule.t = function
       | Add ->
-          idem () (* 0+x == x *)
+          Op_rule.mk_idem () (* 0+x == x *)
       | Sub ->
-          unknown ()
+          Op_rule.mk_unknown ()
 
     (* 0-x == ? *)
 
     let zero_rhs : t -> Op_rule.t = function
       | Add | Sub ->
-          idem ()
+          Op_rule.mk_idem ()
 
     (* x+0 == x; x-0 == x *)
 
     let refl : t -> Op_rule.t = function
       | Sub ->
-          zero ()
+          Op_rule.mk_zero ()
       | Add ->
-          unknown ()
+          Op_rule.mk_unknown ()
   end
 
   module Bitwise = struct
@@ -67,9 +63,9 @@ module Binary = struct
 
     let zero_lhs : t -> Op_rule.t = function
       | Or | Xor ->
-          idem () (* x|0 == x; x^0 == x *)
+          Op_rule.mk_idem () (* x|0 == x; x^0 == x *)
       | And ->
-          zero ()
+          Op_rule.mk_zero ()
 
     (* x&0 == 0 *)
 
@@ -78,9 +74,9 @@ module Binary = struct
 
     let refl : t -> Op_rule.t = function
       | Xor ->
-          zero ()
+          Op_rule.mk_zero ()
       | And | Or ->
-          idem ()
+          Op_rule.mk_idem ()
   end
 
   module Logical = struct
@@ -90,7 +86,8 @@ module Binary = struct
 
     let zero_rhs : t -> Op_rule.t = zero_lhs
 
-    let refl : t -> Op_rule.t = always_unknown
+    let refl : t -> Op_rule.t = function
+      | And | Or -> Op_rule.mk_true ()
   end
 
   type t =

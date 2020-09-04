@@ -12,14 +12,33 @@
 open Base
 open Base_quickcheck
 
-module M = struct
-  type t = Bool of bool | Int of int
-  [@@deriving compare, equal, sexp, quickcheck, variants]
+open struct
+  module A = Accessor_base
 end
 
-include M
-include Comparable.Make (M)
+module Acc = struct
+  type t = Bool of bool | Int of int
+  [@@deriving compare, equal, sexp, quickcheck, accessors]
 
+  let true_ = [%accessor A.(bool @> A.Bool.true_)]
+  let false_ = [%accessor A.(bool @> A.Bool.false_)]
+
+  let int_zero =
+    [%accessor
+    A.variant ~match_:(function
+     | 0 -> First ()
+     | n -> Second n
+    )
+    ~construct:(fun () -> 0)]
+
+  let zero = [%accessor A.(int @> int_zero)]
+end
+
+include Acc
+include Comparable.Make (Acc)
+
+let bool = A.construct bool
+let int = A.construct int
 let truth : t = Bool true
 
 let falsehood : t = Bool false
@@ -46,12 +65,14 @@ let reduce (k : t) ~(int : int -> 'a) ~(bool : bool -> 'a) : 'a =
   match k with Bool b -> bool b | Int i -> int i
 
 let as_bool : t -> bool Or_error.t =
-  reduce ~bool:Or_error.return ~int:(fun _ ->
-      Or_error.error_string "expected bool; got int")
+  Fn.compose
+    (Result.of_option ~error:(Error.of_string "expected bool; got int"))
+    (A.get_option Acc.bool)
 
 let as_int : t -> int Or_error.t =
-  reduce ~int:Or_error.return ~bool:(fun _ ->
-      Or_error.error_string "expected int; got bool")
+  Fn.compose
+    (Result.of_option ~error:(Error.of_string "expected int; got bool"))
+    (A.get_option Acc.int)
 
 let pp (f : Formatter.t) : t -> unit =
   reduce ~int:(Fmt.int f) ~bool:(Fmt.bool f)

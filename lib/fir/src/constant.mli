@@ -16,6 +16,8 @@
 
 open Base
 
+(** {1 Constants} *)
+
 (** Opaque type of constants. *)
 type t [@@deriving compare, equal, sexp, quickcheck]
 
@@ -24,6 +26,28 @@ include Comparable.S with type t := t
 include Plumbing.Jsonable_types.S with type t := t
 
 include Pretty_printer.S with type t := t
+
+(** {2 Accessors}
+
+    These will likely slowly replace the non-accessor functions below. *)
+module Acc : sig
+  val bool : ('a, bool, t, [< Accessor.variant]) Accessor.Simple.t
+  (** [bool] permits construction and selection of boolean constants. *)
+
+  val int : ('a, int, t, [< Accessor.variant]) Accessor.Simple.t
+  (** [int] permits construction and selection of boolean constants. *)
+
+  (** {3 Accessors for specific values} *)
+
+  val true_ : ('a, unit, t, [< Accessor.variant]) Accessor.Simple.t
+  (** [true_] permits construction and selection of true constants. *)
+
+  val false_ : ('a, unit, t, [< Accessor.variant]) Accessor.Simple.t
+  (** [false_] permits construction and selection of false constants. *)
+
+  val zero : ('a, unit, t, [< Accessor.variant]) Accessor.Simple.t
+  (** [zero] permits construction and selection of zero constants. *)
+end
 
 (** {2 Constructors} *)
 
