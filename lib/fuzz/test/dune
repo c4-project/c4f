@@ -7,6 +7,6 @@
   (pps ppx_jane))
  (libraries sexplib0 splittable_random expect_test_helpers_core
    ppx_expect.common ppx_expect.config ppx_expect.config_types
-   ppx_inline_test.config accessor base base.caml core_kernel stdio fmt
-   travesty.base_exts act.fuzz act.litmus_c act.fir act.common act.litmus
-   act.utils act_fir_test))
+   ppx_inline_test.config accessor accessor_base base base.caml core_kernel
+   stdio fmt travesty.base_exts act.fuzz act.litmus_c act.fir act.common
+   act.litmus act.utils act_fir_test))

@@ -16,14 +16,6 @@ module type S_binary = sig
   (** The type of operation. *)
   type t [@@deriving sexp, compare, equal, quickcheck]
 
-  val refl : t -> Op_rule.t
-  (** [refl op] retrieves whether [x op x] equals [x] (Idem) or [0] (Zero). *)
-
-  val zero_lhs : t -> Op_rule.t
-  (** [zero_lhs op] retrieves whether [0 op x] equals [x] (Idem) or [0]
-      (Zero). *)
-
-  val zero_rhs : t -> Op_rule.t
-  (** [zero_rhs op] retrieves whether [x op 0] equals [x] (Idem) or [0]
-      (Zero). *)
+  val rules : t -> Op_rule.t list
+  (** [rules op] gets the algebraic rules defined for [op]. *)
 end

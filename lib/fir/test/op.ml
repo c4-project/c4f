@@ -31,55 +31,39 @@ let%test_module "algebraic properties" =
 
     open Travesty_base_exts.Fn.Compose_syntax
 
-    let%test_module "arith" =
-      ( module struct
-        let gen_arith (f : Src.Op.Binary.Arith.t -> bool) :
-            (module Q.Test.S with type t = Src.Op.Binary.Arith.t * int) =
-          ( module struct
-            open Q
+    (* let%test_module "arith" = ( module struct let gen_arith (f :
+       Src.Op_rule.t list -> bool) : (module Q.Test.S with type t =
+       Src.Op.Binary.Arith.t * int) = ( module struct open Q
 
-            module A = struct
-              type t = Src.Op.Binary.Arith.t [@@deriving sexp, quickcheck]
+       module A = struct type t = Src.Op.Binary.Arith.t [@@deriving sexp,
+       quickcheck]
 
-              let quickcheck_generator =
-                Generator.filter quickcheck_generator ~f
-            end
+       let quickcheck_generator = Generator.filter quickcheck_generator
+       ~f:(Src.Op.Binary.Arith.rules >> f) end
 
-            type t = A.t * int [@@deriving sexp, quickcheck]
-          end )
+       type t = A.t * int [@@deriving sexp, quickcheck] end )
 
-        let%test_unit "zero_lhs idem" =
-          Q.Test.run_exn
-            (gen_arith Src.(Op.Binary.Arith.zero_lhs >> Op_rule.is_idem))
-            ~f:(fun (op, rhs) ->
-              test_int_result
-                (eval_int_op (Arith op) 0 rhs)
-                ~expect:rhs ~here:[%here])
+       let%test_unit "zero_lhs idem" = Q.Test.run_exn (gen_arith
+       Src.Op_rule.(has_in_out_matching (In.zero' Left) Idem)) ~f:(fun (op,
+       rhs) -> test_int_result (eval_int_op (Arith op) 0 rhs) ~expect:rhs
+       ~here:[%here])
 
-        let%test_unit "zero_rhs idem" =
-          Q.Test.run_exn
-            (gen_arith Src.(Op.Binary.Arith.zero_rhs >> Op_rule.is_idem))
-            ~f:(fun (op, lhs) ->
-              test_int_result
-                (eval_int_op (Arith op) lhs 0)
-                ~expect:lhs ~here:[%here])
+       let%test_unit "zero_rhs idem" = Q.Test.run_exn (gen_arith
+       Src.Op_rule.(has_in_out_matching (In.zero' Right) Idem)) ~f:(fun (op,
+       lhs) -> test_int_result (eval_int_op (Arith op) lhs 0) ~expect:lhs
+       ~here:[%here])
 
-        (* There are no LHS or RHS arith zeros yet *)
+       (* There are no LHS or RHS arith zeros yet *)
 
-        (* There are no refl arith idems yet *)
+       (* There are no refl arith idems yet *)
 
-        let%test_unit "refl_zero" =
-          Q.Test.run_exn
-            (gen_arith Src.(Op.Binary.Arith.refl >> Op_rule.is_zero))
-            ~f:(fun (op, r) ->
-              test_int_result
-                (eval_int_op (Arith op) r r)
-                ~expect:0 ~here:[%here])
-      end )
-
+       let%test_unit "refl_zero" = Q.Test.run_exn (gen_arith
+       Src.Op_rule.(has_in_out_matching In.refl Idem)) ~f:(fun (op, r) ->
+       test_int_result (eval_int_op (Arith op) r r) ~expect:0 ~here:[%here])
+       end ) *)
     let%test_module "bitwise" =
       ( module struct
-        let gen_bitwise (f : Src.Op.Binary.Bitwise.t -> bool) :
+        let gen_bitwise (f : Src.Op_rule.t list -> bool) :
             (module Q.Test.S with type t = Src.Op.Binary.Bitwise.t * int) =
           ( module struct
             open Q
@@ -88,7 +72,8 @@ let%test_module "algebraic properties" =
               type t = Src.Op.Binary.Bitwise.t [@@deriving sexp, quickcheck]
 
               let quickcheck_generator =
-                Generator.filter quickcheck_generator ~f
+                Generator.filter quickcheck_generator
+                  ~f:(Src.Op.Binary.Bitwise.rules >> f)
             end
 
             type t = A.t * int [@@deriving sexp, quickcheck]
@@ -96,7 +81,8 @@ let%test_module "algebraic properties" =
 
         let%test_unit "zero_lhs idem" =
           Q.Test.run_exn
-            (gen_bitwise Src.(Op.Binary.Bitwise.zero_lhs >> Op_rule.is_idem))
+            (gen_bitwise
+               Src.Op_rule.(has_in_out_matching (In.zero' Left) Idem))
             ~f:(fun (op, rhs) ->
               test_int_result
                 (eval_int_op (Bitwise op) 0 rhs)
@@ -104,7 +90,8 @@ let%test_module "algebraic properties" =
 
         let%test_unit "zero_rhs idem" =
           Q.Test.run_exn
-            (gen_bitwise Src.(Op.Binary.Bitwise.zero_rhs >> Op_rule.is_idem))
+            (gen_bitwise
+               Src.Op_rule.(has_in_out_matching (In.zero' Right) Idem))
             ~f:(fun (op, lhs) ->
               test_int_result
                 (eval_int_op (Bitwise op) lhs 0)
@@ -112,7 +99,8 @@ let%test_module "algebraic properties" =
 
         let%test_unit "zero_lhs zero" =
           Q.Test.run_exn
-            (gen_bitwise Src.(Op.Binary.Bitwise.zero_lhs >> Op_rule.is_zero))
+            (gen_bitwise
+               Src.Op_rule.(has_in_out_matching (In.zero' Left) Out.zero))
             ~f:(fun (op, rhs) ->
               test_int_result
                 (eval_int_op (Bitwise op) 0 rhs)
@@ -120,7 +108,8 @@ let%test_module "algebraic properties" =
 
         let%test_unit "zero_rhs zero" =
           Q.Test.run_exn
-            (gen_bitwise Src.(Op.Binary.Bitwise.zero_rhs >> Op_rule.is_zero))
+            (gen_bitwise
+               Src.Op_rule.(has_in_out_matching (In.zero' Right) Out.zero))
             ~f:(fun (op, lhs) ->
               test_int_result
                 (eval_int_op (Bitwise op) lhs 0)
@@ -128,7 +117,7 @@ let%test_module "algebraic properties" =
 
         let%test_unit "refl_idem" =
           Q.Test.run_exn
-            (gen_bitwise Src.(Op.Binary.Bitwise.refl >> Op_rule.is_idem))
+            (gen_bitwise Src.Op_rule.(has_in_out_matching In.refl Idem))
             ~f:(fun (op, r) ->
               test_int_result
                 (eval_int_op (Bitwise op) r r)
@@ -136,7 +125,7 @@ let%test_module "algebraic properties" =
 
         let%test_unit "refl_zero" =
           Q.Test.run_exn
-            (gen_bitwise Src.(Op.Binary.Bitwise.refl >> Op_rule.is_zero))
+            (gen_bitwise Src.Op_rule.(has_in_out_matching In.refl Out.zero))
             ~f:(fun (op, r) ->
               test_int_result
                 (eval_int_op (Bitwise op) r r)

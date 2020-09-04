@@ -21,15 +21,14 @@ module Acc = struct
   [@@deriving compare, equal, sexp, quickcheck, accessors]
 
   let true_ = [%accessor A.(bool @> A.Bool.true_)]
+
   let false_ = [%accessor A.(bool @> A.Bool.false_)]
 
   let int_zero =
     [%accessor
-    A.variant ~match_:(function
-     | 0 -> First ()
-     | n -> Second n
-    )
-    ~construct:(fun () -> 0)]
+      A.variant
+        ~match_:(function 0 -> First () | n -> Second n)
+        ~construct:(fun () -> 0)]
 
   let zero = [%accessor A.(int @> int_zero)]
 end
@@ -38,7 +37,9 @@ include Acc
 include Comparable.Make (Acc)
 
 let bool = A.construct bool
+
 let int = A.construct int
+
 let truth : t = Bool true
 
 let falsehood : t = Bool false

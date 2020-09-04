@@ -13,53 +13,70 @@
 
     These are used in {!Op_types} and {!Op}. *)
 
+(** {1 Rule inputs} *)
+
+module In : sig
+  (** {2 Locations of constants in constant rules} *)
+
+  module Dir : sig
+    type t = Left | Right [@@deriving accessors]
+  end
+
+  type t = Const of Dir.t * Constant.t | Refl [@@deriving accessors]
+
+  (** {2 Common input shorthands} *)
+
+  val zero : Dir.t -> t
+  (** [zero d] is short for [Const (d, int 0)]. *)
+
+  val zero' : Dir.t -> ('a, unit, t, [< Accessor.variant]) Accessor.Simple.t
+  (** [zero' d] can be used to match on, or construct, a zero input. *)
+
+  val true_ : Dir.t -> t
+  (** [true_ d] is short for [Const (d, bool True)]. *)
+
+  val false_ : Dir.t -> t
+  (** [false_ d] is short for [Const (d, bool False)]. *)
+end
+
+(** {1 Rule outputs} *)
+
+module Out : sig
+  type t = Const of Constant.t | Idem [@@deriving accessors]
+
+  (** {2 Common output shorthands} *)
+
+  val zero : t
+  (** [zero] is short for [Const (Int 0)]. *)
+
+  val true_ : t
+  (** [true_] is short for [Const (bool True)]. *)
+
+  val false_ : t
+  (** [false_] is short for [Const (bool False)]. *)
+end
+
 (** {1 The rule type} *)
 
-(** Type of outcomes of algebraic questions such as 'does [x op x] return
-    a particular statically-known value?'. *)
+(** Opaque type of rules *)
 type t
 
-(** {2 Accessors} *)
-  
-val idem : ('a, unit, t, [< Accessor.variant]) Accessor.Simple.t
-(** [idem] focuses on whether a rule specifies idempotence. *)
+val ( @-> ) : In.t -> Out.t -> t
+(** [i @-> o] constructs a rule from i to o. *)
 
-val const : ('a, Constant.t, t, [< Accessor.variant]) Accessor.Simple.t
-(** [const] focuses on whether a rule specifies that the return is always a constant. *)
+(** {2 Common rules} *)
 
-val unknown : ('a, unit, t, [< Accessor.variant]) Accessor.Simple.t
-(** [unknown] focuses on whether a rule specifies that the return is unknown. *)
+(** {2 Searching for rules} *)
 
-(** {2 Constructors} *)
+val in_matching :
+  Out.t -> (unit, In.t, t list, [< Accessor.many_getter]) Accessor.Simple.t
+(** [in_matching out_] accesses the input criteria for all rules in a rule
+    list whose output criteria is [out_]. *)
 
-val mk_idem : unit -> t
-(** [mk_idem ()] is an idempotence rule. *)
-
-val mk_const : Constant.t -> t
-(** [mk_const k] is a rule that suggests the result of an op is always [k]. *)
-
-val mk_true : unit -> t
-(** [mk_true ()] is an always-true rule. *)
-
-val mk_false : unit -> t
-(** [mk_false ()] is an always-false rule. *)
-
-val mk_zero : unit -> t
-(** [mk_zero ()] is an always-zero rule. *)
-
-val mk_unknown : unit -> t
-(** [mk_unknown ()] is an absence of known rule. *)
-
-(** {2 Queries} *)
-
-val is_idem : t -> bool
-(** [is_idem x] gets whether [x] is idempotence. *)
-
-val is_true : t -> bool
-(** [is_true x] gets whether [x] is constant true. *)
-
-val is_false : t -> bool
-(** [is_false x] gets whether [x] is constant false. *)
-
-val is_zero : t -> bool
-(** [is_zero x] gets whether [x] is constant zero. *)
+val has_in_out_matching :
+     (unit, 'a, In.t, Accessor.many_getter) Accessor.Simple.t
+  -> Out.t
+  -> t list
+  -> bool
+(** [has_in_out_matching in_acc out xs] is [true] if, and only if, [xs] has
+    at least one rule ending in [out] and for which [in_acc] produces values. *)

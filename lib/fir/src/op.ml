@@ -11,8 +11,6 @@
 
 open Base
 
-let always_unknown _ = Op_rule.mk_unknown ()
-
 module Unary = struct
   type t = L_not [@@deriving sexp, variants, compare, equal, quickcheck]
 end
@@ -21,73 +19,74 @@ module Binary = struct
   module Rel = struct
     type t = Eq | Ne [@@deriving sexp, compare, equal, quickcheck]
 
-    let zero_lhs : t -> Op_rule.t = always_unknown
-
-    (* (0 == x) == ?; (x != 0) == ? *)
-
-    let zero_rhs : t -> Op_rule.t = always_unknown
-
-    (* (x == 0) == ?; (x != 0) == ? *)
-
-    let refl : t -> Op_rule.t = function
-      | Eq -> Op_rule.mk_true () (* x == x -> always true *)
-      | Ne -> Op_rule.mk_false () (* x != x -> always false *)
+    let rules : t -> Op_rule.t list =
+      Op_rule.(
+        function
+        | Eq ->
+            [Refl @-> Const Constant.truth (* x == x -> true *)]
+        | Ne ->
+            [Refl @-> Const Constant.falsehood (* x != x -> false *)])
   end
 
   module Arith = struct
     type t = Add | Sub [@@deriving sexp, compare, equal, quickcheck]
 
-    let zero_lhs : t -> Op_rule.t = function
-      | Add ->
-          Op_rule.mk_idem () (* 0+x == x *)
-      | Sub ->
-          Op_rule.mk_unknown ()
-
-    (* 0-x == ? *)
-
-    let zero_rhs : t -> Op_rule.t = function
-      | Add | Sub ->
-          Op_rule.mk_idem ()
-
-    (* x+0 == x; x-0 == x *)
-
-    let refl : t -> Op_rule.t = function
-      | Sub ->
-          Op_rule.mk_zero ()
-      | Add ->
-          Op_rule.mk_unknown ()
+    let rules : t -> Op_rule.t list =
+      Op_rule.(
+        function
+        | Add ->
+            [ In.zero Left @-> Idem (* 0 + x -> x *)
+            ; In.zero Right @-> Idem
+              (* x + 0 -> x *) ]
+        | Sub ->
+            [ In.zero Right @-> Idem (* x - 0 -> x *)
+            ; Refl @-> Out.zero
+              (* x - x -> 0 *) ])
   end
 
   module Bitwise = struct
     type t = And | Or | Xor [@@deriving sexp, compare, equal, quickcheck]
 
-    let zero_lhs : t -> Op_rule.t = function
-      | Or | Xor ->
-          Op_rule.mk_idem () (* x|0 == x; x^0 == x *)
-      | And ->
-          Op_rule.mk_zero ()
-
-    (* x&0 == 0 *)
-
-    (* All bitwise operators are commutative. *)
-    let zero_rhs : t -> Op_rule.t = zero_lhs
-
-    let refl : t -> Op_rule.t = function
-      | Xor ->
-          Op_rule.mk_zero ()
-      | And | Or ->
-          Op_rule.mk_idem ()
+    let rules : t -> Op_rule.t list =
+      Op_rule.(
+        function
+        | And ->
+            [ In.zero Left @-> Out.zero (* 0&x -> 0 *)
+            ; In.zero Right @-> Out.zero (* x&0 -> 0 *)
+            ; Refl @-> Idem
+              (* x&x -> x *) ]
+        | Or ->
+            [ In.zero Left @-> Idem (* 0|x -> x *)
+            ; In.zero Right @-> Idem (* x|0 -> x *)
+            ; Refl @-> Idem
+              (* x|x -> x *) ]
+        | Xor ->
+            [ In.zero Left @-> Idem (* 0^x -> x *)
+            ; In.zero Right @-> Idem (* x^0 -> x *)
+            ; Refl @-> Out.zero
+              (* x^x -> 0 *) ])
   end
 
   module Logical = struct
     type t = And | Or [@@deriving sexp, compare, equal, quickcheck]
 
-    let zero_lhs : t -> Op_rule.t = always_unknown
-
-    let zero_rhs : t -> Op_rule.t = zero_lhs
-
-    let refl : t -> Op_rule.t = function
-      | And | Or -> Op_rule.mk_true ()
+    let rules : t -> Op_rule.t list =
+      Op_rule.(
+        function
+        | And ->
+            [ In.false_ Left @-> Out.false_ (* false&&x -> false *)
+            ; In.false_ Right @-> Out.false_ (* x&&false -> false *)
+            ; In.true_ Left @-> Idem (* true&&x -> x *)
+            ; In.true_ Right @-> Idem (* x&&true -> x *)
+            ; Refl @-> Idem
+              (* x&&x -> x *) ]
+        | Or ->
+            [ In.false_ Left @-> Idem (* false||x -> x *)
+            ; In.false_ Right @-> Idem (* x||false -> x *)
+            ; In.true_ Left @-> Out.true_ (* true||x -> true *)
+            ; In.true_ Right @-> Out.true_ (* x||true -> true *)
+            ; Refl @-> Idem
+              (* x&&x -> x *) ])
   end
 
   type t =
@@ -115,35 +114,15 @@ module Binary = struct
 
   let b_xor : t = Bitwise Xor
 
-  let zero_lhs : t -> Op_rule.t = function
+  let rules : t -> Op_rule.t list = function
     | Rel o ->
-        Rel.zero_lhs o
+        Rel.rules o
     | Arith o ->
-        Arith.zero_lhs o
+        Arith.rules o
     | Bitwise o ->
-        Bitwise.zero_lhs o
+        Bitwise.rules o
     | Logical o ->
-        Logical.zero_lhs o
-
-  let zero_rhs : t -> Op_rule.t = function
-    | Rel o ->
-        Rel.zero_rhs o
-    | Arith o ->
-        Arith.zero_rhs o
-    | Bitwise o ->
-        Bitwise.zero_rhs o
-    | Logical o ->
-        Logical.zero_rhs o
-
-  let refl : t -> Op_rule.t = function
-    | Rel o ->
-        Rel.refl o
-    | Arith o ->
-        Arith.refl o
-    | Bitwise o ->
-        Bitwise.refl o
-    | Logical o ->
-        Logical.refl o
+        Logical.rules o
 end
 
 module Fetch = struct
@@ -173,13 +152,7 @@ module Fetch = struct
     | And ->
         Binary.b_and
 
-  let zero_lhs : t -> Op_rule.t =
-    Fn.compose Binary.zero_lhs to_bop
-
-  let zero_rhs : t -> Op_rule.t =
-    Fn.compose Binary.zero_rhs to_bop
-
-  let refl : t -> Op_rule.t = Fn.compose Binary.refl to_bop
+  let rules : t -> Op_rule.t list = Fn.compose Binary.rules to_bop
 
   module Gen_idem_zero_rhs = struct
     include With_qc
@@ -188,7 +161,10 @@ module Fetch = struct
 
     let quickcheck_generator : t Base_quickcheck.Generator.t =
       Base_quickcheck.Generator.filter quickcheck_generator
-        ~f:(Fn.compose Op_rule.is_idem zero_rhs)
+        ~f:
+          (Fn.compose
+             Op_rule.(has_in_out_matching (In.zero' Right) Idem)
+             rules)
   end
 
   module Gen_idem_refl = struct
@@ -198,6 +174,6 @@ module Fetch = struct
 
     let quickcheck_generator : t Base_quickcheck.Generator.t =
       Base_quickcheck.Generator.filter quickcheck_generator
-        ~f:(Fn.compose Op_rule.is_idem refl)
+        ~f:(Fn.compose Op_rule.(has_in_out_matching In.refl Idem) rules)
   end
 end

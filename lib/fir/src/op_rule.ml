@@ -9,38 +9,69 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+open Base
+
 open struct
   module A = Accessor_base
 end
 
-type t =
-  | Idem
-  | Const of Constant.t 
-  | Unknown
-  [@@deriving accessors]
+module In = struct
+  module Dir = struct
+    type t = Left | Right [@@deriving equal, accessors]
+  end
 
-let true_ : ('a, unit, t, [< A.variant]) A.Simple.t =
-  [%accessor A.(const @> Constant.Acc.true_)]
+  type t = Const of Dir.t * Constant.t | Refl [@@deriving accessors]
 
-let false_ : ('a, unit, t, [< A.variant]) A.Simple.t =
-  [%accessor A.(const @> Constant.Acc.false_)]
+  let const_at (d : Dir.t) : ('a, Constant.t, t, [< A.variant]) A.Simple.t =
+    [%accessor
+      A.(
+        const
+        @> variant
+             ~match_:(fun (d2, k) ->
+               if Dir.equal d d2 then First k else Second (d2, k))
+             ~construct:(fun k -> (d, k)))]
 
-let zero : ('a, unit, t, [< A.variant]) A.Simple.t =
-  [%accessor A.(const @> Constant.Acc.zero)]
+  let zero' (d : Dir.t) : ('a, unit, t, [< A.variant]) A.Simple.t =
+    [%accessor A.(const_at d @> Constant.Acc.zero)]
 
-let mk_idem : unit -> t = A.construct idem
-let mk_const : Constant.t -> t = A.construct const
-let mk_true : unit -> t = A.construct true_
-let mk_false : unit -> t = A.construct false_
-let mk_zero : unit -> t = A.construct zero
-let mk_unknown : unit -> t = A.construct unknown
+  let zero (d : Dir.t) : t = Const (d, Constant.int 0)
 
-let is_present (acc : (unit -> 'a -> 'b, unit -> 'at -> 'bt, [> A.many_getter]) A.t) (x : 'at) : bool =
-  not (A.is_empty acc x)
+  let true_ (d : Dir.t) : t = Const (d, Constant.truth)
 
-let is_idem : t -> bool = is_present idem
+  let false_ (d : Dir.t) : t = Const (d, Constant.falsehood)
+end
 
-let is_true : t -> bool = is_present true_
-let is_false : t -> bool = is_present false_
-let is_zero : t -> bool = is_present zero
+module Out = struct
+  type t = Const of Constant.t | Idem [@@deriving equal, accessors]
 
+  let zero : t = Const (Constant.int 0)
+
+  let true_ : t = Const Constant.truth
+
+  let false_ : t = Const Constant.falsehood
+end
+
+type t = {in_: In.t; out_: Out.t} [@@deriving accessors]
+
+let ( @-> ) (in_ : In.t) (out_ : Out.t) : t = {in_; out_}
+
+let single_in_matching (out_ : Out.t) :
+    (unit, In.t, t, [< A.optional_getter]) A.Simple.t =
+  [%accessor
+    A.optional_getter (fun r ->
+        Base.Option.(
+          some_if (Out.equal r.out_ out_) ()
+          >>= fun (_ : 'a) -> A.get_option in_ r))]
+
+let in_matching (out_ : Out.t) :
+    (unit, In.t, t list, [< A.many_getter]) A.Simple.t =
+  [%accessor A.(List.each @> single_in_matching out_)]
+
+let in_out_matching
+    (in_acc : (unit, 'a, In.t, ([< A.many_getter] as 'b)) A.Simple.t)
+    (out_ : Out.t) : (unit, 'a, t list, 'b) A.Simple.t =
+  [%accessor A.(in_matching out_ @> in_acc)]
+
+let has_in_out_matching (in_acc : (unit, 'a, In.t, 'd) A.Simple.t)
+    (out_ : Out.t) (xs : t list) : bool =
+  not (A.is_empty (in_out_matching in_acc out_) xs)
