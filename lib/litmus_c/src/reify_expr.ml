@@ -15,25 +15,41 @@ open struct
   module Fir = Act_fir
 end
 
-let bop : Fir.Op.Binary.t -> Operators.Bin.t = function
-  | Rel Eq ->
-      `Eq
-  | Rel Ne ->
-      `Ne
-  | Arith Add ->
+let rel_bop : Fir.Op.Binary.Rel.t -> Operators.Bin.t = function
+  | Eq ->
+    `Eq
+  | Ne ->
+    `Ne
+
+let arith_bop : Fir.Op.Binary.Arith.t -> Operators.Bin.t = function
+  | Add ->
       `Add
-  | Arith Sub ->
+  | Sub ->
       `Sub
-  | Bitwise And ->
+
+let bitwise_bop : Fir.Op.Binary.Bitwise.t -> Operators.Bin.t = function
+  | And ->
       `And
-  | Bitwise Or ->
+  | Or ->
       `Or
-  | Bitwise Xor ->
+  | Xor ->
       `Xor
-  | Logical And ->
-      `Land
-  | Logical Or ->
-      `Lor
+
+let logical_bop : Fir.Op.Binary.Logical.t -> Operators.Bin.t = function
+  | And ->
+    `Land
+  | Or ->
+    `Lor
+
+let bop : Fir.Op.Binary.t -> Operators.Bin.t = function
+  | Rel r ->
+    rel_bop r
+  | Arith a ->
+    arith_bop a
+  | Bitwise b ->
+    bitwise_bop b
+  | Logical l ->
+    logical_bop l
 
 let uop_pre : Fir.Op.Unary.t -> Operators.Pre.t = function L_not -> `Lnot
 
