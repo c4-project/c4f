@@ -57,8 +57,9 @@ let%test_module "Eval" =
       [%expect
         {|
       (Error
-       ("eq: types of constants are incompatible" (left (Int 27))
-        (right (Bool false)))) |}]
+       (("types of constant in relational expression are incompatible"
+         (left (Int 27)) (right (Bool false)))
+        ("Type mismatch" (t1 int) (t2 bool)))) |}]
 
     let%expect_test "example true env-sensitive Boolean expression" =
       test_mod

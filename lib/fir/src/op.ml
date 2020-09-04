@@ -10,20 +10,14 @@
    project root for more information. *)
 
 open Base
-
-module Algebra = struct
-  let is_idem : [> `Idem] option -> bool = function
-    | Some `Idem ->
-        true
-    | _ ->
-        false
-
-  let is_zero : [> `Zero] option -> bool = function
-    | Some `Zero ->
-        true
-    | _ ->
-        false
+open struct
+  module A = Accessor_base
 end
+
+let idem = A.construct Op_rule.idem
+let unknown = A.construct Op_rule.unknown
+let zero = A.construct Op_rule.zero
+let always_unknown _ = unknown ()
 
 module Unary = struct
   type t = L_not [@@deriving sexp, variants, compare, equal, quickcheck]
@@ -33,79 +27,70 @@ module Binary = struct
   module Rel = struct
     type t = Eq | Ne [@@deriving sexp, compare, equal, quickcheck]
 
-    let zero_lhs : t -> [`Idem | `Zero] option = Fn.const None
+    let zero_lhs : t -> Op_rule.t = always_unknown
 
     (* (0 == x) == ?; (x != 0) == ? *)
 
-    let zero_rhs : t -> [`Idem | `Zero] option = Fn.const None
+    let zero_rhs : t -> Op_rule.t = always_unknown
 
     (* (x == 0) == ?; (x != 0) == ? *)
 
-    let refl : t -> [`Idem | `Zero] option = Fn.const None
+    let refl : t -> Op_rule.t = always_unknown
   end
 
   module Arith = struct
     type t = Add | Sub [@@deriving sexp, compare, equal, quickcheck]
 
-    let zero_lhs : t -> [`Idem | `Zero] option = function
+    let zero_lhs : t -> Op_rule.t = function
       | Add ->
-          Some `Idem (* 0+x == x *)
+          idem () (* 0+x == x *)
       | Sub ->
-          None
+          unknown ()
 
     (* 0-x == ? *)
 
-    let zero_rhs : t -> [`Idem | `Zero] option = function
+    let zero_rhs : t -> Op_rule.t = function
       | Add | Sub ->
-          Some `Idem
+          idem ()
 
     (* x+0 == x; x-0 == x *)
 
-    let refl : t -> [`Idem | `Zero] option = function
+    let refl : t -> Op_rule.t = function
       | Sub ->
-          Some `Zero
+          zero ()
       | Add ->
-          None
+          unknown ()
   end
 
   module Bitwise = struct
     type t = And | Or | Xor [@@deriving sexp, compare, equal, quickcheck]
 
-    let zero_lhs : t -> [`Idem | `Zero] option = function
+    let zero_lhs : t -> Op_rule.t = function
       | Or | Xor ->
-          Some `Idem (* x|0 == x; x^0 == x *)
+          idem () (* x|0 == x; x^0 == x *)
       | And ->
-          Some `Zero
+          zero ()
 
     (* x&0 == 0 *)
 
     (* All bitwise operators are commutative. *)
-    let zero_rhs = zero_lhs
+    let zero_rhs : t -> Op_rule.t = zero_lhs
 
-    let refl : t -> [`Idem | `Zero] option = function
+    let refl : t -> Op_rule.t = function
       | Xor ->
-          Some `Zero
+          zero ()
       | And | Or ->
-          Some `Idem
+          idem ()
   end
 
   module Logical = struct
     type t = And | Or [@@deriving sexp, compare, equal, quickcheck]
 
-    (* As above, note that zero is Boolean false in C. *)
+    let zero_lhs : t -> Op_rule.t = always_unknown
 
-    (* TODO(@MattWindsor91): do these operations preserve specific truthy
-       values? *)
+    let zero_rhs : t -> Op_rule.t = zero_lhs
 
-    let zero_lhs : t -> [`Idem | `Zero] option = function
-      | And ->
-          Some `Zero
-      | Or ->
-          None
-
-    let zero_rhs = zero_lhs
-
-    let refl : t -> [`Idem | `Zero] option = Fn.const None
+    let refl : t -> Op_rule.t = always_unknown
   end
 
   type t =
@@ -133,7 +118,7 @@ module Binary = struct
 
   let b_xor : t = Bitwise Xor
 
-  let zero_lhs : t -> [`Idem | `Zero] option = function
+  let zero_lhs : t -> Op_rule.t = function
     | Rel o ->
         Rel.zero_lhs o
     | Arith o ->
@@ -143,7 +128,7 @@ module Binary = struct
     | Logical o ->
         Logical.zero_lhs o
 
-  let zero_rhs : t -> [`Idem | `Zero] option = function
+  let zero_rhs : t -> Op_rule.t = function
     | Rel o ->
         Rel.zero_rhs o
     | Arith o ->
@@ -153,7 +138,7 @@ module Binary = struct
     | Logical o ->
         Logical.zero_rhs o
 
-  let refl : t -> [`Idem | `Zero] option = function
+  let refl : t -> Op_rule.t = function
     | Rel o ->
         Rel.refl o
     | Arith o ->
@@ -191,13 +176,13 @@ module Fetch = struct
     | And ->
         Binary.b_and
 
-  let zero_lhs : t -> [`Idem | `Zero] option =
+  let zero_lhs : t -> Op_rule.t =
     Fn.compose Binary.zero_lhs to_bop
 
-  let zero_rhs : t -> [`Idem | `Zero] option =
+  let zero_rhs : t -> Op_rule.t =
     Fn.compose Binary.zero_rhs to_bop
 
-  let refl : t -> [`Idem | `Zero] option = Fn.compose Binary.refl to_bop
+  let refl : t -> Op_rule.t = Fn.compose Binary.refl to_bop
 
   module Gen_idem_zero_rhs = struct
     include With_qc
@@ -206,7 +191,7 @@ module Fetch = struct
 
     let quickcheck_generator : t Base_quickcheck.Generator.t =
       Base_quickcheck.Generator.filter quickcheck_generator
-        ~f:(Fn.compose Algebra.is_idem zero_rhs)
+        ~f:(Fn.compose Op_rule.is_idem zero_rhs)
   end
 
   module Gen_idem_refl = struct
@@ -216,6 +201,6 @@ module Fetch = struct
 
     let quickcheck_generator : t Base_quickcheck.Generator.t =
       Base_quickcheck.Generator.filter quickcheck_generator
-        ~f:(Fn.compose Algebra.is_idem refl)
+        ~f:(Fn.compose Op_rule.is_idem refl)
   end
 end

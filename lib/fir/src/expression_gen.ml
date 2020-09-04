@@ -124,7 +124,7 @@ module Int_zeroes (E : Env_types.S) = struct
   (** Generates operators with the property [x op x == 0]. *)
   let gen_refl_zero_op : Op.Binary.t Q.Generator.t =
     Q.Generator.filter [%quickcheck.generator: Op.Binary.t]
-      ~f:Op.(Fn.compose Algebra.is_zero Binary.refl)
+      ~f:Op.(Fn.compose Op_rule.is_zero Binary.refl)
 
   (** Generates binary operations of the form [x op x], which are statically
       known to produce 0. *)

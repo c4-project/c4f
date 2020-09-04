@@ -50,7 +50,7 @@ let%test_module "algebraic properties" =
 
         let%test_unit "zero_lhs idem" =
           Q.Test.run_exn
-            (gen_arith Src.Op.(Binary.Arith.zero_lhs >> Algebra.is_idem))
+            (gen_arith Src.(Op.Binary.Arith.zero_lhs >> Op_rule.is_idem))
             ~f:(fun (op, rhs) ->
               test_int_result
                 (eval_int_op (Arith op) 0 rhs)
@@ -58,7 +58,7 @@ let%test_module "algebraic properties" =
 
         let%test_unit "zero_rhs idem" =
           Q.Test.run_exn
-            (gen_arith Src.Op.(Binary.Arith.zero_rhs >> Algebra.is_idem))
+            (gen_arith Src.(Op.Binary.Arith.zero_rhs >> Op_rule.is_idem))
             ~f:(fun (op, lhs) ->
               test_int_result
                 (eval_int_op (Arith op) lhs 0)
@@ -70,7 +70,7 @@ let%test_module "algebraic properties" =
 
         let%test_unit "refl_zero" =
           Q.Test.run_exn
-            (gen_arith Src.Op.(Binary.Arith.refl >> Algebra.is_zero))
+            (gen_arith Src.(Op.Binary.Arith.refl >> Op_rule.is_zero))
             ~f:(fun (op, r) ->
               test_int_result
                 (eval_int_op (Arith op) r r)
@@ -96,7 +96,7 @@ let%test_module "algebraic properties" =
 
         let%test_unit "zero_lhs idem" =
           Q.Test.run_exn
-            (gen_bitwise Src.Op.(Binary.Bitwise.zero_lhs >> Algebra.is_idem))
+            (gen_bitwise Src.(Op.Binary.Bitwise.zero_lhs >> Op_rule.is_idem))
             ~f:(fun (op, rhs) ->
               test_int_result
                 (eval_int_op (Bitwise op) 0 rhs)
@@ -104,7 +104,7 @@ let%test_module "algebraic properties" =
 
         let%test_unit "zero_rhs idem" =
           Q.Test.run_exn
-            (gen_bitwise Src.Op.(Binary.Bitwise.zero_rhs >> Algebra.is_idem))
+            (gen_bitwise Src.(Op.Binary.Bitwise.zero_rhs >> Op_rule.is_idem))
             ~f:(fun (op, lhs) ->
               test_int_result
                 (eval_int_op (Bitwise op) lhs 0)
@@ -112,7 +112,7 @@ let%test_module "algebraic properties" =
 
         let%test_unit "zero_lhs zero" =
           Q.Test.run_exn
-            (gen_bitwise Src.Op.(Binary.Bitwise.zero_lhs >> Algebra.is_zero))
+            (gen_bitwise Src.(Op.Binary.Bitwise.zero_lhs >> Op_rule.is_zero))
             ~f:(fun (op, rhs) ->
               test_int_result
                 (eval_int_op (Bitwise op) 0 rhs)
@@ -120,7 +120,7 @@ let%test_module "algebraic properties" =
 
         let%test_unit "zero_rhs zero" =
           Q.Test.run_exn
-            (gen_bitwise Src.Op.(Binary.Bitwise.zero_rhs >> Algebra.is_zero))
+            (gen_bitwise Src.(Op.Binary.Bitwise.zero_rhs >> Op_rule.is_zero))
             ~f:(fun (op, lhs) ->
               test_int_result
                 (eval_int_op (Bitwise op) lhs 0)
@@ -128,7 +128,7 @@ let%test_module "algebraic properties" =
 
         let%test_unit "refl_idem" =
           Q.Test.run_exn
-            (gen_bitwise Src.Op.(Binary.Bitwise.refl >> Algebra.is_idem))
+            (gen_bitwise Src.(Op.Binary.Bitwise.refl >> Op_rule.is_idem))
             ~f:(fun (op, r) ->
               test_int_result
                 (eval_int_op (Bitwise op) r r)
@@ -136,7 +136,7 @@ let%test_module "algebraic properties" =
 
         let%test_unit "refl_zero" =
           Q.Test.run_exn
-            (gen_bitwise Src.Op.(Binary.Bitwise.refl >> Algebra.is_zero))
+            (gen_bitwise Src.(Op.Binary.Bitwise.refl >> Op_rule.is_zero))
             ~f:(fun (op, r) ->
               test_int_result
                 (eval_int_op (Bitwise op) r r)
