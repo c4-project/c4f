@@ -55,17 +55,16 @@ type t = {in_: In.t; out_: Out.t} [@@deriving accessors]
 
 let ( @-> ) (in_ : In.t) (out_ : Out.t) : t = {in_; out_}
 
-let single_in_matching (out_ : Out.t) :
-    (unit, In.t, t, [< A.optional_getter]) A.Simple.t =
-  [%accessor
-    A.optional_getter (fun r ->
-        Base.Option.(
-          some_if (Out.equal r.out_ out_) ()
-          >>= fun (_ : 'a) -> A.get_option in_ r))]
+let single_in_matching (type i) (out_ : Out.t) :
+    (i, In.t, t, [< A.optional_getter]) A.Simple.t =
+  A.optional_getter (fun r ->
+      Base.Option.(
+        some_if (Out.equal r.out_ out_) ()
+        >>= fun (_ : 'a) -> A.get_option in_ r))
 
 let in_matching (out_ : Out.t) :
-    (unit, In.t, t list, [< A.many_getter]) A.Simple.t =
-  [%accessor A.(List.each @> single_in_matching out_)]
+    ('i, In.t, t list, [< A.many_getter]) A.Simple.t =
+  A.(List.each @> single_in_matching out_)
 
 let in_out_matching
     (in_acc : (unit, 'a, In.t, ([< A.many_getter] as 'b)) A.Simple.t)

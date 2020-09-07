@@ -14,7 +14,7 @@
 (** Basic type of binary operation modules. *)
 module type S_binary = sig
   (** The type of operation. *)
-  type t [@@deriving sexp, compare, equal, quickcheck]
+  type t [@@deriving enumerate, sexp, compare, equal, quickcheck]
 
   val rules : t -> Op_rule.t list
   (** [rules op] gets the algebraic rules defined for [op]. *)

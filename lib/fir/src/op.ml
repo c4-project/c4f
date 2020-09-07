@@ -12,12 +12,14 @@
 open Base
 
 module Unary = struct
-  type t = L_not [@@deriving sexp, variants, compare, equal, quickcheck]
+  type t = L_not
+  [@@deriving enumerate, sexp, variants, compare, equal, quickcheck]
 end
 
 module Binary = struct
   module Rel = struct
-    type t = Eq | Ne [@@deriving sexp, compare, equal, quickcheck]
+    type t = Eq | Ne
+    [@@deriving enumerate, sexp, compare, equal, quickcheck]
 
     let rules : t -> Op_rule.t list =
       Op_rule.(
@@ -29,7 +31,8 @@ module Binary = struct
   end
 
   module Arith = struct
-    type t = Add | Sub [@@deriving sexp, compare, equal, quickcheck]
+    type t = Add | Sub
+    [@@deriving enumerate, sexp, compare, equal, quickcheck]
 
     let rules : t -> Op_rule.t list =
       Op_rule.(
@@ -45,7 +48,8 @@ module Binary = struct
   end
 
   module Bitwise = struct
-    type t = And | Or | Xor [@@deriving sexp, compare, equal, quickcheck]
+    type t = And | Or | Xor
+    [@@deriving enumerate, sexp, compare, equal, quickcheck]
 
     let rules : t -> Op_rule.t list =
       Op_rule.(
@@ -68,7 +72,8 @@ module Binary = struct
   end
 
   module Logical = struct
-    type t = And | Or [@@deriving sexp, compare, equal, quickcheck]
+    type t = And | Or
+    [@@deriving enumerate, sexp, compare, equal, quickcheck]
 
     let rules : t -> Op_rule.t list =
       Op_rule.(
@@ -94,7 +99,7 @@ module Binary = struct
     | Arith of Arith.t
     | Bitwise of Bitwise.t
     | Logical of Logical.t
-  [@@deriving sexp, variants, compare, equal, quickcheck]
+  [@@deriving enumerate, sexp, variants, compare, equal, quickcheck]
 
   let eq : t = Rel Eq
 
@@ -128,7 +133,7 @@ end
 module Fetch = struct
   module With_qc = struct
     module M = struct
-      type t = Add | Sub | And | Or | Xor [@@deriving enum]
+      type t = Add | Sub | And | Or | Xor [@@deriving enum, enumerate]
 
       let table =
         [(Add, "add"); (Sub, "sub"); (Or, "or"); (Xor, "xor"); (And, "and")]

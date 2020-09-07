@@ -68,8 +68,13 @@ val ( @-> ) : In.t -> Out.t -> t
 
 (** {2 Searching for rules} *)
 
+val single_in_matching :
+  Out.t -> ('i, In.t, t, [< Accessor.optional_getter]) Accessor.Simple.t
+(** [in_matching out_] accesses the input criteria for a rule, provided that
+    its output criteria is [out_]. *)
+
 val in_matching :
-  Out.t -> (unit, In.t, t list, [< Accessor.many_getter]) Accessor.Simple.t
+  Out.t -> ('i, In.t, t list, [< Accessor.many_getter]) Accessor.Simple.t
 (** [in_matching out_] accesses the input criteria for all rules in a rule
     list whose output criteria is [out_]. *)
 

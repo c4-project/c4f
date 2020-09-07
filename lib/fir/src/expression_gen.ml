@@ -124,43 +124,10 @@ module Int_zeroes (E : Env_types.S) = struct
   let base_generators : t Q.Generator.t list =
     [Q.Generator.return (Expression.int_lit 0)]
 
-  (** [gen_zero_bop_op] generates a binary operator that can produce zero
-      given particular input patterns, and a description of one randomly
-      picked such input pattern. *)
-  let gen_zero_bop_op : (Op.Binary.t * Op_rule.In.t) Q.Generator.t =
-    Q.Generator.(
-      Let_syntax.(
-        let%bind op, in_list =
-          filter_map [%quickcheck.generator: Op.Binary.t] ~f:(fun op ->
-              let rules = Op.Binary.rules op in
-              let acc = Op_rule.(in_matching Out.zero) in
-              if Accessor.is_empty acc rules then None
-              else Some (op, Accessor.to_list acc rules))
-        in
-        let%map in_ = Q.Generator.of_list in_list in
-        (op, in_)))
-
-  let flip (l : t) (r : t) : (t * t) Q.Generator.t =
-    Q.Generator.Let_syntax.(
-      let%map flip = Q.Generator.bool in
-      if flip then (l, r) else (r, l))
-
-  let gen_zero_bop (x1 : t) (x2 : t) : t Q.Generator.t =
-    Q.Generator.Let_syntax.(
-      (* x1 and x2 should be equivalent, so this flip step shouldn't cause
-         issues even if the operator is not commutative. *)
-      let%bind x1, x2 = flip x1 x2 in
-      let%map op, in_ = gen_zero_bop_op in
-      let in1, in2 =
-        match in_ with
-        | Refl ->
-            (x1, x2)
-        | Const (Left, k) ->
-            (Expression.constant k, x2)
-        | Const (Right, k) ->
-            (x1, Expression.constant k)
-      in
-      Expression.bop op in1 in2)
+  (** [gen_zero_bop_any operands] binary operations over [operands] that have
+      any operand type, but result in zero. *)
+  let gen_zero_bop_any : Op_gen.Operand_set.t -> t Q.Generator.t =
+    Op_gen.bop (module Op.Binary) ~promote:Fn.id ~out:Op_rule.Out.zero
 
   (** Generates binary operations of the form [x op x], [x op k], or
       [k op x], where [x] is a primitive, [k] is a specific constant, and the
@@ -168,14 +135,15 @@ module Int_zeroes (E : Env_types.S) = struct
   let gen_prim_zero_bop ~(mu : t Q.Generator.t) : t Q.Generator.t =
     Q.Generator.Let_syntax.(
       let%bind p = Det_prims.gen_prim ~gen_zero:mu in
-      gen_zero_bop p p)
+      gen_zero_bop_any (One p))
 
   (** Generates binary operations of the form [x op y], in which one of [x]
       and [y] is a variable, the other is its known value, and the operation
       is statically known to produce 0. *)
   let gen_kv_zero_bop ~(mu : t Q.Generator.t) : t Q.Generator.t =
     let gen_load = Det_prims.gen_load_with_record ~gen_zero:mu in
-    Det_prims.gen_kv_refl ~gen_load ~gen_op:gen_zero_bop
+    Det_prims.gen_kv_refl ~gen_load ~gen_op:(fun l r ->
+        gen_zero_bop_any (Two (l, r)))
 
   let recursive_generators (mu : t Q.Generator.t) : t Q.Generator.t list =
     eval_guards
@@ -341,6 +309,8 @@ end
 module Known_value_comparisons (E : Env_types.S) : sig
   type t = Expression.t [@@deriving sexp_of, quickcheck]
 end = struct
+  (* NB: these are always truthy. *)
+
   type t = Expression.t [@@deriving sexp_of]
 
   let generate_int (var_ref : Expression.t) (value : int) : t Q.Generator.t =
