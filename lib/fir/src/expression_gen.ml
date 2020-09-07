@@ -127,6 +127,9 @@ module Int_zeroes (E : Env_types.S) = struct
   (** [gen_zero_bop_any operands] binary operations over [operands] that have
       any operand type, but result in zero. *)
   let gen_zero_bop_any : Op_gen.Operand_set.t -> t Q.Generator.t =
+    (* Note: this works without restricting to specific operator subtypes
+       because, at time of writing, the only operators that produce 0
+       (bitwise and arithmetic) take in integers. *)
     Op_gen.bop (module Op.Binary) ~promote:Fn.id ~out:Op_rule.Out.zero
 
   (** Generates binary operations of the form [x op x], [x op k], or
@@ -273,8 +276,8 @@ end = struct
     Q.Generator.Let_syntax.(
       let%map l = [%quickcheck.generator: Iv.t]
       and r = [%quickcheck.generator: Iv.t]
-      and op = Q.Generator.of_list [Expression.eq; Expression.ne] in
-      op l r)
+      and op = [%quickcheck.generator: Op.Binary.Rel.t] in
+      Expression.bop (Op.Binary.Rel op) l r)
 
   let gen_const : t Q.Generator.t =
     Q.Generator.map ~f:Expression.bool_lit Q.([%quickcheck.generator: bool])
@@ -306,30 +309,52 @@ end = struct
   let quickcheck_shrinker : t Q.Shrinker.t = Q.Shrinker.atomic
 end
 
-module Known_value_comparisons (E : Env_types.S) : sig
+let generate_known_bool_direct (target : bool) (var_ref : Expression.t)
+    (value : bool) : Expression.t Q.Generator.t =
+  Q.Generator.return
+    (if Bool.equal value target then var_ref else Expression.l_not var_ref)
+
+(** [gen_known_bop_rel target operands] generates binary operations over
+    [operands] that are relational and result in [target]. *)
+let gen_known_bop_rel (target : bool) :
+    Op_gen.Operand_set.t -> Expression.t Q.Generator.t =
+  Op_gen.bop
+    (module Op.Binary.Rel)
+    ~promote:(fun x -> Op.Binary.Rel x)
+    ~out:(Const (Constant.bool target))
+
+(** [gen_known_bop_logic target operands] generates binary operations over
+    [operands] that are logical (and, so, require boolean inputs) and result
+    in [target]. *)
+let gen_known_bop_logic (target : bool) :
+    Op_gen.Operand_set.t -> Expression.t Q.Generator.t =
+  Op_gen.bop
+    (module Op.Binary.Logical)
+    ~promote:(fun x -> Op.Binary.Logical x)
+    ~out:(Const (Constant.bool target))
+
+module Known_value_comparisons (Basic : sig
+  module E : Env_types.S
+
+  val target : bool
+  (** The value to which the comparison should equal. *)
+end) : sig
   type t = Expression.t [@@deriving sexp_of, quickcheck]
 end = struct
-  (* NB: these are always truthy. *)
-
   type t = Expression.t [@@deriving sexp_of]
 
   let generate_int (var_ref : Expression.t) (value : int) : t Q.Generator.t =
     (* TODO(@MattWindsor91): do more here? *)
-    Q.Generator.Let_syntax.(
-      let%map op =
-        Q.Generator.of_list Op.Binary.[eq]
-        (* TODO(@MattWindsor91): inequalities *)
-      in
-      Expression.(bop op var_ref (int_lit value)))
+    gen_known_bop_rel Basic.target (Two (var_ref, Expression.int_lit value))
 
   let generate_bool (var_ref : Expression.t) (value : bool) : t Q.Generator.t
       =
-    (* TODO(@MattWindsor91): do more here? *)
-    let basic_eq = Expression.(eq var_ref (bool_lit value)) in
-    let candidates =
-      if value then [var_ref (* implicit true *); basic_eq] else [basic_eq]
-    in
-    Q.Generator.of_list candidates
+    Q.Generator.union
+      [ generate_known_bool_direct Basic.target var_ref value
+      ; gen_known_bop_logic Basic.target
+          (Two (var_ref, Expression.bool_lit value))
+      ; gen_known_bop_rel Basic.target
+          (Two (var_ref, Expression.bool_lit value)) ]
 
   let make_var_ref (id : Act_common.C_id.t) (ty : Type.t) : Expression.t =
     (* TODO(@MattWindsor91): can we do more than SC here? *)
@@ -345,7 +370,7 @@ end = struct
        exists. *)
     Q.Generator.Let_syntax.(
       let%bind id, (ty, value) =
-        E.env |> Env.variables_with_known_values |> Map.to_alist
+        Basic.E.env |> Env.variables_with_known_values |> Map.to_alist
         |> Q.Generator.of_list
       in
       let var_ref : Expression.t = make_var_ref id ty in
@@ -410,20 +435,20 @@ module Bool_known (E : Env_types.S) = struct
      recursive-generator level. It's easier to do this mutual recursion over
      functions than modules, but we expose a modular interface in the end. *)
 
-  let tt_base_generators : t Q.Generator.t list =
+  let base_generators (target : bool) : t Q.Generator.t list =
     (* Use thunks here to prevent accidentally evaluating a generator that
        can't possibly work---eg, an atomic load when we don't have any atomic
        variables. *)
     eval_guards
-      [ (true, fun () -> Q.Generator.return Expression.truth)
+      [ (true, fun () -> Q.Generator.return (Expression.bool_lit target))
       ; ( Lazy.force is_var_eq_tenable
         , fun () ->
-            let module Var_eq = Known_value_comparisons (E) in
-            Var_eq.quickcheck_generator ) ]
+            let module Var_eq = Known_value_comparisons (struct
+              module E = E
 
-  let ff_base_generators : t Q.Generator.t list =
-    (* TODO(@MattWindsor91): known-value false comparisons *)
-    eval_guards [(true, fun () -> Q.Generator.return Expression.falsehood)]
+              let target = target
+            end) in
+            Var_eq.quickcheck_generator ) ]
 
   let mk_recursive_generator (mu : t Q.Generator.t) ~(both_bop : Op.Binary.t)
       ~(circuiting_bop : Op.Binary.t) ~(negated_gen : t Q.Generator.t Lazy.t)
@@ -446,12 +471,12 @@ module Bool_known (E : Env_types.S) = struct
 
   let rec tt_generator : t Q.Generator.t Lazy.t =
     lazy
-      (Q.Generator.recursive_union tt_base_generators
+      (Q.Generator.recursive_union (base_generators true)
          ~f:(tt_recursive_generators ~negated_gen:ff_generator))
 
   and ff_generator : t Q.Generator.t Lazy.t =
     lazy
-      (Q.Generator.recursive_union ff_base_generators
+      (Q.Generator.recursive_union (base_generators false)
          ~f:(ff_recursive_generators ~negated_gen:tt_generator))
 
   module Tautologies : S = struct
