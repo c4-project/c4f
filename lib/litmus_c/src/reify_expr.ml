@@ -20,6 +20,14 @@ let rel_bop : Fir.Op.Binary.Rel.t -> Operators.Bin.t = function
       `Eq
   | Ne ->
       `Ne
+  | Gt ->
+      `Gt
+  | Ge ->
+      `Ge
+  | Le ->
+      `Le
+  | Lt ->
+      `Lt
 
 let arith_bop : Fir.Op.Binary.Arith.t -> Operators.Bin.t = function
   | Add ->

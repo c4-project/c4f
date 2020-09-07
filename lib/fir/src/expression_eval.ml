@@ -40,28 +40,53 @@ let eval_logical (op : Op.Binary.Logical.t) (l : expr) (r : expr) ~(mu : mu)
       Heap.Monad.return (Constant.bool l_value)
     else mu r)
 
-let rel_op_sem : Op.Binary.Rel.t -> Constant.t -> Constant.t -> bool =
-  function
+let bool_rel_op_sem : Op.Binary.Rel.t -> bool -> bool -> bool = function
   | Eq ->
-      Constant.equal
+      Bool.( = )
   | Ne ->
-      fun l r -> not (Constant.equal l r)
+      Bool.( <> )
+  | Gt ->
+      Bool.( > )
+  | Ge ->
+      Bool.( >= )
+  | Le ->
+      Bool.( <= )
+  | Lt ->
+      Bool.( < )
 
-let promote_constant_types (l : Constant.t) (r : Constant.t) :
-    Type.t Or_error.t =
-  Or_error.tag_s
-    (Type.check (Constant.type_of l) (Constant.type_of r))
-    ~tag:
-      [%message
-        "types of constant in relational expression are incompatible"
-          ~left:(l : Constant.t)
-          ~right:(r : Constant.t)]
+let int_rel_op_sem : Op.Binary.Rel.t -> int -> int -> bool = function
+  | Eq ->
+      Int.( = )
+  | Ne ->
+      Int.( <> )
+  | Gt ->
+      Int.( > )
+  | Ge ->
+      Int.( >= )
+  | Le ->
+      Int.( <= )
+  | Lt ->
+      Int.( < )
+
+let rel_op_sem (op : Op.Binary.Rel.t) (l : Constant.t) (r : Constant.t) :
+    bool Or_error.t =
+  match (l, r) with
+  | Bool lb, Bool rb ->
+      Ok (bool_rel_op_sem op lb rb)
+  | Int li, Int ri ->
+      Ok (int_rel_op_sem op li ri)
+  | _ ->
+      Or_error.error_s
+        [%message
+          "types of relational inputs don't match"
+            ~left:(l : Constant.t)
+            ~right:(r : Constant.t)]
 
 let eval_rel' (op : Op.Binary.Rel.t) (l_const : Constant.t)
     (r_const : Constant.t) : Constant.t Or_error.t =
   Or_error.Let_syntax.(
-    let%map _ = promote_constant_types l_const r_const in
-    Constant.bool (rel_op_sem op l_const r_const))
+    let%map v = rel_op_sem op l_const r_const in
+    Constant.bool v)
 
 let eval_rel (op : Op.Binary.Rel.t) (l : expr) (r : expr) ~(mu : mu) :
     Constant.t Heap.Monad.t =

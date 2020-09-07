@@ -18,16 +18,19 @@ end
 
 module Binary = struct
   module Rel = struct
-    type t = Eq | Ne
+    type t = Eq | Ne | Gt | Ge | Le | Lt
     [@@deriving enumerate, sexp, compare, equal, quickcheck]
 
     let rules : t -> Op_rule.t list =
+      (* If we ever get unsigned integers, or some way of tracking what the
+         maximum and minimum integers are in constant form, we can add a few
+         more rules for Gt/Ge/Le/Lt. *)
       Op_rule.(
         function
-        | Eq ->
-            [Refl @-> Const Constant.truth (* x == x -> true *)]
-        | Ne ->
-            [Refl @-> Const Constant.falsehood (* x != x -> false *)])
+        | Eq | Le | Ge ->
+            [Refl @-> Const Constant.truth (* x == x -> true, etc. *)]
+        | Ne | Lt | Gt ->
+            [Refl @-> Const Constant.falsehood (* x != x -> false, etc. *)])
   end
 
   module Arith = struct
@@ -104,6 +107,14 @@ module Binary = struct
   let eq : t = Rel Eq
 
   let ne : t = Rel Ne
+
+  let lt : t = Rel Lt
+
+  let le : t = Rel Le
+
+  let ge : t = Rel Ge
+
+  let gt : t = Rel Gt
 
   let add : t = Arith Add
 

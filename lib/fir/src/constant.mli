@@ -18,8 +18,9 @@ open Base
 
 (** {1 Constants} *)
 
-(** Opaque type of constants. *)
-type t [@@deriving compare, equal, sexp, quickcheck]
+(** Type of constants. *)
+type t = Bool of bool | Int of int
+[@@deriving compare, equal, sexp, quickcheck]
 
 include Comparable.S with type t := t
 

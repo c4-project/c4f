@@ -70,6 +70,10 @@ module Binary : sig
     type t =
       | Eq  (** An equality operator. *)
       | Ne  (** A non-equality operator. *)
+      | Gt  (** A greater-than operator. *)
+      | Ge  (** A greater-than-or-equal operator. *)
+      | Le  (** A less-than-or-equal operator. *)
+      | Lt  (** A less-than operator. *)
     [@@deriving sexp, compare, equal, quickcheck]
 
     include Op_types.S_binary with type t := t
@@ -97,6 +101,18 @@ module Binary : sig
 
   val ne : t
   (** [ne] is the non-equality operator. *)
+
+  val gt : t
+  (** [gt] is the greater-than operator. *)
+
+  val ge : t
+  (** [ge] is the greater-than-or-equal operator. *)
+
+  val le : t
+  (** [le] is the less-than-or-equal operator. *)
+
+  val lt : t
+  (** [lt] is the less-than operator. *)
 
   val add : t
   (** [add] is the addition operator. *)
