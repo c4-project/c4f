@@ -24,6 +24,29 @@ let%test_module "model" =
         [%sexp
           (Src.Abstract_stm.model stm : unit Fir.Statement.t Or_error.t)]
 
+    let%expect_test "model explicit block" =
+      test
+        Src.Ast.(
+          Stm.Compound
+            [ `Stm
+                (Stm.Expr
+                   (Some
+                      (Expr.Binary
+                         ( Expr.Identifier (Ac.C_id.of_string "x")
+                         , `Assign
+                         , Expr.Identifier (Ac.C_id.of_string "y") )))) ]) ;
+      [%expect
+        {|
+          (Ok
+           (Flow
+            ((header Explicit)
+             (body
+              ((statements
+                ((Prim ()
+                  (Assign
+                   ((lvalue (Variable x)) (rvalue (Address (Lvalue (Variable y)))))))))
+               (metadata ())))))) |}]
+
     let%expect_test "model upwards for loop" =
       test
         Src.Ast.(

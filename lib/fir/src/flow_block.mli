@@ -86,6 +86,12 @@ module Header : sig
     | Lock of Lock.t  (** A lock block. *)
     | While of While.t * Expression.t
         (** A while or do-while loop, alongside its condition. *)
+    | Explicit  (** An explicit block with no conditions or looping. *)
+    | Implicit
+        (** An implicit block.
+
+            Implicit blocks don't actually appear in reified code; they only
+            serve to attach metadata to specific subranges of code. *)
   [@@deriving sexp, compare, equal]
 
   (** {3 Traversals} *)
@@ -123,6 +129,12 @@ val for_loop : control:For.t -> body:('meta, 'stm) Block.t -> ('meta, 'stm) t
 
 val lock_block : body:('meta, 'stm) Block.t -> kind:Lock.t -> ('meta, 'stm) t
 (** [lock_block ~body ~kind] makes a lock block with the given body and kind. *)
+
+val explicit : ('meta, 'stm) Block.t -> ('meta, 'stm) t
+(** [explicit b] makes an explicit block using [b]. *)
+
+val implicit : ('meta, 'stm) Block.t -> ('meta, 'stm) t
+(** [implicit b] makes an implicit block using [b]. *)
 
 (** {2 Accessors and queries} *)
 

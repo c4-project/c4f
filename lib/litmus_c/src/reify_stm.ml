@@ -15,6 +15,14 @@ open struct
   module Fir = Act_fir
 end
 
+(* A lot of this module involves dealing with the prospect of one FIR
+   statement expanding into multiple C statements; hence why reified blocks
+   have statements that themselves are lists of statements. At time of
+   writing (note that comments lie, including this one), the types of FIR
+   statement that introduce multiple C statements are:
+
+   - implicit flow blocks (these expand to the statements they contain) *)
+
 let atomic = Reify_atomic.reify_stm ~expr:Reify_expr.reify
 
 let assign (asn : Fir.Assign.t) : Ast.Stm.t =
@@ -25,16 +33,25 @@ let assign (asn : Fir.Assign.t) : Ast.Stm.t =
 let lift_stms : Ast.Stm.t list -> Ast.Compound_stm.t =
   List.map ~f:(fun s -> `Stm s)
 
-let block_compound (type meta) (b : (meta, Ast.Stm.t) Fir.Block.t) :
-    Ast.Compound_stm.t =
-  lift_stms (Fir.Block.statements b)
+let merge_stms (b : ('meta, Ast.Stm.t list) Fir.Block.t) : Ast.Stm.t list =
+  List.concat (Fir.Block.statements b)
 
-let block (type meta) (b : (meta, Ast.Stm.t) Fir.Block.t) : Ast.Stm.t =
+let block_compound (type meta) (b : (meta, Ast.Stm.t list) Fir.Block.t) :
+    Ast.Compound_stm.t =
+  lift_stms (merge_stms b)
+
+let block (type meta) (b : (meta, Ast.Stm.t list) Fir.Block.t) : Ast.Stm.t =
   Compound (block_compound b)
 
-let ne_block (type meta) (b : (meta, Ast.Stm.t) Fir.Block.t) :
+let is_empty_nested (type meta) (b : (meta, Ast.Stm.t list) Fir.Block.t) :
+    bool =
+  List.for_all (Fir.Block.statements b) ~f:List.is_empty
+
+let ne_block (type meta) (b : (meta, Ast.Stm.t list) Fir.Block.t) :
     Ast.Stm.t option =
-  if Fir.Block.is_empty b then None else Some (block b)
+  (* We can't use Fir.Block.is_empty here, as it'd suggest a block whose
+     statement list is [[]] is not empty. *)
+  if is_empty_nested b then None else Some (block b)
 
 let nop (_ : 'meta) : Ast.Stm.t = Ast.Stm.Expr None
 
@@ -59,15 +76,15 @@ let procedure_call (c : Fir.Call.t) : Ast.Stm.t =
           { func= Identifier (Fir.Call.function_id c)
           ; arguments= List.map ~f:Reify_expr.reify (Fir.Call.arguments c) }))
 
-let prim ((_, p) : _ * Fir.Prim_statement.t) : Ast.Stm.t =
-  Fir.Prim_statement.value_map p ~assign ~atomic ~early_out ~procedure_call
-    ~label ~goto ~nop
+let prim ((_, p) : _ * Fir.Prim_statement.t) : Ast.Stm.t list =
+  [ Fir.Prim_statement.value_map p ~assign ~atomic ~early_out ~procedure_call
+      ~label ~goto ~nop ]
 
-let if_stm (ifs : (_, Ast.Stm.t) Fir.If.t) : Ast.Stm.t =
-  If
-    { cond= Reify_expr.reify (Fir.If.cond ifs)
-    ; t_branch= block (Fir.If.t_branch ifs)
-    ; f_branch= ne_block (Fir.If.f_branch ifs) }
+let if_stm (ifs : (_, Ast.Stm.t list) Fir.If.t) : Ast.Stm.t list =
+  [ If
+      { cond= Reify_expr.reify (Fir.If.cond ifs)
+      ; t_branch= block (Fir.If.t_branch ifs)
+      ; f_branch= ne_block (Fir.If.f_branch ifs) } ]
 
 let for_init (lv : Ast.Expr.t) (header : Fir.Flow_block.For.t) : Ast.Expr.t =
   let init = Reify_expr.reify (Fir.Flow_block.For.init_value header) in
@@ -123,23 +140,28 @@ let lock (kind : Fir.Flow_block.Lock.t) (body : Ast.Compound_stm.t) :
     Ast.Stm.t =
   match kind with Atomic -> Atomic body | Synchronized -> Synchronized body
 
-let flow (fb : (_, Ast.Stm.t) Fir.Flow_block.t) : Ast.Stm.t =
-  let body = block_compound (Fir.Flow_block.body fb) in
+let flow (fb : (_, Ast.Stm.t list) Fir.Flow_block.t) : Ast.Stm.t list =
+  let body' = Fir.Flow_block.body fb in
+  let body = block_compound body' in
   match Fir.Flow_block.header fb with
   | For f ->
-      for_loop f body
+      [for_loop f body]
   | Lock l ->
-      lock l body
+      [lock l body]
   | While (w, c) ->
-      while_loop w c body
+      [while_loop w c body]
+  | Explicit ->
+      [Compound body]
+  | Implicit ->
+      merge_stms body'
 
-let reify (type meta) (m : meta Fir.Statement.t) : Ast.Stm.t =
+let reify (type meta) (m : meta Fir.Statement.t) : Ast.Stm.t list =
   Fir.Statement.reduce m ~prim ~if_stm ~flow
 
 let pp : type meta. meta Fir.Statement.t Fmt.t =
- fun x -> Fmt.using reify Ast.Stm.pp x
+ fun x -> Fmt.(using reify (list ~sep:sp Ast.Stm.pp)) x
 
 (* Yay, value restriction... *)
 let reify_compound (type meta) (m : meta Fir.Statement.t list) :
     Ast.Compound_stm.t =
-  List.map ~f:(fun x -> `Stm (reify x)) m
+  List.concat_map ~f:(fun x -> lift_stms (reify x)) m

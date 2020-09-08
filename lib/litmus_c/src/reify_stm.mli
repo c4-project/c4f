@@ -13,8 +13,9 @@
 
     For the big picture, see {!Reify}. *)
 
-val reify : _ Act_fir.Statement.t -> Ast.Stm.t
-(** [reify s] reifies the mini-statement [s] into the C AST. *)
+val reify : _ Act_fir.Statement.t -> Ast.Stm.t list
+(** [reify s] reifies the mini-statement [s] into the C AST. One FIR
+    statement may expand into multiple C statements. *)
 
 val reify_compound : _ Act_fir.Statement.t list -> Ast.Compound_stm.t
 (** [reify_compound xs] reifies a list [xs] of statements into a C AST

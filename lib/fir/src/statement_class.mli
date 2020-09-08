@@ -44,6 +44,8 @@ module Flow : sig
     | For
     | Lock of Flow_block.Lock.t option
     | While of Flow_block.While.t option
+    | Explicit
+    | Implicit
   [@@deriving compare, equal, sexp]
 
   include

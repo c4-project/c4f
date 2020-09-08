@@ -24,7 +24,7 @@ let ensure_functions :
     Ast.External_decl.t list -> Ast.Function_def.t list Or_error.t =
   Tx.Or_error.combine_map ~f:(function
     | `Fun f ->
-        Or_error.return f
+        Ok f
     | d ->
         Or_error.error_s
           [%message "Expected a function" ~got:(d : Ast.External_decl.t)])

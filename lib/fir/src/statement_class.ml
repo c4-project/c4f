@@ -34,6 +34,8 @@ module Flow = struct
     | For
     | Lock of Flow_block.Lock.t option
     | While of Flow_block.While.t option
+    | Explicit
+    | Implicit
   [@@deriving compare, equal, sexp]
 
   let classify' (f : ('a, 'b) Flow_block.t) : t option =
@@ -44,6 +46,10 @@ module Flow = struct
         Some (Lock (Some lk))
     | While (wk, _) ->
         Some (While (Some wk))
+    | Explicit ->
+        Some Explicit
+    | Implicit ->
+        Some Implicit
 
   let classify (f : ('meta, 'meta Statement.t) Flow_block.t) : t option =
     classify' f

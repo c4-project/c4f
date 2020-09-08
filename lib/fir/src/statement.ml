@@ -68,7 +68,8 @@ let own_metadata (type meta) (x : meta t) : meta Option.t =
     ~if_stm:(Fn.const None) ~flow:(Fn.const None)
 
 (** Shorthand for lifting a predicate on primitives. *)
-let is_prim_and (type meta) (t : meta t) ~(f : Prim_statement.t -> bool) : bool =
+let is_prim_and (type meta) (t : meta t) ~(f : Prim_statement.t -> bool) :
+    bool =
   A.(exists (prim @> Tuple2.snd)) ~f t
 
 (** Shorthand for writing a predicate that is [false] on primitives. *)

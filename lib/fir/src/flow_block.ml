@@ -67,7 +67,12 @@ end
 (** {2 Headers proper} *)
 
 module Header = struct
-  type t = For of For.t | Lock of Lock.t | While of While.t * Expression.t
+  type t =
+    | For of For.t
+    | Lock of Lock.t
+    | While of While.t * Expression.t
+    | Explicit
+    | Implicit
   [@@deriving accessors, sexp, compare, equal]
 
   (** Traversal over the expressions inside a header. *)
@@ -94,6 +99,10 @@ module Header = struct
             M.return (Lock l)
         | While (w, e) ->
             M.(e |> f >>| fun e' -> While (w, e'))
+        | Explicit ->
+            M.return Explicit
+        | Implicit ->
+            M.return Implicit
     end
   end)
 end
@@ -113,6 +122,12 @@ let while_loop ~(cond : Expression.t) ~(body : ('meta, 'stm) Block.t)
 let lock_block ~(body : ('meta, 'stm) Block.t) ~(kind : Lock.t) :
     ('meta, 'stm) t =
   make ~body ~header:(Header.Lock kind)
+
+let explicit (body : ('meta, 'stm) Block.t) : ('meta, 'stm) t =
+  make ~body ~header:Explicit
+
+let implicit (body : ('meta, 'stm) Block.t) : ('meta, 'stm) t =
+  make ~body ~header:Implicit
 
 module Base_map (A : Applicative.S) = struct
   let bmap (type m1 s1 m2 s2) (flow : (m1, s1) t)

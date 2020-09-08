@@ -22,7 +22,7 @@ let ensure_statements :
     Ast.Compound_stm.Elt.t list -> Ast.Stm.t list Or_error.t =
   Tx.Or_error.combine_map ~f:(function
     | `Stm f ->
-        Or_error.return f
+        Ok f
     | d ->
         Or_error.error_s
           [%message "Expected a statement" ~got:(d : Ast.Compound_stm.Elt.t)])
@@ -141,11 +141,10 @@ let expr_stm : Ast.Expr.t -> unit Fir.Statement.t Or_error.t = function
 let possible_compound_to_list : Ast.Stm.t -> Ast.Stm.t list Or_error.t =
   function
   | Ast.Stm.Compound elems ->
-      Or_error.Let_syntax.(
-        let%bind _, ast_nondecls = Abstract_prim.sift_decls elems in
-        ensure_statements ast_nondecls)
+      (* We don't support inner declarations at the moment. *)
+      ensure_statements elems
   | stm ->
-      Or_error.return [stm]
+      Ok [stm]
 
 (** Type of recursive statement converters. *)
 type mu_stm = Ast.Stm.t -> unit Fir.Statement.t Or_error.t
@@ -287,6 +286,13 @@ let lock (model_stm : mu_stm) (old_body : Ast.Compound_stm.t)
     let%map body = block_list model_stm ast_stms in
     A.construct Fir.Statement.flow (Fir.Flow_block.lock_block ~body ~kind))
 
+let explicit (model_stm : mu_stm) (old_body : Ast.Compound_stm.t) :
+    unit Fir.Statement.t Or_error.t =
+  Or_error.(
+    old_body |> ensure_statements >>= block_list model_stm
+    >>| Fir.Flow_block.explicit
+    >>| A.construct Fir.Statement.flow)
+
 let rec model : Ast.Stm.t -> unit Fir.Statement.t Or_error.t = function
   | Expr None ->
       Ok A.(construct Fir.(Statement.prim' @> Prim_statement.nop) ())
@@ -294,6 +300,8 @@ let rec model : Ast.Stm.t -> unit Fir.Statement.t Or_error.t = function
       expr_stm (debracket e)
   | If {cond; t_branch; f_branch} ->
       model_if model cond t_branch f_branch
+  | Compound xs ->
+      explicit model xs
   | Continue ->
       Ok
         A.(
@@ -326,6 +334,6 @@ let rec model : Ast.Stm.t -> unit Fir.Statement.t Or_error.t = function
       Ok A.(construct Fir.(Statement.prim' @> Prim_statement.label) l)
   | Goto l ->
       Ok A.(construct Fir.(Statement.prim' @> Prim_statement.goto) l)
-  | (Label _ | Compound _ | Switch _) as s ->
+  | (Label _ | Switch _) as s ->
       Or_error.error_s
         [%message "Unsupported statement" ~got:(s : Ast.Stm.t)]

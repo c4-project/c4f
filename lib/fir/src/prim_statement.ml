@@ -12,7 +12,6 @@
 open Base
 
 open struct
-  module A = Accessor_base
   module Ac = Act_common
 end
 

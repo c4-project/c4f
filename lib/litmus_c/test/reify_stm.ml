@@ -22,6 +22,20 @@ let%test_module "reify/pp" =
     let test (stm : unit Fir.Statement.t) : unit =
       Fmt.pr "@[%a@]@." Src.Reify_stm.pp stm
 
+    let test_body : (unit, unit Fir.Statement.t) Fir.Block.t =
+      Fir.(
+        Block.make ~metadata:()
+          ~statements:
+            [ A.(construct (Statement.prim' @> Prim_statement.assign))
+                (Assign.make
+                   ~lvalue:(Lvalue.of_variable_str_exn "x")
+                   ~rvalue:Expression.truth)
+            ; A.(construct (Statement.prim' @> Prim_statement.assign))
+                (Assign.make
+                   ~lvalue:(Lvalue.of_variable_str_exn "y")
+                   ~rvalue:Expression.falsehood) ]
+          ())
+
     let%expect_test "upwards for loop" =
       test
         Fir.(
@@ -34,8 +48,8 @@ let%test_module "reify/pp" =
                      ~init_value:(Expression.int_lit 0)
                      ~cmp_value:(Expression.int_lit 42)
                      ~direction:Up_exclusive)
-                ~body:(Block.make ~metadata:() ()))) ;
-      [%expect {| for (x = 0; x < 42; x++) {  } |}]
+                ~body:test_body)) ;
+      [%expect {| for (x = 0; x < 42; x++) { x = true; y = false; } |}]
 
     let%expect_test "downwards-inclusive for loop" =
       test
@@ -49,8 +63,8 @@ let%test_module "reify/pp" =
                      ~init_value:(Expression.int_lit 53)
                      ~cmp_value:(Expression.int_lit 27)
                      ~direction:Down_inclusive)
-                ~body:(Block.make ~metadata:() ()))) ;
-      [%expect {| for (x = 53; x >= 27; x--) {  } |}]
+                ~body:test_body)) ;
+      [%expect {| for (x = 53; x >= 27; x--) { x = true; y = false; } |}]
 
     let%expect_test "upwards-inclusive for loop with pointers" =
       test
@@ -64,6 +78,15 @@ let%test_module "reify/pp" =
                      ~init_value:(Expression.int_lit 0)
                      ~cmp_value:(Expression.int_lit 100)
                      ~direction:Up_inclusive)
-                ~body:(Block.make ~metadata:() ()))) ;
-      [%expect {| for (*x = 0; *x <= 100; (*x)++) {  } |}]
+                ~body:test_body)) ;
+      [%expect
+        {| for (*x = 0; *x <= 100; (*x)++) { x = true; y = false; } |}]
+
+    let%expect_test "explicit block" =
+      test Fir.(A.construct Statement.flow (Flow_block.explicit test_body)) ;
+      [%expect {| { x = true; y = false; } |}]
+
+    let%expect_test "implicit block" =
+      test Fir.(A.construct Statement.flow (Flow_block.implicit test_body)) ;
+      [%expect {| x = true; y = false; |}]
   end )

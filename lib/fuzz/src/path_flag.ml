@@ -40,7 +40,7 @@ let flags_of_flow_class : Act_fir.Statement_class.Flow.t -> Set.M(M).t =
       Set.singleton (module M) In_loop
   | Lock (Some Atomic) ->
       Set.singleton (module M) In_atomic
-  | Lock _ ->
+  | Lock _ | Explicit | Implicit ->
       Set.empty (module M)
 
 let flags_of_metadata (m : Metadata.t) : Set.M(M).t =
