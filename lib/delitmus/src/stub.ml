@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module A = Accessor_base
   module Ac = Act_common
   module Tx = Travesty_base_exts
 end
@@ -102,7 +103,8 @@ let inner_call_stm (tid : int) (function_id : Ac.C_id.t)
     unit Act_fir.Statement.t =
   let arguments = inner_call_arguments tid all_params in
   let call = Act_fir.Call.make ~function_id ~arguments () in
-  Act_fir.(Statement.prim () (Prim_statement.procedure_call call))
+  Act_fir.(
+    Statement.prim () (A.construct Prim_statement.procedure_call call))
 
 let make_function_stub (vars : Var_map.t) ~(old_id : Ac.C_id.t)
     ~(new_id : Ac.C_id.t) : unit Act_fir.Function.t Ac.C_named.t Or_error.t =

@@ -27,54 +27,35 @@ open Base
 (** Opaque type of FIR primitive statements. *)
 type t [@@deriving sexp, compare, equal]
 
-(** {1 Constructors} *)
+(** {1 Accessors} *)
 
-val assign : Assign.t -> t
-(** [assign a] lifts an assignment [a] to a primitive statement. *)
+val assign : ('a, Assign.t, t, [< Accessor.variant]) Accessor.Simple.t
+(** [assign] focuses on assignment statements. *)
 
-val label : Act_common.C_id.t -> t
-(** [label l] lifts a label [l] to a primitive statement. *)
+val label :
+  ('a, Act_common.C_id.t, t, [< Accessor.variant]) Accessor.Simple.t
+(** [label] focuses on label statements. *)
 
-val goto : Act_common.C_id.t -> t
-(** [goto l] lifts a goto to label [l] to a primitive statement. *)
+val goto : ('a, Act_common.C_id.t, t, [< Accessor.variant]) Accessor.Simple.t
+(** [goto] focuses on goto statements. *)
 
-val nop : t
-(** [nop] is a no-op (semicolon) primitive statement. *)
+val nop : ('a, unit, t, [< Accessor.variant]) Accessor.Simple.t
+(** [nop] focuses on no-op (semicolon) statements. *)
 
-val procedure_call : Call.t -> t
-(** [procedure_call a] lifts a procedure (non-value-returning function) call
-    [a] to a primitive statement. *)
+val procedure_call : ('a, Call.t, t, [< Accessor.variant]) Accessor.Simple.t
+(** [procedure_call] focuses on procedure (non-value-returning function) call
+    statements. *)
 
-(** {2 Atomics}
-
-    See {!Atomic_statement}. *)
-
-val atomic : Atomic_statement.t -> t
-(** [atomic a] lifts an atomic statement [a], with metadata [meta], to a
-    primitive statement. *)
-
-val atomic_cmpxchg : Expression.t Atomic_cmpxchg.t -> t
-(** [atomic_cmpxchg a] lifts an atomic compare-exchange [a] to a primitive
-    statement. *)
-
-val atomic_fetch : Expression.t Atomic_fetch.t -> t
-(** [atomic_fetch a] lifts an atomic fetch [a] to a primitive statement. *)
-
-val atomic_fence : Atomic_fence.t -> t
-(** [atomic_fence a] lifts an atomic fence [a] to a primitive statement. *)
-
-val atomic_store : Atomic_store.t -> t
-(** [atomic_store a] lifts an atomic store [a] to a primitive statement. *)
-
-val atomic_xchg : Expression.t Atomic_xchg.t -> t
-(** [atomic_xchg a] lifts an atomic exchange [a] to a primitive statement. *)
+val atomic :
+  ('a, Atomic_statement.t, t, [< Accessor.variant]) Accessor.Simple.t
+(** [atomic] focuses on atomic statements. *)
 
 (** {2 Shorthand for early-out statements}
 
     See {!Early_out}. *)
 
-val early_out : Early_out.t -> t
-(** [early_out e] lifts an early-out statement [e] to a primitive statement. *)
+val early_out : ('a, Early_out.t, t, [< Accessor.variant]) Accessor.Simple.t
+(** [early_out] focuses on early-out statements. *)
 
 val break : t
 (** [break] is a break statement. *)
@@ -100,22 +81,6 @@ val value_map :
 (** [value_map x ~assign ~atomic ~early_out ~label ~goto ~nop
     ~procedure_call] reduces a primitive statement [x] to a particular result
     type by applying the appropriate function. *)
-
-val as_atomic : t -> Atomic_statement.t option
-(** [as_atomic x] is [Some a] if [x] is [atomic a], and [None] otherwise. *)
-
-val is_atomic : t -> bool
-(** [is_atomic x] is [true] if [x] is [atomic a], and [false] otherwise. *)
-
-val as_early_out : t -> Early_out.t option
-(** [as_early_out x] is [Some e] if [x] is [early_out e], and [None]
-    otherwise. *)
-
-val as_label : t -> Act_common.C_id.t option
-(** [as_label x] is [Some l] if [x] is [label l], and [None] otherwise. *)
-
-val is_label : t -> bool
-(** [is_label x] is [true] if [x] is [label l], and [false] otherwise. *)
 
 (** Creates a basic monadic map over [M]. *)
 module Base_map (M : Monad.S) : sig

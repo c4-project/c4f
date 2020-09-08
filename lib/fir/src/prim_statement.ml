@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module A = Accessor_base
   module Ac = Act_common
 end
 
@@ -26,23 +27,10 @@ module P = struct
     | Goto of Ac.C_id.t
     | Nop
     | Procedure_call of Call.t
-  [@@deriving variants, sexp, compare, equal]
+  [@@deriving accessors, sexp, compare, equal]
 end
 
 include P
-
-let atomic_cmpxchg (a : Expression.t Atomic_cmpxchg.t) : t =
-  atomic (Atomic_statement.cmpxchg a)
-
-let atomic_fetch (a : Expression.t Atomic_fetch.t) : t =
-  atomic (Atomic_statement.fetch a)
-
-let atomic_fence (a : Atomic_fence.t) : t = atomic (Atomic_statement.fence a)
-
-let atomic_store (a : Atomic_store.t) : t = atomic (Atomic_statement.store a)
-
-let atomic_xchg (a : Expression.t Atomic_xchg.t) : t =
-  atomic (Atomic_statement.xchg a)
 
 let break : t = Early_out Break
 
@@ -55,33 +43,21 @@ let value_map (type result) (x : t) ~(assign : Assign.t -> result)
     ~(early_out : Early_out.t -> result) ~(label : Ac.C_id.t -> result)
     ~(goto : Ac.C_id.t -> result) ~(nop : unit -> result)
     ~(procedure_call : Call.t -> result) : result =
-  Variants.map x ~assign:(Fn.const assign) ~atomic:(Fn.const atomic)
-    ~early_out:(Fn.const early_out) ~label:(Fn.const label)
-    ~goto:(Fn.const goto)
-    ~nop:(fun _ -> nop ())
-    ~procedure_call:(Fn.const procedure_call)
-
-let as_atomic : t -> Atomic_statement.t option = function
+  match x with
+  | Assign a ->
+      assign a
   | Atomic a ->
-      Some a
-  | Assign _ | Label _ | Early_out _ | Goto _ | Nop | Procedure_call _ ->
-      None
-
-let is_atomic (p : t) : bool = Option.is_some (as_atomic p)
-
-let as_early_out : t -> Early_out.t option = function
+      atomic a
   | Early_out e ->
-      Some e
-  | Assign _ | Atomic _ | Label _ | Goto _ | Nop | Procedure_call _ ->
-      None
-
-let as_label : t -> Act_common.C_id.t option = function
+      early_out e
   | Label l ->
-      Some l
-  | Assign _ | Atomic _ | Early_out _ | Goto _ | Nop | Procedure_call _ ->
-      None
-
-let is_label (p : t) : bool = Option.is_some (as_label p)
+      label l
+  | Goto g ->
+      goto g
+  | Nop ->
+      nop ()
+  | Procedure_call p ->
+      procedure_call p
 
 module Base_map (M : Monad.S) = struct
   let bmap (x : t) ~(assign : Assign.t -> Assign.t M.t)
@@ -92,13 +68,14 @@ module Base_map (M : Monad.S) = struct
       ~(procedure_call : Call.t -> Call.t M.t) : t M.t =
     Travesty_base_exts.Fn.Compose_syntax.(
       value_map x
-        ~assign:(assign >> M.map ~f:P.assign)
-        ~atomic:(atomic >> M.map ~f:P.atomic)
-        ~early_out:(early_out >> M.map ~f:P.early_out)
-        ~label:(label >> M.map ~f:P.label)
-        ~goto:(goto >> M.map ~f:P.goto)
-        ~nop:(fun () -> M.return P.nop)
-        ~procedure_call:(procedure_call >> M.map ~f:P.procedure_call))
+        ~assign:(assign >> M.map ~f:(fun a -> Assign a))
+        ~atomic:(atomic >> M.map ~f:(fun a -> Atomic a))
+        ~early_out:(early_out >> M.map ~f:(fun e -> Early_out e))
+        ~label:(label >> M.map ~f:(fun l -> Label l))
+        ~goto:(goto >> M.map ~f:(fun g -> Goto g))
+        ~nop:(fun () -> M.return Nop)
+        ~procedure_call:
+          (procedure_call >> M.map ~f:(fun p -> Procedure_call p)))
 end
 
 (** Does the legwork of implementing a particular type of traversal over

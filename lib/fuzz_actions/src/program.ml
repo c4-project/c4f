@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module A = Accessor_base
   module F = Act_fuzz
 end
 
@@ -74,7 +75,9 @@ struct
     let lid = Act_common.Litmus_id.local tid name in
     let label_stm =
       Act_fir.(
-        name |> Prim_statement.label |> Statement.prim F.Metadata.generated)
+        name
+        |> A.construct Prim_statement.label
+        |> Statement.prim F.Metadata.generated)
     in
     F.State.Monad.(
       Let_syntax.(

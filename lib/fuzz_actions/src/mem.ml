@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module A = Accessor_base
   module Ac = Act_common
   module Fir = Act_fir
   module F = Act_fuzz
@@ -49,8 +50,8 @@ struct
     let path = F.Payload_impl.Insertion.where payload in
     let fence_stm =
       payload |> F.Payload_impl.Insertion.to_insert
-      |> Act_fir.Prim_statement.atomic_fence
-      |> Act_fir.Statement.prim F.Metadata.generated
+      |> A.(construct Fir.(Prim_statement.atomic @> Atomic_statement.fence))
+      |> Fir.Statement.prim F.Metadata.generated
     in
     (* We don't need to do any bookkeeping on fences. *)
     F.State.Monad.Monadic.return

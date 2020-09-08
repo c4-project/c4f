@@ -11,28 +11,35 @@
 
 open Base
 
-(* This module wrapper exists to let us refer to the generated variant
-   constructors in Base_map. *)
-module P = struct
-  type t =
-    | Cmpxchg of Expression.t Atomic_cmpxchg.t
-    | Fence of Atomic_fence.t
-    | Fetch of Expression.t Atomic_fetch.t
-    | Store of Atomic_store.t
-    | Xchg of Expression.t Atomic_xchg.t
-  [@@deriving variants, sexp, compare, equal]
+open struct
+  module A = Accessor_base
 end
 
-include P
+type t =
+  | Cmpxchg of Expression.t Atomic_cmpxchg.t
+  | Fence of Atomic_fence.t
+  | Fetch of Expression.t Atomic_fetch.t
+  | Store of Atomic_store.t
+  | Xchg of Expression.t Atomic_xchg.t
+[@@deriving accessors, sexp, compare, equal]
 
-let reduce (type result) (x : t)
+let value_map (type result) (x : t)
     ~(cmpxchg : Expression.t Atomic_cmpxchg.t -> result)
     ~(fence : Atomic_fence.t -> result)
     ~(fetch : Expression.t Atomic_fetch.t -> result)
     ~(store : Atomic_store.t -> result)
     ~(xchg : Expression.t Atomic_xchg.t -> result) : result =
-  Variants.map x ~cmpxchg:(Fn.const cmpxchg) ~fence:(Fn.const fence)
-    ~fetch:(Fn.const fetch) ~store:(Fn.const store) ~xchg:(Fn.const xchg)
+  match x with
+  | Cmpxchg c ->
+      cmpxchg c
+  | Fence f ->
+      fence f
+  | Fetch f ->
+      fetch f
+  | Store s ->
+      store s
+  | Xchg x ->
+      xchg x
 
 module Base_map (Ap : Applicative.S) = struct
   let bmap (x : t)
@@ -45,12 +52,12 @@ module Base_map (Ap : Applicative.S) = struct
       ~(xchg : Expression.t Atomic_xchg.t -> Expression.t Atomic_xchg.t Ap.t)
       : t Ap.t =
     Travesty_base_exts.Fn.Compose_syntax.(
-      reduce x
-        ~cmpxchg:(cmpxchg >> Ap.map ~f:P.cmpxchg)
-        ~fence:(fence >> Ap.map ~f:P.fence)
-        ~fetch:(fetch >> Ap.map ~f:P.fetch)
-        ~store:(store >> Ap.map ~f:P.store)
-        ~xchg:(xchg >> Ap.map ~f:P.xchg))
+      value_map x
+        ~cmpxchg:(cmpxchg >> Ap.map ~f:(fun c -> Cmpxchg c))
+        ~fence:(fence >> Ap.map ~f:(fun f -> Fence f))
+        ~fetch:(fetch >> Ap.map ~f:(fun f -> Fetch f))
+        ~store:(store >> Ap.map ~f:(fun s -> Store s))
+        ~xchg:(xchg >> Ap.map ~f:(fun x -> Xchg x)))
 end
 
 (** Does the legwork of implementing a particular type of traversal over

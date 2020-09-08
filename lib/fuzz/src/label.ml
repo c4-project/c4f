@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module A = Accessor_base
   module Ac = Act_common
 end
 
@@ -22,7 +23,8 @@ let labels_of_thread (tid : int)
     Act_common.Litmus_id.t list =
   thread |> Ac.C_named.value |> Act_fir.Function.body_stms
   |> List.concat_map ~f:Stm.On_primitives.to_list
-  |> List.filter_map ~f:Act_fir.Prim_statement.as_label
+  (* TODO(@MattWindsor91): push this further *)
+  |> List.filter_map ~f:(A.get_option Act_fir.Prim_statement.label)
   |> List.map ~f:(Act_common.Litmus_id.local tid)
 
 let labels_of_test (test : Act_fir.Litmus.Test.t) :

@@ -10,7 +10,11 @@
    project root for more information. *)
 
 open Base
-module Src = Act_fir
+
+open struct
+  module A = Accessor
+  module Src = Act_fir
+end
 
 let cond : Src.Expression.t = Src.Expression.bool_lit true
 
@@ -30,22 +34,24 @@ let mkwhile ?(cond : Src.Expression.t = cond)
 let prim : Src.Prim_statement.t -> unit Src.Statement.t =
   Src.Statement.prim ()
 
-let nop : unit Src.Statement.t = prim Src.Prim_statement.nop
+let nop : unit Src.Statement.t = prim (A.construct Src.Prim_statement.nop ())
 
 let mkaxchg ?(mo : Src.Mem_order.t = Seq_cst) (obj : Src.Address.t)
     (desired : Src.Expression.t) : unit Src.Statement.t =
   prim
-    (Src.Prim_statement.atomic_xchg (Src.Atomic_xchg.make ~mo ~obj ~desired))
+    (A.(construct Src.(Prim_statement.atomic @> Atomic_statement.xchg))
+       (Src.Atomic_xchg.make ~mo ~obj ~desired))
 
 let mkastore ?(mo : Src.Mem_order.t = Seq_cst) (dst : Src.Address.t)
     (src : Src.Expression.t) : unit Src.Statement.t =
   prim
-    (Src.Prim_statement.atomic_store (Src.Atomic_store.make ~mo ~dst ~src))
+    (A.(construct Src.(Prim_statement.atomic @> Atomic_statement.store))
+       (Src.Atomic_store.make ~mo ~dst ~src))
 
 let mkafetch ?(mo : Src.Mem_order.t = Seq_cst) (op : Src.Op.Fetch.t)
     (obj : Src.Address.t) (arg : Src.Expression.t) : unit Src.Statement.t =
   prim
-    (Src.Prim_statement.atomic_fetch
+    (A.(construct Src.(Prim_statement.atomic @> Atomic_statement.fetch))
        (Src.Atomic_fetch.make ~mo ~obj ~arg ~op))
 
 let%test_module "has_if_statements" =

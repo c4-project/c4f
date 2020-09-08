@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module A = Accessor_base
   module Ac = Act_common
   module Fir = Act_fir
   module F = Act_fuzz
@@ -87,7 +88,7 @@ module Insert = struct
       []
 
     let to_stms (x : Fir.Atomic_store.t) : Fir.Prim_statement.t list =
-      [Fir.Prim_statement.atomic_store x]
+      [A.(construct Fir.(Prim_statement.atomic @> Atomic_statement.store)) x]
 
     let dst_ids (x : Fir.Atomic_store.t) : Ac.C_id.t list =
       [Fir.Address.variable_of (Fir.Atomic_store.dst x)]
@@ -237,13 +238,13 @@ module Transform = struct
     let a_store_action (s : Fir.Atomic_store.t) :
         Fir.Atomic_statement.t Or_error.t =
       Ok
-        (Fir.Atomic_statement.xchg
+        (A.construct Fir.Atomic_statement.xchg
            Fir.Atomic_store.(
              Fir.Atomic_xchg.make ~obj:(dst s) ~desired:(src s) ~mo:(mo s)))
 
     let xchgify_atomic :
         Fir.Atomic_statement.t -> Fir.Atomic_statement.t Or_error.t =
-      Fir.Atomic_statement.reduce ~cmpxchg:not_a_store_action
+      Fir.Atomic_statement.value_map ~cmpxchg:not_a_store_action
         ~fence:not_a_store_action ~fetch:not_a_store_action
         ~xchg:not_a_store_action ~store:a_store_action
 

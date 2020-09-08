@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module A = Accessor
   module Src = Act_fir
   module Ac = Act_common
 end
@@ -48,7 +49,7 @@ let%test_module "make_type_alist" =
 
     let p0_stms : unit Src.Statement.t list =
       [ Src.Statement.prim ()
-          (Src.Prim_statement.assign
+          (A.construct Src.Prim_statement.assign
              (Src.Assign.make
                 ~lvalue:(Src.Lvalue.of_variable_str_exn "r0")
                 ~rvalue:
@@ -57,7 +58,7 @@ let%test_module "make_type_alist" =
                         ~src:(Src.Address.of_variable_str_exn "y")
                         ~mo:Src.Mem_order.Acquire))))
       ; Src.Statement.prim ()
-          (Src.Prim_statement.assign
+          (A.construct Src.Prim_statement.assign
              (Src.Assign.make
                 ~lvalue:(Src.Lvalue.of_variable_str_exn "r1")
                 ~rvalue:
@@ -74,13 +75,15 @@ let%test_module "make_type_alist" =
 
     let p1_stms : unit Src.Statement.t list =
       [ Src.Statement.prim ()
-          (Src.Prim_statement.atomic_store
+          (A.(
+             construct Src.(Prim_statement.atomic @> Atomic_statement.store))
              (Src.Atomic_store.make
                 ~src:(Src.Expression.int_lit 1)
                 ~dst:(Src.Address.of_variable_str_exn "x")
                 ~mo:Src.Mem_order.Relaxed))
       ; Src.Statement.prim ()
-          (Src.Prim_statement.atomic_store
+          (A.(
+             construct Src.(Prim_statement.atomic @> Atomic_statement.store))
              (Src.Atomic_store.make
                 ~src:(Src.Expression.int_lit 1)
                 ~dst:(Src.Address.of_variable_str_exn "y")

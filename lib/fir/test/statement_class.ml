@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module A = Accessor
   module Src = Act_fir
 end
 
@@ -25,7 +26,7 @@ let test_fragment : unit Src.Statement.t Lazy.t =
                   Address.(of_variable_str_exn "x")
                   Expression.(int_lit 42)
               ; Src.Statement.prim ()
-                  (Src.Prim_statement.label
+                  (A.construct Src.Prim_statement.label
                      (Act_common.C_id.of_string "foo")) ]
             Src.
               [ mkastore

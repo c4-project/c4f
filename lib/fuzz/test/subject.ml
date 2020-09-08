@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module A = Accessor
   module Src = Act_fuzz
 end
 
@@ -68,7 +69,7 @@ module Test_data = struct
   let mk_store (a : Act_fir.Atomic_store.t) : Src.Subject.Statement.t =
     Act_fir.(
       Statement.prim Src.Metadata.generated
-      @@ Prim_statement.atomic_store @@ a)
+      @@ A.(construct (Prim_statement.atomic @> Atomic_statement.store)) a)
 
   let mk_always_true_if (cond : Act_fir.Expression.t)
       (t : Src.Subject.Statement.t list) (f : Src.Subject.Statement.t list) :
@@ -91,7 +92,7 @@ module Test_data = struct
                  ~mo:Mem_order.Seq_cst)
           ; Act_fir.Statement.prim Src.Metadata.generated
               Act_fir.(
-                Prim_statement.label
+                A.construct Prim_statement.label
                   (Act_common.C_id.of_string "kappa_kappa")) ]
           [])
 
@@ -142,7 +143,7 @@ module Test_data = struct
               (Atomic_store.make ~src:(Expression.int_lit 42)
                  ~dst:(Address.of_variable_str_exn "x")
                  ~mo:Mem_order.Seq_cst)
-          ; prim Src.Metadata.generated Prim_statement.nop
+          ; prim Src.Metadata.generated (A.construct Prim_statement.nop ())
           ; mk_store
               (Atomic_store.make
                  ~src:(Expression.of_variable_str_exn "foo")
@@ -174,11 +175,12 @@ module Test_data = struct
       Act_fir.(
         Statement.
           [ prim Src.Metadata.generated
-              (Prim_statement.label (Act_common.C_id.of_string "loop"))
+              (A.construct Prim_statement.label
+                 (Act_common.C_id.of_string "loop"))
           ; mk_always_true_if Act_fir.Expression.truth []
               [ prim Src.Metadata.generated
-                  (Prim_statement.goto (Act_common.C_id.of_string "loop")) ]
-          ])
+                  (A.construct Prim_statement.goto
+                     (Act_common.C_id.of_string "loop")) ] ])
 
   let thread1 : Src.Subject.Thread.t Lazy.t =
     Lazy.map ~f:(fun stms -> Src.Subject.Thread.make ~stms ()) thread1_stms

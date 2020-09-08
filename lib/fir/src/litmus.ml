@@ -13,6 +13,7 @@ open Base
 
 open struct
   module Tx = Travesty_base_exts
+  module A = Accessor
   module Ac = Act_common
   module Named = Ac.C_named
 end
@@ -29,7 +30,8 @@ module Lang :
     type t = [`Stm of unit Statement.t | `Decl of Initialiser.t Named.t]
     [@@deriving sexp]
 
-    let empty () : t = `Stm (Statement.prim () Prim_statement.nop)
+    let empty () : t =
+      `Stm (Statement.prim () (A.construct Prim_statement.nop ()))
 
     let make_uniform = Tx.List.right_pad ~padding:(empty ())
   end

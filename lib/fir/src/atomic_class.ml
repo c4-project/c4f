@@ -29,7 +29,7 @@ include M
 include Act_utils.Enum.Extend_table (M)
 
 let classify_stm : Atomic_statement.t -> t option =
-  Atomic_statement.reduce ~cmpxchg:(const_some Cmpxchg)
+  Atomic_statement.value_map ~cmpxchg:(const_some Cmpxchg)
     ~fence:(const_some Fence) ~fetch:(const_some Fetch)
     ~store:(const_some Store) ~xchg:(const_some Xchg)
 

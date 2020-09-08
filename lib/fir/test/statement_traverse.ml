@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module A = Accessor
   module Src = Act_fir
   module Stm = Statement
 end
@@ -30,12 +31,14 @@ let%test_module "On_lvalues and On_addresses" =
                   (Expression.lvalue
                      Lvalue.(deref (of_variable_str_exn "i")))
                 [ prim ()
-                    (Prim_statement.atomic_store
+                    (A.(
+                       construct
+                         (Prim_statement.atomic @> Atomic_statement.store))
                        (Src.Atomic_store.make ~mo:Relaxed
                           ~src:(Expression.of_variable_str_exn "herd")
                           ~dst:Address.(ref (of_variable_str_exn "u")))) ]
                 [ prim ()
-                    (Prim_statement.goto
+                    (A.construct Prim_statement.goto
                        (Act_common.C_id.of_string "not_you")) ]
             ; Stm.mkif
                 ~cond:
@@ -44,7 +47,7 @@ let%test_module "On_lvalues and On_addresses" =
                       of_variable_str_exn "liek"
                       && of_variable_str_exn "mudkipz"))
                 [ prim ()
-                    (Prim_statement.label
+                    (A.construct Prim_statement.label
                        (Act_common.C_id.of_string "not_you")) ]
                 [] ]))
 
@@ -76,19 +79,23 @@ let%test_module "On_expressions" =
             Stm.mkwhile
               [ Stm.mkif ~cond:Src.Expression.falsehood
                   [ prim ()
-                      (Prim_statement.assign
+                      (A.construct Prim_statement.assign
                          (Assign.make
                             ~lvalue:(Lvalue.of_variable_str_exn "r0")
                             ~rvalue:(Expression.int_lit 1))) ]
                   []
               ; Stm.mkif
                   [ prim ()
-                      (Prim_statement.atomic_store
+                      (A.(
+                         construct
+                           (Prim_statement.atomic @> Atomic_statement.store))
                          (Atomic_store.make ~mo:Seq_cst
                             ~src:(Expression.int_lit 27)
                             ~dst:(Address.of_variable_str_exn "x"))) ]
                   [ prim ()
-                      (Prim_statement.atomic_store
+                      (A.(
+                         construct
+                           (Prim_statement.atomic @> Atomic_statement.store))
                          (Atomic_store.make ~mo:Seq_cst
                             ~src:(Expression.int_lit 53)
                             ~dst:(Address.of_variable_str_exn "x"))) ] ]))
@@ -118,19 +125,21 @@ let%test_module "On_primitives" =
             Stm.mkwhile
               [ Stm.mkif
                   [ prim ()
-                      (Prim_statement.label
+                      (A.construct Prim_statement.label
                          (Act_common.C_id.of_string "kappa")) ]
                   []
               ; Stm.mkif
                   [ prim ()
-                      (Prim_statement.label
+                      (A.construct Prim_statement.label
                          (Act_common.C_id.of_string "keepo")) ]
                   [ prim ()
-                      (Prim_statement.atomic_fence
+                      (A.(
+                         construct
+                           (Prim_statement.atomic @> Atomic_statement.fence))
                          (Src.Atomic_fence.make ~mode:Thread ~mo:Seq_cst)) ]
               ; prim ()
-                  (Prim_statement.goto (Act_common.C_id.of_string "kappa"))
-              ]))
+                  (A.construct Prim_statement.goto
+                     (Act_common.C_id.of_string "kappa")) ]))
       in
       let stm' =
         M.On_primitives.map stm ~f:(fun _ -> Src.Prim_statement.return)

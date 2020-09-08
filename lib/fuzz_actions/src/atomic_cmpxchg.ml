@@ -10,6 +10,7 @@
    project root for more information. *)
 
 open struct
+  module A = Accessor_base
   module Ac = Act_common
   module Fir = Act_fir
   module F = Act_fuzz
@@ -149,6 +150,6 @@ module Insert = struct
             (Fir.Lvalue.variable (Ac.Litmus_id.variable_name x.out_var))
           ~rvalue:cmpxchg_expr
       in
-      [Fir.Prim_statement.assign cmpxchg_assign]
+      [A.construct Fir.Prim_statement.assign cmpxchg_assign]
   end)
 end

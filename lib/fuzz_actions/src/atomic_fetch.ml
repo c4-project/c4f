@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module A = Accessor_base
   module Ac = Act_common
   module Fir = Act_fir
   module F = Act_fuzz
@@ -85,7 +86,7 @@ module Insert = struct
 
     let to_stms (x : Fir.Expression.t Fir.Atomic_fetch.t) :
         Fir.Prim_statement.t list =
-      [Fir.Prim_statement.atomic_fetch x]
+      [A.(construct Fir.(Prim_statement.atomic @> Atomic_statement.fetch)) x]
 
     let new_locals (_ : Fir.Expression.t Fir.Atomic_fetch.t) :
         Fir.Initialiser.t Ac.C_named.Alist.t =

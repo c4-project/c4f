@@ -74,6 +74,6 @@ let expr_stm (x : Ast.Expr.t) : Ast.Stm.t = Expr (Some x)
 let reify_stm (x : Fir.Atomic_statement.t)
     ~(expr : Fir.Expression.t -> Ast.Expr.t) : Ast.Stm.t =
   x
-  |> Fir.Atomic_statement.reduce ~cmpxchg:(cmpxchg ~expr)
+  |> Fir.Atomic_statement.value_map ~cmpxchg:(cmpxchg ~expr)
        ~fetch:(fetch ~expr) ~fence ~store:(store ~expr) ~xchg:(xchg ~expr)
   |> expr_stm

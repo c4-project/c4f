@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module A = Accessor_base
   module Ac = Act_common
   module Fir = Act_fir
   module Tx = Travesty_base_exts
@@ -36,35 +37,40 @@ let model_atomic_cmpxchg_stm (args : Ast.Expr.t list) :
   Or_error.(
     args
     |> Abstract_atomic.model_cmpxchg ~expr
-    >>| Fir.Prim_statement.atomic_cmpxchg >>| prim)
+    >>| A.(construct Fir.(Prim_statement.atomic @> Atomic_statement.cmpxchg))
+    >>| prim)
 
 let model_atomic_fence_stm (args : Ast.Expr.t list)
     ~(mode : Fir.Atomic_fence.Mode.t) : unit Fir.Statement.t Or_error.t =
   Or_error.(
     args
     |> Abstract_atomic.model_fence ~mode
-    >>| Fir.Prim_statement.atomic_fence >>| prim)
+    >>| A.(construct Fir.(Prim_statement.atomic @> Atomic_statement.fence))
+    >>| prim)
 
 let model_atomic_fetch_stm (args : Ast.Expr.t list) ~(op : Fir.Op.Fetch.t) :
     unit Fir.Statement.t Or_error.t =
   Or_error.(
     args
     |> Abstract_atomic.model_fetch ~expr ~op
-    >>| Fir.Prim_statement.atomic_fetch >>| prim)
+    >>| A.(construct Fir.(Prim_statement.atomic @> Atomic_statement.fetch))
+    >>| prim)
 
 let model_atomic_store_stm (args : Ast.Expr.t list) :
     unit Fir.Statement.t Or_error.t =
   Or_error.(
     args
     |> Abstract_atomic.model_store ~expr
-    >>| Fir.Prim_statement.atomic_store >>| prim)
+    >>| A.(construct Fir.(Prim_statement.atomic @> Atomic_statement.store))
+    >>| prim)
 
 let model_atomic_xchg_stm (args : Ast.Expr.t list) :
     unit Fir.Statement.t Or_error.t =
   Or_error.(
     args
     |> Abstract_atomic.model_xchg ~expr
-    >>| Fir.Prim_statement.atomic_xchg >>| prim)
+    >>| A.(construct Fir.(Prim_statement.atomic @> Atomic_statement.xchg))
+    >>| prim)
 
 let expr_stm_call_table :
     (Ast.Expr.t list -> unit Fir.Statement.t Or_error.t) Map.M(Ac.C_id).t
@@ -84,7 +90,7 @@ let arbitrary_procedure_call (function_id : Ac.C_id.t)
   Or_error.Let_syntax.(
     let%map arguments = Tx.Or_error.combine_map ~f:expr raw_arguments in
     let call = Fir.Call.make ~arguments ~function_id () in
-    call |> Fir.Prim_statement.procedure_call |> prim)
+    call |> A.construct Fir.Prim_statement.procedure_call |> prim)
 
 let procedure_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list) :
     unit Fir.Statement.t Or_error.t =
@@ -102,7 +108,7 @@ let expr_stm : Ast.Expr.t -> unit Fir.Statement.t Or_error.t = function
         let%map lvalue = Abstract_prim.expr_to_lvalue l
         and rvalue = expr r in
         let assign = Fir.Assign.make ~lvalue ~rvalue in
-        assign |> Fir.Prim_statement.assign |> prim)
+        assign |> A.construct Fir.Prim_statement.assign |> prim)
   | Call {func; arguments} ->
       procedure_call func arguments
   | ( Brackets _ (* should've been debracketed already *)
@@ -270,7 +276,7 @@ let lock (model_stm : mu_stm) (old_body : Ast.Compound_stm.t)
 
 let rec model : Ast.Stm.t -> unit Fir.Statement.t Or_error.t = function
   | Expr None ->
-      Ok (prim Fir.Prim_statement.nop)
+      Ok (prim (A.construct Fir.Prim_statement.nop ()))
   | Expr (Some e) ->
       expr_stm (debracket e)
   | If {cond; t_branch; f_branch} ->
@@ -297,9 +303,9 @@ let rec model : Ast.Stm.t -> unit Fir.Statement.t Or_error.t = function
   | Label (Normal l, Expr None) ->
       (* This is a particularly weird subset of the labels, but I'm not sure
          how best to expand it. *)
-      Ok (prim (Fir.Prim_statement.label l))
+      Ok (prim (A.construct Fir.Prim_statement.label l))
   | Goto l ->
-      Ok (prim (Fir.Prim_statement.goto l))
+      Ok (prim (A.construct Fir.Prim_statement.goto l))
   | (Label _ | Compound _ | Switch _) as s ->
       Or_error.error_s
         [%message "Unsupported statement" ~got:(s : Ast.Stm.t)]

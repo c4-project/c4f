@@ -19,28 +19,39 @@ open Base
     carrier type that does. *)
 type t [@@deriving sexp, compare, equal]
 
-(** {1 Constructors} *)
+(** {1 Accessors} *)
 
-val cmpxchg : Expression.t Atomic_cmpxchg.t -> t
-(** [cmpxchg a] lifts an atomic compare-exchange [a] to an atomic statement,
-    discarding the boolean output. *)
+val cmpxchg :
+  ( 'a
+  , Expression.t Atomic_cmpxchg.t
+  , t
+  , [< Accessor.variant] )
+  Accessor.Simple.t
+(** [cmpxchg] focuses on atomic compare-exchanges that are in statement
+    position (discarding the boolean output). *)
 
-val fence : Atomic_fence.t -> t
-(** [fence a] lifts an atomic fence [a] to an atomic statement. *)
+val fence : ('a, Atomic_fence.t, t, [< Accessor.variant]) Accessor.Simple.t
+(** [fence] focuses on atomic fence statements. *)
 
-val fetch : Expression.t Atomic_fetch.t -> t
-(** [fetch a] lifts an atomic fetch [a] to an atomic statement. *)
+val fetch :
+  ( 'a
+  , Expression.t Atomic_fetch.t
+  , t
+  , [< Accessor.variant] )
+  Accessor.Simple.t
+(** [fetch] focuses on atomic fetch statements. *)
 
-val store : Atomic_store.t -> t
-(** [store a] lifts an atomic store [a] to an atomic statement. *)
+val store : ('a, Atomic_store.t, t, [< Accessor.variant]) Accessor.Simple.t
+(** [store] focuses on atomic store statements. *)
 
-val xchg : Expression.t Atomic_xchg.t -> t
-(** [xchg a] lifts an atomic exchange [a] to an atomic statement, discarding
-    the output. *)
+val xchg :
+  ('a, Expression.t Atomic_xchg.t, t, [< Accessor.variant]) Accessor.Simple.t
+(** [xchg] focuses on atomic exchanges that are in statement position
+    (discarding the output). *)
 
 (** {1 Traversals} *)
 
-val reduce :
+val value_map :
      t
   -> cmpxchg:(Expression.t Atomic_cmpxchg.t -> 'result)
   -> fence:(Atomic_fence.t -> 'result)
@@ -48,7 +59,7 @@ val reduce :
   -> store:(Atomic_store.t -> 'result)
   -> xchg:(Expression.t Atomic_xchg.t -> 'result)
   -> 'result
-(** [reduce x ~cmpxchg ~fence ~fetch ~store ~xchg] reduces an atomic
+(** [value_map x ~cmpxchg ~fence ~fetch ~store ~xchg] reduces an atomic
     statement [x] to a particular result type by applying the appropriate
     function. *)
 

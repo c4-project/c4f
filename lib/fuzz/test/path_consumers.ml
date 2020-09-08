@@ -12,6 +12,10 @@
 open Base
 open Base_quickcheck
 
+open struct
+  module A = Accessor
+end
+
 let%test_module "Statement_list" =
   ( module struct
     let%test_module "paths applied to example code" =
@@ -36,7 +40,8 @@ let%test_module "Statement_list" =
         let example_stm : F.Subject.Statement.t =
           Act_fir.(
             Statement.prim F.Metadata.generated
-              (Prim_statement.atomic_store
+              (A.(
+                 construct (Prim_statement.atomic @> Atomic_statement.store))
                  (Atomic_store.make ~mo:Mem_order.Seq_cst
                     ~src:(Expression.int_lit 9001)
                     ~dst:(Address.of_variable_str_exn "y"))))

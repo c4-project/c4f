@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module A = Accessor_base
   module Ac = Act_common
   module Fir = Act_fir
   module F = Act_fuzz
@@ -80,7 +81,8 @@ module Insert = struct
 
     let make_early_out (kind : Fir.Early_out.t) : F.Subject.Statement.t =
       Fir.(
-        Statement.prim F.Metadata.generated (Prim_statement.early_out kind))
+        Statement.prim F.Metadata.generated
+          (A.construct Prim_statement.early_out kind))
 
     let run_inner (test : F.Subject.Test.t) (path : F.Path.Flagged.t)
         (kind : Fir.Early_out.t) : F.Subject.Test.t Or_error.t =
@@ -159,7 +161,9 @@ module Insert = struct
       let label = F.Payload_impl.Insertion.to_insert payload in
       let goto_stm =
         Fir.(
-          label |> Prim_statement.goto |> Statement.prim F.Metadata.generated)
+          label
+          |> A.construct Prim_statement.goto
+          |> Statement.prim F.Metadata.generated)
       in
       F.State.Monad.(
         Let_syntax.(
