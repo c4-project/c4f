@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -11,16 +11,41 @@
 
 open Base
 
-type t = {lvalue: Lvalue.t; rvalue: Expression.t}
-[@@deriving sexp, fields, make, compare, equal]
+open struct
+  module A = Accessor
+end
+
+module Source = struct
+  type t = Dec | Inc | Expr of Expression.t
+  [@@deriving accessors, sexp, compare, equal]
+
+  let exprs : ('i, Expression.t, t, [< A.many]) A.Simple.t =
+    [%accessor
+      A.many
+        A.Many.(
+          function
+          | Dec ->
+              return Dec
+          | Inc ->
+              return Inc
+          | Expr e ->
+              access e >>| fun e' -> Expr e')]
+end
+
+type t = {dst: Lvalue.t; src: Source.t}
+[@@deriving accessors, sexp, make, compare, equal]
+
+let ( @= ) (dst : Lvalue.t) (src : Expression.t) : t =
+  make ~dst ~src:(Expr src)
 
 module Base_map (M : Monad.S) = struct
   module F = Travesty.Traversable.Helpers (M)
 
-  let bmap (assign : t) ~(lvalue : Lvalue.t F.traversal)
-      ~(rvalue : Expression.t F.traversal) : t M.t =
-    Fields.fold ~init:(M.return assign) ~lvalue:(F.proc_field lvalue)
-      ~rvalue:(F.proc_field rvalue)
+  let bmap (assign : t) ~(dst : Lvalue.t F.traversal)
+      ~(src : Source.t F.traversal) : t M.t =
+    M.Let_syntax.(
+      let%map dst' = dst assign.dst and src' = src assign.src in
+      make ~dst:dst' ~src:src')
 end
 
 module On_lvalues :
@@ -38,7 +63,14 @@ Travesty.Traversable.Make0 (struct
         (Address.On_lvalues)
     module E = EL.On_monad (M)
 
-    let map_m x ~f = B.bmap x ~lvalue:f ~rvalue:(E.map_m ~f)
+    module MAcc = A.Of_monad (struct
+      include M
+
+      let apply = `Define_using_bind
+    end)
+
+    let map_m x ~f =
+      B.bmap x ~dst:f ~src:(MAcc.map Source.exprs ~f:(E.map_m ~f))
   end
 end)
 
@@ -52,7 +84,13 @@ Travesty.Traversable.Make0 (struct
   module On_monad (M : Monad.S) = struct
     module B = Base_map (M)
 
-    let map_m x ~f = B.bmap x ~lvalue:M.return ~rvalue:f
+    module MAcc = A.Of_monad (struct
+      include M
+
+      let apply = `Define_using_bind
+    end)
+
+    let map_m x ~f = B.bmap x ~dst:M.return ~src:(MAcc.map Source.exprs ~f)
   end
 end)
 

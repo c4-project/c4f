@@ -114,19 +114,37 @@ let procedure_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list) :
     | None ->
         arbitrary_procedure_call function_id arguments)
 
+let assign (dst : Fir.Lvalue.t) (src : Fir.Assign.Source.t) :
+    unit Fir.Statement.t =
+  let assign = Fir.Assign.make ~src ~dst in
+  A.(construct Fir.(Statement.prim' @> Prim_statement.assign) assign)
+
+let crement (dir : [`Inc | `Dec]) (l : Ast.Expr.t) :
+    unit Fir.Statement.t Or_error.t =
+  Or_error.Let_syntax.(
+    let%map dst = Abstract_prim.expr_to_lvalue l in
+    let src : Fir.Assign.Source.t =
+      match dir with `Inc -> Inc | `Dec -> Dec
+    in
+    assign dst src)
+
 let expr_stm : Ast.Expr.t -> unit Fir.Statement.t Or_error.t = function
   | Binary (l, `Assign, r) ->
       Or_error.Let_syntax.(
         let%map lvalue = Abstract_prim.expr_to_lvalue l
         and rvalue = expr r in
-        let assign = Fir.Assign.make ~lvalue ~rvalue in
+        let assign = Fir.Assign.(lvalue @= rvalue) in
         A.(construct Fir.(Statement.prim' @> Prim_statement.assign) assign))
   | Call {func; arguments} ->
       procedure_call func arguments
+  (* ++x and x++ SHOULD be semantically equivalent in statement position. *)
+  | Postfix (l, `Inc) | Prefix (`Inc, l) ->
+      crement `Inc l
+  | Postfix (l, `Dec) | Prefix (`Dec, l) ->
+      crement `Dec l
   | ( Brackets _ (* should've been debracketed already *)
     | Constant _
     | Prefix _
-    | Postfix _
     | Binary _
     | Ternary _
     | Cast _

@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module A = Accessor
   module Fir = Act_fir
 end
 
@@ -26,9 +27,17 @@ end
 let atomic = Reify_atomic.reify_stm ~expr:Reify_expr.reify
 
 let assign (asn : Fir.Assign.t) : Ast.Stm.t =
-  let l = Fir.Assign.lvalue asn in
-  let r = Fir.Assign.rvalue asn in
-  Expr (Some Reify_expr.(Binary (Reify_prim.lvalue l, `Assign, reify r)))
+  let dst = Reify_prim.lvalue (A.get Fir.Assign.dst asn) in
+  let exp : Ast.Expr.t =
+    match A.get Fir.Assign.src asn with
+    | Inc ->
+        Postfix (dst, `Inc)
+    | Dec ->
+        Postfix (dst, `Dec)
+    | Expr e ->
+        Binary (dst, `Assign, Reify_expr.reify e)
+  in
+  Expr (Some exp)
 
 let lift_stms : Ast.Stm.t list -> Ast.Compound_stm.t =
   List.map ~f:(fun s -> `Stm s)

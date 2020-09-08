@@ -80,9 +80,9 @@ let%test_module "On_expressions" =
                 [ A.(
                     construct
                       (Statement.prim' @> Prim_statement.assign)
-                      (Assign.make
-                         ~lvalue:(Lvalue.of_variable_str_exn "r0")
-                         ~rvalue:(Expression.int_lit 1))) ]
+                      Assign.(
+                        Lvalue.of_variable_str_exn "r0"
+                        @= Expression.int_lit 1)) ]
                 []
             ; Stm.mkif
                 [ A.(

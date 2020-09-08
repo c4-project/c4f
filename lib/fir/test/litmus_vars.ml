@@ -49,25 +49,25 @@ let%test_module "make_type_alist" =
 
     let p0_stms : unit Src.Statement.t list =
       [ A.(
-          construct
-            Src.(Statement.prim' @> Prim_statement.assign)
-            (Src.Assign.make
-               ~lvalue:(Src.Lvalue.of_variable_str_exn "r0")
-               ~rvalue:
-                 (Src.Expression.atomic_load
-                    (Src.Atomic_load.make
-                       ~src:(Src.Address.of_variable_str_exn "y")
-                       ~mo:Src.Mem_order.Acquire))))
+          Src.(
+            construct
+              (Statement.prim' @> Prim_statement.assign)
+              Assign.(
+                Lvalue.of_variable_str_exn "r0"
+                @= Expression.atomic_load
+                     (Atomic_load.make
+                        ~src:(Address.of_variable_str_exn "y")
+                        ~mo:Acquire))))
       ; A.(
-          construct
-            Src.(Statement.prim' @> Prim_statement.assign)
-            (Src.Assign.make
-               ~lvalue:(Src.Lvalue.of_variable_str_exn "r1")
-               ~rvalue:
-                 (Src.Expression.atomic_load
-                    (Src.Atomic_load.make
-                       ~src:(Src.Address.of_variable_str_exn "x")
-                       ~mo:Src.Mem_order.Relaxed)))) ]
+          Src.(
+            construct
+              (Statement.prim' @> Prim_statement.assign)
+              Assign.(
+                Lvalue.of_variable_str_exn "r1"
+                @= Expression.atomic_load
+                     (Atomic_load.make
+                        ~src:(Address.of_variable_str_exn "x")
+                        ~mo:Relaxed)))) ]
 
     let p0 : unit Src.Function.t =
       Src.Function.make ~body_decls:p0_decls ~body_stms:p0_stms ~parameters

@@ -44,7 +44,7 @@ let%test_module "model" =
               ((statements
                 ((Prim ()
                   (Assign
-                   ((lvalue (Variable x)) (rvalue (Address (Lvalue (Variable y)))))))))
+                   ((dst (Variable x)) (src (Expr (Address (Lvalue (Variable y))))))))))
                (metadata ())))))) |}]
 
     let%expect_test "model upwards for loop" =

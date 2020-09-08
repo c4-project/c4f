@@ -27,13 +27,10 @@ let%test_module "reify/pp" =
         Block.make ~metadata:()
           ~statements:
             [ A.(construct (Statement.prim' @> Prim_statement.assign))
-                (Assign.make
-                   ~lvalue:(Lvalue.of_variable_str_exn "x")
-                   ~rvalue:Expression.truth)
+                Assign.(Lvalue.of_variable_str_exn "x" @= Expression.truth)
             ; A.(construct (Statement.prim' @> Prim_statement.assign))
-                (Assign.make
-                   ~lvalue:(Lvalue.of_variable_str_exn "y")
-                   ~rvalue:Expression.falsehood) ]
+                Assign.(
+                  Lvalue.of_variable_str_exn "y" @= Expression.falsehood) ]
           ())
 
     let%expect_test "upwards for loop" =

@@ -145,10 +145,9 @@ module Insert = struct
         Fir.Expression.atomic (Fir.Atomic_expression.cmpxchg x.cmpxchg)
       in
       let cmpxchg_assign =
-        Fir.Assign.make
-          ~lvalue:
-            (Fir.Lvalue.variable (Ac.Litmus_id.variable_name x.out_var))
-          ~rvalue:cmpxchg_expr
+        Fir.Assign.(
+          Fir.Lvalue.variable (Ac.Litmus_id.variable_name x.out_var)
+          @= cmpxchg_expr)
       in
       [A.construct Fir.Prim_statement.assign cmpxchg_assign]
   end)

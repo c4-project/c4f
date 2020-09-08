@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018--2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -11,23 +11,42 @@
 
 (** A non-atomic assignment. *)
 
+(** {1 Sources}
+
+    FIR assignments abstract over several different types of non-atomic
+    assignment-type statement. *)
+
+module Source : sig
+  (** Type of sources. *)
+  type t = Dec | Inc | Expr of Expression.t
+  [@@deriving accessors, sexp, compare, equal]
+
+  val exprs : ('i, Expression.t, t, [< Accessor.many]) Accessor.Simple.t
+  (** [exprs] focuses on any top-level expressions inside a source. *)
+end
+
+(** {1 Assignments proper} *)
+
 (** Opaque type of non-atomic assignments. *)
 type t [@@deriving sexp, compare, equal]
 
-(** {3 Constructors} *)
+(** {2 Constructors} *)
 
-val make : lvalue:Lvalue.t -> rvalue:Expression.t -> t
-(** [make ~lvalue ~rvalue] constructs an assignment of [rvalue] to [lvalue]. *)
+val make : dst:Lvalue.t -> src:Source.t -> t
+(** [make ~dst ~src] constructs an assignment of [src] to [dst]. *)
 
-(** {3 Accessors} *)
+val ( @= ) : Lvalue.t -> Expression.t -> t
+(** [dst @= src] is shorthand for assigning the expression [src] to [dst]. *)
 
-val lvalue : t -> Lvalue.t
-(** [lvalue asn] gets [asn]'s destination lvalue. *)
+(** {2 Accessors} *)
 
-val rvalue : t -> Expression.t
-(** [rvalue asn] gets [asn]'s source expression (rvalue). *)
+val dst : ('i, Lvalue.t, t, [< Accessor.field]) Accessor.Simple.t
+(** [dst] focuses on destination lvalues. *)
 
-(** {3 Traversals} *)
+val src : ('i, Source.t, t, [< Accessor.field]) Accessor.Simple.t
+(** [src] focuses on sources. *)
+
+(** {2 Traversals} *)
 
 (** Traversing over atomic-action addresses in assignments. *)
 module On_addresses :
