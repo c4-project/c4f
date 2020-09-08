@@ -11,6 +11,10 @@
 
 open Base
 
+open struct
+  module A = Accessor
+end
+
 module Base_map (M : Monad.S) = struct
   (* TODO(@MattWindsor91): this should take an applicative, but can't because
      it depends on bitraversal of blocks, and on this version of Travesty
@@ -25,9 +29,9 @@ module Base_map (M : Monad.S) = struct
       m2 t M.t =
     Travesty_base_exts.Fn.Compose_syntax.(
       Statement.reduce_step x
-        ~prim:(prim >> M.map ~f:(fun (m, x) -> Statement.prim m x))
-        ~if_stm:(if_stm >> M.map ~f:Statement.if_stm)
-        ~flow:(flow >> M.map ~f:Statement.flow))
+        ~prim:(prim >> M.map ~f:(A.construct Statement.prim))
+        ~if_stm:(if_stm >> M.map ~f:(A.construct Statement.if_stm))
+        ~flow:(flow >> M.map ~f:(A.construct Statement.flow)))
 
   module A = Act_utils.Applicative.Of_monad_ext (M)
   module IB = If.Base_map (A)

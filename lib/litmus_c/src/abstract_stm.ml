@@ -29,48 +29,60 @@ let ensure_statements :
 
 let expr = Abstract_expr.model
 
-let prim : Fir.Prim_statement.t -> unit Fir.Statement.t =
-  Fir.Statement.prim ()
-
 let model_atomic_cmpxchg_stm (args : Ast.Expr.t list) :
     unit Fir.Statement.t Or_error.t =
   Or_error.(
     args
     |> Abstract_atomic.model_cmpxchg ~expr
-    >>| A.(construct Fir.(Prim_statement.atomic @> Atomic_statement.cmpxchg))
-    >>| prim)
+    >>| A.(
+          construct
+            Fir.(
+              Statement.prim' @> Prim_statement.atomic
+              @> Atomic_statement.cmpxchg)))
 
 let model_atomic_fence_stm (args : Ast.Expr.t list)
     ~(mode : Fir.Atomic_fence.Mode.t) : unit Fir.Statement.t Or_error.t =
   Or_error.(
     args
     |> Abstract_atomic.model_fence ~mode
-    >>| A.(construct Fir.(Prim_statement.atomic @> Atomic_statement.fence))
-    >>| prim)
+    >>| A.(
+          construct
+            Fir.(
+              Statement.prim' @> Prim_statement.atomic
+              @> Atomic_statement.fence)))
 
 let model_atomic_fetch_stm (args : Ast.Expr.t list) ~(op : Fir.Op.Fetch.t) :
     unit Fir.Statement.t Or_error.t =
   Or_error.(
     args
     |> Abstract_atomic.model_fetch ~expr ~op
-    >>| A.(construct Fir.(Prim_statement.atomic @> Atomic_statement.fetch))
-    >>| prim)
+    >>| A.(
+          construct
+            Fir.(
+              Statement.prim' @> Prim_statement.atomic
+              @> Atomic_statement.fetch)))
 
 let model_atomic_store_stm (args : Ast.Expr.t list) :
     unit Fir.Statement.t Or_error.t =
   Or_error.(
     args
     |> Abstract_atomic.model_store ~expr
-    >>| A.(construct Fir.(Prim_statement.atomic @> Atomic_statement.store))
-    >>| prim)
+    >>| A.(
+          construct
+            Fir.(
+              Statement.prim' @> Prim_statement.atomic
+              @> Atomic_statement.store)))
 
 let model_atomic_xchg_stm (args : Ast.Expr.t list) :
     unit Fir.Statement.t Or_error.t =
   Or_error.(
     args
     |> Abstract_atomic.model_xchg ~expr
-    >>| A.(construct Fir.(Prim_statement.atomic @> Atomic_statement.xchg))
-    >>| prim)
+    >>| A.(
+          construct
+            Fir.(
+              Statement.prim' @> Prim_statement.atomic
+              @> Atomic_statement.xchg)))
 
 let expr_stm_call_table :
     (Ast.Expr.t list -> unit Fir.Statement.t Or_error.t) Map.M(Ac.C_id).t
@@ -90,7 +102,7 @@ let arbitrary_procedure_call (function_id : Ac.C_id.t)
   Or_error.Let_syntax.(
     let%map arguments = Tx.Or_error.combine_map ~f:expr raw_arguments in
     let call = Fir.Call.make ~arguments ~function_id () in
-    call |> A.construct Fir.Prim_statement.procedure_call |> prim)
+    A.(construct Fir.(Statement.prim' @> Prim_statement.procedure_call) call))
 
 let procedure_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list) :
     unit Fir.Statement.t Or_error.t =
@@ -108,7 +120,7 @@ let expr_stm : Ast.Expr.t -> unit Fir.Statement.t Or_error.t = function
         let%map lvalue = Abstract_prim.expr_to_lvalue l
         and rvalue = expr r in
         let assign = Fir.Assign.make ~lvalue ~rvalue in
-        assign |> A.construct Fir.Prim_statement.assign |> prim)
+        A.(construct Fir.(Statement.prim' @> Prim_statement.assign) assign))
   | Call {func; arguments} ->
       procedure_call func arguments
   | ( Brackets _ (* should've been debracketed already *)
@@ -159,7 +171,7 @@ let model_if (model_stm : mu_stm) (old_cond : Ast.Expr.t)
         ~default:(Ok (Fir.Block.of_statement_list []))
     in
     let ifs = Fir.If.make ~cond ~t_branch ~f_branch in
-    Fir.Statement.if_stm ifs)
+    A.construct Fir.Statement.if_stm ifs)
 
 let for_loop_lvalue_unify (ilv : Fir.Lvalue.t) (clv : Fir.Lvalue.t)
     (ulv : Fir.Lvalue.t) : Fir.Lvalue.t Or_error.t =
@@ -224,7 +236,7 @@ let for_loop_structured (model_stm : mu_stm) (ilv : Ast.Expr.t)
     let control =
       Fir.Flow_block.For.make ~lvalue ~init_value ~cmp_value ~direction
     in
-    Fir.Statement.flow (Fir.Flow_block.for_loop ~control ~body))
+    A.construct Fir.Statement.flow (Fir.Flow_block.for_loop ~control ~body))
 
 let rec debracket (x : Ast.Expr.t) : Ast.Expr.t =
   (* We do this inline in the abstraction for ordinary expressions, so this
@@ -264,7 +276,8 @@ let while_loop (model_stm : mu_stm) (old_cond : Ast.Expr.t)
     unit Fir.Statement.t Or_error.t =
   Or_error.Let_syntax.(
     let%map cond = expr old_cond and body = block model_stm old_body in
-    Fir.Statement.flow (Fir.Flow_block.while_loop ~cond ~body ~kind))
+    A.construct Fir.Statement.flow
+      (Fir.Flow_block.while_loop ~cond ~body ~kind))
 
 let lock (model_stm : mu_stm) (old_body : Ast.Compound_stm.t)
     (kind : Fir.Flow_block.Lock.t) : unit Fir.Statement.t Or_error.t =
@@ -272,21 +285,28 @@ let lock (model_stm : mu_stm) (old_body : Ast.Compound_stm.t)
     (* TODO(@MattWindsor91): we should really support declarations here. *)
     let%bind ast_stms = ensure_statements old_body in
     let%map body = block_list model_stm ast_stms in
-    Fir.Statement.flow (Fir.Flow_block.lock_block ~body ~kind))
+    A.construct Fir.Statement.flow (Fir.Flow_block.lock_block ~body ~kind))
 
 let rec model : Ast.Stm.t -> unit Fir.Statement.t Or_error.t = function
   | Expr None ->
-      Ok (prim (A.construct Fir.Prim_statement.nop ()))
+      Ok A.(construct Fir.(Statement.prim' @> Prim_statement.nop) ())
   | Expr (Some e) ->
       expr_stm (debracket e)
   | If {cond; t_branch; f_branch} ->
       model_if model cond t_branch f_branch
   | Continue ->
-      Ok (prim Fir.Prim_statement.continue)
+      Ok
+        A.(
+          construct
+            Fir.(Statement.prim' @> Prim_statement.early_out)
+            Continue)
   | Break ->
-      Ok (prim Fir.Prim_statement.break)
+      Ok
+        A.(construct Fir.(Statement.prim' @> Prim_statement.early_out) Break)
   | Return None ->
-      Ok (prim Fir.Prim_statement.return)
+      Ok
+        A.(
+          construct Fir.(Statement.prim' @> Prim_statement.early_out) Return)
   | Return (Some _) as s ->
       Or_error.error_s
         [%message "Value returns not supported in FIR" ~got:(s : Ast.Stm.t)]
@@ -303,9 +323,9 @@ let rec model : Ast.Stm.t -> unit Fir.Statement.t Or_error.t = function
   | Label (Normal l, Expr None) ->
       (* This is a particularly weird subset of the labels, but I'm not sure
          how best to expand it. *)
-      Ok (prim (A.construct Fir.Prim_statement.label l))
+      Ok A.(construct Fir.(Statement.prim' @> Prim_statement.label) l)
   | Goto l ->
-      Ok (prim (A.construct Fir.Prim_statement.goto l))
+      Ok A.(construct Fir.(Statement.prim' @> Prim_statement.goto) l)
   | (Label _ | Compound _ | Switch _) as s ->
       Or_error.error_s
         [%message "Unsupported statement" ~got:(s : Ast.Stm.t)]

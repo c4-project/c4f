@@ -54,8 +54,7 @@ let type_adjusted_param ((id, ty) : Ac.Litmus_id.t * Act_fir.Type.t) :
     (Ac.Litmus_id.t * Act_fir.Type.t) Or_error.t =
   Or_error.Let_syntax.(
     let%map ty' =
-      if Ac.Litmus_id.is_global id then Act_fir.Type.ref ty
-      else Or_error.return ty
+      if Ac.Litmus_id.is_global id then Act_fir.Type.ref ty else Ok ty
     in
     (id, ty'))
 
@@ -103,8 +102,8 @@ let inner_call_stm (tid : int) (function_id : Ac.C_id.t)
     unit Act_fir.Statement.t =
   let arguments = inner_call_arguments tid all_params in
   let call = Act_fir.Call.make ~function_id ~arguments () in
-  Act_fir.(
-    Statement.prim () (A.construct Prim_statement.procedure_call call))
+  A.(
+    construct Act_fir.(Statement.prim' @> Prim_statement.procedure_call) call)
 
 let make_function_stub (vars : Var_map.t) ~(old_id : Ac.C_id.t)
     ~(new_id : Ac.C_id.t) : unit Act_fir.Function.t Ac.C_named.t Or_error.t =

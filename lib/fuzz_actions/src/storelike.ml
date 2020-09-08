@@ -227,9 +227,8 @@ struct
       ~(to_insert : B.t) : F.Subject.Test.t Or_error.t =
     let tid = F.Path.tid (F.Path_flag.Flagged.path path) in
     let stms =
-      Fir.(
-        to_insert |> B.to_stms
-        |> List.map ~f:(Statement.prim F.Metadata.generated))
+      to_insert |> B.to_stms
+      |> List.map ~f:F.Subject.Statement.make_generated_prim
     in
     Or_error.Let_syntax.(
       let%bind target' =

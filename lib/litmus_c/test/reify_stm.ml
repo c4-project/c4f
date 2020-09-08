@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module A = Accessor
   module Fir = Act_fir
   module Src = Act_litmus_c
 end
@@ -24,7 +25,7 @@ let%test_module "reify/pp" =
     let%expect_test "upwards for loop" =
       test
         Fir.(
-          Statement.flow
+          A.construct Statement.flow
             Flow_block.(
               for_loop
                 ~control:
@@ -39,7 +40,7 @@ let%test_module "reify/pp" =
     let%expect_test "downwards-inclusive for loop" =
       test
         Fir.(
-          Statement.flow
+          A.construct Statement.flow
             Flow_block.(
               for_loop
                 ~control:
@@ -54,7 +55,7 @@ let%test_module "reify/pp" =
     let%expect_test "upwards-inclusive for loop with pointers" =
       test
         Fir.(
-          Statement.flow
+          A.construct Statement.flow
             Flow_block.(
               for_loop
                 ~control:

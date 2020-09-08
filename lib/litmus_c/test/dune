@@ -6,5 +6,5 @@
  (preprocess
   (pps ppx_jane))
  (libraries fmt ppx_expect.common ppx_expect.config ppx_expect.config_types
-   ppx_inline_test.config base base.caml stdio parsexp act.common act.fir
-   act_fir_test act.litmus_c act.litmus act.utils sexplib0))
+   ppx_inline_test.config base base.caml stdio parsexp accessor act.common
+   act.fir act_fir_test act.litmus_c act.litmus act.utils sexplib0))

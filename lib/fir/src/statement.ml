@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module A = Accessor_base
   module Tx = Travesty_base_exts
 end
 
@@ -21,10 +22,16 @@ module Inner = struct
     | Prim of 'meta * Prim_statement.t
     | If_stm of ('meta, 'meta t) If.t
     | Flow of ('meta, 'meta t) Flow_block.t
-  [@@deriving sexp, compare, variants, equal]
+  [@@deriving sexp, compare, accessors, equal]
 end
 
 include Inner
+
+let prim' : ('a, Prim_statement.t, unit t, [< A.variant]) A.Simple.t =
+  [%accessor
+    A.(
+      prim
+      @> isomorphism ~get:(fun ((), x) -> x) ~construct:(fun x -> ((), x)))]
 
 let reduce_step (type meta result) (x : meta t)
     ~(prim : meta * Prim_statement.t -> result)

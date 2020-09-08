@@ -25,9 +25,10 @@ let test_fragment : unit Src.Statement.t Lazy.t =
               [ mkafetch Add
                   Address.(of_variable_str_exn "x")
                   Expression.(int_lit 42)
-              ; Src.Statement.prim ()
-                  (A.construct Src.Prim_statement.label
-                     (Act_common.C_id.of_string "foo")) ]
+              ; A.(
+                  construct
+                    Src.(Statement.prim' @> Prim_statement.label)
+                    (Act_common.C_id.of_string "foo")) ]
             Src.
               [ mkastore
                   Address.(of_variable_str_exn "y")

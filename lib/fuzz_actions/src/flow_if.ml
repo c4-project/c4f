@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module A = Accessor
   module Ac = Act_common
   module Fir = Act_fir
   module F = Act_fuzz
@@ -77,7 +78,7 @@ module Surround = struct
 
     let wrap_in_if (statements : F.Subject.Statement.t list)
         ~(cond : Fir.Expression.t) : F.Subject.Statement.t =
-      Fir.Statement.if_stm
+      A.construct Fir.Statement.if_stm
         (Fir.If.make ~cond
            ~t_branch:(Basic.t_branch_of_statements statements)
            ~f_branch:(Basic.f_branch_of_statements statements))

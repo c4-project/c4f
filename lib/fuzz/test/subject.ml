@@ -14,24 +14,25 @@ open Base
 open struct
   module A = Accessor
   module Src = Act_fuzz
+  module Fir = Act_fir
 end
 
 module Test_data = struct
-  let init : Act_fir.Constant.t Act_common.C_named.Alist.t Lazy.t =
+  let init : Fir.Constant.t Act_common.C_named.Alist.t Lazy.t =
     lazy
-      [ (Act_common.C_id.of_string "x", Act_fir.Constant.int 27)
-      ; (Act_common.C_id.of_string "y", Act_fir.Constant.int 53) ]
+      [ (Act_common.C_id.of_string "x", Fir.Constant.int 27)
+      ; (Act_common.C_id.of_string "y", Fir.Constant.int 53) ]
 
-  let body_decls : Act_fir.Initialiser.t Act_common.C_named.Alist.t Lazy.t =
+  let body_decls : Fir.Initialiser.t Act_common.C_named.Alist.t Lazy.t =
     lazy
       [ ( Act_common.C_id.of_string "r0"
-        , Act_fir.Initialiser.make
-            ~ty:(Act_fir.Type.int ~is_atomic:true ())
-            ~value:(Act_fir.Constant.int 4004) ) ]
+        , Fir.Initialiser.make
+            ~ty:(Fir.Type.int ~is_atomic:true ())
+            ~value:(Fir.Constant.int 4004) ) ]
 
-  let globals : Act_fir.Type.t Act_common.C_named.Alist.t Lazy.t =
+  let globals : Fir.Type.t Act_common.C_named.Alist.t Lazy.t =
     lazy
-      Act_fir.
+      Fir.
         [ ( Act_common.C_id.of_string "x"
           , Type.(int ~is_pointer:true ~is_atomic:true ()) )
         ; ( Act_common.C_id.of_string "y"
@@ -45,9 +46,9 @@ module Test_data = struct
              let scope = Act_common.Scope.Local 0 in
              ( Act_common.Litmus_id.make ~scope ~id
              , Act_fuzz.Var.Record.make_generated
-                 ~initial_value:(Accessor.get Act_fir.Initialiser.value v)
+                 ~initial_value:(Accessor.get Fir.Initialiser.value v)
                  scope
-                 (Accessor.get Act_fir.Initialiser.ty v) )))
+                 (Accessor.get Fir.Initialiser.ty v) )))
 
   let state : Act_fuzz.State.t Lazy.t =
     (* TODO(@MattWindsor91): labels? *)
@@ -66,23 +67,22 @@ module Test_data = struct
       in
       Act_fuzz.State.make ~vars ())
 
-  let mk_store (a : Act_fir.Atomic_store.t) : Src.Subject.Statement.t =
-    Act_fir.(
-      Statement.prim Src.Metadata.generated
-      @@ A.(construct (Prim_statement.atomic @> Atomic_statement.store)) a)
+  let mk_store (a : Fir.Atomic_store.t) : Src.Subject.Statement.t =
+    Src.Subject.Statement.make_generated_prim
+      A.(construct Fir.(Prim_statement.atomic @> Atomic_statement.store) a)
 
-  let mk_always_true_if (cond : Act_fir.Expression.t)
+  let mk_always_true_if (cond : Fir.Expression.t)
       (t : Src.Subject.Statement.t list) (f : Src.Subject.Statement.t list) :
       Src.Subject.Statement.t =
-    Act_fir.(
-      Statement.if_stm
-        (Act_fir.If.make ~cond
+    Fir.(
+      A.construct Statement.if_stm
+        (If.make ~cond
            ~t_branch:(Src.Subject.Block.make_generated ~statements:t ())
            ~f_branch:(Src.Subject.Block.make_dead_code ~statements:f ())))
 
   let sample_known_true_if : Src.Subject.Statement.t Lazy.t =
     lazy
-      Act_fir.(
+      Fir.(
         mk_always_true_if
           Expression.(
             Infix.(of_variable_str_exn "foo" == of_variable_str_exn "y"))
@@ -90,16 +90,16 @@ module Test_data = struct
               (Atomic_store.make ~src:(Expression.int_lit 56)
                  ~dst:(Address.of_variable_str_exn "x")
                  ~mo:Mem_order.Seq_cst)
-          ; Act_fir.Statement.prim Src.Metadata.generated
-              Act_fir.(
+          ; Src.Subject.Statement.make_generated_prim
+              Fir.(
                 A.construct Prim_statement.label
                   (Act_common.C_id.of_string "kappa_kappa")) ]
           [])
 
   let sample_known_false_if : Src.Subject.Statement.t Lazy.t =
     lazy
-      Act_fir.(
-        Statement.if_stm
+      Fir.(
+        A.construct Statement.if_stm
           (If.make ~cond:Expression.falsehood
              ~t_branch:
                (Src.Subject.Block.make_dead_code
@@ -118,8 +118,8 @@ module Test_data = struct
 
   let sample_once_do_while : Src.Subject.Statement.t Lazy.t =
     lazy
-      Act_fir.(
-        Statement.flow
+      Fir.(
+        A.construct Statement.flow
           (Flow_block.while_loop
              ~cond:Expression.(Infix.(int_lit 4 == int_lit 5))
              ~body:
@@ -137,21 +137,21 @@ module Test_data = struct
       let%map sample_known_true_if = sample_known_true_if
       and sample_known_false_if = sample_known_false_if
       and sample_once_do_while = sample_once_do_while in
-      Act_fir.(
-        Statement.
-          [ mk_store
-              (Atomic_store.make ~src:(Expression.int_lit 42)
-                 ~dst:(Address.of_variable_str_exn "x")
-                 ~mo:Mem_order.Seq_cst)
-          ; prim Src.Metadata.generated (A.construct Prim_statement.nop ())
-          ; mk_store
-              (Atomic_store.make
-                 ~src:(Expression.of_variable_str_exn "foo")
-                 ~dst:(Address.of_variable_str_exn "y")
-                 ~mo:Mem_order.Relaxed)
-          ; sample_known_true_if
-          ; sample_known_false_if
-          ; sample_once_do_while ]))
+      Fir.
+        [ mk_store
+            (Atomic_store.make ~src:(Expression.int_lit 42)
+               ~dst:(Address.of_variable_str_exn "x")
+               ~mo:Mem_order.Seq_cst)
+        ; Src.Subject.Statement.make_generated_prim
+            (A.construct Prim_statement.nop ())
+        ; mk_store
+            (Atomic_store.make
+               ~src:(Expression.of_variable_str_exn "foo")
+               ~dst:(Address.of_variable_str_exn "y")
+               ~mo:Mem_order.Relaxed)
+        ; sample_known_true_if
+        ; sample_known_false_if
+        ; sample_once_do_while ])
 
   let pos_0_first_atom = 0
 
@@ -172,15 +172,14 @@ module Test_data = struct
 
   let thread1_stms : Src.Subject.Statement.t list Lazy.t =
     lazy
-      Act_fir.(
-        Statement.
-          [ prim Src.Metadata.generated
-              (A.construct Prim_statement.label
-                 (Act_common.C_id.of_string "loop"))
-          ; mk_always_true_if Act_fir.Expression.truth []
-              [ prim Src.Metadata.generated
-                  (A.construct Prim_statement.goto
-                     (Act_common.C_id.of_string "loop")) ] ])
+      Fir.
+        [ Src.Subject.Statement.make_generated_prim
+            (A.construct Prim_statement.label
+               (Act_common.C_id.of_string "loop"))
+        ; mk_always_true_if Fir.Expression.truth []
+            [ Src.Subject.Statement.make_generated_prim
+                (A.construct Prim_statement.goto
+                   (Act_common.C_id.of_string "loop")) ] ]
 
   let thread1 : Src.Subject.Thread.t Lazy.t =
     Lazy.map ~f:(fun stms -> Src.Subject.Thread.make ~stms ()) thread1_stms
@@ -270,7 +269,7 @@ end
 
 let%test_module "has_statements checks" =
   ( module struct
-    let test (matching : Act_fir.Statement_class.t list) : unit =
+    let test (matching : Fir.Statement_class.t list) : unit =
       Act_utils.Io.print_bool
         (Src.Subject.Test.has_statements ~matching
            (Lazy.force Test_data.test))
@@ -280,13 +279,13 @@ let%test_module "has_statements checks" =
       [%expect {| false |}]
 
     let%expect_test "has atomics" =
-      test [Act_fir.Statement_class.atomic ()] ;
+      test [Fir.Statement_class.atomic ()] ;
       [%expect {| true |}]
   end )
 
 let%test_module "has_statements_not_matching" =
   ( module struct
-    let test (one_of : Act_fir.Statement_class.t list) : unit =
+    let test (one_of : Fir.Statement_class.t list) : unit =
       Act_utils.Io.print_bool
         (Src.Subject.Test.has_statements_not_matching ~one_of
            (Lazy.force Test_data.test))
@@ -296,7 +295,7 @@ let%test_module "has_statements_not_matching" =
       [%expect {| true |}]
 
     let%expect_test "has non-atomics" =
-      test [Act_fir.Statement_class.atomic ()] ;
+      test [Fir.Statement_class.atomic ()] ;
       [%expect {| true |}]
 
     let%expect_test "has things that are not a primitive, or not an if, or \
@@ -307,7 +306,7 @@ let%test_module "has_statements_not_matching" =
 
 let%test_module "list_to_litmus" =
   ( module struct
-    type r = Act_fir.Litmus.Lang.Program.t list [@@deriving sexp_of]
+    type r = Fir.Litmus.Lang.Program.t list [@@deriving sexp_of]
 
     let env = Lazy.force Act_fir_test.Env.test_env
 
@@ -317,7 +316,7 @@ let%test_module "list_to_litmus" =
            (module Act_common.Litmus_id)
            ~f:(fun ~key ~data ->
              let lit = Act_common.Litmus_id.global key in
-             let ty = Accessor.get Act_fir.Env.Record.type_of data in
+             let ty = Accessor.get Fir.Env.Record.type_of data in
              (lit, Src.Var.Record.make_existing Global ty))
       |> Or_error.ok_exn |> Act_common.Scoped_map.of_litmus_id_map
 

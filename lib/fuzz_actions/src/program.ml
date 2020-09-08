@@ -77,7 +77,7 @@ struct
       Act_fir.(
         name
         |> A.construct Prim_statement.label
-        |> Statement.prim F.Metadata.generated)
+        |> F.Subject.Statement.make_generated_prim)
     in
     F.State.Monad.(
       Let_syntax.(

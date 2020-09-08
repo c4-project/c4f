@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module A = Accessor_base
   module Ac = Act_common
   module Fir = Act_fir
 end
@@ -29,8 +30,8 @@ module Statement = struct
 
   include Fir.Statement_traverse.With_meta (Metadata)
 
-  let make_generated_prim : Fir.Prim_statement.t -> t =
-    Fir.Statement.prim Metadata.generated
+  let make_generated_prim (s : Fir.Prim_statement.t) : t =
+    A.construct Fir.Statement.prim (Metadata.generated, s)
 end
 
 module Block = struct

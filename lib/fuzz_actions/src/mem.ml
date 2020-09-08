@@ -51,7 +51,7 @@ struct
     let fence_stm =
       payload |> F.Payload_impl.Insertion.to_insert
       |> A.(construct Fir.(Prim_statement.atomic @> Atomic_statement.fence))
-      |> Fir.Statement.prim F.Metadata.generated
+      |> F.Subject.Statement.make_generated_prim
     in
     (* We don't need to do any bookkeeping on fences. *)
     F.State.Monad.Monadic.return

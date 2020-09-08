@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module A = Accessor
   module Ac = Act_common
   module Fir = Act_fir
   module F = Act_fuzz
@@ -51,7 +52,7 @@ module Insert = struct
     end)
 
     let make_while (to_insert : Fir.Expression.t) : F.Subject.Statement.t =
-      Fir.Statement.flow
+      A.construct Fir.Statement.flow
         Fir.Flow_block.(
           make
             ~header:(Header.While (While, to_insert))
@@ -131,7 +132,7 @@ module Surround = struct
     let wrap (statements : F.Metadata.t Fir.Statement.t list)
         ~(payload : Payload.t) : F.Metadata.t Fir.Statement.t =
       let cond = F.Payload_impl.Cond_surround.cond payload in
-      Fir.Statement.flow
+      A.construct Fir.Statement.flow
         (Fir.Flow_block.while_loop ~kind:Basic.kind ~cond
            ~body:(F.Subject.Block.make_generated ~statements ()))
   end)
@@ -370,6 +371,6 @@ module Surround = struct
         : F.Subject.Statement.t =
       let control = control payload in
       let body = F.Subject.Block.make_generated ~statements () in
-      Fir.(Statement.flow (Flow_block.for_loop ~control ~body))
+      Fir.(A.construct Statement.flow (Flow_block.for_loop ~control ~body))
   end)
 end

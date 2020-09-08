@@ -53,17 +53,38 @@ val own_metadata : 'meta t -> 'meta Option.t
     recurse into other nodes (such as blocks); since not all statement types
     directly hold metadata, it returns an option. *)
 
-(** {1 Constructors} *)
+(** {1 Specialised forms of statement component types}
 
-val if_stm : ('meta, 'meta t) If.t -> 'meta t
-(** [if_stm ifs] lifts an if statement [ifs] to a statement. *)
+    These specialised forms contain basic derived operations, but no more.
+    Use {!Statement_traverse} for traversal, and the original modules for
+    everything else. *)
 
-val flow : ('meta, 'meta t) Flow_block.t -> 'meta t
-(** [flow f] lifts a single-block flow construct [f] to a statement. *)
+module If : sig
+  (** Specialised if statement type. *)
+  type nonrec 'meta t = ('meta, 'meta t) If.t [@@deriving sexp]
+end
 
-val prim : 'meta -> Prim_statement.t -> 'meta t
-(** [prim meta p] lifts a primitive statement [p] to a statement, with
-    metadata [meta]. *)
+module Flow_block : sig
+  (** Specialised flow block type. *)
+  type nonrec 'meta t = ('meta, 'meta t) Flow_block.t [@@deriving sexp]
+end
+
+(** {1 Accessors} *)
+
+val if_stm : ('i, 'm If.t, 'm t, [< Accessor.variant]) Accessor.Simple.t
+(** [if_stm] focuses on if statements. *)
+
+val flow :
+  ('i, 'm Flow_block.t, 'm t, [< Accessor.variant]) Accessor.Simple.t
+(** [flow] focuses on flow blocks. *)
+
+val prim :
+  ('i, 'm * Prim_statement.t, 'm t, [< Accessor.variant]) Accessor.Simple.t
+(** [prim] focuses on primitive statements. *)
+
+val prim' :
+  ('a, Prim_statement.t, unit t, [< Accessor.variant]) Accessor.Simple.t
+(** [prim'] is a variant of [prim] that presumes there is no metadata. *)
 
 (** {1 Predicates over statements} *)
 
@@ -87,19 +108,3 @@ val has_blocks_with_metadata : 'meta t -> predicate:('meta -> bool) -> bool
     metadata.
 
     This is useful for tracking things like the existence of dead-code. *)
-
-(** {1 Specialised forms of statement component types}
-
-    These specialised forms contain basic derived operations, but no more.
-    Use {!Statement_traverse} for traversal, and the original modules for
-    everything else. *)
-
-module If : sig
-  (** Specialised if statement type. *)
-  type nonrec 'meta t = ('meta, 'meta t) If.t [@@deriving sexp]
-end
-
-module Flow_block : sig
-  (** Specialised flow block type. *)
-  type nonrec 'meta t = ('meta, 'meta t) Flow_block.t [@@deriving sexp]
-end

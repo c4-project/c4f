@@ -31,7 +31,7 @@ module Lang :
     [@@deriving sexp]
 
     let empty () : t =
-      `Stm (Statement.prim () (A.construct Prim_statement.nop ()))
+      `Stm A.(construct (Statement.prim' @> Prim_statement.nop) ())
 
     let make_uniform = Tx.List.right_pad ~padding:(empty ())
   end

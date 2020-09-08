@@ -80,9 +80,8 @@ module Insert = struct
         else Fn.id )
 
     let make_early_out (kind : Fir.Early_out.t) : F.Subject.Statement.t =
-      Fir.(
-        Statement.prim F.Metadata.generated
-          (A.construct Prim_statement.early_out kind))
+      F.Subject.Statement.make_generated_prim
+        (A.construct Fir.Prim_statement.early_out kind)
 
     let run_inner (test : F.Subject.Test.t) (path : F.Path.Flagged.t)
         (kind : Fir.Early_out.t) : F.Subject.Test.t Or_error.t =
@@ -160,10 +159,9 @@ module Insert = struct
       let path = F.Payload_impl.Insertion.where payload in
       let label = F.Payload_impl.Insertion.to_insert payload in
       let goto_stm =
-        Fir.(
-          label
-          |> A.construct Prim_statement.goto
-          |> Statement.prim F.Metadata.generated)
+        label
+        |> A.construct Fir.Prim_statement.goto
+        |> F.Subject.Statement.make_generated_prim
       in
       F.State.Monad.(
         Let_syntax.(

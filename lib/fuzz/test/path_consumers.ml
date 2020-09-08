@@ -14,6 +14,7 @@ open Base_quickcheck
 
 open struct
   module A = Accessor
+  module Fir = Act_fir
 end
 
 let%test_module "Statement_list" =
@@ -22,7 +23,7 @@ let%test_module "Statement_list" =
       ( module struct
         open struct
           module F = Act_fuzz
-          module Stm = Act_fir.Statement_traverse
+          module Stm = Fir.Statement_traverse
           module P = Subject.Test_data.Path
         end
 
@@ -38,13 +39,12 @@ let%test_module "Statement_list" =
                  ~path:(Lazy.force path) ~action))
 
         let example_stm : F.Subject.Statement.t =
-          Act_fir.(
-            Statement.prim F.Metadata.generated
-              (A.(
-                 construct (Prim_statement.atomic @> Atomic_statement.store))
-                 (Atomic_store.make ~mo:Mem_order.Seq_cst
-                    ~src:(Expression.int_lit 9001)
-                    ~dst:(Address.of_variable_str_exn "y"))))
+          F.Subject.Statement.make_generated_prim
+            Fir.(
+              A.(construct (Prim_statement.atomic @> Atomic_statement.store))
+                (Atomic_store.make ~mo:Mem_order.Seq_cst
+                   ~src:(Expression.int_lit 9001)
+                   ~dst:(Address.of_variable_str_exn "y")))
 
         let%test_module "insert_stm" =
           ( module struct
@@ -193,10 +193,10 @@ let%test_module "Statement_list" =
           ( module struct
             let iffify (statements : F.Subject.Statement.t list) :
                 F.Subject.Statement.t list Or_error.t =
-              Or_error.return
-                [ Act_fir.Statement.if_stm
-                    (Act_fir.If.make
-                       ~cond:(Act_fir.Expression.bool_lit true)
+              Ok
+                [ A.construct Fir.Statement.if_stm
+                    (Fir.If.make
+                       ~cond:(Fir.Expression.bool_lit true)
                        ~t_branch:
                          (F.Subject.Block.make_generated ~statements ())
                        ~f_branch:(F.Subject.Block.make_generated ())) ]

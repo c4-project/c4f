@@ -23,33 +23,33 @@ let%test_module "On_lvalues and On_addresses" =
 
     let stm =
       Src.(
-        Statement.(
-          Stm.mkwhile
-            ~cond:(Expression.of_variable_str_exn "so")
-            [ Stm.mkif
-                ~cond:
-                  (Expression.lvalue
-                     Lvalue.(deref (of_variable_str_exn "i")))
-                [ prim ()
-                    (A.(
-                       construct
-                         (Prim_statement.atomic @> Atomic_statement.store))
-                       (Src.Atomic_store.make ~mo:Relaxed
-                          ~src:(Expression.of_variable_str_exn "herd")
-                          ~dst:Address.(ref (of_variable_str_exn "u")))) ]
-                [ prim ()
-                    (A.construct Prim_statement.goto
-                       (Act_common.C_id.of_string "not_you")) ]
-            ; Stm.mkif
-                ~cond:
-                  Expression.(
-                    Infix.(
-                      of_variable_str_exn "liek"
-                      && of_variable_str_exn "mudkipz"))
-                [ prim ()
-                    (A.construct Prim_statement.label
-                       (Act_common.C_id.of_string "not_you")) ]
-                [] ]))
+        Stm.mkwhile
+          ~cond:(Expression.of_variable_str_exn "so")
+          [ Stm.mkif
+              ~cond:
+                (Expression.lvalue Lvalue.(deref (of_variable_str_exn "i")))
+              [ A.(
+                  construct
+                    ( Statement.prim' @> Prim_statement.atomic
+                    @> Atomic_statement.store )
+                    (Src.Atomic_store.make ~mo:Relaxed
+                       ~src:(Expression.of_variable_str_exn "herd")
+                       ~dst:Address.(ref (of_variable_str_exn "u")))) ]
+              [ A.(
+                  construct
+                    (Statement.prim' @> Prim_statement.goto)
+                    (Act_common.C_id.of_string "not_you")) ]
+          ; Stm.mkif
+              ~cond:
+                Expression.(
+                  Infix.(
+                    of_variable_str_exn "liek"
+                    && of_variable_str_exn "mudkipz"))
+              [ A.(
+                  construct
+                    (Statement.prim' @> Prim_statement.label)
+                    (Act_common.C_id.of_string "not_you")) ]
+              [] ])
 
     let print_exprs : Act_litmus_c.Ast.Expr.t list -> unit =
       Fmt.(pr "@[<v>%a@]@." (list ~sep:sp Act_litmus_c.Ast.Expr.pp))
@@ -75,30 +75,30 @@ let%test_module "On_expressions" =
     let%expect_test "replace all expressions" =
       let stm =
         Src.(
-          Statement.(
-            Stm.mkwhile
-              [ Stm.mkif ~cond:Src.Expression.falsehood
-                  [ prim ()
-                      (A.construct Prim_statement.assign
-                         (Assign.make
-                            ~lvalue:(Lvalue.of_variable_str_exn "r0")
-                            ~rvalue:(Expression.int_lit 1))) ]
-                  []
-              ; Stm.mkif
-                  [ prim ()
-                      (A.(
-                         construct
-                           (Prim_statement.atomic @> Atomic_statement.store))
-                         (Atomic_store.make ~mo:Seq_cst
-                            ~src:(Expression.int_lit 27)
-                            ~dst:(Address.of_variable_str_exn "x"))) ]
-                  [ prim ()
-                      (A.(
-                         construct
-                           (Prim_statement.atomic @> Atomic_statement.store))
-                         (Atomic_store.make ~mo:Seq_cst
-                            ~src:(Expression.int_lit 53)
-                            ~dst:(Address.of_variable_str_exn "x"))) ] ]))
+          Stm.mkwhile
+            [ Stm.mkif ~cond:Src.Expression.falsehood
+                [ A.(
+                    construct
+                      (Statement.prim' @> Prim_statement.assign)
+                      (Assign.make
+                         ~lvalue:(Lvalue.of_variable_str_exn "r0")
+                         ~rvalue:(Expression.int_lit 1))) ]
+                []
+            ; Stm.mkif
+                [ A.(
+                    construct
+                      ( Statement.prim' @> Prim_statement.atomic
+                      @> Atomic_statement.store )
+                      (Atomic_store.make ~mo:Seq_cst
+                         ~src:(Expression.int_lit 27)
+                         ~dst:(Address.of_variable_str_exn "x"))) ]
+                [ A.(
+                    construct
+                      ( Statement.prim' @> Prim_statement.atomic
+                      @> Atomic_statement.store )
+                      (Atomic_store.make ~mo:Seq_cst
+                         ~src:(Expression.int_lit 53)
+                         ~dst:(Address.of_variable_str_exn "x"))) ] ])
       in
       let stm' =
         M.On_expressions.map stm ~f:(fun _ -> Src.Expression.int_lit 2)
@@ -121,25 +121,27 @@ let%test_module "On_primitives" =
     let%expect_test "replace all primitives" =
       let stm =
         Src.(
-          Statement.(
-            Stm.mkwhile
-              [ Stm.mkif
-                  [ prim ()
-                      (A.construct Prim_statement.label
-                         (Act_common.C_id.of_string "kappa")) ]
-                  []
-              ; Stm.mkif
-                  [ prim ()
-                      (A.construct Prim_statement.label
-                         (Act_common.C_id.of_string "keepo")) ]
-                  [ prim ()
-                      (A.(
-                         construct
-                           (Prim_statement.atomic @> Atomic_statement.fence))
-                         (Src.Atomic_fence.make ~mode:Thread ~mo:Seq_cst)) ]
-              ; prim ()
-                  (A.construct Prim_statement.goto
-                     (Act_common.C_id.of_string "kappa")) ]))
+          Stm.mkwhile
+            [ Stm.mkif
+                [ A.(
+                    construct
+                      (Statement.prim' @> Prim_statement.label)
+                      (Act_common.C_id.of_string "kappa")) ]
+                []
+            ; Stm.mkif
+                [ A.(
+                    construct
+                      (Statement.prim' @> Prim_statement.label)
+                      (Act_common.C_id.of_string "keepo")) ]
+                [ A.(
+                    construct
+                      ( Statement.prim' @> Prim_statement.atomic
+                      @> Atomic_statement.fence ))
+                    (Src.Atomic_fence.make ~mode:Thread ~mo:Seq_cst) ]
+            ; A.(
+                construct
+                  (Statement.prim' @> Prim_statement.goto)
+                  (Act_common.C_id.of_string "kappa")) ])
       in
       let stm' =
         M.On_primitives.map stm ~f:(fun _ -> Src.Prim_statement.return)

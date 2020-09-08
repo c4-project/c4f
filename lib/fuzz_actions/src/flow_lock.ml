@@ -12,6 +12,7 @@
 open Base
 
 open struct
+  module A = Accessor
   module Fir = Act_fir
   module F = Act_fuzz
 end
@@ -67,7 +68,7 @@ module Surround = struct
     let wrap (statements : F.Metadata.t Fir.Statement.t list)
         ~(payload : Payload.t) : F.Metadata.t Fir.Statement.t =
       ignore (payload : Payload.t) ;
-      Fir.Statement.flow
+      A.construct Fir.Statement.flow
         (Fir.Flow_block.lock_block ~kind:Basic.lock_type
            ~body:(F.Subject.Block.make_generated ~statements ()))
   end)
