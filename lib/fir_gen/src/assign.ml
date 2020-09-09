@@ -17,7 +17,10 @@ end
 
 module Int (Src : Fir.Env_types.S) (Dst : Fir.Env_types.S) : S =
   Fir.Assign.Quickcheck_generic
-    (Fir.Assign.Source.Quickcheck_int (Expr.Int_values(Src))) (Lvalue.Int_values (Dst)) 
+    (Fir.Assign.Source.Quickcheck_int
+       (Expr.Int_values (Src))) (Lvalue.Int_values (Dst))
+
 module Bool (Src : Fir.Env_types.S) (Dst : Fir.Env_types.S) : S =
   Fir.Assign.Quickcheck_generic
-    (Fir.Assign.Source.Quickcheck_bool (Expr.Bool_values(Src))) (Lvalue.Bool_values (Dst)) 
+    (Fir.Assign.Source.Quickcheck_bool
+       (Expr.Bool_values (Src))) (Lvalue.Bool_values (Dst))

@@ -48,6 +48,7 @@ let%test_module "running payloads on test subject" =
       P0(atomic_int *x, atomic_int *y)
       {
           atomic_int r0 = 4004;
+          int r1 = 8008;
           atomic_store_explicit(x, 42, memory_order_seq_cst);
           ;
           atomic_store_explicit(y, foo, memory_order_relaxed);
@@ -75,6 +76,7 @@ let%test_module "running payloads on test subject" =
       P0(atomic_int *x, atomic_int *y)
       {
           atomic_int r0 = 4004;
+          int r1 = 8008;
           atomic_store_explicit(x, 42, memory_order_relaxed);
           ;
           atomic_store_explicit(y, foo, memory_order_relaxed);
@@ -102,6 +104,7 @@ let%test_module "running payloads on test subject" =
       P0(atomic_int *x, atomic_int *y)
       {
           atomic_int r0 = 4004;
+          int r1 = 8008;
           atomic_store_explicit(x, 42, memory_order_seq_cst);
           ;
           atomic_store_explicit(y, foo, memory_order_seq_cst);
@@ -129,6 +132,7 @@ let%test_module "running payloads on test subject" =
       P0(atomic_int *x, atomic_int *y)
       {
           atomic_int r0 = 4004;
+          int r1 = 8008;
           atomic_store_explicit(x, 42, memory_order_seq_cst);
           ;
           atomic_store_explicit(y, foo, memory_order_relaxed);
@@ -156,6 +160,7 @@ let%test_module "running payloads on test subject" =
       P0(atomic_int *x, atomic_int *y)
       {
           atomic_int r0 = 4004;
+          int r1 = 8008;
           atomic_store_explicit(x, 42, memory_order_seq_cst);
           ;
           atomic_store_explicit(y, foo, memory_order_relaxed);
@@ -183,6 +188,7 @@ let%test_module "running payloads on test subject" =
       P0(atomic_int *x, atomic_int *y)
       {
           atomic_int r0 = 4004;
+          int r1 = 8008;
           atomic_store_explicit(x, 42, memory_order_seq_cst);
           ;
           atomic_store_explicit(y, foo, memory_order_relaxed);

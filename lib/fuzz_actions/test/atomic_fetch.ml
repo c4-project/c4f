@@ -59,9 +59,11 @@ let%test_module "fetch.make.int.dead" =
       [%expect
         {|
       void
-      P0(atomic_int *gen1, atomic_int *gen2, atomic_int *x, atomic_int *y)
+      P0(atomic_int *gen1, atomic_int *gen2, int *gen3, int *gen4, atomic_int *x,
+         atomic_int *y)
       {
           atomic_int r0 = 4004;
+          int r1 = 8008;
           atomic_store_explicit(x, 42, memory_order_seq_cst);
           ;
           atomic_store_explicit(y, foo, memory_order_relaxed);
@@ -79,18 +81,19 @@ let%test_module "fetch.make.int.dead" =
       }
 
       void
-      P1(atomic_int *gen1, atomic_int *gen2, atomic_int *x, atomic_int *y)
+      P1(atomic_int *gen1, atomic_int *gen2, int *gen3, int *gen4, atomic_int *x,
+         atomic_int *y)
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "test int fetch: global variables" =
       Storelike.Test_common.run_and_dump_globals test_action
         ~initial_state:(Lazy.force FT.Subject.Test_data.state) ;
-      [%expect {| gen1=1337 gen2=-55 x= y= |}]
+      [%expect {| gen1=1337 gen2=-55 gen3=1998 gen4=-4 x= y= |}]
 
     let%expect_test "test int fetch: variables with known values" =
       Storelike.Test_common.run_and_dump_kvs test_action
         ~initial_state:(Lazy.force FT.Subject.Test_data.state) ;
-      [%expect {| gen1=1337 gen2=-55 r0=4004 |}]
+      [%expect {| gen1=1337 gen2=-55 gen3=1998 gen4=-4 r0=4004 r1=8008 |}]
 
     let%expect_test "test int fetch: variables with dependencies" =
       Storelike.Test_common.run_and_dump_deps test_action
@@ -124,9 +127,11 @@ let%test_module "fetch.make.int.redundant" =
       [%expect
         {|
       void
-      P0(atomic_int *gen1, atomic_int *gen2, atomic_int *x, atomic_int *y)
+      P0(atomic_int *gen1, atomic_int *gen2, int *gen3, int *gen4, atomic_int *x,
+         atomic_int *y)
       {
           atomic_int r0 = 4004;
+          int r1 = 8008;
           atomic_store_explicit(x, 42, memory_order_seq_cst);
           ;
           atomic_fetch_add_explicit(gen1, 0, memory_order_seq_cst);
@@ -144,18 +149,19 @@ let%test_module "fetch.make.int.redundant" =
       }
 
       void
-      P1(atomic_int *gen1, atomic_int *gen2, atomic_int *x, atomic_int *y)
+      P1(atomic_int *gen1, atomic_int *gen2, int *gen3, int *gen4, atomic_int *x,
+         atomic_int *y)
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "test int fetch: global variables" =
       Storelike.Test_common.run_and_dump_globals test_action
         ~initial_state:(Lazy.force FT.Subject.Test_data.state) ;
-      [%expect {| gen1=1337 gen2=-55 x= y= |}]
+      [%expect {| gen1=1337 gen2=-55 gen3=1998 gen4=-4 x= y= |}]
 
     let%expect_test "test int fetch: variables with known values" =
       Storelike.Test_common.run_and_dump_kvs test_action
         ~initial_state:(Lazy.force FT.Subject.Test_data.state) ;
-      [%expect {| gen1=1337 gen2=-55 r0=4004 |}]
+      [%expect {| gen1=1337 gen2=-55 gen3=1998 gen4=-4 r0=4004 r1=8008 |}]
 
     let%expect_test "test int fetch: variables with dependencies" =
       Storelike.Test_common.run_and_dump_deps test_action

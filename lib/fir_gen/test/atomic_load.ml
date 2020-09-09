@@ -14,19 +14,25 @@ open Import
 
 let in_env env x = Map.mem env (Fir.Atomic_load.variable_of x)
 
-let print_sample = Utils.My_quickcheck.print_sample ~printer:(
-  Fmt.(pr "@[%a@]@." (using Fir.Expression.atomic_load Act_litmus_c.Reify_expr.pp))
-)
+let print_sample =
+  Utils.My_quickcheck.print_sample
+    ~printer:
+      Fmt.(
+        pr "@[%a@]@."
+          (using Fir.Expression.atomic_load Act_litmus_c.Reify_expr.pp))
 
 let%expect_test "Int: samples" =
   let env = Lazy.force Fir_test.Env.test_env in
-  print_sample (module struct
-    include Fir.Atomic_load
-    include Src.Atomic_load.Int (struct
+  print_sample
+    ( module struct
+      include Fir.Atomic_load
+
+      include Src.Atomic_load.Int (struct
         let env = env
-      end) 
-  end);
-  [%expect {|
+      end)
+    end ) ;
+  [%expect
+    {|
     atomic_load_explicit(bar, memory_order_consume)
     atomic_load_explicit(bar, memory_order_acquire)
     atomic_load_explicit(bar, memory_order_seq_cst)

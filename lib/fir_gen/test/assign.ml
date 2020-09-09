@@ -12,24 +12,34 @@
 open Base
 open Import
 
-let dst_in_env env x = Map.mem env Fir.(Lvalue.variable_of (x.@(Assign.dst)))
+let dst_in_env env x = Map.mem env Fir.(Lvalue.variable_of x.@(Assign.dst))
 
-let print_sample = Utils.My_quickcheck.print_sample ~printer:(
-  Fmt.(pr "@[%a@]@." (using (Accessor.construct (Fir.Statement.prim' @> Fir.Prim_statement.assign)) Act_litmus_c.Reify_stm.pp))
-)
+let print_sample =
+  Utils.My_quickcheck.print_sample
+    ~printer:
+      Fmt.(
+        pr "@[%a@]@."
+          (using
+             (Accessor.construct
+                (Fir.Statement.prim' @> Fir.Prim_statement.assign))
+             Act_litmus_c.Reify_stm.pp))
 
 let%expect_test "Int: samples" =
   let env = Lazy.force Fir_test.Env.test_env in
-  print_sample (module struct
-    include Fir.Assign
-    include Src.Assign.Int (struct
-        let env = env
-      end) 
-      (struct
-        let env = env
-      end) 
-  end);
-  [%expect {|
+  print_sample
+    ( module struct
+      include Fir.Assign
+
+      include Src.Assign.Int
+                (struct
+                  let env = env
+                end)
+                (struct
+                  let env = env
+                end)
+    end ) ;
+  [%expect
+    {|
     foo--;
     foo++;
     foo = 0 & 4;
@@ -49,7 +59,9 @@ let%expect_test "Int: samples" =
 
 let%test_unit "Int: generated destination variables in environment" =
   let env = Lazy.force Fir_test.Env.test_env in
-  let module Env = struct let env = env end in
+  let module Env = struct
+    let env = env
+  end in
   let module Chk = Src.Assign.Int (Env) (Env) in
   Q.Test.run_exn
     (module Chk)
@@ -57,16 +69,20 @@ let%test_unit "Int: generated destination variables in environment" =
 
 let%expect_test "Bool: samples" =
   let env = Lazy.force Fir_test.Env.test_env in
-  print_sample (module struct
-    include Fir.Assign
-    include Src.Assign.Bool (struct
-        let env = env
-      end) 
-      (struct
-        let env = env
-      end) 
-  end);
-  [%expect {|
+  print_sample
+    ( module struct
+      include Fir.Assign
+
+      include Src.Assign.Bool
+                (struct
+                  let env = env
+                end)
+                (struct
+                  let env = env
+                end)
+    end ) ;
+  [%expect
+    {|
     barbaz = false;
     barbaz = true;
     barbaz = barbaz;
@@ -126,7 +142,9 @@ let%expect_test "Bool: samples" =
 
 let%test_unit "Bool: generated destination variables in environment" =
   let env = Lazy.force Fir_test.Env.test_env in
-  let module Env = struct let env = env end in
+  let module Env = struct
+    let env = env
+  end in
   let module Chk = Src.Assign.Bool (Env) (Env) in
   Q.Test.run_exn
     (module Chk)

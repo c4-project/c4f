@@ -28,7 +28,11 @@ module Test_data = struct
       [ ( Act_common.C_id.of_string "r0"
         , Fir.Initialiser.make
             ~ty:(Fir.Type.int ~is_atomic:true ())
-            ~value:(Fir.Constant.int 4004) ) ]
+            ~value:(Fir.Constant.int 4004) )
+      ; ( Act_common.C_id.of_string "r1"
+        , Fir.Initialiser.make
+            ~ty:(Fir.Type.int ~is_atomic:false ())
+            ~value:(Fir.Constant.int 8008) ) ]
 
   let globals : Fir.Type.t Act_common.C_named.Alist.t Lazy.t =
     lazy
@@ -339,6 +343,7 @@ let%test_module "list_to_litmus" =
            atomic_int x, atomic_int y, atomic_bool z)
         {
             atomic_int r0 = 4004;
+            int r1 = 8008;
             atomic_store_explicit(x, 42, memory_order_seq_cst);
             ;
             atomic_store_explicit(y, foo, memory_order_relaxed);
@@ -372,6 +377,7 @@ let%test_module "list_to_litmus" =
            atomic_int x, atomic_int y, atomic_bool z)
         {
             atomic_int r0 = 4004;
+            int r1 = 8008;
             atomic_store_explicit(x, 42, memory_order_seq_cst);
             ;
             atomic_store_explicit(y, foo, memory_order_relaxed);

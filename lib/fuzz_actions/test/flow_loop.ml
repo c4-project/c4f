@@ -54,6 +54,7 @@ let%test_module "test runs" =
              atomic_int y)
           {
               atomic_int r0 = 4004;
+              int r1 = 8008;
               atomic_store_explicit(x, 42, memory_order_seq_cst);
               ;
               while (y == 27 && a) {  }
@@ -103,6 +104,7 @@ let%test_module "test runs" =
              atomic_int y)
           {
               atomic_int r0 = 4004;
+              int r1 = 8008;
               do { atomic_store_explicit(x, 42, memory_order_seq_cst); ; } while (y ==
               27 && a);
               atomic_store_explicit(y, foo, memory_order_relaxed);
@@ -154,6 +156,7 @@ let%test_module "test runs" =
              atomic_int y)
           {
               atomic_int r0 = 4004;
+              int r1 = 8008;
               atomic_store_explicit(x, 42, memory_order_seq_cst);
               ;
               atomic_store_explicit(y, foo, memory_order_relaxed);
@@ -205,6 +208,7 @@ let%test_module "test runs" =
              atomic_int y)
           {
               atomic_int r0 = 4004;
+              int r1 = 8008;
               atomic_store_explicit(x, 42, memory_order_seq_cst);
               ;
               atomic_store_explicit(y, foo, memory_order_relaxed);
@@ -264,6 +268,7 @@ let%test_module "test runs" =
           {
               int i = 0;
               atomic_int r0 = 4004;
+              int r1 = 8008;
               for (i = 27; i >= atomic_load_explicit(x, memory_order_seq_cst); i--)
               { atomic_store_explicit(x, 42, memory_order_seq_cst); ; }
               atomic_store_explicit(y, foo, memory_order_relaxed);

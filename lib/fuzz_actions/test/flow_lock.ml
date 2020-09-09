@@ -43,6 +43,7 @@ let%test_module "Surround.Sync" =
              atomic_int y)
           {
               atomic_int r0 = 4004;
+              int r1 = 8008;
               synchronized { atomic_store_explicit(x, 42, memory_order_seq_cst); ; }
               atomic_store_explicit(y, foo, memory_order_relaxed);
               if (foo == y)
@@ -90,6 +91,7 @@ let%test_module "Surround.Atomic" =
              atomic_int y)
           {
               atomic_int r0 = 4004;
+              int r1 = 8008;
               atomic_store_explicit(x, 42, memory_order_seq_cst);
               atomic { ; }
               atomic_store_explicit(y, foo, memory_order_relaxed);

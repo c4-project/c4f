@@ -55,6 +55,11 @@ let actions : F.Action.With_default_weight.t list Lazy.t =
       ; make ~action:(module Program.Label) ~default_weight:15
       ; make ~action:(module Var.Make) ~default_weight:20
       ; make ~action:(module Var.Volatile) ~default_weight:25
+      ; make ~action:(module Var_assign.Insert.Int_dead) ~default_weight:20
+      ; make ~action:(module Var_assign.Insert.Int_normal) ~default_weight:20
+      ; make
+          ~action:(module Var_assign.Insert.Int_redundant)
+          ~default_weight:15
         (* These are disabled by default because they induce transactions.
            TODO(@MattWindsor91): gate them in another way. *)
       ; make ~action:(module Flow_lock.Surround.Atomic) ~default_weight:0

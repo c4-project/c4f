@@ -18,8 +18,10 @@ module type S = sig
   type t = Fir.Atomic_store.t [@@deriving sexp_of, quickcheck]
 end
 
-(** Generates type-safe, but arbitrary, integer atomic stores over the given environments. *)
+(** Generates type-safe, but arbitrary, integer atomic stores over the given
+    environments. *)
 module Int (Src : Fir.Env_types.S) (Dst : Fir.Env_types.S) : S
 
-(** Generates type-safe, but arbitrary, Boolean atomic stores over the given environments. *)
+(** Generates type-safe, but arbitrary, Boolean atomic stores over the given
+    environments. *)
 module Bool (Src : Fir.Env_types.S) (Dst : Fir.Env_types.S) : S

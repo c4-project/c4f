@@ -13,7 +13,6 @@
 
 module Accessor = Accessor_base
 include Accessor.O
-
 module Src = Act_fir_gen
 module Q = Base_quickcheck
 module Fir = Act_fir

@@ -56,6 +56,7 @@ let%test_module "program.label" =
       P0(atomic_int *x, atomic_int *y)
       {
           atomic_int r0 = 4004;
+          int r1 = 8008;
           atomic_store_explicit(x, 42, memory_order_seq_cst);
           ;
           label_mclabelface: ;

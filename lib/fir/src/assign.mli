@@ -26,16 +26,15 @@ module Source : sig
   val exprs : ('i, Expression.t, t, [< Accessor.many]) Accessor.Simple.t
   (** [exprs] focuses on any top-level expressions inside a source. *)
 
+  (** Lifts an integer expression generator to a source generator. *)
   module Quickcheck_int
-    (Expr : Utils.My_quickcheck.S_with_sexp with type t := Expression.t)
-     : Utils.My_quickcheck.S_with_sexp with type t = t
-  (** Lifts an integer expression generator to a source generator. *) 
+      (Expr : Utils.My_quickcheck.S_with_sexp with type t := Expression.t) :
+    Utils.My_quickcheck.S_with_sexp with type t = t
 
+  (** Lifts a Boolean expression generator to a source generator. *)
   module Quickcheck_bool
-    (Expr : Utils.My_quickcheck.S_with_sexp with type t := Expression.t)
-     : Utils.My_quickcheck.S_with_sexp with type t = t
-  (** Lifts a Boolean expression generator to a source generator. *) 
-
+      (Expr : Utils.My_quickcheck.S_with_sexp with type t := Expression.t) :
+    Utils.My_quickcheck.S_with_sexp with type t = t
 end
 
 (** {1 Assignments proper} *)
@@ -59,6 +58,9 @@ val dst : ('i, Lvalue.t, t, [< Accessor.field]) Accessor.Simple.t
 val src : ('i, Source.t, t, [< Accessor.field]) Accessor.Simple.t
 (** [src] focuses on sources. *)
 
+val exprs : ('i, Expression.t, t, [< Accessor.many]) Accessor.Simple.t
+(** [exprs] focuses on any top-level expressions inside an assignment. *)
+
 (** {2 Traversals} *)
 
 (** Traversing over atomic-action addresses in assignments. *)
@@ -75,11 +77,13 @@ module On_lvalues :
 
 (** {2 Low-level quickchecking}
 
-See {!Act_fir_gen}.
-*)
+    See {!Act_fir_gen}. *)
 
+val quickcheck_observer : t Q.Observer.t
+(** [quickcheck_observer] is a generic quickcheck observer for assigns. *)
+
+(** Low-level building block for quickcheck generators on assigns. *)
 module Quickcheck_generic
     (Src : Utils.My_quickcheck.S_with_sexp with type t := Source.t)
     (Dst : Utils.My_quickcheck.S_with_sexp with type t := Lvalue.t) :
   Utils.My_quickcheck.S_with_sexp with type t = t
-(** Low-level building block for quickcheck generators on assigns. *)
