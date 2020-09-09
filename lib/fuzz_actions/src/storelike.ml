@@ -151,16 +151,15 @@ struct
 
     let error_if_empty (env_name : string) (env : Fir.Env.t) :
         unit Or_error.t =
-      if Map.is_empty env then
-        Or_error.error_s
-          [%message
-            "Internal error: Environment was empty." ~here:[%here] ~env_name]
-      else Ok ()
+      Tx.Or_error.when_m (Map.is_empty env) ~f:(fun () ->
+          Or_error.error_s
+            [%message
+              "Internal error: Environment was empty." ~here:[%here]
+                ~env_name])
 
     let check_envs (src : Fir.Env.t) (dst : Fir.Env.t) : unit Or_error.t =
-      Or_error.Let_syntax.(
-        let%bind () = error_if_empty "src" src in
-        error_if_empty "dst" dst)
+      Or_error.combine_errors_unit
+        [error_if_empty "src" src; error_if_empty "dst" dst]
 
     let gen' (vars : F.Var.Map.t) ~(where : F.Path.t)
         ~(forbid_already_written : bool) : t F.Opt_gen.t =
