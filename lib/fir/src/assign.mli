@@ -11,6 +11,8 @@
 
 (** A non-atomic assignment. *)
 
+open Import
+
 (** {1 Sources}
 
     FIR assignments abstract over several different types of non-atomic
@@ -59,3 +61,14 @@ module On_expressions :
 (** Traversing over lvalues in assignments. *)
 module On_lvalues :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t
+
+(** {2 Low-level quickchecking}
+
+See {!Act_fir_gen}.
+*)
+
+module Quickcheck_generic
+    (Src : Utils.My_quickcheck.S_with_sexp with type t := Expression.t)
+    (Dst : Utils.My_quickcheck.S_with_sexp with type t := Lvalue.t) :
+  Utils.My_quickcheck.S_with_sexp with type t = t
+(** Low-level building block for quickcheck generators on assigns. *)
