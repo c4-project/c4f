@@ -31,9 +31,9 @@ let assign (asn : Fir.Assign.t) : Ast.Stm.t =
   let exp : Ast.Expr.t =
     match A.get Fir.Assign.src asn with
     | Inc ->
-        Postfix (dst, `Inc)
+        Reify_expr.postfix `Inc dst
     | Dec ->
-        Postfix (dst, `Dec)
+        Reify_expr.postfix `Dec dst
     | Expr e ->
         Binary (dst, `Assign, Reify_expr.reify e)
   in

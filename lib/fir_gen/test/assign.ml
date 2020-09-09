@@ -51,8 +51,8 @@ let%expect_test "Int: samples" =
     foo = atomic_load_explicit(bar, memory_order_consume) -
     atomic_load_explicit(bar, memory_order_consume) & *blep ^
     atomic_load_explicit(&x, memory_order_acquire);
-    *blep--;
-    *blep++;
+    (*blep)--;
+    (*blep)++;
     *blep = 18140;
     *blep = atomic_fetch_or_explicit(&x, 0 & 27, memory_order_seq_cst);
     *blep = 0 & foo ^ 0 & foo; |}]

@@ -86,4 +86,14 @@ let%test_module "reify/pp" =
     let%expect_test "implicit block" =
       test Fir.(A.construct Statement.flow (Flow_block.implicit test_body)) ;
       [%expect {| x = true; y = false; |}]
+
+    let%expect_test "increment of a variable" =
+      test Fir.(A.(construct (Statement.prim' @> Prim_statement.assign) (Assign.make ~dst:(Lvalue.of_variable_str_exn "x") ~src:Inc)));
+      [%expect {| x++; |}]
+
+    let%expect_test "increment of a pointer" =
+      test Fir.(A.(construct (Statement.prim' @> Prim_statement.assign) (Assign.make ~dst:(Lvalue.(deref (of_variable_str_exn "x"))) ~src:Inc)));
+      [%expect {| (*x)++; |}]
+
+
   end )
