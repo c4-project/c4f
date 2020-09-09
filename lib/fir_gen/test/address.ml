@@ -10,43 +10,43 @@
    project root for more information. *)
 
 open Base
-module Src = Act_fir
-module Q = Base_quickcheck
-module Qx = Act_utils.My_quickcheck
+open Import
 
-let variable_in (env : Src.Env.t) (l : Src.Address.t) : bool =
-  Map.mem env (Src.Address.variable_of l)
+let variable_in (env : Fir.Env.t) (l : Fir.Address.t) : bool =
+  (* TODO(@MattWindsor91) Is this duplicated? *)
+  Map.mem env (Fir.Address.variable_of l)
 
-let test_in_env (env : Src.Env.t)
-    (module Qc : Qx.S_with_sexp with type t = Src.Address.t) : unit =
+let test_in_env (env : Fir.Env.t)
+    (module Qc : Utils.My_quickcheck.S_with_sexp with type t = Fir.Address.t)
+    : unit =
   Q.Test.run_exn
     (module Qc)
-    ~f:([%test_pred: Src.Address.t] ~here:[[%here]] (variable_in env))
+    ~f:([%test_pred: Fir.Address.t] ~here:[[%here]] (variable_in env))
 
-let test_type (env : Src.Env.t)
-    (module Qc : Qx.S_with_sexp with type t = Src.Address.t)
-    (expected : Src.Type.t) : unit =
-  let module Tc = Src.Address.Type_check (struct
+let test_type (env : Fir.Env.t)
+    (module Qc : Utils.My_quickcheck.S_with_sexp with type t = Fir.Address.t)
+    (expected : Fir.Type.t) : unit =
+  let module Tc = Fir.Address.Type_check (struct
     let env = env
   end) in
   Q.Test.run_exn
     (module Qc)
     ~f:(fun lv ->
-      [%test_result: Src.Type.t Or_error.t] ~here:[[%here]] (Tc.type_of lv)
-        ~expect:(Or_error.return expected))
+      [%test_result: Fir.Type.t Or_error.t] ~here:[[%here]] (Tc.type_of lv)
+        ~expect:(Ok expected))
 
 let%test_module "On_env" =
   ( module struct
-    let e = Lazy.force Env.test_env
+    let e = Lazy.force Fir_test.Env.test_env
 
-    module Qc = Src.Address_gen.On_env (struct
+    module Qc = Src.Address.On_env (struct
       let env = e
     end)
 
     let%expect_test "sample" =
-      Qx.print_sample
+      Utils.My_quickcheck.print_sample
         ( module struct
-          include Src.Address
+          include Fir.Address
           include Qc
         end ) ;
       [%expect
@@ -76,16 +76,16 @@ let%test_module "On_env" =
 
 let%test_module "Atomic_int_pointers" =
   ( module struct
-    let e = Lazy.force Env.test_env
+    let e = Lazy.force Fir_test.Env.test_env
 
-    module Qc = Src.Address_gen.Atomic_int_pointers (struct
+    module Qc = Src.Address.Atomic_int_pointers (struct
       let env = e
     end)
 
     let%expect_test "liveness" =
-      Qx.print_sample
+      Utils.My_quickcheck.print_sample
         ( module struct
-          include Src.Address
+          include Fir.Address
           include Qc
         end ) ;
       [%expect
@@ -100,21 +100,21 @@ let%test_module "Atomic_int_pointers" =
     let%test_unit "generated lvalues have '*atomic_int' type" =
       test_type e
         (module Qc)
-        Src.Type.(int ~is_pointer:true ~is_atomic:true ())
+        Fir.Type.(int ~is_pointer:true ~is_atomic:true ())
   end )
 
 let%test_module "Atomic_bool_pointers" =
   ( module struct
-    let e = Lazy.force Env.test_env
+    let e = Lazy.force Fir_test.Env.test_env
 
-    module Qc = Src.Address_gen.Atomic_bool_pointers (struct
+    module Qc = Src.Address.Atomic_bool_pointers (struct
       let env = e
     end)
 
     let%expect_test "Atomic_bool_pointers: liveness" =
-      Qx.print_sample
+      Utils.My_quickcheck.print_sample
         ( module struct
-          include Src.Address
+          include Fir.Address
           include Qc
         end ) ;
       [%expect
@@ -128,5 +128,5 @@ let%test_module "Atomic_bool_pointers" =
     let%test_unit "generated lvalues have '*atomic_bool' type" =
       test_type e
         (module Qc)
-        Src.Type.(bool ~is_pointer:true ~is_atomic:true ())
+        Fir.Type.(bool ~is_pointer:true ~is_atomic:true ())
   end )

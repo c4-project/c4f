@@ -9,4 +9,4 @@
  (modules_without_implementation storelike_types)
  (libraries sexplib0 base base.caml stdio splittable_random accessor
    accessor_base travesty travesty.base_exts act.common act.litmus act.utils
-   act.fuzz act.fir))
+   act.fuzz act.fir act.fir_gen))

@@ -101,9 +101,4 @@ module Quickcheck_main = Quickcheck_generic (Address)
 
 include (Quickcheck_main : module type of Quickcheck_main with type t := t)
 
-module Quickcheck_atomic_ints (E : Env_types.S) : sig
-  type nonrec t = t [@@deriving sexp_of, quickcheck]
-end =
-  Quickcheck_generic (Address_gen.Atomic_int_pointers (E))
-
 let variable_of (ld : t) : Ac.C_id.t = Address.variable_of (src ld)

@@ -11,17 +11,21 @@
 
 (** Specialised Quickcheck generators for addresses *)
 
+open Import
+
+(** Type of lvalue generators. *)
+module type S = sig
+  type t = Fir.Address.t [@@deriving sexp_of, quickcheck]
+end
+
 (** Generates random addresses, constrained over the variables in the given
     environment. *)
-module On_env (E : Env_types.S) :
-  Act_utils.My_quickcheck.S_with_sexp with type t = Address.t
+module On_env (E : Fir.Env_types.S) : S
 
 (** Generates addresses over the given typing environment that have the type
     'atomic_int*'. *)
-module Atomic_int_pointers (E : Env_types.S) :
-  Act_utils.My_quickcheck.S_with_sexp with type t = Address.t
+module Atomic_int_pointers (E : Fir.Env_types.S) : S
 
 (** Generates addresses over the given typing environment that have the type
     'atomic_bool*'. *)
-module Atomic_bool_pointers (E : Env_types.S) :
-  Act_utils.My_quickcheck.S_with_sexp with type t = Address.t
+module Atomic_bool_pointers (E : Fir.Env_types.S) : S

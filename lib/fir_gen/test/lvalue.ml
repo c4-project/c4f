@@ -10,43 +10,42 @@
    project root for more information. *)
 
 open Base
-module Q = Base_quickcheck
-module Src = Act_fir
+open Import
 
-let variable_in (env : Src.Env.t) (l : Src.Lvalue.t) : bool =
-  Map.mem env (Src.Lvalue.variable_of l)
+let variable_in (env : Fir.Env.t) (l : Fir.Lvalue.t) : bool =
+  Map.mem env (Fir.Lvalue.variable_of l)
 
-let print_sample = Act_utils.My_quickcheck.print_sample
+let print_sample = Utils.My_quickcheck.print_sample
 
-let test_in_env (env : Src.Env.t)
-    (module Qc : Act_utils.My_quickcheck.S_with_sexp
-      with type t = Src.Lvalue.t) : unit =
+let test_in_env (env : Fir.Env.t)
+    (module Qc : Utils.My_quickcheck.S_with_sexp with type t = Fir.Lvalue.t)
+    : unit =
   Q.Test.run_exn
     (module Qc)
-    ~f:([%test_pred: Src.Lvalue.t] ~here:[[%here]] (variable_in env))
+    ~f:([%test_pred: Fir.Lvalue.t] ~here:[[%here]] (variable_in env))
 
-let test_type (env : Src.Env.t)
-    (module Qc : Act_utils.My_quickcheck.S_with_sexp
-      with type t = Src.Lvalue.t) (expected : Src.Type.t) : unit =
-  let module Tc = Src.Lvalue.Type_check (struct
+let test_type (env : Fir.Env.t)
+    (module Qc : Utils.My_quickcheck.S_with_sexp with type t = Fir.Lvalue.t)
+    (expected : Fir.Type.t) : unit =
+  let module Tc = Fir.Lvalue.Type_check (struct
     let env = env
   end) in
   Q.Test.run_exn
     (module Qc)
     ~f:(fun lv ->
-      [%test_result: Src.Type.t Or_error.t] ~here:[[%here]] (Tc.type_of lv)
+      [%test_result: Fir.Type.t Or_error.t] ~here:[[%here]] (Tc.type_of lv)
         ~expect:(Or_error.return expected))
 
 let%test_module "On_env" =
   ( module struct
     let%expect_test "sample" =
-      let e = Lazy.force Env.test_env in
-      let module Qc = Src.Lvalue_gen.On_env (struct
+      let e = Lazy.force Fir_test.Env.test_env in
+      let module Qc = Src.Lvalue.On_env (struct
         let env = e
       end) in
       print_sample
         ( module struct
-          include Src.Lvalue
+          include Fir.Lvalue
           include Qc
         end ) ;
       [%expect
@@ -69,27 +68,27 @@ let%test_module "On_env" =
         (Deref (Deref (Deref (Deref (Deref (Variable bar)))))) |}]
 
     let%test_unit "generated underlying variables in environment" =
-      let e = Lazy.force Env.test_env in
+      let e = Lazy.force Fir_test.Env.test_env in
       test_in_env e
-        ( module Src.Lvalue_gen.On_env (struct
+        ( module Src.Lvalue.On_env (struct
           let env = e
         end) )
   end )
 
 let%test_module "Int_values" =
   ( module struct
-    let e = Lazy.force Env.test_env
+    let e = Lazy.force Fir_test.Env.test_env
 
-    module Qc = Src.Lvalue_gen.Int_values (struct
+    module Qc = Src.Lvalue.Int_values (struct
       let env = e
     end)
 
-    let print_sample (e : Src.Env.t) =
+    let print_sample (e : Fir.Env.t) =
       print_sample
         ( module struct
-          include Src.Lvalue
+          include Fir.Lvalue
 
-          include Src.Lvalue_gen.Int_values (struct
+          include Src.Lvalue.Int_values (struct
             let env = e
           end)
         end )
@@ -105,19 +104,19 @@ let%test_module "Int_values" =
       test_in_env e (module Qc)
 
     let%test_unit "generated lvalues have 'int' type" =
-      test_type e (module Qc) Src.Type.(int ())
+      test_type e (module Qc) Fir.Type.(int ())
   end )
 
 let%test_module "Bool_values" =
   ( module struct
-    let e = Lazy.force Env.test_env
+    let e = Lazy.force Fir_test.Env.test_env
 
-    let print_sample (e : Src.Env.t) =
+    let print_sample (e : Fir.Env.t) =
       print_sample
         ( module struct
-          include Src.Lvalue
+          include Fir.Lvalue
 
-          include Src.Lvalue_gen.Bool_values (struct
+          include Src.Lvalue.Bool_values (struct
             let env = e
           end)
         end )
@@ -127,14 +126,14 @@ let%test_module "Bool_values" =
 
     let%test_unit "generated underlying variables in environment" =
       test_in_env e
-        ( module Src.Lvalue_gen.Bool_values (struct
+        ( module Src.Lvalue.Bool_values (struct
           let env = e
         end) )
 
     let%test_unit "generated lvalues have 'bool' type" =
       test_type e
-        ( module Src.Lvalue_gen.Bool_values (struct
+        ( module Src.Lvalue.Bool_values (struct
           let env = e
         end) )
-        Src.Type.(bool ())
+        Fir.Type.(bool ())
   end )

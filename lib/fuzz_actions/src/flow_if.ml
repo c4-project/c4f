@@ -10,19 +10,15 @@
    project root for more information. *)
 
 open Base
+open Import
 
-open struct
-  module A = Accessor
-  module Ac = Act_common
-  module Fir = Act_fir
-  module F = Act_fuzz
-end
-
-let prefix_name (rest : Ac.Id.t) : Ac.Id.t = Ac.Id.("flow" @: "if" @: rest)
+let prefix_name (rest : Common.Id.t) : Common.Id.t =
+  Common.Id.("flow" @: "if" @: rest)
 
 module Surround = struct
   module type S =
-    F.Action_types.S with type Payload.t = F.Payload_impl.Cond_surround.t
+    Fuzz.Action_types.S
+      with type Payload.t = Fuzz.Payload_impl.Cond_surround.t
 
   let readme_prelude : string =
     {| Removes a sublist of statements from the program, replacing them
@@ -38,12 +34,12 @@ module Surround = struct
         README. *)
 
     val t_branch_of_statements :
-      F.Subject.Statement.t list -> F.Subject.Block.t
+      Fuzz.Subject.Statement.t list -> Fuzz.Subject.Block.t
     (** [t_branch_of_statements stms] should construct the true-branch block
         given the original statement span [stms]. *)
 
     val f_branch_of_statements :
-      F.Subject.Statement.t list -> F.Subject.Block.t
+      Fuzz.Subject.Statement.t list -> Fuzz.Subject.Block.t
     (** [f_branch_of_statements stms] should construct the false-branch block
         given the original statement span [stms]. *)
 
@@ -53,18 +49,18 @@ module Surround = struct
         return a Quickcheck generator generating expressions over those
         variables. *)
 
-    val path_filter : F.Path_filter.t
+    val path_filter : Fuzz.Path_filter.t
     (** [path_filter] should apply any extra requirements on path filters. *)
   end) : S = struct
     include Basic
 
-    let name = prefix_name Ac.Id.("surround" @: name_suffix @: empty)
+    let name = prefix_name Common.Id.("surround" @: name_suffix @: empty)
 
     let readme () =
       let raw = readme_prelude ^ "\n\n" ^ readme_suffix in
       Act_utils.My_string.format_for_readme raw
 
-    module Surround = F.Payload_impl.Cond_surround
+    module Surround = Fuzz.Payload_impl.Cond_surround
 
     module Payload = Surround.Make (struct
       include Basic
@@ -72,19 +68,19 @@ module Surround = struct
       let path_filter _ = path_filter
     end)
 
-    let available : F.Availability.t =
-      F.Availability.is_filter_constructible Basic.path_filter
+    let available : Fuzz.Availability.t =
+      Fuzz.Availability.is_filter_constructible Basic.path_filter
         ~kind:Transform
 
-    let wrap_in_if (statements : F.Subject.Statement.t list)
-        ~(cond : Fir.Expression.t) : F.Subject.Statement.t =
-      A.construct Fir.Statement.if_stm
+    let wrap_in_if (statements : Fuzz.Subject.Statement.t list)
+        ~(cond : Fir.Expression.t) : Fuzz.Subject.Statement.t =
+      Accessor.construct Fir.Statement.if_stm
         (Fir.If.make ~cond
            ~t_branch:(Basic.t_branch_of_statements statements)
            ~f_branch:(Basic.f_branch_of_statements statements))
 
-    let run (test : F.Subject.Test.t) ~(payload : Payload.t) :
-        F.Subject.Test.t F.State.Monad.t =
+    let run (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
+        Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Surround.apply ~filter:path_filter payload ~test ~f:(fun cond ->
           wrap_in_if ~cond)
   end
@@ -100,18 +96,18 @@ module Surround = struct
 
     let cond_gen : Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t
         =
-      Fir.Expression_gen.gen_bools
+      Fir_gen.Expr.bool
 
-    let t_branch_of_statements (statements : F.Subject.Statement.t list) :
-        F.Subject.Block.t =
-      F.Subject.Block.make_generated ~statements ()
+    let t_branch_of_statements (statements : Fuzz.Subject.Statement.t list) :
+        Fuzz.Subject.Block.t =
+      Fuzz.Subject.Block.make_generated ~statements ()
 
     let f_branch_of_statements :
-        F.Subject.Statement.t list -> F.Subject.Block.t =
+        Fuzz.Subject.Statement.t list -> Fuzz.Subject.Block.t =
       t_branch_of_statements
 
-    let path_filter : F.Path_filter.t =
-      F.Path_filter.(
+    let path_filter : Fuzz.Path_filter.t =
+      Fuzz.Path_filter.(
         require_end_check empty
           ~check:(Stm_class (Has_not_any, [Fir.Statement_class.label])))
   end)
@@ -126,45 +122,46 @@ module Surround = struct
 
     let cond_gen : Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t
         =
-      Fir.Expression_gen.gen_tautologies
+      Fir_gen.Expr.tautology
 
-    let t_branch_of_statements (statements : F.Subject.Statement.t list) :
-        F.Subject.Block.t =
-      F.Subject.Block.make_generated ~statements ()
+    let t_branch_of_statements (statements : Fuzz.Subject.Statement.t list) :
+        Fuzz.Subject.Block.t =
+      Fuzz.Subject.Block.make_generated ~statements ()
 
-    let f_branch_of_statements (_statements : F.Subject.Statement.t list) :
-        F.Subject.Block.t =
-      Fir.Block.make ~metadata:F.Metadata.dead_code ()
+    let f_branch_of_statements (_statements : Fuzz.Subject.Statement.t list)
+        : Fuzz.Subject.Block.t =
+      Fir.Block.make ~metadata:Fuzz.Metadata.dead_code ()
 
-    let path_filter : F.Path_filter.t = F.Path_filter.empty
+    let path_filter : Fuzz.Path_filter.t = Fuzz.Path_filter.empty
   end)
 end
 
 module Transform = struct
-  module type S = F.Action_types.S with type Payload.t = F.Path.t
+  module type S = Fuzz.Action_types.S with type Payload.t = Fuzz.Path.t
 
   module Invert : S = struct
-    let name = prefix_name Ac.Id.("transform" @: "invert" @: empty)
+    let name = prefix_name Common.Id.("transform" @: "invert" @: empty)
 
     let readme () =
       Act_utils.My_string.format_for_readme
         {| Flips the conditional and branches of an if statement. |}
 
-    let path_filter : F.Path_filter.t =
-      F.Path_filter.(require_end_check empty ~check:(Stm_class (Is, [If])))
+    let path_filter : Fuzz.Path_filter.t =
+      Fuzz.Path_filter.(
+        require_end_check empty ~check:(Stm_class (Is, [If])))
 
-    let available : F.Availability.t =
-      F.Availability.is_filter_constructible path_filter ~kind:Transform
+    let available : Fuzz.Availability.t =
+      Fuzz.Availability.is_filter_constructible path_filter ~kind:Transform
 
     module Payload = struct
-      type t = F.Path.t [@@deriving sexp]
+      type t = Fuzz.Path.t [@@deriving sexp]
 
-      let gen : F.Path.t F.Payload_gen.t =
-        F.Payload_gen.path Transform ~filter:path_filter
+      let gen : Fuzz.Path.t Fuzz.Payload_gen.t =
+        Fuzz.Payload_gen.path Transform ~filter:path_filter
     end
 
-    let invert_if (ifs : F.Subject.Statement.If.t) : F.Subject.Statement.If.t
-        =
+    let invert_if (ifs : Fuzz.Subject.Statement.If.t) :
+        Fuzz.Subject.Statement.If.t =
       Fir.If.(
         make
           ~cond:(Fir.Expression.l_not (cond ifs))
@@ -172,24 +169,24 @@ module Transform = struct
           ~f_branch:(t_branch ifs)
         (* as above *))
 
-    let not_an_if (type leg) (stm : F.Subject.Statement.t) (_ : leg) :
+    let not_an_if (type leg) (stm : Fuzz.Subject.Statement.t) (_ : leg) :
         leg Or_error.t =
       Or_error.error_s
         [%message
           "Tried to if-invert an invalid statement"
-            ~stm:(stm : F.Subject.Statement.t)]
+            ~stm:(stm : Fuzz.Subject.Statement.t)]
 
     module Bm = Fir.Statement_traverse.Base_map (Or_error)
 
-    let invert_stm (stm : F.Subject.Statement.t) :
-        F.Subject.Statement.t Or_error.t =
+    let invert_stm (stm : Fuzz.Subject.Statement.t) :
+        Fuzz.Subject.Statement.t Or_error.t =
       Bm.bmap stm ~prim:(not_an_if stm) ~flow:(not_an_if stm)
         ~if_stm:(Fn.compose Or_error.return invert_if)
 
-    let run (test : F.Subject.Test.t) ~(payload : Payload.t) :
-        F.Subject.Test.t F.State.Monad.t =
-      F.State.Monad.Monadic.return
-        (F.Path_consumers.consume test ~filter:path_filter ~path:payload
+    let run (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
+        Fuzz.Subject.Test.t Fuzz.State.Monad.t =
+      Fuzz.State.Monad.Monadic.return
+        (Fuzz.Path_consumers.consume test ~filter:path_filter ~path:payload
            ~action:(Transform invert_stm))
   end
 end

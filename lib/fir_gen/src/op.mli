@@ -16,6 +16,8 @@
     functions for generating operations on expressions with specific output
     properties. *)
 
+open Import
+
 (** {1 Operand sets}
 
     We can generate a known-output operand expression with various types of
@@ -33,16 +35,17 @@
 
 module Operand_set : sig
   type t =
-    | One of Expression.t
-    | Two of Expression.t * Expression.t  (** Type of operand sets. *)
+    | One of Fir.Expression.t
+    | Two of Fir.Expression.t * Fir.Expression.t
+        (** Type of operand sets. *)
 end
 
 val bop :
-     (module Op_types.S_binary with type t = 't)
+     (module Fir.Op_types.S_binary with type t = 't)
   -> Operand_set.t
-  -> promote:('t -> Op.Binary.t)
-  -> out:Op_rule.Out.t
-  -> Expression.t Base_quickcheck.Generator.t
+  -> promote:('t -> Fir.Op.Binary.t)
+  -> out:Fir.Op_rule.Out.t
+  -> Fir.Expression.t Base_quickcheck.Generator.t
 (** [bop m operands ~promote ~out] generates a binary operation with operands
     drawn from [operands] and operators drawn from [m] via [promote], such
     that the output is guaranteed to match output rule [out]. *)

@@ -47,12 +47,15 @@ module On_mem_orders :
 (** {2 Generation and quickchecking}
 
     The main quickcheck instance for atomic loads generates any such loads,
-    without regard to type safety over a particular typing environment. *)
+    without regard to type safety over a particular typing environment.
 
-(** Generates random, type-safe atomic loads over the given variable typing
-    environment, restricted to atomic ints. *)
-module Quickcheck_atomic_ints (E : Env_types.S) :
-  Act_utils.My_quickcheck.S_with_sexp with type t = t
+    For more interesting quickcheck behaviour, see {!Act_fir_gen}. *)
+
+(** Generic building block for making custom quickcheck generators. *)
+module Quickcheck_generic
+    (A : Act_utils.My_quickcheck.S_with_sexp with type t := Address.t) : sig
+  type nonrec t = t [@@deriving sexp_of, quickcheck]
+end
 
 (** {2 Type checking} *)
 

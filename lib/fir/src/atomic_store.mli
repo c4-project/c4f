@@ -66,12 +66,3 @@ module Quickcheck_generic
     (Src : Act_utils.My_quickcheck.S_with_sexp with type t := Expression.t)
     (Dst : Act_utils.My_quickcheck.S_with_sexp with type t := Address.t) :
   Act_utils.My_quickcheck.S_with_sexp with type t = t
-
-(** There isn't a generic quickcheck instance for atomic stores, as we can't
-    guarantee type safety in general. *)
-
-(** [Quickcheck_ints (E)] generates random stores from atomic integers to
-    non-atomic integers, using [Src] as the variable typing environment for
-    sources and [Dst] as the environment for destinations. *)
-module Quickcheck_ints (Src : Env_types.S) (Dst : Env_types.S) :
-  Act_utils.My_quickcheck.S_with_sexp with type t = t

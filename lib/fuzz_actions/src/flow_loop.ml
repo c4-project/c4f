@@ -10,74 +10,72 @@
    project root for more information. *)
 
 open Base
+open Import
 
-open struct
-  module A = Accessor
-  module Ac = Act_common
-  module Fir = Act_fir
-  module F = Act_fuzz
-end
-
-let prefix_name (rest : Ac.Id.t) : Ac.Id.t = Ac.Id.("flow" @: "loop" @: rest)
+let prefix_name (rest : Common.Id.t) : Common.Id.t =
+  Common.Id.("flow" @: "loop" @: rest)
 
 module Insert = struct
   module type S =
-    F.Action_types.S
-      with type Payload.t = Fir.Expression.t F.Payload_impl.Insertion.t
+    Fuzz.Action_types.S
+      with type Payload.t = Fir.Expression.t Fuzz.Payload_impl.Insertion.t
 
   module While_false : S = struct
-    let name = prefix_name Ac.Id.("insert" @: "while" @: "false" @: empty)
+    let name =
+      prefix_name Common.Id.("insert" @: "while" @: "false" @: empty)
 
     let readme () : string =
       Act_utils.My_string.format_for_readme
         {| Inserts an empty while loop whose condition is known to be false,
           and whose body is marked as dead-code for future actions. |}
 
-    let available : F.Availability.t = F.Availability.has_threads
+    let available : Fuzz.Availability.t = Fuzz.Availability.has_threads
 
-    module Payload = F.Payload_impl.Insertion.Make (struct
+    module Payload = Fuzz.Payload_impl.Insertion.Make (struct
       type t = Fir.Expression.t [@@deriving sexp]
 
-      let path_filter _ = F.Path_filter.empty
+      let path_filter _ = Fuzz.Path_filter.empty
 
-      let gen (ins_path : F.Path.Flagged.t) : t F.Payload_gen.t =
-        F.Payload_gen.(
+      let gen (ins_path : Fuzz.Path.Flagged.t) : t Fuzz.Payload_gen.t =
+        Fuzz.Payload_gen.(
           let* vars = vars in
-          let tid = F.Path.tid (F.Path_flag.Flagged.path ins_path) in
+          let tid = Fuzz.Path.tid (Fuzz.Path_flag.Flagged.path ins_path) in
           let env =
-            F.Var.Map.env_satisfying_all vars ~scope:(Local tid)
+            Fuzz.Var.Map.env_satisfying_all vars ~scope:(Local tid)
               ~predicates:[]
           in
-          lift_quickcheck (Fir.Expression_gen.gen_falsehoods env))
+          lift_quickcheck (Fir_gen.Expr.falsehood env))
     end)
 
-    let make_while (to_insert : Fir.Expression.t) : F.Subject.Statement.t =
-      A.construct Fir.Statement.flow
+    let make_while (to_insert : Fir.Expression.t) : Fuzz.Subject.Statement.t
+        =
+      Accessor.construct Fir.Statement.flow
         Fir.Flow_block.(
           make
             ~header:(Header.While (While, to_insert))
-            ~body:(F.Subject.Block.make_dead_code ()))
+            ~body:(Fuzz.Subject.Block.make_dead_code ()))
 
     (* TODO(@MattWindsor91): unify this with things? *)
-    let run (subject : F.Subject.Test.t)
-        ~(payload : Fir.Expression.t F.Payload_impl.Insertion.t) :
-        F.Subject.Test.t F.State.Monad.t =
-      let to_insert = F.Payload_impl.Insertion.to_insert payload in
-      let path = F.Payload_impl.Insertion.where payload in
-      F.State.Monad.(
+    let run (subject : Fuzz.Subject.Test.t)
+        ~(payload : Fir.Expression.t Fuzz.Payload_impl.Insertion.t) :
+        Fuzz.Subject.Test.t Fuzz.State.Monad.t =
+      let to_insert = Fuzz.Payload_impl.Insertion.to_insert payload in
+      let path = Fuzz.Payload_impl.Insertion.where payload in
+      Fuzz.State.Monad.(
         (* NB: See discussion in Surround's apply function. *)
         add_expression_dependencies to_insert
-          ~scope:(Local (F.Path.tid (F.Path_flag.Flagged.path path)))
+          ~scope:(Local (Fuzz.Path.tid (Fuzz.Path_flag.Flagged.path path)))
         >>= fun () ->
         Monadic.return
-          (F.Path_consumers.consume_with_flags subject ~path
+          (Fuzz.Path_consumers.consume_with_flags subject ~path
              ~action:(Insert [make_while to_insert])))
   end
 end
 
 module Surround = struct
   module type S =
-    F.Action_types.S with type Payload.t = F.Payload_impl.Cond_surround.t
+    Fuzz.Action_types.S
+      with type Payload.t = Fuzz.Payload_impl.Cond_surround.t
 
   module Make (Basic : sig
     val kind : Fir.Flow_block.While.t
@@ -93,54 +91,56 @@ module Surround = struct
     val readme_suffix : string
     (** [readme_suffix] gets appended onto the end of the readme. *)
 
-    val path_filter : F.Availability.Context.t -> F.Path_filter.t
+    val path_filter : Fuzz.Availability.Context.t -> Fuzz.Path_filter.t
     (** [path_filter ctx] generates the filter for the loop path. *)
 
     val cond_gen : Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t
     (** [cond_gen] generates the conditional for the loop. *)
-  end) : S = F.Action.Make_surround (struct
+  end) : S = Fuzz.Action.Make_surround (struct
     let name =
       prefix_name
-        Ac.Id.("surround" @: Basic.kind_name @: Basic.name_suffix @: empty)
+        Common.Id.(
+          "surround" @: Basic.kind_name @: Basic.name_suffix @: empty)
 
     let surround_with = Basic.kind_name ^ " loops"
 
     let readme_suffix = Basic.readme_suffix
 
-    let available : F.Availability.t =
-      F.Availability.(
+    let available : Fuzz.Availability.t =
+      Fuzz.Availability.(
         M.(
           lift Basic.path_filter
           >>= is_filter_constructible ~kind:Transform_list))
 
     module Payload = struct
-      include F.Payload_impl.Cond_surround.Make (struct
+      include Fuzz.Payload_impl.Cond_surround.Make (struct
         let cond_gen = Basic.cond_gen
 
         let path_filter = Basic.path_filter
       end)
 
-      let where = F.Payload_impl.Cond_surround.where
+      let where = Fuzz.Payload_impl.Cond_surround.where
 
-      let src_exprs x = [F.Payload_impl.Cond_surround.cond x]
+      let src_exprs x = [Fuzz.Payload_impl.Cond_surround.cond x]
     end
 
-    let run_pre (test : F.Subject.Test.t) ~(payload : Payload.t) :
-        F.Subject.Test.t F.State.Monad.t =
-      ignore payload ; F.State.Monad.return test
+    let run_pre (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
+        Fuzz.Subject.Test.t Fuzz.State.Monad.t =
+      ignore payload ;
+      Fuzz.State.Monad.return test
 
-    let wrap (statements : F.Metadata.t Fir.Statement.t list)
-        ~(payload : Payload.t) : F.Metadata.t Fir.Statement.t =
-      let cond = F.Payload_impl.Cond_surround.cond payload in
-      A.construct Fir.Statement.flow
+    let wrap (statements : Fuzz.Metadata.t Fir.Statement.t list)
+        ~(payload : Payload.t) : Fuzz.Metadata.t Fir.Statement.t =
+      let cond = Fuzz.Payload_impl.Cond_surround.cond payload in
+      Accessor.construct Fir.Statement.flow
         (Fir.Flow_block.while_loop ~kind:Basic.kind ~cond
-           ~body:(F.Subject.Block.make_generated ~statements ()))
+           ~body:(Fuzz.Subject.Block.make_generated ~statements ()))
   end)
 
-  let live_surround_path_filter _ : F.Path_filter.t =
+  let live_surround_path_filter _ : Fuzz.Path_filter.t =
     (* Don't surround breaks and continues in live code; doing so causes them
        to affect the new surrounding loop, which is a semantic change. *)
-    F.Path_filter.(
+    Fuzz.Path_filter.(
       require_end_check empty
         ~check:
           (Stm_class
@@ -162,9 +162,9 @@ module Surround = struct
 
     let cond_gen : Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t
         =
-      Fir.Expression_gen.gen_falsehoods
+      Fir_gen.Expr.falsehood
 
-    let path_filter : F.Availability.Context.t -> F.Path_filter.t =
+    let path_filter : Fuzz.Availability.Context.t -> Fuzz.Path_filter.t =
       live_surround_path_filter
   end)
 
@@ -181,10 +181,10 @@ module Surround = struct
 
     let cond_gen : Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t
         =
-      Fir.Expression_gen.gen_bools
+      Fir_gen.Expr.bool
 
-    let path_filter (_ : F.Availability.Context.t) : F.Path_filter.t =
-      F.Path_filter.(in_dead_code_only empty)
+    let path_filter (_ : Fuzz.Availability.Context.t) : Fuzz.Path_filter.t =
+      Fuzz.Path_filter.(in_dead_code_only empty)
   end)
 
   module While_dead : S = Make (struct
@@ -200,24 +200,24 @@ module Surround = struct
 
     let cond_gen : Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t
         =
-      Fir.Expression_gen.gen_bools
+      Fir_gen.Expr.bool
 
-    let path_filter (_ : F.Availability.Context.t) : F.Path_filter.t =
-      F.Path_filter.(in_dead_code_only empty)
+    let path_filter (_ : Fuzz.Availability.Context.t) : Fuzz.Path_filter.t =
+      Fuzz.Path_filter.(in_dead_code_only empty)
   end)
 
   module For_kv_payload = struct
     type t =
-      { lc_var: Ac.Litmus_id.t
+      { lc_var: Common.Litmus_id.t
       ; lc_type: Fir.Type.t
       ; kv_val: Fir.Constant.t
       ; kv_expr: Fir.Expression.t
-      ; where: F.Path.Flagged.t }
+      ; where: Fuzz.Path.Flagged.t }
     [@@deriving sexp, fields]
 
     let lc_expr (x : t) : Fir.Expression.t =
-      let name = Ac.Litmus_id.variable_name x.lc_var in
-      let lc_tvar = Ac.C_named.make x.lc_type ~name in
+      let name = Common.Litmus_id.variable_name x.lc_var in
+      let lc_tvar = Common.C_named.make x.lc_type ~name in
       Fir.Expression.lvalue (Fir.Lvalue.on_value_of_typed_id lc_tvar)
 
     let src_exprs (x : t) : Fir.Expression.t list =
@@ -228,9 +228,10 @@ module Surround = struct
   end
 
   module For_kv_once :
-    F.Action_types.S with type Payload.t = For_kv_payload.t =
-  F.Action.Make_surround (struct
-    let name = prefix_name Ac.Id.("surround" @: "for" @: "once-kv" @: empty)
+    Fuzz.Action_types.S with type Payload.t = For_kv_payload.t =
+  Fuzz.Action.Make_surround (struct
+    let name =
+      prefix_name Common.Id.("surround" @: "for" @: "once-kv" @: empty)
 
     let surround_with : string = "for-loops"
 
@@ -239,23 +240,24 @@ module Surround = struct
         (fresh) counter to the known value of an existing variable and
         compares it in such a way as to execute only once. |}
 
-    let is_int : F.Var.Record.t -> bool =
+    let is_int : Fuzz.Var.Record.t -> bool =
       Fir.Type.Prim.eq ~to_:Int
         Accessor.(
-          F.Var.Record.Access.type_of @> Fir.Type.Access.basic_type
+          Fuzz.Var.Record.Access.type_of @> Fir.Type.Access.basic_type
           @> Fir.Type.Basic.Access.prim)
 
-    let var_preds = [F.Var.Record.has_known_value; is_int]
+    let var_preds = [Fuzz.Var.Record.has_known_value; is_int]
 
     (* These may induce atomic loads, and so can't be in atomic blocks. *)
-    let path_filter (ctx : F.Availability.Context.t) =
-      F.Path_filter.(
+    let path_filter (ctx : Fuzz.Availability.Context.t) =
+      Fuzz.Path_filter.(
         not_in_atomic_block
-        @@ F.Availability.in_thread_with_variables ~predicates:var_preds ctx
+        @@ Fuzz.Availability.in_thread_with_variables ~predicates:var_preds
+             ctx
         @@ live_surround_path_filter ctx)
 
-    let available : F.Availability.t =
-      F.Availability.(
+    let available : Fuzz.Availability.t =
+      Fuzz.Availability.(
         has_variables ~predicates:var_preds
         + M.(
             lift path_filter >>= is_filter_constructible ~kind:Transform_list))
@@ -263,16 +265,16 @@ module Surround = struct
     module Payload = struct
       include For_kv_payload
 
-      let access_of_var (vrec : Fir.Env.Record.t Ac.C_named.t) :
-          Fir.Expression.t F.Payload_gen.t =
+      let access_of_var (vrec : Fir.Env.Record.t Common.C_named.t) :
+          Fir.Expression.t Fuzz.Payload_gen.t =
         let var =
-          Ac.C_named.map_right
+          Common.C_named.map_right
             ~f:(Accessor_base.get Fir.Env.Record.type_of)
             vrec
         in
-        let ty = Ac.C_named.value var in
+        let ty = Common.C_named.value var in
         (* TODO(@MattWindsor91): is this duplicating something? *)
-        F.Payload_gen.(
+        Fuzz.Payload_gen.(
           if Fir.Type.is_atomic ty then
             let+ mo = lift_quickcheck Fir.Mem_order.gen_load in
             Fir.Expression.atomic_load
@@ -283,45 +285,47 @@ module Surround = struct
             return
               (Fir.Expression.lvalue (Fir.Lvalue.on_value_of_typed_id var)))
 
-      let known_value_val (vrec : Fir.Env.Record.t Ac.C_named.t) :
-          Fir.Constant.t F.Payload_gen.t =
-        vrec |> Ac.C_named.value
+      let known_value_val (vrec : Fir.Env.Record.t Common.C_named.t) :
+          Fir.Constant.t Fuzz.Payload_gen.t =
+        vrec |> Common.C_named.value
         |> Accessor_base.get_option Fir.Env.Record.known_value
         |> Result.of_option
              ~error:
                (Error.of_string "chosen value should have a known value")
-        |> F.Payload_gen.Inner.return
+        |> Fuzz.Payload_gen.Inner.return
 
-      let known_value_var (scope : Ac.Scope.t) :
-          Fir.Env.Record.t Ac.C_named.t F.Payload_gen.t =
+      let known_value_var (scope : Common.Scope.t) :
+          Fir.Env.Record.t Common.C_named.t Fuzz.Payload_gen.t =
         (* TODO(@MattWindsor91): this shares a lot of DNA with atomic_store
            redundant. *)
-        F.Payload_gen.(
+        Fuzz.Payload_gen.(
           let* vs = vars in
           let env =
-            F.Var.Map.env_satisfying_all ~scope vs ~predicates:var_preds
+            Fuzz.Var.Map.env_satisfying_all ~scope vs ~predicates:var_preds
           in
           lift_quickcheck (Fir.Env.gen_random_var_with_record env))
 
-      let counter_type (vrec : Fir.Env.Record.t Ac.C_named.t) : Fir.Type.t =
+      let counter_type (vrec : Fir.Env.Record.t Common.C_named.t) :
+          Fir.Type.t =
         let acc =
           Accessor_base.(
             Fir.Env.Record.type_of @> Fir.Type.Access.basic_type
             @> Fir.Type.Basic.Access.prim)
         in
-        let prim = Accessor_base.get acc (Ac.C_named.value vrec) in
+        let prim = Accessor_base.get acc (Common.C_named.value vrec) in
         Fir.Type.make
           (Fir.Type.Basic.make prim ~is_atomic:false)
           ~is_pointer:false ~is_volatile:false
 
-      let gen : t F.Payload_gen.t =
-        F.Payload_gen.(
+      let gen : t Fuzz.Payload_gen.t =
+        Fuzz.Payload_gen.(
           let* filter =
             lift (Fn.compose path_filter Context.to_availability)
           in
           let* where = path_with_flags Transform_list ~filter in
           let scope =
-            Ac.Scope.Local (F.Path.tid (F.Path_flag.Flagged.path where))
+            Common.Scope.Local
+              (Fuzz.Path.tid (Fuzz.Path_flag.Flagged.path where))
           in
           let* lc_var = fresh_var scope in
           let* kv_var = known_value_var scope in
@@ -331,23 +335,24 @@ module Surround = struct
           {lc_var; lc_type; kv_val; kv_expr; where})
     end
 
-    let register_loop_counter (v : Ac.Litmus_id.t) (ty : Fir.Type.t)
-        (test : F.Subject.Test.t) : F.Subject.Test.t F.State.Monad.t =
+    let register_loop_counter (v : Common.Litmus_id.t) (ty : Fir.Type.t)
+        (test : Fuzz.Subject.Test.t) : Fuzz.Subject.Test.t Fuzz.State.Monad.t
+        =
       (* Note that this sets the known value of the loop counter to 0, so we
          have to erase it again; otherwise, the for loop's activity on the
          loop counter would be ignored by the rest of the fuzzer and lead to
          semantic violations. *)
       let value = Fir.Constant.zero_of_type ty in
       let init = Fir.Initialiser.make ~ty ~value in
-      F.State.Monad.register_and_declare_var v init test
+      Fuzz.State.Monad.register_and_declare_var v init test
 
-    let run_pre (test : F.Subject.Test.t) ~(payload : Payload.t) :
-        F.Subject.Test.t F.State.Monad.t =
-      F.State.Monad.Let_syntax.(
+    let run_pre (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
+        Fuzz.Subject.Test.t Fuzz.State.Monad.t =
+      Fuzz.State.Monad.Let_syntax.(
         let%bind test' =
           register_loop_counter payload.lc_var payload.lc_type test
         in
-        let%map () = F.State.Monad.erase_var_value payload.lc_var in
+        let%map () = Fuzz.State.Monad.erase_var_value payload.lc_var in
         test')
 
     let direction (payload : Payload.t) : Act_fir.Flow_block.For.Direction.t
@@ -362,15 +367,18 @@ module Surround = struct
     let control (payload : Payload.t) : Act_fir.Flow_block.For.t =
       Fir.Flow_block.For.make
         ~lvalue:
-          (Fir.Lvalue.variable (Ac.Litmus_id.variable_name payload.lc_var))
+          (Fir.Lvalue.variable
+             (Common.Litmus_id.variable_name payload.lc_var))
         ~direction:(direction payload)
         ~init_value:(Fir.Expression.constant payload.kv_val)
         ~cmp_value:payload.kv_expr
 
-    let wrap (statements : F.Subject.Statement.t list) ~(payload : Payload.t)
-        : F.Subject.Statement.t =
+    let wrap (statements : Fuzz.Subject.Statement.t list)
+        ~(payload : Payload.t) : Fuzz.Subject.Statement.t =
       let control = control payload in
-      let body = F.Subject.Block.make_generated ~statements () in
-      Fir.(A.construct Statement.flow (Flow_block.for_loop ~control ~body))
+      let body = Fuzz.Subject.Block.make_generated ~statements () in
+      Fir.(
+        Accessor.construct Statement.flow
+          (Flow_block.for_loop ~control ~body))
   end)
 end

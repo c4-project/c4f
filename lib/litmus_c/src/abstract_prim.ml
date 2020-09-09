@@ -20,7 +20,7 @@ end
 
 let constant : Ast_basic.Constant.t -> Fir.Constant.t Or_error.t = function
   | Integer k ->
-      Or_error.return (Fir.Constant.int k)
+      Ok (Fir.Constant.int k)
   | Char _ | Float _ ->
       Or_error.error_string "Unsupported constant type"
 
@@ -99,14 +99,14 @@ let qualifiers_to_type (quals : [> Ast.Decl_spec.t] list)
 let declarator_to_id :
     Ast.Declarator.t -> (Act_common.C_id.t * bool) Or_error.t = function
   | {pointer= Some [[]]; direct= Id id} ->
-      Or_error.return (id, true)
+      Ok (id, true)
   | {pointer= Some _; _} as decl ->
       Or_error.error_s
         [%message
           "Complex pointers not supported yet"
             ~declarator:(decl : Ast.Declarator.t)]
   | {pointer= None; direct= Id id} ->
-      Or_error.return (id, false)
+      Ok (id, false)
   | x ->
       Or_error.error_s
         [%message
@@ -166,7 +166,7 @@ let param_decl : Ast.Param_decl.t -> Fir.Type.t Named.t Or_error.t = function
 
 let rec expr_to_lvalue : Ast.Expr.t -> Fir.Lvalue.t Or_error.t = function
   | Identifier id ->
-      Or_error.return (Fir.Lvalue.variable id)
+      Ok (Fir.Lvalue.variable id)
   | Brackets expr ->
       expr_to_lvalue expr
   | Prefix (`Deref, expr) ->
@@ -195,7 +195,7 @@ let lvalue_to_identifier (lv : Fir.Lvalue.t) : Act_common.C_id.t Or_error.t =
   if Fir.Lvalue.is_deref lv then
     Or_error.error_s
       [%message "Expected identifier" ~got:(lv : Fir.Lvalue.t)]
-  else Or_error.return (Fir.Lvalue.variable_of lv)
+  else Ok (Fir.Lvalue.variable_of lv)
 
 let expr_to_identifier (expr : Ast.Expr.t) : Act_common.C_id.t Or_error.t =
   Or_error.(expr |> expr_to_lvalue >>= lvalue_to_identifier)

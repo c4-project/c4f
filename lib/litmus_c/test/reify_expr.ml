@@ -13,6 +13,7 @@ open Base
 
 open struct
   module Fir = Act_fir
+  module Fir_gen = Act_fir_gen
   module Src = Act_litmus_c
 end
 
@@ -77,23 +78,23 @@ let%test_module "round trips" =
         test_round_trip (module Qc)
     end
 
-    module Int_values = Make (Fir.Expression_gen.Int_values)
+    module Int_values = Make (Fir_gen.Expr.Int_values)
 
     let%test_unit "round-trip on integer expressions" =
       Int_values.run_round_trip ()
 
-    module Int_zeroes = Make (Fir.Expression_gen.Int_zeroes)
+    module Int_zeroes = Make (Fir_gen.Expr.Int_zeroes)
 
     let%test_unit "round-trip on integer zeroes" =
       Int_zeroes.run_round_trip ()
 
-    module Bool_values = Make (Fir.Expression_gen.Bool_values)
+    module Bool_values = Make (Fir_gen.Expr.Bool_values)
 
     let%test_unit "round-trip on Boolean expressions" =
       Bool_values.run_round_trip ()
 
     module Bool_tautologies_in (E : Fir.Env_types.S) = struct
-      module K = Fir.Expression_gen.Bool_known (E)
+      module K = Fir_gen.Expr.Bool_known (E)
       include K.Tautologies
     end
 
@@ -103,7 +104,7 @@ let%test_module "round trips" =
       Bool_tautologies.run_round_trip ()
 
     module Bool_falsehoods_in (E : Fir.Env_types.S) = struct
-      module K = Fir.Expression_gen.Bool_known (E)
+      module K = Fir_gen.Expr.Bool_known (E)
       include K.Tautologies
     end
 

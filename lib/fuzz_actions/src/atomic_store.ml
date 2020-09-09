@@ -10,21 +10,15 @@
    project root for more information. *)
 
 open Base
+open Import
 
-open struct
-  module A = Accessor_base
-  module Ac = Act_common
-  module Fir = Act_fir
-  module F = Act_fuzz
-end
-
-let prefix_name (rest : Ac.Id.t) : Ac.Id.t =
-  Ac.Id.("atomic" @: "store" @: rest)
+let prefix_name (rest : Common.Id.t) : Common.Id.t =
+  Common.Id.("atomic" @: "store" @: rest)
 
 module Insert = struct
   module type S =
-    F.Action_types.S
-      with type Payload.t = Fir.Atomic_store.t F.Payload_impl.Insertion.t
+    Fuzz.Action_types.S
+      with type Payload.t = Fir.Atomic_store.t Fuzz.Payload_impl.Insertion.t
 
   let readme_preamble : string =
     {|
@@ -34,7 +28,7 @@ module Insert = struct
 
   (** Functor for generating variants of the store action. *)
   module Make (B : sig
-    val name_suffix : Ac.Id.t
+    val name_suffix : Common.Id.t
     (** [name_suffix] is the name of the action, less 'store.make'. *)
 
     val readme_insert : string
@@ -44,11 +38,11 @@ module Insert = struct
     val dst_type : Fir.Type.Basic.t
     (** [dst_type] is the value type of the destination. *)
 
-    val path_filter : F.Path_filter.t
+    val path_filter : Fuzz.Path_filter.t
     (** [path_filter] is the filter to apply on statement insertion paths
         before considering them for the atomic store. *)
 
-    val extra_dst_restrictions : (F.Var.Record.t -> bool) list
+    val extra_dst_restrictions : (Fuzz.Var.Record.t -> bool) list
     (** [extra_dst_restrictions] is a list of additional restrictions to
         place on the destination variables (for example, 'must not have
         dependencies'). *)
@@ -60,7 +54,7 @@ module Insert = struct
     module Quickcheck (Src : Fir.Env_types.S) (Dst : Fir.Env_types.S) :
       Act_utils.My_quickcheck.S_with_sexp with type t := Fir.Atomic_store.t
   end) : S = Storelike.Make (struct
-    let name = prefix_name Ac.Id.("insert" @: B.name_suffix)
+    let name = prefix_name Common.Id.("insert" @: B.name_suffix)
 
     let readme_preamble : string list = [readme_preamble; B.readme_insert]
 
@@ -68,11 +62,11 @@ module Insert = struct
 
     (* No atomic stores are transaction-safe, so we forbid their generation
        in atomic blocks. *)
-    let path_filter = F.Path_filter.not_in_atomic_block @@ path_filter
+    let path_filter = Fuzz.Path_filter.not_in_atomic_block @@ path_filter
 
     type t = Fir.Atomic_store.t [@@deriving sexp]
 
-    let gen ~(src : Fir.Env.t) ~(dst : Fir.Env.t) ~(vars : F.Var.Map.t)
+    let gen ~(src : Fir.Env.t) ~(dst : Fir.Env.t) ~(vars : Fuzz.Var.Map.t)
         ~(tid : int) : t Base_quickcheck.Generator.t =
       let module Src = struct
         let env = src
@@ -84,13 +78,15 @@ module Insert = struct
       ignore vars ; ignore tid ; G.quickcheck_generator
 
     let new_locals (_ : Fir.Atomic_store.t) :
-        Fir.Initialiser.t Ac.C_named.Alist.t =
+        Fir.Initialiser.t Common.C_named.Alist.t =
       []
 
     let to_stms (x : Fir.Atomic_store.t) : Fir.Prim_statement.t list =
-      [A.(construct Fir.(Prim_statement.atomic @> Atomic_statement.store)) x]
+      [ Accessor.construct
+          Fir.(Prim_statement.atomic @> Atomic_statement.store)
+          x ]
 
-    let dst_ids (x : Fir.Atomic_store.t) : Ac.C_id.t list =
+    let dst_ids (x : Fir.Atomic_store.t) : Common.C_id.t list =
       [Fir.Address.variable_of (Fir.Atomic_store.dst x)]
 
     let src_exprs (x : Fir.Atomic_store.t) : Fir.Expression.t list =
@@ -98,13 +94,13 @@ module Insert = struct
   end)
 
   module Int_normal : S = Make (struct
-    let name_suffix = Ac.Id.("int" @: "normal" @: empty)
+    let name_suffix = Common.Id.("int" @: "normal" @: empty)
 
     let readme_insert : string =
       "This variant can insert anywhere and target any source and \
        destination."
 
-    let path_filter = F.Path_filter.empty
+    let path_filter = Fuzz.Path_filter.empty
 
     let extra_dst_restrictions =
       [Storelike.Dst_restriction.forbid_dependencies]
@@ -115,18 +111,18 @@ module Insert = struct
 
     let dst_type = Fir.Type.Basic.int ~is_atomic:true ()
 
-    module Quickcheck = Fir.Atomic_store.Quickcheck_ints
+    module Quickcheck = Fir_gen.Atomic_store.Int
   end)
 
   module Int_dead : S = Make (struct
-    let name_suffix = Ac.Id.("int" @: "dead" @: empty)
+    let name_suffix = Common.Id.("int" @: "dead" @: empty)
 
     let readme_insert : string =
       {| This variant can target any source and destination, but only inserts
        into dead code.  As it only targets dead code, it does not add
        dependences or erase known-values. |}
 
-    let path_filter = F.Path_filter.(empty |> in_dead_code_only)
+    let path_filter = Fuzz.Path_filter.(empty |> in_dead_code_only)
 
     let extra_dst_restrictions = []
 
@@ -136,19 +132,19 @@ module Insert = struct
 
     let dst_type = Fir.Type.Basic.int ~is_atomic:true ()
 
-    module Quickcheck = Fir.Atomic_store.Quickcheck_ints
+    module Quickcheck = Fir_gen.Atomic_store.Int
   end)
 
   module Int_redundant : S = Make (struct
-    let name_suffix = Ac.Id.("int" @: "redundant" @: empty)
+    let name_suffix = Common.Id.("int" @: "redundant" @: empty)
 
     let readme_insert : string =
       {| This variant can insert anywhere, but only stores the known value of
        a destination back to itself. |}
 
-    let path_filter = F.Path_filter.empty
+    let path_filter = Fuzz.Path_filter.empty
 
-    let extra_dst_restrictions = [F.Var.Record.has_known_value]
+    let extra_dst_restrictions = [Fuzz.Var.Record.has_known_value]
 
     module Flags = struct
       let erase_known_values = false
@@ -164,7 +160,7 @@ module Insert = struct
     struct
       type t = Fir.Atomic_store.t [@@deriving sexp]
 
-      module Q_dst = Fir.Address_gen.Atomic_int_pointers (Dst)
+      module Q_dst = Fir_gen.Address.Atomic_int_pointers (Dst)
 
       let quickcheck_observer = Fir.Atomic_store.quickcheck_observer
 
@@ -197,16 +193,17 @@ module Insert = struct
 end
 
 module Transform = struct
-  module Xchgify : F.Action_types.S with type Payload.t = F.Path.t = struct
-    let name = prefix_name Ac.Id.("transform" @: "xchgify" @: empty)
+  module Xchgify : Fuzz.Action_types.S with type Payload.t = Fuzz.Path.t =
+  struct
+    let name = prefix_name Common.Id.("transform" @: "xchgify" @: empty)
 
     let readme () =
       {| Promotes a random atomic store to an atomic exchange whose value is
        discarded. |}
 
-    let path_filter : F.Path_filter.t Lazy.t =
+    let path_filter : Fuzz.Path_filter.t Lazy.t =
       lazy
-        F.Path_filter.(
+        Fuzz.Path_filter.(
           empty
           |> require_end_check
                ~check:
@@ -214,20 +211,20 @@ module Transform = struct
                     (Is, [Fir.Statement_class.atomic ~specifically:Store ()])))
 
     module Payload = struct
-      type t = F.Path.t [@@deriving sexp]
+      type t = Fuzz.Path.t [@@deriving sexp]
 
-      let gen : t F.Payload_gen.t =
+      let gen : t Fuzz.Payload_gen.t =
         let filter = Lazy.force path_filter in
-        F.Payload_gen.path Transform ~filter
+        Fuzz.Payload_gen.path Transform ~filter
     end
 
-    let available : F.Availability.t =
-      F.Availability.is_filter_constructible (Lazy.force path_filter)
+    let available : Fuzz.Availability.t =
+      Fuzz.Availability.is_filter_constructible (Lazy.force path_filter)
         ~kind:Transform
 
     module Atoms =
       Travesty.Traversable.Chain0
-        (F.Subject.Statement.On_primitives)
+        (Fuzz.Subject.Statement.On_primitives)
         (Fir.Prim_statement.On_atomics)
     module AtomsM = Atoms.On_monad (Or_error)
 
@@ -238,7 +235,7 @@ module Transform = struct
     let a_store_action (s : Fir.Atomic_store.t) :
         Fir.Atomic_statement.t Or_error.t =
       Ok
-        (A.construct Fir.Atomic_statement.xchg
+        (Accessor.construct Fir.Atomic_statement.xchg
            Fir.Atomic_store.(
              Fir.Atomic_xchg.make ~obj:(dst s) ~desired:(src s) ~mo:(mo s)))
 
@@ -249,14 +246,14 @@ module Transform = struct
         ~xchg:not_a_store_action ~store:a_store_action
 
     let xchgify :
-           F.Metadata.t Fir.Statement.t
-        -> F.Metadata.t Fir.Statement.t Or_error.t =
+           Fuzz.Metadata.t Fir.Statement.t
+        -> Fuzz.Metadata.t Fir.Statement.t Or_error.t =
       AtomsM.map_m ~f:xchgify_atomic
 
-    let run (subject : F.Subject.Test.t) ~(payload : F.Path.t) :
-        F.Subject.Test.t F.State.Monad.t =
-      F.State.Monad.Monadic.return
-        (F.Path_consumers.consume subject ~filter:(Lazy.force path_filter)
+    let run (subject : Fuzz.Subject.Test.t) ~(payload : Fuzz.Path.t) :
+        Fuzz.Subject.Test.t Fuzz.State.Monad.t =
+      Fuzz.State.Monad.Monadic.return
+        (Fuzz.Path_consumers.consume subject ~filter:(Lazy.force path_filter)
            ~path:payload ~action:(Transform xchgify))
   end
 end

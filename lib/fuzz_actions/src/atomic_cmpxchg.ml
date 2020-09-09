@@ -2,38 +2,34 @@
 
    Copyright (c) 2018--2020 Matt Windsor and contributors
 
-   ACT itself is licensed under the MIT License. See the LICENSE file in the
-   project root for more information.
+   CommonT itself is licensed under the MIT License. See the LICENSE file in
+   the project root for more information.
 
-   ACT is based in part on code from the Herdtools7 project
+   CommonT is based in part on code from the Herdtools7 project
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open struct
-  module A = Accessor_base
-  module Ac = Act_common
-  module Fir = Act_fir
-  module F = Act_fuzz
-end
+open Import
 
-let prefix_name (rest : Ac.Id.t) : Ac.Id.t =
-  Ac.Id.("atomic" @: "cmpxchg" @: rest)
+let prefix_name (rest : Common.Id.t) : Common.Id.t =
+  Common.Id.("atomic" @: "cmpxchg" @: rest)
 
 module Insert = struct
   module Inner_payload = struct
     type t =
-      { out_var: Ac.Litmus_id.t
-      ; exp_var: Ac.Litmus_id.t
+      { out_var: Common.Litmus_id.t
+      ; exp_var: Common.Litmus_id.t
       ; exp_val: Fir.Constant.t
       ; cmpxchg: Fir.Expression.t Fir.Atomic_cmpxchg.t }
     [@@deriving compare, sexp]
   end
 
   module Int_succeed :
-    F.Action_types.S
-      with type Payload.t = Inner_payload.t F.Payload_impl.Insertion.t =
+    Fuzz.Action_types.S
+      with type Payload.t = Inner_payload.t Fuzz.Payload_impl.Insertion.t =
   Storelike.Make (struct
-    let name = prefix_name Ac.Id.("insert" @: "int" @: "succeed" @: empty)
+    let name =
+      prefix_name Common.Id.("insert" @: "int" @: "succeed" @: empty)
 
     let readme_preamble : string list =
       [ {| Inserts an atomic int compare-exchange that always succeeds, and a new
@@ -49,24 +45,24 @@ module Insert = struct
 
     type t = Inner_payload.t [@@deriving sexp]
 
-    let path_filter = F.Path_filter.empty
+    let path_filter = Fuzz.Path_filter.empty
 
     let extra_dst_restrictions =
       [ Storelike.Dst_restriction.forbid_dependencies
-      ; F.Var.Record.has_known_value ]
+      ; Fuzz.Var.Record.has_known_value ]
 
     module Flags = struct
       let erase_known_values = true
     end
 
-    let gen_vars ~(vars : F.Var.Map.t) :
-        (Ac.C_id.t * Ac.C_id.t) Base_quickcheck.Generator.t =
+    let gen_vars ~(vars : Fuzz.Var.Map.t) :
+        (Common.C_id.t * Common.C_id.t) Base_quickcheck.Generator.t =
       Base_quickcheck.Generator.(
         Let_syntax.(
-          let%bind out_var = F.Var.Map.gen_fresh_var vars in
+          let%bind out_var = Fuzz.Var.Map.gen_fresh_var vars in
           let%map exp_var =
-            filter (F.Var.Map.gen_fresh_var vars) ~f:(fun id ->
-                not (Ac.C_id.equal id out_var))
+            filter (Fuzz.Var.Map.gen_fresh_var vars) ~f:(fun id ->
+                not (Common.C_id.equal id out_var))
           in
           (out_var, exp_var)))
 
@@ -75,7 +71,7 @@ module Insert = struct
       let module Dst = struct
         let env = dst
       end in
-      let module Obj = Fir.Address_gen.Atomic_int_pointers (Dst) in
+      let module Obj = Fir_gen.Address.Atomic_int_pointers (Dst) in
       Base_quickcheck.Generator.(
         filter_map Obj.quickcheck_generator ~f:(fun obj ->
             match
@@ -97,20 +93,20 @@ module Insert = struct
           in
           (succ, fail)))
 
-    let gen ~(src : Fir.Env.t) ~(dst : Fir.Env.t) ~(vars : F.Var.Map.t)
+    let gen ~(src : Fir.Env.t) ~(dst : Fir.Env.t) ~(vars : Fuzz.Var.Map.t)
         ~(tid : int) : Inner_payload.t Base_quickcheck.Generator.t =
       let module Src = struct
         let env = src
       end in
-      let module Expr = Fir.Expression_gen.Int_values (Src) in
+      let module Expr = Fir_gen.Expr.Int_values (Src) in
       Base_quickcheck.Generator.(
         Let_syntax.(
           let%bind out_var_c, exp_var_c = gen_vars ~vars in
           let%bind succ, fail = gen_mos in
           let%bind obj, exp_val = gen_obj ~dst in
           let%map desired = Expr.quickcheck_generator in
-          let out_var = Ac.Litmus_id.local tid out_var_c in
-          let exp_var = Ac.Litmus_id.local tid exp_var_c in
+          let out_var = Common.Litmus_id.local tid out_var_c in
+          let exp_var = Common.Litmus_id.local tid exp_var_c in
           let expected = Fir.Address.of_variable_ref exp_var_c in
           let cmpxchg =
             Fir.Atomic_cmpxchg.make ~obj ~expected ~desired ~succ ~fail
@@ -120,11 +116,11 @@ module Insert = struct
     let dst_type : Fir.Type.Basic.t = Fir.Type.Basic.int ~is_atomic:true ()
 
     let new_locals (x : Inner_payload.t) :
-        Fir.Initialiser.t Ac.C_named.Alist.t =
-      [ ( Ac.Litmus_id.variable_name x.out_var
+        Fir.Initialiser.t Common.C_named.Alist.t =
+      [ ( Common.Litmus_id.variable_name x.out_var
         , Fir.Initialiser.make ~ty:(Fir.Type.bool ())
             ~value:Fir.Constant.truth )
-      ; ( Ac.Litmus_id.variable_name x.exp_var
+      ; ( Common.Litmus_id.variable_name x.exp_var
         , Fir.Initialiser.make ~ty:(Fir.Type.int ()) ~value:x.exp_val ) ]
 
     let src_exprs (x : Inner_payload.t) : Fir.Expression.t list =
@@ -132,7 +128,7 @@ module Insert = struct
       ; Fir.Expression.address (Fir.Atomic_cmpxchg.obj x.cmpxchg)
       ; Fir.Expression.address (Fir.Atomic_cmpxchg.expected x.cmpxchg) ]
 
-    let dst_ids (x : Inner_payload.t) : Ac.C_id.t list =
+    let dst_ids (x : Inner_payload.t) : Common.C_id.t list =
       (* exp_val/expected and out_val have known values, so we don't treat
          them as dests here. This might be a bad idea? *)
       [Fir.Address.variable_of (Fir.Atomic_cmpxchg.obj x.cmpxchg)]
@@ -146,9 +142,9 @@ module Insert = struct
       in
       let cmpxchg_assign =
         Fir.Assign.(
-          Fir.Lvalue.variable (Ac.Litmus_id.variable_name x.out_var)
+          Fir.Lvalue.variable (Common.Litmus_id.variable_name x.out_var)
           @= cmpxchg_expr)
       in
-      [A.construct Fir.Prim_statement.assign cmpxchg_assign]
+      [Accessor.construct Fir.Prim_statement.assign cmpxchg_assign]
   end)
 end
