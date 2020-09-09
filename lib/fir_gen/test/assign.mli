@@ -9,13 +9,4 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Common imports *)
-
-module Accessor = Accessor_base
-include Accessor.O
-
-module Src = Act_fir_gen
-module Q = Base_quickcheck
-module Fir = Act_fir
-module Fir_test = Act_fir_test
-module Utils = Act_utils
+(** This interface intentionally left blank. *)

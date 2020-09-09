@@ -27,7 +27,8 @@ module Source = struct
           access e >>| fun e' -> Expr e')
 
   let exprs : ('i, Expression.t, t, [< many]) Accessor.Simple.t =
-    (* This could literally just be [expr], but I'm planning to add a*)
+    (* This could literally just be [expr], but I'm planning to add more
+       (x += e) and so on, which'll complicate things. *)
     [%accessor Accessor.(many exprs')]
   
   module Quickcheck_generic
@@ -63,6 +64,21 @@ module Source = struct
       ~f:(Accessor.construct anon)
       ~f_inverse:(Accessor.get anon)
   end
+
+  module Quickcheck_int = Quickcheck_generic
+  (* Currently, all possible sources are compatible with integers. *)
+
+  module Quickcheck_bool
+    (Expr : Utils.My_quickcheck.S_with_sexp with type t := Expression.t) :
+  Utils.My_quickcheck.S_with_sexp with type t = t = struct
+    include Quickcheck_generic (Expr)
+    let quickcheck_generator = Q.Generator.filter quickcheck_generator
+      ~f:(function
+       | Inc | Dec -> false
+       | Expr _ -> true (* assuming Expr generates Boolean expressions! *)
+      )
+  end
+
 end
 
 type t = {dst: Lvalue.t; src: Source.t}
@@ -140,7 +156,7 @@ module On_addresses :
     (Expression_traverse.On_addresses)
 
 module Quickcheck_generic
-    (Src : Utils.My_quickcheck.S_with_sexp with type t := Expression.t)
+    (Src : Utils.My_quickcheck.S_with_sexp with type t := Source.t)
     (Dst : Utils.My_quickcheck.S_with_sexp with type t := Lvalue.t) :
   Utils.My_quickcheck.S_with_sexp with type t = t = struct
   type nonrec t = t
@@ -151,17 +167,15 @@ module Quickcheck_generic
     ~get:(fun {dst; src} -> (dst, src))
     ~construct:(fun (dst, src) -> {dst; src})]
 
-  module Src' = Source.Quickcheck_generic (Src)
-
   let quickcheck_generator : t Base_quickcheck.Generator.t =
     Base_quickcheck.Generator.(
-      map [%quickcheck.generator: Dst.t * Src'.t] ~f:(Accessor.construct anon))
+      map [%quickcheck.generator: Dst.t * Src.t] ~f:(Accessor.construct anon))
 
   let quickcheck_observer : t Base_quickcheck.Observer.t =
     Base_quickcheck.Observer.(
-      unmap [%quickcheck.observer: Dst.t * Src'.t] ~f:(Accessor.get anon))
+      unmap [%quickcheck.observer: Dst.t * Src.t] ~f:(Accessor.get anon))
 
   let quickcheck_shrinker : t Base_quickcheck.Shrinker.t =
     Base_quickcheck.Shrinker.(
-      map [%quickcheck.shrinker: Dst.t * Src'.t] ~f:(Accessor.construct anon) ~f_inverse:(Accessor.get anon))
+      map [%quickcheck.shrinker: Dst.t * Src.t] ~f:(Accessor.construct anon) ~f_inverse:(Accessor.get anon))
 end

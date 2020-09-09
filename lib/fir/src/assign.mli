@@ -25,6 +25,17 @@ module Source : sig
 
   val exprs : ('i, Expression.t, t, [< Accessor.many]) Accessor.Simple.t
   (** [exprs] focuses on any top-level expressions inside a source. *)
+
+  module Quickcheck_int
+    (Expr : Utils.My_quickcheck.S_with_sexp with type t := Expression.t)
+     : Utils.My_quickcheck.S_with_sexp with type t = t
+  (** Lifts an integer expression generator to a source generator. *) 
+
+  module Quickcheck_bool
+    (Expr : Utils.My_quickcheck.S_with_sexp with type t := Expression.t)
+     : Utils.My_quickcheck.S_with_sexp with type t = t
+  (** Lifts a Boolean expression generator to a source generator. *) 
+
 end
 
 (** {1 Assignments proper} *)
@@ -68,7 +79,7 @@ See {!Act_fir_gen}.
 *)
 
 module Quickcheck_generic
-    (Src : Utils.My_quickcheck.S_with_sexp with type t := Expression.t)
+    (Src : Utils.My_quickcheck.S_with_sexp with type t := Source.t)
     (Dst : Utils.My_quickcheck.S_with_sexp with type t := Lvalue.t) :
   Utils.My_quickcheck.S_with_sexp with type t = t
 (** Low-level building block for quickcheck generators on assigns. *)
