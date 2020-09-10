@@ -10,13 +10,7 @@
    project root for more information. *)
 
 open Base
-
-open struct
-  module Ac = Act_common
-  module Fir = Act_fir
-  module F = Act_fuzz
-  module Tx = Travesty_base_exts
-end
+open Import
 
 let readme_faw : string Lazy.t =
   lazy
@@ -30,17 +24,18 @@ let readme_faw : string Lazy.t =
     select a previously-stored variable.  This is a limitation of the flag
     system.)
   |}
-       (Ac.Id.to_string F.Config_tables.forbid_already_written_flag))
+       (Common.Id.to_string Fuzz.Config_tables.forbid_already_written_flag))
 
 (** Lists the restrictions we put on source variables. *)
-let basic_src_restrictions : (F.Var.Record.t -> bool) list Lazy.t = lazy []
+let basic_src_restrictions : (Fuzz.Var.Record.t -> bool) list Lazy.t =
+  lazy []
 
 module Dst_restriction = struct
-  type t = F.Var.Record.t -> bool
+  type t = Fuzz.Var.Record.t -> bool
 
   let basic (dst_type : Fir.Type.Basic.t) : t list =
     let bt =
-      Accessor.(F.Var.Record.Access.type_of @> Fir.Type.Access.basic_type)
+      Accessor.(Fuzz.Var.Record.Access.type_of @> Fir.Type.Access.basic_type)
     in
     [Fir.Type.Basic.eq bt ~to_:dst_type]
 
@@ -49,19 +44,19 @@ module Dst_restriction = struct
     basic dst_type
     @ List.filter_opt
         [ Option.some_if forbid_already_written
-            (Fn.non F.Var.Record.has_writes) ]
+            (Fn.non Fuzz.Var.Record.has_writes) ]
 
   let forbid_dependencies : t =
     Tx.Fn.(
-      Fn.non F.Var.Record.has_dependencies
+      Fn.non Fuzz.Var.Record.has_dependencies
       (* We don't know whether variables that existed before fuzzing have any
          dependencies, as we don't do any flow analysis of them. Maybe one
          day this will be relaxed? *)
-      &&& F.Var.Record.was_generated)
+      &&& Fuzz.Var.Record.was_generated)
 end
 
 module Make (B : sig
-  val name : Ac.Id.t
+  val name : Common.Id.t
   (** [name] is the name of the action. *)
 
   val readme_preamble : string list
@@ -71,7 +66,7 @@ module Make (B : sig
   val dst_type : Fir.Type.Basic.t
   (** [dst_type] is the value type of the destination. *)
 
-  val path_filter : F.Path_filter.t
+  val path_filter : Fuzz.Path_filter.t
   (** [path_filter] is the filter to apply on statement insertion paths
       before considering them for the atomic store. *)
 
@@ -84,7 +79,7 @@ module Make (B : sig
 
   include Storelike_types.Basic
 end) :
-  F.Action_types.S with type Payload.t = B.t F.Payload_impl.Insertion.t =
+  Fuzz.Action_types.S with type Payload.t = B.t Fuzz.Payload_impl.Insertion.t =
 struct
   let name = B.name
 
@@ -100,22 +95,22 @@ struct
     readme_chunks () |> String.concat ~sep:"\n\n"
     |> Act_utils.My_string.format_for_readme
 
-  let src_env (vars : F.Var.Map.t) ~(tid : int) : Fir.Env.t =
+  let src_env (vars : Fuzz.Var.Map.t) ~(tid : int) : Fir.Env.t =
     let predicates = Lazy.force basic_src_restrictions in
-    F.Var.Map.env_satisfying_all ~predicates ~scope:(Local tid) vars
+    Fuzz.Var.Map.env_satisfying_all ~predicates ~scope:(Local tid) vars
 
   let dst_restrictions ~(forbid_already_written : bool) :
-      (F.Var.Record.t -> bool) list =
+      (Fuzz.Var.Record.t -> bool) list =
     Dst_restriction.with_user_flags ~dst_type:B.dst_type
       ~forbid_already_written
     @ B.extra_dst_restrictions
 
-  let dst_env (vars : F.Var.Map.t) ~(tid : int)
+  let dst_env (vars : Fuzz.Var.Map.t) ~(tid : int)
       ~(forbid_already_written : bool) : Fir.Env.t =
     let predicates = dst_restrictions ~forbid_already_written in
-    F.Var.Map.env_satisfying_all ~predicates ~scope:(Local tid) vars
+    Fuzz.Var.Map.env_satisfying_all ~predicates ~scope:(Local tid) vars
 
-  let approx_forbid_already_written (ctx : F.Availability.Context.t) :
+  let approx_forbid_already_written (ctx : Fuzz.Availability.Context.t) :
       bool Or_error.t =
     (* If the flag is stochastic, then we can't tell whether its value will
        be the same in the payload check. As such, we need to be pessimistic
@@ -124,10 +119,10 @@ struct
 
        See https://github.com/MattWindsor91/act/issues/172. *)
     Or_error.(
-      F.Param_map.get_flag
-        (F.Availability.Context.param_map ctx)
-        ~id:F.Config_tables.forbid_already_written_flag
-      >>| F.Flag.to_exact_opt
+      Fuzz.Param_map.get_flag
+        (Fuzz.Availability.Context.param_map ctx)
+        ~id:Fuzz.Config_tables.forbid_already_written_flag
+      >>| Fuzz.Flag.to_exact_opt
       >>| Option.value ~default:true)
 
   let path_filter ctx =
@@ -135,13 +130,13 @@ struct
       ctx |> approx_forbid_already_written |> Result.ok
       |> Option.value ~default:true
     in
-    F.Availability.in_thread_with_variables ctx
+    Fuzz.Availability.in_thread_with_variables ctx
       ~predicates:(dst_restrictions ~forbid_already_written)
-    @@ F.Availability.in_thread_with_variables ctx
+    @@ Fuzz.Availability.in_thread_with_variables ctx
          ~predicates:(Lazy.force basic_src_restrictions)
     @@ B.path_filter
 
-  module Payload = F.Payload_impl.Insertion.Make (struct
+  module Payload = Fuzz.Payload_impl.Insertion.Make (struct
     type t = B.t [@@deriving sexp]
 
     let path_filter = path_filter
@@ -160,105 +155,106 @@ struct
       Or_error.combine_errors_unit
         [error_if_empty "src" src; error_if_empty "dst" dst]
 
-    let is_dependency_cycle_free
-      (pld : t) : bool =
+    let is_dependency_cycle_free (pld : t) : bool =
       (* TODO(@MattWindsor91): this is very heavy-handed; we should permit
-         references to the destination in the source wherever they are 
-         not depended-upon, but how do we do this? *)
+         references to the destination in the source wherever they are not
+         depended-upon, but how do we do this? *)
       let dsts = B.dst_ids pld in
       let srcs = B.src_exprs pld in
       Fir.(
-      List.for_all srcs
-        ~f:(Expression_traverse.On_addresses.for_all
-         ~f:(fun src_addr ->
-            Option.is_none (List.find dsts ~f:(Ac.C_id.equal (Address.variable_of src_addr)
-          )
-          )
-         )))
+        Accessor.(
+          for_all (List.each @> Expression_traverse.depended_upon_idents))
+          ~f:(fun id ->
+            Option.is_none (List.find dsts ~f:(Common.C_id.equal id))))
+        srcs
 
-    let gen' (vars : F.Var.Map.t) ~(where : F.Path.t)
-        ~(forbid_already_written : bool) : t F.Opt_gen.t =
-      let tid = F.Path.tid where in
+    let gen' (vars : Fuzz.Var.Map.t) ~(where : Fuzz.Path.t)
+        ~(forbid_already_written : bool) : t Fuzz.Opt_gen.t =
+      let tid = Fuzz.Path.tid where in
       let src = src_env vars ~tid in
       let dst = dst_env vars ~tid ~forbid_already_written in
       Or_error.Let_syntax.(
         let%map () = check_envs src dst in
         Base_quickcheck.Generator.filter
-        (B.gen ~src ~dst ~vars ~tid)
+          (B.gen ~src ~dst ~vars ~tid)
           ~f:is_dependency_cycle_free)
 
-    let gen (wheref : F.Path.Flagged.t) : t F.Payload_gen.t =
-      F.Payload_gen.(
+    let gen (wheref : Fuzz.Path.Flagged.t) : t Fuzz.Payload_gen.t =
+      Fuzz.Payload_gen.(
         let* forbid_already_written =
-          flag F.Config_tables.forbid_already_written_flag
+          flag Fuzz.Config_tables.forbid_already_written_flag
         in
         let* vars = vars in
-        let where = F.Path_flag.Flagged.path wheref in
+        let where = Fuzz.Path_flag.Flagged.path wheref in
         lift_opt_gen (gen' vars ~where ~forbid_already_written))
   end)
 
-  let available : F.Availability.t =
+  let available : Fuzz.Availability.t =
     (* The path filter requires the path to be in a thread that has access to
        variables satisfying both source and destination restrictions, so we
        need not specify those restrictions separately. *)
-    F.Availability.(
+    Fuzz.Availability.(
       M.(lift path_filter >>= is_filter_constructible ~kind:Insert))
 
-  let bookkeep_dst (x : Ac.C_id.t) ~(tid : int) : unit F.State.Monad.t =
-    F.State.Monad.(
+  let bookkeep_dst (x : Common.C_id.t) ~(tid : int) : unit Fuzz.State.Monad.t
+      =
+    Fuzz.State.Monad.(
       Let_syntax.(
         let%bind dst_var = resolve x ~scope:(Local tid) in
         let%bind () = add_write dst_var in
         when_m B.Flags.erase_known_values ~f:(fun () ->
             erase_var_value dst_var)))
 
-  let bookkeep_dsts (xs : Ac.C_id.t list) ~(tid : int) : unit F.State.Monad.t
-      =
-    xs |> List.map ~f:(bookkeep_dst ~tid) |> F.State.Monad.all_unit
+  let bookkeep_dsts (xs : Common.C_id.t list) ~(tid : int) :
+      unit Fuzz.State.Monad.t =
+    xs |> List.map ~f:(bookkeep_dst ~tid) |> Fuzz.State.Monad.all_unit
 
-  module MList = Tx.List.On_monad (F.State.Monad)
+  module MList = Tx.List.On_monad (Fuzz.State.Monad)
 
-  let bookkeep_new_locals (nls : Fir.Initialiser.t Ac.C_named.Alist.t)
-      ~(tid : int) : unit F.State.Monad.t =
+  let bookkeep_new_locals (nls : Fir.Initialiser.t Common.C_named.Alist.t)
+      ~(tid : int) : unit Fuzz.State.Monad.t =
     MList.iter_m nls ~f:(fun (name, init) ->
-        F.State.Monad.register_var (Ac.Litmus_id.local tid name) init)
+        Fuzz.State.Monad.register_var (Common.Litmus_id.local tid name) init)
 
-  let do_bookkeeping (item : B.t) ~(path : F.Path.Flagged.t) :
-      unit F.State.Monad.t =
-    let tid = path |> F.Path_flag.Flagged.path |> F.Path.tid in
-    F.State.Monad.(
+  let do_bookkeeping (item : B.t) ~(path : Fuzz.Path.Flagged.t) :
+      unit Fuzz.State.Monad.t =
+    let tid = path |> Fuzz.Path_flag.Flagged.path |> Fuzz.Path.tid in
+    Fuzz.State.Monad.(
       Let_syntax.(
         let%bind () = bookkeep_new_locals ~tid (B.new_locals item) in
         let%bind () = bookkeep_dsts ~tid (B.dst_ids item) in
         add_expression_dependencies_at_path ~path (B.src_exprs item)))
 
-  let insert_vars (target : F.Subject.Test.t)
-      (new_locals : Fir.Initialiser.t Ac.C_named.Alist.t) ~(tid : int) :
-      F.Subject.Test.t Or_error.t =
+  let insert_vars (target : Fuzz.Subject.Test.t)
+      (new_locals : Fir.Initialiser.t Common.C_named.Alist.t) ~(tid : int) :
+      Fuzz.Subject.Test.t Or_error.t =
     Tx.List.With_errors.fold_m new_locals ~init:target
       ~f:(fun subject (id, init) ->
-        F.Subject.Test.declare_var subject (Ac.Litmus_id.local tid id) init)
+        Fuzz.Subject.Test.declare_var subject
+          (Common.Litmus_id.local tid id)
+          init)
 
-  let do_insertions (target : F.Subject.Test.t) ~(path : F.Path.Flagged.t)
-      ~(to_insert : B.t) : F.Subject.Test.t Or_error.t =
-    let tid = F.Path.tid (F.Path_flag.Flagged.path path) in
+  let do_insertions (target : Fuzz.Subject.Test.t)
+      ~(path : Fuzz.Path.Flagged.t) ~(to_insert : B.t) :
+      Fuzz.Subject.Test.t Or_error.t =
+    let tid = Fuzz.Path.tid (Fuzz.Path_flag.Flagged.path path) in
     let stms =
       to_insert |> B.to_stms
-      |> List.map ~f:F.Subject.Statement.make_generated_prim
+      |> List.map ~f:Fuzz.Subject.Statement.make_generated_prim
     in
     Or_error.Let_syntax.(
       let%bind target' =
-        F.Path_consumers.consume_with_flags target ~filter:B.path_filter
+        Fuzz.Path_consumers.consume_with_flags target ~filter:B.path_filter
           ~path ~action:(Insert stms)
       in
       insert_vars target' (B.new_locals to_insert) ~tid)
 
-  let run (subject : F.Subject.Test.t)
-      ~(payload : B.t F.Payload_impl.Insertion.t) :
-      F.Subject.Test.t F.State.Monad.t =
-    let to_insert = F.Payload_impl.Insertion.to_insert payload in
-    let path = F.Payload_impl.Insertion.where payload in
-    F.State.Monad.(
+  let run (subject : Fuzz.Subject.Test.t)
+      ~(payload : B.t Fuzz.Payload_impl.Insertion.t) :
+      Fuzz.Subject.Test.t Fuzz.State.Monad.t =
+    let to_insert = Fuzz.Payload_impl.Insertion.to_insert payload in
+    let path = Fuzz.Payload_impl.Insertion.where payload in
+    Fuzz.State.Monad.(
       Let_syntax.(
         let%bind () = do_bookkeeping to_insert ~path in
         Monadic.return (do_insertions subject ~path ~to_insert)))

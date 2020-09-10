@@ -9,13 +9,4 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Common imports *)
-
-module Accessor = Accessor_base
-include Accessor.O
-module Tx = Travesty_base_exts
-module Common = Act_common
-module Fir = Act_fir
-module Fir_gen = Act_fir_gen
-module Fuzz = Act_fuzz
-module Utils = Act_utils
+(** This interface deliberately left blank. *)

@@ -23,10 +23,15 @@ module Acc = struct
 end
 
 include Acc
+
 let constant = Accessor.construct constant
+
 let address = Accessor.construct address
+
 let atomic = Accessor.construct atomic
+
 let bop o l r = Accessor.construct bop (o, l, r)
+
 let uop o x = Accessor.construct uop (o, x)
 
 let reduce_step (expr : t) ~(constant : Constant.t -> 'a)
@@ -131,9 +136,8 @@ module Base_map (Ap : Applicative.S) = struct
         ~address:(address >> Ap.map ~f:(Accessor.construct Acc.address))
         ~atomic:(atomic >> Ap.map ~f:(Accessor.construct Acc.atomic))
         ~bop:(fun o l r ->
-        Ap.map ~f:(Accessor.construct Acc.bop) (bop (o, l, r)))
-        ~uop:(fun o x -> Ap.map ~f:(Accessor.construct Acc.uop) (uop (o, x)))
-      )
+          Ap.map ~f:(Accessor.construct Acc.bop) (bop (o, l, r)))
+        ~uop:(fun o x -> Ap.map ~f:(Accessor.construct Acc.uop) (uop (o, x))))
 end
 
 let atomic_cmpxchg (f : t Atomic_cmpxchg.t) : t =

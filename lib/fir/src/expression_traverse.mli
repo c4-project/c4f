@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -37,3 +37,18 @@ module Xchg :
 module Atomic :
   Expression_types.S_traversable
     with type t = Expression.t Atomic_expression.t
+
+(** {1 Accessors}
+
+    These mainly abstract over the traversals above, for now. *)
+
+val depended_upon_idents :
+  ( 'i
+  , Act_common.C_id.t
+  , Expression.t
+  , [< Accessor.many_getter] )
+  Accessor.Simple.t
+(** [depended_upon_idents] recursively gets every identifier in an expression
+    that said expression is considered to depend upon. Over time, the notion
+    of dependence may weaken, and this getter may pull in a subset of the
+    identifiers mentioned in the expression. *)

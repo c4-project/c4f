@@ -363,3 +363,18 @@ module Atomic :
         (Mem_order)
   end)
 end
+
+let depended_upon_idents :
+    ( 'i
+    , Act_common.C_id.t
+    , Expression.t
+    , [< Accessor.many_getter] )
+    Accessor.Simple.t =
+  (* TODO(@MattWindsor91): if we ever get a more useful notion of dependency,
+     replace this definition. *)
+  [%accessor
+    Accessor.(
+      many_getter
+        Many_getter.(
+          On_addresses.fold ~init:empty ~f:(fun mg ad ->
+              mg @ access (Address.variable_of ad))))]

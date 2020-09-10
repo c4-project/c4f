@@ -92,22 +92,27 @@ module Monad = struct
   let add_dependency (id : Ac.Litmus_id.t) : unit t =
     modify (add_dependency ~id)
 
-  module Exp_lvalues =
-    Travesty.Traversable.Chain0
-      (Act_fir.Expression_traverse.On_addresses)
-      (Act_fir.Address.On_lvalues)
-  module Exp_idents =
-    Travesty.Traversable.Chain0 (Exp_lvalues) (Act_fir.Lvalue.On_identifiers)
-  module Exp_identsM = Exp_idents.On_monad (M)
+  module AccM = Accessor.Of_monad (struct
+    include M
+
+    let apply = `Define_using_bind
+  end)
+
+  let add_scoped_dependency (id : Ac.C_id.t) ~(scope : Ac.Scope.t) : unit t =
+    id |> resolve ~scope >>= add_dependency
 
   let add_expression_dependencies (expr : Act_fir.Expression.t)
       ~(scope : Ac.Scope.t) : unit t =
-    Exp_identsM.iter_m expr ~f:(fun c_id ->
-        c_id |> resolve ~scope >>= add_dependency)
+    AccM.iter Act_fir.Expression_traverse.depended_upon_idents expr
+      ~f:(add_scoped_dependency ~scope)
 
   let add_multiple_expression_dependencies
       (exprs : Act_fir.Expression.t list) ~(scope : Ac.Scope.t) : unit t =
-    all_unit (List.map ~f:(add_expression_dependencies ~scope) exprs)
+    AccM.iter
+      Accessor_base.(
+        List.each @> Act_fir.Expression_traverse.depended_upon_idents)
+      exprs
+      ~f:(add_scoped_dependency ~scope)
 
   let add_expression_dependencies_at_path (exprs : Act_fir.Expression.t list)
       ~(path : Path.Flagged.t) : unit t =
