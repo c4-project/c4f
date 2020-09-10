@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,23 +10,18 @@
    project root for more information. *)
 
 open Base
-
-open struct
-  module Src = Act_fuzz_actions
-  module Fir = Act_fir
-  module F = Act_fuzz
-  module FT = Act_fuzz_test
-end
+open Import
 
 let%test_module "test runs" =
   ( module struct
     (* TODO(@MattWindsor91): sort out the discrepancy between the subject
        example and var map. Also sort out duplication with below. *)
 
-    let state : F.State.t =
-      F.State.make ~vars:(Lazy.force FT.Var.Test_data.test_map) ()
+    let state : Fuzz.State.t =
+      Fuzz.State.make ~vars:(Lazy.force Fuzz_test.Var.Test_data.test_map) ()
 
-    let test : F.Subject.Test.t = Lazy.force FT.Subject.Test_data.test
+    let test : Fuzz.Subject.Test.t =
+      Lazy.force Fuzz_test.Subject.Test_data.test
 
     let cond : Fir.Expression.t =
       (* should be false with respect to the var map *)
@@ -39,13 +34,14 @@ let%test_module "test runs" =
     let%test_module "Insert.While_false" =
       ( module struct
         let payload : Src.Flow_loop.Insert.While_false.Payload.t =
-          F.Payload_impl.Insertion.make ~to_insert:cond
-            ~where:(Lazy.force FT.Subject.Test_data.Path.insert_live)
+          Fuzz.Payload_impl.Insertion.make ~to_insert:cond
+            ~where:(Lazy.force Fuzz_test.Subject.Test_data.Path.insert_live)
 
         let action = Src.Flow_loop.Insert.While_false.run test ~payload
 
         let%expect_test "resulting AST" =
-          FT.Action.Test_utils.run_and_dump_test action ~initial_state:state ;
+          Fuzz_test.Action.Test_utils.run_and_dump_test action
+            ~initial_state:state ;
           [%expect
             {|
           void
@@ -78,7 +74,7 @@ let%test_module "test runs" =
           { loop: ; if (true) {  } else { goto loop; } } |}]
 
         let%expect_test "global dependencies after running" =
-          FT.Action.Test_utils.run_and_dump_global_deps action
+          Fuzz_test.Action.Test_utils.run_and_dump_global_deps action
             ~initial_state:state ;
           [%expect {|
           a=false y=53 |}]
@@ -88,14 +84,16 @@ let%test_module "test runs" =
       ( module struct
         module Surround = Src.Flow_loop.Surround.Do_false
 
-        let payload : F.Payload_impl.Cond_surround.t =
-          F.Payload_impl.Cond_surround.make ~cond
-            ~where:(Lazy.force FT.Subject.Test_data.Path.surround_atomic)
+        let payload : Fuzz.Payload_impl.Cond_surround.t =
+          Fuzz.Payload_impl.Cond_surround.make ~cond
+            ~where:
+              (Lazy.force Fuzz_test.Subject.Test_data.Path.surround_atomic)
 
         let action = Surround.run test ~payload
 
         let%expect_test "resulting AST" =
-          FT.Action.Test_utils.run_and_dump_test action ~initial_state:state ;
+          Fuzz_test.Action.Test_utils.run_and_dump_test action
+            ~initial_state:state ;
           [%expect
             {|
           void
@@ -127,7 +125,7 @@ let%test_module "test runs" =
           { loop: ; if (true) {  } else { goto loop; } } |}]
 
         let%expect_test "global dependencies after running" =
-          FT.Action.Test_utils.run_and_dump_global_deps action
+          Fuzz_test.Action.Test_utils.run_and_dump_global_deps action
             ~initial_state:state ;
           [%expect {|
           a=false y=53 |}]
@@ -140,14 +138,16 @@ let%test_module "test runs" =
         (* TODO(@MattWindsor91): sort out the discrepancy between the subject
            example and var map. *)
 
-        let payload : F.Payload_impl.Cond_surround.t =
-          F.Payload_impl.Cond_surround.make ~cond
-            ~where:(Lazy.force FT.Subject.Test_data.Path.surround_dead)
+        let payload : Fuzz.Payload_impl.Cond_surround.t =
+          Fuzz.Payload_impl.Cond_surround.make ~cond
+            ~where:
+              (Lazy.force Fuzz_test.Subject.Test_data.Path.surround_dead)
 
         let action = Surround.run test ~payload
 
         let%expect_test "resulting AST" =
-          FT.Action.Test_utils.run_and_dump_test action ~initial_state:state ;
+          Fuzz_test.Action.Test_utils.run_and_dump_test action
+            ~initial_state:state ;
           [%expect
             {|
           void
@@ -183,7 +183,7 @@ let%test_module "test runs" =
           { loop: ; if (true) {  } else { goto loop; } } |}]
 
         let%expect_test "global dependencies after running" =
-          FT.Action.Test_utils.run_and_dump_global_deps action
+          Fuzz_test.Action.Test_utils.run_and_dump_global_deps action
             ~initial_state:state ;
           [%expect {| |}]
       end )
@@ -192,14 +192,16 @@ let%test_module "test runs" =
       ( module struct
         module Surround = Src.Flow_loop.Surround.While_dead
 
-        let payload : F.Payload_impl.Cond_surround.t =
-          F.Payload_impl.Cond_surround.make ~cond
-            ~where:(Lazy.force FT.Subject.Test_data.Path.surround_dead)
+        let payload : Fuzz.Payload_impl.Cond_surround.t =
+          Fuzz.Payload_impl.Cond_surround.make ~cond
+            ~where:
+              (Lazy.force Fuzz_test.Subject.Test_data.Path.surround_dead)
 
         let action = Surround.run test ~payload
 
         let%expect_test "resulting AST" =
-          FT.Action.Test_utils.run_and_dump_test action ~initial_state:state ;
+          Fuzz_test.Action.Test_utils.run_and_dump_test action
+            ~initial_state:state ;
           [%expect
             {|
           void
@@ -235,7 +237,7 @@ let%test_module "test runs" =
           { loop: ; if (true) {  } else { goto loop; } } |}]
 
         let%expect_test "global dependencies after running" =
-          FT.Action.Test_utils.run_and_dump_global_deps action
+          Fuzz_test.Action.Test_utils.run_and_dump_global_deps action
             ~initial_state:state ;
           [%expect {| |}]
       end )
@@ -253,12 +255,14 @@ let%test_module "test runs" =
                 Expression.atomic_load
                   (Atomic_load.make ~mo:Seq_cst
                      ~src:(Address.of_variable_str_exn "x")))
-          ; where= Lazy.force FT.Subject.Test_data.Path.surround_atomic }
+          ; where=
+              Lazy.force Fuzz_test.Subject.Test_data.Path.surround_atomic }
 
         let action = Surround.run test ~payload
 
         let%expect_test "resulting AST" =
-          FT.Action.Test_utils.run_and_dump_test action ~initial_state:state ;
+          Fuzz_test.Action.Test_utils.run_and_dump_test action
+            ~initial_state:state ;
           [%expect
             {|
           void
@@ -290,14 +294,15 @@ let%test_module "test runs" =
              atomic_int y)
           { loop: ; if (true) {  } else { goto loop; } } |}]
 
-        let%expect_test "global dependencies after running" =
-          FT.Action.Test_utils.run_and_dump_global_deps action
-            ~initial_state:state ;
+        let%expect_test "dependencies in thread 0 after running" =
+          Fuzz_test.Action.Test_utils.run_and_dump_vars action
+            ~initial_state:state ~scope:(Local 0)
+            ~predicates:[Act_fuzz.Var.Record.has_dependencies] ;
           [%expect {| x=27 |}]
 
         let%expect_test "known values in thread 0 after running" =
-          FT.Action.Test_utils.run_and_dump_vars action ~initial_state:state
-            ~scope:(Local 0)
+          Fuzz_test.Action.Test_utils.run_and_dump_vars action
+            ~initial_state:state ~scope:(Local 0)
             ~predicates:[Act_fuzz.Var.Record.has_known_value] ;
           [%expect {| a=false b=true x=27 y=53 |}]
       end )
