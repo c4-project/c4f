@@ -208,7 +208,7 @@ let probe_fn (fn : unit Function.t) : unit Monad.t =
 
 let probe_named_fn (fn : unit Function.t Act_common.C_named.t) : unit Monad.t
     =
-  probe_fn (Act_common.C_named.value fn)
+  probe_fn (Accessor.get Act_common.C_named.value fn)
 
 let probe_threads : unit Function.t Act_common.C_named.t list -> unit Monad.t
     =

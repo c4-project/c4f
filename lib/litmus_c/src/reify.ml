@@ -41,8 +41,8 @@ let func_body (ds : Fir.Initialiser.t Named.Alist.t)
   decls ds @ Reify_stm.reify_compound statements
 
 let func (f : _ Fir.Function.t Named.t) : Ast.External_decl.t =
-  let id = Named.name f in
-  let def = Named.value f in
+  let id = Accessor.get Named.name f in
+  let def = Accessor.get Named.value f in
   let parameters = Fir.Function.parameters def in
   let body_decls = Fir.Function.body_decls def in
   let body_stms = Fir.Function.body_stms def in

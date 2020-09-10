@@ -125,7 +125,7 @@ module Test = struct
 
   let threads_of_litmus (test : Fir.Litmus.Test.t) : Thread.t list =
     test |> Fir.Litmus.Test.threads
-    |> List.map ~f:(Fn.compose Thread.of_function Ac.C_named.value)
+    |> List.map ~f:(fun x -> Thread.of_function A.(x.@(Ac.C_named.value)))
 
   let of_litmus (test : Fir.Litmus.Test.t) : t =
     Act_litmus.Test.Raw.make

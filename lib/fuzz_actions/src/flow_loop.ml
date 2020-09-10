@@ -272,7 +272,7 @@ module Surround = struct
             ~f:(Accessor_base.get Fir.Env.Record.type_of)
             vrec
         in
-        let ty = Common.C_named.value var in
+        let ty = var.@(Common.C_named.value) in
         (* TODO(@MattWindsor91): is this duplicating something? *)
         Fuzz.Payload_gen.(
           if Fir.Type.is_atomic ty then
@@ -287,8 +287,7 @@ module Surround = struct
 
       let known_value_val (vrec : Fir.Env.Record.t Common.C_named.t) :
           Fir.Constant.t Fuzz.Payload_gen.t =
-        vrec |> Common.C_named.value
-        |> Accessor_base.get_option Fir.Env.Record.known_value
+        vrec.@?(Common.C_named.value @> Fir.Env.Record.known_value)
         |> Result.of_option
              ~error:
                (Error.of_string "chosen value should have a known value")
@@ -307,15 +306,14 @@ module Surround = struct
 
       let counter_type (vrec : Fir.Env.Record.t Common.C_named.t) :
           Fir.Type.t =
-        let acc =
-          Accessor_base.(
-            Fir.Env.Record.type_of @> Fir.Type.Access.basic_type
-            @> Fir.Type.Basic.Access.prim)
-        in
-        let prim = Accessor_base.get acc (Common.C_named.value vrec) in
-        Fir.Type.make
-          (Fir.Type.Basic.make prim ~is_atomic:false)
-          ~is_pointer:false ~is_volatile:false
+        Fir.(
+          let prim =
+            vrec.@(Common.C_named.value @> Env.Record.type_of
+                   @> Type.Access.basic_type @> Type.Basic.Access.prim)
+          in
+          Type.make
+            (Type.Basic.make prim ~is_atomic:false)
+            ~is_pointer:false ~is_volatile:false)
 
       let gen : t Fuzz.Payload_gen.t =
         Fuzz.Payload_gen.(

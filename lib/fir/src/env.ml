@@ -115,7 +115,9 @@ let gen_random_var_with_type : t -> Type.t Ac.C_named.t Q.Generator.t =
     gen_random_var_with_record
 
 let gen_random_var : t -> Ac.C_id.t Q.Generator.t =
-  Fn.compose (Q.Generator.map ~f:Ac.C_named.name) gen_random_var_with_record
+  Fn.compose
+    (Q.Generator.map ~f:(Accessor.get Ac.C_named.name))
+    gen_random_var_with_record
 
 module Random_var (E : sig
   val env : t

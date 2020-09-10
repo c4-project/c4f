@@ -21,11 +21,13 @@ module Stm = Act_fir.Statement_traverse.With_meta (Unit)
 let labels_of_thread (tid : int)
     (thread : unit Act_fir.Function.t Ac.C_named.t) :
     Act_common.Litmus_id.t list =
-  thread |> Ac.C_named.value |> Act_fir.Function.body_stms
+  thread |> A.get Ac.C_named.value |> Act_fir.Function.body_stms
   |> List.concat_map ~f:Stm.On_primitives.to_list
   (* TODO(@MattWindsor91): push this further *)
-  |> List.filter_map ~f:(A.get_option Act_fir.Prim_statement.label)
-  |> List.map ~f:(Act_common.Litmus_id.local tid)
+  |> List.filter_map ~f:(fun x ->
+         Option.(
+           A.(x.@?(Act_fir.Prim_statement.label))
+           >>| Act_common.Litmus_id.local tid))
 
 let labels_of_test (test : Act_fir.Litmus.Test.t) :
     Set.M(Act_common.Litmus_id).t =

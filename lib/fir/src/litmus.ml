@@ -42,16 +42,16 @@ module Lang :
     type t = unit Function.t Named.t [@@deriving sexp]
 
     let name (nd : t) : string option =
-      Some (Ac.C_id.to_string (Named.name nd))
+      Some (Ac.C_id.to_string (Accessor.get Named.name nd))
 
     let listing (np : t) : Statement.t list =
-      let fn = Named.value np in
+      let fn = Accessor.get Named.value np in
       List.map (Function.body_decls fn) ~f:(fun (name, value) ->
           `Decl (Named.make value ~name))
       @ List.map (Function.body_stms fn) ~f:(fun x -> `Stm x)
 
     let global_vars (np : t) =
-      np |> Named.value |> Function.parameters
+      np |> Accessor.get Named.value |> Function.parameters
       |> Map.of_alist_or_error (module Ac.C_id)
       |> Result.ok
   end

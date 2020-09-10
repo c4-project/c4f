@@ -130,8 +130,8 @@ module Quickcheck_main = Quickcheck_generic (Lvalue)
 include (Quickcheck_main : module type of Quickcheck_main with type t := t)
 
 let on_address_of_typed_id (tid : Type.t Ac.C_named.t) : t =
-  let id = Ac.C_named.name tid in
-  let ty = Ac.C_named.value tid in
+  let id = Accessor.get Ac.C_named.name tid in
+  let ty = Accessor.get Ac.C_named.value tid in
   let lv = of_variable id in
   if Type.is_pointer ty then lv else ref lv
 

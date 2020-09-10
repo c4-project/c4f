@@ -65,7 +65,8 @@ module Make (B : Runner_types.Basic) : Runner_types.S = struct
     (* We can get the context just from looking at functions, because of the
        way in which C litmus tests are constructed. *)
     let functions =
-      List.map ~f:Ac.C_named.value (Act_fir.Litmus.Test.threads input)
+      Accessor_base.(to_list (List.each @> Ac.C_named.value))
+        (Act_fir.Litmus.Test.threads input)
     in
     let local_inits = make_local_inits functions in
     Context.make ~aux ~local_inits

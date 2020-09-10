@@ -13,8 +13,9 @@
 
 open Base
 
-(** Opaque type of named elements. *)
-type 'a t [@@deriving sexp, compare, equal, quickcheck]
+(** Type of named elements. *)
+type 'a t = {name: C_id.t; value: 'a}
+[@@deriving accessors, sexp, compare, equal, quickcheck]
 
 (** {2 Constructors} *)
 
@@ -28,25 +29,6 @@ val seq_of_alist : (C_id.t, 'a) List.Assoc.t -> 'a t Sequence.t
 val list_of_alist : (C_id.t, 'a) List.Assoc.t -> 'a t list
 (** [list_of_alist xs] converts an identifier-keyed association list [xs] to
     a list of named values. *)
-
-(** {2 Accessors} *)
-
-module Access : sig
-  val name : (_, C_id.t, _ t, [< Accessor.field]) Accessor.Simple.t
-  (** [name] accesses the name tag of a named element. *)
-
-  val value :
-    ('i -> 'a -> 'b, 'i -> 'a t -> 'b t, [< Accessor.field]) Accessor.t
-  (** [value] accesses the underlying value of a named element. *)
-end
-
-(** {2 Projections} *)
-
-val name : _ t -> C_id.t
-(** [name n] gets the name tag of [n]. *)
-
-val value : 'a t -> 'a
-(** [value n] gets the underlying value of [n]. *)
 
 val alist_of_seq : 'a t Sequence.t -> (C_id.t, 'a) List.Assoc.t
 (** [alist_of_seq xs] converts a sequence of named values [xs] to an

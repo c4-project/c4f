@@ -32,18 +32,16 @@ let make_global_var_alist (progs : Litmus.Test.Lang.Program.t list) :
       Or_error.error_string "need at least one function"
   | xs ->
       Or_error.(
-        xs
-        |> Accessor_base.(
-             to_list
-               ( List.each @> Ac.C_named.Access.value
-               @> Function.Access.parameters ))
+        Accessor_base.(
+          xs.@*(List.each @> Ac.C_named.value @> Function.Access.parameters))
         |> merge_parameters
         |> Or_error.tag ~tag:"Functions do not agree on parameter lists"
         >>| Tx.Alist.map_left ~f:Act_common.Litmus_id.global)
 
 let make_local_var_alist (tid : int) (prog : Litmus.Test.Lang.Program.t) :
     (Ac.Litmus_id.t, Type.t) List.Assoc.t =
-  prog |> Named.value |> Function.body_decls
+  Accessor_base.(prog.@(Named.value))
+  |> Function.body_decls
   |> Tx.Alist.bi_map
        ~left:(Act_common.Litmus_id.local tid)
        ~right:(Accessor.get Initialiser.ty)

@@ -63,7 +63,7 @@ module Make (B : Runner_types.Basic) = struct
   let make_named_function_record
       (func : unit Act_fir.Function.t Ac.C_named.t) :
       (Act_common.C_id.t * Function_map.Record.t) Or_error.t =
-    let name = Ac.C_named.name func in
+    let name = Accessor.get Ac.C_named.name func in
     Or_error.Let_syntax.(
       let%map new_name = rewrite_function_name name in
       ( name

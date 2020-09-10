@@ -111,6 +111,6 @@ module Quickcheck_id = Quickcheck_generic (Ac.C_id)
 include (Quickcheck_id : module type of Quickcheck_id with type t := t)
 
 let on_value_of_typed_id (tid : Type.t Ac.C_named.t) : t =
-  let id = Ac.C_named.name tid in
-  let ty = Ac.C_named.value tid in
+  let id = Accessor.get Ac.C_named.name tid in
+  let ty = Accessor.get Ac.C_named.value tid in
   if Type.is_pointer ty then Deref (Variable id) else Variable id

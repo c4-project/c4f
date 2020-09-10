@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,29 +10,32 @@
    project root for more information. *)
 
 open Base
+open Accessor.O
 
-module Access = struct
+(* This nested module used to fix shadowing later. *)
+module M = struct
   type 'a t = {name: C_id.t; value: 'a}
   [@@deriving sexp, compare, equal, accessors, quickcheck]
 end
 
-include Access
+include M
 
 let make (value : 'a) ~(name : C_id.t) : 'a t = {name; value}
 
-let name (x : 'a t) = Accessor.get name x
-
-let value (x : 'a t) = Accessor.get value x
+let tuple : ('i, C_id.t * 'a, 'a t, [< isomorphism]) Accessor.Simple.t =
+  [%accessor
+    Accessor.isomorphism
+      ~construct:(fun (name, value) -> {name; value})
+      ~get:(fun {name; value} -> (name, value))]
 
 let seq_of_alist (xs : (C_id.t, 'a) List.Assoc.t) : 'a t Sequence.t =
-  xs |> Sequence.of_list
-  |> Sequence.map ~f:(fun (name, value) -> make value ~name)
+  xs |> Sequence.of_list |> Sequence.map ~f:(Accessor.construct tuple)
 
 let list_of_alist (xs : (C_id.t, 'a) List.Assoc.t) : 'a t list =
   xs |> seq_of_alist |> Sequence.to_list
 
 let alist_of_seq (xs : 'a t Sequence.t) : (C_id.t, 'a) List.Assoc.t =
-  xs |> Sequence.map ~f:(fun t -> (name t, value t)) |> Sequence.to_list
+  xs |> Sequence.map ~f:(Accessor.get tuple) |> Sequence.to_list
 
 let alist_of_list (xs : 'a t list) : (C_id.t, 'a) List.Assoc.t =
   xs |> Sequence.of_list |> alist_of_seq
@@ -49,7 +52,7 @@ module BT :
     let bi_map_m (n : 'r1 t) ~(left : left -> left M.t)
         ~(right : 'r1 -> 'r2 M.t) : 'r2 t M.t =
       M.Let_syntax.(
-        let%map name = left (name n) and value = right (value n) in
+        let%map name = left n.@(name) and value = right n.@(value) in
         make value ~name)
   end
 end)
@@ -62,11 +65,11 @@ module Alist = struct
   module As_named (A : Equal.S) :
     Travesty.Traversable_types.S0
       with type t = A.t t
-       and type Elt.t = A.t Access.t = Travesty.Traversable.Make0 (struct
+       and type Elt.t = A.t M.t = Travesty.Traversable.Make0 (struct
     type nonrec t = A.t t
 
     module Elt = struct
-      type t = A.t Access.t [@@deriving equal]
+      type t = A.t M.t [@@deriving equal]
     end
 
     module On_monad (M : Monad.S) = struct
