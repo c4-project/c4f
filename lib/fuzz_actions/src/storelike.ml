@@ -160,6 +160,22 @@ struct
       Or_error.combine_errors_unit
         [error_if_empty "src" src; error_if_empty "dst" dst]
 
+    let is_dependency_cycle_free
+      (pld : t) : bool =
+      (* TODO(@MattWindsor91): this is very heavy-handed; we should permit
+         references to the destination in the source wherever they are 
+         not depended-upon, but how do we do this? *)
+      let dsts = B.dst_ids pld in
+      let srcs = B.src_exprs pld in
+      Fir.(
+      List.for_all srcs
+        ~f:(Expression_traverse.On_addresses.for_all
+         ~f:(fun src_addr ->
+            Option.is_none (List.find dsts ~f:(Ac.C_id.equal (Address.variable_of src_addr)
+          )
+          )
+         )))
+
     let gen' (vars : F.Var.Map.t) ~(where : F.Path.t)
         ~(forbid_already_written : bool) : t F.Opt_gen.t =
       let tid = F.Path.tid where in
@@ -167,7 +183,9 @@ struct
       let dst = dst_env vars ~tid ~forbid_already_written in
       Or_error.Let_syntax.(
         let%map () = check_envs src dst in
-        B.gen ~src ~dst ~vars ~tid)
+        Base_quickcheck.Generator.filter
+        (B.gen ~src ~dst ~vars ~tid)
+          ~f:is_dependency_cycle_free)
 
     let gen (wheref : F.Path.Flagged.t) : t F.Payload_gen.t =
       F.Payload_gen.(
