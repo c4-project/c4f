@@ -174,24 +174,29 @@ struct
             Option.is_none (List.find dsts ~f:(Common.C_id.equal id))))
         srcs
 
-    let gen' (vars : Fuzz.Var.Map.t) ~(where : Fuzz.Path.t)
+    let gen' (vars : Fuzz.Var.Map.t) ~(where : Fuzz.Path.Flagged.t)
         ~(forbid_already_written : bool) : t Fuzz.Opt_gen.t =
+      let in_dc =
+        Set.mem
+          (Fuzz.Path_flag.Flagged.flags where)
+          Fuzz.Path_flag.In_dead_code
+      in
+      let where = Fuzz.Path_flag.Flagged.path where in
       let tid = Fuzz.Path.tid where in
       let src = src_env vars ~tid in
       let dst = dst_env vars ~tid ~forbid_already_written in
       Or_error.Let_syntax.(
         let%map () = check_envs src dst in
-        Base_quickcheck.Generator.filter
-          (B.gen ~src ~dst ~vars ~tid)
-          ~f:is_dependency_cycle_free)
+        let gen = B.gen ~src ~dst ~vars ~tid in
+        if in_dc then gen
+        else Base_quickcheck.Generator.filter gen ~f:is_dependency_cycle_free)
 
-    let gen (wheref : Fuzz.Path.Flagged.t) : t Fuzz.Payload_gen.t =
+    let gen (where : Fuzz.Path.Flagged.t) : t Fuzz.Payload_gen.t =
       Fuzz.Payload_gen.(
         let* forbid_already_written =
           flag Fuzz.Config_tables.forbid_already_written_flag
         in
         let* vars = vars in
-        let where = Fuzz.Path_flag.Flagged.path wheref in
         lift_opt_gen (gen' vars ~where ~forbid_already_written))
   end)
 
