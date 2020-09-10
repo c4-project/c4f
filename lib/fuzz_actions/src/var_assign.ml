@@ -87,8 +87,9 @@ module Insert = struct
     let dst_ids (x : Fir.Assign.t) : Common.C_id.t list =
       [Fir.Lvalue.variable_of x.@(Fir.Assign.dst)]
 
-    let src_exprs (x : Fir.Assign.t) : Fir.Expression.t list =
-      x.@*(Fir.Assign.exprs)
+    let src_exprs (x : Fir.Assign.t) :
+        (Fir.Expression.t * [`Safe | `Unsafe]) list =
+      List.map x.@*(Fir.Assign.exprs) ~f:(fun x -> (x, `Unsafe))
   end)
 
   (* TODO(@MattWindsor91): de-duplicate with Atomic_store *)

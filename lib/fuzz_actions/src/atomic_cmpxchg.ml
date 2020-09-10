@@ -123,10 +123,12 @@ module Insert = struct
       ; ( Common.Litmus_id.variable_name x.exp_var
         , Fir.Initialiser.make ~ty:(Fir.Type.int ()) ~value:x.exp_val ) ]
 
-    let src_exprs (x : Inner_payload.t) : Fir.Expression.t list =
-      [ Fir.Atomic_cmpxchg.desired x.cmpxchg
-      ; Fir.Expression.address (Fir.Atomic_cmpxchg.obj x.cmpxchg)
-      ; Fir.Expression.address (Fir.Atomic_cmpxchg.expected x.cmpxchg) ]
+    let src_exprs (x : Inner_payload.t) :
+        (Fir.Expression.t * [`Safe | `Unsafe]) list =
+      [ (Fir.Atomic_cmpxchg.desired x.cmpxchg, `Unsafe)
+      ; (Fir.Expression.address (Fir.Atomic_cmpxchg.obj x.cmpxchg), `Safe)
+      ; ( Fir.Expression.address (Fir.Atomic_cmpxchg.expected x.cmpxchg)
+        , `Unsafe ) ]
 
     let dst_ids (x : Inner_payload.t) : Common.C_id.t list =
       (* exp_val/expected and out_val have known values, so we don't treat

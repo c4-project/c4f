@@ -160,7 +160,13 @@ struct
          references to the destination in the source wherever they are not
          depended-upon, but how do we do this? *)
       let dsts = B.dst_ids pld in
-      let srcs = B.src_exprs pld in
+      let srcs =
+        List.filter_map (B.src_exprs pld) ~f:(function
+          | _, `Safe ->
+              None
+          | x, `Unsafe ->
+              Some x)
+      in
       Fir.(
         Accessor.(
           for_all (List.each @> Expression_traverse.depended_upon_idents))
@@ -223,7 +229,8 @@ struct
       Let_syntax.(
         let%bind () = bookkeep_new_locals ~tid (B.new_locals item) in
         let%bind () = bookkeep_dsts ~tid (B.dst_ids item) in
-        add_expression_dependencies_at_path ~path (B.src_exprs item)))
+        add_expression_dependencies_at_path ~path
+          (List.map ~f:fst (B.src_exprs item))))
 
   let insert_vars (target : Fuzz.Subject.Test.t)
       (new_locals : Fir.Initialiser.t Common.C_named.Alist.t) ~(tid : int) :

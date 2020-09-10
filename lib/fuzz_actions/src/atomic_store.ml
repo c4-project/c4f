@@ -89,8 +89,9 @@ module Insert = struct
     let dst_ids (x : Fir.Atomic_store.t) : Common.C_id.t list =
       [Fir.Address.variable_of (Fir.Atomic_store.dst x)]
 
-    let src_exprs (x : Fir.Atomic_store.t) : Fir.Expression.t list =
-      [Fir.Atomic_store.src x]
+    let src_exprs (x : Fir.Atomic_store.t) :
+        (Fir.Expression.t * [`Safe | `Unsafe]) list =
+      [(Fir.Atomic_store.src x, `Unsafe)]
   end)
 
   module Int_normal : S = Make (struct

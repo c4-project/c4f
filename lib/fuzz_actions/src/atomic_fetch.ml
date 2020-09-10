@@ -93,8 +93,8 @@ module Insert = struct
       [Fir.Address.variable_of (Fir.Atomic_fetch.obj x)]
 
     let src_exprs (x : Fir.Expression.t Fir.Atomic_fetch.t) :
-        Fir.Expression.t list =
-      [Fir.Atomic_fetch.arg x]
+        (Fir.Expression.t * [`Safe | `Unsafe]) list =
+      [(Fir.Atomic_fetch.arg x, `Unsafe)]
   end)
 
   (* TODO(@MattWindsor91): 'Int' module, which would need some care in order

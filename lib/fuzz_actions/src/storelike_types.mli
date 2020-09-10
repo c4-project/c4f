@@ -45,9 +45,10 @@ module type Basic = sig
   (** [dst_exprs s] gets a list of any (unscoped) destination C identifiers
       used in this storelike. *)
 
-  val src_exprs : t -> Act_fir.Expression.t list
+  val src_exprs : t -> (Act_fir.Expression.t * [`Safe | `Unsafe]) list
   (** [src_exprs s] gets a list of any source expressions used in this
-      storelike. *)
+      storelike, each tagged with an assessment of whether it is safe for
+      those expressions to depend on the destination. *)
 
   val to_stms : t -> Act_fir.Prim_statement.t list
   (** [to_stms s] lifts a storelike into a list of primitives. *)
