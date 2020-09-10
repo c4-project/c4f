@@ -10,22 +10,24 @@
    project root for more information. *)
 
 open Base
+open Import
 
-open struct
-  module Ac = Act_common
-end
-
-module P = struct
+module Acc = struct
   type t =
     | Constant of Constant.t
     | Address of Address.t
     | Atomic of t Atomic_expression.t
     | Bop of Op.Binary.t * t * t
     | Uop of Op.Unary.t * t
-  [@@deriving sexp, variants, compare, equal]
+  [@@deriving sexp, accessors, compare, equal]
 end
 
-include P
+include Acc
+let constant = Accessor.construct constant
+let address = Accessor.construct address
+let atomic = Accessor.construct atomic
+let bop o l r = Accessor.construct bop (o, l, r)
+let uop o x = Accessor.construct uop (o, x)
 
 let reduce_step (expr : t) ~(constant : Constant.t -> 'a)
     ~(address : Address.t -> 'a) ~(atomic : t Atomic_expression.t -> 'a)
@@ -64,7 +66,7 @@ let quickcheck_observer : t Base_quickcheck.Observer.t =
 
 let lvalue (l : Lvalue.t) : t = address (Address.lvalue l)
 
-let variable (v : Ac.C_id.t) : t = lvalue (Lvalue.variable v)
+let variable (v : Common.C_id.t) : t = lvalue (Lvalue.variable v)
 
 let of_variable_str_exn (s : string) : t =
   lvalue (Lvalue.of_variable_str_exn s)
@@ -125,12 +127,13 @@ module Base_map (Ap : Applicative.S) = struct
       ~(uop : Op.Unary.t * t -> (Op.Unary.t * t) Ap.t) : t Ap.t =
     Travesty_base_exts.Fn.Compose_syntax.(
       reduce_step x
-        ~constant:(constant >> Ap.map ~f:P.constant)
-        ~address:(address >> Ap.map ~f:P.address)
-        ~atomic:(atomic >> Ap.map ~f:P.atomic))
-      ~bop:(fun o l r ->
-        Ap.map ~f:(fun (o', l', r') -> P.bop o' l' r') (bop (o, l, r)))
-      ~uop:(fun o x -> Ap.map ~f:(fun (o', x') -> P.uop o' x') (uop (o, x)))
+        ~constant:(constant >> Ap.map ~f:(Accessor.construct Acc.constant))
+        ~address:(address >> Ap.map ~f:(Accessor.construct Acc.address))
+        ~atomic:(atomic >> Ap.map ~f:(Accessor.construct Acc.atomic))
+        ~bop:(fun o l r ->
+        Ap.map ~f:(Accessor.construct Acc.bop) (bop (o, l, r)))
+        ~uop:(fun o x -> Ap.map ~f:(Accessor.construct Acc.uop) (uop (o, x)))
+      )
 end
 
 let atomic_cmpxchg (f : t Atomic_cmpxchg.t) : t =

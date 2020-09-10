@@ -12,9 +12,31 @@
 (** FIR: expressions *)
 
 open Base
+open Import
 
 (** Opaque type of expressions. *)
 type t [@@deriving sexp, compare, equal]
+
+(** {1 Accessors}
+
+    These will eventually replace constructors. *)
+
+module Acc : sig
+  val address : ('i, Address.t, t, [< variant]) Accessor.Simple.t
+  (** [address] focuses on address expressions. *)
+
+  val atomic : ('i, t Atomic_expression.t, t, [< variant]) Accessor.Simple.t
+  (** [atomic] focuses on atomic expressions. *)
+
+  val constant : ('i, Constant.t, t, [< variant]) Accessor.Simple.t
+  (** [constant] focuses on constant expressions. *)
+
+  val bop : ('i, Op.Binary.t * t * t, t, [< variant]) Accessor.Simple.t
+  (** [bop] focuses on binary operation expressions. *)
+
+  val uop : ('i, Op.Unary.t * t, t, [< variant]) Accessor.Simple.t
+  (** [uop] focuses on unary operation expressions. *)
+end
 
 (** {1 Constructors} *)
 
