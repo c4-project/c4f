@@ -298,7 +298,7 @@ let%test_module "test runs" =
           Fuzz_test.Action.Test_utils.run_and_dump_vars action
             ~initial_state:state ~scope:(Local 0)
             ~predicates:[Act_fuzz.Var.Record.has_dependencies] ;
-          [%expect {| x=27 |}]
+          [%expect {| i= x=27 |}]
 
         let%expect_test "known values in thread 0 after running" =
           Fuzz_test.Action.Test_utils.run_and_dump_vars action

@@ -350,7 +350,8 @@ module Surround = struct
         let%bind test' =
           register_loop_counter payload.lc_var payload.lc_type test
         in
-        let%map () = Fuzz.State.Monad.erase_var_value payload.lc_var in
+        let%bind () = Fuzz.State.Monad.erase_var_value payload.lc_var in
+        let%map () = Fuzz.State.Monad.add_dependency payload.lc_var in
         test')
 
     let direction (payload : Payload.t) : Act_fir.Flow_block.For.Direction.t
