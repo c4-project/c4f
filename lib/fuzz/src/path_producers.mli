@@ -32,19 +32,12 @@ val is_constructible :
     least one valid path of kind [kind] over test [test] that matches filter
     [filter]. *)
 
-val try_gen :
-     ?filter:Path_filter.t
-  -> Subject.Test.t
-  -> kind:Path_kind.t
-  -> Path.t Opt_gen.t
-(** [try_gen ?filter test ~kind] tries to choose a random path of kind [kind]
-    over test [test] that matches filter [filter]. It fails if such a path is
-    not constructible. *)
-
 val try_gen_with_flags :
      ?filter:Path_filter.t
   -> Subject.Test.t
   -> kind:Path_kind.t
   -> Path.t Path_flag.Flagged.t Opt_gen.t
-(** [try_gen_with_flags ?filter test ~kind] behaves as {!try_gen}, but also
-    returns the flags of the path generated. *)
+(** [try_gen_with_flags ?filter test ~kind] tries to choose a random path of
+    kind [kind] over test [test] that matches filter [filter]. It returns the
+    path alongside the flags that were enabled on it, and fails if such a
+    path is not constructible. *)

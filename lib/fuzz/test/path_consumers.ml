@@ -254,11 +254,11 @@ let%test_module "Statement_list" =
               let kind = F.Path_kind.With_action.to_kind action in
               Test.run_exn
                 ( module struct
-                  type t = F.Path.t [@@deriving sexp]
+                  type t = F.Path.Flagged.t [@@deriving sexp]
 
                   let quickcheck_generator =
                     Or_error.ok_exn
-                      (F.Path_producers.try_gen ?filter ~kind
+                      (F.Path_producers.try_gen_with_flags ?filter ~kind
                          (Lazy.force Subject.Test_data.test))
 
                   let quickcheck_shrinker =
@@ -267,9 +267,10 @@ let%test_module "Statement_list" =
                 end )
                 ~f:(fun path ->
                   [%test_result: unit Or_error.t] ~here:[[%here]]
-                    ~expect:(Or_error.return ())
+                    ~expect:(Ok ())
                     (Or_error.map ~f:(Fn.const ())
-                       (F.Path_consumers.consume ~path ?filter ~action
+                       (F.Path_consumers.consume_with_flags ~path ?filter
+                          ~action
                           (Lazy.force Subject.Test_data.test))))
 
             let%test_unit "unfiltered transform-stm produces valid paths" =

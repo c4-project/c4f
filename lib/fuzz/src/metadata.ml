@@ -45,7 +45,7 @@ let gen_dead : t = Generated (Gen.make ~liveness:Dead ())
 let gen_once : t = Generated (Gen.make ~liveness:Once ())
 
 let liveness (m : t) : Liveness.t =
-    Option.value m.@?(generated @> Gen.liveness) ~default:Live
+  Option.value m.@?(generated @> Gen.liveness) ~default:Live
 
 let has_restriction (r : Restriction.t) : t -> bool = function
   | Existing ->

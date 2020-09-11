@@ -158,4 +158,13 @@ include Complete
 
 module Flagged = struct
   type t = Complete.t Path_flag.Flagged.t [@@deriving sexp, compare, equal]
+
+  let pp : t Fmt.t =
+    Fmt.(
+      using Path_flag.Flagged.path Complete.pp
+      ++ sp
+      ++ braces
+           (using
+              (Fn.compose Set.to_list Path_flag.Flagged.flags)
+              (list ~sep:comma Path_flag.pp)))
 end

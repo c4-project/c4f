@@ -22,13 +22,13 @@ module M = struct
       | In_dead_code
       | In_execute_multi
       | In_loop
-       [@@deriving enum]
+    [@@deriving enum]
 
     let table : (t, string) List.Assoc.t =
       [ (Execute_multi_unsafe, "execute-multi-unsafe")
       ; (In_atomic, "in-atomic")
       ; (In_dead_code, "in-dead-code")
-      ; (In_execute_multi, "in-execute-multi")  
+      ; (In_execute_multi, "in-execute-multi")
       ; (In_loop, "in-loop") ]
   end
 
@@ -41,24 +41,23 @@ include M
 (** Maps a subset of the flags to predicates that toggle whether a piece of
     metadata sets the flag or not. *)
 let metadata_predicates : (t, Metadata.t -> bool) List.Assoc.t =
-  [ (Execute_multi_unsafe, Metadata.has_restriction Metadata.Restriction.Once_only)
+  [ ( Execute_multi_unsafe
+    , Metadata.has_restriction Metadata.Restriction.Once_only )
   ; (In_dead_code, Metadata.(Fn.compose Liveness.is_dead liveness))
   ; (In_execute_multi, Metadata.(Fn.compose (Liveness.equal Live) liveness))
   ]
 
 let flags_of_flow_class' =
   [%accessor
-    Accessor.optional_getter
-      (function
+    Accessor.optional_getter (function
       | Act_fir.Statement_class.Flow.For | While _ ->
-        (* Whether or not the loop executes multiple times is stored in its
-           block metadata. *)
+          (* Whether or not the loop executes multiple times is stored in its
+             block metadata. *)
           Some In_loop
       | Lock (Some Atomic) ->
           Some In_atomic
       | Lock _ | Explicit | Implicit ->
-          None)
-  ]
+          None)]
 
 let flags_of_flow_class : Act_fir.Statement_class.Flow.t -> Set.M(M).t =
   Accessor.Set.of_accessor (module M) flags_of_flow_class'

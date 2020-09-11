@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -248,9 +248,3 @@ let try_gen_with_flags ?(filter : Path_filter.t option)
       Or_error.error_string "No valid paths generated"
   | xs ->
       Ok (Base_quickcheck.Generator.of_list xs)
-
-let try_gen ?(filter : Path_filter.t option) (test : Subject.Test.t)
-    ~(kind : Path_kind.t) : Path.t Opt_gen.t =
-  Opt_gen.map
-    (try_gen_with_flags ?filter ~kind test)
-    ~f:Path_flag.Flagged.path

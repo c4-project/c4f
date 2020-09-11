@@ -183,4 +183,6 @@ val tid : t -> int
 module Flagged : sig
   (** A type synonym for flagged complete paths. *)
   type nonrec t = t Path_flag.Flagged.t [@@deriving sexp, compare, equal]
+
+  include Pretty_printer.S with type t := t
 end
