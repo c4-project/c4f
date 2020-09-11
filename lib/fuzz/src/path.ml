@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -163,8 +163,5 @@ module Flagged = struct
     Fmt.(
       using Path_flag.Flagged.path Complete.pp
       ++ sp
-      ++ braces
-           (using
-              (Fn.compose Set.to_list Path_flag.Flagged.flags)
-              (list ~sep:comma Path_flag.pp)))
+      ++ using Path_flag.Flagged.flags Path_flag.pp_set)
 end

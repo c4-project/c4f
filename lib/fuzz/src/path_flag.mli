@@ -34,6 +34,9 @@ include Act_utils.Enum_types.Extension_table with type t := t
 (** Use [Set.M(Path_flag).t] in client code. *)
 type set := (t, comparator_witness) Set.t
 
+val pp_set : set Fmt.t
+(** [pp_set] pretty-prints a set of path flags. *)
+
 (** {1 Acquiring path flags} *)
 
 val flags_of_metadata : Metadata.t -> set
@@ -41,8 +44,8 @@ val flags_of_metadata : Metadata.t -> set
     construct with metadata [m] will enable. *)
 
 val flags_of_block : Subject.Block.t -> set
-(** [flags_of_metadata b] gets the path flags that passing through a block
-    [b] will enable. *)
+(** [flags_of_block b] gets the path flags that passing through a block [b]
+    will enable. *)
 
 val flags_of_flow : Subject.Statement.Flow.t -> set
 (** [flags_of_flow f] gets the path flags that passing through a flow block

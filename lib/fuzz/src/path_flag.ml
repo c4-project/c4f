@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -80,6 +80,9 @@ let flags_of_stm (s : Subject.Statement.t) : Set.M(M).t =
 let flags_of_flow (f : Subject.Statement.Flow.t) : Set.M(M).t =
   f |> Act_fir.Statement_class.Flow.classify
   |> option_map ~f:flags_of_flow_class
+
+let pp_set : Set.M(M).t Fmt.t =
+  Fmt.(braces (using Set.to_list (list ~sep:comma pp)))
 
 module Flagged = struct
   type 'p t = {path: 'p; flags: Set.M(M).t}
