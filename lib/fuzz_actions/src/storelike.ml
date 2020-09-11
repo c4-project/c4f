@@ -231,11 +231,11 @@ struct
       unit Fuzz.State.Monad.t =
     let tid = path |> Fuzz.Path_flag.Flagged.path |> Fuzz.Path.tid in
     Fuzz.State.Monad.(
-      Let_syntax.(
-        let%bind () = bookkeep_new_locals ~tid (B.new_locals item) in
-        let%bind () = bookkeep_dsts ~tid (B.dst_ids item) in
-        add_expression_dependencies_at_path ~path
-          (List.map ~f:fst (B.src_exprs item))))
+      all_unit
+        [ bookkeep_new_locals ~tid (B.new_locals item)
+        ; bookkeep_dsts ~tid (B.dst_ids item)
+        ; add_expression_dependencies_at_path ~path
+            (List.map ~f:fst (B.src_exprs item)) ])
 
   let insert_vars (target : Fuzz.Subject.Test.t)
       (new_locals : Fir.Initialiser.t Common.C_named.Alist.t) ~(tid : int) :
