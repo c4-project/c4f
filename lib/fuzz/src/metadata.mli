@@ -50,6 +50,9 @@ module Liveness : sig
             This is usually the default liveness when no other specific
             liveness information is needed or given. *)
   [@@deriving accessors, sexp, compare, equal]
+
+  val is_dead : t -> bool
+  (** [is_dead x] is true if, and only if, [x] is [Dead]. *)
 end
 
 (** {2 Specific restriction flags}
@@ -106,10 +109,11 @@ val gen_dead : t
 (** [gen_dead] is metadata marking the recipient as generated dead-code with
     no restrictions. *)
 
-(** {2 Predicates} *)
+(** {2 Getters and predicates} *)
 
-val is_dead_code : t -> bool
-(** [is_dead_code m] is true provided that [m] is generated dead-code. *)
+val liveness : t -> Liveness.t
+(** [liveness m] is the liveness of [m], defaulting to [Live] if [m] is
+    existing. *)
 
 val has_restriction : Restriction.t -> t -> bool
 (** [has_restriction m] is true provided that [m] has the given restriction.

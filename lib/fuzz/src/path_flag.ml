@@ -10,17 +10,26 @@
    project root for more information. *)
 
 open Base
+open Import
 
 (* This module gymnastics brought to you by needing to have a comparator
    module below. *)
 module M = struct
   module M_inner = struct
-    type t = In_loop | In_dead_code | In_atomic [@@deriving enum]
+    type t =
+      | Execute_multi_unsafe
+      | In_atomic
+      | In_dead_code
+      | In_execute_multi
+      | In_loop
+       [@@deriving enum]
 
     let table : (t, string) List.Assoc.t =
-      [ (In_loop, "in loop")
-      ; (In_dead_code, "in dead code")
-      ; (In_atomic, "in atomic block") ]
+      [ (Execute_multi_unsafe, "execute-multi-unsafe")
+      ; (In_atomic, "in-atomic")
+      ; (In_dead_code, "in-dead-code")
+      ; (In_execute_multi, "in-execute-multi")  
+      ; (In_loop, "in-loop") ]
   end
 
   include M_inner
@@ -32,16 +41,27 @@ include M
 (** Maps a subset of the flags to predicates that toggle whether a piece of
     metadata sets the flag or not. *)
 let metadata_predicates : (t, Metadata.t -> bool) List.Assoc.t =
-  [(In_dead_code, Metadata.is_dead_code)]
+  [ (Execute_multi_unsafe, Metadata.has_restriction Metadata.Restriction.Once_only)
+  ; (In_dead_code, Metadata.(Fn.compose Liveness.is_dead liveness))
+  ; (In_execute_multi, Metadata.(Fn.compose (Liveness.equal Live) liveness))
+  ]
+
+let flags_of_flow_class' =
+  [%accessor
+    Accessor.optional_getter
+      (function
+      | Act_fir.Statement_class.Flow.For | While _ ->
+        (* Whether or not the loop executes multiple times is stored in its
+           block metadata. *)
+          Some In_loop
+      | Lock (Some Atomic) ->
+          Some In_atomic
+      | Lock _ | Explicit | Implicit ->
+          None)
+  ]
 
 let flags_of_flow_class : Act_fir.Statement_class.Flow.t -> Set.M(M).t =
-  function
-  | For | While _ ->
-      Set.singleton (module M) In_loop
-  | Lock (Some Atomic) ->
-      Set.singleton (module M) In_atomic
-  | Lock _ | Explicit | Implicit ->
-      Set.empty (module M)
+  Accessor.Set.of_accessor (module M) flags_of_flow_class'
 
 let flags_of_metadata (m : Metadata.t) : Set.M(M).t =
   metadata_predicates

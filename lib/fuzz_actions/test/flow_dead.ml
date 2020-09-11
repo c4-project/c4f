@@ -64,7 +64,7 @@ let%test_module "Early_out" =
       test_on_example_program FT.Subject.Test_data.Path.insert_dead Break ;
       [%expect
         {|
-      ("checking flags on insertion" "Unmet required flag condition: in loop") |}]
+      ("checking flags on insertion" "Unmet required flag condition: in-loop") |}]
 
     let%expect_test "valid return on example program" =
       test_on_example_program FT.Subject.Test_data.Path.insert_dead Return ;

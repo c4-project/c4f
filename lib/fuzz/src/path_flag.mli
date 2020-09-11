@@ -20,9 +20,11 @@ open Base
 
 (** Type of path flags. *)
 type t =
-  | In_loop  (** The path passes through a loop body. *)
-  | In_dead_code  (** The path passes through a dead-code block. *)
+  | Execute_multi_unsafe (** The path reaches a statement that is not safe to execute multiple times. *)
   | In_atomic  (** The path passes through an atomic block. *)
+  | In_dead_code  (** The path passes through a dead-code block. *)
+  | In_execute_multi (** The path passes through a block that MAY execute multiple times. *)
+  | In_loop  (** The path passes through a loop body. *)
 
 include Act_utils.Enum_types.Extension_table with type t := t
 

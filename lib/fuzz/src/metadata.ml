@@ -14,6 +14,8 @@ open Import
 
 module Liveness = struct
   type t = Dead | Once | Live [@@deriving accessors, sexp, compare, equal]
+
+  let is_dead (x : t) : bool = not (Accessor.is_empty dead x)
 end
 
 module Restriction = struct
@@ -42,8 +44,8 @@ let gen_dead : t = Generated (Gen.make ~liveness:Dead ())
 
 let gen_once : t = Generated (Gen.make ~liveness:Once ())
 
-let is_dead_code : t -> bool =
-  Fn.non (Accessor.is_empty (generated @> Gen.liveness @> Liveness.dead))
+let liveness (m : t) : Liveness.t =
+    Option.value m.@?(generated @> Gen.liveness) ~default:Live
 
 let has_restriction (r : Restriction.t) : t -> bool = function
   | Existing ->
