@@ -126,11 +126,13 @@ module Surround = struct
 
     let t_branch_of_statements (statements : Fuzz.Subject.Statement.t list) :
         Fuzz.Subject.Block.t =
-      Fuzz.Subject.Block.make_generated ~statements ()
+      Fir.Block.make ~metadata:Fuzz.Metadata.gen_once ~statements ()
 
     let f_branch_of_statements (_statements : Fuzz.Subject.Statement.t list)
         : Fuzz.Subject.Block.t =
-      Fir.Block.make ~metadata:Fuzz.Metadata.dead_code ()
+      (* _statements contains the same statements as the true block; we want
+         to generate an empty block, so we ignore it. *)
+      Fir.Block.make ~metadata:Fuzz.Metadata.gen_dead ()
 
     let path_filter : Fuzz.Path_filter.t = Fuzz.Path_filter.empty
   end)

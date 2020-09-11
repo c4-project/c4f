@@ -31,20 +31,20 @@ module Statement = struct
   include Fir.Statement_traverse.With_meta (Metadata)
 
   let make_generated_prim (s : Fir.Prim_statement.t) : t =
-    A.construct Fir.Statement.prim (Metadata.generated, s)
+    A.construct Fir.Statement.prim (Metadata.gen_normal, s)
 end
 
 module Block = struct
   type t = (Metadata.t, Statement.t) Fir.Block.t
 
   let make_existing ?(statements : Statement.t list option) () : t =
-    Fir.Block.make ?statements ~metadata:Metadata.existing ()
+    Fir.Block.make ?statements ~metadata:Metadata.Existing ()
 
   let make_generated ?(statements : Statement.t list option) () : t =
-    Fir.Block.make ?statements ~metadata:Metadata.generated ()
+    Fir.Block.make ?statements ~metadata:Metadata.gen_normal ()
 
   let make_dead_code ?(statements : Statement.t list option) () : t =
-    Fir.Block.make ?statements ~metadata:Metadata.dead_code ()
+    Fir.Block.make ?statements ~metadata:Metadata.gen_dead ()
 end
 
 module Thread = struct
@@ -78,7 +78,7 @@ module Thread = struct
     |> List.map
          ~f:
            (Fir.Statement_traverse.On_meta.map ~f:(fun () ->
-                Metadata.existing))
+                Metadata.Existing))
 
   let of_function (func : unit Fir.Function.t) : t =
     make

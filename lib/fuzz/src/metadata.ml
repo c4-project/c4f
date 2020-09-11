@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,18 +10,43 @@
    project root for more information. *)
 
 open Base
+open Import
 
-type t = {source: [`Existing | `Generated]; liveness: [`Normal | `Dead]}
-[@@deriving sexp, compare, equal]
+module Liveness = struct
+  type t = Dead | Once | Live [@@deriving accessors, sexp, compare, equal]
+end
 
-let existing : t = {source= `Existing; liveness= `Normal}
+module Restriction = struct
+  module M = struct
+    type t = Once_only [@@deriving accessors, sexp, compare, equal]
+  end
 
-let generated : t = {source= `Generated; liveness= `Normal}
+  include M
+  include Comparable.Make (M)
+end
 
-let dead_code : t = {source= `Generated; liveness= `Dead}
+module Gen = struct
+  type t =
+    { liveness: Liveness.t [@default Liveness.Live]
+    ; restrictions: Set.M(Restriction).t
+          [@default Set.empty (module Restriction)] }
+  [@@deriving accessors, sexp, make, compare, equal]
+end
 
-let is_dead_code : t -> bool = function
-  | {liveness= `Dead; _} ->
+type t = Existing | Generated of Gen.t
+[@@deriving accessors, sexp, compare, equal]
+
+let gen_normal : t = Generated (Gen.make ())
+
+let gen_dead : t = Generated (Gen.make ~liveness:Dead ())
+
+let gen_once : t = Generated (Gen.make ~liveness:Once ())
+
+let is_dead_code : t -> bool =
+  Fn.non (Accessor.is_empty (generated @> Gen.liveness @> Liveness.dead))
+
+let has_restriction (r : Restriction.t) : t -> bool = function
+  | Existing ->
       true
-  | _ ->
-      false
+  | Generated g ->
+      not Accessor.(is_empty (Gen.restrictions @> Set.found r) g)
