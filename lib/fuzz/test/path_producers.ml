@@ -45,14 +45,14 @@ let%test_module "sample path output on example code" =
               P0!Stms!Insert[4] {}
               P0!Stms!Insert[6] {}
               P0!Stms!Stm[3]!If!False!Insert[0] {in-dead-code}
-              P0!Stms!Stm[3]!If!True!Insert[0] {in-execute-multi}
-              P0!Stms!Stm[3]!If!True!Insert[1] {in-execute-multi}
-              P0!Stms!Stm[4]!If!False!Insert[0] {in-execute-multi}
+              P0!Stms!Stm[3]!If!True!Insert[0] {}
+              P0!Stms!Stm[3]!If!True!Insert[1] {}
+              P0!Stms!Stm[4]!If!False!Insert[0] {}
               P0!Stms!Stm[4]!If!True!Insert[1] {in-dead-code}
               P0!Stms!Stm[5]!Flow-block!Body!Insert[0] {in-dead-code, in-loop}
               P0!Stms!Stm[5]!Flow-block!Body!Insert[1] {in-dead-code, in-loop}
               P1!Stms!Insert[1] {}
-              P1!Stms!Stm[1]!If!True!Insert[0] {in-execute-multi} |}]
+              P1!Stms!Stm[1]!If!True!Insert[0] {} |}]
 
     let%expect_test "try_gen_insert_stm with thread filtering" =
       test Insert
@@ -65,7 +65,7 @@ let%test_module "sample path output on example code" =
               P1!Stms!Insert[2] {}
               P1!Stms!Stm[1]!If!False!Insert[0] {in-dead-code}
               P1!Stms!Stm[1]!If!False!Insert[1] {in-dead-code}
-              P1!Stms!Stm[1]!If!True!Insert[0] {in-execute-multi} |}]
+              P1!Stms!Stm[1]!If!True!Insert[0] {} |}]
 
     let%expect_test "try_gen_insert_stm with dead-code filtering" =
       test Insert Act_fuzz.Path_filter.(empty |> in_dead_code_only) ;
@@ -82,17 +82,16 @@ let%test_module "sample path output on example code" =
       test Transform Act_fuzz.Path_filter.empty ;
       [%expect
         {|
-            P0!Stms!Stm[0]!This {in-execute-multi}
-            P0!Stms!Stm[1]!This {in-execute-multi}
-            P0!Stms!Stm[2]!This {in-execute-multi}
+            P0!Stms!Stm[0]!This {}
+            P0!Stms!Stm[1]!This {}
+            P0!Stms!Stm[2]!This {}
             P0!Stms!Stm[3]!This {}
-            P0!Stms!Stm[4]!If!True!Stm[0]!This {in-dead-code, in-execute-multi}
+            P0!Stms!Stm[4]!If!True!Stm[0]!This {in-dead-code}
             P0!Stms!Stm[4]!This {}
-            P0!Stms!Stm[5]!Flow-block!Body!Stm[0]!This
-            {in-dead-code, in-execute-multi, in-loop}
+            P0!Stms!Stm[5]!Flow-block!Body!Stm[0]!This {in-dead-code, in-loop}
             P0!Stms!Stm[5]!This {}
-            P1!Stms!Stm[0]!This {in-execute-multi}
-            P1!Stms!Stm[1]!If!False!Stm[0]!This {in-dead-code, in-execute-multi}
+            P1!Stms!Stm[0]!This {}
+            P1!Stms!Stm[1]!If!False!Stm[0]!This {in-dead-code}
             P1!Stms!Stm[1]!This {} |}]
 
     let%expect_test "try_gen_transform_stm with filtering to if statements" =
@@ -109,24 +108,22 @@ let%test_module "sample path output on example code" =
       test Transform Act_fuzz.Path_filter.(empty |> in_dead_code_only) ;
       [%expect
         {|
-              P0!Stms!Stm[4]!If!True!Stm[0]!This {in-dead-code, in-execute-multi}
-              P0!Stms!Stm[5]!Flow-block!Body!Stm[0]!This
-              {in-dead-code, in-execute-multi, in-loop}
-              P1!Stms!Stm[1]!If!False!Stm[0]!This {in-dead-code, in-execute-multi} |}]
+              P0!Stms!Stm[4]!If!True!Stm[0]!This {in-dead-code}
+              P0!Stms!Stm[5]!Flow-block!Body!Stm[0]!This {in-dead-code, in-loop}
+              P1!Stms!Stm[1]!If!False!Stm[0]!This {in-dead-code} |}]
 
     let%expect_test "try_gen_transform_stm with filtering to loops" =
       test Transform Act_fuzz.Path_filter.(empty |> in_loop_only) ;
       [%expect
         {|
-        P0!Stms!Stm[5]!Flow-block!Body!Stm[0]!This
-        {in-dead-code, in-execute-multi, in-loop} |}]
+        P0!Stms!Stm[5]!Flow-block!Body!Stm[0]!This {in-dead-code, in-loop} |}]
 
     let%expect_test "try_gen_transform_stm_list" =
       test Transform_list Act_fuzz.Path_filter.empty ;
       [%expect
         {|
-              P0!Stms!Stm[3]!If!True!Range[0, 1] {in-execute-multi}
-              P0!Stms!Stm[3]!If!True!Range[1, 0] {in-execute-multi}
+              P0!Stms!Stm[3]!If!True!Range[0, 1] {}
+              P0!Stms!Stm[3]!If!True!Range[1, 0] {}
               P0!Stms!Stm[4]!If!True!Range[0, 0] {in-dead-code}
               P0!Stms!Stm[5]!Flow-block!Body!Range[0, 0] {in-dead-code, in-loop}
               P0!Stms!Range[0, 0] {}
@@ -166,8 +163,8 @@ let%test_module "sample path output on example code" =
           empty |> require_end_check ~check:(Stm_class (Is, [If]))) ;
       [%expect
         {|
-              P0!Stms!Stm[3]!If!True!Range[1, 0] {in-execute-multi}
-              P0!Stms!Stm[4]!If!False!Range[0, 0] {in-execute-multi}
+              P0!Stms!Stm[3]!If!True!Range[1, 0] {}
+              P0!Stms!Stm[4]!If!False!Range[0, 0] {}
               P0!Stms!Stm[4]!If!True!Range[1, 0] {in-dead-code}
               P0!Stms!Range[0, 0] {}
               P0!Stms!Range[1, 0] {}
@@ -191,10 +188,10 @@ let%test_module "sample path output on example code" =
                ~check:(Stm_class (Is_not_any, [Prim (Some Label)]))) ;
       [%expect
         {|
-              P0!Stms!Stm[3]!If!True!Range[0, 0] {in-execute-multi}
-              P0!Stms!Stm[3]!If!True!Range[0, 1] {in-execute-multi}
-              P0!Stms!Stm[3]!If!True!Range[1, 0] {in-execute-multi}
-              P0!Stms!Stm[3]!If!True!Range[2, 0] {in-execute-multi}
+              P0!Stms!Stm[3]!If!True!Range[0, 0] {}
+              P0!Stms!Stm[3]!If!True!Range[0, 1] {}
+              P0!Stms!Stm[3]!If!True!Range[1, 0] {}
+              P0!Stms!Stm[3]!If!True!Range[2, 0] {}
               P0!Stms!Stm[4]!If!True!Range[0, 0] {in-dead-code}
               P0!Stms!Stm[4]!If!True!Range[0, 1] {in-dead-code}
               P0!Stms!Stm[4]!If!True!Range[1, 0] {in-dead-code}
@@ -217,9 +214,9 @@ let%test_module "sample path output on example code" =
       [%expect
         {|
               P0!Stms!Stm[3]!If!False!Range[0, 0] {in-dead-code}
-              P0!Stms!Stm[3]!If!True!Range[0, 0] {in-execute-multi}
-              P0!Stms!Stm[3]!If!True!Range[0, 1] {in-execute-multi}
-              P0!Stms!Stm[3]!If!True!Range[1, 0] {in-execute-multi}
+              P0!Stms!Stm[3]!If!True!Range[0, 0] {}
+              P0!Stms!Stm[3]!If!True!Range[0, 1] {}
+              P0!Stms!Stm[3]!If!True!Range[1, 0] {}
               P0!Stms!Stm[4]!If!True!Range[0, 0] {in-dead-code}
               P0!Stms!Stm[5]!Flow-block!Body!Range[0, 1] {in-dead-code, in-loop}
               P0!Stms!Stm[5]!Flow-block!Body!Range[1, 0] {in-dead-code, in-loop}
@@ -231,5 +228,5 @@ let%test_module "sample path output on example code" =
               P0!Stms!Range[5, 1] {}
               P1!Stms!Stm[1]!If!False!Range[0, 0] {in-dead-code}
               P1!Stms!Stm[1]!If!False!Range[1, 0] {in-dead-code}
-              P1!Stms!Stm[1]!If!True!Range[0, 0] {in-execute-multi} |}]
+              P1!Stms!Stm[1]!If!True!Range[0, 0] {} |}]
   end )

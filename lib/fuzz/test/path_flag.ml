@@ -22,7 +22,7 @@ let%test_module "flags_of_metadata" =
 
     let%expect_test "existing" =
       test Src.Metadata.Existing ;
-      [%expect {| {execute-multi-unsafe, in-execute-multi} |}]
+      [%expect {| {execute-multi-unsafe} |}]
 
     let%expect_test "dead-code" =
       test Src.Metadata.gen_dead ;
@@ -30,7 +30,7 @@ let%test_module "flags_of_metadata" =
 
     let%expect_test "normal generation" =
       test Src.Metadata.gen_normal ;
-      [%expect {| {in-execute-multi} |}]
+      [%expect {| {} |}]
 
     let%expect_test "normal-with-restrictions generation" =
       test
@@ -39,7 +39,7 @@ let%test_module "flags_of_metadata" =
             (Gen.make
                ~restrictions:(Set.singleton (module Restriction) Once_only)
                ())) ;
-      [%expect {| {execute-multi-unsafe, in-execute-multi} |}]
+      [%expect {| {execute-multi-unsafe} |}]
 
     let%expect_test "once generation" =
       test Src.Metadata.gen_once ;
@@ -57,7 +57,7 @@ let%test_module "flags_of_flow" =
            ~cond:(Fir.Expression.of_variable_str_exn "foo")
            ~kind:While
            ~body:(Src.Subject.Block.make_generated ())) ;
-      [%expect {| {in-loop} |}]
+      [%expect {| {in-execute-multi, in-loop} |}]
 
     let%expect_test "existing loop" =
       test
@@ -65,7 +65,7 @@ let%test_module "flags_of_flow" =
            ~cond:(Fir.Expression.of_variable_str_exn "foo")
            ~kind:While
            ~body:(Src.Subject.Block.make_existing ())) ;
-      [%expect {| {in-loop} |}]
+      [%expect {| {in-execute-multi, in-loop} |}]
 
     let%expect_test "dead loop" =
       test

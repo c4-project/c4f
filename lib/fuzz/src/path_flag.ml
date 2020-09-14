@@ -44,13 +44,14 @@ let metadata_predicates : (t, Metadata.t -> bool) List.Assoc.t =
   [ ( Execute_multi_unsafe
     , Metadata.has_restriction Metadata.Restriction.Once_only )
   ; (In_dead_code, Metadata.(Fn.compose Liveness.is_dead liveness))
-  ; (In_execute_multi, Metadata.(Fn.compose (Liveness.equal Live) liveness))
-  ]
+    (* We don't add Execute_multi here, as, while it depends on the block
+       metadata, it only gets added to loops; consequently, it gets added as
+       a special case in the flow flag generator. *) ]
 
 let flags_of_flow_class' =
   [%accessor
     Accessor.optional_getter (function
-      | Act_fir.Statement_class.Flow.For | While _ ->
+      | Fir.Statement_class.Flow.For | While _ ->
           (* Whether or not the loop executes multiple times is stored in its
              block metadata. *)
           Some In_loop
@@ -58,9 +59,6 @@ let flags_of_flow_class' =
           Some In_atomic
       | Lock _ | Explicit | Implicit ->
           None)]
-
-let flags_of_flow_class : Act_fir.Statement_class.Flow.t -> Set.M(M).t =
-  Accessor.Set.of_accessor (module M) flags_of_flow_class'
 
 let flags_of_metadata (m : Metadata.t) : Set.M(M).t =
   metadata_predicates
@@ -75,11 +73,23 @@ let flags_of_block (b : Subject.Block.t) : Set.M(M).t =
   flags_of_metadata b.@(Fir.Block.metadata)
 
 let flags_of_stm (s : Subject.Statement.t) : Set.M(M).t =
-  s |> Act_fir.Statement.own_metadata |> option_map ~f:flags_of_metadata
+  s |> Fir.Statement.own_metadata |> option_map ~f:flags_of_metadata
+
+let add_special_flow_flags (f : Subject.Statement.Flow.t) (fcf : Set.M(M).t)
+    : Set.M(M).t =
+  let body_m = (Fir.Flow_block.body f).@(Fir.Block.metadata) in
+  if Set.mem fcf In_loop && Metadata.(Liveness.equal Live (liveness body_m))
+  then Set.add fcf In_execute_multi
+  else fcf
+
+let classify' =
+  [%accessor Accessor.optional_getter Fir.Statement_class.Flow.classify]
+
+let flags_of_flow_class : Subject.Statement.Flow.t -> Set.M(M).t =
+  Accessor.Set.of_accessor (module M) (classify' @> flags_of_flow_class')
 
 let flags_of_flow (f : Subject.Statement.Flow.t) : Set.M(M).t =
-  f |> Act_fir.Statement_class.Flow.classify
-  |> option_map ~f:flags_of_flow_class
+  add_special_flow_flags f (flags_of_flow_class f)
 
 let pp_set : Set.M(M).t Fmt.t =
   Fmt.(braces (using Set.to_list (list ~sep:comma pp)))
