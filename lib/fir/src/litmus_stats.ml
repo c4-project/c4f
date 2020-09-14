@@ -177,14 +177,20 @@ let probe_prim (s : Prim_statement.t) : unit Monad.t =
       ~early_out:probe_early_out ~label:nowt ~goto:nowt ~nop:nowt
       ~procedure_call:nowt)
 
+module AM = Accessor.Of_monad (struct
+  include Monad
+
+  let apply = `Define_using_bind
+end)
+
 let seq_block : (unit, unit Monad.t) Block.t -> unit Monad.t =
-  Fn.compose Monad.all_unit Block.statements
+  AM.all_unit Block.each_statement
 
 let probe_if (i : (unit, unit Monad.t) If.t) : unit Monad.t =
-  Monad.Let_syntax.(
-    let%bind () = seq_block (If.t_branch i) in
-    let%bind () = seq_block (If.f_branch i) in
-    probe_expr (If.cond i))
+  Monad.all_unit
+    [ seq_block (If.t_branch i)
+    ; seq_block (If.f_branch i)
+    ; probe_expr (If.cond i) ]
 
 module HdrM = Flow_block.Header.On_expressions.On_monad (Monad)
 

@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,6 +10,7 @@
    project root for more information. *)
 
 open Base
+open Import
 
 (** Generic blocks with metadata. *)
 
@@ -30,11 +31,15 @@ val of_statement_list : 'stm list -> (unit, 'stm) t
 
 (** {2 Accessors} *)
 
-val metadata : ('meta, _) t -> 'meta
-(** [metadata block] gets [block]'s metadata. *)
+val metadata : ('i, 'meta, ('meta, 'stm) t, [< field]) Accessor.Simple.t
+(** [metadata] accesses block metadata. *)
 
-val statements : (_, 'stm) t -> 'stm list
-(** [statements block] gets [block]'s statement list. *)
+val statements :
+  ('i, 'stm list, ('meta, 'stm) t, [< field]) Accessor.Simple.t
+(** [statements] accesses block statement lists. *)
+
+val each_statement : ('i, 'stm, ('meta, 'stm) t, [< many]) Accessor.Simple.t
+(** [each_statement] accesses each statement in a block individually. *)
 
 val is_empty : (_, _) t -> bool
 (** [is_empty block] is true if, and only if, [statements block] is the empty

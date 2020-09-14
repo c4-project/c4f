@@ -12,7 +12,7 @@
 open Base
 
 open struct
-  module A = Accessor
+  module A = Accessor_base
   module Fir = Act_fir
 end
 
@@ -42,8 +42,10 @@ let assign (asn : Fir.Assign.t) : Ast.Stm.t =
 let lift_stms : Ast.Stm.t list -> Ast.Compound_stm.t =
   List.map ~f:(fun s -> `Stm s)
 
+let flat_statements = [%accessor A.(Fir.Block.each_statement @> List.each)]
+
 let merge_stms (b : ('meta, Ast.Stm.t list) Fir.Block.t) : Ast.Stm.t list =
-  List.concat (Fir.Block.statements b)
+  A.(b.@*(flat_statements))
 
 let block_compound (type meta) (b : (meta, Ast.Stm.t list) Fir.Block.t) :
     Ast.Compound_stm.t =
@@ -52,15 +54,11 @@ let block_compound (type meta) (b : (meta, Ast.Stm.t list) Fir.Block.t) :
 let block (type meta) (b : (meta, Ast.Stm.t list) Fir.Block.t) : Ast.Stm.t =
   Compound (block_compound b)
 
-let is_empty_nested (type meta) (b : (meta, Ast.Stm.t list) Fir.Block.t) :
-    bool =
-  List.for_all (Fir.Block.statements b) ~f:List.is_empty
-
 let ne_block (type meta) (b : (meta, Ast.Stm.t list) Fir.Block.t) :
     Ast.Stm.t option =
   (* We can't use Fir.Block.is_empty here, as it'd suggest a block whose
      statement list is [[]] is not empty. *)
-  if is_empty_nested b then None else Some (block b)
+  if Accessor.is_empty flat_statements b then None else Some (block b)
 
 let nop (_ : 'meta) : Ast.Stm.t = Ast.Stm.Expr None
 

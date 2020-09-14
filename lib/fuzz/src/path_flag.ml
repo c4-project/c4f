@@ -72,7 +72,7 @@ let option_map (type a) (o : a Option.t) ~(f : a -> Set.M(M).t) : Set.M(M).t
   Option.value_map o ~f ~default:(Set.empty (module M))
 
 let flags_of_block (b : Subject.Block.t) : Set.M(M).t =
-  flags_of_metadata (Act_fir.Block.metadata b)
+  flags_of_metadata b.@(Fir.Block.metadata)
 
 let flags_of_stm (s : Subject.Statement.t) : Set.M(M).t =
   s |> Act_fir.Statement.own_metadata |> option_map ~f:flags_of_metadata

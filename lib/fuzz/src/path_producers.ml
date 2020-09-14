@@ -10,6 +10,7 @@
    project root for more information. *)
 
 open Base
+open Import
 
 type 'm t = 'm Path_flag.Flagged.t Sequence.t
 
@@ -136,7 +137,7 @@ module Block = struct
 
   let produce (b : Subject.Block.t) ~(mu : mu) : ctx:ctx -> Path.Stms.t t =
     with_flags (Path_flag.flags_of_block b) ~f:(fun ctx ->
-        produce_stms (Act_fir.Block.statements b) ~mu ~ctx)
+        produce_stms b.@(Fir.Block.statements) ~mu ~ctx)
 end
 
 (** If blocks and flow blocks both share the same path structure, with some
@@ -178,7 +179,7 @@ module If = Make_flow (struct
   type branch = bool [@@deriving enumerate]
 
   let sel_branch (b : bool) : Subject.Statement.If.t -> Subject.Block.t =
-    if b then Act_fir.If.t_branch else Act_fir.If.f_branch
+    if b then Fir.If.t_branch else Fir.If.f_branch
 
   let lift_path b rest = Path.Stm.in_if @@ Path.If.in_branch b @@ rest
 
@@ -190,7 +191,7 @@ module Flow = Make_flow (struct
 
   type branch = unit [@@deriving enumerate]
 
-  let sel_branch () = Act_fir.Flow_block.body
+  let sel_branch () = Fir.Flow_block.body
 
   let lift_path () rest = Path.Stm.in_flow @@ Path.Flow.in_body @@ rest
 
@@ -207,7 +208,7 @@ module Stm = struct
 
   let recursive (s : Subject.Statement.t) ~(mu : mu) ~(ctx : ctx) :
       Path.Stm.t t =
-    Act_fir.Statement.reduce_step s ~prim:(Fn.const Sequence.empty)
+    Fir.Statement.reduce_step s ~prim:(Fn.const Sequence.empty)
       ~if_stm:(If.produce ~mu ~ctx) ~flow:(Flow.produce ~mu ~ctx)
 
   let produce (s : Subject.Statement.t) ~(ctx : ctx) : Path.Stm.t t =

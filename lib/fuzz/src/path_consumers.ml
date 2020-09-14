@@ -10,10 +10,7 @@
    project root for more information. *)
 
 open Base
-
-open struct
-  module Tx = Travesty_base_exts
-end
+open Import
 
 type ctx = Path_kind.With_action.t Path_context.t
 
@@ -38,14 +35,14 @@ module Helpers = struct
           ~got:(got : Path_kind.t)
           ~want:(want : Path_kind.t)]
 
-  let bad_stm (got_stm : Subject.Statement.t)
-      ~(want : Act_fir.Statement_class.t) : 'a Or_error.t =
-    let got = Act_fir.Statement_class.classify got_stm in
+  let bad_stm (got_stm : Subject.Statement.t) ~(want : Fir.Statement_class.t)
+      : 'a Or_error.t =
+    let got = Fir.Statement_class.classify got_stm in
     Or_error.error_s
       [%message
         "Unexpected statement class for this path"
-          ~got:(got : Act_fir.Statement_class.t option)
-          ~want:(want : Act_fir.Statement_class.t)]
+          ~got:(got : Fir.Statement_class.t option)
+          ~want:(want : Fir.Statement_class.t)]
 end
 
 let checked_transform (stm : Subject.Statement.t) ~(ctx : ctx)
@@ -131,13 +128,13 @@ module Block = struct
 
   let consume (b : Subject.Block.t) ~(path : Path.Stms.t) ~(mu : mu) :
       ctx:ctx -> Subject.Block.t Or_error.t =
-    let metadata = Act_fir.Block.metadata b in
+    let metadata = b.@(Fir.Block.metadata) in
     with_flags (Path_flag.flags_of_block b) ~f:(fun ctx ->
         Or_error.Let_syntax.(
           let%map statements =
-            consume_stms (Act_fir.Block.statements b) ~path ~mu ~ctx
+            consume_stms b.@(Fir.Block.statements) ~path ~mu ~ctx
           in
-          Act_fir.Block.make ~statements ~metadata ()))
+          Fir.Block.make ~statements ~metadata ()))
 end
 
 (** If blocks and flow blocks both share the same path structure, with some
@@ -195,7 +192,7 @@ module If = Make_flow (struct
 
   let thru_flags = Fn.const (Set.empty (module Path_flag))
 
-  module Map = Act_fir.If.Base_map (Or_error)
+  module Map = Fir.If.Base_map (Or_error)
 
   let block_lens ((b, _) : rest)
       (f : Subject.Block.t -> Subject.Block.t Or_error.t) : t -> t Or_error.t
@@ -213,7 +210,7 @@ module Flow = Make_flow (struct
 
   let thru_flags = Path_flag.flags_of_flow
 
-  module Map = Act_fir.Flow_block.Base_map (Or_error)
+  module Map = Fir.Flow_block.Base_map (Or_error)
 
   let block_lens (_ : rest)
       (f : Subject.Block.t -> Subject.Block.t Or_error.t) : t -> t Or_error.t
@@ -222,7 +219,7 @@ module Flow = Make_flow (struct
 end)
 
 module Stm = struct
-  module Map = Act_fir.Statement_traverse.Base_map (Or_error)
+  module Map = Fir.Statement_traverse.Base_map (Or_error)
 
   let this_stm (stm : Subject.Statement.t) ~(ctx : ctx) :
       Subject.Statement.t Or_error.t =

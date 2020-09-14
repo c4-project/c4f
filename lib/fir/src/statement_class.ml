@@ -1,4 +1,16 @@
+(* The Automagic Compiler Tormentor
+
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
+
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
+
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
+
 open Base
+open Import
 
 module Prim = struct
   type t =
@@ -84,7 +96,7 @@ include Class.Make_ext (struct
       ~flow:(fun x -> Some (Flow (Flow.classify x)))
 
   let unfold_block (blk : ('m, t list) Block.t) : t list =
-    List.concat (Block.statements blk)
+    Accessor.to_list (Block.each_statement @> Accessor.List.each) blk
 
   let classify_rec (type e) (stm : e Statement.t) : t list =
     Statement.reduce stm

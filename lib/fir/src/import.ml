@@ -16,3 +16,4 @@ include Accessor.O
 module Common = Act_common
 module Utils = Act_utils
 module Q = Base_quickcheck
+module Tx = Travesty_base_exts

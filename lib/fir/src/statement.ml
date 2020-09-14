@@ -10,11 +10,7 @@
    project root for more information. *)
 
 open Base
-
-open struct
-  module A = Accessor_base
-  module Tx = Travesty_base_exts
-end
+open Import
 
 (* This module brought to you by ppx_deriving's dislike of nonrec. *)
 module Inner = struct
@@ -27,9 +23,9 @@ end
 
 include Inner
 
-let prim' : ('a, Prim_statement.t, unit t, [< A.variant]) A.Simple.t =
+let prim' : ('a, Prim_statement.t, unit t, [< variant]) Accessor.Simple.t =
   [%accessor
-    A.(
+    Accessor.(
       prim
       @> isomorphism ~get:(fun ((), x) -> x) ~construct:(fun x -> ((), x)))]
 
@@ -70,7 +66,7 @@ let own_metadata (type meta) (x : meta t) : meta Option.t =
 (** Shorthand for lifting a predicate on primitives. *)
 let is_prim_and (type meta) (t : meta t) ~(f : Prim_statement.t -> bool) :
     bool =
-  A.(exists (prim @> Tuple2.snd)) ~f t
+  Accessor.(exists (prim @> Tuple2.snd)) ~f t
 
 (** Shorthand for writing a predicate that is [false] on primitives. *)
 let is_not_prim_and (type meta) ~(if_stm : (meta, meta t) If.t -> bool)
@@ -79,7 +75,7 @@ let is_not_prim_and (type meta) ~(if_stm : (meta, meta t) If.t -> bool)
 
 let true_of_any_block_stm (b : ('meta, 'meta t) Block.t)
     ~(predicate : 'meta t -> bool) : bool =
-  List.exists (Block.statements b) ~f:predicate
+  Accessor.exists Block.each_statement b ~f:predicate
 
 let true_of_any_flow_body_stm (l : ('meta, 'meta t) Flow_block.t)
     ~(predicate : 'meta t -> bool) : bool =
@@ -96,7 +92,7 @@ let has_blocks_with_metadata (m : 'meta t) ~(predicate : 'meta -> bool) :
     bool =
   let rec mu x =
     let true_of_block b =
-      predicate (Block.metadata b) || true_of_any_block_stm ~predicate:mu b
+      predicate b.@(Block.metadata) || true_of_any_block_stm ~predicate:mu b
     in
     is_not_prim_and x
       ~flow:(fun l -> true_of_block (Flow_block.body l))
