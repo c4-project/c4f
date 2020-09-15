@@ -36,10 +36,10 @@ module Insert = struct
 
       let path_filter _ = Fuzz.Path_filter.empty
 
-      let gen (ins_path : Fuzz.Path.Flagged.t) : t Fuzz.Payload_gen.t =
+      let gen ({path; _} : Fuzz.Path.Flagged.t) : t Fuzz.Payload_gen.t =
+        let tid = Fuzz.Path.tid path in
         Fuzz.Payload_gen.(
           let* vars = vars in
-          let tid = Fuzz.Path.tid (Fuzz.Path_flag.Flagged.path ins_path) in
           let env =
             Fuzz.Var.Map.env_satisfying_all vars ~scope:(Local tid)
               ~predicates:[]
@@ -64,7 +64,7 @@ module Insert = struct
       Fuzz.State.Monad.(
         (* NB: See discussion in Surround's apply function. *)
         add_expression_dependencies to_insert
-          ~scope:(Local (Fuzz.Path.tid (Fuzz.Path_flag.Flagged.path path)))
+          ~scope:(Local (Fuzz.Path.tid path.path))
         >>= fun () ->
         Monadic.return
           (Fuzz.Path_consumers.consume_with_flags subject ~path
@@ -321,10 +321,7 @@ module Surround = struct
             lift (Fn.compose path_filter Context.to_availability)
           in
           let* where = path_with_flags Transform_list ~filter in
-          let scope =
-            Common.Scope.Local
-              (Fuzz.Path.tid (Fuzz.Path_flag.Flagged.path where))
-          in
+          let scope = Common.Scope.Local (Fuzz.Path.tid where.path) in
           let* lc_var = fresh_var scope in
           let* kv_var = known_value_var scope in
           let lc_type = counter_type kv_var in

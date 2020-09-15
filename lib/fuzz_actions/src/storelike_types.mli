@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -20,8 +20,8 @@ module type Flags = sig
   (** [erase_known_values] is a flag that, when true, causes the action to
       erase the known value when finished. *)
 
-  val execute_multi_unsafe : [`Always | `Never | `If_cycles]
-  (** [execute_multi_unsafe] is a 3-way flag that governs whether the
+  val execute_multi_safe : [`Always | `Never | `If_no_cycles]
+  (** [execute_multi_safe] is a 3-way flag that governs whether the
       storelike action is safe to execute multiple times. *)
 end
 

@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -61,24 +61,12 @@ val flags_of_stm : Subject.Statement.t -> set
 (** {1 Paths with flags attached} *)
 
 module Flagged : sig
-  (** Opaque type of flagged paths, predicated on the path type [p]. *)
-  type 'p t [@@deriving sexp, compare, equal]
+  (** Type of flagged paths, predicated on the path type [p]. *)
+  type 'p t = {path: 'p; flags: set}
+    [@@deriving accessors, sexp, compare, equal]
 
-  (** {2 Constructors} *)
-
-  val make : path:'p -> flags:set -> 'p t
-  (** [make ~path ~flags] makes a flagged path with flags [flags] and path
-      [path]. *)
-
-  (** {2 Accessors} *)
-
-  val path : 'p t -> 'p
-  (** [path fp] gets [fp]'s underlying path. *)
-
-  val flags : 'p t -> set
-  (** [flags fp] gets [fp]'s underlying flags. *)
-
-  (** {2 Traversal} *)
+  val make : ?flags:set -> 'p -> 'p t
+  (** [make ?flags path] makes a flagged path. *)
 
   (** We can traverse flagged paths, with [left] being the path and [right]
       the set of flags. *)

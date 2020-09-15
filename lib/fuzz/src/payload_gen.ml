@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -50,9 +50,6 @@ let path_with_flags (kind : Path_kind.t) ~(filter : Path_filter.t) :
   lift Context.subject
   >>| Path_producers.try_gen_with_flags ~filter ~kind
   >>= lift_opt_gen
-
-let path (kind : Path_kind.t) ~(filter : Path_filter.t) : Path.t t =
-  path_with_flags kind ~filter >>| Path_flag.Flagged.path
 
 let flag (id : Act_common.Id.t) : bool t =
   let* param_map = lift Context.param_map in

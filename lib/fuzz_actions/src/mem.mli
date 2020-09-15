@@ -13,17 +13,6 @@
 
 (** {1 Fence insertion} *)
 
-(** {2 Payload} *)
-
-module Fence_payload : sig
-  (** Opaque type of fence payloads. *)
-  type t [@@deriving sexp]
-
-  val make : path:Act_fuzz.Path.t -> fence:Act_fir.Atomic_fence.t -> t
-  (** [make ~path ~fence] constructs a fence payload with path [path] and
-      fence [fence]. *)
-end
-
 (** {2 Action} *)
 
 (** [Fence] is an action that inserts random memory fences. *)
@@ -41,7 +30,7 @@ module Strengthen_payload : sig
   type t [@@deriving sexp]
 
   val make :
-    path:Act_fuzz.Path.t -> mo:Act_fir.Mem_order.t -> can_weaken:bool -> t
+    path:Act_fuzz.Path.Flagged.t -> mo:Act_fir.Mem_order.t -> can_weaken:bool -> t
   (** [make ~path ~mo ~can_weaken] constructs a strengthening payload with
       path [path], memory order [mo], and whether or not weakening is
       allowed. *)

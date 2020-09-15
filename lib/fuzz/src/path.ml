@@ -161,7 +161,7 @@ module Flagged = struct
 
   let pp : t Fmt.t =
     Fmt.(
-      using Path_flag.Flagged.path Complete.pp
+      using (Accessor.get Path_flag.Flagged.path) Complete.pp
       ++ sp
-      ++ using Path_flag.Flagged.flags Path_flag.pp_set)
+      ++ using (Accessor.get Path_flag.Flagged.flags) Path_flag.pp_set)
 end

@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,10 +10,7 @@
    project root for more information. *)
 
 open Base
-
-open struct
-  module Tx = Travesty_base_exts
-end
+open Import
 
 (* This module used to be highly functionalised (with each check being a
    predicate function collected in a list); we replaced this with the present
@@ -80,6 +77,8 @@ module Not_flags = struct
     {existing with not_flags= Set.add existing.not_flags flag}
 
   let not_in_atomic_block : t -> t = forbid_flag ~flag:In_atomic
+
+  let not_in_execute_multi : t -> t = forbid_flag ~flag:In_execute_multi
 end
 
 include Not_flags

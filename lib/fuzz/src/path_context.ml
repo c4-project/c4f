@@ -45,4 +45,4 @@ let check_thread_ok (x : _ t) ~(thread : int) : unit Or_error.t =
       [%message "Thread not allowed by filter" ~thread:(thread : int)]
 
 let lift_path (x : 'k t) ~(path : 'p) : 'p Path_flag.Flagged.t =
-  Path_flag.Flagged.make ~path ~flags:x.flags
+  Path_flag.Flagged.make path ~flags:x.flags

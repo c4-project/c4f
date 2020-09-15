@@ -16,27 +16,20 @@
 
 open Base
 
-val consume :
-     ?filter:Path_filter.t
-  -> Subject.Test.t
-  -> path:Path.t
-  -> action:Path_kind.With_action.t
-  -> Subject.Test.t Or_error.t
-(** [consume ?filter target ~path ~action] consumes [path] over [target],
-    performing [action] at the end of it.
-
-    If [filter] is present, the consumer will check that the path satisfies
-    the path filter. This is the same check as used in {!Path_producers}; its
-    use here is to safeguard against broken path production or replaying of
-    ill-formed traces. *)
-
 val consume_with_flags :
      ?filter:Path_filter.t
   -> Subject.Test.t
   -> path:Path.t Path_flag.Flagged.t
   -> action:Path_kind.With_action.t
   -> Subject.Test.t Or_error.t
-(** [consume_with_flags ?filter target ~path ~action] behaves as {!consume},
-    but adds to the path filter the requirement that the flags attached to
+(** [consume_with_flags ?filter target ~path ~action] consumes [path] over [target],
+    performing [action] at the end of it.
+
+    If [filter] is present, the consumer will check that the path satisfies
+    the path filter. This is the same check as used in {!Path_producers}; its
+    use here is to safeguard against broken path production or replaying of
+    ill-formed traces.
+
+    It adds to the path filter the requirement that the flags attached to
     [path] must hold. This safeguards against traces mistakenly attributing
     flags, for instance. *)

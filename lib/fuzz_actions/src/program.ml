@@ -68,10 +68,9 @@ struct
 
   let run (subject : F.Subject.Test.t) ~(payload : Payload.t) :
       F.Subject.Test.t F.State.Monad.t =
-    let pathf = F.Payload_impl.Insertion.where payload in
-    let path = F.Path_flag.Flagged.path pathf in
+    let path = F.Payload_impl.Insertion.where payload in
     let name = F.Payload_impl.Insertion.to_insert payload in
-    let tid = F.Path.tid path in
+    let tid = F.Path.tid path.path in
     let lid = Act_common.Litmus_id.local tid name in
     let label_stm =
       Act_fir.(
@@ -83,6 +82,6 @@ struct
       Let_syntax.(
         let%bind () = register_label lid in
         Monadic.return
-          (F.Path_consumers.consume subject ~path
+          (F.Path_consumers.consume_with_flags subject ~path
              ~action:(Insert [label_stm]))))
 end

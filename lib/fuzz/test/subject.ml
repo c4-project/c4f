@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,12 +10,7 @@
    project root for more information. *)
 
 open Base
-
-open struct
-  module A = Accessor
-  module Src = Act_fuzz
-  module Fir = Act_fir
-end
+open Import
 
 module Test_data = struct
   let init : Fir.Constant.t Act_common.C_named.Alist.t Lazy.t =
@@ -73,13 +68,13 @@ module Test_data = struct
 
   let mk_store (a : Fir.Atomic_store.t) : Src.Subject.Statement.t =
     Src.Subject.Statement.make_generated_prim
-      A.(construct Fir.(Prim_statement.atomic @> Atomic_statement.store) a)
+      (Accessor.construct Fir.(Prim_statement.atomic @> Atomic_statement.store) a)
 
   let mk_always_true_if (cond : Fir.Expression.t)
       (t : Src.Subject.Statement.t list) (f : Src.Subject.Statement.t list) :
       Src.Subject.Statement.t =
     Fir.(
-      A.construct Statement.if_stm
+      Accessor.construct Statement.if_stm
         (If.make ~cond
            ~t_branch:(Src.Subject.Block.make_generated ~statements:t ())
            ~f_branch:(Src.Subject.Block.make_dead_code ~statements:f ())))
@@ -96,14 +91,14 @@ module Test_data = struct
                  ~mo:Mem_order.Seq_cst)
           ; Src.Subject.Statement.make_generated_prim
               Fir.(
-                A.construct Prim_statement.label
+                Accessor.construct Prim_statement.label
                   (Act_common.C_id.of_string "kappa_kappa")) ]
           [])
 
   let sample_known_false_if : Src.Subject.Statement.t Lazy.t =
     lazy
       Fir.(
-        A.construct Statement.if_stm
+        Accessor.construct Statement.if_stm
           (If.make ~cond:Expression.falsehood
              ~t_branch:
                (Src.Subject.Block.make_dead_code
@@ -123,7 +118,7 @@ module Test_data = struct
   let sample_once_do_while : Src.Subject.Statement.t Lazy.t =
     lazy
       Fir.(
-        A.construct Statement.flow
+        Accessor.construct Statement.flow
           (Flow_block.while_loop
              ~cond:Expression.(Infix.(int_lit 4 == int_lit 5))
              ~body:
@@ -147,7 +142,7 @@ module Test_data = struct
                ~dst:(Address.of_variable_str_exn "x")
                ~mo:Mem_order.Seq_cst)
         ; Src.Subject.Statement.make_generated_prim
-            (A.construct Prim_statement.nop ())
+            (Accessor.construct Prim_statement.nop ())
         ; mk_store
             (Atomic_store.make
                ~src:(Expression.of_variable_str_exn "foo")
@@ -178,11 +173,11 @@ module Test_data = struct
     lazy
       Fir.
         [ Src.Subject.Statement.make_generated_prim
-            (A.construct Prim_statement.label
+            (Accessor.construct Prim_statement.label
                (Act_common.C_id.of_string "loop"))
         ; mk_always_true_if Fir.Expression.truth []
             [ Src.Subject.Statement.make_generated_prim
-                (A.construct Prim_statement.goto
+                (Accessor.construct Prim_statement.goto
                    (Act_common.C_id.of_string "loop")) ] ]
 
   let thread1 : Src.Subject.Thread.t Lazy.t =
@@ -207,7 +202,7 @@ module Test_data = struct
         Src.Path.t Src.Path_flag.Flagged.t Lazy.t =
       Lazy.map p ~f:(fun path ->
           let flags = Set.of_list (module Src.Path_flag) fs in
-          Src.Path_flag.Flagged.make ~path ~flags)
+          Src.Path_flag.Flagged.make path ~flags)
 
     let thread_0_stms (path : Src.Path.Stms.t) : Src.Path.t Lazy.t =
       lazy Src.Path.(in_thread 0 @@ Thread.in_stms @@ path)

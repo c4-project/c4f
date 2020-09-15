@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -170,8 +170,7 @@ struct
 
     let gen' (vars : Fuzz.Var.Map.t) ~(where : Fuzz.Path.Flagged.t)
         ~(forbid_already_written : bool) : t Fuzz.Opt_gen.t =
-      let where = Fuzz.Path_flag.Flagged.path where in
-      let tid = Fuzz.Path.tid where in
+      let tid = Fuzz.Path.tid where.path in
       let src = src_env vars ~tid in
       let dst = dst_env vars ~tid ~forbid_already_written in
       Or_error.Let_syntax.(
@@ -220,7 +219,7 @@ struct
 
   let do_bookkeeping (item : B.t) ~(path : Fuzz.Path.Flagged.t) :
       unit Fuzz.State.Monad.t =
-    let tid = path |> Fuzz.Path_flag.Flagged.path |> Fuzz.Path.tid in
+    let tid = Fuzz.Path.tid path.path in
     Fuzz.State.Monad.(
       all_unit
         [ bookkeep_new_locals ~tid (B.new_locals item)
@@ -236,37 +235,56 @@ struct
           (Common.Litmus_id.local tid id)
           init)
 
-  let apply_once_only (to_insert : B.t) : bool =
-    match B.Flags.execute_multi_unsafe with
+  let path_filter : Fuzz.Path_filter.t =
+    match B.Flags.execute_multi_safe with
+    | `Never ->
+        (* There is no point in generating paths that insert into
+           multi-execution contexts, as their construction will never be sound
+           unless we insert into dead-code.  Presently we don't have any way
+           of overriding one flag with the other, so we over-approximate. *)
+      Fuzz.Path_filter.not_in_execute_multi B.path_filter
+    | `Always | `If_no_cycles ->
+      (* We assume that if a storelike reports itself as constructible in
+         execute-multi contexts, there will always exist some payload that can
+         be generated at filtered paths that is sound. *)
+      B.path_filter
+
+  (** [apply_once_only to_insert path_flags] decides whether [to_insert],
+      inserted into a path containing [path_flags], needs the [Once_only]
+      metadata restriction set.  This prevents actions that would wrap
+      [to_insert] in a multi-execution loop from doing so. *)
+  let apply_once_only (to_insert : B.t) (path_flags : Set.M(Fuzz.Path_flag).t) : bool =
+    if Set.mem path_flags In_dead_code then false else
+    match B.Flags.execute_multi_safe with
     | `Always ->
-        true
-    | `If_cycles ->
+        false
+    | `If_no_cycles ->
         has_dependency_cycle to_insert
     | `Never ->
-        false
+        true
 
-  let stm_metadata (to_insert : B.t) : Fuzz.Metadata.t =
+  let stm_metadata (to_insert : B.t) (path_flags : Set.M(Fuzz.Path_flag).t) : Fuzz.Metadata.t =
     let restrictions =
-      if apply_once_only to_insert then
+      if apply_once_only to_insert path_flags then
         Set.singleton (module Fuzz.Metadata.Restriction) Once_only
       else Set.empty (module Fuzz.Metadata.Restriction)
     in
     Generated (Fuzz.Metadata.Gen.make ~restrictions ())
 
-  let to_stms_with_metadata (to_insert : B.t) : Fuzz.Subject.Statement.t list
+  let to_stms_with_metadata (to_insert : B.t) (path_flags : Set.M(Fuzz.Path_flag).t) : Fuzz.Subject.Statement.t list
       =
-    let md = stm_metadata to_insert in
+    let md = stm_metadata to_insert path_flags in
     List.map (B.to_stms to_insert) ~f:(fun x ->
         Accessor.construct Fir.Statement.prim (md, x))
 
   let do_insertions (target : Fuzz.Subject.Test.t)
       ~(path : Fuzz.Path.Flagged.t) ~(to_insert : B.t) :
       Fuzz.Subject.Test.t Or_error.t =
-    let tid = Fuzz.Path.tid (Fuzz.Path_flag.Flagged.path path) in
-    let stms = to_stms_with_metadata to_insert in
+    let tid = Fuzz.Path.tid path.path in
+    let stms = to_stms_with_metadata to_insert path.flags in
     Or_error.(
       target
-      |> Fuzz.Path_consumers.consume_with_flags ~filter:B.path_filter ~path
+      |> Fuzz.Path_consumers.consume_with_flags ~filter:path_filter ~path
            ~action:(Insert stms)
       >>= insert_vars ~new_locals:(B.new_locals to_insert) ~tid)
 

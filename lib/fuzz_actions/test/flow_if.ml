@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,12 +10,7 @@
    project root for more information. *)
 
 open Base
-
-open struct
-  module Src = Act_fuzz_actions
-  module F = Act_fuzz
-  module FT = Act_fuzz_test
-end
+open Import
 
 let%test_module "Surround" =
   ( module struct
@@ -24,10 +19,10 @@ let%test_module "Surround" =
     (* TODO(@MattWindsor91): sort out the discrepancy between the subject
        example and var map. *)
 
-    let state : F.State.t =
-      F.State.make ~vars:(Lazy.force FT.Var.Test_data.test_map) ()
+    let state : Fuzz.State.t =
+      Fuzz.State.make ~vars:(Lazy.force Fuzz_test.Var.Test_data.test_map) ()
 
-    let test : F.Subject.Test.t = Lazy.force FT.Subject.Test_data.test
+    let test : Fuzz.Subject.Test.t = Lazy.force Fuzz_test.Subject.Test_data.test
 
     let cond : Act_fir.Expression.t =
       (* should be true with respect to the test var-map *)
@@ -37,18 +32,18 @@ let%test_module "Surround" =
             (eq (of_variable_str_exn "x") (int_lit 27))
             (of_variable_str_exn "a")))
 
-    let where : F.Path.Flagged.t =
-      Lazy.force FT.Subject.Test_data.Path.surround_atomic
+    let where : Fuzz.Path.Flagged.t =
+      Lazy.force Fuzz_test.Subject.Test_data.Path.surround_atomic
 
-    let payload : F.Payload_impl.Cond_surround.t =
-      F.Payload_impl.Cond_surround.make ~cond ~where
+    let payload : Fuzz.Payload_impl.Cond_surround.t =
+      Fuzz.Payload_impl.Cond_surround.make ~cond ~where
 
     let%test_module "Tautology" =
       ( module struct
         let action = Surround.Tautology.run test ~payload
 
         let%expect_test "resulting AST" =
-          FT.Action.Test_utils.run_and_dump_test action ~initial_state:state ;
+          Fuzz_test.Action.Test_utils.run_and_dump_test action ~initial_state:state ;
           [%expect
             {|
         void
@@ -80,7 +75,7 @@ let%test_module "Surround" =
         { loop: ; if (true) {  } else { goto loop; } } |}]
 
         let%expect_test "global dependencies after running" =
-          FT.Action.Test_utils.run_and_dump_global_deps action
+          Fuzz_test.Action.Test_utils.run_and_dump_global_deps action
             ~initial_state:state ;
           [%expect {|
           a=false x=27 |}]
@@ -91,7 +86,7 @@ let%test_module "Surround" =
         let action = Surround.Duplicate.run test ~payload
 
         let%expect_test "resulting AST" =
-          FT.Action.Test_utils.run_and_dump_test action ~initial_state:state ;
+          Fuzz_test.Action.Test_utils.run_and_dump_test action ~initial_state:state ;
           [%expect
             {|
         void
@@ -124,19 +119,19 @@ let%test_module "Surround" =
         { loop: ; if (true) {  } else { goto loop; } } |}]
 
         let%expect_test "global dependencies after running" =
-          FT.Action.Test_utils.run_and_dump_global_deps action
+          Fuzz_test.Action.Test_utils.run_and_dump_global_deps action
             ~initial_state:state ;
           [%expect {|
           a=false x=27 |}]
 
-        let label_direct : F.Path.Flagged.t =
-          Lazy.force FT.Subject.Test_data.Path.surround_label_direct
+        let label_direct : Fuzz.Path.Flagged.t =
+          Lazy.force Fuzz_test.Subject.Test_data.Path.surround_label_direct
 
-        let label_direct_payload : F.Payload_impl.Cond_surround.t =
-          F.Payload_impl.Cond_surround.make ~cond ~where:label_direct
+        let label_direct_payload : Fuzz.Payload_impl.Cond_surround.t =
+          Fuzz.Payload_impl.Cond_surround.make ~cond ~where:label_direct
 
         let%expect_test "direct-label AST (should fail)" =
-          FT.Action.Test_utils.run_and_dump_test
+          Fuzz_test.Action.Test_utils.run_and_dump_test
             (Surround.Duplicate.run test ~payload:label_direct_payload)
             ~initial_state:state ;
           [%expect
@@ -145,14 +140,14 @@ let%test_module "Surround" =
                ("while checking statements"
                 ("Statement failed check" (check (Stm_class Has_not_any ((Prim (Label)))))))) |}]
 
-        let label_indirect : F.Path.Flagged.t =
-          Lazy.force FT.Subject.Test_data.Path.surround_label_indirect
+        let label_indirect : Fuzz.Path.Flagged.t =
+          Lazy.force Fuzz_test.Subject.Test_data.Path.surround_label_indirect
 
-        let label_indirect_payload : F.Payload_impl.Cond_surround.t =
-          F.Payload_impl.Cond_surround.make ~cond ~where:label_indirect
+        let label_indirect_payload : Fuzz.Payload_impl.Cond_surround.t =
+          Fuzz.Payload_impl.Cond_surround.make ~cond ~where:label_indirect
 
         let%expect_test "indirect-label AST (should fail)" =
-          FT.Action.Test_utils.run_and_dump_test
+          Fuzz_test.Action.Test_utils.run_and_dump_test
             (Surround.Duplicate.run test ~payload:label_indirect_payload)
             ~initial_state:state ;
           [%expect
@@ -165,15 +160,16 @@ let%test_module "Surround" =
 
 let%test_module "Invert" =
   ( module struct
-    let initial_state : F.State.t = Lazy.force FT.Subject.Test_data.state
+    let initial_state : Fuzz.State.t = Lazy.force Fuzz_test.Subject.Test_data.state
 
-    let test : F.Subject.Test.t = Lazy.force FT.Subject.Test_data.test
+    let test : Fuzz.Subject.Test.t = Lazy.force Fuzz_test.Subject.Test_data.test
 
-    let payload : F.Path.t =
-      F.Path.(in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 3 @@ Stm.this_stm)
+    let payload : Fuzz.Path.Flagged.t =
+      Fuzz.Path_flag.Flagged.make
+        Fuzz.Path.(in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 3 @@ Stm.this_stm)
 
     let%expect_test "resulting AST" =
-      FT.Action.Test_utils.run_and_dump_test
+      Fuzz_test.Action.Test_utils.run_and_dump_test
         (Src.Flow_if.Transform.Invert.run test ~payload)
         ~initial_state ;
       [%expect

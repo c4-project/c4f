@@ -70,11 +70,10 @@ module Cond_surround = struct
   (** [maybe_add_cond_dependencies fpath cond] uses [add_cond_dependencies]
       to add dependencies if the path flags do not situate [fpath] inside
       dead code. *)
-  let add_cond_dependencies (fpath : Path.t Path_flag.Flagged.t)
+  let add_cond_dependencies (path : Path.t Path_flag.Flagged.t)
       (cond : Act_fir.Expression.t) : unit State.Monad.t =
-    let flags = Path_flag.Flagged.flags fpath in
-    State.Monad.unless_m (Set.mem flags Path_flag.In_dead_code) ~f:(fun () ->
-        add_cond_dependencies (Path_flag.Flagged.path fpath) cond)
+    State.Monad.unless_m (Set.mem path.flags Path_flag.In_dead_code) ~f:(fun () ->
+        add_cond_dependencies path.path cond)
 
   let apply ?(filter : Path_filter.t option) ({cond; where} : t)
       ~(test : Subject.Test.t)
@@ -117,7 +116,7 @@ module Cond_surround = struct
           lift (Fn.compose Basic.path_filter Context.to_availability)
         in
         let* where = Payload_gen.path_with_flags Transform_list ~filter in
-        let+ cond = gen_cond (Path_flag.Flagged.path where) in
+        let+ cond = gen_cond where.path in
         Body.make ~cond ~where)
   end
 end

@@ -9,35 +9,32 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open struct
-  module Src = Act_fuzz_actions
-  module F = Act_fuzz
-  module FT = Act_fuzz_test
-end
+open Base
+open Import
 
 let%test_module "running payloads on test subject" =
   ( module struct
     let test_action (payload : Src.Mem.Strengthen_payload.t) :
-        F.Subject.Test.t F.State.Monad.t =
-      Src.Mem.Strengthen.run (Lazy.force FT.Subject.Test_data.test) ~payload
+        Fuzz.Subject.Test.t Fuzz.State.Monad.t =
+      Src.Mem.Strengthen.run (Lazy.force Fuzz_test.Subject.Test_data.test) ~payload
 
-    let test (lpath : F.Path.t Lazy.t) (mo : Act_fir.Mem_order.t)
+    let test (lpath : Fuzz.Path.t Lazy.t) (mo : Act_fir.Mem_order.t)
         (can_weaken : bool) : unit =
-      let path = Lazy.force lpath in
+      let path = {Fuzz.Path_flag.Flagged.path= Lazy.force lpath; flags= Set.empty (module Fuzz.Path_flag)} in
       let pld = Src.Mem.Strengthen_payload.make ~path ~mo ~can_weaken in
       let action = test_action pld in
-      FT.Action.Test_utils.run_and_dump_test action
-        ~initial_state:(Lazy.force FT.Subject.Test_data.state)
+      Fuzz_test.Action.Test_utils.run_and_dump_test action
+        ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state)
 
-    let sc_action : F.Path.t Lazy.t =
-      F.Path.(FT.Subject.Test_data.Path.thread_0_stms @@ Stms.stm 0)
+    let sc_action : Fuzz.Path.t Lazy.t =
+      Fuzz.Path.(Fuzz_test.Subject.Test_data.Path.thread_0_stms @@ Stms.stm 0)
 
-    let rlx_action : F.Path.t Lazy.t =
-      F.Path.(FT.Subject.Test_data.Path.thread_0_stms @@ Stms.stm 2)
+    let rlx_action : Fuzz.Path.t Lazy.t =
+      Fuzz.Path.(Fuzz_test.Subject.Test_data.Path.thread_0_stms @@ Stms.stm 2)
 
-    let nest_action : F.Path.t Lazy.t =
-      F.Path.(
-        FT.Subject.Test_data.Path.thread_0_stms @@ Stms.in_stm 4 @@ Stm.in_if
+    let nest_action : Fuzz.Path.t Lazy.t =
+      Fuzz.Path.(
+        Fuzz_test.Subject.Test_data.Path.thread_0_stms @@ Stms.in_stm 4 @@ Stm.in_if
         @@ If.in_branch true @@ Stms.stm 0)
 
     let%expect_test "failed SC->RLX" =

@@ -18,11 +18,6 @@ open struct
   module F = Act_fuzz
 end
 
-module Fence_payload = struct
-  type t = {path: F.Path.t; fence: Fir.Atomic_fence.t}
-  [@@deriving sexp, make]
-end
-
 module Fence :
   F.Action_types.S
     with type Payload.t = Fir.Atomic_fence.t F.Payload_impl.Insertion.t =
@@ -60,7 +55,7 @@ struct
 end
 
 module Strengthen_payload = struct
-  type t = {path: F.Path.t; mo: Fir.Mem_order.t; can_weaken: bool}
+  type t = {path: F.Path.Flagged.t; mo: Fir.Mem_order.t; can_weaken: bool}
   [@@deriving sexp, make]
 end
 
@@ -99,7 +94,7 @@ module Strengthen :
     let gen : t F.Payload_gen.t =
       F.Payload_gen.(
         let* can_weaken = flag F.Config_tables.unsafe_weaken_orders_flag in
-        let* path = path Transform ~filter in
+        let* path = path_with_flags Transform ~filter in
         let+ mo = lift_quickcheck Fir.Mem_order.quickcheck_generator in
         {path; mo; can_weaken})
   end
@@ -127,6 +122,6 @@ module Strengthen :
       ~payload:({path; mo; can_weaken} : Payload.t) :
       F.Subject.Test.t F.State.Monad.t =
     F.State.Monad.Monadic.return
-      (F.Path_consumers.consume subject ~path ~filter
+      (F.Path_consumers.consume_with_flags subject ~path ~filter
          ~action:(Transform (change_mo ~mo ~can_weaken)))
 end

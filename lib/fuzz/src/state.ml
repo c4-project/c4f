@@ -117,8 +117,8 @@ module Monad = struct
 
   let add_expression_dependencies_at_path (exprs : Act_fir.Expression.t list)
       ~(path : Path.Flagged.t) : unit t =
-    let in_dead_code = Set.mem (Path_flag.Flagged.flags path) In_dead_code in
-    let tid = Path.tid (Path_flag.Flagged.path path) in
+    let in_dead_code = Set.mem path.flags In_dead_code in
+    let tid = Path.tid path.path in
     unless_m in_dead_code ~f:(fun () ->
         add_multiple_expression_dependencies exprs ~scope:(Local tid))
 

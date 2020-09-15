@@ -115,7 +115,7 @@ module Insert = struct
     module Flags = struct
       let erase_known_values = false
 
-      let execute_multi_unsafe = `Never
+      let execute_multi_safe = `Always
     end
 
     let dst_type = Fir.Type.Basic.int ~is_atomic:true ()
@@ -137,7 +137,7 @@ module Insert = struct
     module Flags = struct
       let erase_known_values = false
 
-      let execute_multi_unsafe = `Never
+      let execute_multi_safe = `Always
     end
 
     let dst_type = Fir.Type.Basic.int ~is_atomic:true ()

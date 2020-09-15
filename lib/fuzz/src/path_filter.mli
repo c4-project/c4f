@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -55,6 +55,11 @@ val in_threads_only : t -> threads:Set.M(Int).t -> t
 val not_in_atomic_block : t -> t
 (** [not_in_atomic_block filter] adds to [filter] the restriction that any
     path must not travel through an atomic block. *)
+
+val not_in_execute_multi : t -> t
+(** [not_in_execute_multi filter] adds to [filter] the restriction that any
+    path must not travel through a loop, or any other such construct, that
+    can execute multiple times. *)
 
 val transaction_safe : t -> t
 (** [transaction_safe] requires the path to reach a statement that is

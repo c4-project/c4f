@@ -108,7 +108,7 @@ module Insert = struct
     module Flags = struct
       let erase_known_values = true
 
-      let execute_multi_unsafe = `If_cycles
+      let execute_multi_safe = `If_no_cycles
     end
 
     let dst_type = Fir.Type.Basic.int ~is_atomic:true ()
@@ -131,7 +131,7 @@ module Insert = struct
     module Flags = struct
       let erase_known_values = false
 
-      let execute_multi_unsafe = `Never
+      let execute_multi_safe = `Always
     end
 
     let dst_type = Fir.Type.Basic.int ~is_atomic:true ()
@@ -153,7 +153,7 @@ module Insert = struct
     module Flags = struct
       let erase_known_values = false
 
-      let execute_multi_unsafe = `Never
+      let execute_multi_safe = `Always
     end
 
     let dst_type = Fir.Type.Basic.int ~is_atomic:true ()
@@ -199,7 +199,7 @@ module Insert = struct
 end
 
 module Transform = struct
-  module Xchgify : Fuzz.Action_types.S with type Payload.t = Fuzz.Path.t =
+  module Xchgify : Fuzz.Action_types.S with type Payload.t = Fuzz.Path.Flagged.t =
   struct
     let name = prefix_name Common.Id.("transform" @: "xchgify" @: empty)
 
@@ -217,11 +217,11 @@ module Transform = struct
                     (Is, [Fir.Statement_class.atomic ~specifically:Store ()])))
 
     module Payload = struct
-      type t = Fuzz.Path.t [@@deriving sexp]
+      type t = Fuzz.Path.Flagged.t [@@deriving sexp]
 
       let gen : t Fuzz.Payload_gen.t =
         let filter = Lazy.force path_filter in
-        Fuzz.Payload_gen.path Transform ~filter
+        Fuzz.Payload_gen.path_with_flags Transform ~filter
     end
 
     let available : Fuzz.Availability.t =
@@ -256,10 +256,10 @@ module Transform = struct
         -> Fuzz.Metadata.t Fir.Statement.t Or_error.t =
       AtomsM.map_m ~f:xchgify_atomic
 
-    let run (subject : Fuzz.Subject.Test.t) ~(payload : Fuzz.Path.t) :
+    let run (subject : Fuzz.Subject.Test.t) ~(payload : Fuzz.Path.Flagged.t) :
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Fuzz.State.Monad.Monadic.return
-        (Fuzz.Path_consumers.consume subject ~filter:(Lazy.force path_filter)
+        (Fuzz.Path_consumers.consume_with_flags subject ~filter:(Lazy.force path_filter)
            ~path:payload ~action:(Transform xchgify))
   end
 end

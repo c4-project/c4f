@@ -58,7 +58,7 @@ module Insert = struct
          change the value of the destination; future iterations of the same
          compare-exchange will fail, and not only return false but also
          change the value of the expected-variable. See issue 212. *)
-      let execute_multi_unsafe = `Always
+      let execute_multi_safe = `Never
     end
 
     let gen_vars ~(vars : Fuzz.Var.Map.t) :

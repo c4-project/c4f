@@ -38,7 +38,7 @@ end
 module Transform : sig
   (** Basic transform generators have this type. *)
   module type S =
-    Act_fuzz.Action_types.S with type Payload.t = Act_fuzz.Path.t
+    Act_fuzz.Action_types.S with type Payload.t = Act_fuzz.Path.Flagged.t
 
   (** Inverts existing if statements. *)
   module Invert : S

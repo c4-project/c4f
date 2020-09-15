@@ -397,14 +397,14 @@ let%test_module "store.make.int.redundant" =
 
 let%test_module "xchgify" =
   ( module struct
-    let test_action (payload : Fuzz.Path.t) :
+    let test_action (payload : Fuzz.Path.Flagged.t) :
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Src.Atomic_store.Transform.Xchgify.run
         (Lazy.force Fuzz_test.Subject.Test_data.test)
         ~payload
 
     let test (lpath : Fuzz.Path.t Lazy.t) : unit =
-      let path = Lazy.force lpath in
+      let path = {Fuzz.Path_flag.Flagged.path= Lazy.force lpath; flags= Set.empty (module Fuzz.Path_flag)} in
       let action = test_action path in
       Fuzz_test.Action.Test_utils.run_and_dump_test action
         ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state)
