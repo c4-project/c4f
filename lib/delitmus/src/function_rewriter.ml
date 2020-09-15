@@ -47,19 +47,23 @@ struct
   end) =
   struct
     let rewrite_lvalue_if_global : C.Lvalue.t -> C.Lvalue.t Or_error.t =
-      Ctx.T.when_global ~over:C.Lvalue.variable_of
+      Ctx.T.when_global
+        ~over:(Accessor.get C.Lvalue.variable_of)
         ~f:Basic.rewrite_global_lvalue
 
     let rewrite_address_if_global : C.Address.t -> C.Address.t Or_error.t =
-      Ctx.T.when_global ~over:C.Address.variable_of
+      Ctx.T.when_global
+        ~over:(Accessor.get C.Address.variable_of)
         ~f:Basic.rewrite_global_address
 
     let rewrite_lvalue_if_local : C.Lvalue.t -> C.Lvalue.t Or_error.t =
-      Ctx.T.when_local ~over:C.Lvalue.variable_of
+      Ctx.T.when_local
+        ~over:(Accessor.get C.Lvalue.variable_of)
         ~f:Basic.rewrite_local_lvalue
 
     let rewrite_address_if_local : C.Address.t -> C.Address.t Or_error.t =
-      Ctx.T.when_local ~over:C.Address.variable_of
+      Ctx.T.when_local
+        ~over:(Accessor.get C.Address.variable_of)
         ~f:Basic.rewrite_local_address
 
     let rewrite_id_if_local :
@@ -68,13 +72,16 @@ struct
         ~f:(Basic.rewrite_local_cid ~context:Ctx.context ~tid:Ctx.T.tid)
 
     module C_stm_meta = C.Statement_traverse.With_meta (Unit)
-    module On_ids =
-      Travesty.Traversable.Chain0
-        (C_stm_meta.On_lvalues)
-        (Act_fir.Lvalue.On_identifiers)
+
+    module AError = Accessor.Of_monad (struct
+      include Or_error
+
+      let apply = `Custom apply
+    end)
 
     let rewrite_ids : unit C.Statement.t -> unit C.Statement.t Or_error.t =
-      On_ids.With_errors.map_m ~f:rewrite_id_if_local
+      C_stm_meta.On_lvalues.With_errors.map_m
+        ~f:(AError.map C.Lvalue.variable_of ~f:rewrite_id_if_local)
 
     (* When rewriting global lvalues (as part of a var-as-global run), we do
        it _after_ address rewriting, as the address rewriting will
@@ -186,14 +193,19 @@ end
 
 module Vars_as_globals = Make (struct
   let rewrite_global_address (addr : C.Address.t) : C.Address.t Or_error.t =
-    let is_deref = C.Address.On_lvalues.exists addr ~f:C.Lvalue.is_deref in
+    let is_deref =
+      Accessor.exists C.Address.lvalue_of addr ~f:C.Lvalue.is_deref
+    in
     let addr' =
       if is_deref then addr
       else
         (* The added deref here will be removed in lvalue rewriting. *)
-        C.Address.ref (C.Address.On_lvalues.map ~f:C.Lvalue.deref addr)
+        Ref
+          (Accessor.map C.Address.lvalue_of
+             ~f:(Accessor.construct C.Lvalue.deref)
+             addr)
     in
-    Or_error.return addr'
+    Ok addr'
 
   let rewrite_global_lvalue : C.Lvalue.t -> C.Lvalue.t Or_error.t =
     C.Lvalue.un_deref
@@ -221,7 +233,7 @@ module Vars_as_parameters = Make (struct
   let rewrite_local_lvalue : C.Lvalue.t -> C.Lvalue.t Or_error.t =
     (* The added deref here will be removed in address rewriting if not
        needed. *)
-    Fn.compose Or_error.return C.Lvalue.deref
+    Fn.compose Or_error.return (Accessor.construct C.Lvalue.deref)
 
   let rewrite_local_address : C.Address.t -> C.Address.t Or_error.t =
     Fn.compose Or_error.return C.Address.normalise

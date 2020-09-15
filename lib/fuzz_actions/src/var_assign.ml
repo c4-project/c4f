@@ -85,11 +85,10 @@ module Insert = struct
       [Accessor.construct Fir.Prim_statement.assign x]
 
     let dst_ids (x : Fir.Assign.t) : Common.C_id.t list =
-      [Fir.Lvalue.variable_of x.@(Fir.Assign.dst)]
+      x.@*(Fir.Assign.dst @> Fir.Lvalue.variable_of)
 
-    let src_exprs (x : Fir.Assign.t) :
-        (Fir.Expression.t * [`Safe | `Unsafe]) list =
-      List.map x.@*(Fir.Assign.exprs) ~f:(fun x -> (x, `Unsafe))
+    let src_exprs (x : Fir.Assign.t) : Fir.Expression.t list =
+      x.@*(Fir.Assign.src @> Fir.Assign.Source.exprs)
   end)
 
   (* TODO(@MattWindsor91): de-duplicate with Atomic_store *)
@@ -108,6 +107,8 @@ module Insert = struct
 
     module Flags = struct
       let erase_known_values = true
+
+      let execute_multi_unsafe = `If_cycles
     end
 
     let dst_type = Fir.Type.Basic.int ~is_atomic:false ()
@@ -129,6 +130,8 @@ module Insert = struct
 
     module Flags = struct
       let erase_known_values = false
+
+      let execute_multi_unsafe = `Never
     end
 
     let dst_type = Fir.Type.Basic.int ~is_atomic:false ()
@@ -149,6 +152,8 @@ module Insert = struct
 
     module Flags = struct
       let erase_known_values = false
+
+      let execute_multi_unsafe = `Never
     end
 
     let dst_type = Fir.Type.Basic.int ~is_atomic:false ()
@@ -169,7 +174,7 @@ module Insert = struct
       let known_value_expr_of_dest (dst : Q_dst.t) :
           Fir.Expression.t Or_error.t =
         Or_error.Let_syntax.(
-          let id = Fir.Lvalue.variable_of dst in
+          let id = dst.@(Fir.Lvalue.variable_of) in
           let%bind kvo = Fir.Env.known_value Dst.env ~id in
           let%map kv =
             Result.of_option kvo

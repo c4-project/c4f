@@ -11,12 +11,7 @@
 
 open Core_kernel (* for Fqueue *)
 
-open struct
-  module Ac = Act_common
-  module Tx = Travesty_base_exts
-  module Fir = Act_fir
-  module Named = Ac.C_named
-end
+open Import
 
 let constant : Ast_basic.Constant.t -> Fir.Constant.t Or_error.t = function
   | Integer k ->
@@ -24,20 +19,20 @@ let constant : Ast_basic.Constant.t -> Fir.Constant.t Or_error.t = function
   | Char _ | Float _ ->
       Or_error.error_string "Unsupported constant type"
 
-let defined_types : (Ac.C_id.t, Fir.Type.Basic.t) List.Assoc.t Lazy.t =
+let defined_types : (Common.C_id.t, Fir.Type.Basic.t) List.Assoc.t Lazy.t =
   lazy
     Fir.Type.Basic.
-      [ (Ac.C_id.of_string "atomic_bool", bool ~is_atomic:true ())
-      ; (Ac.C_id.of_string "atomic_int", int ~is_atomic:true ())
-      ; (Ac.C_id.of_string "bool", bool ()) ]
+      [ (Common.C_id.of_string "atomic_bool", bool ~is_atomic:true ())
+      ; (Common.C_id.of_string "atomic_int", int ~is_atomic:true ())
+      ; (Common.C_id.of_string "bool", bool ()) ]
 
-let defined_type_to_basic (t : Ac.C_id.t) : Fir.Type.Basic.t Or_error.t =
+let defined_type_to_basic (t : Common.C_id.t) : Fir.Type.Basic.t Or_error.t =
   t
-  |> List.Assoc.find ~equal:Ac.C_id.equal (Lazy.force defined_types)
+  |> List.Assoc.find ~equal:Common.C_id.equal (Lazy.force defined_types)
   |> Result.of_option
        ~error:
          (Error.create_s
-            [%message "Unknown defined type" ~got:(t : Ac.C_id.t)])
+            [%message "Unknown defined type" ~got:(t : Common.C_id.t)])
 
 let partition_qualifiers :
        [> Ast.Decl_spec.t] list
@@ -113,8 +108,8 @@ let declarator_to_id :
           "Unsupported direct declarator"
             ~got:(x.direct : Ast.Direct_declarator.t)]
 
-let identifier_to_constant (id : Ac.C_id.t) : Fir.Constant.t option =
-  match Ac.C_id.to_string id with
+let identifier_to_constant (id : Common.C_id.t) : Fir.Constant.t option =
+  match Common.C_id.to_string id with
   | "true" ->
       Some Fir.Constant.truth
   | "false" ->
@@ -143,7 +138,7 @@ let value_of_initialiser : Ast.Initialiser.t -> Fir.Constant.t Or_error.t =
   | List _ ->
       Or_error.error_string "List initialisers not supported"
 
-let decl (d : Ast.Decl.t) : Fir.Initialiser.t Named.t Or_error.t =
+let decl (d : Ast.Decl.t) : Fir.Initialiser.t Common.C_named.t Or_error.t =
   Or_error.Let_syntax.(
     let%bind idecl = Tx.List.one d.declarator in
     let%bind name, is_pointer = declarator_to_id idecl.declarator in
@@ -153,24 +148,26 @@ let decl (d : Ast.Decl.t) : Fir.Initialiser.t Named.t Or_error.t =
         ~error:(Error.of_string "Empty initialisers not supported")
     in
     let%map value = value_of_initialiser init in
-    Named.make ~name (Fir.Initialiser.make ~ty ~value))
+    Common.C_named.make ~name (Fir.Initialiser.make ~ty ~value))
 
-let param_decl : Ast.Param_decl.t -> Fir.Type.t Named.t Or_error.t = function
+let param_decl : Ast.Param_decl.t -> Fir.Type.t Common.C_named.t Or_error.t =
+  function
   | {declarator= `Abstract _; _} ->
       Or_error.error_string "Abstract parameter declarators not supported"
   | {qualifiers; declarator= `Concrete declarator} ->
       Or_error.Let_syntax.(
         let%bind name, is_pointer = declarator_to_id declarator in
         let%map ty = qualifiers_to_type qualifiers ~is_pointer in
-        Named.make ty ~name)
+        Common.C_named.make ty ~name)
 
 let rec expr_to_lvalue : Ast.Expr.t -> Fir.Lvalue.t Or_error.t = function
   | Identifier id ->
-      Ok (Fir.Lvalue.variable id)
+      Ok (Accessor.construct Fir.Lvalue.variable id)
   | Brackets expr ->
       expr_to_lvalue expr
   | Prefix (`Deref, expr) ->
-      Or_error.(expr |> expr_to_lvalue >>| Fir.Lvalue.deref)
+      Or_error.(
+        expr |> expr_to_lvalue >>| Accessor.construct Fir.Lvalue.deref)
   | ( Prefix _
     | Postfix _
     | Binary _
@@ -187,15 +184,17 @@ let rec expr_to_lvalue : Ast.Expr.t -> Fir.Lvalue.t Or_error.t = function
 
 let rec expr_to_address : Ast.Expr.t -> Fir.Address.t Or_error.t = function
   | Prefix (`Ref, expr) ->
-      Or_error.(expr |> expr_to_address >>| Fir.Address.ref)
+      Or_error.(
+        expr |> expr_to_address >>| Accessor.construct Fir.Address.ref)
   | expr ->
-      Or_error.(expr |> expr_to_lvalue >>| Fir.Address.lvalue)
+      Or_error.(
+        expr |> expr_to_lvalue >>| Accessor.construct Fir.Address.lvalue)
 
 let lvalue_to_identifier (lv : Fir.Lvalue.t) : Act_common.C_id.t Or_error.t =
   if Fir.Lvalue.is_deref lv then
     Or_error.error_s
       [%message "Expected identifier" ~got:(lv : Fir.Lvalue.t)]
-  else Ok (Fir.Lvalue.variable_of lv)
+  else Ok lv.@(Fir.Lvalue.variable_of)
 
 let expr_to_identifier (expr : Ast.Expr.t) : Act_common.C_id.t Or_error.t =
   Or_error.(expr |> expr_to_lvalue >>= lvalue_to_identifier)
@@ -203,7 +202,7 @@ let expr_to_identifier (expr : Ast.Expr.t) : Act_common.C_id.t Or_error.t =
 let expr_to_memory_order (expr : Ast.Expr.t) : Fir.Mem_order.t Or_error.t =
   Or_error.Let_syntax.(
     let%bind id = expr_to_identifier expr in
-    id |> Ac.C_id.to_string |> Fir.Mem_order.of_string_option
+    id |> Common.C_id.to_string |> Fir.Mem_order.of_string_option
     |> Result.of_option
          ~error:
            (Error.create_s

@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,14 +10,17 @@
    project root for more information. *)
 
 open Base
-module Ac = Act_common
+open Import
 
 type t = {src: Address.t; mo: Mem_order.t}
-[@@deriving sexp, fields, make, compare, equal]
+[@@deriving sexp, accessors, make, compare, equal]
 
-let to_tuple ({src; mo} : t) : Address.t * Mem_order.t = (src, mo)
-
-let of_tuple ((src, mo) : Address.t * Mem_order.t) : t = {src; mo}
+let tuple :
+    ('i, Address.t * Mem_order.t, t, [< isomorphism]) Accessor.Simple.t =
+  [%accessor
+    Accessor.isomorphism
+      ~get:(fun {src; mo} -> (src, mo))
+      ~construct:(fun (src, mo) -> {src; mo})]
 
 let ensure_mo_compat (old : Mem_order.t) (nu : Mem_order.t) : Mem_order.t =
   if Mem_order.is_load_compatible nu then nu else old
@@ -38,13 +41,19 @@ Travesty.Traversable.Make0 (struct
   module Elt = Address
 
   module On_monad (M : Monad.S) = struct
+    module AccM = Accessor.Of_monad (struct
+      include M
+
+      let apply = `Define_using_bind
+    end)
+
     module B = Base_map (struct
       type 'a t = 'a M.t
 
       include Applicative.Of_monad (M)
     end)
 
-    let map_m x ~f = B.bmap x ~src:f ~mo:M.return
+    let map_m : t -> f:(Address.t -> Address.t M.t) -> t M.t = AccM.map src
   end
 end)
 
@@ -70,10 +79,10 @@ module Type_check (E : Env_types.S) = struct
   module A = Address.Type_check (E)
 
   let type_of (ld : t) : Type.t Or_error.t =
-    let open Or_error.Let_syntax in
-    let%bind a_ptr = A.type_of (src ld) in
-    let%bind a = Type.deref a_ptr in
-    Type.to_non_atomic a
+    Or_error.Let_syntax.(
+      let%bind a_ptr = A.type_of ld.src in
+      let%bind a = Type.deref a_ptr in
+      Type.to_non_atomic a)
 end
 
 module Quickcheck_generic
@@ -85,15 +94,18 @@ end = struct
   let sexp_of_t = sexp_of_t
 
   let quickcheck_generator : t Base_quickcheck.Generator.t =
-    Base_quickcheck.Generator.map ~f:of_tuple
+    Base_quickcheck.Generator.map
+      ~f:(Accessor.construct tuple)
       [%quickcheck.generator: A.t * [%custom Mem_order.gen_load]]
 
   let quickcheck_observer : t Base_quickcheck.Observer.t =
-    Base_quickcheck.Observer.unmap ~f:to_tuple
+    Base_quickcheck.Observer.unmap ~f:(Accessor.get tuple)
       [%quickcheck.observer: A.t * Mem_order.t]
 
   let quickcheck_shrinker : t Base_quickcheck.Shrinker.t =
-    Base_quickcheck.Shrinker.map ~f:of_tuple ~f_inverse:to_tuple
+    Base_quickcheck.Shrinker.map
+      ~f:(Accessor.construct tuple)
+      ~f_inverse:(Accessor.get tuple)
       [%quickcheck.shrinker: A.t * Mem_order.t]
 end
 
@@ -101,4 +113,6 @@ module Quickcheck_main = Quickcheck_generic (Address)
 
 include (Quickcheck_main : module type of Quickcheck_main with type t := t)
 
-let variable_of (ld : t) : Ac.C_id.t = Address.variable_of (src ld)
+let variable_of : type i. (i, Common.C_id.t, t, [< field]) Accessor.Simple.t
+    =
+  [%accessor src @> Address.variable_of]

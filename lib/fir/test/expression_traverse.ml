@@ -32,6 +32,8 @@ let%test_module "depended_upon_idents" =
               (variable (Act_common.C_id.of_string "foo"))
               (sub
                  (variable (Act_common.C_id.of_string "bar"))
-                 (lvalue (Lvalue.deref (Lvalue.of_variable_str_exn "baz")))))) ;
+                 (lvalue
+                    Lvalue.(
+                      Accessor.construct deref (of_variable_str_exn "baz")))))) ;
       [%expect {| (foo bar baz) |}]
   end )

@@ -9,11 +9,12 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Base
-
 (** Fetch-style read-modify-write operations. *)
 
-(** Opaque type of fetches.
+open Base
+open Import
+
+(** The fetch record itself.
 
     Fetches take the expression type as a type parameter. This is necessary
     to bust a dependency cycle when fetches appear in expression position.
@@ -22,7 +23,8 @@ open Base
     While this quickcheck generates appropriate memory orders, it will use
     random addresses, and is unsuitable for type-safe/environment-safe
     generation. *)
-type 'e t [@@deriving sexp, compare, equal, quickcheck]
+type 'e t = {obj: Address.t; arg: 'e; mo: Mem_order.t; op: Op.Fetch.t}
+[@@deriving sexp, accessors, compare, equal, quickcheck]
 
 (** {1 Constructors} *)
 
@@ -31,34 +33,11 @@ val make : obj:Address.t -> arg:'e -> mo:Mem_order.t -> op:Op.Fetch.t -> 'e t
     given by [op]; [obj] is the address of the atomic object to fetch; [arg]
     is the argument to [op]; and [mo] the memory order. *)
 
-(** {1 Accessors} *)
-
-val obj : _ t -> Address.t
-(** [obj f] gets the address of the atomic object [f] is fetching. *)
-
-val arg : 'e t -> 'e
-(** [arg f] gets the argument to [f]'s operation. *)
-
-val mo : _ t -> Mem_order.t
-(** [mo f] gets [f]'s memory order. *)
-
-val op : _ t -> Op.Fetch.t
-(** [op f] gets [f]'s postfix operation. *)
-
-val variable_of : _ t -> Act_common.C_id.t
-(** [variable_of] x is the underlying variable of [x]. In the context of an
-    atomic fetch, the 'underlying variable' is that of [obj], not any
-    variable in [arg]. *)
-
-(** Primitive building block for atomic-fetch quickchecks. *)
-module Quickcheck_generic
-    (A : Act_utils.My_quickcheck.S_with_sexp with type t := Address.t)
-    (O : Act_utils.My_quickcheck.S_with_sexp with type t := Op.Fetch.t)
-    (E : Act_utils.My_quickcheck.S_with_sexp) : sig
-  type nonrec t = E.t t [@@deriving sexp_of, quickcheck]
-end
-
 (** {1 Traversal primitives} *)
+
+val variable_of : ('i, Common.C_id.t, 'e t, [< field]) Accessor.Simple.t
+(** [variable_of] accesses the underlying object variable of the fetch. It
+    does not access any other variables. *)
 
 (** Primitive building block for producing traversals over atomic fetches.
 
@@ -72,6 +51,14 @@ module Base_map (Ap : Applicative.S) : sig
     -> mo:(Mem_order.t -> Mem_order.t Ap.t)
     -> op:(Op.Fetch.t -> Op.Fetch.t Ap.t)
     -> 'b t Ap.t
+end
+
+(** Primitive building block for atomic-fetch quickchecks. *)
+module Quickcheck_generic
+    (A : Act_utils.My_quickcheck.S_with_sexp with type t := Address.t)
+    (O : Act_utils.My_quickcheck.S_with_sexp with type t := Op.Fetch.t)
+    (E : Act_utils.My_quickcheck.S_with_sexp) : sig
+  type nonrec t = E.t t [@@deriving sexp_of, quickcheck]
 end
 
 (** {1 Interface implementations} *)

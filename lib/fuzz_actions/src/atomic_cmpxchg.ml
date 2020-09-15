@@ -53,6 +53,12 @@ module Insert = struct
 
     module Flags = struct
       let erase_known_values = true
+
+      (* These compare-exchanges are always unsafe in a loop, since they
+         change the value of the destination; future iterations of the same
+         compare-exchange will fail, and not only return false but also
+         change the value of the expected-variable. See issue 212. *)
+      let execute_multi_unsafe = `Always
     end
 
     let gen_vars ~(vars : Fuzz.Var.Map.t) :
@@ -75,7 +81,7 @@ module Insert = struct
       Base_quickcheck.Generator.(
         filter_map Obj.quickcheck_generator ~f:(fun obj ->
             match
-              Fir.Env.known_value dst ~id:(Fir.Address.variable_of obj)
+              Fir.Env.known_value dst ~id:obj.@(Fir.Address.variable_of)
             with
             | Ok (Some v) ->
                 Some (obj, v)
@@ -107,7 +113,9 @@ module Insert = struct
           let%map desired = Expr.quickcheck_generator in
           let out_var = Common.Litmus_id.local tid out_var_c in
           let exp_var = Common.Litmus_id.local tid exp_var_c in
-          let expected = Fir.Address.of_variable_ref exp_var_c in
+          let expected =
+            Accessor.construct Fir.Address.variable_ref exp_var_c
+          in
           let cmpxchg =
             Fir.Atomic_cmpxchg.make ~obj ~expected ~desired ~succ ~fail
           in
@@ -123,17 +131,15 @@ module Insert = struct
       ; ( Common.Litmus_id.variable_name x.exp_var
         , Fir.Initialiser.make ~ty:(Fir.Type.int ()) ~value:x.exp_val ) ]
 
-    let src_exprs (x : Inner_payload.t) :
-        (Fir.Expression.t * [`Safe | `Unsafe]) list =
-      [ (Fir.Atomic_cmpxchg.desired x.cmpxchg, `Unsafe)
-      ; (Fir.Expression.address (Fir.Atomic_cmpxchg.obj x.cmpxchg), `Safe)
-      ; ( Fir.Expression.address (Fir.Atomic_cmpxchg.expected x.cmpxchg)
-        , `Unsafe ) ]
+    let src_exprs (x : Inner_payload.t) : Fir.Expression.t list =
+      [ Fir.Atomic_cmpxchg.desired x.cmpxchg
+      ; Fir.Expression.address (Fir.Atomic_cmpxchg.obj x.cmpxchg)
+      ; Fir.Expression.address (Fir.Atomic_cmpxchg.expected x.cmpxchg) ]
 
     let dst_ids (x : Inner_payload.t) : Common.C_id.t list =
       (* exp_val/expected and out_val have known values, so we don't treat
          them as dests here. This might be a bad idea? *)
-      [Fir.Address.variable_of (Fir.Atomic_cmpxchg.obj x.cmpxchg)]
+      (Fir.Atomic_cmpxchg.obj x.cmpxchg).@*(Fir.Address.variable_of)
 
     let to_stms (x : Inner_payload.t) : Fir.Prim_statement.t list =
       (* We shouldn't need a specific assignment of the expected variable,
@@ -144,7 +150,8 @@ module Insert = struct
       in
       let cmpxchg_assign =
         Fir.Assign.(
-          Fir.Lvalue.variable (Common.Litmus_id.variable_name x.out_var)
+          Accessor.construct Fir.Lvalue.variable
+            (Common.Litmus_id.variable_name x.out_var)
           @= cmpxchg_expr)
       in
       [Accessor.construct Fir.Prim_statement.assign cmpxchg_assign]

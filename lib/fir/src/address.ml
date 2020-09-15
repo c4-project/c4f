@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,31 +10,33 @@
    project root for more information. *)
 
 open Base
-module Ac = Act_common
+open Import
 
 module M = struct
   type t = Lvalue of Lvalue.t | Ref of t
-  [@@deriving sexp, variants, compare, equal]
+  [@@deriving sexp, accessors, compare, equal]
 end
 
 include M
 include Comparable.Make (M)
 
-let of_variable (v : Ac.C_id.t) : t = Lvalue (Lvalue.variable v)
+let variable : ('i, Common.C_id.t, t, [< variant]) Accessor.Simple.t =
+  [%accessor lvalue @> Lvalue.variable]
+
+let variable_ref : ('i, Common.C_id.t, t, [< variant]) Accessor.Simple.t =
+  [%accessor ref @> variable]
 
 let of_variable_str_exn (vs : string) : t =
-  lvalue (Lvalue.of_variable_str_exn vs)
-
-let of_variable_ref (v : Ac.C_id.t) : t = Ref (of_variable v)
+  Lvalue (Lvalue.of_variable_str_exn vs)
 
 let ref_lvalue (l : Lvalue.t) : t =
   match Lvalue.un_deref l with
   | Ok l' ->
-      lvalue l'
+      Lvalue l'
   | Error _ ->
-      ref (lvalue l)
+      Ref (Lvalue l)
 
-let ref_normal : t -> t = function Lvalue k -> ref_lvalue k | x -> ref x
+let ref_normal : t -> t = function Lvalue k -> ref_lvalue k | x -> Ref x
 
 let rec reduce (addr : t) ~(lvalue : Lvalue.t -> 'a) ~(ref : 'a -> 'a) : 'a =
   match addr with
@@ -43,31 +45,10 @@ let rec reduce (addr : t) ~(lvalue : Lvalue.t -> 'a) ~(ref : 'a -> 'a) : 'a =
   | Ref rest ->
       ref (reduce rest ~lvalue ~ref)
 
-let lvalue_of : t -> Lvalue.t = reduce ~lvalue:Fn.id ~ref:Fn.id
-
-let ref_depth = reduce ~lvalue:(Fn.const 0) ~ref:Int.succ
-
-let normalise (addr : t) : t =
-  Fn.apply_n_times ~n:(ref_depth addr) ref_normal (lvalue (lvalue_of addr))
-
-let deref (addr : t) : t =
-  match normalise addr with
-  | Ref x ->
-      x
-  | Lvalue l ->
-      Lvalue (Lvalue.deref l)
-
-let as_lvalue (addr : t) : Lvalue.t Or_error.t =
-  match normalise addr with
-  | Lvalue x ->
-      Or_error.return x
-  | Ref _ ->
-      Or_error.error_s
-        [%message
-          "Can't safely convert this address to an lvalue" ~address:(addr : t)]
-
-let as_variable (addr : t) : Ac.C_id.t Or_error.t =
-  Or_error.(addr |> as_lvalue >>= Lvalue.as_variable)
+let lvalue_of : ('i, Lvalue.t, t, [< field]) Accessor.Simple.t =
+  [%accessor
+    Accessor.field ~get:(reduce ~lvalue:Fn.id ~ref:Fn.id) ~set:(fun x v ->
+        reduce x ~lvalue:(fun _ -> Lvalue v) ~ref:(fun x -> Ref x))]
 
 module On_lvalues :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
@@ -77,13 +58,39 @@ Travesty.Traversable.Make0 (struct
   module Elt = Lvalue
 
   module On_monad (M : Monad.S) = struct
-    module F = Travesty.Traversable.Helpers (M)
+    module AccM = Accessor.Of_monad (struct
+      include M
 
-    let rec map_m x ~f =
-      Variants.map x ~lvalue:(F.proc_variant1 f)
-        ~ref:(F.proc_variant1 (map_m ~f))
+      let apply = `Define_using_bind
+    end)
+
+    let map_m : t -> f:(Elt.t -> Elt.t M.t) -> t M.t = AccM.map lvalue_of
   end
 end)
+
+let ref_depth = reduce ~lvalue:(Fn.const 0) ~ref:Int.succ
+
+let normalise (addr : t) : t =
+  Fn.apply_n_times ~n:(ref_depth addr) ref_normal (Lvalue addr.@(lvalue_of))
+
+let deref (addr : t) : t =
+  match normalise addr with
+  | Ref x ->
+      x
+  | Lvalue l ->
+      Lvalue (Accessor.construct Lvalue.deref l)
+
+let as_lvalue (addr : t) : Lvalue.t Or_error.t =
+  match normalise addr with
+  | Lvalue x ->
+      Ok x
+  | Ref _ ->
+      Or_error.error_s
+        [%message
+          "Can't safely convert this address to an lvalue" ~address:(addr : t)]
+
+let as_variable (addr : t) : Common.C_id.t Or_error.t =
+  Or_error.(addr |> as_lvalue >>= Lvalue.as_variable)
 
 module Type_check (E : Env_types.S) = struct
   module L = Lvalue.Type_check (E)
@@ -109,8 +116,8 @@ end = struct
   let quickcheck_generator : t Generator.t =
     Generator.(
       recursive_union
-        [map [%quickcheck.generator: Lv.t] ~f:lvalue]
-        ~f:(fun mu -> [map mu ~f:ref]))
+        [map [%quickcheck.generator: Lv.t] ~f:(Accessor.construct lvalue)]
+        ~f:(fun mu -> [map mu ~f:(Accessor.construct ref)]))
 
   let quickcheck_observer : t Observer.t =
     Observer.(
@@ -129,18 +136,19 @@ module Quickcheck_main = Quickcheck_generic (Lvalue)
 
 include (Quickcheck_main : module type of Quickcheck_main with type t := t)
 
-let on_address_of_typed_id (tid : Type.t Ac.C_named.t) : t =
-  let id = Accessor.get Ac.C_named.name tid in
-  let ty = Accessor.get Ac.C_named.value tid in
-  let lv = of_variable id in
-  if Type.is_pointer ty then lv else ref lv
+let on_address_of_typed_id (tid : Type.t Common.C_named.t) : t =
+  let id = tid.@(Common.C_named.name) in
+  let ty = tid.@(Common.C_named.value) in
+  let lv = Accessor.construct variable id in
+  if Type.is_pointer ty then lv else Ref lv
 
-let of_id_in_env (env : Env.t) ~(id : Ac.C_id.t) : t Or_error.t =
+let of_id_in_env (env : Env.t) ~(id : Common.C_id.t) : t Or_error.t =
   Or_error.Let_syntax.(
     let%map ty = Env.type_of env ~id in
-    on_address_of_typed_id (Ac.C_named.make ~name:id ty))
+    on_address_of_typed_id (Common.C_named.make ~name:id ty))
 
-let variable_of (addr : t) : Ac.C_id.t = Lvalue.variable_of (lvalue_of addr)
+let variable_of : ('i, Common.C_id.t, t, [< field]) Accessor.Simple.t =
+  [%accessor lvalue_of @> Lvalue.variable_of]
 
 let check_address_var (addr : t) ~(env : Env.t) :
     Act_common.C_id.t Or_error.t =
@@ -150,7 +158,7 @@ let check_address_var (addr : t) ~(env : Env.t) :
   Or_error.Let_syntax.(
     (* Addresses must have the same type as the entry for the variable in the
        environment. *)
-    let id = variable_of addr in
+    let id = addr.@(variable_of) in
     let%bind v_type = Env.type_of_known_value env ~id in
     let%bind a_type = A_check.type_of addr in
     let%map (_ : Type.t) =

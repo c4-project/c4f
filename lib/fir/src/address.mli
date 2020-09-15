@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -12,23 +12,15 @@
 (** FIR: addresses (a lvalue, or reference thereto). *)
 
 open Base
+open Import
 
-(** Opaque type of addresses. *)
-type t [@@deriving sexp, compare, equal, quickcheck]
+(** Type of addresses. *)
+type t = Lvalue of Lvalue.t | Ref of t
+[@@deriving accessors, sexp, compare, equal, quickcheck]
 
 include Comparable.S with type t := t
 
-(** Traversing over lvalues in addresses. *)
-module On_lvalues :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t
-
 (** {1 Constructors} *)
-
-val lvalue : Lvalue.t -> t
-(** [lvalue lv] lifts an lvalue [lv] to an address. *)
-
-val ref : t -> t
-(** [ref t] constructs a &-reference to [t]. *)
 
 val ref_lvalue : Lvalue.t -> t
 (** [ref_lvalue lv] constructs a &-reference to [lv]. If [lv] is already a
@@ -53,18 +45,9 @@ val deref : t -> t
     normalised form of [addr] is an lvalue, it returns the result of directly
     dereferencing from that lvalue instead. *)
 
-val on_address_of_typed_id : Type.t Act_common.C_named.t -> t
+val on_address_of_typed_id : Type.t Common.C_named.t -> t
 
-val of_id_in_env : Env.t -> id:Act_common.C_id.t -> t Or_error.t
-
-(** {2 Of variables} *)
-
-val of_variable : Act_common.C_id.t -> t
-(** [of_variable v] lifts the variable identifier [v] directly to an address. *)
-
-val of_variable_ref : Act_common.C_id.t -> t
-(** [of_variable_ref v] lifts the address of variable identifier [v] to an
-    address (in C syntax, this would be '&v'). *)
+val of_id_in_env : Env.t -> id:Common.C_id.t -> t Or_error.t
 
 val of_variable_str_exn : string -> t
 (** [of_variable_str_exn vs] is shorthand for applying {!of_variable} to the
@@ -72,18 +55,31 @@ val of_variable_str_exn : string -> t
     with an exception if [vs] is not a valid C identifier, and so this
     function should not be used on user-input data. *)
 
-(** {1 Accessors} *)
+(** {1 Accessors and various traversals} *)
 
 val reduce : t -> lvalue:(Lvalue.t -> 'a) -> ref:('a -> 'a) -> 'a
 (** [reduce addr ~address ~deref] applies [lvalue] on the underlying lvalue
     of [addr], then recursively applies [ref] to the result for each layer of
     address-taking in the address. *)
 
-val lvalue_of : t -> Lvalue.t
-(** [lvalue_of addr] gets the underlying lvalue of [addr]. *)
+val lvalue_of : ('i, Lvalue.t, t, [< field]) Accessor.Simple.t
+(** [lvalue_of] focuses on an address's underlying lvalue. *)
+
+(** This is just [lvalue_of] as a traversable. *)
+module On_lvalues :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t
 
 (** We can get to the variable name inside an address. *)
 include Types.S_has_underlying_variable with type t := t
+
+(** {2 Variable accessors} *)
+
+val variable : ('i, Common.C_id.t, t, [< variant]) Accessor.Simple.t
+(** [variable] focuses on addresses that are just variable lvalues. *)
+
+val variable_ref : ('i, Common.C_id.t, t, [< variant]) Accessor.Simple.t
+(** [variable_ref] focuses on addresses that are references to variable
+    lvalues. *)
 
 (** {1 Safe accessors}
 
@@ -93,7 +89,7 @@ val as_lvalue : t -> Lvalue.t Or_error.t
 (** [as_lvalue addr] normalises [addr], then returns it as an {{!Lvalue.t}
     lvalue} if it is one, or an error otherwise. *)
 
-val as_variable : t -> Act_common.C_id.t Or_error.t
+val as_variable : t -> Common.C_id.t Or_error.t
 (** [as_variable addr] normalises [addr], then returns it as a variable ID if
     it is one, or an error otherwise. *)
 

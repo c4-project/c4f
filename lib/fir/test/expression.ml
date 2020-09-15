@@ -64,9 +64,7 @@ let%test_module "Eval" =
       test_mod
         Src.Expression.(
           l_and
-            (eq
-               (lvalue (Src.Lvalue.variable (Act_common.C_id.of_string "x")))
-               (int_lit 27))
+            (eq (lvalue (Src.Lvalue.of_variable_str_exn "x")) (int_lit 27))
             (l_or truth falsehood)) ;
       [%expect {| (Ok (Bool true)) |}]
 
@@ -74,17 +72,13 @@ let%test_module "Eval" =
       test_mod
         Src.Expression.(
           l_and (l_or truth falsehood)
-            (eq
-               (lvalue (Src.Lvalue.variable (Act_common.C_id.of_string "y")))
-               (int_lit 27))) ;
+            (eq (lvalue (Src.Lvalue.of_variable_str_exn "y")) (int_lit 27))) ;
       [%expect {| (Ok (Bool false)) |}]
 
     let%expect_test "example invalid env-sensitive Boolean expression" =
       test_mod
         Src.Expression.(
-          eq
-            (lvalue (Src.Lvalue.variable (Act_common.C_id.of_string "a")))
-            (int_lit 27)) ;
+          eq (lvalue (Src.Lvalue.of_variable_str_exn "a")) (int_lit 27)) ;
       [%expect
         {| (Error ("Variable not found in typing environment." (id a))) |}]
 

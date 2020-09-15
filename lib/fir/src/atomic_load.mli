@@ -11,7 +11,11 @@
 
 (** An atomic load operation. *)
 
-type t [@@deriving sexp, quickcheck, compare, equal]
+open Import
+
+(** Type of atomic load operations. *)
+type t = {src: Address.t; mo: Mem_order.t}
+[@@deriving sexp, accessors, compare, equal, quickcheck]
 
 (** {2 Constructors} *)
 
@@ -20,12 +24,6 @@ val make : src:Address.t -> mo:Mem_order.t -> t
     with source [src] and memory order [mo]. *)
 
 (** {2 Accessors} *)
-
-val src : t -> Address.t
-(** [src ld] gets [ld]'s source address. *)
-
-val mo : t -> Mem_order.t
-(** [mo ld] gets [ld]'s memory order. *)
 
 (** We can get to the variable name inside an atomic load (that is, the
     source variable). *)

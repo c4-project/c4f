@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -15,13 +15,14 @@ open Act_fir.Lvalue
 module Q = Base_quickcheck
 
 let variable_in_env (x : t) ~(env : Act_fir.Env.t) : bool =
-  Map.mem env (variable_of x)
+  Map.mem env Accessor.(x.@(variable_of))
 
 let%expect_test "variable_in_env: positive variable result, test env" =
   let env = Lazy.force Env.test_env in
   print_s
     [%sexp
-      ( variable_in_env ~env (variable (Act_common.C_id.of_string "foo"))
+      ( variable_in_env ~env
+          (Accessor.construct variable (Act_common.C_id.of_string "foo"))
         : bool )] ;
   [%expect {| true |}]
 
@@ -29,7 +30,8 @@ let%expect_test "variable_in_env: negative variable result, test env" =
   let env = Lazy.force Env.test_env in
   print_s
     [%sexp
-      ( variable_in_env ~env (variable (Act_common.C_id.of_string "kappa"))
+      ( variable_in_env ~env
+          (Accessor.construct variable (Act_common.C_id.of_string "kappa"))
         : bool )] ;
   [%expect {| false |}]
 
@@ -38,7 +40,8 @@ let%expect_test "variable_in_env: positive deref result, test env" =
   print_s
     [%sexp
       ( variable_in_env ~env
-          (deref (variable (Act_common.C_id.of_string "bar")))
+          Accessor.(
+            construct (deref @> variable) (Act_common.C_id.of_string "bar"))
         : bool )] ;
   [%expect {| true |}]
 
@@ -47,7 +50,8 @@ let%expect_test "variable_in_env: negative variable result, test env" =
   print_s
     [%sexp
       ( variable_in_env ~env
-          (deref (variable (Act_common.C_id.of_string "keepo")))
+          Accessor.(
+            construct (deref @> variable) (Act_common.C_id.of_string "keepo"))
         : bool )] ;
   [%expect {| false |}]
 
@@ -55,7 +59,7 @@ let%expect_test "Type-checking a valid normal variable lvalue" =
   let module T = Type_check (struct
     let env = Lazy.force Env.test_env
   end) in
-  let result = T.type_of (variable (Act_common.C_id.of_string "foo")) in
+  let result = T.type_of (of_variable_str_exn "foo") in
   print_s [%sexp (result : Act_fir.Type.t Or_error.t)] ;
   [%expect {| (Ok int) |}]
 
@@ -64,7 +68,9 @@ let%expect_test "Type-checking an invalid deferencing variable lvalue" =
     let env = Lazy.force Env.test_env
   end) in
   let result =
-    T.type_of (deref (variable (Act_common.C_id.of_string "foo")))
+    T.type_of
+      Accessor.(
+        construct (deref @> variable) (Act_common.C_id.of_string "foo"))
   in
   print_s [%sexp (result : Act_fir.Type.t Or_error.t)] ;
   [%expect

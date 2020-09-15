@@ -125,7 +125,9 @@ module Parametric = struct
       let pp f = function
         | Literal {kind; name_opt; decls} ->
             Fmt.(
-              pf f "%a@ %a@ %a" B.Kind.pp kind (option Ast_basic.Identifier.pp) name_opt
+              pf f "%a@ %a@ %a" B.Kind.pp kind
+                (option Ast_basic.Identifier.pp)
+                name_opt
                 (Utils.My_format.pp_c_braces (list ~sep:sp B.Decl.pp))
                 decls)
         | Named (kind, id) ->
@@ -249,14 +251,17 @@ module Parametric = struct
 
     module Make (D : Ast_basic_types.Ast_node) : S with type ddec := D.t =
     struct
-      type t = Pointer of Ast_basic.Pointer.t | Direct of Ast_basic.Pointer.t option * D.t
+      type t =
+        | Pointer of Ast_basic.Pointer.t
+        | Direct of Ast_basic.Pointer.t option * D.t
       [@@deriving sexp, equal, compare]
 
       let pp f : t -> unit = function
         | Pointer ptr ->
             Ast_basic.Pointer.pp f ptr
         | Direct (mptr, direct) ->
-            Fmt.(pair ~sep:nop (option Ast_basic.Pointer.pp) D.pp) f (mptr, direct)
+            Fmt.(pair ~sep:nop (option Ast_basic.Pointer.pp) D.pp)
+              f (mptr, direct)
     end
   end
 
@@ -558,12 +563,14 @@ and Type_spec :
 end
 
 and Spec_or_qual :
-  (Ast_basic_types.Ast_node with type t = [Type_spec.t | Ast_basic.Type_qual.t]) =
-struct
-  type t = [Type_spec.t | Ast_basic.Type_qual.t] [@@deriving equal, sexp_of, compare]
+  (Ast_basic_types.Ast_node
+    with type t = [Type_spec.t | Ast_basic.Type_qual.t]) = struct
+  type t = [Type_spec.t | Ast_basic.Type_qual.t]
+  [@@deriving equal, sexp_of, compare]
 
   let t_of_sexp (s : Sexp.t) : t =
-    try (Type_spec.t_of_sexp s :> t) with _ -> (Ast_basic.Type_qual.t_of_sexp s :> t)
+    try (Type_spec.t_of_sexp s :> t)
+    with _ -> (Ast_basic.Type_qual.t_of_sexp s :> t)
 
   let pp f : t -> unit = function
     | #Type_spec.t as spec ->
@@ -574,9 +581,12 @@ end
 
 and Decl_spec :
   (Ast_basic_types.Ast_node
-    with type t = [Ast_basic.Storage_class_spec.t | Type_spec.t | Ast_basic.Type_qual.t]) =
-struct
-  type t = [Ast_basic.Storage_class_spec.t | Type_spec.t | Ast_basic.Type_qual.t]
+    with type t =
+          [ Ast_basic.Storage_class_spec.t
+          | Type_spec.t
+          | Ast_basic.Type_qual.t ]) = struct
+  type t =
+    [Ast_basic.Storage_class_spec.t | Type_spec.t | Ast_basic.Type_qual.t]
   [@@deriving sexp_of, equal, compare]
 
   let t_of_sexp (s : Sexp.t) : t =
@@ -788,7 +798,9 @@ module Litmus_lang :
   module Program = struct
     include Function_def
 
-    let name x = Some (Ast_basic.Identifier.to_string (Declarator.identifier x.signature))
+    let name x =
+      Some
+        (Ast_basic.Identifier.to_string (Declarator.identifier x.signature))
 
     (* TODO(@MattWindsor91): consider implementing this. The main reason why
        I haven't is because, usually, we'll be converting the litmus test to

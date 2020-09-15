@@ -377,4 +377,4 @@ let depended_upon_idents :
       many_getter
         Many_getter.(
           On_addresses.fold ~init:empty ~f:(fun mg ad ->
-              mg @ access (Address.variable_of ad))))]
+              mg @ access ad.@(Address.variable_of))))]

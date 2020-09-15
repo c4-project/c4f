@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,20 +10,26 @@
    project root for more information. *)
 
 open Base
+open Import
 
 type t = {src: Expression.t; dst: Address.t; mo: Mem_order.t}
-[@@deriving sexp, fields, make, compare, equal]
+[@@deriving sexp, accessors, make, compare, equal]
 
-let to_tuple ({src; dst; mo} : t) : Expression.t * Address.t * Mem_order.t =
-  (src, dst, mo)
-
-let of_tuple ((src, dst, mo) : Expression.t * Address.t * Mem_order.t) : t =
-  {src; dst; mo}
+let tuple :
+    ( 'i
+    , Expression.t * Address.t * Mem_order.t
+    , t
+    , [< isomorphism] )
+    Accessor.Simple.t =
+  [%accessor
+    Accessor.isomorphism
+      ~get:(fun {src; dst; mo} -> (src, dst, mo))
+      ~construct:(fun (src, dst, mo) -> {src; dst; mo})]
 
 let quickcheck_observer : t Base_quickcheck.Observer.t =
   Base_quickcheck.Observer.(
     unmap [%quickcheck.observer: Expression.t * Address.t * Mem_order.t]
-      ~f:to_tuple)
+      ~f:(Accessor.get tuple))
 
 let ensure_mo_compat (old : Mem_order.t) (nu : Mem_order.t) : Mem_order.t =
   if Mem_order.is_store_compatible nu then nu else old
@@ -107,13 +113,15 @@ module Quickcheck_generic
     Base_quickcheck.Generator.(
       map
         [%quickcheck.generator:
-          Src.t * Dst.t * [%custom Mem_order.gen_store]] ~f:of_tuple)
+          Src.t * Dst.t * [%custom Mem_order.gen_store]]
+        ~f:(Accessor.construct tuple))
 
   let quickcheck_observer : t Base_quickcheck.Observer.t =
     quickcheck_observer
 
   let quickcheck_shrinker : t Base_quickcheck.Shrinker.t =
     Base_quickcheck.Shrinker.(
-      map [%quickcheck.shrinker: Src.t * Dst.t * Mem_order.t] ~f:of_tuple
-        ~f_inverse:to_tuple)
+      map [%quickcheck.shrinker: Src.t * Dst.t * Mem_order.t]
+        ~f:(Accessor.construct tuple)
+        ~f_inverse:(Accessor.get tuple))
 end

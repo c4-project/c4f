@@ -329,7 +329,7 @@ let%test_module "store.make.int.redundant" =
         Fir.(
           Atomic_store.make
             ~src:(Fir.Expression.int_lit 1337)
-            ~dst:(Address.of_variable (Act_common.C_id.of_string "gen1"))
+            ~dst:(Address.of_variable_str_exn "gen1")
             ~mo:Mem_order.Seq_cst)
 
     let random_state : Src.Atomic_store.Insert.Int_redundant.Payload.t Lazy.t

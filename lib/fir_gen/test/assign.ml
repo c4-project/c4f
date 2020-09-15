@@ -12,7 +12,8 @@
 open Base
 open Import
 
-let dst_in_env env x = Map.mem env Fir.(Lvalue.variable_of x.@(Assign.dst))
+let dst_in_env env x =
+  Map.mem env Fir.(x.@(Assign.dst @> Lvalue.variable_of))
 
 let print_sample =
   Utils.My_quickcheck.print_sample

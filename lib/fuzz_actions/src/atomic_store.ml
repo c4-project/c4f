@@ -87,11 +87,10 @@ module Insert = struct
           x ]
 
     let dst_ids (x : Fir.Atomic_store.t) : Common.C_id.t list =
-      [Fir.Address.variable_of (Fir.Atomic_store.dst x)]
+      x.@*(Fir.Atomic_store.dst @> Fir.Address.variable_of)
 
-    let src_exprs (x : Fir.Atomic_store.t) :
-        (Fir.Expression.t * [`Safe | `Unsafe]) list =
-      [(Fir.Atomic_store.src x, `Unsafe)]
+    let src_exprs (x : Fir.Atomic_store.t) : Fir.Expression.t list =
+      x.@*(Fir.Atomic_store.src)
   end)
 
   module Int_normal : S = Make (struct
@@ -108,6 +107,8 @@ module Insert = struct
 
     module Flags = struct
       let erase_known_values = true
+
+      let execute_multi_unsafe = `If_cycles
     end
 
     let dst_type = Fir.Type.Basic.int ~is_atomic:true ()
@@ -129,6 +130,8 @@ module Insert = struct
 
     module Flags = struct
       let erase_known_values = false
+
+      let execute_multi_unsafe = `Never
     end
 
     let dst_type = Fir.Type.Basic.int ~is_atomic:true ()
@@ -149,6 +152,8 @@ module Insert = struct
 
     module Flags = struct
       let erase_known_values = false
+
+      let execute_multi_unsafe = `Never
     end
 
     let dst_type = Fir.Type.Basic.int ~is_atomic:true ()
@@ -171,7 +176,7 @@ module Insert = struct
       let known_value_expr_of_dest (dst : Q_dst.t) :
           Fir.Expression.t Or_error.t =
         Or_error.Let_syntax.(
-          let id = Fir.Address.variable_of dst in
+          let id = dst.@(Fir.Address.variable_of) in
           let%bind kvo = Fir.Env.known_value Dst.env ~id in
           let%map kv =
             Result.of_option kvo
@@ -238,7 +243,7 @@ module Transform = struct
       Ok
         (Accessor.construct Fir.Atomic_statement.xchg
            Fir.Atomic_store.(
-             Fir.Atomic_xchg.make ~obj:(dst s) ~desired:(src s) ~mo:(mo s)))
+             Fir.Atomic_xchg.make ~obj:s.@(dst) ~desired:s.@(src) ~mo:s.@(mo)))
 
     let xchgify_atomic :
         Fir.Atomic_statement.t -> Fir.Atomic_statement.t Or_error.t =

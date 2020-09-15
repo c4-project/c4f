@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -50,7 +50,9 @@ let%test_module "examples" =
         Fir.(
           Expression.atomic_load
             (Atomic_load.make
-               ~src:(Address.of_variable_ref (Act_common.C_id.of_string "x"))
+               ~src:
+                 (Accessor.construct Address.variable_ref
+                    (Act_common.C_id.of_string "x"))
                ~mo:Mem_order.Seq_cst)) ;
       [%expect {| atomic_load_explicit(&x, memory_order_seq_cst) |}]
   end )

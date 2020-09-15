@@ -14,7 +14,7 @@ open Import
 
 let variable_in (env : Fir.Env.t) (l : Fir.Address.t) : bool =
   (* TODO(@MattWindsor91) Is this duplicated? *)
-  Map.mem env (Fir.Address.variable_of l)
+  Map.mem env l.@(Fir.Address.variable_of)
 
 let test_in_env (env : Fir.Env.t)
     (module Qc : Utils.My_quickcheck.S_with_sexp with type t = Fir.Address.t)

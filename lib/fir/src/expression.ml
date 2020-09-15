@@ -69,9 +69,9 @@ let quickcheck_observer : t Base_quickcheck.Observer.t =
             | `D of Op.Binary.t * [%custom mu] * [%custom mu]
             | `E of Op.Unary.t * [%custom mu] ]]))
 
-let lvalue (l : Lvalue.t) : t = address (Address.lvalue l)
+let lvalue (l : Lvalue.t) : t = Address (Lvalue l)
 
-let variable (v : Common.C_id.t) : t = lvalue (Lvalue.variable v)
+let variable (v : Common.C_id.t) : t = lvalue (Variable v)
 
 let of_variable_str_exn (s : string) : t =
   lvalue (Lvalue.of_variable_str_exn s)

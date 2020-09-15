@@ -136,6 +136,19 @@ struct
          ~predicates:(Lazy.force basic_src_restrictions)
     @@ B.path_filter
 
+  let has_dependency_cycle (to_insert : B.t) : bool =
+    (* TODO(@MattWindsor91): this is very heavy-handed; we should permit
+       references to the destination in the source wherever they are not
+       depended-upon, but how do we do this? *)
+    let dsts = B.dst_ids to_insert in
+    let srcs = B.src_exprs to_insert in
+    Fir.(
+      Accessor.(
+        exists (List.each @> Expression_traverse.depended_upon_idents))
+        ~f:(fun id ->
+          Option.is_some (List.find dsts ~f:(Common.C_id.equal id))))
+      srcs
+
   module Payload = Fuzz.Payload_impl.Insertion.Make (struct
     type t = B.t [@@deriving sexp]
 
@@ -155,41 +168,15 @@ struct
       Or_error.combine_errors_unit
         [error_if_empty "src" src; error_if_empty "dst" dst]
 
-    let is_dependency_cycle_free (pld : t) : bool =
-      (* TODO(@MattWindsor91): this is very heavy-handed; we should permit
-         references to the destination in the source wherever they are not
-         depended-upon, but how do we do this? *)
-      let dsts = B.dst_ids pld in
-      let srcs =
-        List.filter_map (B.src_exprs pld) ~f:(function
-          | _, `Safe ->
-              None
-          | x, `Unsafe ->
-              Some x)
-      in
-      Fir.(
-        Accessor.(
-          for_all (List.each @> Expression_traverse.depended_upon_idents))
-          ~f:(fun id ->
-            Option.is_none (List.find dsts ~f:(Common.C_id.equal id))))
-        srcs
-
     let gen' (vars : Fuzz.Var.Map.t) ~(where : Fuzz.Path.Flagged.t)
         ~(forbid_already_written : bool) : t Fuzz.Opt_gen.t =
-      let in_dc =
-        Set.mem
-          (Fuzz.Path_flag.Flagged.flags where)
-          Fuzz.Path_flag.In_dead_code
-      in
       let where = Fuzz.Path_flag.Flagged.path where in
       let tid = Fuzz.Path.tid where in
       let src = src_env vars ~tid in
       let dst = dst_env vars ~tid ~forbid_already_written in
       Or_error.Let_syntax.(
         let%map () = check_envs src dst in
-        let gen = B.gen ~src ~dst ~vars ~tid in
-        if in_dc then gen
-        else Base_quickcheck.Generator.filter gen ~f:is_dependency_cycle_free)
+        B.gen ~src ~dst ~vars ~tid)
 
     let gen (where : Fuzz.Path.Flagged.t) : t Fuzz.Payload_gen.t =
       Fuzz.Payload_gen.(
@@ -220,11 +207,15 @@ struct
       unit Fuzz.State.Monad.t =
     xs |> List.map ~f:(bookkeep_dst ~tid) |> Fuzz.State.Monad.all_unit
 
-  module MList = Tx.List.On_monad (Fuzz.State.Monad)
+  module AState = Accessor.Of_monad (struct
+    include Fuzz.State.Monad
+
+    let apply = `Define_using_bind
+  end)
 
   let bookkeep_new_locals (nls : Fir.Initialiser.t Common.C_named.Alist.t)
       ~(tid : int) : unit Fuzz.State.Monad.t =
-    MList.iter_m nls ~f:(fun (name, init) ->
+    AState.iter Accessor.List.each nls ~f:(fun (name, init) ->
         Fuzz.State.Monad.register_var (Common.Litmus_id.local tid name) init)
 
   let do_bookkeeping (item : B.t) ~(path : Fuzz.Path.Flagged.t) :
@@ -234,11 +225,10 @@ struct
       all_unit
         [ bookkeep_new_locals ~tid (B.new_locals item)
         ; bookkeep_dsts ~tid (B.dst_ids item)
-        ; add_expression_dependencies_at_path ~path
-            (List.map ~f:fst (B.src_exprs item)) ])
+        ; add_expression_dependencies_at_path ~path (B.src_exprs item) ])
 
   let insert_vars (target : Fuzz.Subject.Test.t)
-      (new_locals : Fir.Initialiser.t Common.C_named.Alist.t) ~(tid : int) :
+      ~(new_locals : Fir.Initialiser.t Common.C_named.Alist.t) ~(tid : int) :
       Fuzz.Subject.Test.t Or_error.t =
     Tx.List.With_errors.fold_m new_locals ~init:target
       ~f:(fun subject (id, init) ->
@@ -246,20 +236,39 @@ struct
           (Common.Litmus_id.local tid id)
           init)
 
+  let apply_once_only (to_insert : B.t) : bool =
+    match B.Flags.execute_multi_unsafe with
+    | `Always ->
+        true
+    | `If_cycles ->
+        has_dependency_cycle to_insert
+    | `Never ->
+        false
+
+  let stm_metadata (to_insert : B.t) : Fuzz.Metadata.t =
+    let restrictions =
+      if apply_once_only to_insert then
+        Set.singleton (module Fuzz.Metadata.Restriction) Once_only
+      else Set.empty (module Fuzz.Metadata.Restriction)
+    in
+    Generated (Fuzz.Metadata.Gen.make ~restrictions ())
+
+  let to_stms_with_metadata (to_insert : B.t) : Fuzz.Subject.Statement.t list
+      =
+    let md = stm_metadata to_insert in
+    List.map (B.to_stms to_insert) ~f:(fun x ->
+        Accessor.construct Fir.Statement.prim (md, x))
+
   let do_insertions (target : Fuzz.Subject.Test.t)
       ~(path : Fuzz.Path.Flagged.t) ~(to_insert : B.t) :
       Fuzz.Subject.Test.t Or_error.t =
     let tid = Fuzz.Path.tid (Fuzz.Path_flag.Flagged.path path) in
-    let stms =
-      to_insert |> B.to_stms
-      |> List.map ~f:Fuzz.Subject.Statement.make_generated_prim
-    in
-    Or_error.Let_syntax.(
-      let%bind target' =
-        Fuzz.Path_consumers.consume_with_flags target ~filter:B.path_filter
-          ~path ~action:(Insert stms)
-      in
-      insert_vars target' (B.new_locals to_insert) ~tid)
+    let stms = to_stms_with_metadata to_insert in
+    Or_error.(
+      target
+      |> Fuzz.Path_consumers.consume_with_flags ~filter:B.path_filter ~path
+           ~action:(Insert stms)
+      >>= insert_vars ~new_locals:(B.new_locals to_insert) ~tid)
 
   let run (subject : Fuzz.Subject.Test.t)
       ~(payload : B.t Fuzz.Payload_impl.Insertion.t) :

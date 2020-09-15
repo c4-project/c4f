@@ -12,6 +12,7 @@
 (** FIR: module signatures and basic types *)
 
 open Base
+open Import
 
 (** {1 General signatures} *)
 
@@ -28,8 +29,8 @@ module type S_has_underlying_variable = sig
   (** The type that contains underlying variables. *)
   type t
 
-  val variable_of : t -> Act_common.C_id.t
-  (** [variable_of x] is the underlying variable of [x]. *)
+  val variable_of : ('i, Common.C_id.t, t, [< field]) Accessor.Simple.t
+  (** [variable_of] accesses this object's underlying variable. *)
 end
 
 module type S_type_checker = sig

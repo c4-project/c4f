@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,16 +10,16 @@
    project root for more information. *)
 
 open Base
-module Ac = Act_common
+open Import
 
-type t = Variable of Ac.C_id.t | Deref of t
-[@@deriving sexp, variants, compare, equal]
+type t = Variable of Common.C_id.t | Deref of t
+[@@deriving sexp, accessors, compare, equal]
 
 let of_variable_str_exn (s : string) : t =
-  s |> Act_common.C_id.of_string |> variable
+  s |> Common.C_id.of_string |> Accessor.construct variable
 
-let rec reduce (lv : t) ~(variable : Ac.C_id.t -> 'a) ~(deref : 'a -> 'a) :
-    'a =
+let rec reduce (lv : t) ~(variable : Common.C_id.t -> 'a) ~(deref : 'a -> 'a)
+    : 'a =
   match lv with
   | Variable v ->
       variable v
@@ -32,34 +32,27 @@ let un_deref : t -> t Or_error.t = function
   | Variable _ ->
       Or_error.error_string "can't & a variable lvalue"
   | Deref x ->
-      Or_error.return x
+      Ok x
 
-module On_identifiers :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Ac.C_id.t =
-Travesty.Traversable.Make0 (struct
-  type nonrec t = t
+let rec get_variable_of (x : t) : Common.C_id.t =
+  match x with Variable c -> c | Deref d -> get_variable_of d
 
-  module Elt = Ac.C_id
+let rec set_variable_of (x : t) (v : Common.C_id.t) : t =
+  match x with
+  | Variable _ ->
+      Variable v
+  | Deref d ->
+      Deref (set_variable_of d v)
 
-  module On_monad (M : Monad.S) = struct
-    module F = Travesty.Traversable.Helpers (M)
+let variable_of : ('i, Common.C_id.t, t, [< field]) Accessor.Simple.t =
+  [%accessor Accessor.field ~get:get_variable_of ~set:set_variable_of]
 
-    let rec map_m x ~f =
-      Variants.map x ~variable:(F.proc_variant1 f)
-        ~deref:(F.proc_variant1 (map_m ~f))
-  end
-end)
-
-let variable_of : t -> Ac.C_id.t = reduce ~variable:Fn.id ~deref:Fn.id
-
-let as_variable (lv : t) : Ac.C_id.t Or_error.t =
-  match lv with
-  | Variable x ->
-      Or_error.return x
-  | Deref _ ->
-      Or_error.error_s
-        [%message
-          "Can't safely convert this lvalue to a variable" ~lvalue:(lv : t)]
+let as_variable (lv : t) : Common.C_id.t Or_error.t =
+  Result.of_option lv.@?(variable)
+    ~error:
+      (Error.create_s
+         [%message
+           "Can't safely convert this lvalue to a variable" ~lvalue:(lv : t)])
 
 module Type_check (E : sig
   val env : Env.t
@@ -75,42 +68,46 @@ struct
           sexp_of_t
 end
 
-let anonymise = function Variable v -> `A v | Deref d -> `B d
-
-let deanonymise = function `A v -> Variable v | `B d -> Deref d
+let anonymise =
+  [%accessor
+    Accessor.isomorphism
+      ~get:(function Variable v -> `A v | Deref d -> `B d)
+      ~construct:(function `A v -> Variable v | `B d -> Deref d)]
 
 module Quickcheck_generic
-    (Id : Act_utils.My_quickcheck.S_with_sexp with type t := Ac.C_id.t) : sig
+    (Id : Act_utils.My_quickcheck.S_with_sexp with type t := Common.C_id.t) : sig
   type nonrec t = t [@@deriving sexp_of, quickcheck]
 end = struct
   type nonrec t = t
 
   let sexp_of_t = sexp_of_t
 
-  let quickcheck_generator : t Base_quickcheck.Generator.t =
-    Base_quickcheck.Generator.(
+  let quickcheck_generator : t Q.Generator.t =
+    Q.Generator.(
       recursive_union
-        [map [%quickcheck.generator: Id.t] ~f:variable]
-        ~f:(fun mu -> [map mu ~f:deref]))
+        [map [%quickcheck.generator: Id.t] ~f:(Accessor.construct variable)]
+        ~f:(fun mu -> [map mu ~f:(Accessor.construct deref)]))
 
-  let quickcheck_observer : t Base_quickcheck.Observer.t =
-    Base_quickcheck.Observer.(
+  let quickcheck_observer : t Q.Observer.t =
+    Q.Observer.(
       fixed_point (fun mu ->
-          unmap ~f:anonymise
+          unmap ~f:(Accessor.get anonymise)
             [%quickcheck.observer: [`A of Id.t | `B of [%custom mu]]]))
 
-  let quickcheck_shrinker : t Base_quickcheck.Shrinker.t =
-    Base_quickcheck.Shrinker.(
+  let quickcheck_shrinker : t Q.Shrinker.t =
+    Q.Shrinker.(
       fixed_point (fun mu ->
-          map ~f:deanonymise ~f_inverse:anonymise
+          map
+            ~f:(Accessor.construct anonymise)
+            ~f_inverse:(Accessor.get anonymise)
             [%quickcheck.shrinker: [`A of Id.t | `B of [%custom mu]]]))
 end
 
-module Quickcheck_id = Quickcheck_generic (Ac.C_id)
+module Quickcheck_id = Quickcheck_generic (Common.C_id)
 
 include (Quickcheck_id : module type of Quickcheck_id with type t := t)
 
-let on_value_of_typed_id (tid : Type.t Ac.C_named.t) : t =
-  let id = Accessor.get Ac.C_named.name tid in
-  let ty = Accessor.get Ac.C_named.value tid in
+let on_value_of_typed_id (tid : Type.t Common.C_named.t) : t =
+  let id = Accessor.get Common.C_named.name tid in
+  let ty = Accessor.get Common.C_named.value tid in
   if Type.is_pointer ty then Deref (Variable id) else Variable id

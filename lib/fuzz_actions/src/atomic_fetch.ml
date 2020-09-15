@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -90,11 +90,11 @@ module Insert = struct
 
     let dst_ids (x : Fir.Expression.t Fir.Atomic_fetch.t) :
         Common.C_id.t list =
-      [Fir.Address.variable_of (Fir.Atomic_fetch.obj x)]
+      x.@*(Fir.Atomic_fetch.obj @> Fir.Address.variable_of)
 
     let src_exprs (x : Fir.Expression.t Fir.Atomic_fetch.t) :
-        (Fir.Expression.t * [`Safe | `Unsafe]) list =
-      [(Fir.Atomic_fetch.arg x, `Unsafe)]
+        Fir.Expression.t list =
+      x.@*(Fir.Atomic_fetch.arg)
   end)
 
   (* TODO(@MattWindsor91): 'Int' module, which would need some care in order
@@ -114,6 +114,8 @@ module Insert = struct
 
     module Flags = struct
       let erase_known_values = false
+
+      let execute_multi_unsafe = `Never
     end
 
     let dst_type = Fir.Type.Basic.int ~is_atomic:true ()
@@ -134,6 +136,8 @@ module Insert = struct
 
     module Flags = struct
       let erase_known_values = false
+
+      let execute_multi_unsafe = `Never
     end
 
     let dst_type = Fir.Type.Basic.int ~is_atomic:true ()

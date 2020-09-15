@@ -12,16 +12,13 @@
 open Base
 open Stdio
 module Src = Act_fir
-module Ac = Act_common
 
 let%expect_test "type_of: atomic_int* -> int" =
   let env = Lazy.force Env.test_env in
   let module Ty = Src.Atomic_load.Type_check (struct
     let env = env
   end) in
-  let src =
-    Src.Address.lvalue (Src.Lvalue.variable (Ac.C_id.of_string "bar"))
-  in
+  let src = Src.Address.of_variable_str_exn "bar" in
   let ld = Src.Atomic_load.make ~src ~mo:Src.Mem_order.Seq_cst in
   print_s [%sexp (Ty.type_of ld : Src.Type.t Or_error.t)] ;
   [%expect {| (Ok int) |}]

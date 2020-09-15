@@ -39,13 +39,6 @@ let test_all_expressions_have_type
         ~equal:[%compare.equal: Fir.Type.t Or_error.t]
         ~expect:(Or_error.return ty))
 
-module Exp_lvalues =
-  Travesty.Traversable.Chain0
-    (Act_fir.Expression_traverse.On_addresses)
-    (Act_fir.Address.On_lvalues)
-module Exp_idents =
-  Travesty.Traversable.Chain0 (Exp_lvalues) (Act_fir.Lvalue.On_identifiers)
-
 let test_all_expressions_in_env
     (f : Fir.Env.t -> (module Q.Test.S with type t = Fir.Expression.t)) :
     unit =
@@ -53,7 +46,8 @@ let test_all_expressions_in_env
   Base_quickcheck.Test.run_exn (f env)
     ~f:
       ([%test_pred: Fir.Expression.t]
-         (Exp_idents.for_all ~f:(Map.mem env))
+         (Fir.Expression_traverse.On_addresses.for_all
+            ~f:(Accessor.for_all Fir.Address.variable_of ~f:(Map.mem env)))
          ~here:[[%here]])
 
 let test_all_expressions_evaluate

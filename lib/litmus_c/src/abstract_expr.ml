@@ -141,7 +141,8 @@ let rec model : Ast.Expr.t -> Fir.Expression.t Or_error.t = function
       Ok (identifier_to_expr id)
   | Prefix (`Deref, x) ->
       Or_error.(
-        x |> Abstract_prim.expr_to_lvalue >>| Fir.Lvalue.deref
+        x |> Abstract_prim.expr_to_lvalue
+        >>| Accessor.construct Fir.Lvalue.deref
         >>| Fir.Expression.lvalue)
   | Prefix (op, x) ->
       model_prefix op x ~expr:model

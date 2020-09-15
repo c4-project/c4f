@@ -7,5 +7,6 @@
   (pps ppx_jane))
  (libraries sexplib0 expect_test_helpers_core ppx_expect.common
    ppx_expect.config ppx_expect.config_types ppx_inline_test.config base
-   base.caml fmt travesty.base_exts act.litmus_c act.common act.utils act.fir
-   act.fuzz act.fuzz_actions act_fuzz_test act_fir_test))
+   base.caml accessor accessor_base fmt travesty.base_exts act.litmus_c
+   act.common act.utils act.fir act.fuzz act.fuzz_actions act_fuzz_test
+   act_fir_test))

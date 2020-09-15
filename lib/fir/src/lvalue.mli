@@ -20,28 +20,22 @@
     used where things expect pointers. *)
 
 open Base
+open Import
 
-(** Opaque type of lvalues. *)
-type t [@@deriving sexp, compare, equal, quickcheck]
+(** Type of lvalues. *)
+type t = Variable of Common.C_id.t | Deref of t
+[@@deriving sexp, accessors, compare, equal, quickcheck]
 
 (** Note that the default quickcheck instance generates random lvalues
     without constraint. *)
 
-(** {3 Constructors} *)
-
-val variable : Act_common.C_id.t -> t
-(** [variable id] constructs an lvalue pointing to variable [id]. It doesn't
-    do any validation. *)
+(** {1 Constructors} *)
 
 val of_variable_str_exn : string -> t
 (** [of_variable_str_exn vs] tries to construct an lvalue over a variable
     whose name is the string [vs]. It fails with an exception if [vs] is an
     invalid C identifier. This function is for use mainly in testing, and
     shouldn't be used on user-supplied C code. *)
-
-val deref : t -> t
-(** [deref lvalue] constructs a dereference ([*]) of another lvalue [lvalue].
-    It doesn't do any validation. *)
 
 val un_deref : t -> t Or_error.t
 (** [un_deref lvalue] tries to remove one layer of dereferencing from
@@ -55,7 +49,7 @@ val on_value_of_typed_id : Type.t Act_common.C_named.t -> t
     For example, if [value tid] is a pointer type, the lvalue will become a
     dereference. *)
 
-(** {3 Accessors} *)
+(** {1 Getters and accessors} *)
 
 val reduce :
   t -> variable:(Act_common.C_id.t -> 'a) -> deref:('a -> 'a) -> 'a
@@ -67,11 +61,13 @@ val is_deref : t -> bool
 (** [is_deref lvalue] returns [true] if [lvalue] is a dereference of another
     [lvalue], and [false] otherwise. *)
 
-(** Traversing over identifiers in lvalues. *)
-module On_identifiers :
-  Travesty.Traversable_types.S0
-    with type t := t
-     and type Elt.t = Act_common.C_id.t
+(** {2 Safe getters}
+
+    These getters return an error if the address isn't in the right shape. *)
+
+val as_variable : t -> Act_common.C_id.t Or_error.t
+(** [as_variable lv] returns [lv], then returns it as a variable ID if it is
+    one, or an error otherwise. *)
 
 (** We can get to the variable name inside an lvalue. *)
 include Types.S_has_underlying_variable with type t := t
@@ -79,15 +75,7 @@ include Types.S_has_underlying_variable with type t := t
 (** Type-checking for lvalues. *)
 include Types.S_type_checkable with type t := t
 
-(** {3 Safe accessors}
-
-    These accessors return an error if the address isn't in the right shape. *)
-
-val as_variable : t -> Act_common.C_id.t Or_error.t
-(** [as_variable lv] returns [lv], then returns it as a variable ID if it is
-    one, or an error otherwise. *)
-
-(** {3 Generating random lvalues}
+(** {1 Generating random lvalues}
 
     The default quickcheck instance random lvalues without constraint. We
     also provide several modules with more specific restrictions. Most of

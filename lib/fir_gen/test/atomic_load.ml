@@ -12,7 +12,7 @@
 open Base
 open Import
 
-let in_env env x = Map.mem env (Fir.Atomic_load.variable_of x)
+let in_env env x = Map.mem env x.@(Fir.Atomic_load.variable_of)
 
 let print_sample =
   Utils.My_quickcheck.print_sample

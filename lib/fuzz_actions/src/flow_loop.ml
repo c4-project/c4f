@@ -366,7 +366,7 @@ module Surround = struct
     let control (payload : Payload.t) : Act_fir.Flow_block.For.t =
       Fir.Flow_block.For.make
         ~lvalue:
-          (Fir.Lvalue.variable
+          (Accessor.construct Fir.Lvalue.variable
              (Common.Litmus_id.variable_name payload.lc_var))
         ~direction:(direction payload)
         ~init_value:(Fir.Expression.constant payload.kv_val)

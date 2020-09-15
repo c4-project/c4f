@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,12 +10,14 @@
    project root for more information. *)
 
 open Base
+open Import
 
 type 'e t = {obj: Address.t; arg: 'e; mo: Mem_order.t; op: Op.Fetch.t}
-[@@deriving sexp, fields, make, compare, equal, quickcheck]
+[@@deriving sexp, accessors, make, compare, equal, quickcheck]
 
-let variable_of (type e) (x : e t) : Act_common.C_id.t =
-  Address.variable_of (obj x)
+let variable_of :
+    type e i. (i, Common.C_id.t, e t, [< field]) Accessor.Simple.t =
+  [%accessor obj @> Address.variable_of]
 
 module Base_map (Ap : Applicative.S) = struct
   let bmap (x : 'a t) ~(obj : Address.t -> Address.t Ap.t)
@@ -96,9 +98,9 @@ struct
   let type_of (c : t) : Type.t Or_error.t =
     Or_error.Let_syntax.(
       (* A* *)
-      let%bind obj = Ad.type_of (obj c) in
+      let%bind obj = Ad.type_of c.obj in
       (* M *)
-      let arg = arg c in
+      let arg = c.arg in
       (* C11 allows A to be a pointer type if M is ptrdiff_t; we don't
          implement double-pointer types and so don't implement this (yet). *)
       let%map _ = check_arg_obj ~arg ~obj in

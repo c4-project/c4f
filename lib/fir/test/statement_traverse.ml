@@ -27,14 +27,15 @@ let%test_module "On_lvalues and On_addresses" =
           ~cond:(Expression.of_variable_str_exn "so")
           [ Stm.mkif
               ~cond:
-                (Expression.lvalue Lvalue.(deref (of_variable_str_exn "i")))
+                (Expression.lvalue
+                   Lvalue.(A.construct deref (of_variable_str_exn "i")))
               [ A.(
                   construct
                     ( Statement.prim' @> Prim_statement.atomic
                     @> Atomic_statement.store )
                     (Src.Atomic_store.make ~mo:Relaxed
                        ~src:(Expression.of_variable_str_exn "herd")
-                       ~dst:Address.(ref (of_variable_str_exn "u")))) ]
+                       ~dst:Address.(Ref (of_variable_str_exn "u")))) ]
               [ A.(
                   construct
                     (Statement.prim' @> Prim_statement.goto)

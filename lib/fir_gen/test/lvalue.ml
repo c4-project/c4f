@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -13,7 +13,7 @@ open Base
 open Import
 
 let variable_in (env : Fir.Env.t) (l : Fir.Lvalue.t) : bool =
-  Map.mem env (Fir.Lvalue.variable_of l)
+  Map.mem env l.@(Fir.Lvalue.variable_of)
 
 let print_sample = Utils.My_quickcheck.print_sample
 
@@ -34,7 +34,7 @@ let test_type (env : Fir.Env.t)
     (module Qc)
     ~f:(fun lv ->
       [%test_result: Fir.Type.t Or_error.t] ~here:[[%here]] (Tc.type_of lv)
-        ~expect:(Or_error.return expected))
+        ~expect:(Ok expected))
 
 let%test_module "On_env" =
   ( module struct

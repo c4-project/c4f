@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,17 +10,17 @@
    project root for more information. *)
 
 open Base
+open Import
 
 open struct
-  module Fir = Act_fir
   module Prim = Reify_prim
 end
 
 let known_call (name : string) (args : Ast.Expr.t list) : Ast.Expr.t =
-  Call {func= Identifier (Act_common.C_id.of_string name); arguments= args}
+  Call {func= Identifier (Common.C_id.of_string name); arguments= args}
 
 let mem_order (mo : Fir.Mem_order.t) : Ast.Expr.t =
-  Identifier (Act_common.C_id.of_string (Fir.Mem_order.to_string mo))
+  Identifier (Common.C_id.of_string (Fir.Mem_order.to_string mo))
 
 let cmpxchg (cmpxchg : 'e Fir.Atomic_cmpxchg.t) ~(expr : 'e -> Ast.Expr.t) :
     Ast.Expr.t =
@@ -42,20 +42,20 @@ let fetch (f : 'e Fir.Atomic_fetch.t) ~(expr : 'e -> Ast.Expr.t) : Ast.Expr.t
   Fir.(
     Atomic_fetch.(
       known_call
-        (Abstract_atomic.fetch_name (op f))
-        [Prim.address (obj f); expr (arg f); mem_order (mo f)]))
+        (Abstract_atomic.fetch_name f.op)
+        [Prim.address f.obj; expr f.arg; mem_order f.mo]))
 
 let load (ld : Fir.Atomic_load.t) : Ast.Expr.t =
   Fir.(
     Atomic_load.(
       known_call Abstract_atomic.load_name
-        [Prim.address (src ld); mem_order (mo ld)]))
+        [Prim.address ld.src; mem_order ld.mo]))
 
 let store (st : Fir.Atomic_store.t) ~(expr : 'e -> Ast.Expr.t) : Ast.Expr.t =
   Fir.(
     Atomic_store.(
       known_call Abstract_atomic.store_name
-        [Prim.address (dst st); expr (src st); mem_order (mo st)]))
+        [Prim.address st.dst; expr st.src; mem_order st.mo]))
 
 let xchg (xc : 'e Fir.Atomic_xchg.t) ~(expr : 'e -> Ast.Expr.t) : Ast.Expr.t
     =

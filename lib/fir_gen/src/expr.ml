@@ -42,7 +42,7 @@ module Int_prims (E : Fir.Env_types.S) = struct
   let gen_atomic_load () : (t * Fir.Env.Record.t) Q.Generator.t =
     let module AL = Atomic_load.Int (E) in
     lift [%quickcheck.generator: AL.t] ~to_expr:Fir.Expression.atomic_load
-      ~to_var:Fir.Atomic_load.variable_of
+      ~to_var:(Accessor.get Fir.Atomic_load.variable_of)
 
   let gen_atomic_fetch_zero_nop ~(gen_zero : t Q.Generator.t) :
       (t * Fir.Env.Record.t) Q.Generator.t =
@@ -59,12 +59,12 @@ module Int_prims (E : Fir.Env_types.S) = struct
         end)
     in
     lift [%quickcheck.generator: F.t] ~to_expr:Fir.Expression.atomic_fetch
-      ~to_var:Fir.Atomic_fetch.variable_of
+      ~to_var:(Accessor.get Fir.Atomic_fetch.variable_of)
 
   let gen_lvalue () : (t * Fir.Env.Record.t) Q.Generator.t =
     let module LV = Lvalue.Int_values (E) in
     lift [%quickcheck.generator: LV.t] ~to_expr:Fir.Expression.lvalue
-      ~to_var:Fir.Lvalue.variable_of
+      ~to_var:(Accessor.get Fir.Lvalue.variable_of)
 
   let has_ints ~(is_atomic : bool) : bool =
     Fir.Env.has_variables_of_basic_type E.env
@@ -222,7 +222,8 @@ module Atomic_fetch_int_refl_nops (Obj : Fir.Env_types.S) :
     [%quickcheck.shrinker: [%custom Q.Shrinker.atomic] Fir.Atomic_fetch.t]
 
   let gen_address : (Fir.Address.t * Fir.Env.Record.t) Q.Generator.t =
-    P.with_record A.quickcheck_generator ~to_var:Fir.Address.variable_of
+    P.with_record A.quickcheck_generator
+      ~to_var:(Accessor.get Fir.Address.variable_of)
 
   let gen_op (obj : Fir.Address.t) (arg : Fir.Expression.t) :
       Fir.Expression.t Fir.Atomic_fetch.t Q.Generator.t =

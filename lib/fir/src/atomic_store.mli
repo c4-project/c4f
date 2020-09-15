@@ -9,26 +9,13 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+(** Atomic stores *)
+
+open Import
+
 (** An atomic store operation. *)
-
-type t [@@deriving sexp, compare, equal]
-
-(** {1 Constructors} *)
-
-val make : src:Expression.t -> dst:Address.t -> mo:Mem_order.t -> t
-(** [atomic_store ~src ~dst ~mo] constructs an explicit atomic store
-    expression with source [src], destination [dst], and memory order [mo]. *)
-
-(** {1 Accessors} *)
-
-val dst : t -> Address.t
-(** [dst st] gets [st]'s destination address. *)
-
-val src : t -> Expression.t
-(** [src st] gets [st]'s source expression. *)
-
-val mo : t -> Mem_order.t
-(** [mo st] gets [st]'s memory order. *)
+type t = {src: Expression.t; dst: Address.t; mo: Mem_order.t}
+[@@deriving sexp, accessors, make, compare, equal]
 
 (** {1 Traversals} *)
 

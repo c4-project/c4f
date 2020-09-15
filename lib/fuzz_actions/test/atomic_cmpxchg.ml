@@ -24,7 +24,8 @@ module Test_data = struct
         Atomic_cmpxchg.make
           ~obj:(Address.of_variable_str_exn "gen1")
           ~expected:
-            (Address.of_variable_ref (Act_common.C_id.of_string "expected"))
+            (Accessor.construct Address.variable_ref
+               (Act_common.C_id.of_string "expected"))
           ~desired:(Expression.int_lit 54321)
           ~succ:Seq_cst ~fail:Relaxed)
 

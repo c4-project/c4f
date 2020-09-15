@@ -186,15 +186,14 @@ let eval_atomic_fetch_xchg_common (obj_addr : Address.t)
 
 let eval_atomic_fetch (f : Expression.t Atomic_fetch.t) ~(mu : mu) :
     Constant.t Heap.Monad.t =
-  eval_atomic_fetch_xchg_common (Atomic_fetch.obj f) ~mu
-    ~desired_f:(fun obj_old ->
-      let arg = Atomic_fetch.arg f in
-      let op = Atomic_fetch.op f in
+  eval_atomic_fetch_xchg_common f.obj ~mu ~desired_f:(fun obj_old ->
+      let arg = f.arg in
+      let op = f.op in
       atomic_fetch_op ~op ~obj_old ~arg)
 
 let eval_atomic_load (atomic_load : Atomic_load.t) : Constant.t Heap.Monad.t
     =
-  atomic_load |> Atomic_load.src |> Address.deref |> Heap.Monad.load
+  atomic_load.src |> Address.deref |> Heap.Monad.load
 
 let eval_atomic_xchg (x : Expression.t Atomic_xchg.t) ~(mu : mu) :
     Constant.t Heap.Monad.t =

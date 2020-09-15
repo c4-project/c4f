@@ -71,7 +71,9 @@ let%test_module "reify/pp" =
               for_loop
                 ~control:
                   (For.make
-                     ~lvalue:(Lvalue.deref (Lvalue.of_variable_str_exn "x"))
+                     ~lvalue:
+                       (A.construct Lvalue.deref
+                          (Lvalue.of_variable_str_exn "x"))
                      ~init_value:(Expression.int_lit 0)
                      ~cmp_value:(Expression.int_lit 100)
                      ~direction:Up_inclusive)
@@ -103,7 +105,7 @@ let%test_module "reify/pp" =
             construct
               (Statement.prim' @> Prim_statement.assign)
               (Assign.make
-                 ~dst:Lvalue.(deref (of_variable_str_exn "x"))
+                 ~dst:Lvalue.(construct deref (of_variable_str_exn "x"))
                  ~src:Inc))) ;
       [%expect {| (*x)++; |}]
   end )

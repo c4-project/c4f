@@ -32,19 +32,20 @@ let%test_module "variable_of" =
       Q.Test.run_exn
         (module Act_fir.Address)
         ~f:(fun x ->
-          [%test_eq: Act_common.C_id.t] ~here:[[%here]] (variable_of x)
-            (variable_of (ref x)))
+          [%test_eq: Act_common.C_id.t] ~here:[[%here]]
+            (Accessor.get variable_of x)
+            (Accessor.get variable_of (Ref x)))
 
     let%expect_test "variable_of: nested example" =
       let example =
-        ref
-          (ref
-             (lvalue
+        Ref
+          (Ref
+             (Lvalue
                 Act_fir.(
-                  Lvalue.deref
-                    (Lvalue.variable (Act_common.C_id.of_string "yorick")))))
+                  Lvalue.(
+                    Accessor.construct deref (of_variable_str_exn "yorick")))))
       in
-      let var = variable_of example in
+      let var = Accessor.get variable_of example in
       Fmt.pr "%a@." Act_common.C_id.pp var ;
       [%expect {| yorick |}]
   end )
@@ -60,11 +61,12 @@ let%test_module "Type-check" =
       print_s [%sexp (result : Act_fir.Type.t Or_error.t)]
 
     let%expect_test "Type-checking a valid normal variable lvalue" =
-      test (of_variable (Act_common.C_id.of_string "foo")) ;
+      test (Accessor.construct variable (Act_common.C_id.of_string "foo")) ;
       [%expect {| (Ok int) |}]
 
     let%expect_test "Type-checking an valid reference lvalue" =
-      test (of_variable_ref (Act_common.C_id.of_string "foo")) ;
+      test
+        (Accessor.construct variable_ref (Act_common.C_id.of_string "foo")) ;
       [%expect {| (Ok int*) |}]
   end )
 
@@ -76,7 +78,7 @@ let%test_module "deref" =
         ~f:(fun addr ->
           [%test_result: Act_fir.Address.t] ~here:[[%here]]
             ~equal:[%equal: Act_fir.Address.t]
-            Act_fir.Address.(deref (ref addr))
+            Act_fir.Address.(deref (Ref addr))
             ~expect:(normalise addr))
   end )
 
