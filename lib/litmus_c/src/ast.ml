@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -28,10 +28,7 @@
    "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
 
 open Base
-module Ac = Act_common
-module Au = Act_utils
-module Tx = Travesty_base_exts
-open Ast_basic
+open Import
 
 let pp_assign_rhs (type a) (pp : a Fmt.t) : a Fmt.t = Fmt.(any "@ =@ " ++ pp)
 
@@ -120,19 +117,19 @@ module Parametric = struct
       type t =
         | Literal of
             { kind: B.Kind.t
-            ; name_opt: Identifier.t option
+            ; name_opt: Ast_basic.Identifier.t option
             ; decls: B.Decl.t list }
-        | Named of B.Kind.t * Identifier.t
+        | Named of B.Kind.t * Ast_basic.Identifier.t
       [@@deriving sexp, equal, compare]
 
       let pp f = function
         | Literal {kind; name_opt; decls} ->
             Fmt.(
-              pf f "%a@ %a@ %a" B.Kind.pp kind (option Ac.C_id.pp) name_opt
-                (Au.My_format.pp_c_braces (list ~sep:sp B.Decl.pp))
+              pf f "%a@ %a@ %a" B.Kind.pp kind (option Ast_basic.Identifier.pp) name_opt
+                (Utils.My_format.pp_c_braces (list ~sep:sp B.Decl.pp))
                 decls)
         | Named (kind, id) ->
-            Fmt.pf f "%a@ %a" B.Kind.pp kind Ac.C_id.pp id
+            Fmt.pf f "%a@ %a" B.Kind.pp kind Ast_basic.Identifier.pp id
     end
   end
 
@@ -154,26 +151,26 @@ module Parametric = struct
          and type par := B.Par.t
          and type expr := B.Expr.t = struct
       type t =
-        | Id of Identifier.t
+        | Id of Ast_basic.Identifier.t
         | Bracket of B.Dec.t
-        | Array of (t, B.Expr.t option) Array.t
+        | Array of (t, B.Expr.t option) Ast_basic.Array.t
         | Fun_decl of t * B.Par.t
-        | Fun_call of t * Identifier.t list
+        | Fun_call of t * Ast_basic.Identifier.t list
       [@@deriving sexp, equal, compare]
 
       let rec pp f : t -> unit = function
         | Id i ->
-            Ac.C_id.pp f i
+            Ast_basic.Identifier.pp f i
         | Bracket t ->
             Fmt.parens B.Dec.pp f t
         | Array a ->
-            Array.pp pp (Fmt.option B.Expr.pp) f a
+            Ast_basic.Array.pp pp (Fmt.option B.Expr.pp) f a
         | Fun_decl (t, ps) ->
             Fmt.(pair ~sep:nop pp (parens B.Par.pp) f (t, ps))
         | Fun_call (t, ps) ->
             Fmt.(
               pair ~sep:nop pp
-                (parens (list ~sep:comma Identifier.pp))
+                (parens (list ~sep:comma Ast_basic.Identifier.pp))
                 f (t, ps))
 
       let rec identifier = function
@@ -196,7 +193,7 @@ module Parametric = struct
 
     module Make (D : Ast_basic_types.Ast_node_with_identifier) :
       S with type ddec := D.t = struct
-      type t = {pointer: Pointer.t option; direct: D.t}
+      type t = {pointer: Ast_basic.Pointer.t option; direct: D.t}
       [@@deriving sexp, equal, compare]
 
       let identifier {direct; _} = D.identifier direct
@@ -205,7 +202,7 @@ module Parametric = struct
         Fmt.(
           using
             (fun {pointer; direct} -> (pointer, direct))
-            (pair ~sep:nop (option Pointer.pp) D.pp))
+            (pair ~sep:nop (option Ast_basic.Pointer.pp) D.pp))
     end
   end
 
@@ -231,7 +228,7 @@ module Parametric = struct
          and type expr := B.Expr.t = struct
       type t =
         | Bracket of B.Dec.t
-        | Array of (t option, B.Expr.t option) Array.t
+        | Array of (t option, B.Expr.t option) Ast_basic.Array.t
         | Fun_decl of t option * B.Par.t option
       [@@deriving sexp, equal, compare]
 
@@ -239,7 +236,7 @@ module Parametric = struct
         | Bracket t ->
             Fmt.parens B.Dec.pp f t
         | Array a ->
-            Fmt.(Array.pp (option pp) (option B.Expr.pp) f a)
+            Fmt.(Ast_basic.Array.pp (option pp) (option B.Expr.pp) f a)
         | Fun_decl (t, ps) ->
             Fmt.(
               pair ~sep:nop (option pp) (parens (option B.Par.pp)) f (t, ps))
@@ -252,14 +249,14 @@ module Parametric = struct
 
     module Make (D : Ast_basic_types.Ast_node) : S with type ddec := D.t =
     struct
-      type t = Pointer of Pointer.t | Direct of Pointer.t option * D.t
+      type t = Pointer of Ast_basic.Pointer.t | Direct of Ast_basic.Pointer.t option * D.t
       [@@deriving sexp, equal, compare]
 
       let pp f : t -> unit = function
         | Pointer ptr ->
-            Pointer.pp f ptr
+            Ast_basic.Pointer.pp f ptr
         | Direct (mptr, direct) ->
-            Fmt.(pair ~sep:nop (option Pointer.pp) D.pp) f (mptr, direct)
+            Fmt.(pair ~sep:nop (option Ast_basic.Pointer.pp) D.pp) f (mptr, direct)
     end
   end
 
@@ -296,12 +293,12 @@ module Parametric = struct
 
     module Make (E : Ast_basic_types.Ast_node) : S with type expr := E.t =
     struct
-      type t = Normal of Identifier.t | Case of E.t | Default
+      type t = Normal of Ast_basic.Identifier.t | Case of E.t | Default
       [@@deriving sexp, equal, compare]
 
       let pp_body (f : Base.Formatter.t) : t -> unit = function
         | Normal id ->
-            Identifier.pp f id
+            Ast_basic.Identifier.pp f id
         | Case expr ->
             Fmt.pf f "case@ %a" E.pp expr
         | Default ->
@@ -325,15 +322,15 @@ module Parametric = struct
         | Ternary of {cond: t; t_expr: t; f_expr: t}
         | Cast of T.t * t
         | Call of {func: t; arguments: t list}
-        | Subscript of (t, t) Array.t
+        | Subscript of (t, t) Ast_basic.Array.t
         | Field of
             { value: t
-            ; field: Identifier.t
+            ; field: Ast_basic.Identifier.t
             ; access: [`Direct (* . *) | `Deref (* -> *)] }
         | Sizeof_type of T.t
-        | Identifier of Identifier.t
+        | Identifier of Ast_basic.Identifier.t
         | String of String.t
-        | Constant of Constant.t
+        | Constant of Ast_basic.Constant.t
         | Brackets of t
       [@@deriving sexp, equal, compare]
 
@@ -351,20 +348,20 @@ module Parametric = struct
         | Call {func; arguments} ->
             Fmt.(pf f "%a%a" pp func (parens (list ~sep:comma pp)) arguments)
         | Subscript a ->
-            Array.pp pp pp f a
+            Ast_basic.Array.pp pp pp f a
         | Field {value; field; access= `Direct} ->
-            Fmt.pf f "%a.%a" pp value Ac.C_id.pp field
+            Fmt.pf f "%a.%a" pp value Ast_basic.Identifier.pp field
         | Field {value; field; access= `Deref} ->
-            Fmt.pf f "%a->%a" pp value Ac.C_id.pp field
+            Fmt.pf f "%a->%a" pp value Ast_basic.Identifier.pp field
         | Sizeof_type ty ->
             Fmt.(pf f "sizeof%a" (parens T.pp) ty)
         | Identifier id ->
-            Ac.C_id.pp f id
+            Ast_basic.Identifier.pp f id
         | String s ->
             (* TODO(@MattWindsor91): escape sequences *)
             Fmt.(quote ~mark:"\"" string) f s
         | Constant k ->
-            Constant.pp f k
+            Ast_basic.Constant.pp f k
         | Brackets t ->
             Fmt.parens pp f t
     end
@@ -423,7 +420,7 @@ module Parametric = struct
             ; cond: B.Expr.t option
             ; update: B.Expr.t option
             ; body: t }
-        | Goto of Identifier.t
+        | Goto of Ast_basic.Identifier.t
         | Continue
         | Break
         | Return of B.Expr.t option
@@ -460,7 +457,7 @@ module Parametric = struct
               pf f "for@ (%a;@ %a;@ %a)@ %a" (option B.Expr.pp) init
                 (option B.Expr.pp) cond (option B.Expr.pp) update pp body)
         | Goto label ->
-            Fmt.pf f "goto@ %a;" Ac.C_id.pp label
+            Fmt.pf f "goto@ %a;" Ast_basic.Identifier.pp label
         | Return expr ->
             (* The space should be surpressed when there is no return value,
                hence the somewhat odd formulation. *)
@@ -493,7 +490,7 @@ module Parametric = struct
       type t = Elt.t list [@@deriving sexp, equal, compare]
 
       let pp : t Fmt.t =
-        Au.My_format.pp_c_braces Fmt.(list ~sep:sp (box Elt.pp))
+        Utils.My_format.pp_c_braces Fmt.(list ~sep:sp (box Elt.pp))
     end
   end
 end
@@ -502,18 +499,18 @@ module rec Expr : (Ast_types.S_expr with type Ty.t = Type_name.t) =
   Parametric.Expr.Make (Type_name)
 
 and Enumerator : sig
-  type t = {name: Identifier.t; value: Expr.t option}
+  type t = {name: Ast_basic.Identifier.t; value: Expr.t option}
 
   include Ast_basic_types.Ast_node with type t := t
 end = struct
-  type t = {name: Identifier.t; value: Expr.t option}
+  type t = {name: Ast_basic.Identifier.t; value: Expr.t option}
   [@@deriving sexp, equal, compare]
 
   let pp : t Fmt.t =
     Fmt.(
       using
         (fun {name; value} -> (name, value))
-        (pp_opt_assign Ac.C_id.pp Expr.pp))
+        (pp_opt_assign Ast_basic.Identifier.pp Expr.pp))
 end
 
 and Enum_spec :
@@ -543,56 +540,56 @@ and Type_spec :
     with type su := Struct_or_union_spec.t
      and type en := Enum_spec.t) = struct
   type t =
-    [ Prim_type.t
+    [ Ast_basic.Prim_type.t
     | `Struct_or_union of Struct_or_union_spec.t
     | `Enum of Enum_spec.t
-    | `Defined_type of Identifier.t ]
+    | `Defined_type of Ast_basic.Identifier.t ]
   [@@deriving sexp, equal, compare]
 
   let pp f : t -> unit = function
-    | #Prim_type.t as prim ->
-        Prim_type.pp f prim
+    | #Ast_basic.Prim_type.t as prim ->
+        Ast_basic.Prim_type.pp f prim
     | `Struct_or_union spec ->
         Struct_or_union_spec.pp f spec
     | `Enum spec ->
         Enum_spec.pp f spec
     | `Defined_type tdef ->
-        Ac.C_id.pp f tdef
+        Ast_basic.Identifier.pp f tdef
 end
 
 and Spec_or_qual :
-  (Ast_basic_types.Ast_node with type t = [Type_spec.t | Type_qual.t]) =
+  (Ast_basic_types.Ast_node with type t = [Type_spec.t | Ast_basic.Type_qual.t]) =
 struct
-  type t = [Type_spec.t | Type_qual.t] [@@deriving equal, sexp_of, compare]
+  type t = [Type_spec.t | Ast_basic.Type_qual.t] [@@deriving equal, sexp_of, compare]
 
   let t_of_sexp (s : Sexp.t) : t =
-    try (Type_spec.t_of_sexp s :> t) with _ -> (Type_qual.t_of_sexp s :> t)
+    try (Type_spec.t_of_sexp s :> t) with _ -> (Ast_basic.Type_qual.t_of_sexp s :> t)
 
   let pp f : t -> unit = function
     | #Type_spec.t as spec ->
         Type_spec.pp f spec
-    | #Type_qual.t as qual ->
-        Type_qual.pp f qual
+    | #Ast_basic.Type_qual.t as qual ->
+        Ast_basic.Type_qual.pp f qual
 end
 
 and Decl_spec :
   (Ast_basic_types.Ast_node
-    with type t = [Storage_class_spec.t | Type_spec.t | Type_qual.t]) =
+    with type t = [Ast_basic.Storage_class_spec.t | Type_spec.t | Ast_basic.Type_qual.t]) =
 struct
-  type t = [Storage_class_spec.t | Type_spec.t | Type_qual.t]
+  type t = [Ast_basic.Storage_class_spec.t | Type_spec.t | Ast_basic.Type_qual.t]
   [@@deriving sexp_of, equal, compare]
 
   let t_of_sexp (s : Sexp.t) : t =
-    try (Storage_class_spec.t_of_sexp s :> t)
+    try (Ast_basic.Storage_class_spec.t_of_sexp s :> t)
     with _ -> (Spec_or_qual.t_of_sexp s :> t)
 
   let pp f : t -> unit = function
-    | #Storage_class_spec.t as spec ->
-        Storage_class_spec.pp f spec
+    | #Ast_basic.Storage_class_spec.t as spec ->
+        Ast_basic.Storage_class_spec.pp f spec
     | #Type_spec.t as spec ->
         Type_spec.pp f spec
-    | #Type_qual.t as qual ->
-        Type_qual.pp f qual
+    | #Ast_basic.Type_qual.t as qual ->
+        Ast_basic.Type_qual.pp f qual
 end
 
 and Type_name :
@@ -773,10 +770,10 @@ module Litmus_lang :
   Act_litmus.Test_types.Basic
     with type Statement.t = [`Stm of Stm.t | `Decl of Decl.t]
      and type Program.t = Function_def.t
-     and type Constant.t = Constant.t = struct
+     and type Constant.t = Ast_basic.Constant.t = struct
   let name = "C"
 
-  module Constant = Constant
+  module Constant = Ast_basic.Constant
 
   module Statement = struct
     include Compound_stm.Elt
@@ -791,7 +788,7 @@ module Litmus_lang :
   module Program = struct
     include Function_def
 
-    let name x = Some (Ac.C_id.to_string (Declarator.identifier x.signature))
+    let name x = Some (Ast_basic.Identifier.to_string (Declarator.identifier x.signature))
 
     (* TODO(@MattWindsor91): consider implementing this. The main reason why
        I haven't is because, usually, we'll be converting the litmus test to
