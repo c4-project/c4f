@@ -21,19 +21,33 @@ let eval_guards : (bool * (unit -> 'a)) list -> 'a list =
 let gen_int32 : Fir.Expression.t Q.Generator.t =
   Q.Generator.map ~f:Fir.Expression.constant Fir.Constant.gen_int32
 
+let with_record (g : 'a Q.Generator.t) ~(to_var : 'a -> Act_common.C_id.t)
+    ~(env : Fir.Env.t) : ('a * Fir.Env.Record.t) Q.Generator.t =
+  Q.Generator.filter_map g ~f:(fun x ->
+      Option.(x |> to_var |> Map.find env >>| fun r -> (x, r)))
+
+let lift (g : 'a Q.Generator.t) ~(to_expr : 'a -> Fir.Expression.t)
+    ~(to_var : 'a -> Common.C_id.t) ~(env : Fir.Env.t) :
+    (Fir.Expression.t * Fir.Env.Record.t) Q.Generator.t =
+  Q.Generator.map
+    ~f:(fun (l, r) -> (to_expr l, r))
+    (with_record g ~to_var ~env)
+
+let lift_lvalue (g : Fir.Lvalue.t Q.Generator.t) ~(env : Fir.Env.t) :
+    (Fir.Expression.t * Fir.Env.Record.t) Q.Generator.t =
+  lift g ~to_expr:Fir.Expression.lvalue
+    ~to_var:(Accessor.get Fir.Lvalue.variable_of)
+    ~env
+
+let lift_atomic_load (g : Fir.Atomic_load.t Q.Generator.t) ~(env : Fir.Env.t)
+    : (Fir.Expression.t * Fir.Env.Record.t) Q.Generator.t =
+  lift g ~to_expr:Fir.Expression.atomic_load
+    ~to_var:(Accessor.get Fir.Atomic_load.variable_of)
+    ~env
+
 (** Primitive integer expressions over a given environment. *)
 module Int_prims (E : Fir.Env_types.S) = struct
   type t = Fir.Expression.t [@@deriving sexp]
-
-  let with_record (g : 'a Q.Generator.t) ~(to_var : 'a -> Act_common.C_id.t)
-      : ('a * Fir.Env.Record.t) Q.Generator.t =
-    Q.Generator.filter_map g ~f:(fun x ->
-        Option.(x |> to_var |> Map.find E.env >>| fun r -> (x, r)))
-
-  let lift (g : 'a Q.Generator.t) ~(to_expr : 'a -> t)
-      ~(to_var : 'a -> Common.C_id.t) : (t * Fir.Env.Record.t) Q.Generator.t
-      =
-    Q.Generator.map ~f:(fun (l, r) -> (to_expr l, r)) (with_record g ~to_var)
 
   (* These 'let module's can't be lifted outside of their thunks, because
      otherwise they'll evaluate at instantiation of this functor, and not all
@@ -41,8 +55,7 @@ module Int_prims (E : Fir.Env_types.S) = struct
 
   let gen_atomic_load () : (t * Fir.Env.Record.t) Q.Generator.t =
     let module AL = Atomic_load.Int (E) in
-    lift [%quickcheck.generator: AL.t] ~to_expr:Fir.Expression.atomic_load
-      ~to_var:(Accessor.get Fir.Atomic_load.variable_of)
+    lift_atomic_load AL.quickcheck_generator ~env:E.env
 
   let gen_atomic_fetch_zero_nop ~(gen_zero : t Q.Generator.t) :
       (t * Fir.Env.Record.t) Q.Generator.t =
@@ -60,30 +73,24 @@ module Int_prims (E : Fir.Env_types.S) = struct
     in
     lift [%quickcheck.generator: F.t] ~to_expr:Fir.Expression.atomic_fetch
       ~to_var:(Accessor.get Fir.Atomic_fetch.variable_of)
+      ~env:E.env
 
   let gen_lvalue () : (t * Fir.Env.Record.t) Q.Generator.t =
     let module LV = Lvalue.Int_values (E) in
-    lift [%quickcheck.generator: LV.t] ~to_expr:Fir.Expression.lvalue
-      ~to_var:(Accessor.get Fir.Lvalue.variable_of)
+    lift_lvalue LV.quickcheck_generator ~env:E.env
 
   let has_ints ~(is_atomic : bool) : bool =
-    Fir.Env.has_variables_of_basic_type E.env
+    Fir.Env.has_vars_of_basic_type E.env
       ~basic:(Fir.Type.Basic.int ~is_atomic ())
-
-  let has_ints_any_atomicity () : bool =
-    has_ints ~is_atomic:true || has_ints ~is_atomic:false
-
-  let base_load_with_record ~(gen_zero : t Q.Generator.t) :
-      (t * Fir.Env.Record.t) Q.Generator.t list =
-    eval_guards
-      [ (has_ints ~is_atomic:true, gen_atomic_load)
-      ; ( has_ints ~is_atomic:true
-        , fun () -> gen_atomic_fetch_zero_nop ~gen_zero )
-      ; (has_ints ~is_atomic:false, gen_lvalue) ]
 
   let gen_load_with_record ~(gen_zero : t Q.Generator.t) :
       (t * Fir.Env.Record.t) Q.Generator.t =
-    Q.Generator.union (base_load_with_record ~gen_zero)
+    Q.Generator.union
+      (eval_guards
+         [ (has_ints ~is_atomic:true, gen_atomic_load)
+         ; ( has_ints ~is_atomic:true
+           , fun () -> gen_atomic_fetch_zero_nop ~gen_zero )
+         ; (has_ints ~is_atomic:false, gen_lvalue) ])
 
   (** [gen_kv_refl gen_op gen_load] generates expressions of the form
       [h v (kv v)], where [kv v] gets the known value of [v], and [h] is an
@@ -101,11 +108,15 @@ module Int_prims (E : Fir.Env_types.S) = struct
       in
       gen_op v kv)
 
-  let gen_load ~(gen_zero : t Q.Generator.t) : t Q.Generator.t list =
-    List.map ~f:(Q.Generator.map ~f:fst) (base_load_with_record ~gen_zero)
+  let gen_load ~(gen_zero : t Q.Generator.t) : t Q.Generator.t =
+    Q.Generator.map ~f:fst (gen_load_with_record ~gen_zero)
 
   let gen_prim ~(gen_zero : t Q.Generator.t) : t Q.Generator.t =
-    Q.Generator.union ([gen_int32] @ gen_load ~gen_zero)
+    Q.Generator.weighted_union
+      (eval_guards
+         [ (true, fun () -> (1.0, gen_int32))
+         ; ( Fir.Env.has_vars_of_prim_type E.env ~prim:Int
+           , fun () -> (6.0, gen_load ~gen_zero) ) ])
 end
 
 module Int_zeroes (E : Fir.Env_types.S) = struct
@@ -151,8 +162,8 @@ module Int_zeroes (E : Fir.Env_types.S) = struct
   let recursive_generators (mu : t Q.Generator.t) : t Q.Generator.t list =
     eval_guards
       [ (true, fun () -> gen_prim_zero_bop ~mu)
-      ; (Det_prims.has_ints_any_atomicity (), fun () -> gen_kv_zero_bop ~mu)
-      ]
+      ; ( Fir.Env.has_vars_of_prim_type Det_env.env ~prim:Int
+        , fun () -> gen_kv_zero_bop ~mu ) ]
 
   let quickcheck_generator : t Q.Generator.t =
     Q.Generator.recursive_union base_generators ~f:recursive_generators
@@ -222,8 +233,9 @@ module Atomic_fetch_int_refl_nops (Obj : Fir.Env_types.S) :
     [%quickcheck.shrinker: [%custom Q.Shrinker.atomic] Fir.Atomic_fetch.t]
 
   let gen_address : (Fir.Address.t * Fir.Env.Record.t) Q.Generator.t =
-    P.with_record A.quickcheck_generator
+    with_record A.quickcheck_generator
       ~to_var:(Accessor.get Fir.Address.variable_of)
+      ~env:Obj.env
 
   let gen_op (obj : Fir.Address.t) (arg : Fir.Expression.t) :
       Fir.Expression.t Fir.Atomic_fetch.t Q.Generator.t =
@@ -272,9 +284,28 @@ end = struct
 
   module Iv = Int_values (E)
 
-  let gen_bool_lvalue () : t Q.Generator.t =
-    let module L = Lvalue.Bool_values (E) in
-    Q.Generator.map ~f:Fir.Expression.lvalue [%quickcheck.generator: L.t]
+  (* As with Int_values. TODO(@MattWindsor91): extract this pattern somehow? *)
+
+  let gen_atomic_load () : (t * Fir.Env.Record.t) Q.Generator.t =
+    let module AL = Atomic_load.Bool (E) in
+    lift_atomic_load AL.quickcheck_generator ~env:E.env
+
+  let gen_lvalue () : (t * Fir.Env.Record.t) Q.Generator.t =
+    let module LV = Lvalue.Bool_values (E) in
+    lift_lvalue LV.quickcheck_generator ~env:E.env
+
+  let has_bools ~(is_atomic : bool) : bool =
+    Fir.Env.has_vars_of_basic_type E.env
+      ~basic:(Fir.Type.Basic.bool ~is_atomic ())
+
+  let gen_load_with_record () : (t * Fir.Env.Record.t) Q.Generator.t =
+    Q.Generator.union
+      (eval_guards
+         [ (has_bools ~is_atomic:true, gen_atomic_load)
+         ; (has_bools ~is_atomic:false, gen_lvalue) ])
+
+  let gen_load () : t Q.Generator.t =
+    Q.Generator.map ~f:fst (gen_load_with_record ())
 
   let gen_int_relational : t Q.Generator.t =
     Q.Generator.Let_syntax.(
@@ -292,11 +323,11 @@ end = struct
     (* Use thunks here to prevent accidentally evaluating a generator that
        can't possibly work---eg, an atomic load when we don't have any atomic
        variables. *)
-    [(1.0, gen_const); (4.0, gen_int_relational)]
-    @ eval_guards
-        [ ( Fir.Env.has_variables_of_basic_type E.env
-              ~basic:Fir.Type.Basic.(bool ())
-          , fun () -> (4.0, gen_bool_lvalue ()) ) ]
+    eval_guards
+      [ (true, fun () -> (1.0, gen_const))
+      ; (true, fun () -> (6.0, gen_int_relational))
+      ; ( Fir.Env.has_vars_of_prim_type E.env ~prim:Bool
+        , fun () -> (4.0, gen_load ()) ) ]
 
   let recursive_generators (mu : t Q.Generator.t) :
       (float * t Q.Generator.t) list =

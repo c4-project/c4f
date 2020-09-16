@@ -15,5 +15,8 @@ module type S = sig
   type t = Fir.Atomic_load.t [@@deriving sexp_of, quickcheck]
 end
 
+module Bool (E : Fir.Env_types.S) : S =
+  Fir.Atomic_load.Quickcheck_generic (Address.Atomic_bool_pointers (E))
+
 module Int (E : Fir.Env_types.S) : S =
   Fir.Atomic_load.Quickcheck_generic (Address.Atomic_int_pointers (E))

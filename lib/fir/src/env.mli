@@ -90,9 +90,13 @@ val filter_to_known_values : t -> t
 (** [filter_to_known_values env] behaves like [variables_with_known_values],
     but returns another environment. *)
 
-val has_variables_of_basic_type : t -> basic:Type.Basic.t -> bool
-(** [has_variables_of_basic_type t] is true provided that [env] has at least
-    one variable whose basic type is [t]. *)
+val has_vars_of_prim_type : t -> prim:Type.Prim.t -> bool
+(** [has_vars_of_prim_type env ~prim] is true provided that [env] has at
+    least one variable whose primitive type is [prim]. *)
+
+val has_vars_of_basic_type : t -> basic:Type.Basic.t -> bool
+(** [has_vars_of_basic_type env ~basic] is true provided that [env] has at
+    least one variable whose basic type is [basic]. *)
 
 val variables_of_basic_type : t -> basic:Type.Basic.t -> t
 (** [variables_of_basic_type env ~basic] filters [env], returning a map
