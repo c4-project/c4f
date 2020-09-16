@@ -125,6 +125,21 @@ struct
       >>| Fuzz.Flag.to_exact_opt
       >>| Option.value ~default:true)
 
+  let execute_multi_path_filter (f : Fuzz.Path_filter.t) : Fuzz.Path_filter.t
+      =
+    match B.Flags.execute_multi_safe with
+    | `Never ->
+        (* There is no point in generating paths that insert into
+           multi-execution contexts, as their construction will never be
+           sound unless we insert into dead-code. Presently we don't have any
+           way of overriding one flag with the other, so we over-approximate. *)
+        Fuzz.Path_filter.not_in_execute_multi f
+    | `Always | `If_no_cycles ->
+        (* We assume that if a storelike reports itself as constructible in
+           execute-multi contexts, there will always exist some payload that
+           can be generated at filtered paths that is sound. *)
+        f
+
   let path_filter ctx =
     let forbid_already_written =
       ctx |> approx_forbid_already_written |> Result.ok
@@ -134,7 +149,7 @@ struct
       ~predicates:(dst_restrictions ~forbid_already_written)
     @@ Fuzz.Availability.in_thread_with_variables ctx
          ~predicates:(Lazy.force basic_src_restrictions)
-    @@ B.path_filter
+    @@ execute_multi_path_filter @@ B.path_filter
 
   let has_dependency_cycle (to_insert : B.t) : bool =
     (* TODO(@MattWindsor91): this is very heavy-handed; we should permit
@@ -235,35 +250,24 @@ struct
           (Common.Litmus_id.local tid id)
           init)
 
-  let path_filter : Fuzz.Path_filter.t =
-    match B.Flags.execute_multi_safe with
-    | `Never ->
-        (* There is no point in generating paths that insert into
-           multi-execution contexts, as their construction will never be sound
-           unless we insert into dead-code.  Presently we don't have any way
-           of overriding one flag with the other, so we over-approximate. *)
-      Fuzz.Path_filter.not_in_execute_multi B.path_filter
-    | `Always | `If_no_cycles ->
-      (* We assume that if a storelike reports itself as constructible in
-         execute-multi contexts, there will always exist some payload that can
-         be generated at filtered paths that is sound. *)
-      B.path_filter
-
   (** [apply_once_only to_insert path_flags] decides whether [to_insert],
       inserted into a path containing [path_flags], needs the [Once_only]
-      metadata restriction set.  This prevents actions that would wrap
+      metadata restriction set. This prevents actions that would wrap
       [to_insert] in a multi-execution loop from doing so. *)
-  let apply_once_only (to_insert : B.t) (path_flags : Set.M(Fuzz.Path_flag).t) : bool =
-    if Set.mem path_flags In_dead_code then false else
-    match B.Flags.execute_multi_safe with
-    | `Always ->
-        false
-    | `If_no_cycles ->
-        has_dependency_cycle to_insert
-    | `Never ->
-        true
+  let apply_once_only (to_insert : B.t)
+      (path_flags : Set.M(Fuzz.Path_flag).t) : bool =
+    if Set.mem path_flags In_dead_code then false
+    else
+      match B.Flags.execute_multi_safe with
+      | `Always ->
+          false
+      | `If_no_cycles ->
+          has_dependency_cycle to_insert
+      | `Never ->
+          true
 
-  let stm_metadata (to_insert : B.t) (path_flags : Set.M(Fuzz.Path_flag).t) : Fuzz.Metadata.t =
+  let stm_metadata (to_insert : B.t) (path_flags : Set.M(Fuzz.Path_flag).t) :
+      Fuzz.Metadata.t =
     let restrictions =
       if apply_once_only to_insert path_flags then
         Set.singleton (module Fuzz.Metadata.Restriction) Once_only
@@ -271,7 +275,8 @@ struct
     in
     Generated (Fuzz.Metadata.Gen.make ~restrictions ())
 
-  let to_stms_with_metadata (to_insert : B.t) (path_flags : Set.M(Fuzz.Path_flag).t) : Fuzz.Subject.Statement.t list
+  let to_stms_with_metadata (to_insert : B.t)
+      (path_flags : Set.M(Fuzz.Path_flag).t) : Fuzz.Subject.Statement.t list
       =
     let md = stm_metadata to_insert path_flags in
     List.map (B.to_stms to_insert) ~f:(fun x ->
@@ -282,6 +287,9 @@ struct
       Fuzz.Subject.Test.t Or_error.t =
     let tid = Fuzz.Path.tid path.path in
     let stms = to_stms_with_metadata to_insert path.flags in
+    (* TODO(@MattWindsor91): see issue 203; the path filter depends on an
+       availability context, which we don't yet have in the state monad. *)
+    let path_filter = execute_multi_path_filter B.path_filter in
     Or_error.(
       target
       |> Fuzz.Path_consumers.consume_with_flags ~filter:path_filter ~path

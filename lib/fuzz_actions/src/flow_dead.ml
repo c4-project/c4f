@@ -12,10 +12,12 @@
 open Base
 open Import
 
-let prefix_name (rest : Common.Id.t) : Common.Id.t = Common.Id.("flow" @: "dead" @: rest)
+let prefix_name (rest : Common.Id.t) : Common.Id.t =
+  Common.Id.("flow" @: "dead" @: rest)
 
 module Insert = struct
-  let early_out_name = prefix_name Common.Id.("insert" @: "early-out" @: empty)
+  let early_out_name =
+    prefix_name Common.Id.("insert" @: "early-out" @: empty)
 
   let goto_name = prefix_name Common.Id.("insert" @: "goto" @: empty)
 
@@ -32,7 +34,8 @@ module Insert = struct
       let filter = Fuzz.Path_filter.(in_dead_code_only empty) in
       Fuzz.Path_producers.try_gen_with_flags test ~filter ~kind:Insert
 
-    let kind_pred ({flags; _} : Fuzz.Path.Flagged.t) : Fir.Early_out.t -> bool =
+    let kind_pred ({flags; _} : Fuzz.Path.Flagged.t) :
+        Fir.Early_out.t -> bool =
       if Set.mem flags In_loop then Fn.const true
       else Fn.non Fir.Early_out.in_loop_only
 
@@ -69,7 +72,8 @@ module Insert = struct
     let kind_filter (kind : Fir.Early_out.t) :
         (Fuzz.Path_filter.t -> Fuzz.Path_filter.t) Staged.t =
       Staged.stage
-        ( if Fir.Early_out.in_loop_only kind then Fuzz.Path_filter.in_loop_only
+        ( if Fir.Early_out.in_loop_only kind then
+          Fuzz.Path_filter.in_loop_only
         else Fn.id )
 
     let make_early_out (kind : Fir.Early_out.t) : Fuzz.Subject.Statement.t =
@@ -92,7 +96,8 @@ module Insert = struct
 
   module Goto :
     Fuzz.Action_types.S
-      with type Payload.t = Common.C_id.t Fuzz.Payload_impl.Insertion.t = struct
+      with type Payload.t = Common.C_id.t Fuzz.Payload_impl.Insertion.t =
+  struct
     let name = goto_name
 
     let readme () : string =
@@ -104,7 +109,8 @@ module Insert = struct
         labels in the same thread; it does not jump outside the thread.
       |}
 
-    let path_filter' (labels : Set.M(Common.Litmus_id).t) : Fuzz.Path_filter.t =
+    let path_filter' (labels : Set.M(Common.Litmus_id).t) :
+        Fuzz.Path_filter.t =
       let threads_with_labels =
         Set.filter_map (module Int) ~f:Common.Litmus_id.tid labels
       in
@@ -112,8 +118,10 @@ module Insert = struct
         empty |> in_dead_code_only
         |> Fuzz.Path_filter.in_threads_only ~threads:threads_with_labels)
 
-    let path_filter (ctx : Fuzz.Availability.Context.t) : Fuzz.Path_filter.t =
-      ctx |> Fuzz.Availability.Context.state |> Fuzz.State.labels |> path_filter'
+    let path_filter (ctx : Fuzz.Availability.Context.t) : Fuzz.Path_filter.t
+        =
+      ctx |> Fuzz.Availability.Context.state |> Fuzz.State.labels
+      |> path_filter'
 
     module Payload = Fuzz.Payload_impl.Insertion.Make (struct
       type t = Act_common.C_id.t [@@deriving sexp]

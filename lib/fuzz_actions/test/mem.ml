@@ -16,26 +16,33 @@ let%test_module "running payloads on test subject" =
   ( module struct
     let test_action (payload : Src.Mem.Strengthen_payload.t) :
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
-      Src.Mem.Strengthen.run (Lazy.force Fuzz_test.Subject.Test_data.test) ~payload
+      Src.Mem.Strengthen.run
+        (Lazy.force Fuzz_test.Subject.Test_data.test)
+        ~payload
 
     let test (lpath : Fuzz.Path.t Lazy.t) (mo : Act_fir.Mem_order.t)
         (can_weaken : bool) : unit =
-      let path = {Fuzz.Path_flag.Flagged.path= Lazy.force lpath; flags= Set.empty (module Fuzz.Path_flag)} in
+      let path =
+        { Fuzz.Path_flag.Flagged.path= Lazy.force lpath
+        ; flags= Set.empty (module Fuzz.Path_flag) }
+      in
       let pld = Src.Mem.Strengthen_payload.make ~path ~mo ~can_weaken in
       let action = test_action pld in
       Fuzz_test.Action.Test_utils.run_and_dump_test action
         ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state)
 
     let sc_action : Fuzz.Path.t Lazy.t =
-      Fuzz.Path.(Fuzz_test.Subject.Test_data.Path.thread_0_stms @@ Stms.stm 0)
+      Fuzz.Path.(
+        Fuzz_test.Subject.Test_data.Path.thread_0_stms @@ Stms.stm 0)
 
     let rlx_action : Fuzz.Path.t Lazy.t =
-      Fuzz.Path.(Fuzz_test.Subject.Test_data.Path.thread_0_stms @@ Stms.stm 2)
+      Fuzz.Path.(
+        Fuzz_test.Subject.Test_data.Path.thread_0_stms @@ Stms.stm 2)
 
     let nest_action : Fuzz.Path.t Lazy.t =
       Fuzz.Path.(
-        Fuzz_test.Subject.Test_data.Path.thread_0_stms @@ Stms.in_stm 4 @@ Stm.in_if
-        @@ If.in_branch true @@ Stms.stm 0)
+        Fuzz_test.Subject.Test_data.Path.thread_0_stms @@ Stms.in_stm 4
+        @@ Stm.in_if @@ If.in_branch true @@ Stms.stm 0)
 
     let%expect_test "failed SC->RLX" =
       test sc_action Act_fir.Mem_order.Relaxed false ;
@@ -59,6 +66,9 @@ let%test_module "running payloads on test subject" =
           }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
           5);
+          for (r1 = 0; r1 <= 2; r1++)
+          { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+          while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
       }
 
       void
@@ -87,6 +97,9 @@ let%test_module "running payloads on test subject" =
           }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
           5);
+          for (r1 = 0; r1 <= 2; r1++)
+          { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+          while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
       }
 
       void
@@ -115,6 +128,9 @@ let%test_module "running payloads on test subject" =
           }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
           5);
+          for (r1 = 0; r1 <= 2; r1++)
+          { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+          while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
       }
 
       void
@@ -143,6 +159,9 @@ let%test_module "running payloads on test subject" =
           }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
           5);
+          for (r1 = 0; r1 <= 2; r1++)
+          { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+          while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
       }
 
       void
@@ -171,6 +190,9 @@ let%test_module "running payloads on test subject" =
           }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
           5);
+          for (r1 = 0; r1 <= 2; r1++)
+          { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+          while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
       }
 
       void
@@ -199,6 +221,9 @@ let%test_module "running payloads on test subject" =
           }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
           5);
+          for (r1 = 0; r1 <= 2; r1++)
+          { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+          while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
       }
 
       void

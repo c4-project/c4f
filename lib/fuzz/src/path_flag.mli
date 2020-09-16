@@ -63,7 +63,7 @@ val flags_of_stm : Subject.Statement.t -> set
 module Flagged : sig
   (** Type of flagged paths, predicated on the path type [p]. *)
   type 'p t = {path: 'p; flags: set}
-    [@@deriving accessors, sexp, compare, equal]
+  [@@deriving accessors, sexp, compare, equal]
 
   val make : ?flags:set -> 'p -> 'p t
   (** [make ?flags path] makes a flagged path. *)

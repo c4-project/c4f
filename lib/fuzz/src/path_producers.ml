@@ -169,7 +169,7 @@ struct
         |> map_path ~f:(F.lift_path b))
 
   let produce (i : F.t) ~(mu : mu) ~(ctx : ctx) : Path.Stm.t t =
-    (* No metadata on if statement headers. *)
+    (* No metadata on flow statement headers. *)
     branch i (List.map F.all_of_branch ~f:(produce_branch ~mu ~ctx))
 end
 

@@ -22,8 +22,8 @@ val consume_with_flags :
   -> path:Path.t Path_flag.Flagged.t
   -> action:Path_kind.With_action.t
   -> Subject.Test.t Or_error.t
-(** [consume_with_flags ?filter target ~path ~action] consumes [path] over [target],
-    performing [action] at the end of it.
+(** [consume_with_flags ?filter target ~path ~action] consumes [path] over
+    [target], performing [action] at the end of it.
 
     If [filter] is present, the consumer will check that the path satisfies
     the path filter. This is the same check as used in {!Path_producers}; its

@@ -22,7 +22,8 @@ let%test_module "Surround" =
     let state : Fuzz.State.t =
       Fuzz.State.make ~vars:(Lazy.force Fuzz_test.Var.Test_data.test_map) ()
 
-    let test : Fuzz.Subject.Test.t = Lazy.force Fuzz_test.Subject.Test_data.test
+    let test : Fuzz.Subject.Test.t =
+      Lazy.force Fuzz_test.Subject.Test_data.test
 
     let cond : Act_fir.Expression.t =
       (* should be true with respect to the test var-map *)
@@ -43,7 +44,8 @@ let%test_module "Surround" =
         let action = Surround.Tautology.run test ~payload
 
         let%expect_test "resulting AST" =
-          Fuzz_test.Action.Test_utils.run_and_dump_test action ~initial_state:state ;
+          Fuzz_test.Action.Test_utils.run_and_dump_test action
+            ~initial_state:state ;
           [%expect
             {|
         void
@@ -66,6 +68,9 @@ let%test_module "Surround" =
             }
             do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
             5);
+            for (r1 = 0; r1 <= 2; r1++)
+            { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+            while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
         }
 
         void
@@ -86,7 +91,8 @@ let%test_module "Surround" =
         let action = Surround.Duplicate.run test ~payload
 
         let%expect_test "resulting AST" =
-          Fuzz_test.Action.Test_utils.run_and_dump_test action ~initial_state:state ;
+          Fuzz_test.Action.Test_utils.run_and_dump_test action
+            ~initial_state:state ;
           [%expect
             {|
         void
@@ -110,6 +116,9 @@ let%test_module "Surround" =
             }
             do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
             5);
+            for (r1 = 0; r1 <= 2; r1++)
+            { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+            while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
         }
 
         void
@@ -160,13 +169,16 @@ let%test_module "Surround" =
 
 let%test_module "Invert" =
   ( module struct
-    let initial_state : Fuzz.State.t = Lazy.force Fuzz_test.Subject.Test_data.state
+    let initial_state : Fuzz.State.t =
+      Lazy.force Fuzz_test.Subject.Test_data.state
 
-    let test : Fuzz.Subject.Test.t = Lazy.force Fuzz_test.Subject.Test_data.test
+    let test : Fuzz.Subject.Test.t =
+      Lazy.force Fuzz_test.Subject.Test_data.test
 
     let payload : Fuzz.Path.Flagged.t =
       Fuzz.Path_flag.Flagged.make
-        Fuzz.Path.(in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 3 @@ Stm.this_stm)
+        Fuzz.Path.(
+          in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 3 @@ Stm.this_stm)
 
     let%expect_test "resulting AST" =
       Fuzz_test.Action.Test_utils.run_and_dump_test
@@ -192,6 +204,9 @@ let%test_module "Invert" =
             }
             do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
             5);
+            for (r1 = 0; r1 <= 2; r1++)
+            { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+            while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
         }
 
         void

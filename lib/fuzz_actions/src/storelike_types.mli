@@ -21,8 +21,8 @@ module type Flags = sig
       erase the known value when finished. *)
 
   val execute_multi_safe : [`Always | `Never | `If_no_cycles]
-  (** [execute_multi_safe] is a 3-way flag that governs whether the
-      storelike action is safe to execute multiple times. *)
+  (** [execute_multi_safe] is a 3-way flag that governs whether the storelike
+      action is safe to execute multiple times. *)
 end
 
 (** Type of modules that describe a storelike statement and how to generate

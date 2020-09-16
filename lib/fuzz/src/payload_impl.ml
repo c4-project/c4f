@@ -72,8 +72,8 @@ module Cond_surround = struct
       dead code. *)
   let add_cond_dependencies (path : Path.t Path_flag.Flagged.t)
       (cond : Act_fir.Expression.t) : unit State.Monad.t =
-    State.Monad.unless_m (Set.mem path.flags Path_flag.In_dead_code) ~f:(fun () ->
-        add_cond_dependencies path.path cond)
+    State.Monad.unless_m (Set.mem path.flags Path_flag.In_dead_code)
+      ~f:(fun () -> add_cond_dependencies path.path cond)
 
   let apply ?(filter : Path_filter.t option) ({cond; where} : t)
       ~(test : Subject.Test.t)

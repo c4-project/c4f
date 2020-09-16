@@ -68,7 +68,9 @@ module Test_data = struct
 
   let mk_store (a : Fir.Atomic_store.t) : Src.Subject.Statement.t =
     Src.Subject.Statement.make_generated_prim
-      (Accessor.construct Fir.(Prim_statement.atomic @> Atomic_statement.store) a)
+      (Accessor.construct
+         Fir.(Prim_statement.atomic @> Atomic_statement.store)
+         a)
 
   let mk_always_true_if (cond : Fir.Expression.t)
       (t : Src.Subject.Statement.t list) (f : Src.Subject.Statement.t list) :
@@ -122,7 +124,7 @@ module Test_data = struct
           (Flow_block.while_loop
              ~cond:Expression.(Infix.(int_lit 4 == int_lit 5))
              ~body:
-               (Src.Subject.Block.make_dead_code
+               (Src.Subject.Block.make_generated
                   ~statements:
                     [ mk_store
                         (Atomic_store.make ~src:(Expression.int_lit 44)
@@ -131,11 +133,49 @@ module Test_data = struct
                   ())
              ~kind:Do_while))
 
+  let sample_dead_while : Src.Subject.Statement.t Lazy.t =
+    lazy
+      Fir.(
+        Accessor.construct Statement.flow
+          (Flow_block.while_loop
+             ~cond:Expression.(Infix.(int_lit 4 == int_lit 5))
+             ~body:
+               (Src.Subject.Block.make_dead_code
+                  ~statements:
+                    [ mk_store
+                        (Atomic_store.make ~src:(Expression.int_lit 44)
+                           ~dst:(Address.of_variable_str_exn "x")
+                           ~mo:Mem_order.Seq_cst) ]
+                  ())
+             ~kind:While))
+
+  let sample_multi_for : Src.Subject.Statement.t Lazy.t =
+    lazy
+      Fir.(
+        Accessor.construct Statement.flow
+          (Flow_block.for_loop
+             ~control:
+               (Flow_block.For.make
+                  ~lvalue:(Lvalue.of_variable_str_exn "r1")
+                  ~init_value:(Expression.int_lit 0)
+                  ~cmp_value:(Expression.int_lit 2)
+                  ~direction:Flow_block.For.Direction.Up_inclusive)
+             ~body:
+               (Src.Subject.Block.make_generated
+                  ~statements:
+                    [ mk_store
+                        (Atomic_store.make ~src:(Expression.int_lit 99)
+                           ~dst:(Address.of_variable_str_exn "x")
+                           ~mo:Mem_order.Seq_cst) ]
+                  ())))
+
   let body_stms : Src.Subject.Statement.t list Lazy.t =
     Lazy.Let_syntax.(
       let%map sample_known_true_if = sample_known_true_if
       and sample_known_false_if = sample_known_false_if
-      and sample_once_do_while = sample_once_do_while in
+      and sample_once_do_while = sample_once_do_while
+      and sample_multi_for = sample_multi_for
+      and sample_dead_while = sample_dead_while in
       Fir.
         [ mk_store
             (Atomic_store.make ~src:(Expression.int_lit 42)
@@ -150,7 +190,9 @@ module Test_data = struct
                ~mo:Mem_order.Relaxed)
         ; sample_known_true_if
         ; sample_known_false_if
-        ; sample_once_do_while ])
+        ; sample_once_do_while
+        ; sample_multi_for
+        ; sample_dead_while ])
 
   let pos_0_first_atom = 0
 
@@ -162,7 +204,7 @@ module Test_data = struct
 
   let pos_0_false_if = 4
 
-  let pos_0_do_while = 5
+  let pos_0_dead_while = 7
 
   let thread0 : Src.Subject.Thread.t Lazy.t =
     Lazy.Let_syntax.(
@@ -234,7 +276,7 @@ module Test_data = struct
 
     let dead_loop (path : Src.Path.Flow.t) : Src.Path.t Lazy.t =
       Src.Path.(
-        thread_0_stms @@ Stms.in_stm pos_0_do_while @@ Stm.in_flow @@ path)
+        thread_0_stms @@ Stms.in_stm pos_0_dead_while @@ Stm.in_flow @@ path)
 
     let insert_dead_loop : Src.Path.Flagged.t Lazy.t =
       flag [In_dead_code; In_loop]
@@ -352,6 +394,9 @@ let%test_module "list_to_litmus" =
             }
             do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
             5);
+            for (r1 = 0; r1 <= 2; r1++)
+            { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+            while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
         }
         void
         P1(atomic_int *bar, bool barbaz, int *blep, int foo, atomic_bool *foobaz,
@@ -386,6 +431,9 @@ let%test_module "list_to_litmus" =
             }
             do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
             5);
+            for (r1 = 0; r1 <= 2; r1++)
+            { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+            while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
         }
         void
         P1(atomic_int *bar, bool barbaz, int *blep, int foo, atomic_bool *foobaz,

@@ -199,8 +199,8 @@ module Insert = struct
 end
 
 module Transform = struct
-  module Xchgify : Fuzz.Action_types.S with type Payload.t = Fuzz.Path.Flagged.t =
-  struct
+  module Xchgify :
+    Fuzz.Action_types.S with type Payload.t = Fuzz.Path.Flagged.t = struct
     let name = prefix_name Common.Id.("transform" @: "xchgify" @: empty)
 
     let readme () =
@@ -256,10 +256,11 @@ module Transform = struct
         -> Fuzz.Metadata.t Fir.Statement.t Or_error.t =
       AtomsM.map_m ~f:xchgify_atomic
 
-    let run (subject : Fuzz.Subject.Test.t) ~(payload : Fuzz.Path.Flagged.t) :
-        Fuzz.Subject.Test.t Fuzz.State.Monad.t =
+    let run (subject : Fuzz.Subject.Test.t) ~(payload : Fuzz.Path.Flagged.t)
+        : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Fuzz.State.Monad.Monadic.return
-        (Fuzz.Path_consumers.consume_with_flags subject ~filter:(Lazy.force path_filter)
-           ~path:payload ~action:(Transform xchgify))
+        (Fuzz.Path_consumers.consume_with_flags subject
+           ~filter:(Lazy.force path_filter) ~path:payload
+           ~action:(Transform xchgify))
   end
 end

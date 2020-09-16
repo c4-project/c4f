@@ -139,7 +139,8 @@ module Surround = struct
 end
 
 module Transform = struct
-  module type S = Fuzz.Action_types.S with type Payload.t = Fuzz.Path.Flagged.t
+  module type S =
+    Fuzz.Action_types.S with type Payload.t = Fuzz.Path.Flagged.t
 
   module Invert : S = struct
     let name = prefix_name Common.Id.("transform" @: "invert" @: empty)
@@ -188,7 +189,7 @@ module Transform = struct
     let run (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Fuzz.State.Monad.Monadic.return
-        (Fuzz.Path_consumers.consume_with_flags test ~filter:path_filter ~path:payload
-           ~action:(Transform invert_stm))
+        (Fuzz.Path_consumers.consume_with_flags test ~filter:path_filter
+           ~path:payload ~action:(Transform invert_stm))
   end
 end

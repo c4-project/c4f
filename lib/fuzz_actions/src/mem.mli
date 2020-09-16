@@ -30,7 +30,10 @@ module Strengthen_payload : sig
   type t [@@deriving sexp]
 
   val make :
-    path:Act_fuzz.Path.Flagged.t -> mo:Act_fir.Mem_order.t -> can_weaken:bool -> t
+       path:Act_fuzz.Path.Flagged.t
+    -> mo:Act_fir.Mem_order.t
+    -> can_weaken:bool
+    -> t
   (** [make ~path ~mo ~can_weaken] constructs a strengthening payload with
       path [path], memory order [mo], and whether or not weakening is
       allowed. *)

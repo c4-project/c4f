@@ -103,6 +103,9 @@ let%test_module "atomic.store.insert.int.normal" =
           }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
           5);
+          for (r1 = 0; r1 <= 2; r1++)
+          { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+          while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
       }
 
       void
@@ -158,6 +161,9 @@ let%test_module "atomic.store.insert.int.normal" =
           }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
           5);
+          for (r1 = 0; r1 <= 2; r1++)
+          { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+          while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
       }
 
       void
@@ -221,6 +227,9 @@ let%test_module "atomic.store.insert.int.normal" =
           }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
           5);
+          for (r1 = 0; r1 <= 2; r1++)
+          { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+          while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
       }
 
       void
@@ -295,6 +304,9 @@ let%test_module "store.make.int.dead" =
           }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
           5);
+          for (r1 = 0; r1 <= 2; r1++)
+          { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+          while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
       }
 
       void
@@ -372,6 +384,9 @@ let%test_module "store.make.int.redundant" =
           }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
           5);
+          for (r1 = 0; r1 <= 2; r1++)
+          { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+          while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
       }
 
       void
@@ -404,7 +419,10 @@ let%test_module "xchgify" =
         ~payload
 
     let test (lpath : Fuzz.Path.t Lazy.t) : unit =
-      let path = {Fuzz.Path_flag.Flagged.path= Lazy.force lpath; flags= Set.empty (module Fuzz.Path_flag)} in
+      let path =
+        { Fuzz.Path_flag.Flagged.path= Lazy.force lpath
+        ; flags= Set.empty (module Fuzz.Path_flag) }
+      in
       let action = test_action path in
       Fuzz_test.Action.Test_utils.run_and_dump_test action
         ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state)
@@ -434,6 +452,9 @@ let%test_module "xchgify" =
           }
           do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
           5);
+          for (r1 = 0; r1 <= 2; r1++)
+          { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+          while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
       }
 
       void

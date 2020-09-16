@@ -75,8 +75,11 @@ let%test_module "assign.insert.int.normal" =
              }
              do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
              5);
+             for (r1 = 0; r1 <= 2; r1++)
+             { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+             while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
          }
-   
+
          void
          P1(atomic_int *gen1, atomic_int *gen2, int *gen3, int *gen4, atomic_int *x,
             atomic_int *y)
@@ -128,8 +131,11 @@ let%test_module "assign.insert.int.normal" =
              }
              do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
              5);
+             for (r1 = 0; r1 <= 2; r1++)
+             { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+             while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
          }
-   
+
          void
          P1(atomic_int *gen1, atomic_int *gen2, int *gen3, int *gen4, atomic_int *x,
             atomic_int *y)
@@ -195,6 +201,9 @@ let%test_module "assign.insert.int.normal" =
              }
              do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
              5);
+             for (r1 = 0; r1 <= 2; r1++)
+             { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+             while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
          }
 
          void
@@ -272,6 +281,9 @@ let%test_module "assign.insert.int.normal" =
              }
              do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
              5);
+             for (r1 = 0; r1 <= 2; r1++)
+             { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+             while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
          }
 
          void

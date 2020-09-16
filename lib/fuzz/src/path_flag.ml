@@ -95,7 +95,8 @@ let pp_set : Set.M(M).t Fmt.t =
   Fmt.(braces (using Set.to_list (list ~sep:comma pp)))
 
 module Flagged = struct
-  type 'p t = {path: 'p [@main]; flags: Set.M(M).t [@default (Set.empty (module M))]}
+  type 'p t =
+    {path: 'p [@main]; flags: Set.M(M).t [@default Set.empty (module M)]}
   [@@deriving make, accessors, sexp, compare, equal]
 
   include (
