@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,6 +10,7 @@
    project root for more information. *)
 
 open Base
+open Import
 
 module For = struct
   module Direction = struct
@@ -17,35 +18,21 @@ module For = struct
     [@@deriving sexp, compare, equal]
   end
 
-  module Access = struct
-    type t =
-      { lvalue: Lvalue.t
-      ; init_value: Expression.t
-      ; cmp_value: Expression.t
-      ; direction: Direction.t }
-    [@@deriving accessors, make, sexp, compare, equal]
-  end
+  type t =
+    { lvalue: Lvalue.t
+    ; init_value: Expression.t
+    ; cmp_value: Expression.t
+    ; direction: Direction.t }
+  [@@deriving accessors, make, sexp, compare, equal]
 
-  include Access
-
-  let on_expressions_many (x : t) :
-      (t, Expression.t, Expression.t) Accessor.Many.t =
+  let exprs_many (x : t) : (t, Expression.t, Expression.t) Accessor.Many.t =
     Accessor.Many.(
       map2 (access x.init_value) (access x.cmp_value)
         ~f:(fun init_value' cmp_value' ->
           {x with init_value= init_value'; cmp_value= cmp_value'}))
 
-  let on_expressions :
-      (unit -> Expression.t -> Expression.t, _ -> t -> t, _) Accessor.t =
-    [%accessor Accessor.many on_expressions_many]
-
-  let lvalue = Accessor.get lvalue
-
-  let init_value = Accessor.get init_value
-
-  let cmp_value = Accessor.get cmp_value
-
-  let direction = Accessor.get direction
+  let exprs : type i. (i, Expression.t, t, [< many]) Accessor.Simple.t =
+    [%accessor Accessor.many exprs_many]
 end
 
 module While = struct
@@ -75,6 +62,19 @@ module Header = struct
     | Implicit
   [@@deriving accessors, sexp, compare, equal]
 
+  let exprs_many : t -> (t, Expression.t, Expression.t) Accessor.Many.t =
+    Accessor.Many.(
+      function
+      | For f ->
+          For.exprs_many f >>| fun f' -> For f'
+      | While (w, e) ->
+          access e >>| fun e' -> While (w, e')
+      | (Explicit | Implicit | Lock _) as x ->
+          return x)
+
+  let exprs : type i. (i, Expression.t, t, [< many]) Accessor.Simple.t =
+    [%accessor Accessor.many exprs_many]
+
   (** Traversal over the expressions inside a header. *)
   module On_expressions :
     Travesty.Traversable_types.S0
@@ -91,18 +91,7 @@ module Header = struct
         let apply = `Define_using_bind
       end)
 
-      let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
-        match x with
-        | For fr ->
-            M.(AccM.map For.on_expressions fr ~f >>| fun x -> For x)
-        | Lock l ->
-            M.return (Lock l)
-        | While (w, e) ->
-            M.(e |> f >>| fun e' -> While (w, e'))
-        | Explicit ->
-            M.return Explicit
-        | Implicit ->
-            M.return Implicit
+      let map_m : t -> f:(Elt.t -> Elt.t M.t) -> t M.t = AccM.map exprs
     end
   end)
 end

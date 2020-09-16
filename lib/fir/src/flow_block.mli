@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -21,42 +21,30 @@
     - transactions. *)
 
 open Base
+open Import
 
 (** {1 Flow block headers} *)
 
+(** {2 For loops} *)
 module For : sig
   module Direction : sig
-    (** Type of directions of for loops. *)
+    (** Type of directions of simplified for loops. *)
     type t = Down_exclusive | Down_inclusive | Up_exclusive | Up_inclusive
     [@@deriving sexp, compare, equal]
   end
 
-  (** Opaque type of (constrained) for-loop headers. *)
-  type t [@@deriving sexp, compare, equal]
+  (** Type of simplified for headers. *)
+  type t =
+    { lvalue: Lvalue.t
+    ; init_value: Expression.t
+    ; cmp_value: Expression.t
+    ; direction: Direction.t }
+  [@@deriving accessors, make, sexp, compare, equal]
 
-  val make :
-       lvalue:Lvalue.t
-    -> init_value:Expression.t
-    -> cmp_value:Expression.t
-    -> direction:Direction.t
-    -> t
-  (** [make ~lvalue ~init_value ~cmp_value ~direction] constructs an
-      arithmetic for-loop header over [lvalue], which starts at [init_value]
-      and moves in [direction] towards [cmp_value]. *)
+  (** {3 Specific accessors} *)
 
-  (* TODO(@MattWindsor91): declarations inside for loops *)
-
-  val lvalue : t -> Lvalue.t
-  (** [lvalue hdr] gets [hdr]'s counter lvalue. *)
-
-  val init_value : t -> Expression.t
-  (** [init_value hdr] gets [hdr]'s initial value. *)
-
-  val cmp_value : t -> Expression.t
-  (** [cmp_value hdr] gets [hdr]'s compare-against value. *)
-
-  val direction : t -> Direction.t
-  (** [direction hdr] gets [hdr]'s direction. *)
+  val exprs : ('i, Expression.t, t, [< many]) Accessor.Simple.t
+  (** [exprs] focuses on all expressions inside a simplified for header. *)
 end
 
 (** {2 Kinds of flow} *)
@@ -65,7 +53,7 @@ module While : sig
   (** Enumeration of types of while loop. *)
   type t = Do_while  (** A do-while loop. *) | While  (** A while loop. *)
 
-  include Act_utils.Enum_types.Extension_table with type t := t
+  include Utils.Enum_types.Extension_table with type t := t
 end
 
 module Lock : sig
@@ -94,7 +82,10 @@ module Header : sig
             serve to attach metadata to specific subranges of code. *)
   [@@deriving sexp, compare, equal]
 
-  (** {3 Traversals} *)
+  (** {3 Accessors and traversals} *)
+
+  val exprs : ('i, Expression.t, t, [< many]) Accessor.Simple.t
+  (** [exprs] focuses on all expressions inside a flow block header. *)
 
   (** Traversal over the expressions inside a header. *)
   module On_expressions :

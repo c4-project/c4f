@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,11 +10,7 @@
    project root for more information. *)
 
 open Base
-
-open struct
-  module A = Accessor_base
-  module Fir = Act_fir
-end
+open Import
 
 (* A lot of this module involves dealing with the prospect of one FIR
    statement expanding into multiple C statements; hence why reified blocks
@@ -27,9 +23,9 @@ end
 let atomic = Reify_atomic.reify_stm ~expr:Reify_expr.reify
 
 let assign (asn : Fir.Assign.t) : Ast.Stm.t =
-  let dst = Reify_prim.lvalue (A.get Fir.Assign.dst asn) in
+  let dst = Reify_prim.lvalue asn.@(Fir.Assign.dst) in
   let exp : Ast.Expr.t =
-    match A.get Fir.Assign.src asn with
+    match asn.@(Fir.Assign.src) with
     | Inc ->
         Reify_expr.postfix `Inc dst
     | Dec ->
@@ -42,10 +38,11 @@ let assign (asn : Fir.Assign.t) : Ast.Stm.t =
 let lift_stms : Ast.Stm.t list -> Ast.Compound_stm.t =
   List.map ~f:(fun s -> `Stm s)
 
-let flat_statements = [%accessor A.(Fir.Block.each_statement @> List.each)]
+let flat_statements =
+  [%accessor Fir.Block.each_statement @> Accessor.List.each]
 
 let merge_stms (b : ('meta, Ast.Stm.t list) Fir.Block.t) : Ast.Stm.t list =
-  A.(b.@*(flat_statements))
+  b.@*(flat_statements)
 
 let block_compound (type meta) (b : (meta, Ast.Stm.t list) Fir.Block.t) :
     Ast.Compound_stm.t =
@@ -94,11 +91,11 @@ let if_stm (ifs : (_, Ast.Stm.t list) Fir.If.t) : Ast.Stm.t list =
       ; f_branch= ne_block (Fir.If.f_branch ifs) } ]
 
 let for_init (lv : Ast.Expr.t) (header : Fir.Flow_block.For.t) : Ast.Expr.t =
-  let init = Reify_expr.reify (Fir.Flow_block.For.init_value header) in
+  let init = Reify_expr.reify header.init_value in
   Ast.Expr.Binary (lv, `Assign, init)
 
 let for_cond_op (header : Fir.Flow_block.For.t) : Operators.Bin.t =
-  match Fir.Flow_block.For.direction header with
+  match header.direction with
   | Up_exclusive ->
       `Lt
   | Up_inclusive ->
@@ -110,11 +107,11 @@ let for_cond_op (header : Fir.Flow_block.For.t) : Operators.Bin.t =
 
 let for_cond (lv : Ast.Expr.t) (header : Fir.Flow_block.For.t) : Ast.Expr.t =
   let op = for_cond_op header in
-  let cmp = Reify_expr.reify (Fir.Flow_block.For.cmp_value header) in
+  let cmp = Reify_expr.reify header.cmp_value in
   Ast.Expr.Binary (lv, op, cmp)
 
 let for_update_op (header : Fir.Flow_block.For.t) : Operators.Post.t =
-  match Fir.Flow_block.For.direction header with
+  match header.direction with
   | Up_exclusive | Up_inclusive ->
       `Inc
   | Down_exclusive | Down_inclusive ->
@@ -126,7 +123,7 @@ let for_update (lv : Ast.Expr.t) (header : Fir.Flow_block.For.t) : Ast.Expr.t
 
 let for_loop (header : Fir.Flow_block.For.t) (body : Ast.Compound_stm.t) :
     Ast.Stm.t =
-  let lv = Reify_prim.lvalue (Fir.Flow_block.For.lvalue header) in
+  let lv = Reify_prim.lvalue header.lvalue in
   let init = Some (for_init lv header) in
   let cond = Some (for_cond lv header) in
   let update = Some (for_update lv header) in
