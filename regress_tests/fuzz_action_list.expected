@@ -186,6 +186,15 @@ flow.loop.surround.for.once-kv:
     
     The for loop initialises its (fresh) counter to the known value of an
     existing variable and compares it in such a way as to execute only once.
+flow.loop.surround.for.simple:
+  Weight: 15x
+  Summary:
+    This action removes a sublist of statements from the program, replacing
+    them with for-loops containing those statements.
+    
+    The for loop initialises its (fresh) counter to zero, then counts upwards
+    to a random, small, constant value. This action does not surround
+    non-generated or loop-unsafe statements.
 flow.loop.surround.while.dead:
   Weight: 10x
   Summary:

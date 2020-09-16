@@ -20,6 +20,7 @@
     constructed that can be filtered at the end of its construction. *)
 
 open Base
+open Import
 
 (** Opaque type of path filters. *)
 type t
@@ -71,11 +72,13 @@ val transaction_safe : t -> t
 module End_check : sig
   (** Type of end checks. *)
   type t =
-    | Stm_class of
-        Act_fir.Class_constraint.t * Act_fir.Statement_class.t list
+    | Stm_class of Fir.Class_constraint.t * Fir.Statement_class.t list
         (** Requires the path to reach a statement satisfying the given
             statement class constraint. *)
-    | Has_no_expressions_of_class of Act_fir.Expression_class.t list
+    | Stm_no_meta_restriction of Metadata.Restriction.t
+        (** Requires the path to not reach a statement whose metadata,
+            directly or recursively, contains the given restriction. *)
+    | Has_no_expressions_of_class of Fir.Expression_class.t list
         (** Requires the path to reach a statement that has no expressions of
             any of the given classes. *)
 end

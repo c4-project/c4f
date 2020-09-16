@@ -23,6 +23,7 @@ module End_check = struct
     type t =
       | Stm_class of
           Act_fir.Class_constraint.t * Act_fir.Statement_class.t list
+      | Stm_no_meta_restriction of Metadata.Restriction.t
       | Has_no_expressions_of_class of Act_fir.Expression_class.t list
     [@@deriving compare, equal, sexp]
   end
@@ -35,6 +36,10 @@ module End_check = struct
       match check with
       | Stm_class (req, templates) ->
           satisfies stm ~req ~templates
+      | Stm_no_meta_restriction r ->
+          not
+            (Fir.Statement_traverse.On_meta.exists stm
+               ~f:(Metadata.has_restriction r))
       | Has_no_expressions_of_class templates ->
           not
             (Subject.Statement.On_expressions.exists stm

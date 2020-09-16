@@ -44,7 +44,10 @@ let actions : F.Action.With_default_weight.t list Lazy.t =
       ; make ~action:(module Flow_loop.Surround.Do_dead) ~default_weight:10
       ; make ~action:(module Flow_loop.Surround.Do_false) ~default_weight:15
       ; make
-          ~action:(module Flow_loop.Surround.For_kv_once)
+          ~action:(module Flow_loop.Surround.For.Kv_once)
+          ~default_weight:15
+      ; make
+          ~action:(module Flow_loop.Surround.For.Simple)
           ~default_weight:15
       ; make
           ~action:(module Flow_loop.Surround.While_dead)
