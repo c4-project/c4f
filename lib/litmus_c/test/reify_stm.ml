@@ -43,7 +43,7 @@ let%test_module "reify/pp" =
                   { For.Simple.lvalue= Lvalue.of_variable_str_exn "x"
                   ; init_value= Expression.int_lit 0
                   ; cmp_value= Expression.int_lit 42
-                  ; direction= Up_exclusive })) ;
+                  ; direction= Up Exclusive })) ;
       [%expect {| for (x = 0; x < 42; x++) { x = true; y = false; } |}]
 
     let%expect_test "downwards-inclusive for loop" =
@@ -56,7 +56,7 @@ let%test_module "reify/pp" =
                   { For.Simple.lvalue= Lvalue.of_variable_str_exn "x"
                   ; init_value= Expression.int_lit 53
                   ; cmp_value= Expression.int_lit 27
-                  ; direction= Down_inclusive })) ;
+                  ; direction= Down Inclusive })) ;
       [%expect {| for (x = 53; x >= 27; x--) { x = true; y = false; } |}]
 
     let%expect_test "infinite for loop" =
@@ -78,7 +78,7 @@ let%test_module "reify/pp" =
                         (Lvalue.of_variable_str_exn "x")
                   ; init_value= Expression.int_lit 0
                   ; cmp_value= Expression.int_lit 100
-                  ; direction= Up_inclusive })) ;
+                  ; direction= Up Inclusive })) ;
       [%expect
         {| for (*x = 0; *x <= 100; (*x)++) { x = true; y = false; } |}]
 

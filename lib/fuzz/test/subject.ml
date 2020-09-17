@@ -158,7 +158,7 @@ module Test_data = struct
                { lvalue= Lvalue.of_variable_str_exn "r1"
                ; init_value= Expression.int_lit 0
                ; cmp_value= Expression.int_lit 2
-               ; direction= Up_inclusive }
+               ; direction= Up Inclusive }
              (Src.Subject.Block.make_generated
                 ~statements:
                   [ mk_store

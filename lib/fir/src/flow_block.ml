@@ -43,28 +43,29 @@ module For = struct
     [%accessor Accessor.many exprs_many]
 
   module Simple = struct
+    module Inclusivity = struct
+      type t = Exclusive | Inclusive
+      [@@deriving sexp, compare, equal, quickcheck]
+    end
+
     module Direction = struct
-      type t =
-        | Down_exclusive
-        | Down_inclusive
-        | Up_exclusive
-        | Up_inclusive
+      type t = Down of Inclusivity.t | Up of Inclusivity.t
       [@@deriving sexp, compare, equal, quickcheck]
 
       let src : t -> Assign.Source.t = function
-        | Up_exclusive | Up_inclusive ->
+        | Up Exclusive | Up Inclusive ->
             Inc
-        | Down_exclusive | Down_inclusive ->
+        | Down Exclusive | Down Inclusive ->
             Dec
 
       let rel : t -> Op.Binary.Rel.t = function
-        | Up_exclusive ->
+        | Up Exclusive ->
             Lt
-        | Up_inclusive ->
+        | Up Inclusive ->
             Le
-        | Down_exclusive ->
+        | Down Exclusive ->
             Gt
-        | Down_inclusive ->
+        | Down Inclusive ->
             Ge
     end
 
@@ -98,19 +99,19 @@ module For = struct
        property of variant accessors. *)
     match (op, asn) with
     | Lt, Inc | Ne, Inc ->
-        Ok Up_exclusive
+        Ok (Up Exclusive)
     | Lt, _ ->
         Or_error.error_string "if comparison op is <, update must be ++"
     | Le, Inc ->
-        Ok Up_inclusive
+        Ok (Up Inclusive)
     | Le, _ ->
         Or_error.error_string "if comparison op is <=, update must be ++"
     | Gt, Dec ->
-        Ok Down_exclusive
+        Ok (Down Exclusive)
     | Gt, _ ->
         Or_error.error_string "if comparison op is >, update must be --"
     | Ge, Dec ->
-        Ok Down_inclusive
+        Ok (Down Inclusive)
     | Ge, _ ->
         Or_error.error_string "if comparison op is >=, update must be --"
     | _, _ ->

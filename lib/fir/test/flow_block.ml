@@ -42,7 +42,7 @@ let%test_module "for loop simplification" =
             {|
       (Ok
        ((lvalue (Variable x)) (init_value (Constant (Int 0)))
-        (cmp_value (Constant (Int 42))) (direction Up_exclusive))) |}]
+        (cmp_value (Constant (Int 42))) (direction (Up Exclusive)))) |}]
       end )
 
     let%test_unit "simple first variant law" =

@@ -39,13 +39,15 @@ open Import
 module For : sig
   (** {3 Simplified loops} *)
   module Simple : sig
+    module Inclusivity : sig
+      (** Type of inclusivities of simplified for loops. *)
+      type t = Exclusive | Inclusive
+      [@@deriving sexp, compare, equal, quickcheck]
+    end
+
     module Direction : sig
       (** Type of directions of simplified for loops. *)
-      type t =
-        | Down_exclusive
-        | Down_inclusive
-        | Up_exclusive
-        | Up_inclusive
+      type t = Down of Inclusivity.t | Up of Inclusivity.t
       [@@deriving sexp, compare, equal, quickcheck]
     end
 
