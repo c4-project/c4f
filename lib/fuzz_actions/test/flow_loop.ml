@@ -31,13 +31,13 @@ let%test_module "test runs" =
             (eq (of_variable_str_exn "y") (int_lit 27))
             (of_variable_str_exn "a")))
 
-    let%test_module "Insert.While_false" =
+    let%test_module "While.Insert.False" =
       ( module struct
-        let payload : Src.Flow_loop.Insert.While_false.Payload.t =
+        let payload : Src.Flow_loop.While.Insert.False.Payload.t =
           Fuzz.Payload_impl.Insertion.make ~to_insert:cond
             ~where:(Lazy.force Fuzz_test.Subject.Test_data.Path.insert_live)
 
-        let action = Src.Flow_loop.Insert.While_false.run test ~payload
+        let action = Src.Flow_loop.While.Insert.False.run test ~payload
 
         let%expect_test "resulting AST" =
           Fuzz_test.Action.Test_utils.run_and_dump_test action
@@ -83,9 +83,9 @@ let%test_module "test runs" =
           a=false y=53 |}]
       end )
 
-    let%test_module "Surround.Do_false" =
+    let%test_module "While.Surround.Do_false" =
       ( module struct
-        module Surround = Src.Flow_loop.Surround.Do_false
+        module Surround = Src.Flow_loop.While.Surround.Do_false
 
         let payload : Fuzz.Payload_impl.Cond_surround.t =
           Fuzz.Payload_impl.Cond_surround.make ~cond
@@ -137,9 +137,9 @@ let%test_module "test runs" =
           a=false y=53 |}]
       end )
 
-    let%test_module "Surround.Do_dead" =
+    let%test_module "While.Surround.Do_dead" =
       ( module struct
-        module Surround = Src.Flow_loop.Surround.Do_dead
+        module Surround = Src.Flow_loop.While.Surround.Do_dead
 
         (* TODO(@MattWindsor91): sort out the discrepancy between the subject
            example and var map. *)
@@ -197,9 +197,9 @@ let%test_module "test runs" =
           [%expect {| |}]
       end )
 
-    let%test_module "Surround.While_dead" =
+    let%test_module "While.Surround.Dead" =
       ( module struct
-        module Surround = Src.Flow_loop.Surround.While_dead
+        module Surround = Src.Flow_loop.While.Surround.Dead
 
         let payload : Fuzz.Payload_impl.Cond_surround.t =
           Fuzz.Payload_impl.Cond_surround.make ~cond
@@ -254,14 +254,14 @@ let%test_module "test runs" =
           [%expect {| |}]
       end )
 
-    let counter : Src.Flow_loop.Surround.For.Counter.t =
+    let counter : Src.Flow_loop.For.Counter.t =
       {var= Act_common.Litmus_id.of_string "0:i"; ty= Fir.Type.int ()}
 
-    let%test_module "Surround.For.kv_once" =
+    let%test_module "For.Surround.kv_once" =
       ( module struct
-        module Surround = Src.Flow_loop.Surround.For.Kv_once
+        module Surround = Src.Flow_loop.For.Surround.Kv_once
 
-        let payload : Src.Flow_loop.Surround.For.Kv_payload.t =
+        let payload : Src.Flow_loop.For.Kv_payload.t =
           { lc= counter
           ; kv_val= Fir.Constant.int 27
           ; kv_expr=
@@ -326,9 +326,9 @@ let%test_module "test runs" =
 
     let%test_module "Surround.For.Simple" =
       ( module struct
-        module Surround = Src.Flow_loop.Surround.For.Simple
+        module Surround = Src.Flow_loop.For.Surround.Simple
 
-        let payload : Src.Flow_loop.Surround.For.Simple_payload.t =
+        let payload : Src.Flow_loop.For.Simple_payload.t =
           { lc= counter
           ; up_to= Fir.Constant.int 53
           ; where=

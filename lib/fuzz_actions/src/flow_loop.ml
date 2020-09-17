@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -15,237 +15,281 @@ open Import
 let prefix_name (rest : Common.Id.t) : Common.Id.t =
   Common.Id.("flow" @: "loop" @: rest)
 
-module Insert = struct
-  module type S =
-    Fuzz.Action_types.S
-      with type Payload.t = Fir.Expression.t Fuzz.Payload_impl.Insertion.t
+let live_surround_path_filter _ : Fuzz.Path_filter.t =
+  (* Don't surround breaks and continues in live code; doing so causes them
+     to affect the new surrounding loop, which is a semantic change.
 
-  module While_false : S = struct
-    let name =
-      prefix_name Common.Id.("insert" @: "while" @: "false" @: empty)
+     Note that this does NOT forbid loop-unsafe statements when surrounding;
+     this is because some loops are known to execute once only, and so are ok
+     to use with such statements. *)
+  Fuzz.Path_filter.(
+    require_end_check empty
+      ~check:
+        (Stm_class
+           ( Has_not_any
+           , Fir.Statement_class.
+               [ Prim (Some (Early_out (Some Break)))
+               ; Prim (Some (Early_out (Some Continue))) ] )))
 
-    let readme () : string =
-      Act_utils.My_string.format_for_readme
-        {| Inserts an empty while loop whose condition is known to be false,
+module While = struct
+  module Insert = struct
+    module type S =
+      Fuzz.Action_types.S
+        with type Payload.t = Fir.Expression.t Fuzz.Payload_impl.Insertion.t
+
+    module False : S = struct
+      let name =
+        prefix_name Common.Id.("insert" @: "while" @: "false" @: empty)
+
+      let readme () : string =
+        Act_utils.My_string.format_for_readme
+          {| Inserts an empty while loop whose condition is known to be false,
           and whose body is marked as dead-code for future actions. |}
 
-    let available : Fuzz.Availability.t = Fuzz.Availability.has_threads
+      let available : Fuzz.Availability.t = Fuzz.Availability.has_threads
 
-    module Payload = Fuzz.Payload_impl.Insertion.Make (struct
-      type t = Fir.Expression.t [@@deriving sexp]
+      module Payload = Fuzz.Payload_impl.Insertion.Make (struct
+        type t = Fir.Expression.t [@@deriving sexp]
 
-      let path_filter _ = Fuzz.Path_filter.empty
+        let path_filter _ = Fuzz.Path_filter.empty
 
-      let gen ({path; _} : Fuzz.Path.Flagged.t) : t Fuzz.Payload_gen.t =
-        let tid = Fuzz.Path.tid path in
-        Fuzz.Payload_gen.(
-          let* vars = vars in
-          let env =
-            Fuzz.Var.Map.env_satisfying_all vars ~scope:(Local tid)
-              ~predicates:[]
-          in
-          lift_quickcheck (Fir_gen.Expr.falsehood env))
+        let gen ({path; _} : Fuzz.Path.Flagged.t) : t Fuzz.Payload_gen.t =
+          let tid = Fuzz.Path.tid path in
+          Fuzz.Payload_gen.(
+            let* vars = vars in
+            let env =
+              Fuzz.Var.Map.env_satisfying_all vars ~scope:(Local tid)
+                ~predicates:[]
+            in
+            lift_quickcheck (Fir_gen.Expr.falsehood env))
+      end)
+
+      let make_while (to_insert : Fir.Expression.t) :
+          Fuzz.Subject.Statement.t =
+        Accessor.construct Fir.Statement.flow
+          Fir.Flow_block.(
+            make
+              ~header:(Header.While (While, to_insert))
+              ~body:(Fuzz.Subject.Block.make_dead_code ()))
+
+      (* TODO(@MattWindsor91): unify this with things? *)
+      let run (subject : Fuzz.Subject.Test.t)
+          ~(payload : Fir.Expression.t Fuzz.Payload_impl.Insertion.t) :
+          Fuzz.Subject.Test.t Fuzz.State.Monad.t =
+        let to_insert = Fuzz.Payload_impl.Insertion.to_insert payload in
+        let path = Fuzz.Payload_impl.Insertion.where payload in
+        Fuzz.State.Monad.(
+          (* NB: See discussion in Surround's apply function. *)
+          add_expression_dependencies to_insert
+            ~scope:(Local (Fuzz.Path.tid path.path))
+          >>= fun () ->
+          Monadic.return
+            (Fuzz.Path_consumers.consume_with_flags subject ~path
+               ~action:(Insert [make_while to_insert])))
+    end
+  end
+
+  module Surround = struct
+    module type S =
+      Fuzz.Action_types.S
+        with type Payload.t = Fuzz.Payload_impl.Cond_surround.t
+
+    module Make (Basic : sig
+      val kind : Fir.Flow_block.While.t
+      (** [kind] is the kind of loop to make. *)
+
+      val kind_name : string
+      (** [kind_name] is the name of the kind of loop to make, as it should
+          appear in the identifier. *)
+
+      val name_suffix : string
+      (** [name_suffix] becomes the last tag of the action name. *)
+
+      val readme_suffix : string
+      (** [readme_suffix] gets appended onto the end of the readme. *)
+
+      val path_filter : Fuzz.Availability.Context.t -> Fuzz.Path_filter.t
+      (** [path_filter ctx] generates the filter for the loop path. *)
+
+      val cond_gen :
+        Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t
+      (** [cond_gen] generates the conditional for the loop. *)
+    end) : S = Fuzz.Action.Make_surround (struct
+      let name =
+        prefix_name
+          Common.Id.(
+            "surround" @: Basic.kind_name @: Basic.name_suffix @: empty)
+
+      let surround_with = Basic.kind_name ^ " loops"
+
+      let readme_suffix = Basic.readme_suffix
+
+      let available : Fuzz.Availability.t =
+        Fuzz.Availability.(
+          M.(
+            lift Basic.path_filter
+            >>= is_filter_constructible ~kind:Transform_list))
+
+      module Payload = struct
+        include Fuzz.Payload_impl.Cond_surround.Make (struct
+          let cond_gen = Basic.cond_gen
+
+          let path_filter = Basic.path_filter
+        end)
+
+        let where = Fuzz.Payload_impl.Cond_surround.where
+
+        let src_exprs x = [Fuzz.Payload_impl.Cond_surround.cond x]
+      end
+
+      let run_pre (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
+          Fuzz.Subject.Test.t Fuzz.State.Monad.t =
+        ignore payload ;
+        Fuzz.State.Monad.return test
+
+      let wrap (statements : Fuzz.Metadata.t Fir.Statement.t list)
+          ~(payload : Payload.t) : Fuzz.Metadata.t Fir.Statement.t =
+        let cond = Fuzz.Payload_impl.Cond_surround.cond payload in
+        Accessor.construct Fir.Statement.flow
+          (Fir.Flow_block.while_loop ~kind:Basic.kind ~cond
+             ~body:(Fuzz.Subject.Block.make_generated ~statements ()))
     end)
 
-    let make_while (to_insert : Fir.Expression.t) : Fuzz.Subject.Statement.t
-        =
-      Accessor.construct Fir.Statement.flow
-        Fir.Flow_block.(
-          make
-            ~header:(Header.While (While, to_insert))
-            ~body:(Fuzz.Subject.Block.make_dead_code ()))
+    module Do_false : S = Make (struct
+      let kind = Fir.Flow_block.While.Do_while
 
-    (* TODO(@MattWindsor91): unify this with things? *)
-    let run (subject : Fuzz.Subject.Test.t)
-        ~(payload : Fir.Expression.t Fuzz.Payload_impl.Insertion.t) :
-        Fuzz.Subject.Test.t Fuzz.State.Monad.t =
-      let to_insert = Fuzz.Payload_impl.Insertion.to_insert payload in
-      let path = Fuzz.Payload_impl.Insertion.where payload in
-      Fuzz.State.Monad.(
-        (* NB: See discussion in Surround's apply function. *)
-        add_expression_dependencies to_insert
-          ~scope:(Local (Fuzz.Path.tid path.path))
-        >>= fun () ->
-        Monadic.return
-          (Fuzz.Path_consumers.consume_with_flags subject ~path
-             ~action:(Insert [make_while to_insert])))
+      let kind_name = "do"
+
+      let name_suffix = "false"
+
+      let readme_suffix =
+        {| The condition of the `do... while` loop is statically guaranteed to be
+         false, meaning the loop will iterate only once. |}
+
+      let cond_gen :
+          Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t =
+        Fir_gen.Expr.falsehood
+
+      let path_filter : Fuzz.Availability.Context.t -> Fuzz.Path_filter.t =
+        live_surround_path_filter
+    end)
+
+    module Do_dead : S = Make (struct
+      let kind = Fir.Flow_block.While.Do_while
+
+      let kind_name = "do"
+
+      let name_suffix = "dead"
+
+      let readme_suffix =
+        {| This action will only surround portions of dead code, but the condition
+         of the `do... while` loop can be anything. |}
+
+      let cond_gen :
+          Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t =
+        Fir_gen.Expr.bool
+
+      let path_filter (_ : Fuzz.Availability.Context.t) : Fuzz.Path_filter.t
+          =
+        Fuzz.Path_filter.(in_dead_code_only empty)
+    end)
+
+    module Dead : S = Make (struct
+      let kind = Fir.Flow_block.While.While
+
+      let kind_name = "while"
+
+      let name_suffix = "dead"
+
+      let readme_suffix =
+        {| This action will only surround portions of dead code, but the condition
+         of the `while` loop can be anything. |}
+
+      let cond_gen :
+          Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t =
+        Fir_gen.Expr.bool
+
+      let path_filter (_ : Fuzz.Availability.Context.t) : Fuzz.Path_filter.t
+          =
+        Fuzz.Path_filter.(in_dead_code_only empty)
+    end)
   end
 end
 
-module Surround = struct
-  module type S =
-    Fuzz.Action_types.S
-      with type Payload.t = Fuzz.Payload_impl.Cond_surround.t
+module For = struct
+  module Counter = struct
+    type t = {var: Common.Litmus_id.t; ty: Fir.Type.t} [@@deriving sexp]
 
-  module Make (Basic : sig
-    val kind : Fir.Flow_block.While.t
-    (** [kind] is the kind of loop to make. *)
+    let lc_expr ({var; ty} : t) : Fir.Expression.t =
+      let name = Common.Litmus_id.variable_name var in
+      let lc_tvar = Common.C_named.make ty ~name in
+      Fir.Expression.lvalue (Fir.Lvalue.on_value_of_typed_id lc_tvar)
 
-    val kind_name : string
-    (** [kind_name] is the name of the kind of loop to make, as it should
-        appear in the identifier. *)
-
-    val name_suffix : string
-    (** [name_suffix] becomes the last tag of the action name. *)
-
-    val readme_suffix : string
-    (** [readme_suffix] gets appended onto the end of the readme. *)
-
-    val path_filter : Fuzz.Availability.Context.t -> Fuzz.Path_filter.t
-    (** [path_filter ctx] generates the filter for the loop path. *)
-
-    val cond_gen : Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t
-    (** [cond_gen] generates the conditional for the loop. *)
-  end) : S = Fuzz.Action.Make_surround (struct
-    let name =
-      prefix_name
-        Common.Id.(
-          "surround" @: Basic.kind_name @: Basic.name_suffix @: empty)
-
-    let surround_with = Basic.kind_name ^ " loops"
-
-    let readme_suffix = Basic.readme_suffix
-
-    let available : Fuzz.Availability.t =
-      Fuzz.Availability.(
-        M.(
-          lift Basic.path_filter
-          >>= is_filter_constructible ~kind:Transform_list))
-
-    module Payload = struct
-      include Fuzz.Payload_impl.Cond_surround.Make (struct
-        let cond_gen = Basic.cond_gen
-
-        let path_filter = Basic.path_filter
-      end)
-
-      let where = Fuzz.Payload_impl.Cond_surround.where
-
-      let src_exprs x = [Fuzz.Payload_impl.Cond_surround.cond x]
-    end
-
-    let run_pre (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
+    let declare_and_register ({var; ty} : t) (test : Fuzz.Subject.Test.t) :
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
-      ignore payload ;
-      Fuzz.State.Monad.return test
+      Fuzz.State.Monad.Let_syntax.(
+        let value = Fir.Constant.zero_of_type ty in
+        let init = Fir.Initialiser.make ~ty ~value in
+        let%bind test' =
+          Fuzz.State.Monad.register_and_declare_var var init test
+        in
+        (* Note that this sets the known value of the loop counter to 0, so
+           we have to erase it again; otherwise, the for loop's activity on
+           the loop counter would be ignored by the rest of the fuzzer and
+           lead to semantic violations. *)
+        let%bind () = Fuzz.State.Monad.erase_var_value var in
+        let%map () = Fuzz.State.Monad.add_dependency var in
+        test')
+  end
 
-    let wrap (statements : Fuzz.Metadata.t Fir.Statement.t list)
-        ~(payload : Payload.t) : Fuzz.Metadata.t Fir.Statement.t =
-      let cond = Fuzz.Payload_impl.Cond_surround.cond payload in
-      Accessor.construct Fir.Statement.flow
-        (Fir.Flow_block.while_loop ~kind:Basic.kind ~cond
-           ~body:(Fuzz.Subject.Block.make_generated ~statements ()))
-  end)
+  module Simple_payload = struct
+    type t =
+      {lc: Counter.t; up_to: Fir.Constant.t; where: Fuzz.Path.Flagged.t}
+    [@@deriving sexp, fields]
 
-  let live_surround_path_filter _ : Fuzz.Path_filter.t =
-    (* Don't surround breaks and continues in live code; doing so causes them
-       to affect the new surrounding loop, which is a semantic change. *)
-    Fuzz.Path_filter.(
-      require_end_check empty
-        ~check:
-          (Stm_class
-             ( Has_not_any
-             , Fir.Statement_class.
-                 [ Prim (Some (Early_out (Some Break)))
-                 ; Prim (Some (Early_out (Some Continue))) ] )))
+    let src_exprs (x : t) : Fir.Expression.t list =
+      [ Fir.Expression.constant x.up_to
+      ; (* The loop counter is effectively being read from as well as written
+           to each iteration. *)
+        Counter.lc_expr x.lc ]
+  end
 
-  module Do_false : S = Make (struct
-    let kind = Fir.Flow_block.While.Do_while
+  module Kv_payload = struct
+    type t =
+      { lc: Counter.t
+      ; kv_val: Fir.Constant.t
+      ; kv_expr: Fir.Expression.t
+      ; where: Fuzz.Path.Flagged.t }
+    [@@deriving sexp, fields]
 
-    let kind_name = "do"
+    let src_exprs (x : t) : Fir.Expression.t list =
+      [ x.kv_expr
+      ; (* The loop counter is effectively being read from as well as written
+           to each iteration. *)
+        Counter.lc_expr x.lc ]
 
-    let name_suffix = "false"
+    let direction (i : Fir.Flow_block.For.Simple.Inclusivity.t)
+        ({kv_val; _} : t) : Fir.Flow_block.For.Simple.Direction.t =
+      (* Try to avoid overflows by only going up if we're negative. *)
+      match Fir.Constant.as_int kv_val with
+      | Ok x when x < 0 ->
+          Up i
+      | _ ->
+          Down i
 
-    let readme_suffix =
-      {| The condition of the `do... while` loop is statically guaranteed to be
-         false, meaning the loop will iterate only once. |}
+    let control (i : Fir.Flow_block.For.Simple.Inclusivity.t) (payload : t) :
+        Act_fir.Flow_block.For.Simple.t =
+      { lvalue=
+          Accessor.construct Fir.Lvalue.variable
+            (Common.Litmus_id.variable_name payload.lc.var)
+      ; direction= direction i payload
+      ; init_value= Fir.Expression.constant payload.kv_val
+      ; cmp_value= payload.kv_expr }
+  end
 
-    let cond_gen : Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t
-        =
-      Fir_gen.Expr.falsehood
-
-    let path_filter : Fuzz.Availability.Context.t -> Fuzz.Path_filter.t =
-      live_surround_path_filter
-  end)
-
-  module Do_dead : S = Make (struct
-    let kind = Fir.Flow_block.While.Do_while
-
-    let kind_name = "do"
-
-    let name_suffix = "dead"
-
-    let readme_suffix =
-      {| This action will only surround portions of dead code, but the condition
-         of the `do... while` loop can be anything. |}
-
-    let cond_gen : Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t
-        =
-      Fir_gen.Expr.bool
-
-    let path_filter (_ : Fuzz.Availability.Context.t) : Fuzz.Path_filter.t =
-      Fuzz.Path_filter.(in_dead_code_only empty)
-  end)
-
-  module While_dead : S = Make (struct
-    let kind = Fir.Flow_block.While.While
-
-    let kind_name = "while"
-
-    let name_suffix = "dead"
-
-    let readme_suffix =
-      {| This action will only surround portions of dead code, but the condition
-         of the `while` loop can be anything. |}
-
-    let cond_gen : Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t
-        =
-      Fir_gen.Expr.bool
-
-    let path_filter (_ : Fuzz.Availability.Context.t) : Fuzz.Path_filter.t =
-      Fuzz.Path_filter.(in_dead_code_only empty)
-  end)
-
-  module For = struct
+  module Surround = struct
     let prefix_name (x : Common.Id.t) : Common.Id.t =
       prefix_name Common.Id.("surround" @: "for" @: x)
-
-    module Counter = struct
-      type t = {var: Common.Litmus_id.t; ty: Fir.Type.t} [@@deriving sexp]
-
-      let lc_expr ({var; ty} : t) : Fir.Expression.t =
-        let name = Common.Litmus_id.variable_name var in
-        let lc_tvar = Common.C_named.make ty ~name in
-        Fir.Expression.lvalue (Fir.Lvalue.on_value_of_typed_id lc_tvar)
-
-      let declare_and_register ({var; ty} : t) (test : Fuzz.Subject.Test.t) :
-          Fuzz.Subject.Test.t Fuzz.State.Monad.t =
-        Fuzz.State.Monad.Let_syntax.(
-          let value = Fir.Constant.zero_of_type ty in
-          let init = Fir.Initialiser.make ~ty ~value in
-          let%bind test' =
-            Fuzz.State.Monad.register_and_declare_var var init test
-          in
-          (* Note that this sets the known value of the loop counter to 0, so
-             we have to erase it again; otherwise, the for loop's activity on
-             the loop counter would be ignored by the rest of the fuzzer and
-             lead to semantic violations. *)
-          let%bind () = Fuzz.State.Monad.erase_var_value var in
-          let%map () = Fuzz.State.Monad.add_dependency var in
-          test')
-    end
-
-    module Simple_payload = struct
-      type t =
-        {lc: Counter.t; up_to: Fir.Constant.t; where: Fuzz.Path.Flagged.t}
-      [@@deriving sexp, fields]
-
-      let src_exprs (x : t) : Fir.Expression.t list =
-        [ Fir.Expression.constant x.up_to
-        ; (* The loop counter is effectively being read from as well as
-             written to each iteration. *)
-          Counter.lc_expr x.lc ]
-    end
 
     module Simple :
       Fuzz.Action_types.S with type Payload.t = Simple_payload.t =
@@ -308,39 +352,6 @@ module Surround = struct
           Accessor.construct Statement.flow
             (Flow_block.for_loop_simple body ~control))
     end)
-
-    module Kv_payload = struct
-      type t =
-        { lc: Counter.t
-        ; kv_val: Fir.Constant.t
-        ; kv_expr: Fir.Expression.t
-        ; where: Fuzz.Path.Flagged.t }
-      [@@deriving sexp, fields]
-
-      let src_exprs (x : t) : Fir.Expression.t list =
-        [ x.kv_expr
-        ; (* The loop counter is effectively being read from as well as
-             written to each iteration. *)
-          Counter.lc_expr x.lc ]
-
-      let direction (i : Fir.Flow_block.For.Simple.Inclusivity.t)
-          ({kv_val; _} : t) : Fir.Flow_block.For.Simple.Direction.t =
-        (* Try to avoid overflows by only going up if we're negative. *)
-        match Fir.Constant.as_int kv_val with
-        | Ok x when x < 0 ->
-            Up i
-        | _ ->
-            Down i
-
-      let control (i : Fir.Flow_block.For.Simple.Inclusivity.t) (payload : t)
-          : Act_fir.Flow_block.For.Simple.t =
-        { lvalue=
-            Accessor.construct Fir.Lvalue.variable
-              (Common.Litmus_id.variable_name payload.lc.var)
-        ; direction= direction i payload
-        ; init_value= Fir.Expression.constant payload.kv_val
-        ; cmp_value= payload.kv_expr }
-    end
 
     module Kv_once : Fuzz.Action_types.S with type Payload.t = Kv_payload.t =
     Fuzz.Action.Make_surround (struct
