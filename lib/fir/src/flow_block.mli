@@ -25,26 +25,74 @@ open Import
 
 (** {1 Flow block headers} *)
 
-(** {2 For loops} *)
+(** {2 For loops}
+
+    FIR presently supports for loops on two separate levels:
+
+    - the standard C-style 'init, compare, update' loop, which is useful for
+      preserving information about existing loops;
+    - a 'simplified' loop whereby a single variable is incremented, or
+      decreemented, towards a target.
+
+    This for loop provision will likely expand and change as we target more
+    languages, but most actions will target the simplified for loop natively. *)
 module For : sig
-  module Direction : sig
-    (** Type of directions of simplified for loops. *)
-    type t = Down_exclusive | Down_inclusive | Up_exclusive | Up_inclusive
-    [@@deriving sexp, compare, equal]
+  (** {3 Simplified loops} *)
+  module Simple : sig
+    module Direction : sig
+      (** Type of directions of simplified for loops. *)
+      type t =
+        | Down_exclusive
+        | Down_inclusive
+        | Up_exclusive
+        | Up_inclusive
+      [@@deriving sexp, compare, equal, quickcheck]
+    end
+
+    (** Type of simplified for headers. *)
+    type t =
+      { lvalue: Lvalue.t
+      ; init_value: Expression.t
+      ; cmp_value: Expression.t
+      ; direction: Direction.t }
+    [@@deriving accessors, sexp, compare, equal]
   end
 
-  (** Type of simplified for headers. *)
+  (** {3 C-style loops}
+
+      We provide a 'make' constructor for situations where some or all of the
+      loop particulars are missing. *)
+
+  (** Type of main loops. *)
   type t =
-    { lvalue: Lvalue.t
-    ; init_value: Expression.t
-    ; cmp_value: Expression.t
-    ; direction: Direction.t }
+    {init: Assign.t option; cmp: Expression.t option; update: Assign.t option}
   [@@deriving accessors, make, sexp, compare, equal]
 
-  (** {3 Specific accessors} *)
+  val try_simplify : t -> Simple.t Or_error.t
+  (** [try_simplify l] behaves like the getter for the accessor [simple], but
+      gives a detailed error whenever the simplification fails. *)
+
+  (** {4 Other accessors}
+
+      See also the derived accessors [init], [cmp], and [update]. *)
+
+  val init_opt : ('i, Assign.t, t, [< optional]) Accessor.Simple.t
+  (** [init_opt] is [init], but as an optional accessor. *)
+
+  val cmp_opt : ('i, Expression.t, t, [< optional]) Accessor.Simple.t
+  (** [cmp_opt] is [cmp], but as an optional accessor. *)
+
+  val update_opt : ('i, Assign.t, t, [< optional]) Accessor.Simple.t
+  (** [update_opt] is [update], but as an optional accessor. *)
 
   val exprs : ('i, Expression.t, t, [< many]) Accessor.Simple.t
-  (** [exprs] focuses on all expressions inside a simplified for header. *)
+  (** [exprs] focuses on all expressions inside a for header. *)
+
+  val simple : ('i, Simple.t, t, [< variant]) Accessor.Simple.t
+  (** [simple] maps a C-style for header to, and from, a simplified header.
+      Note that mapping to a simplified header is partial; to receive error
+      feedback about why a particular C-style header isn't simplifiable, use
+      [try_simplify]. *)
 end
 
 (** {2 Kinds of flow} *)
@@ -114,12 +162,17 @@ val while_loop :
 (** [while ~cond ~body ~kind] makes a while loop with the given body,
     conditional, and kind. *)
 
-val for_loop : control:For.t -> body:('meta, 'stm) Block.t -> ('meta, 'stm) t
-(** [for_loop ~control ~body] makes a for loop with control block [control]
+val for_loop : ('meta, 'stm) Block.t -> control:For.t -> ('meta, 'stm) t
+(** [for_loop body ~control] makes a for loop with control block [control]
     and body [body]. *)
 
-val lock_block : body:('meta, 'stm) Block.t -> kind:Lock.t -> ('meta, 'stm) t
-(** [lock_block ~body ~kind] makes a lock block with the given body and kind. *)
+val for_loop_simple :
+  ('meta, 'stm) Block.t -> control:For.Simple.t -> ('meta, 'stm) t
+(** [for_loop_simple body ~control] makes a simplified for loop with control
+    block [control] and body [body]. *)
+
+val lock_block : ('meta, 'stm) Block.t -> kind:Lock.t -> ('meta, 'stm) t
+(** [lock_block body ~kind] makes a lock block with the given body and kind. *)
 
 val explicit : ('meta, 'stm) Block.t -> ('meta, 'stm) t
 (** [explicit b] makes an explicit block using [b]. *)

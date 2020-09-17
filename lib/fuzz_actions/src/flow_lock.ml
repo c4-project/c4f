@@ -70,7 +70,7 @@ module Surround = struct
       ignore (payload : Payload.t) ;
       A.construct Fir.Statement.flow
         (Fir.Flow_block.lock_block ~kind:Basic.lock_type
-           ~body:(F.Subject.Block.make_generated ~statements ()))
+           (F.Subject.Block.make_generated ~statements ()))
   end)
 
   module Atomic : S = Make (struct

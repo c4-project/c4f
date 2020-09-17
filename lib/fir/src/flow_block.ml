@@ -13,26 +13,191 @@ open Base
 open Import
 
 module For = struct
-  module Direction = struct
-    type t = Down_exclusive | Down_inclusive | Up_exclusive | Up_inclusive
-    [@@deriving sexp, compare, equal]
-  end
-
   type t =
-    { lvalue: Lvalue.t
-    ; init_value: Expression.t
-    ; cmp_value: Expression.t
-    ; direction: Direction.t }
+    {init: Assign.t option; cmp: Expression.t option; update: Assign.t option}
   [@@deriving accessors, make, sexp, compare, equal]
+
+  module AMany = Accessor.Of_applicative2 (struct
+    include Accessor.Many
+
+    type nonrec ('a, 'b) t = ('a, Expression.t, 'b) t
+  end)
+
+  let init_opt : ('i, Assign.t, t, [< optional]) Accessor.Simple.t =
+    [%accessor init @> Accessor.Option.some]
+
+  let cmp_opt : ('i, Expression.t, t, [< optional]) Accessor.Simple.t =
+    [%accessor cmp @> Accessor.Option.some]
+
+  let update_opt : ('i, Assign.t, t, [< optional]) Accessor.Simple.t =
+    [%accessor update @> Accessor.Option.some]
 
   let exprs_many (x : t) : (t, Expression.t, Expression.t) Accessor.Many.t =
     Accessor.Many.(
-      map2 (access x.init_value) (access x.cmp_value)
-        ~f:(fun init_value' cmp_value' ->
-          {x with init_value= init_value'; cmp_value= cmp_value'}))
+      return (fun init cmp update -> make ?init ?cmp ?update ())
+      <*> AMany.map (Accessor.Option.some @> Assign.exprs) ~f:access x.init
+      <*> AMany.map Accessor.Option.some ~f:access x.cmp
+      <*> AMany.map (Accessor.Option.some @> Assign.exprs) ~f:access x.update)
 
   let exprs : type i. (i, Expression.t, t, [< many]) Accessor.Simple.t =
     [%accessor Accessor.many exprs_many]
+
+  module Simple = struct
+    module Direction = struct
+      type t =
+        | Down_exclusive
+        | Down_inclusive
+        | Up_exclusive
+        | Up_inclusive
+      [@@deriving sexp, compare, equal, quickcheck]
+
+      let src : t -> Assign.Source.t = function
+        | Up_exclusive | Up_inclusive ->
+            Inc
+        | Down_exclusive | Down_inclusive ->
+            Dec
+
+      let rel : t -> Op.Binary.Rel.t = function
+        | Up_exclusive ->
+            Lt
+        | Up_inclusive ->
+            Le
+        | Down_exclusive ->
+            Gt
+        | Down_inclusive ->
+            Ge
+    end
+
+    type t =
+      { lvalue: Lvalue.t
+      ; init_value: Expression.t
+      ; cmp_value: Expression.t
+      ; direction: Direction.t }
+    [@@deriving accessors, sexp, compare, equal]
+  end
+
+  let for_loop_lvalue_unify (ilv : Lvalue.t) (clv : Lvalue.t)
+      (ulv : Lvalue.t) : Lvalue.t Or_error.t =
+    if not (Lvalue.equal ilv clv) then
+      Or_error.error_s
+        [%message
+          "Init and comparison lvalues differ; not supported in FIR"
+            ~init:(ilv : Lvalue.t)
+            ~comparison:(clv : Lvalue.t)]
+    else if not ([%equal: Lvalue.t] ilv ulv) then
+      Or_error.error_s
+        [%message
+          "Init and update lvalues differ; not supported in FIR"
+            ~init:(ilv : Lvalue.t)
+            ~update:(ulv : Lvalue.t)]
+    else Ok ilv
+
+  let for_loop_direction (op : Op.Binary.Rel.t) (asn : Assign.Source.t) :
+      Simple.Direction.t Or_error.t =
+    (* We could map != to < and >, but this would violate the well-formedness
+       property of variant accessors. *)
+    match (op, asn) with
+    | Lt, Inc | Ne, Inc ->
+        Ok Up_exclusive
+    | Lt, _ ->
+        Or_error.error_string "if comparison op is <, update must be ++"
+    | Le, Inc ->
+        Ok Up_inclusive
+    | Le, _ ->
+        Or_error.error_string "if comparison op is <=, update must be ++"
+    | Gt, Dec ->
+        Ok Down_exclusive
+    | Gt, _ ->
+        Or_error.error_string "if comparison op is >, update must be --"
+    | Ge, Dec ->
+        Ok Down_inclusive
+    | Ge, _ ->
+        Or_error.error_string "if comparison op is >=, update must be --"
+    | _, _ ->
+        Or_error.error_s
+          [%message
+            "unsupported comparison/update operators"
+              ~comparison:(op : Op.Binary.Rel.t)
+              ~update:(asn : Assign.Source.t)]
+
+  let unbop (cmp : Expression.t) :
+      (Op.Binary.Rel.t * Lvalue.t * Expression.t) Or_error.t =
+    Or_error.Let_syntax.(
+      let%bind bop, l, r =
+        Result.of_option
+          cmp.@?(Expression.Acc.bop)
+          ~error:
+            (Error.create_s
+               [%message
+                 "Unsupported comparison expression" ~cmp:(cmp : Expression.t)])
+      in
+      let%bind lv =
+        Result.of_option
+          l.@?(Expression.Acc.address @> Address.lvalue)
+          ~error:
+            (Error.create_s
+               [%message
+                 "Unsupported LHS of comparison expression"
+                   ~l:(l : Expression.t)])
+      in
+      match bop with
+      | Rel o ->
+          Ok (o, lv, r)
+      | _ ->
+          Or_error.error_s
+            [%message
+              "Unsupported comparison operator" ~op:(bop : Op.Binary.t)])
+
+  let init_value (init : Assign.t) : Expression.t Or_error.t =
+    Result.of_option
+      init.@?(Assign.src @> Assign.Source.expr)
+      ~error:
+        (Error.create_s
+           [%message
+             "Unsupported RHS of initialiser expression"
+               ~init:(init : Assign.t)])
+
+  let try_simplify_inner (init : Assign.t) (cmp : Expression.t)
+      (update : Assign.t) : Simple.t Or_error.t =
+    Or_error.Let_syntax.(
+      let%bind cop, clv, cmp_value = unbop cmp in
+      let%bind lvalue =
+        for_loop_lvalue_unify init.@(Assign.dst) clv update.@(Assign.dst)
+      in
+      let%bind direction = for_loop_direction cop update.@(Assign.src) in
+      let%map init_value = init_value init in
+      {Simple.lvalue; init_value; cmp_value; direction})
+
+  let try_simplify ({init; cmp; update} : t) : Simple.t Or_error.t =
+    match (init, cmp, update) with
+    | Some init, Some cmp, Some update ->
+        try_simplify_inner init cmp update
+    | None, _, _ ->
+        Or_error.error_string "missing init in for loop"
+    | Some _, None, _ ->
+        Or_error.error_string "missing comparison in for loop"
+    | Some _, Some _, None ->
+        Or_error.error_string "missing update in for loop"
+
+  let match_simple (x : t) : (Simple.t, t) Either.t =
+    match try_simplify x with Ok s -> First s | _ -> Second x
+
+  let construct_simple (s : Simple.t) : t =
+    { init= Some Assign.(s.lvalue @= s.init_value)
+    ; cmp=
+        Some
+          (Expression.bop
+             (Rel (Simple.Direction.rel s.direction))
+             (Expression.lvalue s.lvalue)
+             s.cmp_value)
+    ; update=
+        Some
+          (Assign.make ~dst:s.lvalue ~src:(Simple.Direction.src s.direction))
+    }
+
+  let simple : type i. (i, Simple.t, t, [< variant]) Accessor.Simple.t =
+    [%accessor
+      Accessor.variant ~match_:match_simple ~construct:construct_simple]
 end
 
 module While = struct
@@ -100,15 +265,19 @@ end
 type ('meta, 'stm) t = {header: Header.t; body: ('meta, 'stm) Block.t}
 [@@deriving sexp, make, fields, compare, equal]
 
-let for_loop ~(control : For.t) ~(body : ('meta, 'stm) Block.t) :
+let for_loop (body : ('meta, 'stm) Block.t) ~(control : For.t) :
     ('meta, 'stm) t =
   make ~body ~header:(Header.For control)
+
+let for_loop_simple (body : ('meta, 'stm) Block.t) ~(control : For.Simple.t)
+    : ('meta, 'stm) t =
+  make ~body ~header:(Accessor.construct (Header.for_ @> For.simple) control)
 
 let while_loop ~(cond : Expression.t) ~(body : ('meta, 'stm) Block.t)
     ~(kind : While.t) : ('meta, 'stm) t =
   make ~body ~header:(Header.While (kind, cond))
 
-let lock_block ~(body : ('meta, 'stm) Block.t) ~(kind : Lock.t) :
+let lock_block (body : ('meta, 'stm) Block.t) ~(kind : Lock.t) :
     ('meta, 'stm) t =
   make ~body ~header:(Header.Lock kind)
 

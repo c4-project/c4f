@@ -22,18 +22,17 @@ open Import
 
 let atomic = Reify_atomic.reify_stm ~expr:Reify_expr.reify
 
-let assign (asn : Fir.Assign.t) : Ast.Stm.t =
+let assign_expr (asn : Fir.Assign.t) : Ast.Expr.t =
   let dst = Reify_prim.lvalue asn.@(Fir.Assign.dst) in
-  let exp : Ast.Expr.t =
-    match asn.@(Fir.Assign.src) with
-    | Inc ->
-        Reify_expr.postfix `Inc dst
-    | Dec ->
-        Reify_expr.postfix `Dec dst
-    | Expr e ->
-        Binary (dst, `Assign, Reify_expr.reify e)
-  in
-  Expr (Some exp)
+  match asn.@(Fir.Assign.src) with
+  | Inc ->
+      Reify_expr.postfix `Inc dst
+  | Dec ->
+      Reify_expr.postfix `Dec dst
+  | Expr e ->
+      Binary (dst, `Assign, Reify_expr.reify e)
+
+let assign (asn : Fir.Assign.t) : Ast.Stm.t = Expr (Some (assign_expr asn))
 
 let lift_stms : Ast.Stm.t list -> Ast.Compound_stm.t =
   List.map ~f:(fun s -> `Stm s)
@@ -90,43 +89,11 @@ let if_stm (ifs : (_, Ast.Stm.t list) Fir.If.t) : Ast.Stm.t list =
       ; t_branch= block (Fir.If.t_branch ifs)
       ; f_branch= ne_block (Fir.If.f_branch ifs) } ]
 
-let for_init (lv : Ast.Expr.t) (header : Fir.Flow_block.For.t) : Ast.Expr.t =
-  let init = Reify_expr.reify header.init_value in
-  Ast.Expr.Binary (lv, `Assign, init)
-
-let for_cond_op (header : Fir.Flow_block.For.t) : Operators.Bin.t =
-  match header.direction with
-  | Up_exclusive ->
-      `Lt
-  | Up_inclusive ->
-      `Le
-  | Down_exclusive ->
-      `Gt
-  | Down_inclusive ->
-      `Ge
-
-let for_cond (lv : Ast.Expr.t) (header : Fir.Flow_block.For.t) : Ast.Expr.t =
-  let op = for_cond_op header in
-  let cmp = Reify_expr.reify header.cmp_value in
-  Ast.Expr.Binary (lv, op, cmp)
-
-let for_update_op (header : Fir.Flow_block.For.t) : Operators.Post.t =
-  match header.direction with
-  | Up_exclusive | Up_inclusive ->
-      `Inc
-  | Down_exclusive | Down_inclusive ->
-      `Dec
-
-let for_update (lv : Ast.Expr.t) (header : Fir.Flow_block.For.t) : Ast.Expr.t
-    =
-  Reify_expr.postfix (for_update_op header) lv
-
 let for_loop (header : Fir.Flow_block.For.t) (body : Ast.Compound_stm.t) :
     Ast.Stm.t =
-  let lv = Reify_prim.lvalue header.lvalue in
-  let init = Some (for_init lv header) in
-  let cond = Some (for_cond lv header) in
-  let update = Some (for_update lv header) in
+  let init = Option.map ~f:assign_expr header.init in
+  let cond = Option.map ~f:Reify_expr.reify header.cmp in
+  let update = Option.map ~f:assign_expr header.update in
   let body = Ast.Stm.Compound body in
   For {init; cond; update; body}
 

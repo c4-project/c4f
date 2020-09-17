@@ -72,8 +72,10 @@ let%test_module "model" =
          (Flow
           ((header
             (For
-             ((lvalue (Variable x)) (init_value (Constant (Int 0)))
-              (cmp_value (Constant (Int 42))) (direction Up_exclusive))))
+             ((init (((dst (Variable x)) (src (Expr (Constant (Int 0)))))))
+              (cmp
+               ((Bop (Rel Lt) (Address (Lvalue (Variable x))) (Constant (Int 42)))))
+              (update (((dst (Variable x)) (src Inc)))))))
            (body ((statements ((Prim () Nop))) (metadata ())))))) |}]
 
     let%expect_test "model downwards not-equal for loop" =
@@ -101,8 +103,10 @@ let%test_module "model" =
          (Flow
           ((header
             (For
-             ((lvalue (Variable x)) (init_value (Constant (Int 53)))
-              (cmp_value (Constant (Int 27))) (direction Down_exclusive))))
+             ((init (((dst (Variable x)) (src (Expr (Constant (Int 53)))))))
+              (cmp
+               ((Bop (Rel Ne) (Address (Lvalue (Variable x))) (Constant (Int 27)))))
+              (update (((dst (Variable x)) (src Dec)))))))
            (body ((statements ((Prim () Nop))) (metadata ())))))) |}]
 
     let%expect_test "model downwards-inclusive for loop" =
@@ -130,8 +134,10 @@ let%test_module "model" =
          (Flow
           ((header
             (For
-             ((lvalue (Variable x)) (init_value (Constant (Int 42)))
-              (cmp_value (Constant (Int 0))) (direction Down_inclusive))))
+             ((init (((dst (Variable x)) (src (Expr (Constant (Int 42)))))))
+              (cmp
+               ((Bop (Rel Ge) (Address (Lvalue (Variable x))) (Constant (Int 0)))))
+              (update (((dst (Variable x)) (src Dec)))))))
            (body ((statements ((Prim () Nop))) (metadata ())))))) |}]
 
     let%expect_test "model atomic_store_explicit" =

@@ -153,21 +153,19 @@ module Test_data = struct
     lazy
       Fir.(
         Accessor.construct Statement.flow
-          (Flow_block.for_loop
+          (Flow_block.for_loop_simple
              ~control:
-               (Flow_block.For.make
-                  ~lvalue:(Lvalue.of_variable_str_exn "r1")
-                  ~init_value:(Expression.int_lit 0)
-                  ~cmp_value:(Expression.int_lit 2)
-                  ~direction:Flow_block.For.Direction.Up_inclusive)
-             ~body:
-               (Src.Subject.Block.make_generated
-                  ~statements:
-                    [ mk_store
-                        (Atomic_store.make ~src:(Expression.int_lit 99)
-                           ~dst:(Address.of_variable_str_exn "x")
-                           ~mo:Mem_order.Seq_cst) ]
-                  ())))
+               { lvalue= Lvalue.of_variable_str_exn "r1"
+               ; init_value= Expression.int_lit 0
+               ; cmp_value= Expression.int_lit 2
+               ; direction= Up_inclusive }
+             (Src.Subject.Block.make_generated
+                ~statements:
+                  [ mk_store
+                      (Atomic_store.make ~src:(Expression.int_lit 99)
+                         ~dst:(Address.of_variable_str_exn "x")
+                         ~mo:Mem_order.Seq_cst) ]
+                ())))
 
   let body_stms : Src.Subject.Statement.t list Lazy.t =
     Lazy.Let_syntax.(

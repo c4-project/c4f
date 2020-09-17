@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -15,7 +15,7 @@
     that'd normally be typedefs pulled into distinct types. *)
 
 open Base
-open Act_utils
+open Import
 
 (** {1 Primitive types} *)
 module Prim : sig
@@ -37,7 +37,7 @@ module Basic : sig
   (** Opaque type of basic types. *)
   type t
 
-  include Enum_types.Extension_table with type t := t
+  include Utils.Enum_types.Extension_table with type t := t
 
   (** {2 Constructors} *)
 

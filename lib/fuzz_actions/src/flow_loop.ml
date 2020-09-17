@@ -292,14 +292,13 @@ module Surround = struct
           Fuzz.Subject.Test.t Fuzz.State.Monad.t =
         Counter.declare_and_register payload.lc test
 
-      let control (payload : Payload.t) : Act_fir.Flow_block.For.t =
-        Fir.Flow_block.For.make
-          ~lvalue:
-            (Accessor.construct Fir.Lvalue.variable
-               (Common.Litmus_id.variable_name payload.lc.var))
-          ~direction:Up_inclusive
-          ~init_value:(Fir.Expression.int_lit 0)
-          ~cmp_value:(Fir.Expression.constant payload.up_to)
+      let control (payload : Payload.t) : Act_fir.Flow_block.For.Simple.t =
+        { Fir.Flow_block.For.Simple.lvalue=
+            Accessor.construct Fir.Lvalue.variable
+              (Common.Litmus_id.variable_name payload.lc.var)
+        ; direction= Up_inclusive
+        ; init_value= Fir.Expression.int_lit 0
+        ; cmp_value= Fir.Expression.constant payload.up_to }
 
       let wrap (statements : Fuzz.Subject.Statement.t list)
           ~(payload : Payload.t) : Fuzz.Subject.Statement.t =
@@ -307,7 +306,7 @@ module Surround = struct
         let body = Fuzz.Subject.Block.make_generated ~statements () in
         Fir.(
           Accessor.construct Statement.flow
-            (Flow_block.for_loop ~control ~body))
+            (Flow_block.for_loop_simple body ~control))
     end)
 
     module Kv_payload = struct
@@ -433,7 +432,7 @@ module Surround = struct
         Counter.declare_and_register payload.lc test
 
       let direction (payload : Payload.t) :
-          Act_fir.Flow_block.For.Direction.t =
+          Act_fir.Flow_block.For.Simple.Direction.t =
         (* Try to avoid overflows by only going up if we're negative. *)
         match Fir.Constant.as_int payload.kv_val with
         | Ok x when x < 0 ->
@@ -441,14 +440,13 @@ module Surround = struct
         | _ ->
             Down_inclusive
 
-      let control (payload : Payload.t) : Act_fir.Flow_block.For.t =
-        Fir.Flow_block.For.make
-          ~lvalue:
-            (Accessor.construct Fir.Lvalue.variable
-               (Common.Litmus_id.variable_name payload.lc.var))
-          ~direction:(direction payload)
-          ~init_value:(Fir.Expression.constant payload.kv_val)
-          ~cmp_value:payload.kv_expr
+      let control (payload : Payload.t) : Act_fir.Flow_block.For.Simple.t =
+        { lvalue=
+            Accessor.construct Fir.Lvalue.variable
+              (Common.Litmus_id.variable_name payload.lc.var)
+        ; direction= direction payload
+        ; init_value= Fir.Expression.constant payload.kv_val
+        ; cmp_value= payload.kv_expr }
 
       let wrap (statements : Fuzz.Subject.Statement.t list)
           ~(payload : Payload.t) : Fuzz.Subject.Statement.t =
@@ -456,7 +454,7 @@ module Surround = struct
         let body = Fuzz.Subject.Block.make_generated ~statements () in
         Fir.(
           Accessor.construct Statement.flow
-            (Flow_block.for_loop ~control ~body))
+            (Flow_block.for_loop_simple ~control body))
     end)
   end
 end

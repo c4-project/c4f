@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -38,14 +38,12 @@ let%test_module "reify/pp" =
         Fir.(
           A.construct Statement.flow
             Flow_block.(
-              for_loop
+              for_loop_simple test_body
                 ~control:
-                  (For.make
-                     ~lvalue:(Lvalue.of_variable_str_exn "x")
-                     ~init_value:(Expression.int_lit 0)
-                     ~cmp_value:(Expression.int_lit 42)
-                     ~direction:Up_exclusive)
-                ~body:test_body)) ;
+                  { For.Simple.lvalue= Lvalue.of_variable_str_exn "x"
+                  ; init_value= Expression.int_lit 0
+                  ; cmp_value= Expression.int_lit 42
+                  ; direction= Up_exclusive })) ;
       [%expect {| for (x = 0; x < 42; x++) { x = true; y = false; } |}]
 
     let%expect_test "downwards-inclusive for loop" =
@@ -53,31 +51,34 @@ let%test_module "reify/pp" =
         Fir.(
           A.construct Statement.flow
             Flow_block.(
-              for_loop
+              for_loop_simple test_body
                 ~control:
-                  (For.make
-                     ~lvalue:(Lvalue.of_variable_str_exn "x")
-                     ~init_value:(Expression.int_lit 53)
-                     ~cmp_value:(Expression.int_lit 27)
-                     ~direction:Down_inclusive)
-                ~body:test_body)) ;
+                  { For.Simple.lvalue= Lvalue.of_variable_str_exn "x"
+                  ; init_value= Expression.int_lit 53
+                  ; cmp_value= Expression.int_lit 27
+                  ; direction= Down_inclusive })) ;
       [%expect {| for (x = 53; x >= 27; x--) { x = true; y = false; } |}]
+
+    let%expect_test "infinite for loop" =
+      test
+        Fir.(
+          A.construct Statement.flow
+            Flow_block.(for_loop test_body ~control:(For.make ()))) ;
+      [%expect {| for (; ; ) { x = true; y = false; } |}]
 
     let%expect_test "upwards-inclusive for loop with pointers" =
       test
         Fir.(
           A.construct Statement.flow
             Flow_block.(
-              for_loop
+              for_loop_simple test_body
                 ~control:
-                  (For.make
-                     ~lvalue:
-                       (A.construct Lvalue.deref
-                          (Lvalue.of_variable_str_exn "x"))
-                     ~init_value:(Expression.int_lit 0)
-                     ~cmp_value:(Expression.int_lit 100)
-                     ~direction:Up_inclusive)
-                ~body:test_body)) ;
+                  { For.Simple.lvalue=
+                      A.construct Lvalue.deref
+                        (Lvalue.of_variable_str_exn "x")
+                  ; init_value= Expression.int_lit 0
+                  ; cmp_value= Expression.int_lit 100
+                  ; direction= Up_inclusive })) ;
       [%expect
         {| for (*x = 0; *x <= 100; (*x)++) { x = true; y = false; } |}]
 

@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,14 +10,11 @@
    project root for more information. *)
 
 open Base
+open Import
 
-open struct
-  module F = Act_fuzz
-end
-
-let actions : F.Action.With_default_weight.t list Lazy.t =
+let actions : Fuzz.Action.With_default_weight.t list Lazy.t =
   lazy
-    F.Action.With_default_weight.
+    Fuzz.Action.With_default_weight.
       [ make
           ~action:(module Atomic_cmpxchg.Insert.Int_succeed)
           ~default_weight:30
@@ -68,9 +65,9 @@ let actions : F.Action.With_default_weight.t list Lazy.t =
       ; make ~action:(module Flow_lock.Surround.Atomic) ~default_weight:0
       ; make ~action:(module Flow_lock.Surround.Sync) ~default_weight:0 ]
 
-let action_map : F.Action.With_default_weight.t Map.M(Act_common.Id).t Lazy.t
-    =
+let action_map :
+    Fuzz.Action.With_default_weight.t Map.M(Act_common.Id).t Lazy.t =
   Lazy.(
     actions
-    >>| List.map ~f:(fun a -> (F.Action.With_default_weight.name a, a))
+    >>| List.map ~f:(fun a -> (Fuzz.Action.With_default_weight.name a, a))
     >>| Map.of_alist_exn (module Act_common.Id))
