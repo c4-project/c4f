@@ -73,6 +73,18 @@ val eq : t -> t -> t
 val ne : t -> t -> t
 (** [ne l r] builds a non-equality expression. *)
 
+val lt : t -> t -> t
+(** [lt l r] builds a less-than expression. *)
+
+val le : t -> t -> t
+(** [le l r] builds a less-than-or-equal expression. *)
+
+val ge : t -> t -> t
+(** [ge l r] builds a greater-than-or-equal expression. *)
+
+val gt : t -> t -> t
+(** [gt l r] builds a greater-than expression. *)
+
 (** {2 Logical connectives} *)
 
 val l_and : t -> t -> t
@@ -129,6 +141,21 @@ val falsehood : t
 module Infix : sig
   val ( == ) : t -> t -> t
   (** [x == y] is [eq x y]. *)
+
+  val ( != ) : t -> t -> t
+  (** [x != y] is [ne x y]. *)
+
+  val ( < ) : t -> t -> t
+  (** [x < y] is [lt x y]. *)
+
+  val ( <= ) : t -> t -> t
+  (** [x <= y] is [le x y]. *)
+
+  val ( >= ) : t -> t -> t
+  (** [x >= y] is [ge x y]. *)
+
+  val ( > ) : t -> t -> t
+  (** [x > y] is [gt x y]. *)
 
   val ( + ) : t -> t -> t
   (** [x + y] is [add x y]. *)

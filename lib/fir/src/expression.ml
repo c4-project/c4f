@@ -88,6 +88,14 @@ let eq : t -> t -> t = bop Op.Binary.eq
 
 let ne : t -> t -> t = bop Op.Binary.ne
 
+let lt : t -> t -> t = bop Op.Binary.lt
+
+let le : t -> t -> t = bop Op.Binary.le
+
+let ge : t -> t -> t = bop Op.Binary.ge
+
+let gt : t -> t -> t = bop Op.Binary.gt
+
 let add : t -> t -> t = bop Op.Binary.add
 
 let sub : t -> t -> t = bop Op.Binary.sub
@@ -100,6 +108,16 @@ let l_not : t -> t = uop Op.Unary.L_not
 
 module Infix = struct
   let ( == ) : t -> t -> t = eq
+
+  let ( != ) : t -> t -> t = ne
+
+  let ( < ) : t -> t -> t = lt
+
+  let ( <= ) : t -> t -> t = le
+
+  let ( >= ) : t -> t -> t = ge
+
+  let ( > ) : t -> t -> t = gt
 
   let ( + ) : t -> t -> t = add
 
