@@ -19,6 +19,9 @@ module With_default_weight = struct
   type t = {action: (module Action_types.S); default_weight: int}
   [@@deriving make, fields]
 
+  let ( @-> ) (action : (module Action_types.S)) (default_weight : int) =
+    {action; default_weight}
+
   let name ({action= (module M); _} : t) : Act_common.Id.t = M.name
 
   let available ({action= (module M); _} : t) : Availability.t = M.available

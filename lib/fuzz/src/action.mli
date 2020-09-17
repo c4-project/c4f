@@ -12,7 +12,7 @@
 (** Fuzzer: high-level actions *)
 
 open Base
-module Ac := Act_common
+open Import
 
 (** {1 Types} *)
 
@@ -33,6 +33,9 @@ module With_default_weight : sig
   (** [make ~action ~default_weight] constructs an action-with-default-weight
       from its action module [action] and default weight [default_weight]. *)
 
+  val ( @-> ) : (module Action_types.S) -> int -> t
+  (** [action @-> default_weight] is an infix operator version of [make]. *)
+
   (** {3 Accessors} *)
 
   val action : t -> (module Action_types.S)
@@ -41,7 +44,7 @@ module With_default_weight : sig
   val default_weight : t -> int
   (** [default_weight a] gets [a]'s default weight. *)
 
-  val name : t -> Ac.Id.t
+  val name : t -> Common.Id.t
   (** [name a] is shorthand for [A.name], where [A] is [action a]. *)
 end
 
@@ -83,10 +86,10 @@ module Summary : sig
   (** Summaries may be pretty-printed. *)
   include Pretty_printer.S with type t := t
 
-  val pp_map : t Map.M(Ac.Id).t Fmt.t
+  val pp_map : t Map.M(Common.Id).t Fmt.t
   (** [pp_map f map] pretty-prints a map of summaries [map] on formatter [f]. *)
 
-  val pp_map_terse : t Map.M(Ac.Id).t Fmt.t
+  val pp_map_terse : t Map.M(Common.Id).t Fmt.t
   (** [pp_map_terse f map] is like {!pp_map}, but only prints names and
       weights. *)
 end
@@ -101,7 +104,7 @@ module Pool : sig
   (** [of_weighted_actions actions] tries to make a weighted action pool from
       the action-to-weight association given in [actions]. *)
 
-  val summarise : t -> Summary.t Map.M(Ac.Id).t
+  val summarise : t -> Summary.t Map.M(Common.Id).t
   (** [summarise pool] generates a mapping from action names to summaries of
       each action, including its adjusted weight in the pool. *)
 
@@ -121,9 +124,9 @@ end
 
 (** Makes a basic logging function for an action. *)
 module Make_log (B : sig
-  val name : Ac.Id.t
+  val name : Common.Id.t
 end) : sig
-  val log : Ac.Output.t -> ('a, Formatter.t, unit) format -> 'a
+  val log : Common.Output.t -> ('a, Formatter.t, unit) format -> 'a
 end
 
 (** Makes a surrounding action. *)

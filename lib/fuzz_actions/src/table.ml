@@ -15,55 +15,37 @@ open Import
 let actions : Fuzz.Action.With_default_weight.t list Lazy.t =
   lazy
     Fuzz.Action.With_default_weight.
-      [ make
-          ~action:(module Atomic_cmpxchg.Insert.Int_succeed)
-          ~default_weight:30
-      ; make ~action:(module Atomic_store.Insert.Int_dead) ~default_weight:20
-      ; make
-          ~action:(module Atomic_store.Insert.Int_normal)
-          ~default_weight:20
-      ; make
-          ~action:(module Atomic_store.Insert.Int_redundant)
-          ~default_weight:15
-      ; make
-          ~action:(module Atomic_store.Transform.Xchgify)
-          ~default_weight:15
-      ; make ~action:(module Atomic_fetch.Insert.Int_dead) ~default_weight:20
-      ; make
-          ~action:(module Atomic_fetch.Insert.Int_redundant)
-          ~default_weight:20
-      ; make ~action:(module Flow_dead.Insert.Early_out) ~default_weight:20
-      ; make ~action:(module Flow_dead.Insert.Goto) ~default_weight:20
-      ; make ~action:(module Flow_if.Surround.Tautology) ~default_weight:15
-      ; make ~action:(module Flow_if.Surround.Duplicate) ~default_weight:15
-      ; make ~action:(module Flow_if.Transform.Invert) ~default_weight:10
-      ; make ~action:(module Flow_loop.Insert.While_false) ~default_weight:15
-      ; make ~action:(module Flow_loop.Surround.Do_dead) ~default_weight:10
-      ; make ~action:(module Flow_loop.Surround.Do_false) ~default_weight:15
-      ; make
-          ~action:(module Flow_loop.Surround.For.Kv_once)
-          ~default_weight:15
-      ; make
-          ~action:(module Flow_loop.Surround.For.Simple)
-          ~default_weight:15
-      ; make
-          ~action:(module Flow_loop.Surround.While_dead)
-          ~default_weight:10
-      ; make ~action:(module Mem.Fence) ~default_weight:15
-      ; make ~action:(module Mem.Strengthen) ~default_weight:15
-      ; make ~action:(module Program.Make_empty) ~default_weight:10
-      ; make ~action:(module Program.Label) ~default_weight:15
-      ; make ~action:(module Var.Make) ~default_weight:20
-      ; make ~action:(module Var.Volatile) ~default_weight:25
-      ; make ~action:(module Var_assign.Insert.Int_dead) ~default_weight:20
-      ; make ~action:(module Var_assign.Insert.Int_normal) ~default_weight:20
-      ; make
-          ~action:(module Var_assign.Insert.Int_redundant)
-          ~default_weight:15
+      [ (module Atomic_cmpxchg.Insert.Int_succeed) @-> 30
+      ; (module Atomic_store.Insert.Int_dead) @-> 20
+      ; (module Atomic_store.Insert.Int_normal) @-> 20
+      ; (module Atomic_store.Insert.Int_redundant) @-> 15
+      ; (module Atomic_store.Transform.Xchgify) @-> 15
+      ; (module Atomic_fetch.Insert.Int_dead) @-> 20
+      ; (module Atomic_fetch.Insert.Int_redundant) @-> 20
+      ; (module Flow_dead.Insert.Early_out) @-> 20
+      ; (module Flow_dead.Insert.Goto) @-> 20
+      ; (module Flow_if.Surround.Tautology) @-> 15
+      ; (module Flow_if.Surround.Duplicate) @-> 15
+      ; (module Flow_if.Transform.Invert) @-> 10
+      ; (module Flow_loop.Insert.While_false) @-> 15
+      ; (module Flow_loop.Surround.Do_dead) @-> 10
+      ; (module Flow_loop.Surround.Do_false) @-> 15
+      ; (module Flow_loop.Surround.For.Kv_once) @-> 15
+      ; (module Flow_loop.Surround.For.Simple) @-> 15
+      ; (module Flow_loop.Surround.While_dead) @-> 10
+      ; (module Mem.Fence) @-> 15
+      ; (module Mem.Strengthen) @-> 15
+      ; (module Program.Make_empty) @-> 10
+      ; (module Program.Label) @-> 15
+      ; (module Var.Make) @-> 20
+      ; (module Var.Volatile) @-> 25
+      ; (module Var_assign.Insert.Int_dead) @-> 20
+      ; (module Var_assign.Insert.Int_normal) @-> 20
+      ; (module Var_assign.Insert.Int_redundant) @-> 15
         (* These are disabled by default because they induce transactions.
            TODO(@MattWindsor91): gate them in another way. *)
-      ; make ~action:(module Flow_lock.Surround.Atomic) ~default_weight:0
-      ; make ~action:(module Flow_lock.Surround.Sync) ~default_weight:0 ]
+      ; (module Flow_lock.Surround.Atomic) @-> 0
+      ; (module Flow_lock.Surround.Sync) @-> 0 ]
 
 let action_map :
     Fuzz.Action.With_default_weight.t Map.M(Act_common.Id).t Lazy.t =
