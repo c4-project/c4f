@@ -63,9 +63,14 @@ val not_in_execute_multi : t -> t
     can execute multiple times. *)
 
 val transaction_safe : t -> t
-(** [transaction_safe] requires the path to reach a statement that is
-    'transaction safe'; that is, it can appear inside an 'atomic' block. This
-    forbids particular forms of statement and expression. *)
+(** [transaction_safe filter] adds to [filter] the restriction that any path
+    must reach statements that are 'transaction safe'; that is, it can appear
+    inside an 'atomic' block. This forbids particular forms of statement and
+    expression. *)
+
+val live_loop_surround : t -> t
+(** [live_loop_surround filter] adds to [filter] the restrictions that should
+    apply on any attempt to surround statements with a live-code loop. *)
 
 (** {2 End checks} *)
 

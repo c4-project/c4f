@@ -99,6 +99,21 @@ let transaction_safe (filter : t) : t =
        ~check:(Has_no_expressions_of_class [Atomic None])
        filter
 
+let live_loop_surround (filter : t) : t =
+  (* Don't surround breaks and continues in live code; doing so causes them
+     to affect the new surrounding loop, which is a semantic change.
+
+     Note that this does NOT forbid loop-unsafe statements when surrounding;
+     this is because some loops are known to execute once only, and so are ok
+     to use with such statements. *)
+  require_end_check filter
+    ~check:
+      (Stm_class
+         ( Has_not_any
+         , Fir.Statement_class.
+             [ Prim (Some (Early_out (Some Break)))
+             ; Prim (Some (Early_out (Some Continue))) ] ))
+
 let in_threads_only (filter : t) ~(threads : Set.M(Int).t) : t =
   let threads' =
     Option.value_map filter.threads ~f:(Set.inter threads) ~default:threads
