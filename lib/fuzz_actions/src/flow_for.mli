@@ -28,14 +28,29 @@ module Payload : sig
   end
 
   module Kv : sig
-    (** Type of payloads for known-value for-loop actions. *)
+    (** Type of payloads for known-value for-loop actions.
+
+        This payload doesn't take a path; we currently use
+        {!Fuzz.Payload_impl.Insertion.t} with it, even in surround
+        situations. (This situation will change.) *)
     type t =
-      { lc: Counter.t
-      ; kv_val: Fir.Constant.t
-      ; kv_expr: Fir.Expression.t
-      ; where: Fuzz.Path.Flagged.t }
+      {lc: Counter.t; kv_val: Fir.Constant.t; kv_expr: Fir.Expression.t}
     [@@deriving sexp]
+
+    module type S_action =
+      Fuzz.Action_types.S
+        with type Payload.t = t Fuzz.Payload_impl.Insertion.t
   end
+end
+
+(** {2 Insert actions}
+
+    These all insert loops with dead-code bodies, since every other loop can
+    be expressed as a surround. *)
+module Insert : sig
+  (** Action that inserts for-loops guaranteed statically to be dead, by use
+      of a known value comparison that will always fail. *)
+  module Kv_never : Payload.Kv.S_action
 end
 
 (** {2 Surround actions} *)
@@ -46,6 +61,7 @@ module Surround : sig
     Act_fuzz.Action_types.S with type Payload.t = Payload.Simple.t
 
   (** Action that surrounds things with for-loops guaranteed statically to
-      evaluate only once, by use of a known value *)
-  module Kv_once : Act_fuzz.Action_types.S with type Payload.t = Payload.Kv.t
+      evaluate only once, by use of a known value comparison that will only
+      hold in the first iteration. *)
+  module Kv_once : Payload.Kv.S_action
 end

@@ -157,6 +157,11 @@ flow.lock.surround.sync:
   Summary:
     This action removes a sublist of statements from the program, replacing
     them with a synchronised block containing those statements.
+flow.loop.insert.for.kv-never:
+  Weight: 15x
+  Summary:
+    Introduces a loop that initialises its (fresh) counter to the known value
+    of an existing variable and compares it in such a way as to be dead-code.
 flow.loop.insert.while.false:
   Weight: 15x
   Summary:
@@ -178,8 +183,8 @@ flow.loop.surround.do.false:
     
     The condition of the `do... while` loop is statically guaranteed to be
     false, meaning the loop will iterate only once.
-flow.loop.surround.for.once-kv:
-  Weight: 15x
+flow.loop.surround.for.kv-once:
+  Weight: 10x
   Summary:
     This action removes a sublist of statements from the program, replacing
     them with for-loops containing those statements.

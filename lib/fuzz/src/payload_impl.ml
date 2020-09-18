@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -12,6 +12,8 @@
 open Base
 
 module Insertion = struct
+  (* TODO(@MattWindsor91): generalise this payload *)
+
   type 'a t = {to_insert: 'a; where: Path.Flagged.t}
   [@@deriving make, fields, sexp]
 
