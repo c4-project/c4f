@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -11,18 +11,25 @@
 
 (** Fuzzer actions that concern miscellaneous control flows in dead code. *)
 
+open Import
+
 (** Actions that insert dead-control flows. *)
 module Insert : sig
   (** A fuzzer action that inserts early-out (break, return, etc) statements
       into dead-code. *)
   module Early_out :
-    Act_fuzz.Action_types.S
-      with type Payload.t =
-            Act_fir.Early_out.t Act_fuzz.Payload_impl.Pathed.t
+    Fuzz.Action_types.S
+      with type Payload.t = Fir.Early_out.t Fuzz.Payload_impl.Pathed.t
+
+  (** A fuzzer action that inserts breaks or continues at the end of loops,
+      marking statements below that early-out as dead code *)
+  module Early_out_loop_end :
+    Fuzz.Action_types.S
+      with type Payload.t = Fir.Early_out.t Fuzz.Payload_impl.Pathed.t
 
   (** A fuzzer action that inserts goto statements to random labels into
       dead-code. *)
   module Goto :
-    Act_fuzz.Action_types.S
-      with type Payload.t = Act_common.C_id.t Act_fuzz.Payload_impl.Pathed.t
+    Fuzz.Action_types.S
+      with type Payload.t = Common.C_id.t Fuzz.Payload_impl.Pathed.t
 end

@@ -113,8 +113,13 @@ atomic.store.transform.xchgify:
 flow.dead.insert.early-out:
   Weight: 20x
   Summary:
-    Inserts a valid 'early-out' statement (break or return) into a random
-    dead-code location.
+    Inserts a valid 'early-out' statement (break, continue, or return) into a
+    random dead-code location.
+flow.dead.insert.early-out-loop-end:
+  Weight: 20x
+  Summary:
+    Inserts a continue (or break, if semantically appropriate) onto the end
+    of a loop, and marks the area afterwards as dead code.
 flow.dead.insert.goto:
   Weight: 20x
   Summary:

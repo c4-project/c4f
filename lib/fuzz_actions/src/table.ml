@@ -23,6 +23,7 @@ let actions : Fuzz.Action.With_default_weight.t list Lazy.t =
       ; (module Atomic_fetch.Insert.Int_dead) @-> 20
       ; (module Atomic_fetch.Insert.Int_redundant) @-> 20
       ; (module Flow_dead.Insert.Early_out) @-> 20
+      ; (module Flow_dead.Insert.Early_out_loop_end) @-> 20
       ; (module Flow_dead.Insert.Goto) @-> 20
       ; (module Flow_if.Surround.Tautology) @-> 15
       ; (module Flow_if.Surround.Duplicate) @-> 15

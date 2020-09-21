@@ -16,13 +16,23 @@ let prefix_name (rest : Common.Id.t) : Common.Id.t =
   Common.Id.("flow" @: "dead" @: rest)
 
 module Insert = struct
-  let early_out_name =
-    prefix_name Common.Id.("insert" @: "early-out" @: empty)
+  let prefix_name (rest : Common.Id.t) : Common.Id.t =
+    prefix_name Common.Id.("insert" @: rest)
 
-  let goto_name = prefix_name Common.Id.("insert" @: "goto" @: empty)
+  let goto_name = prefix_name Common.Id.("goto" @: empty)
 
   module Early_out_payload = struct
     type t = Fir.Early_out.t Fuzz.Payload_impl.Pathed.t [@@deriving sexp]
+  end
+
+  module Early_out :
+    Fuzz.Action_types.S with type Payload.t = Early_out_payload.t = struct
+    let name = prefix_name Common.Id.("early-out" @: empty)
+
+    let readme () =
+      Act_utils.My_string.format_for_readme
+        {| Inserts a valid 'early-out' statement (break, continue, or return)
+           into a random dead-code location. |}
 
     let base_path_filter : Fuzz.Path_filter.t =
       Fuzz.Path_filter.require_flag In_dead_code
@@ -30,45 +40,36 @@ module Insert = struct
     let path_filter (_ : Fuzz.Availability.Context.t) : Fuzz.Path_filter.t =
       base_path_filter
 
-    let kind_pred ({flags; _} : Fuzz.Path.Flagged.t) :
-        Fir.Early_out.t -> bool =
-      if Set.mem flags In_loop then Fn.const true
-      else Fn.non Fir.Early_out.in_loop_only
-
-    let quickcheck_early_out (path : Fuzz.Path.Flagged.t) :
-        Fir.Early_out.t Base_quickcheck.Generator.t =
-      Base_quickcheck.Generator.(
-        filter Fir.Early_out.quickcheck_generator ~f:(kind_pred path))
-
-    let gen : t Fuzz.Payload_gen.t =
-      Fuzz.Payload_impl.Pathed.gen Insert path_filter
-        (Fn.compose Fuzz.Payload_gen.lift_quickcheck quickcheck_early_out)
-  end
-
-  module Early_out :
-    Fuzz.Action_types.S with type Payload.t = Early_out_payload.t = struct
-    let name = early_out_name
-
-    let readme () =
-      Act_utils.My_string.format_for_readme
-        {| Inserts a valid 'early-out' statement (break or return) into a random
-         dead-code location. |}
-
     let available : Fuzz.Availability.t =
-      Fuzz.Availability.is_filter_constructible
-        Early_out_payload.base_path_filter ~kind:Insert
+      Fuzz.Availability.is_filter_constructible base_path_filter ~kind:Insert
 
-    module Payload = Early_out_payload
+    module Payload = struct
+      include Early_out_payload
+
+      let kind_pred ({flags; _} : Fuzz.Path.Flagged.t) :
+          Fir.Early_out.t -> bool =
+        if Set.mem flags In_loop then Fn.const true
+        else Fn.non Fir.Early_out.in_loop_only
+
+      let quickcheck_early_out (path : Fuzz.Path.Flagged.t) :
+          Fir.Early_out.t Base_quickcheck.Generator.t =
+        Base_quickcheck.Generator.(
+          filter Fir.Early_out.quickcheck_generator ~f:(kind_pred path))
+
+      let gen : t Fuzz.Payload_gen.t =
+        Fuzz.Payload_impl.Pathed.gen Insert path_filter
+          (Fn.compose Fuzz.Payload_gen.lift_quickcheck quickcheck_early_out)
+    end
 
     (* In generation, we pick the path first and then work out which
        early-out to apply; when checking the path, we go backwards and assert
        that the path must meet the filtering needs of the early-out. *)
 
     let kind_filter (kind : Fir.Early_out.t) : Fuzz.Path_filter.t =
-      if Fir.Early_out.in_loop_only kind then
-        Fuzz.Path_filter.(
-          require_flag In_loop + Early_out_payload.base_path_filter)
-      else Early_out_payload.base_path_filter
+      Fuzz.Path_filter.(
+        add_if base_path_filter
+          ~when_:(Fir.Early_out.in_loop_only kind)
+          ~add:(require_flag In_loop))
 
     let make_early_out (kind : Fir.Early_out.t) : Fuzz.Subject.Statement.t =
       Fuzz.Subject.Statement.make_generated_prim
@@ -79,6 +80,84 @@ module Insert = struct
       Fuzz.Payload_impl.Pathed.insert
         ~filter:(kind_filter payload.payload)
         payload ~test ~f:make_early_out
+  end
+
+  module Early_out_loop_end :
+    Fuzz.Action_types.S with type Payload.t = Early_out_payload.t = struct
+    let name = prefix_name Common.Id.("early-out-loop-end" @: empty)
+
+    let base_path_filter : Fuzz.Path_filter.t =
+      Fuzz.Path_filter.(require_flag In_loop + anchor Bottom)
+
+    let readme () =
+      Act_utils.My_string.format_for_readme
+        {| Inserts a continue (or break, if semantically appropriate) onto the
+           end of a loop, and marks the area afterwards as dead code. |}
+
+    let available : Fuzz.Availability.t =
+      Fuzz.Availability.is_filter_constructible base_path_filter ~kind:Insert
+
+    module Payload = struct
+      include Early_out_payload
+
+      let kind_pred ({flags; _} : Fuzz.Path.Flagged.t) :
+          Fir.Early_out.t -> bool =
+        (* We can only break at the end of an arbitrary loop if we know that
+           it can only be executed once, and it's never safe to return from
+           an arbitrary part of live code.
+
+           TODO(@MattWindsor91): contemplate a top-level early-out that does
+           what this action does, but inserts returns. *)
+        function
+        | Continue ->
+            true
+        | Break ->
+            not (Set.mem flags In_execute_multi)
+        | Return ->
+            false
+
+      let quickcheck_early_out (path : Fuzz.Path.Flagged.t) :
+          Fir.Early_out.t Base_quickcheck.Generator.t =
+        Base_quickcheck.Generator.(
+          filter Fir.Early_out.quickcheck_generator ~f:(kind_pred path))
+
+      let path_filter (_ : Fuzz.Availability.Context.t) : Fuzz.Path_filter.t
+          =
+        base_path_filter
+
+      let gen : t Fuzz.Payload_gen.t =
+        Fuzz.Payload_impl.Pathed.gen Insert path_filter
+          (Fn.compose Fuzz.Payload_gen.lift_quickcheck quickcheck_early_out)
+    end
+
+    (* As with Early_out, we're working backwards here! *)
+
+    let kind_filter (kind : Fir.Early_out.t) : Fuzz.Path_filter.t =
+      Fuzz.Path_filter.(
+        add_if base_path_filter
+          ~when_:(Fir.Early_out.equal kind Break)
+          ~add:(forbid_flag In_execute_multi))
+
+    (* TODO(@MattWindsor91): deduplicate with above. *)
+
+    let make_early_out (kind : Fir.Early_out.t) : Fuzz.Subject.Statement.t =
+      Fuzz.Subject.Statement.make_generated_prim
+        (Accessor.construct Fir.Prim_statement.early_out kind)
+
+    let make_contraption (kind : Fir.Early_out.t) :
+        Fuzz.Subject.Statement.t list =
+      [ make_early_out kind
+      ; Accessor.construct Fir.Statement.flow
+          (Fir.Flow_block.implicit (Fuzz.Subject.Block.make_dead_code ())) ]
+
+    let run (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
+        Fuzz.Subject.Test.t Fuzz.State.Monad.t =
+      (* We can't use Pathed.insert, because we're inserting multiple
+         statements. *)
+      Fuzz.State.Monad.Monadic.return
+        (Fuzz.Path_consumers.consume_with_flags test ~path:payload.where
+           ~filter:(kind_filter payload.payload)
+           ~action:(Insert (make_contraption payload.payload)))
   end
 
   module Goto :
