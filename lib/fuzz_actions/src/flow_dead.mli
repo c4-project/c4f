@@ -18,12 +18,11 @@ module Insert : sig
   module Early_out :
     Act_fuzz.Action_types.S
       with type Payload.t =
-            Act_fir.Early_out.t Act_fuzz.Payload_impl.Insertion.t
+            Act_fir.Early_out.t Act_fuzz.Payload_impl.Pathed.t
 
   (** A fuzzer action that inserts goto statements to random labels into
       dead-code. *)
   module Goto :
     Act_fuzz.Action_types.S
-      with type Payload.t =
-            Act_common.C_id.t Act_fuzz.Payload_impl.Insertion.t
+      with type Payload.t = Act_common.C_id.t Act_fuzz.Payload_impl.Pathed.t
 end

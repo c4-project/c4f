@@ -26,7 +26,7 @@ module Insert = struct
 
   module Int_succeed :
     Fuzz.Action_types.S
-      with type Payload.t = Inner_payload.t Fuzz.Payload_impl.Insertion.t =
+      with type Payload.t = Inner_payload.t Fuzz.Payload_impl.Pathed.t =
   Storelike.Make (struct
     let name =
       prefix_name Common.Id.("insert" @: "int" @: "succeed" @: empty)

@@ -22,24 +22,22 @@ module Payload : sig
 
   module Simple : sig
     (** Type of payloads for simple for-loop actions. *)
-    type t =
-      {lc: Counter.t; up_to: Fir.Constant.t; where: Fuzz.Path.Flagged.t}
-    [@@deriving sexp]
+    type t = {lc: Counter.t; up_to: Fir.Constant.t} [@@deriving sexp]
+
+    (** Shorthand for types of actions that take this payload. *)
+    module type S_action =
+      Fuzz.Action_types.S with type Payload.t = t Fuzz.Payload_impl.Pathed.t
   end
 
   module Kv : sig
-    (** Type of payloads for known-value for-loop actions.
-
-        This payload doesn't take a path; we currently use
-        {!Fuzz.Payload_impl.Insertion.t} with it, even in surround
-        situations. (This situation will change.) *)
+    (** Type of payloads for known-value for-loop actions. *)
     type t =
       {lc: Counter.t; kv_val: Fir.Constant.t; kv_expr: Fir.Expression.t}
     [@@deriving sexp]
 
+    (** Shorthand for types of actions that take this payload. *)
     module type S_action =
-      Fuzz.Action_types.S
-        with type Payload.t = t Fuzz.Payload_impl.Insertion.t
+      Fuzz.Action_types.S with type Payload.t = t Fuzz.Payload_impl.Pathed.t
   end
 end
 
@@ -57,8 +55,7 @@ end
 module Surround : sig
   (** Action that surrounds things with for-loops with a small, constant
       number of iterations. *)
-  module Simple :
-    Act_fuzz.Action_types.S with type Payload.t = Payload.Simple.t
+  module Simple : Payload.Simple.S_action
 
   (** Action that surrounds things with for-loops guaranteed statically to
       evaluate only once, by use of a known value comparison that will only

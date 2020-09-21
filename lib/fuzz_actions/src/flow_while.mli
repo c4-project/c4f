@@ -20,8 +20,7 @@ module Insert : sig
 
       The expression generated forms the condition for the loop. *)
   module type S =
-    Fuzz.Action_types.S
-      with type Payload.t = Fir.Expression.t Fuzz.Payload_impl.Insertion.t
+    Fuzz.Action_types.S with type Payload.t = Fuzz.Payload_impl.Cond_pathed.t
 
   (** This action inserts a while loop with a falsy expression in a random
       statement position; its body begins empty but is marked as dead-code. *)
@@ -35,8 +34,7 @@ module Surround : sig
 
   (** Module type of surround actions. *)
   module type S =
-    Fuzz.Action_types.S
-      with type Payload.t = Fuzz.Payload_impl.Cond_surround.t
+    Fuzz.Action_types.S with type Payload.t = Fuzz.Payload_impl.Cond_pathed.t
 
   (** This action removes a sublist of statements from the program, replacing
       them with a `do... while` statement containing some transformation of

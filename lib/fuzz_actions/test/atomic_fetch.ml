@@ -43,7 +43,7 @@ let%test_module "fetch.make.int.dead" =
       Lazy.Let_syntax.(
         let%bind to_insert = Test_data.fadd in
         let%map where = path in
-        F.Payload_impl.Insertion.make ~to_insert ~where)
+        F.Payload_impl.Pathed.make to_insert ~where)
 
     let test_action : F.Subject.Test.t F.State.Monad.t =
       F.State.Monad.(
@@ -114,7 +114,7 @@ let%test_module "fetch.make.int.redundant" =
       Lazy.Let_syntax.(
         let%bind to_insert = Test_data.fadd_redundant in
         let%map where = path in
-        F.Payload_impl.Insertion.make ~to_insert ~where)
+        F.Payload_impl.Pathed.make to_insert ~where)
 
     let test_action : F.Subject.Test.t F.State.Monad.t =
       F.State.Monad.(

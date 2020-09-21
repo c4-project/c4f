@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,12 +10,11 @@
    project root for more information. *)
 
 open Base
+open Import
 
-open struct
-  module Src = Act_fuzz_actions
-  module F = Act_fuzz
-  module FT = Act_fuzz_test
-end
+let lift (path : Fuzz.Path.Flagged.t Lazy.t) :
+    unit Fuzz.Payload_impl.Pathed.t =
+  Fuzz.Payload_impl.Pathed.make () ~where:(Lazy.force path)
 
 let%test_module "Surround.Sync" =
   ( module struct
@@ -24,17 +23,19 @@ let%test_module "Surround.Sync" =
     (* TODO(@MattWindsor91): sort out the discrepancy between the subject
        example and var map. *)
 
-    let state : F.State.t =
-      F.State.make ~vars:(Lazy.force FT.Var.Test_data.test_map) ()
+    let state : Fuzz.State.t =
+      Fuzz.State.make ~vars:(Lazy.force Fuzz_test.Var.Test_data.test_map) ()
 
-    let test : F.Subject.Test.t = Lazy.force FT.Subject.Test_data.test
+    let test : Fuzz.Subject.Test.t =
+      Lazy.force Fuzz_test.Subject.Test_data.test
 
     let action =
       Surround.run test
-        ~payload:(Lazy.force FT.Subject.Test_data.Path.surround_atomic)
+        ~payload:(lift Fuzz_test.Subject.Test_data.Path.surround_atomic)
 
     let%expect_test "resulting AST" =
-      FT.Action.Test_utils.run_and_dump_test action ~initial_state:state ;
+      Fuzz_test.Action.Test_utils.run_and_dump_test action
+        ~initial_state:state ;
       [%expect
         {|
           void
@@ -75,17 +76,19 @@ let%test_module "Surround.Atomic" =
     (* TODO(@MattWindsor91): sort out the discrepancy between the subject
        example and var map. *)
 
-    let state : F.State.t =
-      F.State.make ~vars:(Lazy.force FT.Var.Test_data.test_map) ()
+    let state : Fuzz.State.t =
+      Fuzz.State.make ~vars:(Lazy.force Fuzz_test.Var.Test_data.test_map) ()
 
-    let test : F.Subject.Test.t = Lazy.force FT.Subject.Test_data.test
+    let test : Fuzz.Subject.Test.t =
+      Lazy.force Fuzz_test.Subject.Test_data.test
 
     let action =
       Surround.run test
-        ~payload:(Lazy.force FT.Subject.Test_data.Path.surround_txsafe)
+        ~payload:(lift Fuzz_test.Subject.Test_data.Path.surround_txsafe)
 
     let%expect_test "resulting AST" =
-      FT.Action.Test_utils.run_and_dump_test action ~initial_state:state ;
+      Fuzz_test.Action.Test_utils.run_and_dump_test action
+        ~initial_state:state ;
       [%expect
         {|
           void

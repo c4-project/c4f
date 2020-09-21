@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,14 +10,10 @@
    project root for more information. *)
 
 open Base
+open Import
 
-open struct
-  module A = Accessor_base
-  module F = Act_fuzz
-end
-
-module Make_empty : F.Action_types.S with type Payload.t = unit = struct
-  let name = Act_common.Id.of_string "program.make.empty"
+module Make_empty : Fuzz.Action_types.S with type Payload.t = unit = struct
+  let name = Common.Id.of_string "program.make.empty"
 
   let readme () =
     Act_utils.My_string.format_for_readme
@@ -27,61 +23,62 @@ module Make_empty : F.Action_types.S with type Payload.t = unit = struct
     with other actions that construct statements and control flows.
     |}
 
-  module Payload = F.Payload_impl.None
+  module Payload = Fuzz.Payload_impl.None
 
-  let available : F.Availability.t =
-    F.Availability.M.Inner.lift (fun ctx ->
-        let subject = F.Availability.Context.subject ctx in
-        let param_map = F.Availability.Context.param_map ctx in
+  let available : Fuzz.Availability.t =
+    Fuzz.Availability.M.Inner.lift (fun ctx ->
+        let subject = Fuzz.Availability.Context.subject ctx in
+        let param_map = Fuzz.Availability.Context.param_map ctx in
         Or_error.Let_syntax.(
-          let%map cap = F.Param_map.get_thread_cap param_map in
+          let%map cap = Fuzz.Param_map.get_thread_cap param_map in
           List.length (Act_litmus.Test.Raw.threads subject) < cap))
 
-  let run (subject : F.Subject.Test.t) ~(payload : Payload.t) :
-      F.Subject.Test.t F.State.Monad.t =
+  let run (subject : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
+      Fuzz.Subject.Test.t Fuzz.State.Monad.t =
     ignore payload ;
-    F.State.Monad.return (F.Subject.Test.add_new_thread subject)
+    Fuzz.State.Monad.return (Fuzz.Subject.Test.add_new_thread subject)
 end
 
 module Label :
-  F.Action_types.S
-    with type Payload.t = Act_common.C_id.t F.Payload_impl.Insertion.t =
-struct
-  let name = Act_common.Id.of_string "program.label"
+  Fuzz.Action_types.S
+    with type Payload.t = Common.C_id.t Fuzz.Payload_impl.Pathed.t = struct
+  let name = Common.Id.of_string "program.label"
 
-  let available : F.Availability.t = F.Availability.has_threads
+  let available : Fuzz.Availability.t = Fuzz.Availability.has_threads
 
   let readme () =
     Act_utils.My_string.format_for_readme
       {| Inserts a new, random label into the program. |}
 
-  module Payload = F.Payload_impl.Insertion.Make (struct
-    type t = Act_common.C_id.t [@@deriving sexp]
+  module Payload = struct
+    type t = Common.C_id.t Fuzz.Payload_impl.Pathed.t [@@deriving sexp]
 
-    let path_filter _ = F.Path_filter.empty
+    let path_filter _ = Fuzz.Path_filter.empty
 
-    let gen (_ : F.Path.Flagged.t) : t F.Payload_gen.t =
-      F.Payload_gen.(
-        let* labels = lift (Fn.compose F.State.labels Context.state) in
-        lift_quickcheck (F.Label.gen_fresh labels))
-  end)
+    let gen' (_ : Fuzz.Path.Flagged.t) : Common.C_id.t Fuzz.Payload_gen.t =
+      Fuzz.Payload_gen.(
+        let* labels = lift (Fn.compose Fuzz.State.labels Context.state) in
+        lift_quickcheck (Fuzz.Label.gen_fresh labels))
 
-  let run (subject : F.Subject.Test.t) ~(payload : Payload.t) :
-      F.Subject.Test.t F.State.Monad.t =
-    let path = F.Payload_impl.Insertion.where payload in
-    let name = F.Payload_impl.Insertion.to_insert payload in
-    let tid = F.Path.tid path.path in
-    let lid = Act_common.Litmus_id.local tid name in
+    let gen = Fuzz.Payload_impl.Pathed.gen Insert path_filter gen'
+  end
+
+  let run (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
+      Fuzz.Subject.Test.t Fuzz.State.Monad.t =
+    let path = payload.where in
+    let name = payload.payload in
+    let tid = Fuzz.Path.tid path.path in
+    let lid = Common.Litmus_id.local tid name in
     let label_stm =
       Act_fir.(
         name
-        |> A.construct Prim_statement.label
-        |> F.Subject.Statement.make_generated_prim)
+        |> Accessor.construct Prim_statement.label
+        |> Fuzz.Subject.Statement.make_generated_prim)
     in
-    F.State.Monad.(
+    Fuzz.State.Monad.(
       Let_syntax.(
         let%bind () = register_label lid in
         Monadic.return
-          (F.Path_consumers.consume_with_flags subject ~path
+          (Fuzz.Path_consumers.consume_with_flags test ~path
              ~action:(Insert [label_stm]))))
 end

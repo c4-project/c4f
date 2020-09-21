@@ -126,9 +126,8 @@ flow.dead.insert.goto:
 flow.if.surround.duplicate:
   Weight: 15x
   Summary:
-    Removes a sublist of statements from the program, replacing them with an
-    `if` statement containing some transformation of the removed
-    statements.
+    This action removes a sublist of statements from the program, replacing
+    them with if statements containing those statements.
     
     This version of the action generates an arbitrary condition, and
     initialises both branches of the `if` statement with the original
@@ -137,9 +136,8 @@ flow.if.surround.duplicate:
 flow.if.surround.tautology:
   Weight: 15x
   Summary:
-    Removes a sublist of statements from the program, replacing them with an
-    `if` statement containing some transformation of the removed
-    statements.
+    This action removes a sublist of statements from the program, replacing
+    them with if statements containing those statements.
     
     This version of the action generates an always-true condition, puts the
     original statements in the true block, and marks the false block as

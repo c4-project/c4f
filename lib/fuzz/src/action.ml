@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -156,22 +156,30 @@ module Make_surround (Basic : sig
   val readme_suffix : string
 
   module Payload : sig
-    include Payload_types.S
+    type t [@@deriving sexp]
 
-    val where : t -> Path.Flagged.t
+    val gen : Path.Flagged.t -> t Payload_gen.t
 
     val src_exprs : t -> Act_fir.Expression.t list
   end
 
   val available : Availability.t
 
+  val path_filter : Availability.Context.t -> Path_filter.t
+
+  val checkable_path_filter : Path_filter.t
+
   val run_pre :
     Subject.Test.t -> payload:Payload.t -> Subject.Test.t State.Monad.t
 
   val wrap :
     Subject.Statement.t list -> payload:Payload.t -> Subject.Statement.t
-end) : Action_types.S with type Payload.t = Basic.Payload.t = struct
-  include Basic
+end) :
+  Action_types.S with type Payload.t = Basic.Payload.t Payload_impl.Pathed.t =
+struct
+  let name = Basic.name
+
+  let available = Basic.available
 
   let readme () =
     Act_utils.My_string.format_for_readme
@@ -181,32 +189,30 @@ end) : Action_types.S with type Payload.t = Basic.Payload.t = struct
          ; Basic.surround_with
          ; {| containing those statements. |}
          ; "\n\n"
-         ; readme_suffix ])
+         ; Basic.readme_suffix ])
 
-  (** [add_cond_dependencies payload] marks every variable in
-      [dep_exprs payload] as having a read dependency, using [where payload]
-      to resolve the scope and dead-code status.
+  module Payload = struct
+    type t = Basic.Payload.t Payload_impl.Pathed.t [@@deriving sexp]
 
-      This is a considerable over-approximation of the actual needed
-      dependencies. *)
-  let add_dependencies (payload : Payload.t) : unit State.Monad.t =
-    let path = Payload.where payload in
-    let src_exprs = Payload.src_exprs payload in
-    State.Monad.add_expression_dependencies_at_path src_exprs ~path
+    let gen =
+      Payload_impl.Pathed.gen Transform_list Basic.path_filter
+        Basic.Payload.gen
+  end
+
+  let add_dependencies ({where; payload} : Payload.t) : unit State.Monad.t =
+    let src_exprs = Basic.Payload.src_exprs payload in
+    State.Monad.add_expression_dependencies_at_path src_exprs ~path:where
 
   let run (test : Subject.Test.t) ~(payload : Payload.t) :
       Subject.Test.t State.Monad.t =
     State.Monad.(
       Let_syntax.(
         let%bind () = add_dependencies payload in
-        let%bind test' = Basic.run_pre test ~payload in
-        Monadic.return
-          (* TODO(@MattWindsor91): work out how to get the path filter over
-             here *)
-          (Path_consumers.consume_with_flags test'
-             ~path:(Payload.where payload)
-             ~action:
-               (Transform_list (fun test -> Ok [Basic.wrap test ~payload])))))
+        let%bind test' = Basic.run_pre test ~payload:payload.payload in
+        (* TODO(@MattWindsor91): work out how to get the full path filter
+           over here *)
+        Payload_impl.Pathed.surround ~filter:Basic.checkable_path_filter
+          payload ~test:test' ~f:(fun payload -> Basic.wrap ~payload)))
 end
 
 module Make_log (B : sig

@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -23,7 +23,7 @@ module Surround : sig
   (** Each if statement generator has this type. *)
   module type S =
     Act_fuzz.Action_types.S
-      with type Payload.t = Act_fuzz.Payload_impl.Cond_surround.t
+      with type Payload.t = Act_fuzz.Payload_impl.Cond_pathed.t
 
   (** Generates if statements where the expression is arbitrary and both
       blocks contain the original statement span. *)

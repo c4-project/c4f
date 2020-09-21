@@ -16,8 +16,7 @@ module Insert : sig
   (** Shorthand type for assignment insertion actions. *)
   module type S =
     Act_fuzz.Action_types.S
-      with type Payload.t =
-            Act_fir.Assign.t Act_fuzz.Payload_impl.Insertion.t
+      with type Payload.t = Act_fir.Assign.t Act_fuzz.Payload_impl.Pathed.t
 
   (** [Int_normal] is a fuzzer action that generates a random int assignment. *)
   module Int_normal : S

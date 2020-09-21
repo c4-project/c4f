@@ -15,7 +15,7 @@
   (payload ((basic_type int) (initial_value (Int 13)) (var cP))))
  ((name (atomic store insert int normal))
   (payload
-   ((to_insert
+   ((payload
      ((src (Constant (Int 59774975))) (dst (Lvalue (Variable Is9Qk0n4Rhat)))
       (mo memory_order_relaxed)))
     (where ((path (In_thread 1 (In_stms (Insert 2))))

@@ -18,7 +18,7 @@ let prefix_name (rest : Common.Id.t) : Common.Id.t =
 module Insert = struct
   module type S =
     Fuzz.Action_types.S
-      with type Payload.t = Fir.Assign.t Fuzz.Payload_impl.Insertion.t
+      with type Payload.t = Fir.Assign.t Fuzz.Payload_impl.Pathed.t
 
   let readme_preamble : string =
     {|

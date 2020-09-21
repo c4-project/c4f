@@ -17,4 +17,4 @@ module Make_empty : Act_fuzz.Action_types.S with type Payload.t = unit
 (** Fuzzer action that inserts a new, random label into the program. *)
 module Label :
   Act_fuzz.Action_types.S
-    with type Payload.t = Act_common.C_id.t Act_fuzz.Payload_impl.Insertion.t
+    with type Payload.t = Act_common.C_id.t Act_fuzz.Payload_impl.Pathed.t

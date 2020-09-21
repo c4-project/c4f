@@ -17,7 +17,7 @@ module Insert : sig
   module type S =
     Act_fuzz.Action_types.S
       with type Payload.t =
-            Act_fir.Atomic_store.t Act_fuzz.Payload_impl.Insertion.t
+            Act_fir.Atomic_store.t Act_fuzz.Payload_impl.Pathed.t
 
   (** [Int_normal] is a fuzzer action that generates a random atomic-int
       store instruction. *)

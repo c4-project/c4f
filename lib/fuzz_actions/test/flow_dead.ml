@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -9,31 +9,29 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open struct
-  module Src = Act_fuzz_actions
-  module F = Act_fuzz
-  module FT = Act_fuzz_test
-end
+open Import
 
 let%test_module "Early_out" =
   ( module struct
-    let test_on_example_program (wherez : F.Path.Flagged.t Lazy.t)
+    let test_on_example_program (wherez : Fuzz.Path.Flagged.t Lazy.t)
         (to_insert : Act_fir.Early_out.t) : unit =
       let where = Lazy.force wherez in
-      let initial_state : F.State.t =
-        Lazy.force FT.Subject.Test_data.state
+      let initial_state : Fuzz.State.t =
+        Lazy.force Fuzz_test.Subject.Test_data.state
       in
-      let test : F.Subject.Test.t = Lazy.force FT.Subject.Test_data.test in
-      let payload = F.Payload_impl.Insertion.make ~where ~to_insert in
-      FT.Action.Test_utils.run_and_dump_test
+      let test : Fuzz.Subject.Test.t =
+        Lazy.force Fuzz_test.Subject.Test_data.test
+      in
+      let payload = Fuzz.Payload_impl.Pathed.make ~where to_insert in
+      Fuzz_test.Action.Test_utils.run_and_dump_test
         (Src.Flow_dead.Insert.Early_out.run test ~payload)
         ~initial_state
 
     (* TODO(@MattWindsor91): invalid paths *)
 
     let%expect_test "valid break on example program" =
-      test_on_example_program FT.Subject.Test_data.Path.insert_dead_loop
-        Break ;
+      test_on_example_program
+        Fuzz_test.Subject.Test_data.Path.insert_dead_loop Break ;
       [%expect
         {|
       void
@@ -65,13 +63,15 @@ let%test_module "Early_out" =
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "invalid break on example program" =
-      test_on_example_program FT.Subject.Test_data.Path.insert_dead Break ;
+      test_on_example_program Fuzz_test.Subject.Test_data.Path.insert_dead
+        Break ;
       [%expect
         {|
       ("checking flags on insertion" "Unmet required flag condition: in-loop") |}]
 
     let%expect_test "valid return on example program" =
-      test_on_example_program FT.Subject.Test_data.Path.insert_dead Return ;
+      test_on_example_program Fuzz_test.Subject.Test_data.Path.insert_dead
+        Return ;
       [%expect
         {|
       void

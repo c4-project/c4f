@@ -34,7 +34,7 @@ let%test_module "assign.insert.int.normal" =
       Lazy.Let_syntax.(
         let%bind to_insert = store in
         let%map where = path in
-        Fuzz.Payload_impl.Insertion.make ~to_insert ~where)
+        Fuzz.Payload_impl.Pathed.make to_insert ~where)
 
     let test_action (store : Fir.Assign.t Lazy.t) :
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
@@ -166,7 +166,7 @@ let%test_module "assign.insert.int.normal" =
           Lazy.Let_syntax.(
             let%bind to_insert = Test_data.store "gen3" in
             let%map where = path in
-            Fuzz.Payload_impl.Insertion.make ~to_insert ~where)
+            Fuzz.Payload_impl.Pathed.make to_insert ~where)
 
         let test_action : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
           Fuzz.State.Monad.(
@@ -246,7 +246,7 @@ let%test_module "assign.insert.int.normal" =
           Lazy.Let_syntax.(
             let%bind to_insert = redundant_store in
             let%map where = path in
-            Fuzz.Payload_impl.Insertion.make ~to_insert ~where)
+            Fuzz.Payload_impl.Pathed.make to_insert ~where)
 
         let test_action : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
           Fuzz.State.Monad.(

@@ -30,10 +30,8 @@ let%test_module "test runs" =
       ( module struct
         module Ins = Src.Flow_for.Insert.Kv_never
 
-        let payload : Src.Flow_for.Payload.Kv.t Fuzz.Payload_impl.Insertion.t
-            =
-          Fuzz.Payload_impl.Insertion.make
-            ~to_insert:
+        let payload : Src.Flow_for.Payload.Kv.t Fuzz.Payload_impl.Pathed.t =
+          { Fuzz.Payload_impl.Pathed.payload=
               { Src.Flow_for.Payload.Kv.lc= counter
               ; kv_val= Fir.Constant.int 27
               ; kv_expr=
@@ -41,7 +39,7 @@ let%test_module "test runs" =
                     Expression.atomic_load
                       (Atomic_load.make ~mo:Seq_cst
                          ~src:(Address.of_variable_str_exn "x"))) }
-            ~where:(Lazy.force Fuzz_test.Subject.Test_data.Path.insert_live)
+          ; where= Lazy.force Fuzz_test.Subject.Test_data.Path.insert_live }
 
         let action = Ins.run test ~payload
 
@@ -100,17 +98,15 @@ let%test_module "test runs" =
       ( module struct
         module Surround = Src.Flow_for.Surround.Kv_once
 
-        let payload : Src.Flow_for.Payload.Kv.t Fuzz.Payload_impl.Insertion.t
-            =
-          Fuzz.Payload_impl.Insertion.make
-            ~to_insert:
-              { Src.Flow_for.Payload.Kv.lc= counter
-              ; kv_val= Fir.Constant.int 27
-              ; kv_expr=
-                  Fir.(
-                    Expression.atomic_load
-                      (Atomic_load.make ~mo:Seq_cst
-                         ~src:(Address.of_variable_str_exn "x"))) }
+        let payload : Src.Flow_for.Payload.Kv.t Fuzz.Payload_impl.Pathed.t =
+          Fuzz.Payload_impl.Pathed.make
+            { Src.Flow_for.Payload.Kv.lc= counter
+            ; kv_val= Fir.Constant.int 27
+            ; kv_expr=
+                Fir.(
+                  Expression.atomic_load
+                    (Atomic_load.make ~mo:Seq_cst
+                       ~src:(Address.of_variable_str_exn "x"))) }
             ~where:
               (Lazy.force Fuzz_test.Subject.Test_data.Path.surround_atomic)
 
@@ -170,9 +166,9 @@ let%test_module "test runs" =
       ( module struct
         module Surround = Src.Flow_for.Surround.Simple
 
-        let payload : Src.Flow_for.Payload.Simple.t =
-          { lc= counter
-          ; up_to= Fir.Constant.int 53
+        let payload :
+            Src.Flow_for.Payload.Simple.t Fuzz.Payload_impl.Pathed.t =
+          { payload= {lc= counter; up_to= Fir.Constant.int 53}
           ; where=
               Lazy.force Fuzz_test.Subject.Test_data.Path.surround_atomic }
 

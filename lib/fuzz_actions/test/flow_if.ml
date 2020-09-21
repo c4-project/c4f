@@ -36,8 +36,8 @@ let%test_module "Surround" =
     let where : Fuzz.Path.Flagged.t =
       Lazy.force Fuzz_test.Subject.Test_data.Path.surround_atomic
 
-    let payload : Fuzz.Payload_impl.Cond_surround.t =
-      Fuzz.Payload_impl.Cond_surround.make ~cond ~where
+    let payload : Fuzz.Payload_impl.Cond_pathed.t =
+      Fuzz.Payload_impl.Pathed.make cond ~where
 
     let%test_module "Tautology" =
       ( module struct
@@ -136,8 +136,8 @@ let%test_module "Surround" =
         let label_direct : Fuzz.Path.Flagged.t =
           Lazy.force Fuzz_test.Subject.Test_data.Path.surround_label_direct
 
-        let label_direct_payload : Fuzz.Payload_impl.Cond_surround.t =
-          Fuzz.Payload_impl.Cond_surround.make ~cond ~where:label_direct
+        let label_direct_payload : Fuzz.Payload_impl.Cond_pathed.t =
+          Fuzz.Payload_impl.Pathed.make cond ~where:label_direct
 
         let%expect_test "direct-label AST (should fail)" =
           Fuzz_test.Action.Test_utils.run_and_dump_test
@@ -152,8 +152,8 @@ let%test_module "Surround" =
         let label_indirect : Fuzz.Path.Flagged.t =
           Lazy.force Fuzz_test.Subject.Test_data.Path.surround_label_indirect
 
-        let label_indirect_payload : Fuzz.Payload_impl.Cond_surround.t =
-          Fuzz.Payload_impl.Cond_surround.make ~cond ~where:label_indirect
+        let label_indirect_payload : Fuzz.Payload_impl.Cond_pathed.t =
+          Fuzz.Payload_impl.Pathed.make cond ~where:label_indirect
 
         let%expect_test "indirect-label AST (should fail)" =
           Fuzz_test.Action.Test_utils.run_and_dump_test

@@ -79,7 +79,7 @@ module Make (B : sig
 
   include Storelike_types.Basic
 end) :
-  Fuzz.Action_types.S with type Payload.t = B.t Fuzz.Payload_impl.Insertion.t =
+  Fuzz.Action_types.S with type Payload.t = B.t Fuzz.Payload_impl.Pathed.t =
 struct
   let name = B.name
 
@@ -164,8 +164,8 @@ struct
           Option.is_some (List.find dsts ~f:(Common.C_id.equal id))))
       srcs
 
-  module Payload = Fuzz.Payload_impl.Insertion.Make (struct
-    type t = B.t [@@deriving sexp]
+  module Payload = struct
+    type t = B.t Fuzz.Payload_impl.Pathed.t [@@deriving sexp]
 
     let path_filter = path_filter
 
@@ -183,8 +183,8 @@ struct
       Or_error.combine_errors_unit
         [error_if_empty "src" src; error_if_empty "dst" dst]
 
-    let gen' (vars : Fuzz.Var.Map.t) ~(where : Fuzz.Path.Flagged.t)
-        ~(forbid_already_written : bool) : t Fuzz.Opt_gen.t =
+    let gen_opt (vars : Fuzz.Var.Map.t) ~(where : Fuzz.Path.Flagged.t)
+        ~(forbid_already_written : bool) : B.t Fuzz.Opt_gen.t =
       let tid = Fuzz.Path.tid where.path in
       let src = src_env vars ~tid in
       let dst = dst_env vars ~tid ~forbid_already_written in
@@ -192,14 +192,16 @@ struct
         let%map () = check_envs src dst in
         B.gen ~src ~dst ~vars ~tid)
 
-    let gen (where : Fuzz.Path.Flagged.t) : t Fuzz.Payload_gen.t =
+    let gen' (where : Fuzz.Path.Flagged.t) : B.t Fuzz.Payload_gen.t =
       Fuzz.Payload_gen.(
         let* forbid_already_written =
           flag Fuzz.Config_tables.forbid_already_written_flag
         in
         let* vars = vars in
-        lift_opt_gen (gen' vars ~where ~forbid_already_written))
-  end)
+        lift_opt_gen (gen_opt vars ~where ~forbid_already_written))
+
+    let gen = Fuzz.Payload_impl.Pathed.gen Insert path_filter gen'
+  end
 
   let available : Fuzz.Availability.t =
     (* The path filter requires the path to be in a thread that has access to
@@ -297,10 +299,10 @@ struct
       >>= insert_vars ~new_locals:(B.new_locals to_insert) ~tid)
 
   let run (subject : Fuzz.Subject.Test.t)
-      ~(payload : B.t Fuzz.Payload_impl.Insertion.t) :
+      ~(payload : B.t Fuzz.Payload_impl.Pathed.t) :
       Fuzz.Subject.Test.t Fuzz.State.Monad.t =
-    let to_insert = Fuzz.Payload_impl.Insertion.to_insert payload in
-    let path = Fuzz.Payload_impl.Insertion.where payload in
+    let to_insert = payload.payload in
+    let path = payload.where in
     Fuzz.State.Monad.(
       Let_syntax.(
         let%bind () = do_bookkeeping to_insert ~path in

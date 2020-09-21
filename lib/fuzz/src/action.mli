@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -147,11 +147,20 @@ module Make_surround (Basic : sig
       because, while many surround actions need only the existence of a
       thread, some have more complex needs. *)
 
-  module Payload : sig
-    include Payload_types.S
+  val path_filter : Availability.Context.t -> Path_filter.t
+  (** [path_filter ctx] gets the path filter for this action, modulo the
+      availability context [ctx]. *)
 
-    val where : t -> Path.Flagged.t
-    (** [where pld] gets the transformation path from [pld]. *)
+  val checkable_path_filter : Path_filter.t
+  (** [checkable_path_filter] gets the subset of {!path_filter} that can be
+      checked without an availability context. This is a stopgap until the
+      fuzzer state monad is able to check the full filter. *)
+
+  module Payload : sig
+    type t [@@deriving sexp]
+
+    val gen : Path.Flagged.t -> t Payload_gen.t
+    (** [gen path] should generate an inner payload using [path]. *)
 
     val src_exprs : t -> Act_fir.Expression.t list
     (** [src_exprs pld] gets the list of source expressions, if any, from
@@ -167,4 +176,5 @@ module Make_surround (Basic : sig
     Subject.Statement.t list -> payload:Payload.t -> Subject.Statement.t
   (** [wrap stms ~payload] surrounds [stms] in the construct induced by
       [payload]. *)
-end) : Action_types.S with type Payload.t = Basic.Payload.t
+end) :
+  Action_types.S with type Payload.t = Basic.Payload.t Payload_impl.Pathed.t

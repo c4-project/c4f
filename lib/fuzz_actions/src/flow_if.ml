@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -17,13 +17,7 @@ let prefix_name (rest : Common.Id.t) : Common.Id.t =
 
 module Surround = struct
   module type S =
-    Fuzz.Action_types.S
-      with type Payload.t = Fuzz.Payload_impl.Cond_surround.t
-
-  let readme_prelude : string =
-    {| Removes a sublist of statements from the program, replacing them
-        with an `if` statement containing some transformation of the
-        removed statements. |}
+    Fuzz.Action_types.S with type Payload.t = Fuzz.Payload_impl.Cond_pathed.t
 
   module Make (Basic : sig
     val name_suffix : string
@@ -51,39 +45,45 @@ module Surround = struct
 
     val path_filter : Fuzz.Path_filter.t
     (** [path_filter] should apply any extra requirements on path filters. *)
-  end) : S = struct
-    include Basic
+  end) : S = Fuzz.Action.Make_surround (struct
+    let checkable_path_filter = Basic.path_filter
 
-    let name = prefix_name Common.Id.("surround" @: name_suffix @: empty)
+    let path_filter _ = Basic.path_filter
 
-    let readme () =
-      let raw = readme_prelude ^ "\n\n" ^ readme_suffix in
-      Act_utils.My_string.format_for_readme raw
+    let name =
+      prefix_name Common.Id.("surround" @: Basic.name_suffix @: empty)
 
-    module Surround = Fuzz.Payload_impl.Cond_surround
+    let readme_suffix = Basic.readme_suffix
 
-    module Payload = Surround.Make (struct
-      include Basic
+    let surround_with = "if statements"
 
-      let path_filter _ = path_filter
-    end)
+    module Payload = struct
+      (* TODO(@MattWindsor91): unify with Flow_while *)
+      type t = Fir.Expression.t [@@deriving sexp]
+
+      let src_exprs x = [x]
+
+      let gen =
+        Staged.unstage
+          (Fuzz.Payload_impl.Cond_pathed.lift_cond_gen Basic.cond_gen)
+    end
 
     let available : Fuzz.Availability.t =
       Fuzz.Availability.is_filter_constructible Basic.path_filter
         ~kind:Transform
 
-    let wrap_in_if (statements : Fuzz.Subject.Statement.t list)
-        ~(cond : Fir.Expression.t) : Fuzz.Subject.Statement.t =
+    let run_pre (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
+        Fuzz.Subject.Test.t Fuzz.State.Monad.t =
+      ignore payload ;
+      Fuzz.State.Monad.return test
+
+    let wrap (statements : Fuzz.Subject.Statement.t list)
+        ~(payload : Fir.Expression.t) : Fuzz.Subject.Statement.t =
       Accessor.construct Fir.Statement.if_stm
-        (Fir.If.make ~cond
+        (Fir.If.make ~cond:payload
            ~t_branch:(Basic.t_branch_of_statements statements)
            ~f_branch:(Basic.f_branch_of_statements statements))
-
-    let run (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
-        Fuzz.Subject.Test.t Fuzz.State.Monad.t =
-      Surround.apply ~filter:path_filter payload ~test ~f:(fun cond ->
-          wrap_in_if ~cond)
-  end
+  end)
 
   module Duplicate : S = Make (struct
     let name_suffix : string = "duplicate"

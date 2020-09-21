@@ -18,8 +18,7 @@ let prefix_name (rest : Common.Id.t) : Common.Id.t =
 
 module Insert = struct
   module type S =
-    Fuzz.Action_types.S
-      with type Payload.t = Fir.Expression.t Fuzz.Payload_impl.Insertion.t
+    Fuzz.Action_types.S with type Payload.t = Fuzz.Payload_impl.Cond_pathed.t
 
   module False : S = struct
     let name =
@@ -32,12 +31,13 @@ module Insert = struct
 
     let available : Fuzz.Availability.t = Fuzz.Availability.has_threads
 
-    module Payload = Fuzz.Payload_impl.Insertion.Make (struct
-      type t = Fir.Expression.t [@@deriving sexp]
+    module Payload = struct
+      type t = Fir.Expression.t Fuzz.Payload_impl.Pathed.t [@@deriving sexp]
 
       let path_filter _ = Fuzz.Path_filter.empty
 
-      let gen ({path; _} : Fuzz.Path.Flagged.t) : t Fuzz.Payload_gen.t =
+      let gen' ({path; _} : Fuzz.Path.Flagged.t) :
+          Fir.Expression.t Fuzz.Payload_gen.t =
         let tid = Fuzz.Path.tid path in
         Fuzz.Payload_gen.(
           let* vars = vars in
@@ -46,7 +46,9 @@ module Insert = struct
               ~predicates:[]
           in
           lift_quickcheck (Fir_gen.Expr.falsehood env))
-    end)
+
+      let gen = Fuzz.Payload_impl.Pathed.gen Insert path_filter gen'
+    end
 
     let make_while (to_insert : Fir.Expression.t) : Fuzz.Subject.Statement.t
         =
@@ -57,26 +59,16 @@ module Insert = struct
             ~body:(Fuzz.Subject.Block.make_dead_code ()))
 
     (* TODO(@MattWindsor91): unify this with things? *)
-    let run (subject : Fuzz.Subject.Test.t)
-        ~(payload : Fir.Expression.t Fuzz.Payload_impl.Insertion.t) :
+    let run (test : Fuzz.Subject.Test.t)
+        ~(payload : Fir.Expression.t Fuzz.Payload_impl.Pathed.t) :
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
-      let to_insert = Fuzz.Payload_impl.Insertion.to_insert payload in
-      let path = Fuzz.Payload_impl.Insertion.where payload in
-      Fuzz.State.Monad.(
-        (* NB: See discussion in Surround's apply function. *)
-        add_expression_dependencies to_insert
-          ~scope:(Local (Fuzz.Path.tid path.path))
-        >>= fun () ->
-        Monadic.return
-          (Fuzz.Path_consumers.consume_with_flags subject ~path
-             ~action:(Insert [make_while to_insert])))
+      Fuzz.Payload_impl.Cond_pathed.insert payload ~test ~f:make_while
   end
 end
 
 module Surround = struct
   module type S =
-    Fuzz.Action_types.S
-      with type Payload.t = Fuzz.Payload_impl.Cond_surround.t
+    Fuzz.Action_types.S with type Payload.t = Fuzz.Payload_impl.Cond_pathed.t
 
   module Make (Basic : sig
     val kind : Fir.Flow_block.While.t
@@ -92,7 +84,7 @@ module Surround = struct
     val readme_suffix : string
     (** [readme_suffix] gets appended onto the end of the readme. *)
 
-    val path_filter : Fuzz.Availability.Context.t -> Fuzz.Path_filter.t
+    val path_filter : Fuzz.Path_filter.t
     (** [path_filter ctx] generates the filter for the loop path. *)
 
     val cond_gen : Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t
@@ -107,22 +99,22 @@ module Surround = struct
 
     let readme_suffix = Basic.readme_suffix
 
+    let path_filter _ = Basic.path_filter
+
+    let checkable_path_filter = Basic.path_filter
+
     let available : Fuzz.Availability.t =
       Fuzz.Availability.(
-        M.(
-          lift Basic.path_filter
-          >>= is_filter_constructible ~kind:Transform_list))
+        M.(lift path_filter >>= is_filter_constructible ~kind:Transform_list))
 
     module Payload = struct
-      include Fuzz.Payload_impl.Cond_surround.Make (struct
-        let cond_gen = Basic.cond_gen
+      type t = Fir.Expression.t [@@deriving sexp]
 
-        let path_filter = Basic.path_filter
-      end)
+      let src_exprs x = [x]
 
-      let where = Fuzz.Payload_impl.Cond_surround.where
-
-      let src_exprs x = [Fuzz.Payload_impl.Cond_surround.cond x]
+      let gen =
+        Staged.unstage
+          (Fuzz.Payload_impl.Cond_pathed.lift_cond_gen Basic.cond_gen)
     end
 
     let run_pre (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
@@ -132,7 +124,7 @@ module Surround = struct
 
     let wrap (statements : Fuzz.Metadata.t Fir.Statement.t list)
         ~(payload : Payload.t) : Fuzz.Metadata.t Fir.Statement.t =
-      let cond = Fuzz.Payload_impl.Cond_surround.cond payload in
+      let cond = payload in
       Accessor.construct Fir.Statement.flow
         (Fir.Flow_block.while_loop ~kind:Basic.kind ~cond
            ~body:(Fuzz.Subject.Block.make_generated ~statements ()))
@@ -153,7 +145,7 @@ module Surround = struct
         =
       Fir_gen.Expr.falsehood
 
-    let path_filter (_ : Fuzz.Availability.Context.t) : Fuzz.Path_filter.t =
+    let path_filter : Fuzz.Path_filter.t =
       Fuzz.Path_filter.(live_loop_surround empty)
   end)
 
@@ -172,7 +164,7 @@ module Surround = struct
         =
       Fir_gen.Expr.bool
 
-    let path_filter (_ : Fuzz.Availability.Context.t) : Fuzz.Path_filter.t =
+    let path_filter : Fuzz.Path_filter.t =
       Fuzz.Path_filter.(in_dead_code_only empty)
   end)
 
@@ -191,7 +183,7 @@ module Surround = struct
         =
       Fir_gen.Expr.bool
 
-    let path_filter (_ : Fuzz.Availability.Context.t) : Fuzz.Path_filter.t =
+    let path_filter : Fuzz.Path_filter.t =
       Fuzz.Path_filter.(in_dead_code_only empty)
   end)
 end

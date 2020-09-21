@@ -34,7 +34,7 @@ let%test_module "test runs" =
     let%test_module "While.Insert.False" =
       ( module struct
         let payload : Src.Flow_while.Insert.False.Payload.t =
-          Fuzz.Payload_impl.Insertion.make ~to_insert:cond
+          Fuzz.Payload_impl.Pathed.make cond
             ~where:(Lazy.force Fuzz_test.Subject.Test_data.Path.insert_live)
 
         let action = Src.Flow_while.Insert.False.run test ~payload
@@ -87,8 +87,8 @@ let%test_module "test runs" =
       ( module struct
         module Surround = Src.Flow_while.Surround.Do_false
 
-        let payload : Fuzz.Payload_impl.Cond_surround.t =
-          Fuzz.Payload_impl.Cond_surround.make ~cond
+        let payload : Fuzz.Payload_impl.Cond_pathed.t =
+          Fuzz.Payload_impl.Pathed.make cond
             ~where:
               (Lazy.force Fuzz_test.Subject.Test_data.Path.surround_atomic)
 
@@ -144,8 +144,8 @@ let%test_module "test runs" =
         (* TODO(@MattWindsor91): sort out the discrepancy between the subject
            example and var map. *)
 
-        let payload : Fuzz.Payload_impl.Cond_surround.t =
-          Fuzz.Payload_impl.Cond_surround.make ~cond
+        let payload : Fuzz.Payload_impl.Cond_pathed.t =
+          Fuzz.Payload_impl.Pathed.make cond
             ~where:
               (Lazy.force Fuzz_test.Subject.Test_data.Path.surround_dead)
 
@@ -201,8 +201,8 @@ let%test_module "test runs" =
       ( module struct
         module Surround = Src.Flow_while.Surround.Dead
 
-        let payload : Fuzz.Payload_impl.Cond_surround.t =
-          Fuzz.Payload_impl.Cond_surround.make ~cond
+        let payload : Fuzz.Payload_impl.Cond_pathed.t =
+          Fuzz.Payload_impl.Pathed.make cond
             ~where:
               (Lazy.force Fuzz_test.Subject.Test_data.Path.surround_dead)
 

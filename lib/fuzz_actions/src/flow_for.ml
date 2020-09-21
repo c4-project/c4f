@@ -26,13 +26,14 @@ let is_int : Fuzz.Var.Record.t -> bool =
 
 let kv_var_preds = [Fuzz.Var.Record.has_known_value; is_int]
 
-let kv_live_path_filter (ctx : Fuzz.Availability.Context.t) =
+let kv_live_path_filter_static : Fuzz.Path_filter.t =
+  Fuzz.Path_filter.(live_loop_surround @@ not_in_atomic_block @@ empty)
+
+let kv_live_path_filter (ctx : Fuzz.Availability.Context.t) :
+    Fuzz.Path_filter.t =
   (* These may induce atomic loads, and so can't be in atomic blocks. *)
-  Fuzz.Path_filter.(
-    live_loop_surround @@ not_in_atomic_block
-    @@ Fuzz.Availability.in_thread_with_variables ~predicates:kv_var_preds
-         ctx
-    @@ empty)
+  Fuzz.Availability.in_thread_with_variables ~predicates:kv_var_preds ctx
+  @@ kv_live_path_filter_static
 
 let kv_available (kind : Fuzz.Path_kind.t) : Fuzz.Availability.t =
   (* TODO(@MattWindsor91): is the has-variables redundant here? *)
@@ -79,15 +80,16 @@ module Payload = struct
   end
 
   module Simple = struct
-    type t =
-      {lc: Counter.t; up_to: Fir.Constant.t; where: Fuzz.Path.Flagged.t}
-    [@@deriving sexp, fields]
+    type t = {lc: Counter.t; up_to: Fir.Constant.t} [@@deriving sexp, fields]
 
     let src_exprs (x : t) : Fir.Expression.t list =
       [ Fir.Expression.constant x.up_to
       ; (* The loop counter is effectively being read from as well as written
            to each iteration. *)
         Counter.lc_expr x.lc ]
+
+    module type S_action =
+      Fuzz.Action_types.S with type Payload.t = t Fuzz.Payload_impl.Pathed.t
   end
 
   module Kv = struct
@@ -96,8 +98,7 @@ module Payload = struct
     [@@deriving sexp, fields]
 
     module type S_action =
-      Fuzz.Action_types.S
-        with type Payload.t = t Fuzz.Payload_impl.Insertion.t
+      Fuzz.Action_types.S with type Payload.t = t Fuzz.Payload_impl.Pathed.t
 
     let src_exprs (x : t) : Fir.Expression.t list =
       [ x.kv_expr
@@ -206,11 +207,14 @@ module Insert = struct
     (* These may induce atomic loads, and so can't be in atomic blocks. *)
     let available = kv_available Insert
 
-    module Payload = Fuzz.Payload_impl.Insertion.Make (struct
-      include Payload.Kv
+    let path_filter = kv_live_path_filter
 
-      let path_filter = kv_live_path_filter
-    end)
+    module Payload = struct
+      type t = Payload.Kv.t Fuzz.Payload_impl.Pathed.t [@@deriving sexp]
+
+      let gen =
+        Fuzz.Payload_impl.Pathed.gen Insert path_filter Payload.Kv.gen
+    end
 
     let make_for (payload : Pd.Kv.t) : Fuzz.Subject.Statement.t =
       (* Comparing a var against its known value using < or >. *)
@@ -222,20 +226,18 @@ module Insert = struct
 
     (* TODO(@MattWindsor91): unify this with things? *)
     let run (test : Fuzz.Subject.Test.t)
-        ~(payload : Pd.Kv.t Fuzz.Payload_impl.Insertion.t) :
+        ~(payload : Pd.Kv.t Fuzz.Payload_impl.Pathed.t) :
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
-      let path = Fuzz.Payload_impl.Insertion.where payload in
-      let payload = Fuzz.Payload_impl.Insertion.to_insert payload in
       Fuzz.State.Monad.(
         Let_syntax.(
-          let%bind test' = Pd.Counter.declare_and_register payload.lc test in
+          let p = payload.payload in
+          let%bind test' = Pd.Counter.declare_and_register p.lc test in
           let%bind () =
-            add_expression_dependencies payload.kv_expr
-              ~scope:(Local (Fuzz.Path.tid path.path))
+            add_expression_dependencies p.kv_expr
+              ~scope:(Local (Fuzz.Path.tid payload.where.path))
           in
-          Monadic.return
-            (Fuzz.Path_consumers.consume_with_flags test' ~path
-               ~action:(Insert [make_for payload]))))
+          Fuzz.Payload_impl.Pathed.insert payload
+            ~filter:kv_live_path_filter_static ~test:test' ~f:make_for))
   end
 end
 
@@ -243,9 +245,7 @@ module Surround = struct
   let prefix_name (x : Common.Id.t) : Common.Id.t =
     prefix_name Common.Id.("surround" @: "for" @: x)
 
-  module Simple :
-    Fuzz.Action_types.S with type Payload.t = Payload.Simple.t =
-  Fuzz.Action.Make_surround (struct
+  module Simple : Payload.Simple.S_action = Fuzz.Action.Make_surround (struct
     let name = prefix_name Common.Id.("simple" @: empty)
 
     let surround_with : string = "for-loops"
@@ -255,11 +255,13 @@ module Surround = struct
         upwards to a random, small, constant value.  This action does not
         surround non-generated or loop-unsafe statements. |}
 
-    let path_filter (_ : Fuzz.Availability.Context.t) =
+    let checkable_path_filter =
       Fuzz.Path_filter.(
         live_loop_surround
         @@ require_end_check ~check:(Stm_no_meta_restriction Once_only)
         @@ empty)
+
+    let path_filter (_ : Fuzz.Availability.Context.t) = checkable_path_filter
 
     let available : Fuzz.Availability.t =
       Fuzz.Availability.(
@@ -268,20 +270,17 @@ module Surround = struct
     module Payload = struct
       include Payload.Simple
 
-      let gen : t Fuzz.Payload_gen.t =
+      let gen (where : Fuzz.Path.Flagged.t) :
+          Payload.Simple.t Fuzz.Payload_gen.t =
+        let scope = Common.Scope.Local (Fuzz.Path.tid where.path) in
         Fuzz.Payload_gen.(
-          let* filter =
-            lift (Fn.compose path_filter Context.to_availability)
-          in
-          let* where = path_with_flags Transform_list ~filter in
-          let scope = Common.Scope.Local (Fuzz.Path.tid where.path) in
           let* lc_var = fresh_var scope in
           let lc : Pd.Counter.t = {var= lc_var; ty= Fir.Type.int ()} in
           let+ up_to =
             lift_quickcheck
               Base_quickcheck.Generator.small_strictly_positive_int
           in
-          {lc; up_to= Int up_to; where})
+          {Payload.Simple.lc; up_to= Int up_to})
     end
 
     let run_pre (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
@@ -315,37 +314,20 @@ module Surround = struct
       (fresh) counter to the known value of an existing variable and
       compares it in such a way as to execute only once. |}
 
-    (* These may induce atomic loads, and so can't be in atomic blocks. *)
     let path_filter = kv_live_path_filter
+
+    let checkable_path_filter = kv_live_path_filter_static
 
     let available = kv_available Transform_list
 
-    module Payload = struct
-      type t = Payload.Kv.t Fuzz.Payload_impl.Insertion.t [@@deriving sexp]
-
-      let gen : t Fuzz.Payload_gen.t =
-        Fuzz.Payload_gen.(
-          let* filter =
-            lift (Fn.compose path_filter Context.to_availability)
-          in
-          let* where = path_with_flags Transform_list ~filter in
-          let+ to_insert = Payload.Kv.gen where in
-          Fuzz.Payload_impl.Insertion.make ~to_insert ~where)
-
-      let where = Fuzz.Payload_impl.Insertion.where
-
-      let src_exprs =
-        Fn.compose Payload.Kv.src_exprs Fuzz.Payload_impl.Insertion.to_insert
-    end
+    module Payload = Payload.Kv
 
     let run_pre (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
-      let payload = Fuzz.Payload_impl.Insertion.to_insert payload in
       Pd.Counter.declare_and_register payload.lc test
 
     let wrap (statements : Fuzz.Subject.Statement.t list)
         ~(payload : Payload.t) : Fuzz.Subject.Statement.t =
-      let payload = Fuzz.Payload_impl.Insertion.to_insert payload in
       let control = Pd.Kv.control Inclusive payload in
       let body = Fuzz.Subject.Block.make_generated ~statements () in
       Fir.(

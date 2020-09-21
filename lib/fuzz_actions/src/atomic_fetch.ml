@@ -20,7 +20,7 @@ module Insert = struct
     Fuzz.Action_types.S
       with type Payload.t =
             Act_fir.Expression.t Act_fir.Atomic_fetch.t
-            Fuzz.Payload_impl.Insertion.t
+            Fuzz.Payload_impl.Pathed.t
 
   let readme_preamble : string =
     {|

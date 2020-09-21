@@ -45,7 +45,7 @@ let%test_module "cmpxchg.make.int.succeed" =
       Lazy.Let_syntax.(
         let%bind to_insert = Test_data.cmpxchg_payload in
         let%map where = FT.Subject.Test_data.Path.insert_live in
-        F.Payload_impl.Insertion.make ~to_insert ~where)
+        F.Payload_impl.Pathed.make to_insert ~where)
 
     let test_action : F.Subject.Test.t F.State.Monad.t =
       F.State.Monad.(
@@ -117,7 +117,7 @@ let%test_module "cmpxchg.make.int.succeed" =
       Lazy.Let_syntax.(
         let%bind to_insert = Test_data.cmpxchg_payload in
         let%map where = FT.Subject.Test_data.Path.insert_dead in
-        F.Payload_impl.Insertion.make ~to_insert ~where)
+        F.Payload_impl.Pathed.make to_insert ~where)
 
     let test_action_dead : F.Subject.Test.t F.State.Monad.t =
       F.State.Monad.(

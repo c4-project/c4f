@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -11,11 +11,17 @@
 
 (** Actions that introduce, or rearrange, locks. *)
 
+open Import
+
 (** {1 Surrounding with transactions} *)
 module Surround : sig
-  (** Type of surround modules. *)
+  (** Type of surround modules.
+
+      Ideally, we would use just {!Fuzz.Path.Flagged.t} as the payload here.
+      However, {!Fuzz.Action.Make_surround} expects a payload of the form
+      [t Fuzz.Payload_impl.Pathed.t]. *)
   module type S =
-    Act_fuzz.Action_types.S with type Payload.t = Act_fuzz.Path.Flagged.t
+    Fuzz.Action_types.S with type Payload.t = unit Fuzz.Payload_impl.Pathed.t
 
   (** This action removes a sublist of statements from the program, replacing
       them with an `synchronized` statement containing those statements. *)
