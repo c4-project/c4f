@@ -25,52 +25,47 @@ open Import
 (** Opaque type of path filters. *)
 type t
 
-val empty : t
-(** [empty] is the empty path filter, which has no filtering predicates. *)
+(** We can combine path filters using [+], and the empty path filter is
+    [zero]. *)
+include Container.Summable with type t := t
 
-(** {1 Predicates}
+(** {1 Building path filters} *)
 
-    These consume a path filter and return a path filter with the given
-    predicate switched on. *)
+val add_if : t -> when_:bool -> add:t -> t
+(** [add_if x ~when_ ~add] is [x + add] when [when_] is true, and [x]
+    otherwise. *)
 
-(** {2 Require predicates} *)
+(** {2 Filters that constrain path flags} *)
 
-val req : t -> flags:Set.M(Path_flag).t -> t
-(** [req filter ~flags] adds [flags] to those required by [filter]. *)
+val require_flags : Set.M(Path_flag).t -> t
+(** [require_flags flags] is a path filter that requires every flag in
+    [flags] to be present. *)
 
-val in_dead_code_only : t -> t
-(** [in_dead_code_only filter] adds to [filter] the restriction that any path
-    must travel through at least one dead-code block. *)
+val require_flag : Path_flag.t -> t
+(** [require_flag flag] is a path filter that requires [flag] to be present. *)
 
-val in_loop_only : t -> t
-(** [in_loop_only filter] adds to [filter] the restriction that any path must
-    travel through at least one loop. *)
+val forbid_flags : Set.M(Path_flag).t -> t
+(** [require_flags flags] is a path filter that forbids any flag in [flags]
+    from being present. *)
 
-val in_threads_only : t -> threads:Set.M(Int).t -> t
-(** [in_threads_only filter ~threads] adds to [filter] the restriction that
-    any path must travel through at least one of the threads in [threads].
-    Such restrictions are cumulative. *)
+val forbid_flag : Path_flag.t -> t
+(** [forbid_flag flag] is a path filter that forbids [flag] from being
+    present. *)
 
-(** {2 Forbid predicates} *)
+(** {2 More complex filters} *)
 
-val not_in_atomic_block : t -> t
-(** [not_in_atomic_block filter] adds to [filter] the restriction that any
-    path must not travel through an atomic block. *)
+val in_threads_only : Set.M(Int).t -> t
+(** [in_threads_only threads] requires that any path must travel through at
+    least one of the threads in [threads]. Such restrictions are cumulative. *)
 
-val not_in_execute_multi : t -> t
-(** [not_in_execute_multi filter] adds to [filter] the restriction that any
-    path must not travel through a loop, or any other such construct, that
-    can execute multiple times. *)
+val transaction_safe : t
+(** [transaction_safe] requires that any path must reach statements that are
+    'transaction safe'; that is, it can appear inside an 'atomic' block. This
+    forbids particular forms of statement and expression. *)
 
-val transaction_safe : t -> t
-(** [transaction_safe filter] adds to [filter] the restriction that any path
-    must reach statements that are 'transaction safe'; that is, it can appear
-    inside an 'atomic' block. This forbids particular forms of statement and
-    expression. *)
-
-val live_loop_surround : t -> t
-(** [live_loop_surround filter] adds to [filter] the restrictions that should
-    apply on any attempt to surround statements with a live-code loop. *)
+val live_loop_surround : t
+(** [live_loop_surround] contains the restrictions that should apply on any
+    attempt to surround statements with a live-code loop. *)
 
 (** {2 End checks} *)
 
@@ -86,11 +81,17 @@ module End_check : sig
     | Has_no_expressions_of_class of Fir.Expression_class.t list
         (** Requires the path to reach a statement that has no expressions of
             any of the given classes. *)
+
+  include Comparable.S with type t := t
 end
 
-val require_end_check : t -> check:End_check.t -> t
-(** [require_end_check filter ~check] adds the check expression [check] to
-    the set of things to be checked on statements reached by this path. *)
+val require_end_checks : Set.M(End_check).t -> t
+(** [require_end_checks checks] requires that any statement(s) reached by
+    this path meet all the end checks in [checks]. *)
+
+val require_end_check : End_check.t -> t
+(** [require_end_check check] requires that any statement(s) reached by this
+    path meet the end check [check]. *)
 
 (** {1 Consuming filters} *)
 

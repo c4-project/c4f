@@ -133,7 +133,7 @@ struct
            multi-execution contexts, as their construction will never be
            sound unless we insert into dead-code. Presently we don't have any
            way of overriding one flag with the other, so we over-approximate. *)
-        Fuzz.Path_filter.not_in_execute_multi f
+        Fuzz.Path_filter.(forbid_flag In_execute_multi + f)
     | `Always | `If_no_cycles ->
         (* We assume that if a storelike reports itself as constructible in
            execute-multi contexts, there will always exist some payload that
@@ -145,11 +145,13 @@ struct
       ctx |> approx_forbid_already_written |> Result.ok
       |> Option.value ~default:true
     in
-    Fuzz.Availability.in_thread_with_variables ctx
-      ~predicates:(dst_restrictions ~forbid_already_written)
-    @@ Fuzz.Availability.in_thread_with_variables ctx
-         ~predicates:(Lazy.force basic_src_restrictions)
-    @@ execute_multi_path_filter @@ B.path_filter
+    Fuzz.Path_filter.(
+      Fuzz.Availability.in_thread_with_variables ctx
+        ~predicates:
+          (List.append
+             (dst_restrictions ~forbid_already_written)
+             (Lazy.force basic_src_restrictions))
+      + execute_multi_path_filter B.path_filter)
 
   let has_dependency_cycle (to_insert : B.t) : bool =
     (* TODO(@MattWindsor91): this is very heavy-handed; we should permit

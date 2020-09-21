@@ -51,12 +51,11 @@ let threads_of : Set.M(Act_common.Scope).t -> Set.M(Int).t =
     ~f:(function Act_common.Scope.Global -> None | Local i -> Some i)
 
 let in_thread_with_variables (ctx : Context.t)
-    ~(predicates : (Var.Record.t -> bool) list) (rest : Path_filter.t) :
-    Path_filter.t =
+    ~(predicates : (Var.Record.t -> bool) list) : Path_filter.t =
   let vars = State.vars (Context.state ctx) in
   let scopes = Var.Map.scopes_with_vars vars ~predicates in
-  if Set.mem scopes Global then rest
-  else Path_filter.in_threads_only ~threads:(threads_of scopes) rest
+  if Set.mem scopes Global then Path_filter.zero
+  else Path_filter.in_threads_only (threads_of scopes)
 
 include (
   struct

@@ -25,7 +25,7 @@ struct
   module Payload = struct
     type t = Fir.Atomic_fence.t Fuzz.Payload_impl.Pathed.t [@@deriving sexp]
 
-    let path_filter _ = Fuzz.Path_filter.empty
+    let path_filter _ = Fuzz.Path_filter.zero
 
     let gen' (_ : Fuzz.Path.Flagged.t) :
         Fir.Atomic_fence.t Fuzz.Payload_gen.t =
@@ -77,9 +77,8 @@ module Strengthen :
 
   let filter : Fuzz.Path_filter.t =
     Fuzz.Path_filter.(
-      empty
-      |> require_end_check
-           ~check:(End_check.Stm_class (Is, Fir.Statement_class.[atomic ()])))
+      require_end_check
+        (End_check.Stm_class (Is, Fir.Statement_class.[atomic ()])))
 
   module Payload = struct
     include Strengthen_payload

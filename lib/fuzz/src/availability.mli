@@ -81,10 +81,7 @@ val has_variables : predicates:(Var.Record.t -> bool) list -> t
     These should be moved elsewhere. *)
 
 val in_thread_with_variables :
-     Context.t
-  -> predicates:(Var.Record.t -> bool) list
-  -> Path_filter.t
-  -> Path_filter.t
-(** [in_thread_with_variables ctx ~predicates f] adds to [f] a filter that
-    requires the path to pass through a thread with access to at least one
-    thread for which a variable exists satisfying all of [predicates]. *)
+  Context.t -> predicates:(Var.Record.t -> bool) list -> Path_filter.t
+(** [in_thread_with_variables ctx ~predicates] is a filter that requires the
+    path to pass through a thread with access to at least one thread for
+    which a variable exists satisfying all of [predicates]. *)

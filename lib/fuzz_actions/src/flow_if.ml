@@ -108,8 +108,8 @@ module Surround = struct
 
     let path_filter : Fuzz.Path_filter.t =
       Fuzz.Path_filter.(
-        require_end_check empty
-          ~check:(Stm_class (Has_not_any, [Fir.Statement_class.label])))
+        require_end_check
+          (Stm_class (Has_not_any, [Fir.Statement_class.label])))
   end)
 
   module Tautology : S = Make (struct
@@ -134,7 +134,7 @@ module Surround = struct
          to generate an empty block, so we ignore it. *)
       Fir.Block.make ~metadata:Fuzz.Metadata.gen_dead ()
 
-    let path_filter : Fuzz.Path_filter.t = Fuzz.Path_filter.empty
+    let path_filter : Fuzz.Path_filter.t = Fuzz.Path_filter.zero
   end)
 end
 
@@ -150,8 +150,7 @@ module Transform = struct
         {| Flips the conditional and branches of an if statement. |}
 
     let path_filter : Fuzz.Path_filter.t =
-      Fuzz.Path_filter.(
-        require_end_check empty ~check:(Stm_class (Is, [If])))
+      Fuzz.Path_filter.(require_end_check (Stm_class (Is, [If])))
 
     let available : Fuzz.Availability.t =
       Fuzz.Availability.is_filter_constructible path_filter ~kind:Transform

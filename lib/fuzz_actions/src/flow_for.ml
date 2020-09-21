@@ -27,13 +27,14 @@ let is_int : Fuzz.Var.Record.t -> bool =
 let kv_var_preds = [Fuzz.Var.Record.has_known_value; is_int]
 
 let kv_live_path_filter_static : Fuzz.Path_filter.t =
-  Fuzz.Path_filter.(live_loop_surround @@ not_in_atomic_block @@ empty)
+  Fuzz.Path_filter.(live_loop_surround + forbid_flag In_atomic)
 
 let kv_live_path_filter (ctx : Fuzz.Availability.Context.t) :
     Fuzz.Path_filter.t =
-  (* These may induce atomic loads, and so can't be in atomic blocks. *)
-  Fuzz.Availability.in_thread_with_variables ~predicates:kv_var_preds ctx
-  @@ kv_live_path_filter_static
+  Fuzz.Path_filter.(
+    (* These may induce atomic loads, and so can't be in atomic blocks. *)
+    Fuzz.Availability.in_thread_with_variables ~predicates:kv_var_preds ctx
+    + kv_live_path_filter_static)
 
 let kv_available (kind : Fuzz.Path_kind.t) : Fuzz.Availability.t =
   (* TODO(@MattWindsor91): is the has-variables redundant here? *)
@@ -258,8 +259,7 @@ module Surround = struct
     let checkable_path_filter =
       Fuzz.Path_filter.(
         live_loop_surround
-        @@ require_end_check ~check:(Stm_no_meta_restriction Once_only)
-        @@ empty)
+        + require_end_check (Stm_no_meta_restriction Once_only))
 
     let path_filter (_ : Fuzz.Availability.Context.t) = checkable_path_filter
 

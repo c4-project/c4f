@@ -57,68 +57,60 @@ type t =
   ; end_checks: Set.M(End_check).t
   ; threads: Set.M(Int).t option }
 
-let empty : t =
+let zero : t =
   { req_flags= Set.empty (module Path_flag)
   ; not_flags= Set.empty (module Path_flag)
   ; end_checks= Set.empty (module End_check)
   ; threads= None }
 
-module Req_flags = struct
-  let require_flag (existing : t) ~(flag : Path_flag.t) : t =
-    {existing with req_flags= Set.add existing.req_flags flag}
+let ( + ) (l : t) (r : t) : t =
+  { req_flags= Set.union l.req_flags r.req_flags
+  ; not_flags= Set.union l.not_flags r.not_flags
+  ; end_checks= Set.union l.end_checks r.end_checks
+  ; threads= Option.merge ~f:Set.inter l.threads r.threads }
 
-  let req (existing : t) ~(flags : Set.M(Path_flag).t) : t =
-    {existing with req_flags= Set.union existing.req_flags flags}
+let add_if (x : t) ~(when_ : bool) ~(add : t) : t =
+  if when_ then x + add else x
 
-  let in_dead_code_only : t -> t = require_flag ~flag:In_dead_code
+let require_flags (req_flags : Set.M(Path_flag).t) : t = {zero with req_flags}
 
-  let in_loop_only : t -> t = require_flag ~flag:In_loop
-end
+let require_flag (req_flag : Path_flag.t) : t =
+  require_flags (Set.singleton (module Path_flag) req_flag)
 
-include Req_flags
+let forbid_flags (not_flags : Set.M(Path_flag).t) : t = {zero with not_flags}
 
-module Not_flags = struct
-  let forbid_flag (existing : t) ~(flag : Path_flag.t) : t =
-    {existing with not_flags= Set.add existing.not_flags flag}
+let forbid_flag (not_flag : Path_flag.t) : t =
+  forbid_flags (Set.singleton (module Path_flag) not_flag)
 
-  let not_in_atomic_block : t -> t = forbid_flag ~flag:In_atomic
+let require_end_checks (end_checks : Set.M(End_check).t) : t =
+  {zero with end_checks}
 
-  let not_in_execute_multi : t -> t = forbid_flag ~flag:In_execute_multi
-end
+let require_end_check (end_check : End_check.t) : t =
+  require_end_checks (Set.singleton (module End_check) end_check)
 
-include Not_flags
+let transaction_safe : t =
+  require_end_checks
+    (Set.of_list
+       (module End_check)
+       [ Stm_class (Has_not_any, [Act_fir.Statement_class.atomic ()])
+       ; Has_no_expressions_of_class [Atomic None] ])
 
-let require_end_check (existing : t) ~(check : End_check.t) : t =
-  {existing with end_checks= Set.add existing.end_checks check}
-
-let transaction_safe (filter : t) : t =
-  (* TODO(@MattWindsor91): add things to this as we go along. *)
-  require_end_check
-    ~check:(Stm_class (Has_not_any, [Act_fir.Statement_class.atomic ()]))
-  @@ require_end_check
-       ~check:(Has_no_expressions_of_class [Atomic None])
-       filter
-
-let live_loop_surround (filter : t) : t =
+let live_loop_surround : t =
   (* Don't surround breaks and continues in live code; doing so causes them
      to affect the new surrounding loop, which is a semantic change.
 
      Note that this does NOT forbid loop-unsafe statements when surrounding;
      this is because some loops are known to execute once only, and so are ok
      to use with such statements. *)
-  require_end_check filter
-    ~check:
-      (Stm_class
-         ( Has_not_any
-         , Fir.Statement_class.
-             [ Prim (Some (Early_out (Some Break)))
-             ; Prim (Some (Early_out (Some Continue))) ] ))
+  require_end_check
+    (Stm_class
+       ( Has_not_any
+       , Fir.Statement_class.
+           [ Prim (Some (Early_out (Some Break)))
+           ; Prim (Some (Early_out (Some Continue))) ] ))
 
-let in_threads_only (filter : t) ~(threads : Set.M(Int).t) : t =
-  let threads' =
-    Option.value_map filter.threads ~f:(Set.inter threads) ~default:threads
-  in
-  {filter with threads= Some threads'}
+let in_threads_only (threads : Set.M(Int).t) : t =
+  {zero with threads= Some threads}
 
 let error_of_flag (flag : Path_flag.t) ~(polarity : string) : unit Or_error.t
     =

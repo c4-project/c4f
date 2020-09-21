@@ -34,7 +34,7 @@ module Insert = struct
     module Payload = struct
       type t = Fir.Expression.t Fuzz.Payload_impl.Pathed.t [@@deriving sexp]
 
-      let path_filter _ = Fuzz.Path_filter.empty
+      let path_filter _ = Fuzz.Path_filter.zero
 
       let gen' ({path; _} : Fuzz.Path.Flagged.t) :
           Fir.Expression.t Fuzz.Payload_gen.t =
@@ -146,7 +146,7 @@ module Surround = struct
       Fir_gen.Expr.falsehood
 
     let path_filter : Fuzz.Path_filter.t =
-      Fuzz.Path_filter.(live_loop_surround empty)
+      Fuzz.Path_filter.live_loop_surround
   end)
 
   module Do_dead : S = Make (struct
@@ -165,7 +165,7 @@ module Surround = struct
       Fir_gen.Expr.bool
 
     let path_filter : Fuzz.Path_filter.t =
-      Fuzz.Path_filter.(in_dead_code_only empty)
+      Fuzz.Path_filter.require_flag In_dead_code
   end)
 
   module Dead : S = Make (struct
@@ -184,6 +184,6 @@ module Surround = struct
       Fir_gen.Expr.bool
 
     let path_filter : Fuzz.Path_filter.t =
-      Fuzz.Path_filter.(in_dead_code_only empty)
+      Fuzz.Path_filter.require_flag In_dead_code
   end)
 end

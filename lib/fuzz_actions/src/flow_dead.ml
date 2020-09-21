@@ -25,7 +25,7 @@ module Insert = struct
     type t = Fir.Early_out.t Fuzz.Payload_impl.Pathed.t [@@deriving sexp]
 
     let base_path_filter : Fuzz.Path_filter.t =
-      Fuzz.Path_filter.(in_dead_code_only empty)
+      Fuzz.Path_filter.require_flag In_dead_code
 
     let path_filter (_ : Fuzz.Availability.Context.t) : Fuzz.Path_filter.t =
       base_path_filter
@@ -65,9 +65,10 @@ module Insert = struct
        that the path must meet the filtering needs of the early-out. *)
 
     let kind_filter (kind : Fir.Early_out.t) : Fuzz.Path_filter.t =
-      ( if Fir.Early_out.in_loop_only kind then Fuzz.Path_filter.in_loop_only
-      else Fn.id )
-        Early_out_payload.base_path_filter
+      if Fir.Early_out.in_loop_only kind then
+        Fuzz.Path_filter.(
+          require_flag In_loop + Early_out_payload.base_path_filter)
+      else Early_out_payload.base_path_filter
 
     let make_early_out (kind : Fir.Early_out.t) : Fuzz.Subject.Statement.t =
       Fuzz.Subject.Statement.make_generated_prim
@@ -100,8 +101,7 @@ module Insert = struct
         Set.filter_map (module Int) ~f:Common.Litmus_id.tid labels
       in
       Fuzz.Path_filter.(
-        empty |> in_dead_code_only
-        |> Fuzz.Path_filter.in_threads_only ~threads:threads_with_labels)
+        require_flag In_dead_code + in_threads_only threads_with_labels)
 
     let path_filter (ctx : Fuzz.Availability.Context.t) : Fuzz.Path_filter.t
         =

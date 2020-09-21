@@ -295,10 +295,8 @@ let%test_module "Statement_list" =
                            valid paths" =
               test_produce_consume
                 ~filter:
-                  F.Path_filter.(
-                    require_end_check
-                      ~check:(Stm_class (Has_not_any, [Prim (Some Label)]))
-                      empty)
+                  (F.Path_filter.require_end_check
+                     (Stm_class (Has_not_any, [Prim (Some Label)])))
                 (Transform_list Or_error.return)
           end )
       end )

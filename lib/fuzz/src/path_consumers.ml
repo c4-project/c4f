@@ -272,10 +272,12 @@ let consume (test : Subject.Test.t) ~(path : Path.t) ~(ctx : ctx) :
       Act_litmus.Test.Raw.try_map_thread test ~index
         ~f:(thread index ~path ~ctx)
 
-let consume_with_flags ?(filter : Path_filter.t = Path_filter.empty)
+let consume_with_flags ?(filter : Path_filter.t option)
     (test : Subject.Test.t) ~(path : Path.t Path_flag.Flagged.t)
     ~(action : Path_kind.With_action.t) : Subject.Test.t Or_error.t =
   let {Path_flag.Flagged.path; flags; _} = path in
-  let filter = Path_filter.req filter ~flags in
-  let ctx = Path_context.init action ~filter in
+  let filter =
+    Path_filter.(Option.merge ~f:( + ) filter (Some (require_flags flags)))
+  in
+  let ctx = Path_context.init action ?filter in
   consume test ~path ~ctx

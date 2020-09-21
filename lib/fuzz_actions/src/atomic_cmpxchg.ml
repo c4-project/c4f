@@ -45,7 +45,7 @@ module Insert = struct
 
     type t = Inner_payload.t [@@deriving sexp]
 
-    let path_filter = Fuzz.Path_filter.empty
+    let path_filter = Fuzz.Path_filter.zero
 
     let extra_dst_restrictions =
       [ Storelike.Dst_restriction.forbid_dependencies

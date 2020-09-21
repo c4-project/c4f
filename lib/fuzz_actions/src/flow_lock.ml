@@ -78,7 +78,7 @@ module Surround = struct
 
     let lock_type_name = "an atomic"
 
-    let path_filter = Fuzz.Path_filter.(transaction_safe @@ empty)
+    let path_filter = Fuzz.Path_filter.transaction_safe
   end)
 
   module Sync : S = Make (struct
@@ -88,6 +88,6 @@ module Surround = struct
 
     let lock_type_name = "a synchronised"
 
-    let path_filter = Fuzz.Path_filter.empty
+    let path_filter = Fuzz.Path_filter.zero
   end)
 end

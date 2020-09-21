@@ -53,7 +53,7 @@ module Label :
   module Payload = struct
     type t = Common.C_id.t Fuzz.Payload_impl.Pathed.t [@@deriving sexp]
 
-    let path_filter _ = Fuzz.Path_filter.empty
+    let path_filter _ = Fuzz.Path_filter.zero
 
     let gen' (_ : Fuzz.Path.Flagged.t) : Common.C_id.t Fuzz.Payload_gen.t =
       Fuzz.Payload_gen.(

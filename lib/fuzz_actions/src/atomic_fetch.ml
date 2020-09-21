@@ -108,7 +108,7 @@ module Insert = struct
        into dead code.  As it only targets dead code, it does not add
        dependences or erase known-values. |}
 
-    let path_filter = Fuzz.Path_filter.(empty |> in_dead_code_only)
+    let path_filter = Fuzz.Path_filter.require_flag In_dead_code
 
     let extra_dst_restrictions = []
 
@@ -130,7 +130,7 @@ module Insert = struct
       {| This variant can insert anywhere, but only fetches the known value of
        a destination back to itself. |}
 
-    let path_filter = Fuzz.Path_filter.empty
+    let path_filter = Fuzz.Path_filter.zero
 
     let extra_dst_restrictions = [Fuzz.Var.Record.has_known_value]
 

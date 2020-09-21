@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -18,7 +18,7 @@ end
 type 'k t = {kind: 'k; flags: Set.M(Path_flag).t; filter: Path_filter.t}
 [@@deriving fields]
 
-let init ?(filter : Path_filter.t = Path_filter.empty) (kind : 'k) : 'k t =
+let init ?(filter : Path_filter.t = Path_filter.zero) (kind : 'k) : 'k t =
   {kind; flags= Set.empty (module Path_flag); filter}
 
 let add_flags (x : 'k t) (flags : Set.M(Path_flag).t) : 'k t Or_error.t =
