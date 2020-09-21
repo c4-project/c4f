@@ -17,6 +17,7 @@
     against a {!Path_filter}. *)
 
 open Base
+open Import
 
 (** Type of path flags. *)
 type t =
@@ -29,7 +30,7 @@ type t =
       (** The path passes through a block that MAY execute multiple times. *)
   | In_loop  (** The path passes through a loop body. *)
 
-include Act_utils.Enum_types.Extension_table with type t := t
+include Utils.Enum_types.Extension_table with type t := t
 
 (** Use [Set.M(Path_flag).t] in client code. *)
 type set := (t, comparator_witness) Set.t

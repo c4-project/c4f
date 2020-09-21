@@ -17,6 +17,53 @@ open Import
    flag-based approach to give better error messages when paths fail
    validation. *)
 
+module Anchor = struct
+  type t = Top | Bottom | Full [@@deriving sexp]
+
+  let merge (l : t) (r : t) : t =
+    match (l, r) with
+    | Top, Top ->
+        Top
+    | Bottom, Bottom ->
+        Bottom
+    | _ ->
+        Full
+
+  module Check = struct
+    type t = {is_nested: bool; pos: int; len: int; block_len: int}
+    [@@deriving sexp]
+
+    let of_path (path : Path.Stms.t) ~(block_len : int) : t =
+      Path.Stms.
+        { pos= path.@(index)
+        ; len= len path
+        ; is_nested= is_nested path
+        ; block_len }
+  end
+
+  let is_anchored (anc : t) ~(check : Check.t) : bool =
+    check.is_nested
+    ||
+    match anc with
+    | Top ->
+        check.pos = 0
+    | Bottom ->
+        check.block_len <= check.pos + check.len
+    | Full ->
+        check.pos = 0 && check.block_len <= check.len
+
+  let check_anchor (anc : t) ~(path : Path.Stms.t) ~(block_len : int) :
+      unit Or_error.t =
+    let check = Check.of_path path ~block_len in
+    Tx.Or_error.unless_m (is_anchored anc ~check) ~f:(fun () ->
+        Or_error.error_s
+          [%message
+            "Path is not anchored properly"
+              ~anchor:(anc : t)
+              ~path_fragment:(path : Path.Stms.t)
+              ~check:(check : Check.t)])
+end
+
 (** Checks that can only be carried out at the end of a statement path. *)
 module End_check = struct
   module M = struct
@@ -55,22 +102,27 @@ type t =
   { req_flags: Set.M(Path_flag).t
   ; not_flags: Set.M(Path_flag).t
   ; end_checks: Set.M(End_check).t
-  ; threads: Set.M(Int).t option }
+  ; threads: Set.M(Int).t option
+  ; anchor: Anchor.t option }
 
 let zero : t =
   { req_flags= Set.empty (module Path_flag)
   ; not_flags= Set.empty (module Path_flag)
   ; end_checks= Set.empty (module End_check)
-  ; threads= None }
+  ; threads= None
+  ; anchor= None }
 
 let ( + ) (l : t) (r : t) : t =
   { req_flags= Set.union l.req_flags r.req_flags
   ; not_flags= Set.union l.not_flags r.not_flags
   ; end_checks= Set.union l.end_checks r.end_checks
-  ; threads= Option.merge ~f:Set.inter l.threads r.threads }
+  ; threads= Option.merge ~f:Set.inter l.threads r.threads
+  ; anchor= Option.merge ~f:Anchor.merge l.anchor r.anchor }
 
 let add_if (x : t) ~(when_ : bool) ~(add : t) : t =
   if when_ then x + add else x
+
+let anchor (anc : Anchor.t) : t = {zero with anchor= Some anc}
 
 let require_flags (req_flags : Set.M(Path_flag).t) : t = {zero with req_flags}
 
@@ -130,6 +182,11 @@ let check_req (filter : t) ~(flags : Set.M(Path_flag).t) : unit Or_error.t =
 
 let check_not (filter : t) ~(flags : Set.M(Path_flag).t) : unit Or_error.t =
   error_of_flags ~polarity:"forbidden" (Set.inter filter.not_flags flags)
+
+let check_anchor (filter : t) ~(path : Path.Stms.t) ~(block_len : int) :
+    unit Or_error.t =
+  Tx.Option.With_errors.iter_m filter.anchor
+    ~f:(Anchor.check_anchor ~path ~block_len)
 
 let end_checks_for_statement (filter : t) (stm : Subject.Statement.t) :
     unit Or_error.t list =

@@ -127,13 +127,21 @@ module Block = struct
       Path.Stms.t t =
     xs |> List.mapi ~f:(in_stm ~mu ~ctx) |> Sequence.round_robin
 
+  let check_anchor (p : Path.Stms.t Path_flag.Flagged.t) ~(block_len : int)
+      ~(ctx : ctx) : Path.Stms.t t =
+    Sequence.(
+      lift_err (Path_context.check_anchor ctx ~path:p.path ~block_len)
+      >>| fun () -> p)
+
   let produce_stms (b : Subject.Statement.t list) ~(mu : mu) ~(ctx : ctx) :
       Path.Stms.t t =
-    branch b
-      [ if_kind Insert ~f:Self_insert.produce ~ctx
-      ; if_kind Transform_list ~f:Self_transform_list.produce ~ctx
-        (* All 'transform' targets are inside this block's statements. *)
-      ; in_stms ~ctx ~mu ]
+    Sequence.bind
+      ~f:(check_anchor ~block_len:(List.length b) ~ctx)
+      (branch b
+         [ if_kind Insert ~f:Self_insert.produce ~ctx
+         ; if_kind Transform_list ~f:Self_transform_list.produce ~ctx
+           (* All 'transform' targets are inside this block's statements. *)
+         ; in_stms ~ctx ~mu ])
 
   let produce (b : Subject.Block.t) ~(mu : mu) : ctx:ctx -> Path.Stms.t t =
     with_flags (Path_flag.flags_of_block b) ~f:(fun ctx ->

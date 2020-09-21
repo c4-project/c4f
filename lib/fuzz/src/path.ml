@@ -10,6 +10,7 @@
    project root for more information. *)
 
 open Base
+open Import
 
 type index = int [@@deriving sexp, compare, equal]
 
@@ -112,6 +113,34 @@ end
 
 module Stms = struct
   type t = stm_list [@@deriving sexp, compare, equal]
+
+  let index : type i. (i, index, t, [< field]) Accessor.Simple.t =
+    [%accessor
+      Accessor.field
+        ~get:(function
+          | Insert i -> i | In_stm (i, _) -> i | On_range (i, _) -> i)
+        ~set:(fun x i ->
+          match x with
+          | Insert _ ->
+              Insert i
+          | In_stm (_, r) ->
+              In_stm (i, r)
+          | On_range (_, s) ->
+              On_range (i, s))]
+
+  let len : t -> int = function
+    | Insert _ ->
+        0
+    | In_stm _ ->
+        1
+    | On_range (_, l) ->
+        l
+
+  let is_nested : t -> bool = function
+    | In_stm (_, In_if _) | In_stm (_, In_flow _) ->
+        true
+    | In_stm (_, This_stm) | Insert _ | On_range _ ->
+        false
 
   let insert (i : index) : t = Insert i
 

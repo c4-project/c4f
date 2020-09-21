@@ -68,7 +68,6 @@ val live_loop_surround : t
     attempt to surround statements with a live-code loop. *)
 
 (** {2 End checks} *)
-
 module End_check : sig
   (** Type of end checks. *)
   type t =
@@ -93,6 +92,19 @@ val require_end_check : End_check.t -> t
 (** [require_end_check check] requires that any statement(s) reached by this
     path meet the end check [check]. *)
 
+(** {2 Anchors} *)
+module Anchor : sig
+  (** Type of anchors. *)
+  type t =
+    | Top  (** Path must be located at the top of a block. *)
+    | Bottom  (** Path must be located at the bottom of a block. *)
+    | Full  (** Path must access the whole block. *)
+end
+
+val anchor : Anchor.t -> t
+(** [anchor anc] requires that any statement(s) reached by this path, or any
+    insertion locations proposed by this path, respect the anchoring [anc]. *)
+
 (** {1 Consuming filters} *)
 
 (** {2 Checking paths} *)
@@ -115,5 +127,9 @@ val check_req : t -> flags:Set.M(Path_flag).t -> unit Or_error.t
 val check_final_statement : t -> stm:Subject.Statement.t -> unit Or_error.t
 (** [check_final_statement filter ~stm] should be applied before constructing
     a [This_stm] reference to [stm], and checks whether such a final
-    statement destination is ok according to the predicates in [filter]. It
-    does not subsume [check]. *)
+    statement destination is ok according to the predicates in [filter]. *)
+
+val check_anchor : t -> path:Path.Stms.t -> block_len:int -> unit Or_error.t
+(** [check_anchor filter ~path ~block_len] should be applied before
+    constructing any path targeting a member of a block of length
+    [block_len], and checks whether [path] is properly anchored within it. *)

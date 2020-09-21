@@ -33,7 +33,7 @@ let%test_module "sample path output on example code" =
       let paths = Src.Path_producers.try_gen_with_flags test ~filter ~kind in
       print_sample (Or_error.ok_exn paths)
 
-    let%expect_test "try_gen_insert_stm with no filtering" =
+    let%expect_test "insert with no filtering" =
       test Insert Src.Path_filter.zero ;
       [%expect
         {|
@@ -52,7 +52,43 @@ let%test_module "sample path output on example code" =
               P1!Stms!Insert[1] {}
               P1!Stms!Stm[1]!If!True!Insert[0] {} |}]
 
-    let%expect_test "try_gen_insert_stm with execute-multi filtering" =
+    let%expect_test "insert with top anchoring" =
+      test Insert (Src.Path_filter.anchor Top) ;
+      [%expect
+        {|
+        P0!Stms!Insert[0] {}
+        P0!Stms!Stm[3]!If!False!Insert[0] {in-dead-code}
+        P0!Stms!Stm[3]!If!True!Insert[0] {}
+        P0!Stms!Stm[4]!If!False!Insert[0] {}
+        P0!Stms!Stm[6]!Flow-block!Body!Insert[0] {in-execute-multi, in-loop}
+        P0!Stms!Stm[7]!Flow-block!Body!Insert[0] {in-dead-code, in-loop}
+        P1!Stms!Insert[0] {}
+        P1!Stms!Stm[1]!If!False!Insert[0] {in-dead-code}
+        P1!Stms!Stm[1]!If!True!Insert[0] {} |}]
+
+    let%expect_test "insert with bottom anchoring" =
+      test Insert (Src.Path_filter.anchor Bottom) ;
+      [%expect
+        {|
+        P0!Stms!Insert[8] {}
+        P0!Stms!Stm[3]!If!False!Insert[0] {in-dead-code}
+        P0!Stms!Stm[3]!If!True!Insert[2] {}
+        P0!Stms!Stm[4]!If!False!Insert[0] {}
+        P0!Stms!Stm[6]!Flow-block!Body!Insert[1] {in-execute-multi, in-loop}
+        P0!Stms!Stm[7]!Flow-block!Body!Insert[1] {in-dead-code, in-loop}
+        P1!Stms!Insert[2] {}
+        P1!Stms!Stm[1]!If!False!Insert[1] {in-dead-code}
+        P1!Stms!Stm[1]!If!True!Insert[0] {} |}]
+
+    let%expect_test "insert with full anchoring" =
+      test Insert (Src.Path_filter.anchor Full) ;
+      [%expect
+        {|
+        P0!Stms!Stm[3]!If!False!Insert[0] {in-dead-code}
+        P0!Stms!Stm[4]!If!False!Insert[0] {}
+        P1!Stms!Stm[1]!If!True!Insert[0] {} |}]
+
+    let%expect_test "insert with execute-multi filtering" =
       test Insert Src.Path_filter.(forbid_flag In_execute_multi) ;
       [%expect
         {|
@@ -70,7 +106,7 @@ let%test_module "sample path output on example code" =
               P1!Stms!Insert[2] {}
               P1!Stms!Stm[1]!If!False!Insert[1] {in-dead-code} |}]
 
-    let%expect_test "try_gen_insert_stm with thread filtering" =
+    let%expect_test "insert with thread filtering" =
       test Insert
         Src.Path_filter.(in_threads_only (Set.singleton (module Int) 1)) ;
       [%expect
@@ -82,7 +118,7 @@ let%test_module "sample path output on example code" =
               P1!Stms!Stm[1]!If!False!Insert[1] {in-dead-code}
               P1!Stms!Stm[1]!If!True!Insert[0] {} |}]
 
-    let%expect_test "try_gen_insert_stm with dead-code filtering" =
+    let%expect_test "insert with dead-code filtering" =
       test Insert Src.Path_filter.(require_flag In_dead_code) ;
       [%expect
         {|
@@ -93,7 +129,7 @@ let%test_module "sample path output on example code" =
             P0!Stms!Stm[7]!Flow-block!Body!Insert[1] {in-dead-code, in-loop}
             P1!Stms!Stm[1]!If!False!Insert[1] {in-dead-code} |}]
 
-    let%expect_test "try_gen_transform_stm with no filtering" =
+    let%expect_test "transform with no filtering" =
       test Transform Src.Path_filter.zero ;
       [%expect
         {|
@@ -109,7 +145,43 @@ let%test_module "sample path output on example code" =
             P1!Stms!Stm[0]!This {}
             P1!Stms!Stm[1]!This {} |}]
 
-    let%expect_test "try_gen_transform_stm with filtering to if statements" =
+    let%expect_test "transform with top anchoring" =
+      test Transform (Src.Path_filter.anchor Top) ;
+      [%expect
+        {|
+        P0!Stms!Stm[0]!This {}
+        P0!Stms!Stm[3]!If!True!Stm[0]!This {}
+        P0!Stms!Stm[4]!If!True!Stm[0]!This {in-dead-code}
+        P0!Stms!Stm[5]!Flow-block!Body!Stm[0]!This {in-execute-multi, in-loop}
+        P0!Stms!Stm[6]!Flow-block!Body!Stm[0]!This {in-execute-multi, in-loop}
+        P0!Stms!Stm[7]!Flow-block!Body!Stm[0]!This {in-dead-code, in-loop}
+        P1!Stms!Stm[0]!This {}
+        P1!Stms!Stm[1]!If!False!Stm[0]!This {in-dead-code} |}]
+
+    let%expect_test "transform with bottom anchoring" =
+      test Transform (Src.Path_filter.anchor Bottom) ;
+      [%expect
+        {|
+        P0!Stms!Stm[3]!If!True!Stm[1]!This {}
+        P0!Stms!Stm[4]!If!True!Stm[0]!This {in-dead-code}
+        P0!Stms!Stm[5]!Flow-block!Body!Stm[0]!This {in-execute-multi, in-loop}
+        P0!Stms!Stm[6]!Flow-block!Body!Stm[0]!This {in-execute-multi, in-loop}
+        P0!Stms!Stm[7]!Flow-block!Body!Stm[0]!This {in-dead-code, in-loop}
+        P0!Stms!Stm[7]!This {}
+        P1!Stms!Stm[1]!If!False!Stm[0]!This {in-dead-code}
+        P1!Stms!Stm[1]!This {} |}]
+
+    let%expect_test "transform with full anchoring" =
+      test Transform (Src.Path_filter.anchor Full) ;
+      [%expect
+        {|
+        P0!Stms!Stm[4]!If!True!Stm[0]!This {in-dead-code}
+        P0!Stms!Stm[5]!Flow-block!Body!Stm[0]!This {in-execute-multi, in-loop}
+        P0!Stms!Stm[6]!Flow-block!Body!Stm[0]!This {in-execute-multi, in-loop}
+        P0!Stms!Stm[7]!Flow-block!Body!Stm[0]!This {in-dead-code, in-loop}
+        P1!Stms!Stm[1]!If!False!Stm[0]!This {in-dead-code} |}]
+
+    let%expect_test "transform with filtering to if statements" =
       test Transform
         Src.Path_filter.(require_end_check (Stm_class (Is, [If]))) ;
       [%expect
@@ -118,7 +190,7 @@ let%test_module "sample path output on example code" =
             P0!Stms!Stm[4]!This {}
             P1!Stms!Stm[1]!This {} |}]
 
-    let%expect_test "try_gen_transform_stm with filtering to dead code" =
+    let%expect_test "transform with filtering to dead code" =
       test Transform Src.Path_filter.(require_flag In_dead_code) ;
       [%expect
         {|
@@ -126,7 +198,7 @@ let%test_module "sample path output on example code" =
               P0!Stms!Stm[7]!Flow-block!Body!Stm[0]!This {in-dead-code, in-loop}
               P1!Stms!Stm[1]!If!False!Stm[0]!This {in-dead-code} |}]
 
-    let%expect_test "try_gen_transform_stm with filtering to loops" =
+    let%expect_test "transform with filtering to loops" =
       test Transform Src.Path_filter.(require_flag In_loop) ;
       [%expect
         {|
@@ -134,7 +206,7 @@ let%test_module "sample path output on example code" =
         P0!Stms!Stm[6]!Flow-block!Body!Stm[0]!This {in-execute-multi, in-loop}
         P0!Stms!Stm[7]!Flow-block!Body!Stm[0]!This {in-dead-code, in-loop} |}]
 
-    let%expect_test "try_gen_transform_stm_list" =
+    let%expect_test "transform-list" =
       test Transform_list Src.Path_filter.zero ;
       [%expect
         {|
@@ -158,6 +230,58 @@ let%test_module "sample path output on example code" =
               P0!Stms!Range[7, 0] {}
               P1!Stms!Range[1, 1] {}
               P1!Stms!Range[2, 0] {} |}]
+
+    let%expect_test "transform-list with top anchoring" =
+      test Transform_list (Src.Path_filter.anchor Top) ;
+      [%expect
+        {|
+        P0!Stms!Stm[3]!If!True!Range[0, 0] {}
+        P0!Stms!Stm[3]!If!True!Range[0, 1] {}
+        P0!Stms!Stm[3]!If!True!Range[0, 2] {}
+        P0!Stms!Stm[4]!If!False!Range[0, 0] {}
+        P0!Stms!Stm[5]!Flow-block!Body!Range[0, 0] {in-execute-multi, in-loop}
+        P0!Stms!Stm[6]!Flow-block!Body!Range[0, 0] {in-execute-multi, in-loop}
+        P0!Stms!Stm[6]!Flow-block!Body!Range[0, 1] {in-execute-multi, in-loop}
+        P0!Stms!Stm[7]!Flow-block!Body!Range[0, 1] {in-dead-code, in-loop}
+        P0!Stms!Range[0, 0] {}
+        P0!Stms!Range[0, 2] {}
+        P0!Stms!Range[0, 3] {}
+        P0!Stms!Range[0, 6] {}
+        P1!Stms!Stm[1]!If!True!Range[0, 0] {}
+        P1!Stms!Range[0, 1] {} |}]
+
+    let%expect_test "transform-list with bottom anchoring" =
+      test Transform_list (Src.Path_filter.anchor Bottom) ;
+      [%expect
+        {|
+        P0!Stms!Stm[3]!If!True!Range[0, 2] {}
+        P0!Stms!Stm[3]!If!True!Range[1, 1] {}
+        P0!Stms!Stm[3]!If!True!Range[2, 0] {}
+        P0!Stms!Stm[4]!If!False!Range[0, 0] {}
+        P0!Stms!Stm[5]!Flow-block!Body!Range[1, 0] {in-execute-multi, in-loop}
+        P0!Stms!Stm[6]!Flow-block!Body!Range[0, 1] {in-execute-multi, in-loop}
+        P0!Stms!Stm[6]!Flow-block!Body!Range[1, 0] {in-execute-multi, in-loop}
+        P0!Stms!Stm[7]!Flow-block!Body!Range[0, 1] {in-dead-code, in-loop}
+        P0!Stms!Range[2, 6] {}
+        P0!Stms!Range[5, 3] {}
+        P0!Stms!Range[6, 2] {}
+        P0!Stms!Range[8, 0] {}
+        P1!Stms!Stm[1]!If!True!Range[0, 0] {}
+        P1!Stms!Range[1, 1] {} |}]
+
+    let%expect_test "transform-list with full anchoring" =
+      test Transform_list (Src.Path_filter.anchor Full) ;
+      [%expect
+        {|
+        P0!Stms!Stm[3]!If!False!Range[0, 0] {in-dead-code}
+        P0!Stms!Stm[3]!If!True!Range[0, 2] {}
+        P0!Stms!Stm[4]!If!False!Range[0, 0] {}
+        P0!Stms!Stm[6]!Flow-block!Body!Range[0, 1] {in-execute-multi, in-loop}
+        P0!Stms!Stm[7]!Flow-block!Body!Range[0, 1] {in-dead-code, in-loop}
+        P0!Stms!Range[0, 8] {}
+        P1!Stms!Stm[1]!If!False!Range[0, 1] {in-dead-code}
+        P1!Stms!Stm[1]!If!True!Range[0, 0] {}
+        P1!Stms!Range[0, 2] {} |}]
 
     let%expect_test "transform-list with filtering to dead code" =
       test Transform_list Src.Path_filter.(require_flag In_dead_code) ;

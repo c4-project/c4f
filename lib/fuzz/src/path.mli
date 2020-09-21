@@ -17,6 +17,7 @@
       paths, see {!Path_consumers}. *)
 
 open Base
+open Import
 
 (** {1 Path components} *)
 
@@ -123,6 +124,17 @@ module Stms : sig
   type t = stm_list [@@deriving sexp, compare, equal]
 
   include Pretty_printer.S with type t := t
+
+  (** {3 Accessors and getters} *)
+
+  val index : ('i, index, t, [< field]) Accessor.Simple.t
+  (** [index] focuses on the index of a statement-list path fragment. *)
+
+  val len : t -> int
+  (** [len p] gets the number of statements accessed by [p]. *)
+
+  val is_nested : t -> bool
+  (** [is_nested p] gets whether [p] accesses nested paths. *)
 
   (** {3 Constructors} *)
 

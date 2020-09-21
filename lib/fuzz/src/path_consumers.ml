@@ -118,13 +118,17 @@ module Block = struct
 
   let consume_stms (b : Subject.Statement.t list) ~(path : Path.Stms.t)
       ~(mu : mu) ~(ctx : ctx) : Subject.Statement.t list Or_error.t =
-    match path with
-    | Insert pos ->
-        insert b ~pos ~ctx
-    | On_range (pos, len) ->
-        on_range b ~pos ~len ~ctx
-    | In_stm (pos, path) ->
-        in_stm b ~pos ~path ~mu ~ctx
+    Or_error.Let_syntax.(
+      let%bind () =
+        Path_context.check_anchor ctx ~block_len:(List.length b) ~path
+      in
+      match path with
+      | Insert pos ->
+          insert b ~pos ~ctx
+      | On_range (pos, len) ->
+          on_range b ~pos ~len ~ctx
+      | In_stm (pos, path) ->
+          in_stm b ~pos ~path ~mu ~ctx)
 
   let consume (b : Subject.Block.t) ~(path : Path.Stms.t) ~(mu : mu) :
       ctx:ctx -> Subject.Block.t Or_error.t =
