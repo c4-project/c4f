@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -13,34 +13,31 @@
     configurables. *)
 
 open Base
+open Import
 
-open struct
-  module Ac = Act_common
-end
+let unsafe_weaken_orders_flag : Common.Id.t =
+  Common.Id.("mem" @: "unsafe-weaken-orders" @: empty)
 
-let unsafe_weaken_orders_flag : Ac.Id.t =
-  Ac.Id.("mem" @: "unsafe-weaken-orders" @: empty)
+let make_global_flag : Common.Id.t = Common.Id.("var" @: "make" @: "global" @: empty)
 
-let make_global_flag : Ac.Id.t = Ac.Id.("var" @: "make" @: "global" @: empty)
+let wrap_early_out_flag : Common.Id.t =
+  Common.Id.("flow" @: "dead" @: "early-out-loop-end" @: "wrap" @: empty)
 
-let wrap_early_out_flag : Ac.Id.t =
-  Ac.Id.("flow" @: "dead" @: "early-out-loop-end" @: "wrap" @: empty)
+let make_param_spec_map (xs : (Common.Id.t, 'a Param_spec.t) List.Assoc.t) :
+    'a Param_spec.t Map.M(Common.Id).t =
+  xs |> Map.of_alist_exn (module Common.Id)
 
-let make_param_spec_map (xs : (Ac.Id.t, 'a Param_spec.t) List.Assoc.t) :
-    'a Param_spec.t Map.M(Ac.Id).t =
-  xs |> Map.of_alist_exn (module Ac.Id)
-
-let param_map : Param_spec.Int.t Map.M(Ac.Id).t Lazy.t =
+let param_map : Param_spec.Int.t Map.M(Common.Id).t Lazy.t =
   lazy
     (make_param_spec_map
-       [ ( Ac.Id.("cap" @: "actions" @: empty)
+       [ ( Common.Id.("cap" @: "actions" @: empty)
          , Param_spec.make ~default:40
              ~description:
                {|
               Caps the number of action passes that the fuzzer will run.
             |}
          )
-       ; ( Ac.Id.("cap" @: "threads" @: empty)
+       ; ( Common.Id.("cap" @: "threads" @: empty)
          , Param_spec.make ~default:16
              ~description:
                {|
@@ -56,7 +53,7 @@ let param_map : Param_spec.Int.t Map.M(Ac.Id).t Lazy.t =
             |}
          ) ])
 
-let flag_map : Param_spec.Bool.t Map.M(Ac.Id).t Lazy.t =
+let flag_map : Param_spec.Bool.t Map.M(Common.Id).t Lazy.t =
   lazy
     (make_param_spec_map
        [ ( unsafe_weaken_orders_flag
