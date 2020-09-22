@@ -23,6 +23,9 @@ let unsafe_weaken_orders_flag : Ac.Id.t =
 
 let make_global_flag : Ac.Id.t = Ac.Id.("var" @: "make" @: "global" @: empty)
 
+let wrap_early_out_flag : Ac.Id.t =
+  Ac.Id.("flow" @: "dead" @: "early-out-loop-end" @: "wrap" @: empty)
+
 let make_param_spec_map (xs : (Ac.Id.t, 'a Param_spec.t) List.Assoc.t) :
     'a Param_spec.t Map.M(Ac.Id).t =
   xs |> Map.of_alist_exn (module Ac.Id)
@@ -70,9 +73,22 @@ let flag_map : Param_spec.Bool.t Map.M(Ac.Id).t Lazy.t =
              ~default:(Or_error.ok_exn (Flag.try_make ~wins:1 ~losses:1))
              ~description:
                {|
-               If 'true', the Make action generates global variables; if not, it
-               generates local variables over the range of current threads.
+               If 'true', variable making actions generate global variables;
+               else, they generate local variables over the range of current
+               threads.
 
                To permit both global and local variable generation, this should be an inexact flag.
+|}
+         )
+       ; ( wrap_early_out_flag
+         , Param_spec.make
+           (* Wrapping is probably more fun for compilers than not wrapping. *)
+             ~default:(Or_error.ok_exn (Flag.try_make ~wins:3 ~losses:1))
+             ~description:
+               {|
+               If 'true', loop-end early-out actions wrap the early-out
+               in a truthy if statement; else, they emit the early-out directly.
+
+               To permit both possibilities, this should be an inexact flag.
 |}
          ) ])
