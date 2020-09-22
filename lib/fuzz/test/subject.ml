@@ -124,7 +124,7 @@ module Test_data = struct
           (Flow_block.while_loop
              ~cond:Expression.(Infix.(int_lit 4 == int_lit 5))
              ~body:
-               (Src.Subject.Block.make_generated
+               (Block.make ~metadata:Src.Metadata.gen_once
                   ~statements:
                     [ mk_store
                         (Atomic_store.make ~src:(Expression.int_lit 44)
@@ -202,6 +202,10 @@ module Test_data = struct
 
   let pos_0_false_if = 4
 
+  let pos_0_once_do_while = 5
+
+  let pos_0_multi_for = 6
+
   let pos_0_dead_while = 7
 
   let thread0 : Src.Subject.Thread.t Lazy.t =
@@ -272,9 +276,28 @@ module Test_data = struct
     let insert_dead : Src.Path.Flagged.t Lazy.t =
       flag [In_dead_code] Src.Path.(dead_else @@ Stms.insert 0)
 
+    let once_loop (path : Src.Path.Flow.t) : Src.Path.t Lazy.t =
+      Src.Path.(
+        thread_0_stms @@ Stms.in_stm pos_0_once_do_while @@ Stm.in_flow @@ path)
+
+    let insert_once_loop_end : Src.Path.Flagged.t Lazy.t =
+      flag [In_loop]
+        Src.Path.(once_loop @@ Flow.in_body @@ Stms.insert 1)
+
+    let multi_loop (path : Src.Path.Flow.t) : Src.Path.t Lazy.t =
+      Src.Path.(
+        thread_0_stms @@ Stms.in_stm pos_0_multi_for @@ Stm.in_flow @@ path)
+
+    let insert_multi_loop_end : Src.Path.Flagged.t Lazy.t =
+      flag [In_execute_multi; In_loop]
+        Src.Path.(multi_loop @@ Flow.in_body @@ Stms.insert 1)
+
     let dead_loop (path : Src.Path.Flow.t) : Src.Path.t Lazy.t =
       Src.Path.(
         thread_0_stms @@ Stms.in_stm pos_0_dead_while @@ Stm.in_flow @@ path)
+
+
+
 
     let insert_dead_loop : Src.Path.Flagged.t Lazy.t =
       flag [In_dead_code; In_loop]

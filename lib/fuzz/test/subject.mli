@@ -56,6 +56,14 @@ module Test_data : sig
 
     (** {3 Insertion paths} *)
 
+    val insert_once_loop_end : Act_fuzz.Path.Flagged.t Lazy.t
+    (** [insert_once_loop_end] is a full path that points to the end of a
+        one-execution loop for insertion purposes. *)
+
+    val insert_multi_loop_end : Act_fuzz.Path.Flagged.t Lazy.t
+    (** [insert_multi_loop_end] is a full path that points to the end of a
+        multi-execution loop for insertion purposes. *)
+
     val insert_dead : Act_fuzz.Path.Flagged.t Lazy.t
     (** [insert_dead] is a full path that points to somewhere in dead code
         that can take statement insertions, but is not in a loop. *)

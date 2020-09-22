@@ -13,8 +13,9 @@ open Import
 
 let%test_module "Early_out" =
   ( module struct
-    let test_on_example_program (wherez : Fuzz.Path.Flagged.t Lazy.t)
-        (to_insert : Act_fir.Early_out.t) : unit =
+    let test_on_example_program
+        (wherez : Fuzz.Path.Flagged.t Lazy.t)
+        (kind : Fir.Early_out.t) : unit =
       let where = Lazy.force wherez in
       let initial_state : Fuzz.State.t =
         Lazy.force Fuzz_test.Subject.Test_data.state
@@ -22,7 +23,7 @@ let%test_module "Early_out" =
       let test : Fuzz.Subject.Test.t =
         Lazy.force Fuzz_test.Subject.Test_data.test
       in
-      let payload = Fuzz.Payload_impl.Pathed.make ~where to_insert in
+      let payload = Fuzz.Payload_impl.Pathed.make ~where {Src.Flow_dead.Insert.Early_out_payload.if_cond=None; kind} in
       Fuzz_test.Action.Test_utils.run_and_dump_test
         (Src.Flow_dead.Insert.Early_out.run test ~payload)
         ~initial_state
@@ -101,4 +102,160 @@ let%test_module "Early_out" =
       void
       P1(atomic_int *x, atomic_int *y)
       { loop: ; if (true) {  } else { goto loop; } } |}]
+  end )
+
+let%test_module "Early_out_loop_end" =
+  ( module struct
+    let test_on_example_program
+       ?(if_cond: Fir.Expression.t option)
+        (wherez : Fuzz.Path.Flagged.t Lazy.t)
+        (kind : Fir.Early_out.t) : unit =
+      let where = Lazy.force wherez in
+      let initial_state : Fuzz.State.t =
+        Lazy.force Fuzz_test.Subject.Test_data.state
+      in
+      let test : Fuzz.Subject.Test.t =
+        Lazy.force Fuzz_test.Subject.Test_data.test
+      in
+      let payload = Fuzz.Payload_impl.Pathed.make ~where {Src.Flow_dead.Insert.Early_out_payload.if_cond; kind} in
+      Fuzz_test.Action.Test_utils.run_and_dump_test
+        (Src.Flow_dead.Insert.Early_out_loop_end.run test ~payload)
+        ~initial_state
+
+    let%expect_test "valid continue on multi loop" =
+      test_on_example_program
+        Fuzz_test.Subject.Test_data.Path.insert_multi_loop_end Continue ;
+      [%expect
+        {|
+          void
+          P0(atomic_int *x, atomic_int *y)
+          {
+              atomic_int r0 = 4004;
+              int r1 = 8008;
+              atomic_store_explicit(x, 42, memory_order_seq_cst);
+              ;
+              atomic_store_explicit(y, foo, memory_order_relaxed);
+              if (foo == y)
+              { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
+              if (false)
+              {
+                  atomic_store_explicit(y,
+                                        atomic_load_explicit(x, memory_order_seq_cst),
+                                        memory_order_seq_cst);
+              }
+              do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
+              5);
+              for (r1 = 0; r1 <= 2; r1++)
+              { atomic_store_explicit(x, 99, memory_order_seq_cst); continue; }
+              while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
+          }
+
+          void
+          P1(atomic_int *x, atomic_int *y)
+          { loop: ; if (true) {  } else { goto loop; } } |}]
+
+    let%expect_test "invalid break on multi loop" =
+      test_on_example_program
+        Fuzz_test.Subject.Test_data.Path.insert_multi_loop_end Break ;
+      [%expect
+        {| "Unmet forbidden flag condition: in-execute-multi" |}]
+
+    let%expect_test "valid continue on single loop" =
+      test_on_example_program
+        Fuzz_test.Subject.Test_data.Path.insert_once_loop_end Continue ;
+      [%expect
+        {|
+          void
+          P0(atomic_int *x, atomic_int *y)
+          {
+              atomic_int r0 = 4004;
+              int r1 = 8008;
+              atomic_store_explicit(x, 42, memory_order_seq_cst);
+              ;
+              atomic_store_explicit(y, foo, memory_order_relaxed);
+              if (foo == y)
+              { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
+              if (false)
+              {
+                  atomic_store_explicit(y,
+                                        atomic_load_explicit(x, memory_order_seq_cst),
+                                        memory_order_seq_cst);
+              }
+              do { atomic_store_explicit(x, 44, memory_order_seq_cst); continue; }
+              while (4 == 5);
+              for (r1 = 0; r1 <= 2; r1++)
+              { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+              while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
+          }
+
+          void
+          P1(atomic_int *x, atomic_int *y)
+          { loop: ; if (true) {  } else { goto loop; } } |}]
+
+    let%expect_test "valid break on single loop" =
+      test_on_example_program
+        Fuzz_test.Subject.Test_data.Path.insert_once_loop_end Break ;
+      [%expect
+        {|
+          void
+          P0(atomic_int *x, atomic_int *y)
+          {
+              atomic_int r0 = 4004;
+              int r1 = 8008;
+              atomic_store_explicit(x, 42, memory_order_seq_cst);
+              ;
+              atomic_store_explicit(y, foo, memory_order_relaxed);
+              if (foo == y)
+              { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
+              if (false)
+              {
+                  atomic_store_explicit(y,
+                                        atomic_load_explicit(x, memory_order_seq_cst),
+                                        memory_order_seq_cst);
+              }
+              do { atomic_store_explicit(x, 44, memory_order_seq_cst); break; } while
+              (4 == 5);
+              for (r1 = 0; r1 <= 2; r1++)
+              { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+              while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
+          }
+
+          void
+          P1(atomic_int *x, atomic_int *y)
+          { loop: ; if (true) {  } else { goto loop; } } |}]
+
+    let%expect_test "valid break on single loop with wrapping" =
+      test_on_example_program ~if_cond:(Fir.Expression.truth)
+        Fuzz_test.Subject.Test_data.Path.insert_once_loop_end Break ;
+      [%expect
+        {|
+          void
+          P0(atomic_int *x, atomic_int *y)
+          {
+              atomic_int r0 = 4004;
+              int r1 = 8008;
+              atomic_store_explicit(x, 42, memory_order_seq_cst);
+              ;
+              atomic_store_explicit(y, foo, memory_order_relaxed);
+              if (foo == y)
+              { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
+              if (false)
+              {
+                  atomic_store_explicit(y,
+                                        atomic_load_explicit(x, memory_order_seq_cst),
+                                        memory_order_seq_cst);
+              }
+              do
+              {
+                  atomic_store_explicit(x, 44, memory_order_seq_cst);
+                  if (true) { break; }
+              } while (4 == 5);
+              for (r1 = 0; r1 <= 2; r1++)
+              { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+              while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
+          }
+
+          void
+          P1(atomic_int *x, atomic_int *y)
+          { loop: ; if (true) {  } else { goto loop; } } |}]
   end )
