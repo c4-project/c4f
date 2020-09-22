@@ -15,6 +15,28 @@ open Import
 let print_flags : Set.M(Src.Path_flag).t -> unit =
   Fmt.pr "@[%a@]@." Src.Path_flag.pp_set
 
+let%test_module "check_contradiction_free" =
+  ( module struct
+    let test (m : Src.Path_flag.t list) : unit =
+      let result = Or_error.(m |> Set.of_list (module Src.Path_flag) |> Src.Path_flag.check_contradiction_free >>| fun _ -> ()) in
+      Fmt.(pr "@[%a@]@." (result ~ok:nop ~error:Error.pp)) result
+
+      let%expect_test "empty set" =
+        test [];
+        [%expect {||}]
+      
+      let%expect_test "in loop, execute-multi unsafe" =
+        test [In_loop; Execute_multi_unsafe];
+        [%expect {||}]
+
+      let%expect_test "in execute-multi loop, execute-multi unsafe" =
+        test [In_loop; In_execute_multi; Execute_multi_unsafe];
+        [%expect {|
+          ("Contradiction detected in path flags - possible action generator error"
+           (flags (execute-multi-unsafe in-execute-multi in-loop))
+           (contradictions ((execute-multi-unsafe in-execute-multi)))) |}]
+    end )
+
 let%test_module "flags_of_metadata" =
   ( module struct
     let test (m : Src.Metadata.t) : unit =

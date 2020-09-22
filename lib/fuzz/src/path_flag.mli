@@ -59,6 +59,14 @@ val flags_of_stm : Subject.Statement.t -> set
     through the statement's block (use {!flags_of_flow}, {!flags_of_block},
     etc.). *)
 
+(** {1 Safety checking} *)
+
+val check_contradiction_free : set -> set Or_error.t
+(** [check_contradiction_free xs] checks to see if there are contradictions
+    in the path flags in [xs].  For example, [xs] having both 'execute-multi
+    unsafe' and 'in execute-multi' is a contradiction.  Such contradictions
+    suggest an error in an action generator. *)
+
 (** {1 Paths with flags attached} *)
 
 module Flagged : sig

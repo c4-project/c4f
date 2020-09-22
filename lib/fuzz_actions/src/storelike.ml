@@ -166,12 +166,26 @@ struct
           Option.is_some (List.find dsts ~f:(Common.C_id.equal id))))
       srcs
 
+  (** [apply_once_only to_insert ~path_flags] decides whether [to_insert],
+      inserted into a path containing [path_flags], needs the [Once_only]
+      metadata restriction set. This prevents actions that would wrap
+      [to_insert] in a multi-execution loop from doing so. *)
+  let apply_once_only (to_insert : B.t)
+      ~(path_flags : Set.M(Fuzz.Path_flag).t) : bool =
+    if Set.mem path_flags In_dead_code then false
+    else
+      match B.Flags.execute_multi_safe with
+      | `Always ->
+          false
+      | `If_no_cycles ->
+          has_dependency_cycle to_insert
+      | `Never ->
+          true
+
   module Payload = struct
     type t = B.t Fuzz.Payload_impl.Pathed.t [@@deriving sexp]
 
     let path_filter = path_filter
-
-    module G = Base_quickcheck.Generator
 
     let error_if_empty (env_name : string) (env : Fir.Env.t) :
         unit Or_error.t =
@@ -185,6 +199,14 @@ struct
       Or_error.combine_errors_unit
         [error_if_empty "src" src; error_if_empty "dst" dst]
 
+    let filter_for_loop_safety (gen : B.t Q.Generator.t) ~(path_flags : Set.M(Fuzz.Path_flag).t)
+      : B.t Q.Generator.t =
+      (* We need to make sure that there is no situation where both
+         In_execute_multi and Execute_multi_unsafe are generated on the same item. *)
+      if Set.mem path_flags In_execute_multi
+      then Q.Generator.filter gen ~f:(Fn.non (apply_once_only ~path_flags))
+      else gen
+
     let gen_opt (vars : Fuzz.Var.Map.t) ~(where : Fuzz.Path.Flagged.t)
         ~(forbid_already_written : bool) : B.t Fuzz.Opt_gen.t =
       let tid = Fuzz.Path.tid where.path in
@@ -192,7 +214,7 @@ struct
       let dst = dst_env vars ~tid ~forbid_already_written in
       Or_error.Let_syntax.(
         let%map () = check_envs src dst in
-        B.gen ~src ~dst ~vars ~tid)
+        filter_for_loop_safety ~path_flags:where.flags (B.gen ~src ~dst ~vars ~tid))
 
     let gen' (where : Fuzz.Path.Flagged.t) : B.t Fuzz.Payload_gen.t =
       Fuzz.Payload_gen.(
@@ -254,26 +276,10 @@ struct
           (Common.Litmus_id.local tid id)
           init)
 
-  (** [apply_once_only to_insert path_flags] decides whether [to_insert],
-      inserted into a path containing [path_flags], needs the [Once_only]
-      metadata restriction set. This prevents actions that would wrap
-      [to_insert] in a multi-execution loop from doing so. *)
-  let apply_once_only (to_insert : B.t)
-      (path_flags : Set.M(Fuzz.Path_flag).t) : bool =
-    if Set.mem path_flags In_dead_code then false
-    else
-      match B.Flags.execute_multi_safe with
-      | `Always ->
-          false
-      | `If_no_cycles ->
-          has_dependency_cycle to_insert
-      | `Never ->
-          true
-
   let stm_metadata (to_insert : B.t) (path_flags : Set.M(Fuzz.Path_flag).t) :
       Fuzz.Metadata.t =
     let restrictions =
-      if apply_once_only to_insert path_flags then
+      if apply_once_only to_insert ~path_flags then
         Set.singleton (module Fuzz.Metadata.Restriction) Once_only
       else Set.empty (module Fuzz.Metadata.Restriction)
     in
