@@ -11,13 +11,6 @@ atomic.cmpxchg.insert.int.succeed:
     The new variable is set up such that it has a known value of 'true'.
     
     This operation generates 'atomic_int's.
-    
-    If 'store.forbid-already-written' is true, this action will only store to
-    variables that haven't previously been selected for store actions. This
-    makes calculating candidate executions easier, but limits the degree of
-    entropy somewhat. (Note that if the value is stochastic, the action will
-    only fire if such variables exist, but may or may not proceed to select a
-    previously-stored variable. This is a limitation of the flag system.)
 atomic.fetch.insert.int.dead:
   Weight: 20x
   Summary:
@@ -29,13 +22,6 @@ atomic.fetch.insert.int.dead:
     erase known-values.
     
     This operation generates 'atomic_int's.
-    
-    If 'store.forbid-already-written' is true, this action will only store to
-    variables that haven't previously been selected for store actions. This
-    makes calculating candidate executions easier, but limits the degree of
-    entropy somewhat. (Note that if the value is stochastic, the action will
-    only fire if such variables exist, but may or may not proceed to select a
-    previously-stored variable. This is a limitation of the flag system.)
 atomic.fetch.insert.int.redundant:
   Weight: 20x
   Summary:
@@ -46,13 +32,6 @@ atomic.fetch.insert.int.redundant:
     destination back to itself.
     
     This operation generates 'atomic_int's.
-    
-    If 'store.forbid-already-written' is true, this action will only store to
-    variables that haven't previously been selected for store actions. This
-    makes calculating candidate executions easier, but limits the degree of
-    entropy somewhat. (Note that if the value is stochastic, the action will
-    only fire if such variables exist, but may or may not proceed to select a
-    previously-stored variable. This is a limitation of the flag system.)
 atomic.store.insert.int.dead:
   Weight: 20x
   Summary:
@@ -64,13 +43,6 @@ atomic.store.insert.int.dead:
     erase known-values.
     
     This operation generates 'atomic_int's.
-    
-    If 'store.forbid-already-written' is true, this action will only store to
-    variables that haven't previously been selected for store actions. This
-    makes calculating candidate executions easier, but limits the degree of
-    entropy somewhat. (Note that if the value is stochastic, the action will
-    only fire if such variables exist, but may or may not proceed to select a
-    previously-stored variable. This is a limitation of the flag system.)
 atomic.store.insert.int.normal:
   Weight: 20x
   Summary:
@@ -81,13 +53,6 @@ atomic.store.insert.int.normal:
     destination.
     
     This operation generates 'atomic_int's.
-    
-    If 'store.forbid-already-written' is true, this action will only store to
-    variables that haven't previously been selected for store actions. This
-    makes calculating candidate executions easier, but limits the degree of
-    entropy somewhat. (Note that if the value is stochastic, the action will
-    only fire if such variables exist, but may or may not proceed to select a
-    previously-stored variable. This is a limitation of the flag system.)
 atomic.store.insert.int.redundant:
   Weight: 15x
   Summary:
@@ -98,13 +63,6 @@ atomic.store.insert.int.redundant:
     destination back to itself.
     
     This operation generates 'atomic_int's.
-    
-    If 'store.forbid-already-written' is true, this action will only store to
-    variables that haven't previously been selected for store actions. This
-    makes calculating candidate executions easier, but limits the degree of
-    entropy somewhat. (Note that if the value is stochastic, the action will
-    only fire if such variables exist, but may or may not proceed to select a
-    previously-stored variable. This is a limitation of the flag system.)
 atomic.store.transform.xchgify:
   Weight: 15x
   Summary:
@@ -244,13 +202,6 @@ var.assign.insert.int.dead:
     erase known-values.
     
     This operation generates 'int's.
-    
-    If 'store.forbid-already-written' is true, this action will only store to
-    variables that haven't previously been selected for store actions. This
-    makes calculating candidate executions easier, but limits the degree of
-    entropy somewhat. (Note that if the value is stochastic, the action will
-    only fire if such variables exist, but may or may not proceed to select a
-    previously-stored variable. This is a limitation of the flag system.)
 var.assign.insert.int.normal:
   Weight: 20x
   Summary:
@@ -261,13 +212,6 @@ var.assign.insert.int.normal:
     destination.
     
     This operation generates 'int's.
-    
-    If 'store.forbid-already-written' is true, this action will only store to
-    variables that haven't previously been selected for store actions. This
-    makes calculating candidate executions easier, but limits the degree of
-    entropy somewhat. (Note that if the value is stochastic, the action will
-    only fire if such variables exist, but may or may not proceed to select a
-    previously-stored variable. This is a limitation of the flag system.)
 var.assign.insert.int.redundant:
   Weight: 15x
   Summary:
@@ -278,13 +222,6 @@ var.assign.insert.int.redundant:
     destination back to itself.
     
     This operation generates 'int's.
-    
-    If 'store.forbid-already-written' is true, this action will only store to
-    variables that haven't previously been selected for store actions. This
-    makes calculating candidate executions easier, but limits the degree of
-    entropy somewhat. (Note that if the value is stochastic, the action will
-    only fire if such variables exist, but may or may not proceed to select a
-    previously-stored variable. This is a limitation of the flag system.)
 var.make:
   Weight: 20x
   Summary:

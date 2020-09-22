@@ -179,11 +179,10 @@ let is_thread_ok (filter : t) ~(thread : int) : bool =
 
 let check_req (filter : t) ~(flags : Set.M(Path_flag).t) : unit Or_error.t =
   Or_error.Let_syntax.(
-    (* This might not be the best place to put this check, but it is a
-       point where we have all of the flags that will be enabled on the
-       path. *)
+    (* This might not be the best place to put this check, but it is a point
+       where we have all of the flags that will be enabled on the path. *)
     let%bind _ = Path_flag.check_contradiction_free flags in
-  error_of_flags ~polarity:"required" (Set.diff filter.req_flags flags))
+    error_of_flags ~polarity:"required" (Set.diff filter.req_flags flags))
 
 let check_not (filter : t) ~(flags : Set.M(Path_flag).t) : unit Or_error.t =
   error_of_flags ~polarity:"forbidden" (Set.inter filter.not_flags flags)

@@ -18,9 +18,6 @@ open struct
   module Ac = Act_common
 end
 
-let forbid_already_written_flag : Ac.Id.t =
-  Ac.Id.("store" @: "forbid-already-written" @: empty)
-
 let unsafe_weaken_orders_flag : Ac.Id.t =
   Ac.Id.("mem" @: "unsafe-weaken-orders" @: empty)
 
@@ -59,21 +56,7 @@ let param_map : Param_spec.Int.t Map.M(Ac.Id).t Lazy.t =
 let flag_map : Param_spec.Bool.t Map.M(Ac.Id).t Lazy.t =
   lazy
     (make_param_spec_map
-       [ ( forbid_already_written_flag
-         , Param_spec.make ~default:(Flag.exact false)
-             ~description:
-               {|
-              If 'true', stops store actions from selecting a destination
-              variable to which there already exists a write action.
-
-              Note that, because of the limitations of the flag system, setting
-              this flag to a ratio will cause any dependent actions to stop
-              firing when no non-written variables exist (but, once the action
-              fires, it can decide with the given probability to restrict
-              itself to already-written variables).
-            |}
-         )
-       ; ( unsafe_weaken_orders_flag
+       [ ( unsafe_weaken_orders_flag
          , Param_spec.make ~default:(Flag.exact false)
              ~description:
                {|

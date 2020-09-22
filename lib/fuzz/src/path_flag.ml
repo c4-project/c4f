@@ -38,23 +38,25 @@ end
 
 include M
 
-let contradictions : Set.M(M).t list Lazy.t = 
+let contradictions : Set.M(M).t list Lazy.t =
   lazy
-    (List.map ~f:(Set.of_list (module M))
-    [ [ In_execute_multi; Execute_multi_unsafe ] ])
+    (List.map
+       ~f:(Set.of_list (module M))
+       [[In_execute_multi; Execute_multi_unsafe]])
 
 let contradictions_of_set (xs : Set.M(M).t) : Set.M(M).t list =
   List.filter (Lazy.force contradictions) ~f:(Set.is_subset ~of_:xs)
 
 let check_contradiction_free (xs : Set.M(M).t) : Set.M(M).t Or_error.t =
   let contra = contradictions_of_set xs in
-  if List.is_empty contra
-  then Ok xs
-  else Or_error.error_s
-    [%message "Contradiction detected in path flags - possible action generator error"
-      ~flags:(xs : Set.M(M).t)
-      ~contradictions:(contra : Set.M(M).t list)
-    ]
+  if List.is_empty contra then Ok xs
+  else
+    Or_error.error_s
+      [%message
+        "Contradiction detected in path flags - possible action generator \
+         error"
+          ~flags:(xs : Set.M(M).t)
+          ~contradictions:(contra : Set.M(M).t list)]
 
 (** Maps a subset of the flags to predicates that toggle whether a piece of
     metadata sets the flag or not. *)

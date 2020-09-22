@@ -12,20 +12,6 @@
 open Base
 open Import
 
-let readme_faw : string Lazy.t =
-  lazy
-    (Printf.sprintf
-       {|
-    If '%s' is true, this action will only store
-    to variables that haven't previously been selected for store actions.
-    This makes calculating candidate executions easier, but limits the degree
-    of entropy somewhat.  (Note that if the value is stochastic, the action
-    will only fire if such variables exist, but may or may not proceed to
-    select a previously-stored variable.  This is a limitation of the flag
-    system.)
-  |}
-       (Common.Id.to_string Fuzz.Config_tables.forbid_already_written_flag))
-
 (** Lists the restrictions we put on source variables. *)
 let basic_src_restrictions : (Fuzz.Var.Record.t -> bool) list Lazy.t =
   lazy []
@@ -38,13 +24,6 @@ module Dst_restriction = struct
       Accessor.(Fuzz.Var.Record.Access.type_of @> Fir.Type.Access.basic_type)
     in
     [Fir.Type.Basic.eq bt ~to_:dst_type]
-
-  let with_user_flags ~(dst_type : Fir.Type.Basic.t)
-      ~(forbid_already_written : bool) : t list =
-    basic dst_type
-    @ List.filter_opt
-        [ Option.some_if forbid_already_written
-            (Fn.non Fuzz.Var.Record.has_writes) ]
 
   let forbid_dependencies : t =
     Tx.Fn.(
@@ -88,8 +67,7 @@ struct
   let readme_chunks () : string list =
     B.readme_preamble
     @ [ Printf.sprintf "This operation generates '%s's."
-          (Fir.Type.Basic.to_string B.dst_type)
-      ; Lazy.force readme_faw ]
+          (Fir.Type.Basic.to_string B.dst_type) ]
 
   let readme () =
     readme_chunks () |> String.concat ~sep:"\n\n"
@@ -99,31 +77,12 @@ struct
     let predicates = Lazy.force basic_src_restrictions in
     Fuzz.Var.Map.env_satisfying_all ~predicates ~scope:(Local tid) vars
 
-  let dst_restrictions ~(forbid_already_written : bool) :
-      (Fuzz.Var.Record.t -> bool) list =
-    Dst_restriction.with_user_flags ~dst_type:B.dst_type
-      ~forbid_already_written
-    @ B.extra_dst_restrictions
+  let dst_restrictions : (Fuzz.Var.Record.t -> bool) list Lazy.t =
+    lazy (Dst_restriction.basic B.dst_type @ B.extra_dst_restrictions)
 
-  let dst_env (vars : Fuzz.Var.Map.t) ~(tid : int)
-      ~(forbid_already_written : bool) : Fir.Env.t =
-    let predicates = dst_restrictions ~forbid_already_written in
+  let dst_env (vars : Fuzz.Var.Map.t) ~(tid : int) : Fir.Env.t =
+    let predicates = Lazy.force dst_restrictions in
     Fuzz.Var.Map.env_satisfying_all ~predicates ~scope:(Local tid) vars
-
-  let approx_forbid_already_written (ctx : Fuzz.Availability.Context.t) :
-      bool Or_error.t =
-    (* If the flag is stochastic, then we can't tell whether its value will
-       be the same in the payload check. As such, we need to be pessimistic
-       and assume that we _can't_ make writes to already-written variables if
-       we can't guarantee an exact value.
-
-       See https://github.com/MattWindsor91/act/issues/172. *)
-    Or_error.(
-      Fuzz.Param_map.get_flag
-        (Fuzz.Availability.Context.param_map ctx)
-        ~id:Fuzz.Config_tables.forbid_already_written_flag
-      >>| Fuzz.Flag.to_exact_opt
-      >>| Option.value ~default:true)
 
   let execute_multi_path_filter (f : Fuzz.Path_filter.t) : Fuzz.Path_filter.t
       =
@@ -141,15 +100,11 @@ struct
         f
 
   let path_filter ctx =
-    let forbid_already_written =
-      ctx |> approx_forbid_already_written |> Result.ok
-      |> Option.value ~default:true
-    in
     Fuzz.Path_filter.(
       Fuzz.Availability.in_thread_with_variables ctx
         ~predicates:
           (List.append
-             (dst_restrictions ~forbid_already_written)
+             (Lazy.force dst_restrictions)
              (Lazy.force basic_src_restrictions))
       + execute_multi_path_filter B.path_filter)
 
@@ -199,30 +154,29 @@ struct
       Or_error.combine_errors_unit
         [error_if_empty "src" src; error_if_empty "dst" dst]
 
-    let filter_for_loop_safety (gen : B.t Q.Generator.t) ~(path_flags : Set.M(Fuzz.Path_flag).t)
-      : B.t Q.Generator.t =
+    let filter_for_loop_safety (gen : B.t Q.Generator.t)
+        ~(path_flags : Set.M(Fuzz.Path_flag).t) : B.t Q.Generator.t =
       (* We need to make sure that there is no situation where both
-         In_execute_multi and Execute_multi_unsafe are generated on the same item. *)
-      if Set.mem path_flags In_execute_multi
-      then Q.Generator.filter gen ~f:(Fn.non (apply_once_only ~path_flags))
+         In_execute_multi and Execute_multi_unsafe are generated on the same
+         item. *)
+      if Set.mem path_flags In_execute_multi then
+        Q.Generator.filter gen ~f:(Fn.non (apply_once_only ~path_flags))
       else gen
 
-    let gen_opt (vars : Fuzz.Var.Map.t) ~(where : Fuzz.Path.Flagged.t)
-        ~(forbid_already_written : bool) : B.t Fuzz.Opt_gen.t =
+    let gen_opt (vars : Fuzz.Var.Map.t) ~(where : Fuzz.Path.Flagged.t) :
+        B.t Fuzz.Opt_gen.t =
       let tid = Fuzz.Path.tid where.path in
       let src = src_env vars ~tid in
-      let dst = dst_env vars ~tid ~forbid_already_written in
+      let dst = dst_env vars ~tid in
       Or_error.Let_syntax.(
         let%map () = check_envs src dst in
-        filter_for_loop_safety ~path_flags:where.flags (B.gen ~src ~dst ~vars ~tid))
+        filter_for_loop_safety ~path_flags:where.flags
+          (B.gen ~src ~dst ~vars ~tid))
 
     let gen' (where : Fuzz.Path.Flagged.t) : B.t Fuzz.Payload_gen.t =
       Fuzz.Payload_gen.(
-        let* forbid_already_written =
-          flag Fuzz.Config_tables.forbid_already_written_flag
-        in
         let* vars = vars in
-        lift_opt_gen (gen_opt vars ~where ~forbid_already_written))
+        lift_opt_gen (gen_opt vars ~where))
 
     let gen = Fuzz.Payload_impl.Pathed.gen Insert path_filter gen'
   end

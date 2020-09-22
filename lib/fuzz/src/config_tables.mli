@@ -26,10 +26,6 @@ val flag_map : Param_spec.Bool.t Map.M(Act_common.Id).t Lazy.t
 
 (** {1 Flag keys} *)
 
-val forbid_already_written_flag : Act_common.Id.t
-(** [forbid_already_written_flag] names the flag that, when true, stops store
-    actions from considering variables with existing writes. *)
-
 val make_global_flag : Act_common.Id.t
 (** [make_global_flag] names the flag that decides whether variable creation
     actions should make globals if true (and locals if false). This flag is
