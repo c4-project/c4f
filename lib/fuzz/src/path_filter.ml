@@ -17,6 +17,55 @@ open Import
    flag-based approach to give better error messages when paths fail
    validation. *)
 
+module Block = struct
+  type t =
+    | Top
+    | If of bool option
+    | Flow of Fir.Statement_class.Flow.t option
+  [@@deriving sexp, equal]
+
+  (* All block constraints are disjoint, so if we merge together two path
+     filters that disagree on them, we get an inconsistent check *)
+  type chk = Valid of t | Inconsistent
+
+  let merge (x : chk) (y : chk) : chk =
+    match (x, y) with
+    | Valid x, Valid y when equal x y ->
+        Valid x
+    | Valid _, Valid _
+    | Valid _, Inconsistent
+    | Inconsistent, Valid _
+    | Inconsistent, Inconsistent ->
+        Inconsistent
+
+  let match_fail (block : t) ~(template : t) : unit Or_error.t =
+    Or_error.error_s
+      [%message
+        "Final block of path doesn't match filter"
+          ~block:(block : t)
+          ~template:(template : t)]
+
+  let match_req (block : t) ~(template : t) : unit Or_error.t =
+    match (template, block) with
+    | Top, Top | If None, If _ | Flow None, Flow _ ->
+        Ok ()
+    | If (Some x), If (Some y) when Bool.equal x y ->
+        Ok ()
+    | Flow (Some template), Flow (Some x)
+      when Fir.Statement_class.Flow.class_matches x ~template ->
+        Ok ()
+    | _, _ ->
+        match_fail block ~template
+
+  let check (chk : chk) ~(block : t) : unit Or_error.t =
+    match chk with
+    | Inconsistent ->
+        Or_error.error_string
+          "path filter has inconsistent block requirements"
+    | Valid template ->
+        match_req block ~template
+end
+
 module Anchor = struct
   type t = Top | Bottom | Full [@@deriving sexp]
 
@@ -103,26 +152,31 @@ type t =
   ; not_flags: Set.M(Path_flag).t
   ; end_checks: Set.M(End_check).t
   ; threads: Set.M(Int).t option
-  ; anchor: Anchor.t option }
+  ; anchor: Anchor.t option
+  ; block: Block.chk option }
 
 let zero : t =
   { req_flags= Set.empty (module Path_flag)
   ; not_flags= Set.empty (module Path_flag)
   ; end_checks= Set.empty (module End_check)
   ; threads= None
-  ; anchor= None }
+  ; anchor= None
+  ; block= None }
 
 let ( + ) (l : t) (r : t) : t =
   { req_flags= Set.union l.req_flags r.req_flags
   ; not_flags= Set.union l.not_flags r.not_flags
   ; end_checks= Set.union l.end_checks r.end_checks
   ; threads= Option.merge ~f:Set.inter l.threads r.threads
-  ; anchor= Option.merge ~f:Anchor.merge l.anchor r.anchor }
+  ; anchor= Option.merge ~f:Anchor.merge l.anchor r.anchor
+  ; block= Option.merge ~f:Block.merge l.block r.block }
 
 let add_if (x : t) ~(when_ : bool) ~(add : t) : t =
   if when_ then x + add else x
 
 let anchor (anc : Anchor.t) : t = {zero with anchor= Some anc}
+
+let ends_in_block (blk : Block.t) : t = {zero with block= Some (Valid blk)}
 
 let require_flags (req_flags : Set.M(Path_flag).t) : t = {zero with req_flags}
 
@@ -191,6 +245,9 @@ let check_anchor (filter : t) ~(path : Path.Stms.t) ~(block_len : int) :
     unit Or_error.t =
   Tx.Option.With_errors.iter_m filter.anchor
     ~f:(Anchor.check_anchor ~path ~block_len)
+
+let check_block (filter : t) ~(block : Block.t) : unit Or_error.t =
+  Tx.Option.With_errors.iter_m filter.block ~f:(Block.check ~block)
 
 let end_checks_for_statement (filter : t) (stm : Subject.Statement.t) :
     unit Or_error.t list =

@@ -105,6 +105,23 @@ val anchor : Anchor.t -> t
 (** [anchor anc] requires that any statement(s) reached by this path, or any
     insertion locations proposed by this path, respect the anchoring [anc]. *)
 
+(** {2 Blocks} *)
+module Block : sig
+  (** Type of block restrictions. *)
+  type t =
+    | Top (* Block is at the top of a function/thread. *)
+    | If of bool option (* Block is the given branch of an if statement. *)
+    | Flow of Fir.Statement_class.Flow.t option
+
+  (* Block is a flow block with the given classification. *)
+end
+
+val ends_in_block : Block.t -> t
+(** [ends_in_block b] requires that the inmost block of the path matches [b].
+
+    To check that a path passes through, or does not pass through, a
+    particular block, use path flags. *)
+
 (** {1 Consuming filters} *)
 
 (** {2 Checking paths} *)
@@ -133,3 +150,8 @@ val check_anchor : t -> path:Path.Stms.t -> block_len:int -> unit Or_error.t
 (** [check_anchor filter ~path ~block_len] should be applied before
     constructing any path targeting a member of a block of length
     [block_len], and checks whether [path] is properly anchored within it. *)
+
+val check_block : t -> block:Block.t -> unit Or_error.t
+(** [check_block filter ~block] should be applied before constructing any
+    path whose inmost block is [block], and checks whether the filter allows
+    it. *)

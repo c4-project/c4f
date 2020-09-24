@@ -39,11 +39,16 @@ end
 
 (** {1 Flow classes} *)
 module Flow : sig
+  module Loop : sig
+    (** Sub-enumeration of loop flows. *)
+    type t = For | While of Flow_block.While.t option
+    [@@deriving compare, equal, sexp]
+  end
+
   (** Enumeration of flow statement classes. *)
   type t =
-    | For
+    | Loop of Loop.t option
     | Lock of Flow_block.Lock.t option
-    | While of Flow_block.While.t option
     | Explicit
     | Implicit
   [@@deriving compare, equal, sexp]

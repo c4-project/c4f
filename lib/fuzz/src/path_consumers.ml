@@ -155,10 +155,15 @@ module Make_flow (F : sig
   val path : rest -> Path.Stms.t
   (** [path rest] extracts the path from [rest]. *)
 
+  val block_kind : rest -> t -> Path_filter.Block.t
+  (** [block_kind branch x] gets the path-filter block kind for [x], used to
+      check if paths terminating inside this block match block filters. *)
+
   val thru_flags : t -> Set.M(Path_flag).t
   (** [thru_flags x] gets any flags that should activate on passing through
       [x]. *)
 
+  (* TODO(@MattWindsor91): this can probably be an accessor now. *)
   val block_lens :
        rest
     -> (Subject.Block.t -> Subject.Block.t Or_error.t)
@@ -184,6 +189,9 @@ struct
         | This_cond ->
             this_cond x ~ctx
         | In_block rest ->
+            let ctx =
+              Path_context.set_block_kind ctx (F.block_kind rest x)
+            in
             in_block x ~rest ~mu ~ctx)
 end
 
@@ -193,6 +201,8 @@ module If = Make_flow (struct
   type rest = bool * Path.Stms.t
 
   let path : rest -> Path.Stms.t = snd
+
+  let block_kind ((b, _) : rest) (_ : t) : Path_filter.Block.t = If (Some b)
 
   let thru_flags = Fn.const (Set.empty (module Path_flag))
 
@@ -211,6 +221,9 @@ module Flow = Make_flow (struct
   type rest = Path.Stms.t
 
   let path : rest -> Path.Stms.t = Fn.id
+
+  let block_kind (_ : rest) (f : t) : Path_filter.Block.t =
+    Flow (Fir.Statement_class.Flow.classify f)
 
   let thru_flags = Path_flag.flags_of_flow
 

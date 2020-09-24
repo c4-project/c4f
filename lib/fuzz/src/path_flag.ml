@@ -71,7 +71,7 @@ let metadata_predicates : (t, Metadata.t -> bool) List.Assoc.t =
 let flags_of_flow_class' =
   [%accessor
     Accessor.optional_getter (function
-      | Fir.Statement_class.Flow.For | While _ ->
+      | Fir.Statement_class.Flow.Loop _ ->
           (* Whether or not the loop executes multiple times is stored in its
              block metadata. *)
           Some In_loop

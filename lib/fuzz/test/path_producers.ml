@@ -131,6 +131,17 @@ let%test_module "sample path output on example code" =
             P0!Stms!Stm[7]!Flow-block!Body!Insert[1] {in-dead-code, in-loop}
             P1!Stms!Stm[1]!If!False!Insert[1] {in-dead-code} |}]
 
+    let%expect_test "insert with dead-code filtering" =
+      test Insert Src.Path_filter.(require_flag In_dead_code) ;
+      [%expect
+        {|
+            P0!Stms!Stm[3]!If!False!Insert[0] {in-dead-code}
+            P0!Stms!Stm[4]!If!True!Insert[0] {in-dead-code}
+            P0!Stms!Stm[4]!If!True!Insert[1] {in-dead-code}
+            P0!Stms!Stm[7]!Flow-block!Body!Insert[0] {in-dead-code, in-loop}
+            P0!Stms!Stm[7]!Flow-block!Body!Insert[1] {in-dead-code, in-loop}
+            P1!Stms!Stm[1]!If!False!Insert[1] {in-dead-code} |}]
+
     let%expect_test "transform with no filtering" =
       test Transform Src.Path_filter.zero ;
       [%expect
@@ -207,6 +218,36 @@ let%test_module "sample path output on example code" =
         P0!Stms!Stm[5]!Flow-block!Body!Stm[0]!This {in-loop}
         P0!Stms!Stm[6]!Flow-block!Body!Stm[0]!This {in-execute-multi, in-loop}
         P0!Stms!Stm[7]!Flow-block!Body!Stm[0]!This {in-dead-code, in-loop} |}]
+
+    let%expect_test "transform with filtering to true branches" =
+      test Transform Src.Path_filter.(ends_in_block (If (Some true))) ;
+      [%expect
+        {|
+        P0!Stms!Stm[3]!If!True!Stm[0]!This {}
+        P0!Stms!Stm[3]!If!True!Stm[1]!This {}
+        P0!Stms!Stm[4]!If!True!Stm[0]!This {in-dead-code} |}]
+
+    let%expect_test "transform with filtering to false branches" =
+      test Transform Src.Path_filter.(ends_in_block (If (Some false))) ;
+      [%expect
+        {|
+        P1!Stms!Stm[1]!If!False!Stm[0]!This {in-dead-code} |}]
+
+    let%expect_test "transform with filtering to direct loops" =
+      test Transform
+        Src.Path_filter.(ends_in_block (Flow (Some (Loop None)))) ;
+      [%expect
+        {|
+        P0!Stms!Stm[5]!Flow-block!Body!Stm[0]!This {in-loop}
+        P0!Stms!Stm[6]!Flow-block!Body!Stm[0]!This {in-execute-multi, in-loop}
+        P0!Stms!Stm[7]!Flow-block!Body!Stm[0]!This {in-dead-code, in-loop} |}]
+
+    let%expect_test "transform with filtering to direct for-loops" =
+      test Transform
+        Src.Path_filter.(ends_in_block (Flow (Some (Loop (Some For))))) ;
+      [%expect
+        {|
+        P0!Stms!Stm[6]!Flow-block!Body!Stm[0]!This {in-execute-multi, in-loop} |}]
 
     let%expect_test "transform-list" =
       test Transform_list Src.Path_filter.zero ;

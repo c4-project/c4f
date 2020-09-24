@@ -42,10 +42,23 @@ module Prim = struct
 end
 
 module Flow = struct
+  module Loop = struct
+    type t = For | While of Flow_block.While.t option
+    [@@deriving compare, equal, sexp]
+
+    let class_matches (clazz : t) ~(template : t) : bool =
+      match (template, clazz) with
+      | For, For ->
+          true
+      | While (Some k1), While (Some k2) ->
+          Flow_block.While.equal k1 k2
+      | _, _ ->
+          false
+  end
+
   type t =
-    | For
+    | Loop of Loop.t option
     | Lock of Flow_block.Lock.t option
-    | While of Flow_block.While.t option
     | Explicit
     | Implicit
   [@@deriving compare, equal, sexp]
@@ -53,11 +66,11 @@ module Flow = struct
   let classify' (f : ('a, 'b) Flow_block.t) : t option =
     match Flow_block.header f with
     | For _ ->
-        Some For
+        Some (Loop (Some For))
     | Lock lk ->
         Some (Lock (Some lk))
     | While (wk, _) ->
-        Some (While (Some wk))
+        Some (Loop (Some (While (Some wk))))
     | Explicit ->
         Some Explicit
     | Implicit ->
@@ -71,12 +84,12 @@ module Flow = struct
 
   let class_matches (clazz : t) ~(template : t) : bool =
     match (template, clazz) with
-    | Lock None, Lock _ | While None, While _ ->
+    | Lock None, Lock _ | Loop None, Loop _ ->
         true
     | Lock (Some k1), Lock (Some k2) ->
         Flow_block.Lock.equal k1 k2
-    | While (Some k1), While (Some k2) ->
-        Flow_block.While.equal k1 k2
+    | Loop (Some template), Loop (Some clazz) ->
+        Loop.class_matches clazz ~template
     | _, _ ->
         false
 end
@@ -126,7 +139,7 @@ let atomic ?(specifically : Atomic_class.t option) () : t =
   Prim (Some (Atomic specifically))
 
 let while_loop ?(specifically : Flow_block.While.t option) () : t =
-  Flow (Some (While specifically))
+  Flow (Some (Loop (Some (While specifically))))
 
 let lock_block ?(specifically : Flow_block.Lock.t option) () : t =
   Flow (Some (Lock specifically))

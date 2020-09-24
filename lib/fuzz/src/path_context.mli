@@ -30,6 +30,10 @@ val init : ?filter:Path_filter.t -> 'k -> 'k t
 val add_flags : 'k t -> Set.M(Path_flag).t -> 'k t Or_error.t
 (** [add_flags ctx flags] registers [flags] in [ctx]. *)
 
+val set_block_kind : 'k t -> Path_filter.Block.t -> 'k t
+(** [set_block_kind ctx kind] registers the inmost block kind in [ctx] as
+    being [ctx]. *)
+
 (** {1 Using context data} *)
 
 val kind : 'k t -> 'k
@@ -41,8 +45,8 @@ val lift_path : _ t -> path:'p -> 'p Path_flag.Flagged.t
 (** {2 Checking the path filter} *)
 
 val check_filter_req : _ t -> unit Or_error.t
-(** [check_filter_req ctx] checks [ctx]'s filter flags against those it
-    holds. *)
+(** [check_filter_req ctx] checks [ctx]'s filter's positive requirements
+    against the context state. *)
 
 val check_filter_stm : _ t -> stm:Subject.Statement.t -> unit Or_error.t
 (** [check_filter_stm ctx ~stm] performs [ctx]'s statement end-checks on

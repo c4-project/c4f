@@ -10,28 +10,34 @@
    project root for more information. *)
 
 open Base
+open Import
 
-open struct
-  module Tx = Travesty_base_exts
-end
-
-type 'k t = {kind: 'k; flags: Set.M(Path_flag).t; filter: Path_filter.t}
+type 'k t =
+  { kind: 'k
+  ; last_block: Path_filter.Block.t
+  ; flags: Set.M(Path_flag).t
+  ; filter: Path_filter.t }
 [@@deriving fields]
 
 let init ?(filter : Path_filter.t = Path_filter.zero) (kind : 'k) : 'k t =
-  {kind; flags= Set.empty (module Path_flag); filter}
+  {kind; last_block= Top; flags= Set.empty (module Path_flag); filter}
 
 let add_flags (x : 'k t) (flags : Set.M(Path_flag).t) : 'k t Or_error.t =
   Or_error.Let_syntax.(
     let%map () = Path_filter.check_not x.filter ~flags in
     {x with flags= Set.union x.flags flags})
 
+let set_block_kind (x : 'k t) (kind : Path_filter.Block.t) : 'k t =
+  {x with last_block= kind}
+
 let check_anchor (x : 'k t) ~(path : Path.Stms.t) ~(block_len : int) :
     unit Or_error.t =
   Path_filter.check_anchor x.filter ~path ~block_len
 
 let check_filter_req (x : 'k t) : unit Or_error.t =
-  Path_filter.check_req x.filter ~flags:x.flags
+  Or_error.all_unit
+    [ Path_filter.check_req x.filter ~flags:x.flags
+    ; Path_filter.check_block x.filter ~block:x.last_block ]
 
 let check_filter_stm (x : 'k t) ~(stm : Subject.Statement.t) :
     unit Or_error.t =

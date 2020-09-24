@@ -117,7 +117,8 @@ module Insert = struct
     let name = prefix_name Common.Id.("early-out-loop-end" @: empty)
 
     let base_path_filter : Fuzz.Path_filter.t =
-      Fuzz.Path_filter.(require_flag In_loop + anchor Bottom)
+      Fuzz.Path_filter.(
+        ends_in_block (Flow (Some (Loop None))) + anchor Bottom)
 
     let readme () =
       Act_utils.My_string.format_for_readme
