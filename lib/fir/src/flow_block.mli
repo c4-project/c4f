@@ -146,15 +146,11 @@ end
 
 (** {1 Flow blocks proper} *)
 
-(** Opaque type of while loops. *)
-type ('meta, 'stm) t [@@deriving sexp, compare, equal]
+(** Type of while loops. *)
+type ('meta, 'stm) t = {header: Header.t; body: ('meta, 'stm) Block.t}
+[@@deriving sexp, make, accessors, compare, equal]
 
-(** {2 Constructors} *)
-
-val make : header:Header.t -> body:('meta, 'stm) Block.t -> ('meta, 'stm) t
-(** [make ~header ~body] makes a flow block with the given header and body. *)
-
-(** {3 Convenience constructors} *)
+(** {2 Convenience constructors} *)
 
 val while_loop :
      cond:Expression.t
@@ -181,14 +177,6 @@ val explicit : ('meta, 'stm) Block.t -> ('meta, 'stm) t
 
 val implicit : ('meta, 'stm) Block.t -> ('meta, 'stm) t
 (** [implicit b] makes an implicit block using [b]. *)
-
-(** {2 Accessors and queries} *)
-
-val body : ('meta, 'stm) t -> ('meta, 'stm) Block.t
-(** [body i] gets [i]'s body. *)
-
-val header : (_, _) t -> Header.t
-(** [header i] gets [i]'s header. *)
 
 (** {2 Traversal helpers} *)
 

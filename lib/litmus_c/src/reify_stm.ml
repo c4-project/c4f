@@ -83,11 +83,12 @@ let prim ((_, p) : _ * Fir.Prim_statement.t) : Ast.Stm.t list =
   [ Fir.Prim_statement.value_map p ~assign ~atomic ~early_out ~procedure_call
       ~label ~goto ~nop ]
 
-let if_stm (ifs : (_, Ast.Stm.t list) Fir.If.t) : Ast.Stm.t list =
+let if_stm ({cond; t_branch; f_branch} : (_, Ast.Stm.t list) Fir.If.t) :
+    Ast.Stm.t list =
   [ If
-      { cond= Reify_expr.reify (Fir.If.cond ifs)
-      ; t_branch= block (Fir.If.t_branch ifs)
-      ; f_branch= ne_block (Fir.If.f_branch ifs) } ]
+      { cond= Reify_expr.reify cond
+      ; t_branch= block t_branch
+      ; f_branch= ne_block f_branch } ]
 
 let for_loop (header : Fir.Flow_block.For.t) (body : Ast.Compound_stm.t) :
     Ast.Stm.t =
@@ -111,20 +112,20 @@ let lock (kind : Fir.Flow_block.Lock.t) (body : Ast.Compound_stm.t) :
     Ast.Stm.t =
   match kind with Atomic -> Atomic body | Synchronized -> Synchronized body
 
-let flow (fb : (_, Ast.Stm.t list) Fir.Flow_block.t) : Ast.Stm.t list =
-  let body' = Fir.Flow_block.body fb in
-  let body = block_compound body' in
-  match Fir.Flow_block.header fb with
+let flow ({header; body} : (_, Ast.Stm.t list) Fir.Flow_block.t) :
+    Ast.Stm.t list =
+  let body' = block_compound body in
+  match header with
   | For f ->
-      [for_loop f body]
+      [for_loop f body']
   | Lock l ->
-      [lock l body]
+      [lock l body']
   | While (w, c) ->
-      [while_loop w c body]
+      [while_loop w c body']
   | Explicit ->
-      [Compound body]
+      [Compound body']
   | Implicit ->
-      merge_stms body'
+      merge_stms body
 
 let reify (type meta) (m : meta Fir.Statement.t) : Ast.Stm.t list =
   Fir.Statement.reduce m ~prim ~if_stm ~flow

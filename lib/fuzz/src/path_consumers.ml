@@ -163,14 +163,9 @@ module Make_flow (F : sig
   (** [thru_flags x] gets any flags that should activate on passing through
       [x]. *)
 
-  (* TODO(@MattWindsor91): this can probably be an accessor now. *)
-  val block_lens :
-       rest
-    -> (Subject.Block.t -> Subject.Block.t Or_error.t)
-    -> t
-    -> t Or_error.t
-  (** [block_lens rest f flow] lifts [f] onto the block pointed to by [rest],
-      and applies it to [flow]. *)
+  val sel_block :
+    rest -> (unit, Subject.Block.t, t, [< field]) Accessor.Simple.t
+  (** [sel_block rest] focuses down on the block pointed to by [rest]. *)
 end) =
 struct
   let this_cond (_ : F.t) ~(ctx : ctx) : F.t Or_error.t =
@@ -180,7 +175,7 @@ struct
   let in_block (x : F.t) ~(rest : F.rest) ~(mu : mu) ~(ctx : ctx) :
       F.t Or_error.t =
     let path = F.path rest in
-    F.block_lens rest (Block.consume ~path ~mu ~ctx) x
+    Utils.Accessor.On_error.map (F.sel_block rest) x ~f:(Block.consume ~path ~mu ~ctx)
 
   let consume (x : F.t) ~(path : F.rest Path.flow_block) ~(mu : mu) :
       ctx:ctx -> F.t Or_error.t =
@@ -208,11 +203,7 @@ module If = Make_flow (struct
 
   module Map = Fir.If.Base_map (Or_error)
 
-  let block_lens ((b, _) : rest)
-      (f : Subject.Block.t -> Subject.Block.t Or_error.t) : t -> t Or_error.t
-      =
-    let br active block = if active then f block else Ok block in
-    Map.bmap ~cond:Or_error.return ~t_branch:(br b) ~f_branch:(br (not b))
+  let sel_block ((b, _) : rest) = Fir.If.branch b
 end)
 
 module Flow = Make_flow (struct
@@ -229,10 +220,7 @@ module Flow = Make_flow (struct
 
   module Map = Fir.Flow_block.Base_map (Or_error)
 
-  let block_lens (_ : rest)
-      (f : Subject.Block.t -> Subject.Block.t Or_error.t) : t -> t Or_error.t
-      =
-    Map.bmap ~header:Or_error.return ~body:f
+  let sel_block (_ : rest) = Fir.Flow_block.body
 end)
 
 module Stm = struct

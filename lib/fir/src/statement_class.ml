@@ -63,8 +63,8 @@ module Flow = struct
     | Implicit
   [@@deriving compare, equal, sexp]
 
-  let classify' (f : ('a, 'b) Flow_block.t) : t option =
-    match Flow_block.header f with
+  let classify' ({header; _} : ('a, 'b) Flow_block.t) : t option =
+    match header with
     | For _ ->
         Some (Loop (Some For))
     | Lock lk ->
@@ -115,13 +115,12 @@ include Class.Make_ext (struct
     Statement.reduce stm
       ~prim:(fun (_, x) ->
         List.map ~f:(fun t -> Prim (Some t)) (Prim.classify_rec x))
-      ~if_stm:(fun ifs ->
-        If
-        :: (unfold_block (If.t_branch ifs) @ unfold_block (If.f_branch ifs)))
+      ~if_stm:(fun {t_branch; f_branch; _} ->
+        If :: (unfold_block t_branch @ unfold_block f_branch))
       ~flow:(fun f ->
         Option.to_list
           (Option.map ~f:(fun t -> Flow (Some t)) (Flow.classify' f))
-        @ unfold_block (Flow_block.body f))
+        @ unfold_block f.body)
 
   let class_matches (clazz : t) ~(template : t) : bool =
     match (template, clazz) with

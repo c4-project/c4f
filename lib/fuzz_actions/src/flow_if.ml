@@ -162,14 +162,13 @@ module Transform = struct
         Fuzz.Payload_gen.path_with_flags Transform ~filter:path_filter
     end
 
-    let invert_if (ifs : Fuzz.Subject.Statement.If.t) :
-        Fuzz.Subject.Statement.If.t =
-      Fir.If.(
-        make
-          ~cond:(Fir.Expression.l_not (cond ifs))
-          ~t_branch:(f_branch ifs) (* intentional inversion *)
-          ~f_branch:(t_branch ifs)
-        (* as above *))
+    let invert_if ({cond; t_branch; f_branch} : Fuzz.Subject.Statement.If.t)
+        : Fuzz.Subject.Statement.If.t =
+      Fir.If.make
+        ~cond:(Fir.Expression.l_not cond)
+        ~t_branch:f_branch (* intentional inversion *) ~f_branch:t_branch
+
+    (* as above *)
 
     let not_an_if (type leg) (stm : Fuzz.Subject.Statement.t) (_ : leg) :
         leg Or_error.t =

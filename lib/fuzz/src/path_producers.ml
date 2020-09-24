@@ -162,8 +162,9 @@ module Make_flow (F : sig
   (** [block_kind branch x] gets the path-filter block kind for [x], used to
       check if paths terminating inside this block match block filters. *)
 
-  val sel_branch : branch -> t -> Subject.Block.t
-  (** [sel_branch branch x] focuses down on the branch [branch] in [x]. *)
+  val sel_branch :
+    branch -> (unit, Subject.Block.t, t, [< field]) Accessor.Simple.t
+  (** [sel_branch branch] focuses down on the branch [branch] in [x]. *)
 
   val lift_path : branch -> Path.Stms.t -> Path.Stm.t
   (** [lift_path branch p] lifts the block path [b] into a statement path,
@@ -178,7 +179,8 @@ struct
       ctx:ctx -> Path.Stm.t t =
     with_flags (F.thru_flags i) ~f:(fun ctx ->
         let ctx = Path_context.set_block_kind ctx (F.block_kind b i) in
-        i |> F.sel_branch b |> Block.produce ~mu ~ctx
+        i.@(F.sel_branch b)
+        |> Block.produce ~mu ~ctx
         |> map_path ~f:(F.lift_path b))
 
   let produce (i : F.t) ~(mu : mu) ~(ctx : ctx) : Path.Stm.t t =
@@ -193,10 +195,7 @@ module If = Make_flow (struct
 
   let block_kind (b : bool) (_ : t) : Path_filter.Block.t = If (Some b)
 
-  (* TODO(@MattWindsor91): this can probably be an accessor now, and very
-     likely shared with path_consumers's block_lens. *)
-  let sel_branch (b : bool) : Subject.Statement.If.t -> Subject.Block.t =
-    if b then Fir.If.t_branch else Fir.If.f_branch
+  let sel_branch = Fir.If.branch
 
   let lift_path b rest = Path.Stm.in_if @@ Path.If.in_branch b @@ rest
 

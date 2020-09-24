@@ -262,9 +262,8 @@ module Header = struct
   end)
 end
 
-(** Opaque type of while loops. *)
 type ('meta, 'stm) t = {header: Header.t; body: ('meta, 'stm) Block.t}
-[@@deriving sexp, make, fields, compare, equal]
+[@@deriving sexp, make, accessors, compare, equal]
 
 let for_loop (body : ('meta, 'stm) Block.t) ~(control : For.t) :
     ('meta, 'stm) t =

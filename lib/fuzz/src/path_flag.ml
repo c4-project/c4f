@@ -97,7 +97,7 @@ let flags_of_stm (s : Subject.Statement.t) : Set.M(M).t =
 
 let add_special_flow_flags (f : Subject.Statement.Flow.t) (fcf : Set.M(M).t)
     : Set.M(M).t =
-  let body_m = (Fir.Flow_block.body f).@(Fir.Block.metadata) in
+  let body_m = f.@(Fir.Flow_block.body @> Fir.Block.metadata) in
   if Set.mem fcf In_loop && Metadata.(Liveness.equal Live (liveness body_m))
   then Set.add fcf In_execute_multi
   else fcf

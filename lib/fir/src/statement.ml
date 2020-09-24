@@ -77,9 +77,9 @@ let true_of_any_block_stm (b : ('meta, 'meta t) Block.t)
     ~(predicate : 'meta t -> bool) : bool =
   Accessor.exists Block.each_statement b ~f:predicate
 
-let true_of_any_flow_body_stm (l : ('meta, 'meta t) Flow_block.t)
+let true_of_any_flow_body_stm ({body; _} : ('meta, 'meta t) Flow_block.t)
     ~(predicate : 'meta t -> bool) : bool =
-  true_of_any_block_stm (Flow_block.body l) ~predicate
+  true_of_any_block_stm body ~predicate
 
 let is_if_statement (m : 'meta t) : bool =
   is_not_prim_and m ~if_stm:(Fn.const true) ~flow:(Fn.const false)
@@ -95,9 +95,9 @@ let has_blocks_with_metadata (m : 'meta t) ~(predicate : 'meta -> bool) :
       predicate b.@(Block.metadata) || true_of_any_block_stm ~predicate:mu b
     in
     is_not_prim_and x
-      ~flow:(fun l -> true_of_block (Flow_block.body l))
-      ~if_stm:(fun ifs ->
-        true_of_block (If.t_branch ifs) || true_of_block (If.f_branch ifs))
+      ~flow:(fun {body; _} -> true_of_block body)
+      ~if_stm:(fun {t_branch; f_branch; _} ->
+        true_of_block t_branch || true_of_block f_branch)
   in
   mu m
 

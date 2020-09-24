@@ -15,30 +15,24 @@
     module but specialised to {!Statement}s. *)
 
 open Base
+open Import
 
-(** Opaque type of if statements. *)
-type ('meta, 'stm) t [@@deriving sexp, compare, equal]
+(** Type of if statements. *)
+type ('meta, 'stm) t =
+  { cond: Expression.t
+  ; t_branch: ('meta, 'stm) Block.t
+  ; f_branch: ('meta, 'stm) Block.t }
+[@@deriving sexp, make, accessors, compare, equal]
 
-(** {1 Constructors} *)
-
-val make :
-     cond:Expression.t
-  -> t_branch:('meta, 'stm) Block.t
-  -> f_branch:('meta, 'stm) Block.t
-  -> ('meta, 'stm) t
-(** [make ~cond ~t_branch ~f_branch] makes an if statement with the given
-    branches and conditional. *)
-
-(** {1 Accessors} *)
-
-val cond : (_, _) t -> Expression.t
-(** [cond i] gets [i]'s conditional. *)
-
-val t_branch : ('meta, 'stm) t -> ('meta, 'stm) Block.t
-(** [t_branch i] gets [i]'s true branch. *)
-
-val f_branch : ('meta, 'stm) t -> ('meta, 'stm) Block.t
-(** [f_branch i] gets [i]'s false branch. *)
+val branch :
+     bool
+  -> ( 'i
+     , ('meta, 'stm) Block.t
+     , ('meta, 'stm) t
+     , [< field] )
+     Accessor.Simple.t
+(** [branch b] is the accessor [t_branch] when [b] is true, and [f_branch]
+    otherwise. *)
 
 (** {1 Traversal helpers} *)
 

@@ -73,15 +73,9 @@ struct
 
     module C_stm_meta = C.Statement_traverse.With_meta (Unit)
 
-    module AError = Accessor.Of_monad (struct
-      include Or_error
-
-      let apply = `Custom apply
-    end)
-
-    let rewrite_ids : unit C.Statement.t -> unit C.Statement.t Or_error.t =
+     let rewrite_ids : unit C.Statement.t -> unit C.Statement.t Or_error.t =
       C_stm_meta.On_lvalues.With_errors.map_m
-        ~f:(AError.map C.Lvalue.variable_of ~f:rewrite_id_if_local)
+        ~f:(Act_utils.Accessor.On_error.map C.Lvalue.variable_of ~f:rewrite_id_if_local)
 
     (* When rewriting global lvalues (as part of a var-as-global run), we do
        it _after_ address rewriting, as the address rewriting will

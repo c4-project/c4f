@@ -188,16 +188,15 @@ let seq_block : (unit, unit Monad.t) Block.t -> unit Monad.t =
 
 let probe_if (i : (unit, unit Monad.t) If.t) : unit Monad.t =
   Monad.all_unit
-    [ seq_block (If.t_branch i)
-    ; seq_block (If.f_branch i)
-    ; probe_expr (If.cond i) ]
+    [seq_block i.t_branch; seq_block i.f_branch; probe_expr i.cond]
 
 module HdrM = Flow_block.Header.On_expressions.On_monad (Monad)
 
-let probe_flow (i : (unit, unit Monad.t) Flow_block.t) : unit Monad.t =
+let probe_flow ({body; header} : (unit, unit Monad.t) Flow_block.t) :
+    unit Monad.t =
   Monad.Let_syntax.(
-    let%bind () = seq_block (Flow_block.body i) in
-    HdrM.iter_m ~f:probe_expr (Flow_block.header i))
+    let%bind () = seq_block body in
+    HdrM.iter_m ~f:probe_expr header)
 
 let probe_fn_stm : unit Statement.t -> unit Monad.t =
   Statement.reduce

@@ -10,12 +10,23 @@
    project root for more information. *)
 
 open Base
+open Import
 
 type ('meta, 'stm) t =
   { cond: Expression.t
   ; t_branch: ('meta, 'stm) Block.t
   ; f_branch: ('meta, 'stm) Block.t }
-[@@deriving sexp, make, fields, compare, equal]
+[@@deriving sexp, make, accessors, compare, equal]
+
+let branch :
+    type i meta stm.
+       bool
+    -> (i, (meta, stm) Block.t, (meta, stm) t, [< field]) Accessor.Simple.t =
+  function
+  | true ->
+      t_branch
+  | false ->
+      f_branch
 
 module Base_map (A : Applicative.S) = struct
   let bmap (type m1 s1 m2 s2) (if_stm : (m1, s1) t)
