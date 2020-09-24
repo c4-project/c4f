@@ -18,7 +18,8 @@ open Import
 let unsafe_weaken_orders_flag : Common.Id.t =
   Common.Id.("mem" @: "unsafe-weaken-orders" @: empty)
 
-let make_global_flag : Common.Id.t = Common.Id.("var" @: "make" @: "global" @: empty)
+let make_global_flag : Common.Id.t =
+  Common.Id.("var" @: "make" @: "global" @: empty)
 
 let wrap_early_out_flag : Common.Id.t =
   Common.Id.("flow" @: "dead" @: "early-out-loop-end" @: "wrap" @: empty)

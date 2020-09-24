@@ -22,25 +22,31 @@ module Insert = struct
   let goto_name = prefix_name Common.Id.("goto" @: empty)
 
   module Early_out_payload = struct
-    type t = {
-      if_cond: Fir.Expression.t option
-    ; kind: Fir.Early_out.t
-    } [@@deriving sexp]
+    type t = {if_cond: Fir.Expression.t option; kind: Fir.Early_out.t}
+    [@@deriving sexp]
 
-    module type S_action = Fuzz.Action_types.S with type Payload.t = t Fuzz.Payload_impl.Pathed.t
+    module type S_action =
+      Fuzz.Action_types.S with type Payload.t = t Fuzz.Payload_impl.Pathed.t
 
-    let gen' (kind_filter : Fir.Early_out.t -> bool) (gen_cond: Fir.Expression.t option Fuzz.Payload_gen.t): t Fuzz.Payload_gen.t =
+    let gen' (kind_filter : Fir.Early_out.t -> bool)
+        (gen_cond : Fir.Expression.t option Fuzz.Payload_gen.t) :
+        t Fuzz.Payload_gen.t =
       Fuzz.Payload_gen.(
         let* if_cond = gen_cond in
-        let+ kind = lift_quickcheck (Q.Generator.filter Fir.Early_out.quickcheck_generator ~f:kind_filter) in
-        { if_cond; kind }
-      )
+        let+ kind =
+          lift_quickcheck
+            (Q.Generator.filter Fir.Early_out.quickcheck_generator
+               ~f:kind_filter)
+        in
+        {if_cond; kind})
 
     let gen (path_filter : Fuzz.Availability.Context.t -> Fuzz.Path_filter.t)
-    (kind_filter: Fuzz.Path.Flagged.t -> Fir.Early_out.t -> bool)
-    (gen_cond : Fuzz.Path.Flagged.t -> Fir.Expression.t option Fuzz.Payload_gen.t) : t Fuzz.Payload_impl.Pathed.t Fuzz.Payload_gen.t =
-      Fuzz.Payload_impl.Pathed.gen Insert path_filter
-        (fun path -> gen' (kind_filter path) (gen_cond path))
+        (kind_filter : Fuzz.Path.Flagged.t -> Fir.Early_out.t -> bool)
+        (gen_cond :
+          Fuzz.Path.Flagged.t -> Fir.Expression.t option Fuzz.Payload_gen.t)
+        : t Fuzz.Payload_impl.Pathed.t Fuzz.Payload_gen.t =
+      Fuzz.Payload_impl.Pathed.gen Insert path_filter (fun path ->
+          gen' (kind_filter path) (gen_cond path))
 
     let construct ({kind; if_cond} : t) : Fuzz.Subject.Statement.t =
       let eo =
@@ -48,14 +54,15 @@ module Insert = struct
           (Accessor.construct Fir.Prim_statement.early_out kind)
       in
       match if_cond with
-      | None -> eo
+      | None ->
+          eo
       | Some cond ->
-        let t_branch =
-          Fuzz.Subject.Block.make_generated ~statements:[eo] () in
-        let f_branch =
-          Fuzz.Subject.Block.make_dead_code () in
-        Accessor.construct Fir.Statement.if_stm
-          (Fir.If.make ~cond ~t_branch ~f_branch)
+          let t_branch =
+            Fuzz.Subject.Block.make_generated ~statements:[eo] ()
+          in
+          let f_branch = Fuzz.Subject.Block.make_dead_code () in
+          Accessor.construct Fir.Statement.if_stm
+            (Fir.If.make ~cond ~t_branch ~f_branch)
   end
 
   module Early_out : Early_out_payload.S_action = struct
@@ -76,7 +83,8 @@ module Insert = struct
       Fuzz.Availability.is_filter_constructible base_path_filter ~kind:Insert
 
     module Payload = struct
-      type t = Early_out_payload.t Fuzz.Payload_impl.Pathed.t [@@deriving sexp]
+      type t = Early_out_payload.t Fuzz.Payload_impl.Pathed.t
+      [@@deriving sexp]
 
       let kind_pred ({flags; _} : Fuzz.Path.Flagged.t) :
           Fir.Early_out.t -> bool =
@@ -84,9 +92,8 @@ module Insert = struct
         else Fn.non Fir.Early_out.in_loop_only
 
       let gen : t Fuzz.Payload_gen.t =
-        Early_out_payload.gen path_filter
-          kind_pred
-          (fun _ -> Fuzz.Payload_gen.return None)
+        Early_out_payload.gen path_filter kind_pred (fun _ ->
+            Fuzz.Payload_gen.return None)
     end
 
     (* In generation, we pick the path first and then work out which
@@ -106,8 +113,7 @@ module Insert = struct
         payload ~test ~f:Early_out_payload.construct
   end
 
-  module Early_out_loop_end :
-    Early_out_payload.S_action = struct
+  module Early_out_loop_end : Early_out_payload.S_action = struct
     let name = prefix_name Common.Id.("early-out-loop-end" @: empty)
 
     let base_path_filter : Fuzz.Path_filter.t =
@@ -122,7 +128,8 @@ module Insert = struct
       Fuzz.Availability.is_filter_constructible base_path_filter ~kind:Insert
 
     module Payload = struct
-      type t = Early_out_payload.t Fuzz.Payload_impl.Pathed.t [@@deriving sexp]
+      type t = Early_out_payload.t Fuzz.Payload_impl.Pathed.t
+      [@@deriving sexp]
 
       let kind_pred ({flags; _} : Fuzz.Path.Flagged.t) :
           Fir.Early_out.t -> bool =
@@ -144,19 +151,20 @@ module Insert = struct
           =
         base_path_filter
 
-      let gen_cond' : Fuzz.Path.Flagged.t -> Fir.Expression.t Fuzz.Payload_gen.t =
-          Staged.unstage (Fuzz.Payload_impl.Cond_pathed.lift_cond_gen Fir_gen.Expr.tautology)
+      let gen_cond' :
+          Fuzz.Path.Flagged.t -> Fir.Expression.t Fuzz.Payload_gen.t =
+        Staged.unstage
+          (Fuzz.Payload_impl.Cond_pathed.lift_cond_gen
+             Fir_gen.Expr.tautology)
 
-      let gen_cond (p : Fuzz.Path.Flagged.t) : Fir.Expression.t option Fuzz.Payload_gen.t =
+      let gen_cond (p : Fuzz.Path.Flagged.t) :
+          Fir.Expression.t option Fuzz.Payload_gen.t =
         Fuzz.Payload_gen.(
           let* f = flag Fuzz.Config_tables.wrap_early_out_flag in
-          if f then map (gen_cond' p) ~f:Option.some else return None
-        )
+          if f then map (gen_cond' p) ~f:Option.some else return None)
 
       let gen : t Fuzz.Payload_gen.t =
-        Early_out_payload.gen path_filter
-          kind_pred
-          gen_cond
+        Early_out_payload.gen path_filter kind_pred gen_cond
     end
 
     (* As with Early_out, we're working backwards here! *)

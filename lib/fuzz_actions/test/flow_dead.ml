@@ -13,8 +13,7 @@ open Import
 
 let%test_module "Early_out" =
   ( module struct
-    let test_on_example_program
-        (wherez : Fuzz.Path.Flagged.t Lazy.t)
+    let test_on_example_program (wherez : Fuzz.Path.Flagged.t Lazy.t)
         (kind : Fir.Early_out.t) : unit =
       let where = Lazy.force wherez in
       let initial_state : Fuzz.State.t =
@@ -23,7 +22,10 @@ let%test_module "Early_out" =
       let test : Fuzz.Subject.Test.t =
         Lazy.force Fuzz_test.Subject.Test_data.test
       in
-      let payload = Fuzz.Payload_impl.Pathed.make ~where {Src.Flow_dead.Insert.Early_out_payload.if_cond=None; kind} in
+      let payload =
+        Fuzz.Payload_impl.Pathed.make ~where
+          {Src.Flow_dead.Insert.Early_out_payload.if_cond= None; kind}
+      in
       Fuzz_test.Action.Test_utils.run_and_dump_test
         (Src.Flow_dead.Insert.Early_out.run test ~payload)
         ~initial_state
@@ -106,10 +108,9 @@ let%test_module "Early_out" =
 
 let%test_module "Early_out_loop_end" =
   ( module struct
-    let test_on_example_program
-       ?(if_cond: Fir.Expression.t option)
-        (wherez : Fuzz.Path.Flagged.t Lazy.t)
-        (kind : Fir.Early_out.t) : unit =
+    let test_on_example_program ?(if_cond : Fir.Expression.t option)
+        (wherez : Fuzz.Path.Flagged.t Lazy.t) (kind : Fir.Early_out.t) : unit
+        =
       let where = Lazy.force wherez in
       let initial_state : Fuzz.State.t =
         Lazy.force Fuzz_test.Subject.Test_data.state
@@ -117,7 +118,10 @@ let%test_module "Early_out_loop_end" =
       let test : Fuzz.Subject.Test.t =
         Lazy.force Fuzz_test.Subject.Test_data.test
       in
-      let payload = Fuzz.Payload_impl.Pathed.make ~where {Src.Flow_dead.Insert.Early_out_payload.if_cond; kind} in
+      let payload =
+        Fuzz.Payload_impl.Pathed.make ~where
+          {Src.Flow_dead.Insert.Early_out_payload.if_cond; kind}
+      in
       Fuzz_test.Action.Test_utils.run_and_dump_test
         (Src.Flow_dead.Insert.Early_out_loop_end.run test ~payload)
         ~initial_state
@@ -157,8 +161,7 @@ let%test_module "Early_out_loop_end" =
     let%expect_test "invalid break on multi loop" =
       test_on_example_program
         Fuzz_test.Subject.Test_data.Path.insert_multi_loop_end Break ;
-      [%expect
-        {| "Unmet forbidden flag condition: in-execute-multi" |}]
+      [%expect {| "Unmet forbidden flag condition: in-execute-multi" |}]
 
     let%expect_test "valid continue on single loop" =
       test_on_example_program
@@ -225,7 +228,7 @@ let%test_module "Early_out_loop_end" =
           { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "valid break on single loop with wrapping" =
-      test_on_example_program ~if_cond:(Fir.Expression.truth)
+      test_on_example_program ~if_cond:Fir.Expression.truth
         Fuzz_test.Subject.Test_data.Path.insert_once_loop_end Break ;
       [%expect
         {|

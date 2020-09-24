@@ -278,26 +278,25 @@ module Test_data = struct
 
     let once_loop (path : Src.Path.Flow.t) : Src.Path.t Lazy.t =
       Src.Path.(
-        thread_0_stms @@ Stms.in_stm pos_0_once_do_while @@ Stm.in_flow @@ path)
+        thread_0_stms
+        @@ Stms.in_stm pos_0_once_do_while
+        @@ Stm.in_flow @@ path)
 
     let insert_once_loop_end : Src.Path.Flagged.t Lazy.t =
-      flag [In_loop]
-        Src.Path.(once_loop @@ Flow.in_body @@ Stms.insert 1)
+      flag [In_loop] Src.Path.(once_loop @@ Flow.in_body @@ Stms.insert 1)
 
     let multi_loop (path : Src.Path.Flow.t) : Src.Path.t Lazy.t =
       Src.Path.(
         thread_0_stms @@ Stms.in_stm pos_0_multi_for @@ Stm.in_flow @@ path)
 
     let insert_multi_loop_end : Src.Path.Flagged.t Lazy.t =
-      flag [In_execute_multi; In_loop]
+      flag
+        [In_execute_multi; In_loop]
         Src.Path.(multi_loop @@ Flow.in_body @@ Stms.insert 1)
 
     let dead_loop (path : Src.Path.Flow.t) : Src.Path.t Lazy.t =
       Src.Path.(
         thread_0_stms @@ Stms.in_stm pos_0_dead_while @@ Stm.in_flow @@ path)
-
-
-
 
     let insert_dead_loop : Src.Path.Flagged.t Lazy.t =
       flag [In_dead_code; In_loop]

@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -19,11 +19,20 @@ open struct
 end
 
 module Aux = struct
-  type 'rest t =
-    { o: Act_common.Output.t [@default Act_common.Output.silent ()]
-    ; config: Config.t
-    ; rest: 'rest [@main] }
-  [@@deriving make]
+  module Randomised = struct
+    type t =
+      { seed: int option
+      ; o: Act_common.Output.t [@default Act_common.Output.silent ()]
+      ; config: Config.t [@main] }
+    [@@deriving make]
+  end
+
+  module Replay = struct
+    type t =
+      { o: Act_common.Output.t [@default Act_common.Output.silent ()]
+      ; trace: F.Trace.t [@main] }
+    [@@deriving make]
+  end
 end
 
 let run_on_litmus (test : Fir.Litmus.Test.t) ~(o : Act_common.Output.t)
@@ -52,20 +61,20 @@ let run_with_channels ?(path : string option) (ic : In_channel.t)
     metadata)
 
 module Randomised = Pb.Filter.Make (struct
-  type aux_i = int option Aux.t
+  type aux_i = Aux.Randomised.t
 
   type aux_o = F.Trace.t
 
   let name = "Fuzzer (random)"
 
-  let run (ctx : int option Aux.t Pb.Filter_context.t) (ic : In_channel.t)
+  let run (ctx : Aux.Randomised.t Pb.Filter_context.t) (ic : In_channel.t)
       (oc : Out_channel.t) : F.Trace.t Or_error.t =
-    let {Aux.rest; o; config} = Pb.Filter_context.aux ctx in
+    let {Aux.Randomised.seed; o; config} = Pb.Filter_context.aux ctx in
     let input = Pb.Filter_context.input ctx in
     run_with_channels
       ~path:(Pb.Input.to_string input)
       ic oc ~o
-      ~f:(Randomised.run ?seed:rest ~config)
+      ~f:(Randomised.run ?seed ~config)
 end)
 
 (* TODO(@MattWindsor91): unify this logic with all the other resolvers? *)
@@ -85,17 +94,17 @@ let run_replay (subject : F.Subject.Test.t) ~(trace : F.Trace.t) :
       F.Output.make ~subject:subject' ~metadata:()))
 
 module Replay = Pb.Filter.Make (struct
-  type aux_i = F.Trace.t Aux.t
+  type aux_i = Aux.Replay.t
 
   type aux_o = unit
 
   let name = "Fuzzer (replay)"
 
-  let run (ctx : F.Trace.t Aux.t Pb.Filter_context.t) (ic : In_channel.t)
+  let run (ctx : Aux.Replay.t Pb.Filter_context.t) (ic : In_channel.t)
       (oc : Out_channel.t) : unit Or_error.t =
-    let {Aux.rest; o; _} = Pb.Filter_context.aux ctx in
+    let {Aux.Replay.o; trace} = Pb.Filter_context.aux ctx in
     let input = Pb.Filter_context.input ctx in
     run_with_channels
       ~path:(Pb.Input.to_string input)
-      ic oc ~o ~f:(run_replay ~trace:rest)
+      ic oc ~o ~f:(run_replay ~trace)
 end)

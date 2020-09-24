@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -12,13 +12,12 @@
 open Core (* for Filename.arg_type *)
 
 let run ?(trace_input : string option)
-    (args : _ Common_cmd.Args.With_files.t) (o : Act_common.Output.t)
-    (global_config : Act_config.Global.t) : unit Or_error.t =
-  let config = Act_config.Global.fuzz global_config in
+    (args : _ Common_cmd.Args.With_files.t) (o : Act_common.Output.t) :
+    unit Or_error.t =
   Or_error.Let_syntax.(
     let%bind trace_in = Plumbing.Input.of_string_opt trace_input in
     let%bind trace = Act_fuzz.Trace.load trace_in in
-    let aux_in = Act_fuzz_run.Filter.Aux.make ~o ~config trace in
+    let aux_in = Act_fuzz_run.Filter.Aux.Replay.make ~o trace in
     Common_cmd.Args.With_files.run_filter
       (module Act_fuzz_run.Filter.Replay)
       args ~aux_in)
@@ -41,6 +40,6 @@ let command : Command.t =
           ~doc:"FILE read a trace of completed fuzz actions to this filename"
       in
       fun () ->
-        Common_cmd.Args.Standard.lift_command_with_config
+        Common_cmd.Args.Standard.lift_command
           (Common_cmd.Args.With_files.rest standard_args)
           ~f:(run standard_args ~trace_input))

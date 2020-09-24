@@ -23,7 +23,7 @@ let run ?(seed : int option) ?(trace_output : Plumbing.Output.t option)
     (args : _ Common_cmd.Args.With_files.t) (o : Act_common.Output.t)
     (global_config : Act_config.Global.t) : unit Or_error.t =
   let config = Act_config.Global.fuzz global_config in
-  let aux_in = Act_fuzz_run.Filter.Aux.make ~o ~config seed in
+  let aux_in = Act_fuzz_run.Filter.Aux.Randomised.make ~o ?seed config in
   Or_error.Let_syntax.(
     let%bind aux_out =
       Common_cmd.Args.With_files.run_filter

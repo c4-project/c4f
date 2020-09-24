@@ -17,13 +17,15 @@ open Import
 module Insert : sig
   module Early_out_payload : sig
     (** Type of early-out payloads. *)
-    type t = {
-      if_cond: Fir.Expression.t option (** Optional condition to use to wrap the early-out. *)
-    ; kind: Fir.Early_out.t (** Kind of early-out to insert. *)
-    } [@@deriving sexp]
+    type t =
+      { if_cond: Fir.Expression.t option
+            (** Optional condition to use to wrap the early-out. *)
+      ; kind: Fir.Early_out.t  (** Kind of early-out to insert. *) }
+    [@@deriving sexp]
 
-    module type S_action = Fuzz.Action_types.S with type Payload.t = t Fuzz.Payload_impl.Pathed.t
     (** Shorthand for actions over the early-out payload. *)
+    module type S_action =
+      Fuzz.Action_types.S with type Payload.t = t Fuzz.Payload_impl.Pathed.t
   end
 
   (** A fuzzer action that inserts early-out (break, return, etc) statements
