@@ -186,10 +186,15 @@ module Insert = struct
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       (* We can't use Pathed.insert, because we're inserting multiple
          statements. *)
-      Fuzz.State.Monad.Monadic.return
-        (Fuzz.Path_consumers.consume_with_flags test ~path:payload.where
-           ~filter:(kind_filter payload.payload.kind)
-           ~action:(Insert (make_contraption payload.payload)))
+      Fuzz.State.Monad.(
+        add_expression_dependencies_at_path
+          (Option.to_list payload.payload.if_cond)
+          ~path:payload.where
+        >>= fun () ->
+        Monadic.return
+          (Fuzz.Path_consumers.consume_with_flags test ~path:payload.where
+             ~filter:(kind_filter payload.payload.kind)
+             ~action:(Insert (make_contraption payload.payload))))
   end
 
   module Goto :

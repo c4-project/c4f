@@ -13,12 +13,9 @@ open Import
 
 let%test_module "Early_out" =
   ( module struct
-    let test_on_example_program (wherez : Fuzz.Path.Flagged.t Lazy.t)
-        (kind : Fir.Early_out.t) : unit =
+    let action_on_example_program (wherez : Fuzz.Path.Flagged.t Lazy.t)
+        (kind : Fir.Early_out.t) : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       let where = Lazy.force wherez in
-      let initial_state : Fuzz.State.t =
-        Lazy.force Fuzz_test.Subject.Test_data.state
-      in
       let test : Fuzz.Subject.Test.t =
         Lazy.force Fuzz_test.Subject.Test_data.test
       in
@@ -26,8 +23,15 @@ let%test_module "Early_out" =
         Fuzz.Payload_impl.Pathed.make ~where
           {Src.Flow_dead.Insert.Early_out_payload.if_cond= None; kind}
       in
+      Src.Flow_dead.Insert.Early_out.run test ~payload
+
+    let test_on_example_program (wherez : Fuzz.Path.Flagged.t Lazy.t)
+        (kind : Fir.Early_out.t) : unit =
+      let initial_state : Fuzz.State.t =
+        Lazy.force Fuzz_test.Subject.Test_data.state
+      in
       Fuzz_test.Action.Test_utils.run_and_dump_test
-        (Src.Flow_dead.Insert.Early_out.run test ~payload)
+        (action_on_example_program wherez kind)
         ~initial_state
 
     (* TODO(@MattWindsor91): invalid paths *)
@@ -108,13 +112,10 @@ let%test_module "Early_out" =
 
 let%test_module "Early_out_loop_end" =
   ( module struct
-    let test_on_example_program ?(if_cond : Fir.Expression.t option)
-        (wherez : Fuzz.Path.Flagged.t Lazy.t) (kind : Fir.Early_out.t) : unit
-        =
+    let action_on_example_program ?(if_cond : Fir.Expression.t option)
+        (wherez : Fuzz.Path.Flagged.t Lazy.t) (kind : Fir.Early_out.t) :
+        Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       let where = Lazy.force wherez in
-      let initial_state : Fuzz.State.t =
-        Lazy.force Fuzz_test.Subject.Test_data.state
-      in
       let test : Fuzz.Subject.Test.t =
         Lazy.force Fuzz_test.Subject.Test_data.test
       in
@@ -122,8 +123,16 @@ let%test_module "Early_out_loop_end" =
         Fuzz.Payload_impl.Pathed.make ~where
           {Src.Flow_dead.Insert.Early_out_payload.if_cond; kind}
       in
+      Src.Flow_dead.Insert.Early_out_loop_end.run test ~payload
+
+    let test_on_example_program ?(if_cond : Fir.Expression.t option)
+        (wherez : Fuzz.Path.Flagged.t Lazy.t) (kind : Fir.Early_out.t) : unit
+        =
+      let initial_state : Fuzz.State.t =
+        Lazy.force Fuzz_test.Subject.Test_data.state
+      in
       Fuzz_test.Action.Test_utils.run_and_dump_test
-        (Src.Flow_dead.Insert.Early_out_loop_end.run test ~payload)
+        (action_on_example_program ?if_cond wherez kind)
         ~initial_state
 
     let%expect_test "valid continue on multi loop" =
@@ -261,4 +270,23 @@ let%test_module "Early_out_loop_end" =
           void
           P1(atomic_int *x, atomic_int *y)
           { loop: ; if (true) {  } else { goto loop; } } |}]
+
+    let%expect_test "wrapping introduces dependencies" =
+      (* A fun fuzzer bug occurred when the wrapper introduced a very long
+         and complex expression involving a variable that, owing to not being
+         dependency-marked, was then used as the basis of a compare-exchange
+         in another thread. It took hours to debug, and so this test tries to
+         avoid the problem happening again. *)
+      let wherez = Fuzz_test.Subject.Test_data.Path.insert_once_loop_end in
+      let initial_state : Fuzz.State.t =
+        Lazy.force Fuzz_test.Subject.Test_data.state
+      in
+      Fuzz_test.Action.Test_utils.run_and_dump_vars
+        (action_on_example_program wherez Break
+           ~if_cond:
+             Fir.Expression.(
+               Infix.(of_variable_str_exn "r0" == int_lit 4004)))
+        ~predicates:[Fuzz.Var.Record.has_dependencies]
+        ~scope:(Local 0) ~initial_state ;
+      [%expect {| r0=4004 |}]
   end )
