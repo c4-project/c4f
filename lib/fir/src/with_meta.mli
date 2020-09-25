@@ -18,17 +18,20 @@ open Base
 open Import
 
 (** Type of metadata wrappers. *)
-type ('m, 'v) t =
-  { meta: 'm
-  ; value: 'v
-  }
-  [@@deriving sexp, compare, equal, accessors]
+type ('m, 'v) t = {meta: 'm; value: 'v}
+[@@deriving sexp, compare, equal, accessors]
 
 val make : 'v -> meta:'m -> ('m, 'v) t
-(** [make value ~meta] is a convenience constructor for metadata-carrying values. *)
+(** [make value ~meta] is a convenience constructor for metadata-carrying
+    values. *)
 
-val no_meta: ('i -> 'v1 -> 'v2, 'i -> (unit, 'v1) t -> (unit, 'v2) t, [<isomorphism]) Accessor.t
-(** [no_meta] draws an isomorphism between raw values and empty metadata-carried forms. *)
+val no_meta :
+  ( 'i -> 'v1 -> 'v2
+  , 'i -> (unit, 'v1) t -> (unit, 'v2) t
+  , [< isomorphism] )
+  Accessor.t
+(** [no_meta] draws an isomorphism between raw values and empty
+    metadata-carried forms. *)
 
-include Travesty.Bi_traversable_types.S2 with type ('m, 'v) t := ('m, 'v) t
 (** We can bi-traverse metadata wrappers. *)
+include Travesty.Bi_traversable_types.S2 with type ('m, 'v) t := ('m, 'v) t

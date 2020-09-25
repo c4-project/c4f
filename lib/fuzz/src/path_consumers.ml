@@ -175,7 +175,8 @@ struct
   let in_block (x : F.t) ~(rest : F.rest) ~(mu : mu) ~(ctx : ctx) :
       F.t Or_error.t =
     let path = F.path rest in
-    Utils.Accessor.On_error.map (F.sel_block rest) x ~f:(Block.consume ~path ~mu ~ctx)
+    Utils.Accessor.On_error.map (F.sel_block rest) x
+      ~f:(Block.consume ~path ~mu ~ctx)
 
   let consume (x : F.t) ~(path : F.rest Path.flow_block) ~(mu : mu) :
       ctx:ctx -> F.t Or_error.t =

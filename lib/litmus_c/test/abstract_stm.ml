@@ -42,9 +42,11 @@ let%test_module "model" =
             ((header Explicit)
              (body
               ((statements
-                ((Prim ()
-                  (Assign
-                   ((dst (Variable x)) (src (Expr (Address (Lvalue (Variable y))))))))))
+                ((Prim
+                  ((meta ())
+                   (value
+                    (Assign
+                     ((dst (Variable x)) (src (Expr (Address (Lvalue (Variable y))))))))))))
                (metadata ())))))) |}]
 
     let%expect_test "model upwards for loop" =
@@ -76,7 +78,7 @@ let%test_module "model" =
               (cmp
                ((Bop (Rel Lt) (Address (Lvalue (Variable x))) (Constant (Int 42)))))
               (update (((dst (Variable x)) (src Inc)))))))
-           (body ((statements ((Prim () Nop))) (metadata ())))))) |}]
+           (body ((statements ((Prim ((meta ()) (value Nop))))) (metadata ())))))) |}]
 
     let%expect_test "model downwards not-equal for loop" =
       test
@@ -107,7 +109,7 @@ let%test_module "model" =
               (cmp
                ((Bop (Rel Ne) (Address (Lvalue (Variable x))) (Constant (Int 27)))))
               (update (((dst (Variable x)) (src Dec)))))))
-           (body ((statements ((Prim () Nop))) (metadata ())))))) |}]
+           (body ((statements ((Prim ((meta ()) (value Nop))))) (metadata ())))))) |}]
 
     let%expect_test "model downwards-inclusive for loop" =
       test
@@ -138,7 +140,7 @@ let%test_module "model" =
               (cmp
                ((Bop (Rel Ge) (Address (Lvalue (Variable x))) (Constant (Int 0)))))
               (update (((dst (Variable x)) (src Dec)))))))
-           (body ((statements ((Prim () Nop))) (metadata ())))))) |}]
+           (body ((statements ((Prim ((meta ()) (value Nop))))) (metadata ())))))) |}]
 
     let%expect_test "model atomic_store_explicit" =
       test
@@ -156,11 +158,13 @@ let%test_module "model" =
       [%expect
         {|
       (Ok
-       (Prim ()
-        (Atomic
-         (Store
-          ((src (Constant (Int 42))) (dst (Ref (Lvalue (Variable x))))
-           (mo memory_order_relaxed)))))) |}]
+       (Prim
+        ((meta ())
+         (value
+          (Atomic
+           (Store
+            ((src (Constant (Int 42))) (dst (Ref (Lvalue (Variable x))))
+             (mo memory_order_relaxed)))))))) |}]
 
     let%expect_test "model atomic cmpxchg" =
       test
@@ -182,10 +186,12 @@ let%test_module "model" =
       [%expect
         {|
       (Ok
-       (Prim ()
-        (Atomic
-         (Cmpxchg
-          ((obj (Ref (Lvalue (Variable x)))) (expected (Ref (Lvalue (Variable y))))
-           (desired (Constant (Int 42))) (succ memory_order_relaxed)
-           (fail memory_order_relaxed)))))) |}]
+       (Prim
+        ((meta ())
+         (value
+          (Atomic
+           (Cmpxchg
+            ((obj (Ref (Lvalue (Variable x))))
+             (expected (Ref (Lvalue (Variable y)))) (desired (Constant (Int 42)))
+             (succ memory_order_relaxed) (fail memory_order_relaxed)))))))) |}]
   end )

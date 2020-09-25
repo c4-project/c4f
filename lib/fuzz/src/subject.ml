@@ -30,8 +30,8 @@ module Statement = struct
 
   include Fir.Statement_traverse.With_meta (Metadata)
 
-  let make_generated_prim (s : Fir.Prim_statement.t) : t =
-    A.construct Fir.Statement.prim (Metadata.gen_normal, s)
+  let make_generated_prim (value : Fir.Prim_statement.t) : t =
+    A.construct Fir.Statement.prim {value; meta= Metadata.gen_normal}
 end
 
 module Block = struct

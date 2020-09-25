@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -21,7 +21,9 @@
 module Base_map (M : Base.Monad.S) : sig
   val bmap :
        'm1 Statement.t
-    -> prim:('m1 * Prim_statement.t -> ('m2 * Prim_statement.t) M.t)
+    -> prim:
+         (   ('m1, Prim_statement.t) With_meta.t
+          -> ('m2, Prim_statement.t) With_meta.t M.t)
     -> if_stm:('m1 Statement.If.t -> 'm2 Statement.If.t M.t)
     -> flow:('m1 Statement.Flow_block.t -> 'm2 Statement.Flow_block.t M.t)
     -> 'm2 Statement.t M.t

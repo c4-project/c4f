@@ -104,7 +104,7 @@ include Class.Make_ext (struct
 
   let classify (type e) (stm : e Statement.t) : t option =
     Statement.reduce_step stm
-      ~prim:(fun (_, x) -> Some (Prim (Prim.classify x)))
+      ~prim:(fun {value; _} -> Some (Prim (Prim.classify value)))
       ~if_stm:(Fn.const (Some If))
       ~flow:(fun x -> Some (Flow (Flow.classify x)))
 
@@ -113,8 +113,8 @@ include Class.Make_ext (struct
 
   let classify_rec (type e) (stm : e Statement.t) : t list =
     Statement.reduce stm
-      ~prim:(fun (_, x) ->
-        List.map ~f:(fun t -> Prim (Some t)) (Prim.classify_rec x))
+      ~prim:(fun {value; _} ->
+        List.map ~f:(fun t -> Prim (Some t)) (Prim.classify_rec value))
       ~if_stm:(fun {t_branch; f_branch; _} ->
         If :: (unfold_block t_branch @ unfold_block f_branch))
       ~flow:(fun f ->

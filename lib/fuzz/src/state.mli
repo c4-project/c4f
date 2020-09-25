@@ -54,6 +54,9 @@ module Monad : sig
       with type state := t
        and module Inner := Or_error
 
+  (** Shorthand for lifting accessors over the state monad. *)
+  module Acc : Accessor.Monad.S with type 'x t := 'x t
+
   (** {2 Liftings} *)
 
   val with_labels_m : (Set.M(Act_common.Litmus_id).t -> 'a t) -> 'a t

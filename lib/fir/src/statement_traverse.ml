@@ -20,7 +20,9 @@ module Base_map (M : Monad.S) = struct
   type 'meta t = 'meta Statement.t
 
   let bmap (type m1 m2) (x : m1 t)
-      ~(prim : m1 * Prim_statement.t -> (m2 * Prim_statement.t) M.t)
+      ~(prim :
+            (m1, Prim_statement.t) With_meta.t
+         -> (m2, Prim_statement.t) With_meta.t M.t)
       ~(if_stm : (m1, m1 t) If.t -> (m2, m2 t) If.t M.t)
       ~(flow : (m1, m1 t) Flow_block.t -> (m2, m2 t) Flow_block.t M.t) :
       m2 t M.t =
@@ -37,7 +39,9 @@ module Base_map (M : Monad.S) = struct
   module Bk = Block.On_monad (M)
 
   let bmap_flat (type m1 m2) (x : m1 t)
-      ~(prim : m1 * Prim_statement.t -> (m2 * Prim_statement.t) M.t)
+      ~(prim :
+            (m1, Prim_statement.t) With_meta.t
+         -> (m2, Prim_statement.t) With_meta.t M.t)
       ~(cond : Expression.t -> Expression.t M.t) ~(block_meta : m1 -> m2 M.t)
       : m2 t M.t =
     let rec mu x =
@@ -57,9 +61,15 @@ Travesty.Traversable.Make1 (struct
   module On_monad (M : Monad.S) = struct
     module B = Base_map (M)
 
+    module AccM = Accessor.Of_monad (struct
+      include M
+
+      let apply = `Define_using_bind
+    end)
+
     let map_m (x : 'm1 t) ~(f : 'm1 -> 'm2 M.t) : 'm2 t M.t =
       B.bmap_flat x
-        ~prim:(fun (m, p) -> M.(m |> f >>| fun m' -> (m', p)))
+        ~prim:(AccM.map With_meta.meta ~f)
         ~cond:M.return ~block_meta:f
   end
 end)
@@ -97,9 +107,15 @@ module With_meta (Meta : T) = struct
       module PM = Basic.P.On_monad (M)
       module EM = Basic.E.On_monad (M)
 
+      module AccM = Accessor.Of_monad (struct
+        include M
+
+        let apply = `Define_using_bind
+      end)
+
       let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
         SBase.bmap_flat x
-          ~prim:(fun (m, p) -> M.(p |> PM.map_m ~f >>| fun p' -> (m, p')))
+          ~prim:(AccM.map With_meta.value ~f:(PM.map_m ~f))
           ~cond:(EM.map_m ~f) ~block_meta:M.return
     end
   end)

@@ -30,7 +30,7 @@ type 'meta t [@@deriving sexp, compare, equal]
 
 val reduce_step :
      'meta t
-  -> prim:('meta * Prim_statement.t -> 'result)
+  -> prim:(('meta, Prim_statement.t) With_meta.t -> 'result)
   -> if_stm:(('meta, 'meta t) If.t -> 'result)
   -> flow:(('meta, 'meta t) Flow_block.t -> 'result)
   -> 'result
@@ -40,7 +40,7 @@ val reduce_step :
 
 val reduce :
      'meta t
-  -> prim:('meta * Prim_statement.t -> 'result)
+  -> prim:(('meta, Prim_statement.t) With_meta.t -> 'result)
   -> if_stm:(('meta, 'result) If.t -> 'result)
   -> flow:(('meta, 'result) Flow_block.t -> 'result)
   -> 'result
@@ -79,7 +79,11 @@ val flow :
 (** [flow] focuses on flow blocks. *)
 
 val prim :
-  ('i, 'm * Prim_statement.t, 'm t, [< Accessor.variant]) Accessor.Simple.t
+  ( 'i
+  , ('m, Prim_statement.t) With_meta.t
+  , 'm t
+  , [< Accessor.variant] )
+  Accessor.Simple.t
 (** [prim] focuses on primitive statements. *)
 
 val prim' :

@@ -10,12 +10,7 @@
    project root for more information. *)
 
 open Base
-
-open struct
-  module Src = Act_fuzz_actions
-  module F = Act_fuzz
-  module FT = Act_fuzz_test
-end
+open Import
 
 module Test_data = struct
   let cmpxchg : Act_fir.Expression.t Act_fir.Atomic_cmpxchg.t Lazy.t =
@@ -44,20 +39,20 @@ let%test_module "cmpxchg.make.int.succeed" =
         =
       Lazy.Let_syntax.(
         let%bind to_insert = Test_data.cmpxchg_payload in
-        let%map where = FT.Subject.Test_data.Path.insert_live in
-        F.Payload_impl.Pathed.make to_insert ~where)
+        let%map where = Fuzz_test.Subject.Test_data.Path.insert_live in
+        Fuzz.Payload_impl.Pathed.make to_insert ~where)
 
-    let test_action : F.Subject.Test.t F.State.Monad.t =
-      F.State.Monad.(
+    let test_action : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
+      Fuzz.State.Monad.(
         Storelike.Test_common.prepare_fuzzer_state ()
         >>= fun () ->
         Src.Atomic_cmpxchg.Insert.Int_succeed.run
-          (Lazy.force FT.Subject.Test_data.test)
+          (Lazy.force Fuzz_test.Subject.Test_data.test)
           ~payload:(Lazy.force random_state))
 
     let%expect_test "programs" =
-      FT.Action.Test_utils.run_and_dump_test test_action
-        ~initial_state:(Lazy.force FT.Subject.Test_data.state) ;
+      Fuzz_test.Action.Test_utils.run_and_dump_test test_action
+        ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
       [%expect
         {|
       void
@@ -97,18 +92,18 @@ let%test_module "cmpxchg.make.int.succeed" =
 
     let%expect_test "global variables" =
       Storelike.Test_common.run_and_dump_globals test_action
-        ~initial_state:(Lazy.force FT.Subject.Test_data.state) ;
+        ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
       [%expect {| gen1= gen2=-55 gen3=1998 gen4=-4 x= y= |}]
 
     let%expect_test "variables with known values" =
       Storelike.Test_common.run_and_dump_kvs test_action
-        ~initial_state:(Lazy.force FT.Subject.Test_data.state) ;
+        ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
       [%expect
         {| expected=12345 gen2=-55 gen3=1998 gen4=-4 out=true r0=4004 r1=8008 |}]
 
     let%expect_test "variables with dependencies" =
       Storelike.Test_common.run_and_dump_deps test_action
-        ~initial_state:(Lazy.force FT.Subject.Test_data.state) ;
+        ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
       [%expect {| expected=12345 gen1= |}]
 
     (* TODO(@MattWindsor91): dedupe this with the above *)
@@ -116,19 +111,19 @@ let%test_module "cmpxchg.make.int.succeed" =
         =
       Lazy.Let_syntax.(
         let%bind to_insert = Test_data.cmpxchg_payload in
-        let%map where = FT.Subject.Test_data.Path.insert_dead in
-        F.Payload_impl.Pathed.make to_insert ~where)
+        let%map where = Fuzz_test.Subject.Test_data.Path.insert_dead in
+        Fuzz.Payload_impl.Pathed.make to_insert ~where)
 
-    let test_action_dead : F.Subject.Test.t F.State.Monad.t =
-      F.State.Monad.(
+    let test_action_dead : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
+      Fuzz.State.Monad.(
         Storelike.Test_common.prepare_fuzzer_state ()
         >>= fun () ->
         Src.Atomic_cmpxchg.Insert.Int_succeed.run
-          (Lazy.force FT.Subject.Test_data.test)
+          (Lazy.force Fuzz_test.Subject.Test_data.test)
           ~payload:(Lazy.force payload_dead))
 
     let%expect_test "variables with dependencies, in dead-code" =
       Storelike.Test_common.run_and_dump_deps test_action_dead
-        ~initial_state:(Lazy.force FT.Subject.Test_data.state) ;
+        ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
       [%expect {| |}]
   end )

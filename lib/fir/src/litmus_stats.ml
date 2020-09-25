@@ -200,7 +200,7 @@ let probe_flow ({body; header} : (unit, unit Monad.t) Flow_block.t) :
 
 let probe_fn_stm : unit Statement.t -> unit Monad.t =
   Statement.reduce
-    ~prim:(fun ((), p) -> probe_prim p)
+    ~prim:(fun {value; _} -> probe_prim value)
     ~if_stm:probe_if ~flow:probe_flow
 
 let probe_fn_stms : unit Statement.t list -> unit Monad.t =

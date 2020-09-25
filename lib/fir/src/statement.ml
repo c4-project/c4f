@@ -15,7 +15,7 @@ open Import
 (* This module brought to you by ppx_deriving's dislike of nonrec. *)
 module Inner = struct
   type 'meta t =
-    | Prim of 'meta * Prim_statement.t
+    | Prim of ('meta, Prim_statement.t) With_meta.t
     | If_stm of ('meta, 'meta t) If.t
     | Flow of ('meta, 'meta t) Flow_block.t
   [@@deriving sexp, compare, accessors, equal]
@@ -24,25 +24,16 @@ end
 include Inner
 
 let prim' : ('a, Prim_statement.t, unit t, [< variant]) Accessor.Simple.t =
-  [%accessor
-    Accessor.(
-      prim
-      @> isomorphism ~get:(fun ((), x) -> x) ~construct:(fun x -> ((), x)))]
+  [%accessor Accessor.(prim @> With_meta.no_meta)]
 
 let reduce_step (type meta result) (x : meta t)
-    ~(prim : meta * Prim_statement.t -> result)
+    ~(prim : (meta, Prim_statement.t) With_meta.t -> result)
     ~(if_stm : (meta, meta t) If.t -> result)
     ~(flow : (meta, meta t) Flow_block.t -> result) : result =
-  match x with
-  | Prim (m, x) ->
-      prim (m, x)
-  | If_stm x ->
-      if_stm x
-  | Flow x ->
-      flow x
+  match x with Prim x -> prim x | If_stm x -> if_stm x | Flow x -> flow x
 
 let reduce (type meta result) (x : meta t)
-    ~(prim : meta * Prim_statement.t -> result)
+    ~(prim : (meta, Prim_statement.t) With_meta.t -> result)
     ~(if_stm : (meta, result) If.t -> result)
     ~(flow : (meta, result) Flow_block.t -> result) : result =
   let rec mu x =
@@ -60,13 +51,13 @@ let reduce (type meta result) (x : meta t)
 
 let own_metadata (type meta) (x : meta t) : meta Option.t =
   reduce_step x
-    ~prim:(Fn.compose Option.return fst)
+    ~prim:(Accessor.get_option With_meta.meta)
     ~if_stm:(Fn.const None) ~flow:(Fn.const None)
 
 (** Shorthand for lifting a predicate on primitives. *)
 let is_prim_and (type meta) (t : meta t) ~(f : Prim_statement.t -> bool) :
     bool =
-  Accessor.(exists (prim @> Tuple2.snd)) ~f t
+  Accessor.(exists (prim @> With_meta.value)) ~f t
 
 (** Shorthand for writing a predicate that is [false] on primitives. *)
 let is_not_prim_and (type meta) ~(if_stm : (meta, meta t) If.t -> bool)

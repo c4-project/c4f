@@ -242,9 +242,9 @@ struct
   let to_stms_with_metadata (to_insert : B.t)
       (path_flags : Set.M(Fuzz.Path_flag).t) : Fuzz.Subject.Statement.t list
       =
-    let md = stm_metadata to_insert path_flags in
-    List.map (B.to_stms to_insert) ~f:(fun x ->
-        Accessor.construct Fir.Statement.prim (md, x))
+    let meta = stm_metadata to_insert path_flags in
+    List.map (B.to_stms to_insert) ~f:(fun value ->
+        Accessor.construct Fir.Statement.prim {meta; value})
 
   let do_insertions (target : Fuzz.Subject.Test.t)
       ~(path : Fuzz.Path.Flagged.t) ~(to_insert : B.t) :

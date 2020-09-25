@@ -79,9 +79,10 @@ let procedure_call (c : Fir.Call.t) : Ast.Stm.t =
           { func= Identifier (Fir.Call.function_id c)
           ; arguments= List.map ~f:Reify_expr.reify (Fir.Call.arguments c) }))
 
-let prim ((_, p) : _ * Fir.Prim_statement.t) : Ast.Stm.t list =
-  [ Fir.Prim_statement.value_map p ~assign ~atomic ~early_out ~procedure_call
-      ~label ~goto ~nop ]
+let prim ({value; _} : (_, Fir.Prim_statement.t) Fir.With_meta.t) :
+    Ast.Stm.t list =
+  [ Fir.Prim_statement.value_map value ~assign ~atomic ~early_out
+      ~procedure_call ~label ~goto ~nop ]
 
 let if_stm ({cond; t_branch; f_branch} : (_, Ast.Stm.t list) Fir.If.t) :
     Ast.Stm.t list =

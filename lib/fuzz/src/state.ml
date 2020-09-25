@@ -128,4 +128,10 @@ module Monad = struct
     Monadic.modify (erase_var_value ~id)
 
   let output () : Common.Output.t t = peek (fun x -> x.o)
+
+  module Acc = Accessor.Of_monad (struct
+    include M
+
+    let apply = `Define_using_bind
+  end)
 end
