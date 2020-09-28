@@ -61,5 +61,6 @@ let make_param_map (config : t) : Fuzz.Param_map.t =
   in
   Fuzz.Param_map.make ~params ~flags ()
 
-let summarise (cfg : t) : Fuzz.Action.Summary.t Map.M(Common.Id).t Or_error.t =
+let summarise (cfg : t) : Fuzz.Action.Summary.t Map.M(Common.Id).t Or_error.t
+    =
   Or_error.(cfg |> make_pool >>| Fuzz.Action.Pool.summarise)

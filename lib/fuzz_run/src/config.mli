@@ -59,7 +59,6 @@ val make_pool : t -> Fuzz.Action.Pool.t Or_error.t
     weights in [config]. This pool can then be queried for weight information
     or used to drive a random fuzzer session. *)
 
-val summarise :
-  t -> Fuzz.Action.Summary.t Map.M(Common.Id).t Or_error.t
+val summarise : t -> Fuzz.Action.Summary.t Map.M(Common.Id).t Or_error.t
 (** [summarise config] tries to get the effective fuzzer weights setup using
     the weighting information in [config]. *)

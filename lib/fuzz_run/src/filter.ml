@@ -45,14 +45,12 @@ let run_on_litmus (test : Fir.Litmus.Test.t) ~(o : Act_common.Output.t)
 
 let run_with_channels ?(path : string option) (ic : In_channel.t)
     (oc : Out_channel.t) ~(o : Act_common.Output.t)
-    ~(f : Fuzz.Subject.Test.t -> 'm Fuzz.Output.t Fuzz.State.Monad.t) : 'm Or_error.t
-    =
+    ~(f : Fuzz.Subject.Test.t -> 'm Fuzz.Output.t Fuzz.State.Monad.t) :
+    'm Or_error.t =
   Or_error.Let_syntax.(
     let%bind test = Litmus_c.Frontend.Fir.load_from_ic ?path ic in
     let%map test', metadata = run_on_litmus ~o ~f test in
-    Utils.My_format.fdump oc
-      (Fmt.vbox Litmus_c.Reify.pp_litmus)
-      test' ;
+    Utils.My_format.fdump oc (Fmt.vbox Litmus_c.Reify.pp_litmus) test' ;
     metadata)
 
 module Randomised = Plumbing.Filter.Make (struct
@@ -62,8 +60,8 @@ module Randomised = Plumbing.Filter.Make (struct
 
   let name = "Fuzzer (random)"
 
-  let run (ctx : Aux.Randomised.t Plumbing.Filter_context.t) (ic : In_channel.t)
-      (oc : Out_channel.t) : Fuzz.Trace.t Or_error.t =
+  let run (ctx : Aux.Randomised.t Plumbing.Filter_context.t)
+      (ic : In_channel.t) (oc : Out_channel.t) : Fuzz.Trace.t Or_error.t =
     let {Aux.Randomised.seed; o; config} = Plumbing.Filter_context.aux ctx in
     let input = Plumbing.Filter_context.input ctx in
     run_with_channels
@@ -84,7 +82,9 @@ let run_replay (subject : Fuzz.Subject.Test.t) ~(trace : Fuzz.Trace.t) :
     unit Fuzz.Output.t Fuzz.State.Monad.t =
   Fuzz.State.Monad.(
     Let_syntax.(
-      let%map subject' = Fuzz.Trace.run trace subject ~resolve:resolve_action in
+      let%map subject' =
+        Fuzz.Trace.run trace subject ~resolve:resolve_action
+      in
       Fuzz.Output.make ~subject:subject' ~metadata:()))
 
 module Replay = Plumbing.Filter.Make (struct

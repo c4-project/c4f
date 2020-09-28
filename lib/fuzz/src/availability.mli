@@ -13,31 +13,16 @@
 
 open Base
 
-(** {1 Context for availability checks} *)
+(** {1 Context for availability checks}
 
+    Availability checks depend on two pieces of information:
+
+    - a snapshot of the current test subject;
+    - a snapshot of the current fuzzer state. *)
 module Context : sig
-  (** Opaque type of availability contexts. *)
-  type t
-
-  (** {2 Constructors} *)
-
-  val make :
-    subject:Subject.Test.t -> param_map:Param_map.t -> state:State.t -> t
-  (** [make ~subject ~param_map ~state] makes a context with the given
-      components. *)
-
-  (** {2 Accessors} *)
-
-  val subject : t -> Subject.Test.t
-  (** [subject] gets the subject at the point of the availability check. *)
-
-  val param_map : t -> Param_map.t
-  (** [param_map] gets the parameter map at the point of the availability
-      check. *)
-
-  val state : t -> State.t
-  (** [param_map] gets the fuzzer state at the point of the availability
-      check. *)
+  (** Type of availability contexts. *)
+  type t = {subject: Subject.Test.t; param_map: Param_map.t; state: State.t}
+  [@@deriving accessors, make]
 end
 
 (** {1 Availability checks} *)

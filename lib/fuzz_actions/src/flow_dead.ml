@@ -219,10 +219,9 @@ module Insert = struct
       Fuzz.Path_filter.(
         require_flag In_dead_code + in_threads_only threads_with_labels)
 
-    let path_filter (ctx : Fuzz.Availability.Context.t) : Fuzz.Path_filter.t
-        =
-      ctx |> Fuzz.Availability.Context.state |> Fuzz.State.labels
-      |> path_filter'
+    let path_filter ({state; _} : Fuzz.Availability.Context.t) :
+        Fuzz.Path_filter.t =
+      path_filter' (Fuzz.State.labels state)
 
     module Payload = struct
       type t = Common.C_id.t Fuzz.Payload_impl.Pathed.t [@@deriving sexp]
@@ -252,9 +251,7 @@ module Insert = struct
     let available : Fuzz.Availability.t =
       Fuzz.Availability.(
         M.(
-          lift (fun ctx ->
-              ctx |> Fuzz.Availability.Context.state |> Fuzz.State.labels)
-          >>| path_filter'
+          lift path_filter
           >>= Fuzz.Availability.is_filter_constructible ~kind:Insert))
 
     let make_goto (id : Common.C_id.t) : Fuzz.Subject.Statement.t =
