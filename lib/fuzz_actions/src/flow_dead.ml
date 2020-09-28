@@ -219,9 +219,9 @@ module Insert = struct
       Fuzz.Path_filter.(
         require_flag In_dead_code + in_threads_only threads_with_labels)
 
-    let path_filter ({state; _} : Fuzz.Availability.Context.t) :
+    let path_filter ({state= {labels; _}; _} : Fuzz.Availability.Context.t) :
         Fuzz.Path_filter.t =
-      path_filter' (Fuzz.State.labels state)
+      path_filter' labels
 
     module Payload = struct
       type t = Common.C_id.t Fuzz.Payload_impl.Pathed.t [@@deriving sexp]
@@ -240,10 +240,11 @@ module Insert = struct
 
       let gen' (ins_path : Fuzz.Path.Flagged.t) :
           Common.C_id.t Fuzz.Payload_gen.t =
-        Fuzz.Payload_gen.(
-          let* labels = lift (Fn.compose Fuzz.State.labels Context.state) in
-          let labels_in_tid = reachable_labels labels ins_path in
-          lift_quickcheck (Base_quickcheck.Generator.of_list labels_in_tid))
+        Fuzz.(
+          Payload_gen.(
+            let* labels = lift_acc (Context.state @> Fuzz.State.labels) in
+            let labels_in_tid = reachable_labels labels ins_path in
+            lift_quickcheck (Base_quickcheck.Generator.of_list labels_in_tid)))
 
       let gen = Fuzz.Payload_impl.Pathed.gen Insert path_filter gen'
     end

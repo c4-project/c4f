@@ -52,12 +52,13 @@ let%test_module "assign.insert.int.normal" =
 
         let%expect_test "test int store: programs" =
           Fuzz_test.Action.Test_utils.run_and_dump_test test_action
-            ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
+            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
           [%expect
             {|
          void
-         P0(atomic_int *gen1, atomic_int *gen2, int *gen3, int *gen4, atomic_int *x,
-            atomic_int *y)
+         P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+            bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *gen1,
+            atomic_int *gen2, int *gen3, int *gen4, atomic_int *x, atomic_int *y)
          {
              atomic_int r0 = 4004;
              int r1 = 8008;
@@ -81,23 +82,28 @@ let%test_module "assign.insert.int.normal" =
          }
 
          void
-         P1(atomic_int *gen1, atomic_int *gen2, int *gen3, int *gen4, atomic_int *x,
-            atomic_int *y)
+         P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+            bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *gen1,
+            atomic_int *gen2, int *gen3, int *gen4, atomic_int *x, atomic_int *y)
          { loop: ; if (true) {  } else { goto loop; } } |}]
 
         let%expect_test "test int store: global variables" =
           Storelike.Test_common.run_and_dump_globals test_action
-            ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
-          [%expect {| gen1=1337 gen2=-55 gen3= gen4=-4 x= y= |}]
+            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
+          [%expect
+            {|
+            a=false b=true bar= barbaz= baz= c= d= e= foo= foobar= gen1=1337 gen2=-55
+            gen3= gen4=-4 x=27 y=53 |}]
 
         let%expect_test "test int store: variables with known values" =
           Storelike.Test_common.run_and_dump_kvs test_action
-            ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
-          [%expect {| gen1=1337 gen2=-55 gen4=-4 r0=4004 r1=8008 |}]
+            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
+          [%expect
+            {| a=false b=true gen1=1337 gen2=-55 gen4=-4 r0=4004 r1=8008 x=27 y=53 |}]
 
         let%expect_test "test int store: variables with dependencies" =
           Storelike.Test_common.run_and_dump_deps test_action
-            ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
+            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
           [%expect {| gen2=-55 |}]
       end )
 
@@ -108,12 +114,13 @@ let%test_module "assign.insert.int.normal" =
 
         let%expect_test "test int store: programs" =
           Fuzz_test.Action.Test_utils.run_and_dump_test test_action
-            ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
+            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
           [%expect
             {|
          void
-         P0(atomic_int *gen1, atomic_int *gen2, int *gen3, int *gen4, atomic_int *x,
-            atomic_int *y)
+         P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+            bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *gen1,
+            atomic_int *gen2, int *gen3, int *gen4, atomic_int *x, atomic_int *y)
          {
              atomic_int r0 = 4004;
              int r1 = 8008;
@@ -137,23 +144,28 @@ let%test_module "assign.insert.int.normal" =
          }
 
          void
-         P1(atomic_int *gen1, atomic_int *gen2, int *gen3, int *gen4, atomic_int *x,
-            atomic_int *y)
+         P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+            bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *gen1,
+            atomic_int *gen2, int *gen3, int *gen4, atomic_int *x, atomic_int *y)
          { loop: ; if (true) {  } else { goto loop; } } |}]
 
         let%expect_test "test int store: global variables" =
           Storelike.Test_common.run_and_dump_globals test_action
-            ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
-          [%expect {| gen1=1337 gen2=-55 gen3=1998 gen4=-4 x= y= |}]
+            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
+          [%expect
+            {|
+            a=false b=true bar= barbaz= baz= c= d= e= foo= foobar= gen1=1337 gen2=-55
+            gen3=1998 gen4=-4 x=27 y=53 |}]
 
         let%expect_test "test int store: variables with known values" =
           Storelike.Test_common.run_and_dump_kvs test_action
-            ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
-          [%expect {| gen1=1337 gen2=-55 gen3=1998 gen4=-4 r0=4004 |}]
+            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
+          [%expect
+            {| a=false b=true gen1=1337 gen2=-55 gen3=1998 gen4=-4 r0=4004 x=27 y=53 |}]
 
         let%expect_test "test int store: variables with dependencies" =
           Storelike.Test_common.run_and_dump_deps test_action
-            ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
+            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
           [%expect {| gen2=-55 |}]
       end )
 
@@ -178,12 +190,13 @@ let%test_module "assign.insert.int.normal" =
 
         let%expect_test "test int store: programs" =
           Fuzz_test.Action.Test_utils.run_and_dump_test test_action
-            ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
+            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
           [%expect
             {|
          void
-         P0(atomic_int *gen1, atomic_int *gen2, int *gen3, int *gen4, atomic_int *x,
-            atomic_int *y)
+         P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+            bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *gen1,
+            atomic_int *gen2, int *gen3, int *gen4, atomic_int *x, atomic_int *y)
          {
              atomic_int r0 = 4004;
              int r1 = 8008;
@@ -207,24 +220,28 @@ let%test_module "assign.insert.int.normal" =
          }
 
          void
-         P1(atomic_int *gen1, atomic_int *gen2, int *gen3, int *gen4, atomic_int *x,
-            atomic_int *y)
+         P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+            bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *gen1,
+            atomic_int *gen2, int *gen3, int *gen4, atomic_int *x, atomic_int *y)
          { loop: ; if (true) {  } else { goto loop; } } |}]
 
         let%expect_test "test int store: global variables" =
           Storelike.Test_common.run_and_dump_globals test_action
-            ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
-          [%expect {| gen1=1337 gen2=-55 gen3=1998 gen4=-4 x= y= |}]
+            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
+          [%expect
+            {|
+            a=false b=true bar= barbaz= baz= c= d= e= foo= foobar= gen1=1337 gen2=-55
+            gen3=1998 gen4=-4 x=27 y=53 |}]
 
         let%expect_test "test int store: variables with known values" =
           Storelike.Test_common.run_and_dump_kvs test_action
-            ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
+            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
           [%expect
-            {| gen1=1337 gen2=-55 gen3=1998 gen4=-4 r0=4004 r1=8008 |}]
+            {| a=false b=true gen1=1337 gen2=-55 gen3=1998 gen4=-4 r0=4004 r1=8008 x=27 y=53 |}]
 
         let%expect_test "test int store: variables with dependencies" =
           Storelike.Test_common.run_and_dump_deps test_action
-            ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
+            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
           [%expect {| |}]
       end )
 
@@ -258,12 +275,13 @@ let%test_module "assign.insert.int.normal" =
 
         let%expect_test "test int store: programs" =
           Fuzz_test.Action.Test_utils.run_and_dump_test test_action
-            ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
+            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
           [%expect
             {|
          void
-         P0(atomic_int *gen1, atomic_int *gen2, int *gen3, int *gen4, atomic_int *x,
-            atomic_int *y)
+         P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+            bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *gen1,
+            atomic_int *gen2, int *gen3, int *gen4, atomic_int *x, atomic_int *y)
          {
              atomic_int r0 = 4004;
              int r1 = 8008;
@@ -287,24 +305,28 @@ let%test_module "assign.insert.int.normal" =
          }
 
          void
-         P1(atomic_int *gen1, atomic_int *gen2, int *gen3, int *gen4, atomic_int *x,
-            atomic_int *y)
+         P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+            bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *gen1,
+            atomic_int *gen2, int *gen3, int *gen4, atomic_int *x, atomic_int *y)
          { loop: ; if (true) {  } else { goto loop; } } |}]
 
         let%expect_test "test int store: global variables" =
           Storelike.Test_common.run_and_dump_globals test_action
-            ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
-          [%expect {| gen1=1337 gen2=-55 gen3=1998 gen4=-4 x= y= |}]
+            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
+          [%expect
+            {|
+            a=false b=true bar= barbaz= baz= c= d= e= foo= foobar= gen1=1337 gen2=-55
+            gen3=1998 gen4=-4 x=27 y=53 |}]
 
         let%expect_test "test int store: variables with known values" =
           Storelike.Test_common.run_and_dump_kvs test_action
-            ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
+            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
           [%expect
-            {| gen1=1337 gen2=-55 gen3=1998 gen4=-4 r0=4004 r1=8008 |}]
+            {| a=false b=true gen1=1337 gen2=-55 gen3=1998 gen4=-4 r0=4004 r1=8008 x=27 y=53 |}]
 
         let%expect_test "test int store: variables with dependencies" =
           Storelike.Test_common.run_and_dump_deps test_action
-            ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
+            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
           [%expect {| |}]
       end )
   end )

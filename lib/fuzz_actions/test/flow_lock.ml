@@ -23,8 +23,7 @@ let%test_module "Surround.Sync" =
     (* TODO(@MattWindsor91): sort out the discrepancy between the subject
        example and var map. *)
 
-    let state : Fuzz.State.t =
-      Fuzz.State.make ~vars:(Lazy.force Fuzz_test.Var.Test_data.test_map) ()
+    let state : Fuzz.State.t = Lazy.force Fuzz_test.State.Test_data.state
 
     let test : Fuzz.Subject.Test.t =
       Lazy.force Fuzz_test.Subject.Test_data.test
@@ -40,8 +39,8 @@ let%test_module "Surround.Sync" =
         {|
           void
           P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
-             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
-             atomic_int y)
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           {
               atomic_int r0 = 4004;
               int r1 = 8008;
@@ -64,8 +63,8 @@ let%test_module "Surround.Sync" =
 
           void
           P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
-             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
-             atomic_int y)
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           { loop: ; if (true) {  } else { goto loop; } } |}]
   end )
 
@@ -76,8 +75,7 @@ let%test_module "Surround.Atomic" =
     (* TODO(@MattWindsor91): sort out the discrepancy between the subject
        example and var map. *)
 
-    let state : Fuzz.State.t =
-      Fuzz.State.make ~vars:(Lazy.force Fuzz_test.Var.Test_data.test_map) ()
+    let state : Fuzz.State.t = Lazy.force Fuzz_test.State.Test_data.state
 
     let test : Fuzz.Subject.Test.t =
       Lazy.force Fuzz_test.Subject.Test_data.test
@@ -93,8 +91,8 @@ let%test_module "Surround.Atomic" =
         {|
           void
           P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
-             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
-             atomic_int y)
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           {
               atomic_int r0 = 4004;
               int r1 = 8008;
@@ -118,7 +116,7 @@ let%test_module "Surround.Atomic" =
 
           void
           P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
-             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
-             atomic_int y)
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           { loop: ; if (true) {  } else { goto loop; } } |}]
   end )

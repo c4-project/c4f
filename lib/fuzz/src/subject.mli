@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -19,6 +19,7 @@
     metadata type used in the fuzzer is {!Metadata.t}. *)
 
 open Base
+open Import
 
 (** {1 Shorthand for FIR constructs with subject metadata}
 
@@ -31,21 +32,21 @@ open Base
 (** {2 Subject statements} *)
 
 module Statement : sig
-  type t = Metadata.t Act_fir.Statement.t [@@deriving sexp]
+  type t = Metadata.t Fir.Statement.t [@@deriving sexp]
 
   module If : sig
-    type t = Metadata.t Act_fir.Statement.If.t [@@deriving sexp]
+    type t = Metadata.t Fir.Statement.If.t [@@deriving sexp]
   end
 
   module Flow : sig
-    type t = Metadata.t Act_fir.Statement.Flow_block.t [@@deriving sexp]
+    type t = Metadata.t Fir.Statement.Flow_block.t [@@deriving sexp]
   end
 
-  include Act_fir.Statement_types.S_with_meta with type t := t
+  include Fir.Statement_types.S_with_meta with type t := t
 
   (** {3 Constructors} *)
 
-  val make_generated_prim : Act_fir.Prim_statement.t -> t
+  val make_generated_prim : Fir.Prim_statement.t -> t
   (** [make_generated_prim prim] lifts a primitive statement to a generated
       subject statement. *)
 end
@@ -53,7 +54,7 @@ end
 (** {2 Subject blocks} *)
 
 module Block : sig
-  type t = (Metadata.t, Statement.t) Act_fir.Block.t
+  type t = (Metadata.t, Statement.t) Fir.Block.t
 
   (** {3 Specialised constructors}
 
@@ -79,7 +80,7 @@ end
 module Thread : sig
   (** Transparent type of fuzzable programs. *)
   type t =
-    { decls: Act_fir.Initialiser.t Act_common.C_named.Alist.t
+    { decls: Fir.Initialiser.t Act_common.C_named.Alist.t
     ; stms: Statement.t list }
   [@@deriving sexp]
 
@@ -89,14 +90,14 @@ module Thread : sig
   (** [empty] is the empty program. *)
 
   val make :
-       ?decls:Act_fir.Initialiser.t Act_common.C_named.Alist.t
+       ?decls:Fir.Initialiser.t Act_common.C_named.Alist.t
     -> ?stms:Statement.t list
     -> unit
     -> t
   (** [make ?decls ?stms ()] makes a thread with the given decls and
       statements (defaulting to empty). *)
 
-  val of_function : unit Act_fir.Function.t -> t
+  val of_function : unit Fir.Function.t -> t
   (** [of_litmus func] converts a FIR C function [func] to the intermediate
       form used for fuzzing. *)
 
@@ -105,22 +106,19 @@ module Thread : sig
   val map_decls :
        t
     -> f:
-         (   Act_fir.Initialiser.t Act_common.C_named.t
-          -> Act_fir.Initialiser.t Act_common.C_named.t)
+         (   Fir.Initialiser.t Act_common.C_named.t
+          -> Fir.Initialiser.t Act_common.C_named.t)
     -> t
   (** [map_decls thd ~f] maps [f] over each decl in [thd]. *)
 
   val to_function :
-       t
-    -> vars:Var.Map.t
-    -> id:int
-    -> unit Act_fir.Function.t Act_common.C_named.t
+    t -> vars:Var.Map.t -> id:int -> unit Fir.Function.t Act_common.C_named.t
   (** [to_function prog ~vars ~id] lifts a subject-program [prog] with ID
       [prog_id] back into a Litmus function, adding a parameter list
       generated from [vars] and erasing any metadata. *)
 
   val list_to_litmus :
-    t list -> vars:Var.Map.t -> Act_fir.Litmus.Lang.Program.t list
+    t list -> vars:Var.Map.t -> Fir.Litmus.Lang.Program.t list
   (** [list_to_litmus progs ~vars] lifts a list [progs] of subject-programs
       back into Litmus programs, adding parameter lists generated from
       [vars], and using the physical position of each program in the list to
@@ -134,18 +132,17 @@ end
 (** Fuzzable representation of a litmus test. *)
 module Test : sig
   (** Transparent type of fuzzable litmus tests. *)
-  type t = (Act_fir.Constant.t, Thread.t) Act_litmus.Test.Raw.t
-  [@@deriving sexp]
+  type t = (Fir.Constant.t, Thread.t) Act_litmus.Test.Raw.t [@@deriving sexp]
 
   val add_new_thread : t -> t
   (** [add_new_thread test] appends a new, empty thread onto [test]'s threads
       list, returning the resulting test. *)
 
-  val of_litmus : Act_fir.Litmus.Test.t -> t
+  val of_litmus : Fir.Litmus.Test.t -> t
   (** [of_litmus test] converts a validated C litmus test [test] to the
       intermediate form used for fuzzing. *)
 
-  val to_litmus : t -> vars:Var.Map.t -> Act_fir.Litmus.Test.t Or_error.t
+  val to_litmus : t -> vars:Var.Map.t -> Fir.Litmus.Test.t Or_error.t
   (** [to_litmus subject ~vars] tries to reconstitute a validated C litmus
       test from the subject [subject], using the variable map [vars] to
       reconstitute parameters. It may fail if the resulting litmus is
@@ -161,14 +158,14 @@ module Test : sig
   (** [exists_top_statement test ~f] is true if there exists a top-level
       statement in [test] such that [f] holds. *)
 
-  val has_statements : ?matching:Act_fir.Statement_class.t list -> t -> bool
+  val has_statements : ?matching:Fir.Statement_class.t list -> t -> bool
   (** [has_statements ?matching test] is true if there exists a statement at
       any level in [test] that matches at least one of [matching]; if
       [matching] is empty or not given, we just check to see if any
       statements exist. *)
 
   val has_statements_not_matching :
-    t -> one_of:Act_fir.Statement_class.t list -> bool
+    t -> one_of:Fir.Statement_class.t list -> bool
   (** [exist_statement_not_matching test ~templates] is true if there exists
       a statement at any level in [test] that fails to match at least one of
       [one_of]. *)
@@ -176,7 +173,7 @@ module Test : sig
   (** {3 Helpers for mutating tests} *)
 
   val declare_var :
-    t -> Act_common.Litmus_id.t -> Act_fir.Initialiser.t -> t Or_error.t
+    t -> Act_common.Litmus_id.t -> Fir.Initialiser.t -> t Or_error.t
   (** [declare_var subject var init] adds [var] with initialiser [init] to
       [subject]'s init block or thread initialisers with the initial value
       [initial_value]. *)

@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -12,47 +12,25 @@
 (** The payload generator monad. *)
 
 open Base
+open Import
 
 (** {1 Context}
 
-    A payload generation context is similar to an {!Availability.Context.t},
-    but contains a random number generator and action ID. *)
+    A payload generation context is an extension of an
+    {!Availability.Context.t}, containing also a random number generator and
+    action ID. *)
 module Context : sig
-  (** Opaque type of payload generation contexts. *)
-  type t
+  (** Type of payload generation contexts. *)
+  type t =
+    { action_id: Common.Id.t
+    ; actx: Availability.Context.t
+    ; random: Splittable_random.State.t }
+  [@@deriving accessors, make]
 
-  val make :
-       action_id:Act_common.Id.t
-    -> subject:Subject.Test.t
-    -> param_map:Param_map.t
-    -> state:State.t
-    -> random:Splittable_random.State.t
-    -> t
-  (** [make ~action_id ~subject ~param_map ~state ~random] constructs a
-      payload generation context from the given components. *)
+  (** {2 Shorthands for things in the availability context} *)
 
-  val action_id : t -> Act_common.Id.t
-
-  (* [action_id ctx] gets the action ID inside [ctx]. *)
-
-  val subject : t -> Subject.Test.t
-
-  (* [subject ctx] gets the instantaneous subject inside [ctx]. *)
-
-  val param_map : t -> Param_map.t
-
-  (* [param_map ctx] gets the parameter map inside [ctx]. *)
-
-  val state : t -> State.t
-
-  (* [state ctx] gets the instantaneous fuzzer state inside [ctx]. *)
-
-  val random : t -> Splittable_random.State.t
-
-  (* [random ctx] gets the random number generator inside [ctx]. *)
-
-  val to_availability : t -> Availability.Context.t
-  (** [to_availability ctx] lowers [ctx] to an availability context. *)
+  val state : ('i, State.t, t, [< field]) Accessor.Simple.t
+  (** [state] focuses on the state nested inside the availability context. *)
 end
 
 (** {1 The generator monad}
@@ -63,6 +41,10 @@ include
   Act_utils.Reader_types.S
     with type 'a Inner.t = 'a Or_error.t
      and type ctx = Context.t
+
+val lift_acc :
+  (unit -> 'a -> 'b, unit -> ctx -> 'c, [> getter]) Accessor.t -> 'a t
+(** [lift_acc acc] is shorthand for [lift (Accessor.get acc)]. *)
 
 (** {2 Let syntax}
 
@@ -86,9 +68,9 @@ val path_with_flags : Path_kind.t -> filter:Path_filter.t -> Path.Flagged.t t
     filter [filter], and returns it with its flags. *)
 
 val fresh_var :
-     ?such_that:(Act_common.Litmus_id.t -> bool)
-  -> Act_common.Scope.t
-  -> Act_common.Litmus_id.t t
+     ?such_that:(Common.Litmus_id.t -> bool)
+  -> Common.Scope.t
+  -> Common.Litmus_id.t t
 (** [fresh_var ?such_that scope] generates a fresh variable at [scope],
     optionally satisfying the predicate [such_that]. *)
 
@@ -97,7 +79,7 @@ val fresh_var :
 val vars : Var.Map.t t
 (** [vars] gets the current variable map at time of generation. *)
 
-val flag : Act_common.Id.t -> bool t
+val flag : Common.Id.t -> bool t
 (** [flag id] evaluates the (potentially stochastic) flag with ID [id]. *)
 
 (** {3 Lifting generators} *)

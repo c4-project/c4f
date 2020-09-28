@@ -29,43 +29,6 @@ module Test_data = struct
             ~ty:(Fir.Type.int ~is_atomic:false ())
             ~value:(Fir.Constant.int 8008) ) ]
 
-  let globals : Fir.Type.t Act_common.C_named.Alist.t Lazy.t =
-    lazy
-      Fir.
-        [ ( Act_common.C_id.of_string "x"
-          , Type.(int ~is_pointer:true ~is_atomic:true ()) )
-        ; ( Act_common.C_id.of_string "y"
-          , Type.(int ~is_pointer:true ~is_atomic:true ()) ) ]
-
-  let thread0_vars :
-      (Act_common.Litmus_id.t, Act_fuzz.Var.Record.t) List.Assoc.t Lazy.t =
-    Lazy.map body_decls
-      ~f:
-        (List.map ~f:(fun (id, v) ->
-             let scope = Act_common.Scope.Local 0 in
-             ( Act_common.Litmus_id.make ~scope ~id
-             , Act_fuzz.Var.Record.make_generated
-                 ~initial_value:(Accessor.get Fir.Initialiser.value v)
-                 scope
-                 (Accessor.get Fir.Initialiser.ty v) )))
-
-  let state : Act_fuzz.State.t Lazy.t =
-    (* TODO(@MattWindsor91): labels? *)
-    Lazy.Let_syntax.(
-      let%map globals_alist = globals in
-      let global_vars =
-        globals_alist
-        |> List.map ~f:(fun (id, ty) ->
-               ( Act_common.Litmus_id.global id
-               , Act_fuzz.Var.Record.make_existing Global ty ))
-      in
-      let vars =
-        global_vars @ Lazy.force thread0_vars
-        |> Map.of_alist_exn (module Act_common.Litmus_id)
-        |> Act_common.Scoped_map.of_litmus_id_map
-      in
-      Act_fuzz.State.make ~vars ())
-
   let mk_store (a : Fir.Atomic_store.t) : Src.Subject.Statement.t =
     Src.Subject.Statement.make_generated_prim
       (Accessor.construct

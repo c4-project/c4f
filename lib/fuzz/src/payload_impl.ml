@@ -23,9 +23,7 @@ module Pathed = struct
       (path_filter : Availability.Context.t -> Path_filter.t)
       (gen_inner : Path.Flagged.t -> 'a Payload_gen.t) : 'a t Payload_gen.t =
     Payload_gen.(
-      let* filter =
-        lift (Fn.compose path_filter Payload_gen.Context.to_availability)
-      in
+      let* filter = lift (fun {actx; _} -> path_filter actx) in
       let* where = path_with_flags kind ~filter in
       let+ payload = gen_inner where in
       make payload ~where)
@@ -84,7 +82,7 @@ module Cond_pathed = struct
     Staged.stage (fun {Path_flag.Flagged.path; _} ->
         let tid = Path.tid path in
         Payload_gen.(
-          let* vars = lift (Fn.compose State.vars Context.state) in
+          let* vars = lift_acc (Context.state @> State.vars) in
           let env = cond_env vars ~tid in
           lift_quickcheck (cond_gen env)))
 

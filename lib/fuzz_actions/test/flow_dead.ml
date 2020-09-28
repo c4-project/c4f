@@ -28,7 +28,7 @@ let%test_module "Early_out" =
     let test_on_example_program (wherez : Fuzz.Path.Flagged.t Lazy.t)
         (kind : Fir.Early_out.t) : unit =
       let initial_state : Fuzz.State.t =
-        Lazy.force Fuzz_test.Subject.Test_data.state
+        Lazy.force Fuzz_test.State.Test_data.state
       in
       Fuzz_test.Action.Test_utils.run_and_dump_test
         (action_on_example_program wherez kind)
@@ -42,7 +42,9 @@ let%test_module "Early_out" =
       [%expect
         {|
       void
-      P0(atomic_int *x, atomic_int *y)
+      P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       {
           atomic_int r0 = 4004;
           int r1 = 8008;
@@ -66,7 +68,9 @@ let%test_module "Early_out" =
       }
 
       void
-      P1(atomic_int *x, atomic_int *y)
+      P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "invalid break on example program" =
@@ -82,7 +86,9 @@ let%test_module "Early_out" =
       [%expect
         {|
       void
-      P0(atomic_int *x, atomic_int *y)
+      P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       {
           atomic_int r0 = 4004;
           int r1 = 8008;
@@ -106,7 +112,9 @@ let%test_module "Early_out" =
       }
 
       void
-      P1(atomic_int *x, atomic_int *y)
+      P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       { loop: ; if (true) {  } else { goto loop; } } |}]
   end )
 
@@ -129,7 +137,7 @@ let%test_module "Early_out_loop_end" =
         (wherez : Fuzz.Path.Flagged.t Lazy.t) (kind : Fir.Early_out.t) : unit
         =
       let initial_state : Fuzz.State.t =
-        Lazy.force Fuzz_test.Subject.Test_data.state
+        Lazy.force Fuzz_test.State.Test_data.state
       in
       Fuzz_test.Action.Test_utils.run_and_dump_test
         (action_on_example_program ?if_cond wherez kind)
@@ -141,7 +149,9 @@ let%test_module "Early_out_loop_end" =
       [%expect
         {|
           void
-          P0(atomic_int *x, atomic_int *y)
+          P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           {
               atomic_int r0 = 4004;
               int r1 = 8008;
@@ -164,7 +174,9 @@ let%test_module "Early_out_loop_end" =
           }
 
           void
-          P1(atomic_int *x, atomic_int *y)
+          P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "invalid break on multi loop" =
@@ -178,7 +190,9 @@ let%test_module "Early_out_loop_end" =
       [%expect
         {|
           void
-          P0(atomic_int *x, atomic_int *y)
+          P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           {
               atomic_int r0 = 4004;
               int r1 = 8008;
@@ -201,7 +215,9 @@ let%test_module "Early_out_loop_end" =
           }
 
           void
-          P1(atomic_int *x, atomic_int *y)
+          P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "valid break on single loop" =
@@ -210,7 +226,9 @@ let%test_module "Early_out_loop_end" =
       [%expect
         {|
           void
-          P0(atomic_int *x, atomic_int *y)
+          P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           {
               atomic_int r0 = 4004;
               int r1 = 8008;
@@ -233,7 +251,9 @@ let%test_module "Early_out_loop_end" =
           }
 
           void
-          P1(atomic_int *x, atomic_int *y)
+          P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "valid break on single loop with wrapping" =
@@ -242,7 +262,9 @@ let%test_module "Early_out_loop_end" =
       [%expect
         {|
           void
-          P0(atomic_int *x, atomic_int *y)
+          P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           {
               atomic_int r0 = 4004;
               int r1 = 8008;
@@ -268,7 +290,9 @@ let%test_module "Early_out_loop_end" =
           }
 
           void
-          P1(atomic_int *x, atomic_int *y)
+          P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "wrapping introduces dependencies" =
@@ -279,7 +303,7 @@ let%test_module "Early_out_loop_end" =
          avoid the problem happening again. *)
       let wherez = Fuzz_test.Subject.Test_data.Path.insert_once_loop_end in
       let initial_state : Fuzz.State.t =
-        Lazy.force Fuzz_test.Subject.Test_data.state
+        Lazy.force Fuzz_test.State.Test_data.state
       in
       Fuzz_test.Action.Test_utils.run_and_dump_vars
         (action_on_example_program wherez Break

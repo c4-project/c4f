@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -37,10 +37,6 @@ val get_flag : t -> id:Act_common.Id.t -> Flag.t Or_error.t
 (** [get_flag map ~id] tries to get the flag with ID [id] from map [map]. It
     fails if no such flag exists. The flag returned will need a random number
     generator to evaluate into a boolean. *)
-
-val get_flag_m : t -> id:Act_common.Id.t -> Flag.t State.Monad.t
-(** [get_flag_m map ~id] behaves as [get_flag], but wraps it inside a state
-    monad.. *)
 
 (** {2 Well-known parameters and flags} *)
 

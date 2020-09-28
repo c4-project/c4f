@@ -28,8 +28,7 @@ module Runner_state = struct
   type t =
     { pool: Fuzz.Action.Pool.t
     ; random: Splittable_random.State.t
-    ; trace: Fuzz.Trace.t
-    ; param_map: Fuzz.Param_map.t }
+    ; trace: Fuzz.Trace.t }
   [@@deriving fields]
 
   module Monad = Travesty.State_transform.Make (struct
@@ -41,11 +40,9 @@ module Runner_state = struct
   let make_gen_context (action_id : Common.Id.t)
       (subject : Fuzz.Subject.Test.t) (st : t) :
       Fuzz.Payload_gen.Context.t Fuzz.State.Monad.t =
-    let param_map = param_map st in
     let random = random st in
     Fuzz.State.Monad.peek (fun state ->
-        Fuzz.Payload_gen.Context.make ~action_id ~subject ~param_map ~state
-          ~random)
+        {Fuzz.Payload_gen.Context.action_id; random; actx= {state; subject}})
 end
 
 let output () : Common.Output.t Runner_state.Monad.t =
@@ -72,9 +69,9 @@ let generate_payload (type rs)
 let pick_action (subject : Fuzz.Subject.Test.t) :
     (module Fuzz.Action_types.S) Runner_state.Monad.t =
   Runner_state.Monad.Let_syntax.(
-    let%bind {pool; random; param_map; _} = Runner_state.Monad.peek Fn.id in
+    let%bind {pool; random; _} = Runner_state.Monad.peek Fn.id in
     Runner_state.Monad.Monadic.return
-      (Fuzz.Action.Pool.pick pool ~subject ~random ~param_map))
+      (Fuzz.Action.Pool.pick pool ~subject ~random))
 
 let log_action (type p)
     (action : (module Fuzz.Action_types.S with type Payload.t = p))
@@ -105,11 +102,11 @@ let mutate_subject_step (subject : Fuzz.Subject.Test.t) :
             Common.Output.pv o "fuzz: action done.@."))
 
 let get_cap () : int Runner_state.Monad.t =
-  Runner_state.Monad.Let_syntax.(
-    let%bind param_map = Runner_state.Monad.peek Runner_state.param_map in
-    Runner_state.Monad.Monadic.return
-      (Fuzz.State.Monad.Monadic.return
-         (Fuzz.Param_map.get_action_cap param_map)))
+  Runner_state.Monad.Monadic.return
+    Fuzz.State.Monad.(
+      Let_syntax.(
+        let%bind param_map = peek (fun x -> x.params) in
+        Monadic.return (Fuzz.Param_map.get_action_cap param_map)))
 
 let mutate_subject (subject : Fuzz.Subject.Test.t) :
     Fuzz.Subject.Test.t Runner_state.Monad.t =
@@ -129,10 +126,9 @@ let make_runner_state (seed : int option) (config : Config.t) :
     Runner_state.t Or_error.t =
   let random = make_rng seed in
   let trace = Fuzz.Trace.empty in
-  let param_map = Config.make_param_map config in
   Or_error.Let_syntax.(
     let%map pool = Config.make_pool config in
-    {Runner_state.random; param_map; trace; pool})
+    {Runner_state.random; trace; pool})
 
 let make_output (rstate : Runner_state.t) (subject : Fuzz.Subject.Test.t) :
     Fuzz.Trace.t Fuzz.Output.t =

@@ -10,36 +10,32 @@
    project root for more information. *)
 
 open Base
+open Import
 
 module Context = struct
-  (* TODO(@MattWindsor91): this is very similar to the availability context;
-     should the two share code? *)
   type t =
     { action_id: Act_common.Id.t
-    ; subject: Subject.Test.t
-    ; param_map: Param_map.t
-    ; state: State.t
+    ; actx: Availability.Context.t
     ; random: Splittable_random.State.t }
-  [@@deriving fields, make]
+  [@@deriving accessors, make]
 
-  let to_availability ({subject; param_map; state; _} : t) :
-      Availability.Context.t =
-    Availability.Context.make ~subject ~param_map ~state
+  let state = [%accessor actx @> Availability.Context.state]
 end
 
-include Act_utils.Reader.Fix_context (Act_utils.Reader.With_errors) (Context)
+include Utils.Reader.Fix_context (Act_utils.Reader.With_errors) (Context)
+
+let lift_acc acc = lift (Accessor.get acc)
 
 let lift_opt_gen (type a) (g : a Opt_gen.t) : a t =
-  Inner.lift (fun ctx ->
+  Inner.lift (fun {action_id; random; _} ->
       let g' =
         Or_error.tag_s g
           ~tag:
             [%message
               "Payload generator instantiation failed."
-                ~action_id:(Context.action_id ctx : Act_common.Id.t)]
+                ~action_id:(action_id : Act_common.Id.t)]
       in
       (* TODO(@MattWindsor91): size? *)
-      let random = Context.random ctx in
       Or_error.(g' >>| Base_quickcheck.Generator.generate ~size:10 ~random))
 
 let lift_quickcheck (type a) (g : a Base_quickcheck.Generator.t) : a t =
@@ -47,17 +43,17 @@ let lift_quickcheck (type a) (g : a Base_quickcheck.Generator.t) : a t =
 
 let path_with_flags (kind : Path_kind.t) ~(filter : Path_filter.t) :
     Path.t Path_flag.Flagged.t t =
-  lift Context.subject
+  lift_acc (Context.actx @> Availability.Context.subject)
   >>| Path_producers.try_gen_with_flags ~filter ~kind
   >>= lift_opt_gen
 
 let flag (id : Act_common.Id.t) : bool t =
-  let* param_map = lift Context.param_map in
-  let* random = lift Context.random in
+  let* param_map = lift_acc (Context.state @> State.params) in
+  let* random = lift_acc Context.random in
   let+ f = Inner.return (Param_map.get_flag param_map ~id) in
   Flag.eval f ~random
 
-let vars : Var.Map.t t = lift (Fn.compose State.vars Context.state)
+let vars : Var.Map.t t = lift_acc (Context.state @> State.vars)
 
 let fresh_var ?(such_that : (Act_common.Litmus_id.t -> bool) option)
     (scope : Act_common.Scope.t) : Act_common.Litmus_id.t t =

@@ -112,12 +112,10 @@ module Pool : sig
        t
     -> subject:Subject.Test.t
     -> random:Splittable_random.State.t
-    -> param_map:Param_map.t
     -> (module Action_types.S) State.Monad.t
-  (** [pick pool ~subject ~random ~param_map] is a stateful action that picks
-      a weighted-random action module from [pool] that is available on
-      [subject], using [random] as a random number generator and [param_map]
-      as the map of configured fuzzer parameters. *)
+  (** [pick pool ~subject ~random] is a stateful action that picks a
+      weighted-random action module from [pool] that is available on
+      [subject], using [random] as a random number generator. *)
 end
 
 (** {1 Helpers for building actions} *)

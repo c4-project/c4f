@@ -10,10 +10,7 @@
    project root for more information. *)
 
 open Base
-
-open struct
-  module Src = Act_fuzz
-end
+open Import
 
 module Test_utils = struct
   let reify_test (test : Src.Subject.Test.t)
@@ -47,7 +44,7 @@ module Test_utils = struct
     let result =
       Or_error.(
         Src.State.Monad.(run' action initial_state)
-        >>| fst >>| Src.State.vars
+        >>| Accessor.(get (Tuple2.fst @> Src.State.vars))
         >>| Src.Var.Map.env_satisfying_all ~scope ~predicates
         >>| Map.to_alist
         >>| Travesty_base_exts.Alist.map_right

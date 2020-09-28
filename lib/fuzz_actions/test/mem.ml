@@ -29,7 +29,7 @@ let%test_module "running payloads on test subject" =
       let pld = Src.Mem.Strengthen_payload.make ~path ~mo ~can_weaken in
       let action = test_action pld in
       Fuzz_test.Action.Test_utils.run_and_dump_test action
-        ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state)
+        ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state)
 
     let sc_action : Fuzz.Path.t Lazy.t =
       Fuzz.Path.(
@@ -49,7 +49,9 @@ let%test_module "running payloads on test subject" =
       [%expect
         {|
       void
-      P0(atomic_int *x, atomic_int *y)
+      P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       {
           atomic_int r0 = 4004;
           int r1 = 8008;
@@ -72,7 +74,9 @@ let%test_module "running payloads on test subject" =
       }
 
       void
-      P1(atomic_int *x, atomic_int *y)
+      P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "forced SC->RLX" =
@@ -80,7 +84,9 @@ let%test_module "running payloads on test subject" =
       [%expect
         {|
       void
-      P0(atomic_int *x, atomic_int *y)
+      P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       {
           atomic_int r0 = 4004;
           int r1 = 8008;
@@ -103,7 +109,9 @@ let%test_module "running payloads on test subject" =
       }
 
       void
-      P1(atomic_int *x, atomic_int *y)
+      P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "successful RLX->SC" =
@@ -111,7 +119,9 @@ let%test_module "running payloads on test subject" =
       [%expect
         {|
       void
-      P0(atomic_int *x, atomic_int *y)
+      P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       {
           atomic_int r0 = 4004;
           int r1 = 8008;
@@ -134,7 +144,9 @@ let%test_module "running payloads on test subject" =
       }
 
       void
-      P1(atomic_int *x, atomic_int *y)
+      P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "ignored RLX->ACQ" =
@@ -142,7 +154,9 @@ let%test_module "running payloads on test subject" =
       [%expect
         {|
       void
-      P0(atomic_int *x, atomic_int *y)
+      P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       {
           atomic_int r0 = 4004;
           int r1 = 8008;
@@ -165,7 +179,9 @@ let%test_module "running payloads on test subject" =
       }
 
       void
-      P1(atomic_int *x, atomic_int *y)
+      P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "part-ignored nested change (outer)" =
@@ -173,7 +189,9 @@ let%test_module "running payloads on test subject" =
       [%expect
         {|
       void
-      P0(atomic_int *x, atomic_int *y)
+      P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       {
           atomic_int r0 = 4004;
           int r1 = 8008;
@@ -196,7 +214,9 @@ let%test_module "running payloads on test subject" =
       }
 
       void
-      P1(atomic_int *x, atomic_int *y)
+      P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "part-ignored nested change (inner)" =
@@ -204,7 +224,9 @@ let%test_module "running payloads on test subject" =
       [%expect
         {|
       void
-      P0(atomic_int *x, atomic_int *y)
+      P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       {
           atomic_int r0 = 4004;
           int r1 = 8008;
@@ -227,6 +249,8 @@ let%test_module "running payloads on test subject" =
       }
 
       void
-      P1(atomic_int *x, atomic_int *y)
+      P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       { loop: ; if (true) {  } else { goto loop; } } |}]
   end )

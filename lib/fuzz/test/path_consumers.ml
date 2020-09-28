@@ -29,7 +29,7 @@ let%test_module "Statement_list" =
 
         let test (path : F.Path.Flagged.t Lazy.t)
             ~(action : F.Path_kind.With_action.t) : unit =
-          let vars = F.State.vars (Lazy.force Subject.Test_data.state) in
+          let {F.State.vars; _} = Lazy.force State.Test_data.state in
           Fmt.(
             pr "@[<v>%a@]@."
               (Act_utils.My_format.pp_or_error
@@ -70,7 +70,9 @@ let%test_module "Statement_list" =
               [%expect
                 {|
           void
-          P0(atomic_int *x, atomic_int *y)
+          P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           {
               atomic_int r0 = 4004;
               int r1 = 8008;
@@ -94,7 +96,9 @@ let%test_module "Statement_list" =
           }
 
           void
-          P1(atomic_int *x, atomic_int *y)
+          P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           { loop: ; if (true) {  } else { goto loop; } } |}]
 
             let%expect_test "insert onto end of list" =
@@ -102,7 +106,9 @@ let%test_module "Statement_list" =
               [%expect
                 {|
           void
-          P0(atomic_int *x, atomic_int *y)
+          P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           {
               atomic_int r0 = 4004;
               int r1 = 8008;
@@ -126,7 +132,9 @@ let%test_module "Statement_list" =
           }
 
           void
-          P1(atomic_int *x, atomic_int *y)
+          P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           { loop: ; if (true) {  } else { goto loop; } } |}]
           end )
 
@@ -140,7 +148,9 @@ let%test_module "Statement_list" =
               [%expect
                 {|
                   void
-                  P0(atomic_int *x, atomic_int *y)
+                  P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+                     bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+                     atomic_int *y)
                   {
                       atomic_int r0 = 4004;
                       int r1 = 8008;
@@ -163,7 +173,9 @@ let%test_module "Statement_list" =
                   }
 
                   void
-                  P1(atomic_int *x, atomic_int *y)
+                  P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+                     bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+                     atomic_int *y)
                   { loop: ; if (true) {  } else { goto loop; } } |}]
 
             let%expect_test "transform a range" =
@@ -171,7 +183,9 @@ let%test_module "Statement_list" =
               [%expect
                 {|
           void
-          P0(atomic_int *x, atomic_int *y)
+          P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           {
               atomic_int r0 = 4004;
               int r1 = 8008;
@@ -194,7 +208,9 @@ let%test_module "Statement_list" =
           }
 
           void
-          P1(atomic_int *x, atomic_int *y)
+          P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           { loop: ; if (true) {  } else { goto loop; } } |}]
 
             let%expect_test "transform an insertion (invalid)" =
@@ -232,7 +248,9 @@ let%test_module "Statement_list" =
               [%expect
                 {|
                   void
-                  P0(atomic_int *x, atomic_int *y)
+                  P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+                     bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+                     atomic_int *y)
                   {
                       atomic_int r0 = 4004;
                       int r1 = 8008;
@@ -254,7 +272,9 @@ let%test_module "Statement_list" =
                   }
 
                   void
-                  P1(atomic_int *x, atomic_int *y)
+                  P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+                     bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+                     atomic_int *y)
                   { loop: ; if (true) {  } else { goto loop; } } |}]
 
             let%expect_test "list-transform an insertion (invalid)" =

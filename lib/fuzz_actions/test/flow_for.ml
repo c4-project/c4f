@@ -17,8 +17,7 @@ let%test_module "test runs" =
     (* TODO(@MattWindsor91): sort out the discrepancy between the subject
        example and var map. Also sort out duplication with below. *)
 
-    let state : Fuzz.State.t =
-      Fuzz.State.make ~vars:(Lazy.force Fuzz_test.Var.Test_data.test_map) ()
+    let state : Fuzz.State.t = Lazy.force Fuzz_test.State.Test_data.state
 
     let test : Fuzz.Subject.Test.t =
       Lazy.force Fuzz_test.Subject.Test_data.test
@@ -50,8 +49,8 @@ let%test_module "test runs" =
             {|
           void
           P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
-             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
-             atomic_int y)
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           {
               int i = 0;
               atomic_int r0 = 4004;
@@ -77,8 +76,8 @@ let%test_module "test runs" =
 
           void
           P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
-             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
-             atomic_int y)
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           { loop: ; if (true) {  } else { goto loop; } } |}]
 
         let%expect_test "dependencies in thread 0 after running" =
@@ -91,7 +90,7 @@ let%test_module "test runs" =
           Fuzz_test.Action.Test_utils.run_and_dump_vars action
             ~initial_state:state ~scope:(Local 0)
             ~predicates:[Act_fuzz.Var.Record.has_known_value] ;
-          [%expect {| a=false b=true x=27 y=53 |}]
+          [%expect {| a=false b=true r0=4004 r1=8008 x=27 y=53 |}]
       end )
 
     let%test_module "Surround.kv_once" =
@@ -119,8 +118,8 @@ let%test_module "test runs" =
             {|
           void
           P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
-             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
-             atomic_int y)
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           {
               int i = 0;
               atomic_int r0 = 4004;
@@ -145,8 +144,8 @@ let%test_module "test runs" =
 
           void
           P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
-             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
-             atomic_int y)
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           { loop: ; if (true) {  } else { goto loop; } } |}]
 
         let%expect_test "dependencies in thread 0 after running" =
@@ -159,7 +158,7 @@ let%test_module "test runs" =
           Fuzz_test.Action.Test_utils.run_and_dump_vars action
             ~initial_state:state ~scope:(Local 0)
             ~predicates:[Act_fuzz.Var.Record.has_known_value] ;
-          [%expect {| a=false b=true x=27 y=53 |}]
+          [%expect {| a=false b=true r0=4004 r1=8008 x=27 y=53 |}]
       end )
 
     let%test_module "Surround.Simple" =
@@ -181,8 +180,8 @@ let%test_module "test runs" =
             {|
           void
           P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
-             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
-             atomic_int y)
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           {
               int i = 0;
               atomic_int r0 = 4004;
@@ -207,8 +206,8 @@ let%test_module "test runs" =
 
           void
           P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
-             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int x,
-             atomic_int y)
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           { loop: ; if (true) {  } else { goto loop; } } |}]
 
         let%expect_test "dependencies in thread 0 after running" =
@@ -221,6 +220,6 @@ let%test_module "test runs" =
           Fuzz_test.Action.Test_utils.run_and_dump_vars action
             ~initial_state:state ~scope:(Local 0)
             ~predicates:[Act_fuzz.Var.Record.has_known_value] ;
-          [%expect {| a=false b=true x=27 y=53 |}]
+          [%expect {| a=false b=true r0=4004 r1=8008 x=27 y=53 |}]
       end )
   end )

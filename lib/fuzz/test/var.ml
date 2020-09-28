@@ -28,6 +28,10 @@ module Test_data = struct
   let existing_local (tid : int) : Ty.t -> Src.Var.Record.t =
     Src.Var.Record.make_existing (Ac.Scope.Local tid)
 
+  let generated_local ?(initial_value : Con.t option) (tid : int) :
+      Ty.t -> Src.Var.Record.t =
+    Src.Var.Record.make_generated ?initial_value (Local tid)
+
   let test_map : Src.Var.Map.t Lazy.t =
     lazy
       ( [ ("foo", existing_global (Ty.int ()))
@@ -45,10 +49,15 @@ module Test_data = struct
         ; ("e", generated_global (Ty.int ()))
         ; ( "x"
           , generated_global ~initial_value:(Con.int 27)
-              (Ty.int ~is_atomic:true ()) )
+              (Ty.int ~is_pointer:true ~is_atomic:true ()) )
         ; ( "y"
           , generated_global ~initial_value:(Con.int 53)
+              (Ty.int ~is_pointer:true ~is_atomic:true ()) )
+        ; ( "0:r0"
+          , generated_local 0 ~initial_value:(Con.int 4004)
               (Ty.int ~is_atomic:true ()) )
+        ; ( "0:r1"
+          , generated_local 0 ~initial_value:(Con.int 8008) (Ty.int ()) )
         ; ("1:r0", existing_local 1 (Ty.bool ()))
         ; ("1:r1", existing_local 1 (Ty.int ()))
         ; ("2:r0", existing_local 2 (Ty.int ()))
@@ -69,7 +78,8 @@ let%test_module "scopes_with_vars" =
       print_s [%sexp (scopes : Set.M(Ac.Scope).t)]
 
     let%expect_test "all vars" =
-      test [] ; [%expect {| ((Local 1) (Local 2) (Local 3) Global) |}]
+      test [] ;
+      [%expect {| ((Local 0) (Local 1) (Local 2) (Local 3) Global) |}]
   end )
 
 let%test_module "environment modules in a test map" =
@@ -109,5 +119,5 @@ let%test_module "environment modules in a test map" =
       [%expect
         {|
         ((a (bool (Bool false))) (b (atomic_bool (Bool true)))
-         (x (atomic_int (Int 27))) (y (atomic_int (Int 53)))) |}]
+         (x (atomic_int* (Int 27))) (y (atomic_int* (Int 53)))) |}]
   end )

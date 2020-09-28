@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,19 +10,17 @@
    project root for more information. *)
 
 open Base
+open Import
 
-open struct
-  module Src = Act_fuzz_actions
-  module F = Act_fuzz
-  module FT = Act_fuzz_test
-end
-
-let run_and_dump_labels (test_action : F.Subject.Test.t F.State.Monad.t)
-    ~(initial_state : F.State.t) : unit =
+let run_and_dump_labels
+    (test_action : Fuzz.Subject.Test.t Fuzz.State.Monad.t)
+    ~(initial_state : Fuzz.State.t) : unit =
   let result =
-    Or_error.(
-      F.State.Monad.(run' test_action initial_state)
-      >>| fst >>| F.State.labels)
+    Or_error.Let_syntax.(
+      let%map {labels; _}, _ =
+        Fuzz.State.Monad.(run' test_action initial_state)
+      in
+      labels)
   in
   Fmt.(
     pr "@[%a@]@."
@@ -32,28 +30,30 @@ let run_and_dump_labels (test_action : F.Subject.Test.t F.State.Monad.t)
 
 let%test_module "program.label" =
   ( module struct
-    let path : F.Path.Flagged.t Lazy.t =
-      FT.Subject.Test_data.Path.insert_live
+    let path : Fuzz.Path.Flagged.t Lazy.t =
+      Fuzz_test.Subject.Test_data.Path.insert_live
 
-    let random_state : Act_common.C_id.t F.Payload_impl.Pathed.t Lazy.t =
+    let random_state : Act_common.C_id.t Fuzz.Payload_impl.Pathed.t Lazy.t =
       Lazy.Let_syntax.(
         let%map where = path in
-        F.Payload_impl.Pathed.make
+        Fuzz.Payload_impl.Pathed.make
           (Act_common.C_id.of_string "label_mclabelface")
           ~where)
 
-    let test_action : F.Subject.Test.t F.State.Monad.t =
+    let test_action : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Src.Program.Label.run
-        (Lazy.force FT.Subject.Test_data.test)
+        (Lazy.force Fuzz_test.Subject.Test_data.test)
         ~payload:(Lazy.force random_state)
 
     let%expect_test "programs" =
-      FT.Action.Test_utils.run_and_dump_test test_action
-        ~initial_state:(Lazy.force FT.Subject.Test_data.state) ;
+      Fuzz_test.Action.Test_utils.run_and_dump_test test_action
+        ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
       [%expect
         {|
       void
-      P0(atomic_int *x, atomic_int *y)
+      P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       {
           atomic_int r0 = 4004;
           int r1 = 8008;
@@ -77,11 +77,13 @@ let%test_module "program.label" =
       }
 
       void
-      P1(atomic_int *x, atomic_int *y)
+      P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "labels afterwards" =
       run_and_dump_labels test_action
-        ~initial_state:(Lazy.force FT.Subject.Test_data.state) ;
+        ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
       [%expect {| 0:label_mclabelface |}]
   end )

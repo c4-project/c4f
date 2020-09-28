@@ -74,14 +74,18 @@ struct
             (int_inclusive 0 (nthreads - 1)))
 
     let gen : t Fuzz.Payload_gen.t =
-      Fuzz.Payload_gen.(
-        let* is_global = flag Fuzz.Config_tables.make_global_flag in
-        let* nthreads =
-          lift (Fn.compose Act_litmus.Test.Raw.num_threads Context.subject)
-        in
-        let* vars = lift (Fn.compose Fuzz.State.vars Context.state) in
-        let gen_scope = gen_scope nthreads is_global in
-        lift_quickcheck (generator vars ~gen_scope))
+      Fuzz.(
+        Payload_gen.(
+          let* is_global = flag Fuzz.Config_tables.make_global_flag in
+          let* nthreads =
+            lift
+              (Fn.compose Act_litmus.Test.Raw.num_threads
+                 (Accessor.get
+                    (Context.actx @> Availability.Context.subject)))
+          in
+          let* vars = lift_acc (Context.state @> State.vars) in
+          let gen_scope = gen_scope nthreads is_global in
+          lift_quickcheck (generator vars ~gen_scope)))
   end
 
   let available : Fuzz.Availability.t = Fuzz.Availability.has_threads
@@ -135,15 +139,14 @@ module Volatile :
   let update_state (id : Common.Litmus_id.t) : unit Fuzz.State.Monad.t =
     Fuzz.State.(
       Monad.modify
-        (map_vars
+        (Accessor.map vars
            ~f:
              (Common.Scoped_map.map_record ~id
                 ~f:
-                  Accessor.(
-                    set
-                      ( Fuzz.Var.Record.Access.type_of
-                      @> Fir.Type.Access.is_volatile )
-                      ~to_:true))))
+                  (Accessor.set
+                     ( Fuzz.Var.Record.Access.type_of
+                     @> Fir.Type.Access.is_volatile )
+                     ~to_:true))))
 
   let update_thread_decl (d : Fir.Initialiser.t Common.C_named.t)
       ~(target : Common.C_id.t) : Fir.Initialiser.t Common.C_named.t =

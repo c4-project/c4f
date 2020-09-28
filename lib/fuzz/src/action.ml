@@ -27,13 +27,11 @@ module With_default_weight = struct
   let available ({action= (module M); _} : t) : Availability.t = M.available
 
   let zero_if_not_available (action : t) (weight : int)
-      ~(subject : Subject.Test.t) ~(param_map : Param_map.t) :
-      int State.Monad.t =
+      ~(subject : Subject.Test.t) : int State.Monad.t =
     State.Monad.(
       Let_syntax.(
         let%bind ctx =
-          peek (fun state ->
-              Availability.Context.make ~state ~subject ~param_map)
+          peek (fun state -> Availability.Context.make ~state ~subject)
         in
         if%map Monadic.return (Availability.M.run (available action) ~ctx)
         then weight
@@ -126,10 +124,10 @@ module Pool = struct
   (** [to_available_only wl ~subject] is a stateful action that modifies [wl]
       to pull any actions not available on [subject] and [param_map] to
       weight 0. *)
-  let to_available_only (wl : t) ~(subject : Subject.Test.t)
-      ~(param_map : Param_map.t) : t State.Monad.t =
+  let to_available_only (wl : t) ~(subject : Subject.Test.t) :
+      t State.Monad.t =
     W.adjust_weights_m wl
-      ~f:(With_default_weight.zero_if_not_available ~subject ~param_map)
+      ~f:(With_default_weight.zero_if_not_available ~subject)
 
   let pick_from_available (available : t)
       ~(random : Splittable_random.State.t) :
@@ -140,12 +138,10 @@ module Pool = struct
       |> Monadic.return >>| With_default_weight.action)
 
   let pick (table : t) ~(subject : Subject.Test.t)
-      ~(random : Splittable_random.State.t) ~(param_map : Param_map.t) :
+      ~(random : Splittable_random.State.t) :
       (module Action_types.S) State.Monad.t =
     State.Monad.(
-      table
-      |> to_available_only ~subject ~param_map
-      >>= pick_from_available ~random)
+      table |> to_available_only ~subject >>= pick_from_available ~random)
 end
 
 module Make_surround (Basic : sig

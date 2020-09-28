@@ -11,13 +11,9 @@
 
 open Base
 open Base_quickcheck
+open Import
 
 open struct
-  module Ac = Act_common
-  module Fir = Act_fir
-  module Src = Act_fuzz_actions
-  module F = Act_fuzz
-  module FT = Act_fuzz_test
   module Qx = Act_utils.My_quickcheck
 end
 
@@ -30,28 +26,28 @@ let%test_module "Make" =
             unit =
           Fmt.pr "@[%s@ %a@ =@ %a;@]@."
             (Fir.Type.Basic.to_string basic_type)
-            Ac.Litmus_id.pp var Act_litmus_c.Reify_prim.pp_constant
+            Common.Litmus_id.pp var Act_litmus_c.Reify_prim.pp_constant
             initial_value
 
-        let make_gen (scope : Ac.Scope.t) :
+        let make_gen (scope : Common.Scope.t) :
             (module Qx.S_sample with type t = Src.Var.Make_payload.t) =
           ( module struct
             include Src.Var.Make_payload
 
             let quickcheck_generator =
               Src.Var.Make_payload.generator
-                (Lazy.force FT.Var.Test_data.test_map)
+                (Lazy.force Fuzz_test.Var.Test_data.test_map)
                 ~gen_scope:(Base_quickcheck.Generator.return scope)
           end )
 
-        let make_gen' (scope : Ac.Scope.t) :
+        let make_gen' (scope : Common.Scope.t) :
             (module Test.S with type t = Src.Var.Make_payload.t) =
           (* TODO(@MattWindsor91): SURELY there's a better way of doing this *)
           ( module struct
             include (val make_gen scope)
           end )
 
-        let print_sample (scope : Ac.Scope.t) : unit =
+        let print_sample (scope : Common.Scope.t) : unit =
           (* Expressions are quite big, so we tone down the generation
              parameters a bit. *)
           Qx.print_sample ~test_count:5 ~printer (make_gen scope)
@@ -76,7 +72,7 @@ let%test_module "Make" =
             atomic_int 0:strong_zebra = -1;
             atomic_int 0:xylophone_0 = 33417; |}]
 
-        let test_type (scope : Ac.Scope.t) : unit =
+        let test_type (scope : Common.Scope.t) : unit =
           Test.run_exn (make_gen' scope)
             ~f:(fun Src.Var.Make_payload.{basic_type; initial_value; _} ->
               let (_ : Act_fir.Type.t) =
@@ -96,8 +92,10 @@ let%test_module "Make" =
     let%test_module "Example runs" =
       ( module struct
         let test_action (payload : Src.Var.Make_payload.t) :
-            F.Subject.Test.t F.State.Monad.t =
-          Src.Var.Make.run (Lazy.force FT.Subject.Test_data.test) ~payload
+            Fuzz.Subject.Test.t Fuzz.State.Monad.t =
+          Src.Var.Make.run
+            (Lazy.force Fuzz_test.Subject.Test_data.test)
+            ~payload
 
         let test (scope : Act_common.Scope.t) : unit =
           let pld =
@@ -109,15 +107,17 @@ let%test_module "Make" =
                     ~id:(Act_common.C_id.of_string "foo") }
           in
           let action = test_action pld in
-          FT.Action.Test_utils.run_and_dump_test action
-            ~initial_state:(Lazy.force FT.Subject.Test_data.state)
+          Fuzz_test.Action.Test_utils.run_and_dump_test action
+            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state)
 
         let%expect_test "local" =
           test Act_common.Scope.(Local 1) ;
           [%expect
             {|
           void
-          P0(atomic_int *x, atomic_int *y)
+          P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           {
               atomic_int r0 = 4004;
               int r1 = 8008;
@@ -140,7 +140,9 @@ let%test_module "Make" =
           }
 
           void
-          P1(atomic_int *x, atomic_int *y)
+          P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+             bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+             atomic_int *y)
           { int foo = 42; loop: ; if (true) {  } else { goto loop; } } |}]
 
         let%expect_test "global" =
@@ -148,7 +150,9 @@ let%test_module "Make" =
           [%expect
             {|
       void
-      P0(int *foo, atomic_int *x, atomic_int *y)
+      P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int *foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       {
           atomic_int r0 = 4004;
           int r1 = 8008;
@@ -171,7 +175,9 @@ let%test_module "Make" =
       }
 
       void
-      P1(int *foo, atomic_int *x, atomic_int *y)
+      P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int *foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       { loop: ; if (true) {  } else { goto loop; } } |}]
       end )
   end )
@@ -181,9 +187,9 @@ let%test_module "Volatile" =
     let%test_module "Example runs" =
       ( module struct
         let test_action (payload : Act_common.Litmus_id.t) :
-            F.Subject.Test.t F.State.Monad.t =
+            Fuzz.Subject.Test.t Fuzz.State.Monad.t =
           Src.Var.Volatile.run
-            (Lazy.force FT.Subject.Test_data.test)
+            (Lazy.force Fuzz_test.Subject.Test_data.test)
             ~payload
 
         let test (tid : int) (name : string) : unit =
@@ -191,15 +197,17 @@ let%test_module "Volatile" =
             Act_common.Litmus_id.local tid (Act_common.C_id.of_string name)
           in
           let action = test_action pld in
-          FT.Action.Test_utils.run_and_dump_test action
-            ~initial_state:(Lazy.force FT.Subject.Test_data.state)
+          Fuzz_test.Action.Test_utils.run_and_dump_test action
+            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state)
 
         let%expect_test "r0" =
           test 0 "r0" ;
           [%expect
             {|
             void
-            P0(atomic_int *x, atomic_int *y)
+            P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+               bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+               atomic_int *y)
             {
                 atomic_int volatile r0 = 4004;
                 int r1 = 8008;
@@ -222,7 +230,9 @@ let%test_module "Volatile" =
             }
 
             void
-            P1(atomic_int *x, atomic_int *y)
+            P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+               bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+               atomic_int *y)
             { loop: ; if (true) {  } else { goto loop; } } |}]
       end )
   end )

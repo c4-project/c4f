@@ -13,7 +13,7 @@ open Base
 open Import
 
 module Context = struct
-  type t = {subject: Subject.Test.t; param_map: Param_map.t; state: State.t}
+  type t = {subject: Subject.Test.t; state: State.t}
   [@@deriving accessors, make]
 end
 
@@ -37,9 +37,8 @@ let has_variables ~(predicates : (Var.Record.t -> bool) list) : t =
      unified with the separate but slightly different 'exists_satisfying_all'
      path. *)
   let f = Travesty_base_exts.List.all ~predicates in
-  M.lift (fun {state; _} ->
-      state |> State.vars |> Act_common.Scoped_map.to_litmus_id_map
-      |> Map.exists ~f)
+  M.lift (fun {state= {vars; _}; _} ->
+      Map.exists ~f (Act_common.Scoped_map.to_litmus_id_map vars))
 
 (* TODO(@MattWindsor91): this is a path filter, and should be somewhere else! *)
 
@@ -48,9 +47,8 @@ let threads_of : Set.M(Act_common.Scope).t -> Set.M(Int).t =
     (module Int)
     ~f:(function Act_common.Scope.Global -> None | Local i -> Some i)
 
-let in_thread_with_variables ({state; _} : Context.t)
+let in_thread_with_variables ({state= {vars; _}; _} : Context.t)
     ~(predicates : (Var.Record.t -> bool) list) : Path_filter.t =
-  let vars = State.vars state in
   let scopes = Var.Map.scopes_with_vars vars ~predicates in
   if Set.mem scopes Global then Path_filter.zero
   else Path_filter.in_threads_only (threads_of scopes)

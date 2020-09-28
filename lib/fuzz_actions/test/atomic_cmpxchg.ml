@@ -52,12 +52,13 @@ let%test_module "cmpxchg.make.int.succeed" =
 
     let%expect_test "programs" =
       Fuzz_test.Action.Test_utils.run_and_dump_test test_action
-        ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
+        ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
       [%expect
         {|
       void
-      P0(atomic_int *gen1, atomic_int *gen2, int *gen3, int *gen4, atomic_int *x,
-         atomic_int *y)
+      P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *gen1,
+         atomic_int *gen2, int *gen3, int *gen4, atomic_int *x, atomic_int *y)
       {
           int expected = 12345;
           bool out = true;
@@ -86,24 +87,30 @@ let%test_module "cmpxchg.make.int.succeed" =
       }
 
       void
-      P1(atomic_int *gen1, atomic_int *gen2, int *gen3, int *gen4, atomic_int *x,
-         atomic_int *y)
+      P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *gen1,
+         atomic_int *gen2, int *gen3, int *gen4, atomic_int *x, atomic_int *y)
       { loop: ; if (true) {  } else { goto loop; } } |}]
 
     let%expect_test "global variables" =
       Storelike.Test_common.run_and_dump_globals test_action
-        ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
-      [%expect {| gen1= gen2=-55 gen3=1998 gen4=-4 x= y= |}]
+        ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
+      [%expect
+        {|
+        a=false b=true bar= barbaz= baz= c= d= e= foo= foobar= gen1= gen2=-55
+        gen3=1998 gen4=-4 x=27 y=53 |}]
 
     let%expect_test "variables with known values" =
       Storelike.Test_common.run_and_dump_kvs test_action
-        ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
+        ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
       [%expect
-        {| expected=12345 gen2=-55 gen3=1998 gen4=-4 out=true r0=4004 r1=8008 |}]
+        {|
+          a=false b=true expected=12345 gen2=-55 gen3=1998 gen4=-4 out=true r0=4004
+          r1=8008 x=27 y=53 |}]
 
     let%expect_test "variables with dependencies" =
       Storelike.Test_common.run_and_dump_deps test_action
-        ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
+        ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
       [%expect {| expected=12345 gen1= |}]
 
     (* TODO(@MattWindsor91): dedupe this with the above *)
@@ -124,6 +131,6 @@ let%test_module "cmpxchg.make.int.succeed" =
 
     let%expect_test "variables with dependencies, in dead-code" =
       Storelike.Test_common.run_and_dump_deps test_action_dead
-        ~initial_state:(Lazy.force Fuzz_test.Subject.Test_data.state) ;
+        ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
       [%expect {| |}]
   end )

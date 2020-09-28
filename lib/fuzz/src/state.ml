@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -17,22 +17,16 @@ type t =
     o: Common.Output.t [@default Common.Output.silent ()]
   ; labels: Set.M(Common.Litmus_id).t
         [@default Set.empty (module Common.Litmus_id)]
-  ; vars: Var.Map.t }
-[@@deriving fields, make]
+  ; vars: Var.Map.t
+  ; params: Param_map.t }
+[@@deriving accessors, make]
 
-let of_litmus ?(o : Common.Output.t option) (lt : Act_fir.Litmus.Test.t) :
-    t Or_error.t =
+let of_litmus ?(o : Common.Output.t option) (lt : Fir.Litmus.Test.t)
+    ~(params : Param_map.t) : t Or_error.t =
   let labels = Label.labels_of_test lt in
   Or_error.Let_syntax.(
     let%map vars = Var.Map.make_existing_var_map lt in
-    make ?o ~vars ~labels ())
-
-let try_map_vars (s : t) ~(f : Var.Map.t -> Var.Map.t Or_error.t) :
-    t Or_error.t =
-  Or_error.(s.vars |> f >>| fun vars -> {s with vars})
-
-let map_vars (s : t) ~(f : Var.Map.t -> Var.Map.t) : t =
-  {s with vars= f s.vars}
+    make ?o ~vars ~labels ~params ())
 
 let register_label (s : t) ~(label : Common.Litmus_id.t) : t =
   {s with labels= Set.add s.labels label}
@@ -41,16 +35,17 @@ let register_var (s : t) (var : Common.Litmus_id.t)
     (init : Act_fir.Initialiser.t) : t =
   let ty = Accessor.get Act_fir.Initialiser.ty init in
   let initial_value = Accessor.get Act_fir.Initialiser.value init in
-  map_vars s ~f:(fun v -> Var.Map.register_var v ~initial_value var ty)
+  Accessor.map vars s ~f:(fun v ->
+      Var.Map.register_var v ~initial_value var ty)
 
 let add_dependency (s : t) ~(id : Common.Litmus_id.t) : t =
-  map_vars s ~f:(Var.Map.add_dependency ~id)
+  Accessor.map vars s ~f:(Var.Map.add_dependency ~id)
 
 let add_write (s : t) ~(id : Common.Litmus_id.t) : t =
-  map_vars s ~f:(Var.Map.add_write ~id)
+  Accessor.map vars s ~f:(Var.Map.add_write ~id)
 
 let erase_var_value (s : t) ~(id : Common.Litmus_id.t) : t Or_error.t =
-  try_map_vars s ~f:(Var.Map.erase_value ~id)
+  Utils.Accessor.On_error.map vars s ~f:(Var.Map.erase_value ~id)
 
 module Monad = struct
   module M = Travesty.State_transform.Make (struct
@@ -61,15 +56,21 @@ module Monad = struct
 
   include M
 
-  let with_vars_m (f : Var.Map.t -> 'a t) : 'a t = peek vars >>= f
+  let peek_acc acc = peek (Accessor.get acc)
 
-  let with_vars (f : Var.Map.t -> 'a) : 'a t = peek vars >>| f
+  let with_vars_m (f : Var.Map.t -> 'a t) : 'a t = peek_acc vars >>= f
+
+  let with_vars (f : Var.Map.t -> 'a) : 'a t = peek_acc vars >>| f
 
   let with_labels_m (f : Set.M(Common.Litmus_id).t -> 'a t) : 'a t =
-    peek labels >>= f
+    peek_acc labels >>= f
 
   let with_labels (f : Set.M(Common.Litmus_id).t -> 'a) : 'a t =
-    peek labels >>| f
+    peek_acc labels >>| f
+
+  let get_flag (id : Act_common.Id.t) : Flag.t t =
+    peek_acc params
+    >>= fun pmap -> Monadic.return (Param_map.get_flag pmap ~id)
 
   let resolve (id : Common.C_id.t) ~(scope : Common.Scope.t) :
       Common.Litmus_id.t t =

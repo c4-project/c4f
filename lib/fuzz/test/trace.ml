@@ -81,7 +81,7 @@ let%test_module "trace playback" =
   ( module struct
     let%expect_test "empty trace does nothing" =
       let test = Lazy.force Subject.Test_data.test in
-      let initial_state = Lazy.force Subject.Test_data.state in
+      let initial_state = Lazy.force State.Test_data.state in
       let computation =
         Src.Trace.(
           run empty test ~resolve:(fun _ ->
@@ -91,7 +91,9 @@ let%test_module "trace playback" =
       [%expect
         {|
       void
-      P0(atomic_int *x, atomic_int *y)
+      P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       {
           atomic_int r0 = 4004;
           int r1 = 8008;
@@ -114,7 +116,9 @@ let%test_module "trace playback" =
       }
 
       void
-      P1(atomic_int *x, atomic_int *y)
+      P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+         bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
+         atomic_int *y)
       { loop: ; if (true) {  } else { goto loop; } } |}]
   end )
 

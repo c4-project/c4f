@@ -18,8 +18,7 @@ module Test_data : sig
   val body_stms : Act_fuzz.Subject.Statement.t list Lazy.t
   (** [body_stms] evaluates to the body statements of the example test. *)
 
-  val state : Act_fuzz.State.t Lazy.t
-  (** [state] evaluates to the example test's recommended initial state. *)
+  (** For an initial state, use {!State.Test_data}. *)
 
   val test : Act_fuzz.Subject.Test.t Lazy.t
   (** [test] evaluates to a sample test subject. *)

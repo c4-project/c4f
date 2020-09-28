@@ -26,11 +26,9 @@ module Make_empty : Fuzz.Action_types.S with type Payload.t = unit = struct
   module Payload = Fuzz.Payload_impl.None
 
   let available : Fuzz.Availability.t =
-    Fuzz.Availability.M.Inner.lift (fun ctx ->
-        let subject = ctx.subject in
-        let param_map = ctx.param_map in
+    Fuzz.Availability.M.Inner.lift (fun {subject; state= {params; _}} ->
         Or_error.Let_syntax.(
-          let%map cap = Fuzz.Param_map.get_thread_cap param_map in
+          let%map cap = Fuzz.Param_map.get_thread_cap params in
           List.length (Act_litmus.Test.Raw.threads subject) < cap))
 
   let run (subject : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
@@ -57,7 +55,7 @@ module Label :
 
     let gen' (_ : Fuzz.Path.Flagged.t) : Common.C_id.t Fuzz.Payload_gen.t =
       Fuzz.Payload_gen.(
-        let* labels = lift (Fn.compose Fuzz.State.labels Context.state) in
+        let* labels = lift_acc (Context.state @> Fuzz.State.labels) in
         lift_quickcheck (Fuzz.Label.gen_fresh labels))
 
     let gen = Fuzz.Payload_impl.Pathed.gen Insert path_filter gen'

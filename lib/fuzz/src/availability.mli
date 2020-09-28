@@ -21,7 +21,7 @@ open Base
     - a snapshot of the current fuzzer state. *)
 module Context : sig
   (** Type of availability contexts. *)
-  type t = {subject: Subject.Test.t; param_map: Param_map.t; state: State.t}
+  type t = {subject: Subject.Test.t; state: State.t}
   [@@deriving accessors, make]
 end
 
