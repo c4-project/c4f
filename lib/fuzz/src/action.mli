@@ -110,12 +110,10 @@ module Pool : sig
 
   val pick :
        t
-    -> subject:Subject.Test.t
     -> random:Splittable_random.State.t
-    -> (module Action_types.S) State.Monad.t
-  (** [pick pool ~subject ~random] is a stateful action that picks a
-      weighted-random action module from [pool] that is available on
-      [subject], using [random] as a random number generator. *)
+    -> (t * (module Action_types.S)) Or_error.t
+  (** [pick pool ~random] picks a random action module from [pool], returning
+      both it and the pool with that action removed. *)
 end
 
 (** {1 Helpers for building actions} *)

@@ -10,8 +10,7 @@
    project root for more information. *)
 
 open Base
-open Act_common
-open Act_utils
+open Import
 
 type t = (module Action_types.S)
 
@@ -23,19 +22,6 @@ module With_default_weight = struct
     {action; default_weight}
 
   let name ({action= (module M); _} : t) : Act_common.Id.t = M.name
-
-  let available ({action= (module M); _} : t) : Availability.t = M.available
-
-  let zero_if_not_available (action : t) (weight : int)
-      ~(subject : Subject.Test.t) : int State.Monad.t =
-    State.Monad.(
-      Let_syntax.(
-        let%bind ctx =
-          peek (fun state -> Availability.Context.make ~state ~subject)
-        in
-        if%map Monadic.return (Availability.M.run (available action) ~ctx)
-        then weight
-        else 0))
 end
 
 module Adjusted_weight = struct
@@ -87,7 +73,7 @@ module Summary = struct
 end
 
 module Pool = struct
-  type t = With_default_weight.t Weighted_list.t
+  type t = With_default_weight.t Utils.Weighted_list.t
 
   let of_weighted_actions
       (weighted_actions : (With_default_weight.t, int option) List.Assoc.t) :
@@ -99,11 +85,11 @@ module Pool = struct
            ( act
            , Option.value override
                ~default:(With_default_weight.default_weight act) ))
-    |> Weighted_list.from_alist
+    |> Utils.Weighted_list.from_alist
 
-  let summarise : t -> Summary.t Map.M(Id).t =
-    Weighted_list.fold
-      ~init:(Map.empty (module Id))
+  let summarise : t -> Summary.t Map.M(Common.Id).t =
+    Utils.Weighted_list.fold
+      ~init:(Map.empty (module Common.Id))
       ~f:(fun map (action : With_default_weight.t) weight ->
         (* TODO(@MattWindsor91): see TODO above, as it pertains to this bit
            too. *)
@@ -115,33 +101,18 @@ module Pool = struct
           ~key:(With_default_weight.name action)
           ~data:(Summary.of_action action ?user_weight))
 
-  module W = Weighted_list.On_monad (struct
-    include State.Monad
+  let remove (table : t) (module C : Action_types.S) : t Or_error.t =
+    (* TODO(@MattWindsor91): this is quite inefficient. *)
+    Utils.Weighted_list.adjust_weights table
+      ~f:(fun {action= (module C'); _} w ->
+        if Common.Id.equal C.name C'.name then 0 else w)
 
-    let lift = State.Monad.Monadic.return
-  end)
-
-  (** [to_available_only wl ~subject] is a stateful action that modifies [wl]
-      to pull any actions not available on [subject] and [param_map] to
-      weight 0. *)
-  let to_available_only (wl : t) ~(subject : Subject.Test.t) :
-      t State.Monad.t =
-    W.adjust_weights_m wl
-      ~f:(With_default_weight.zero_if_not_available ~subject)
-
-  let pick_from_available (available : t)
-      ~(random : Splittable_random.State.t) :
-      (module Action_types.S) State.Monad.t =
-    State.Monad.(
-      available
-      |> Weighted_list.sample ~random
-      |> Monadic.return >>| With_default_weight.action)
-
-  let pick (table : t) ~(subject : Subject.Test.t)
-      ~(random : Splittable_random.State.t) :
-      (module Action_types.S) State.Monad.t =
-    State.Monad.(
-      table |> to_available_only ~subject >>= pick_from_available ~random)
+  let pick (table : t) ~(random : Splittable_random.State.t) :
+      (t * (module Action_types.S)) Or_error.t =
+    Or_error.Let_syntax.(
+      let%bind {action; _} = Utils.Weighted_list.sample table ~random in
+      let%map table' = remove table action in
+      (table', action))
 end
 
 module Make_surround (Basic : sig

@@ -66,12 +66,27 @@ let generate_payload (type rs)
         Common.Output.pv o "fuzz: done generating random state.@." ;
         g)))
 
+let available (module A : Fuzz.Action_types.S)
+    ~(subject : Fuzz.Subject.Test.t) : bool Fuzz.State.Monad.t =
+  Fuzz.State.Monad.(
+    peek (fun state -> Fuzz.Availability.Context.make ~subject ~state)
+    >>= fun ctx -> Monadic.return (Fuzz.Availability.M.run A.available ~ctx))
+
+let rec pick_loop (pool : Fuzz.Action.Pool.t)
+    ~(subject : Fuzz.Subject.Test.t) ~(random : Splittable_random.State.t) :
+    (module Fuzz.Action_types.S) Fuzz.State.Monad.t =
+  Fuzz.State.Monad.Let_syntax.(
+    let%bind pool', action =
+      Fuzz.State.Monad.Monadic.return (Fuzz.Action.Pool.pick pool ~random)
+    in
+    if%bind available action ~subject then return action
+    else pick_loop pool' ~subject ~random)
+
 let pick_action (subject : Fuzz.Subject.Test.t) :
     (module Fuzz.Action_types.S) Runner_state.Monad.t =
   Runner_state.Monad.Let_syntax.(
     let%bind {pool; random; _} = Runner_state.Monad.peek Fn.id in
-    Runner_state.Monad.Monadic.return
-      (Fuzz.Action.Pool.pick pool ~subject ~random))
+    Runner_state.Monad.Monadic.return (pick_loop pool ~subject ~random))
 
 let log_action (type p)
     (action : (module Fuzz.Action_types.S with type Payload.t = p))
