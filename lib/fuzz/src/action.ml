@@ -21,7 +21,7 @@ module With_default_weight = struct
   let ( @-> ) (action : (module Action_types.S)) (default_weight : int) =
     {action; default_weight}
 
-  let name ({action= (module M); _} : t) : Act_common.Id.t = M.name
+  let name ({action= (module M); _} : t) : Common.Id.t = M.name
 end
 
 module Adjusted_weight = struct
@@ -61,62 +61,19 @@ module Summary = struct
     Fmt.pf f "@[<v>@[Weight:@ %a@]@,@[<hv 2>Summary:@ @[%a@]@]@]"
       Adjusted_weight.pp weight Fmt.paragraphs readme
 
-  let pp_map : t Map.M(Act_common.Id).t Fmt.t = Act_common.Id.pp_map pp
+  let pp_map : t Map.M(Common.Id).t Fmt.t = Common.Id.pp_map pp
 
-  let pp_map_terse : t Map.M(Act_common.Id).t Fmt.t =
+  let pp_map_terse : t Map.M(Common.Id).t Fmt.t =
     Fmt.(
       using Map.to_alist
         (list ~sep:sp
            (hbox
-              (pair ~sep:(any ":@ ") Act_common.Id.pp
+              (pair ~sep:(any ":@ ") Common.Id.pp
                  (using (fun x -> x.weight) Adjusted_weight.pp)))))
 end
 
-module Pool = struct
-  type t = With_default_weight.t Utils.Weighted_list.t
-
-  let of_weighted_actions
-      (weighted_actions : (With_default_weight.t, int option) List.Assoc.t) :
-      t Or_error.t =
-    (* TODO(@MattWindsor91): ideally we shouldn't lose whether the weight was
-       overridden or not, even if the final weight equals the default one. *)
-    weighted_actions
-    |> List.map ~f:(fun (act, override) ->
-           ( act
-           , Option.value override
-               ~default:(With_default_weight.default_weight act) ))
-    |> Utils.Weighted_list.from_alist
-
-  let summarise : t -> Summary.t Map.M(Common.Id).t =
-    Utils.Weighted_list.fold
-      ~init:(Map.empty (module Common.Id))
-      ~f:(fun map (action : With_default_weight.t) weight ->
-        (* TODO(@MattWindsor91): see TODO above, as it pertains to this bit
-           too. *)
-        let user_weight =
-          if weight = With_default_weight.default_weight action then None
-          else Some weight
-        in
-        Map.set map
-          ~key:(With_default_weight.name action)
-          ~data:(Summary.of_action action ?user_weight))
-
-  let remove (table : t) (module C : Action_types.S) : t Or_error.t =
-    (* TODO(@MattWindsor91): this is quite inefficient. *)
-    Utils.Weighted_list.adjust_weights table
-      ~f:(fun {action= (module C'); _} w ->
-        if Common.Id.equal C.name C'.name then 0 else w)
-
-  let pick (table : t) ~(random : Splittable_random.State.t) :
-      (t * (module Action_types.S)) Or_error.t =
-    Or_error.Let_syntax.(
-      let%bind {action; _} = Utils.Weighted_list.sample table ~random in
-      let%map table' = remove table action in
-      (table', action))
-end
-
 module Make_surround (Basic : sig
-  val name : Act_common.Id.t
+  val name : Common.Id.t
 
   val surround_with : string
 
@@ -183,15 +140,15 @@ struct
 end
 
 module Make_log (B : sig
-  val name : Act_common.Id.t
+  val name : Common.Id.t
 end) : sig
-  val log : Act_common.Output.t -> ('a, Formatter.t, unit) format -> 'a
+  val log : Common.Output.t -> ('a, Formatter.t, unit) format -> 'a
 end = struct
-  let log (o : Act_common.Output.t) (format : ('a, Formatter.t, unit) format)
-      : 'a =
+  let log (o : Common.Output.t) (format : ('a, Formatter.t, unit) format) :
+      'a =
     Fmt.(
-      Act_common.Output.pv o
+      Common.Output.pv o
         Caml.("@[<h>%a:@ @[" ^^ format ^^ "@]@]@.")
-        (styled (`Fg `Green) Act_common.Id.pp)
+        (styled (`Fg `Green) Common.Id.pp)
         B.name)
 end

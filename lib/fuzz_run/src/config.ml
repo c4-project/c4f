@@ -34,11 +34,11 @@ let make_weight_alist (actions : Fuzz.Action.With_default_weight.t list)
     (Fuzz.Action.With_default_weight.t, int option) List.Assoc.t =
   List.map ~f:(make_weight_pair weight_overrides) actions
 
-let make_pool (config : t) : Fuzz.Action.Pool.t Or_error.t =
+let make_pool (config : t) : Action_pool.t Or_error.t =
   let actions = Lazy.force Act_fuzz_actions.Table.actions in
   let weight_overrides = weights config in
   let weights = make_weight_alist actions weight_overrides in
-  Fuzz.Action.Pool.of_weighted_actions weights
+  Action_pool.of_weighted_actions weights
 
 let make_merged_param_map (type v)
     (specs : v Fuzz.Param_spec.t Map.M(Common.Id).t Lazy.t)
@@ -63,4 +63,4 @@ let make_param_map (config : t) : Fuzz.Param_map.t =
 
 let summarise (cfg : t) : Fuzz.Action.Summary.t Map.M(Common.Id).t Or_error.t
     =
-  Or_error.(cfg |> make_pool >>| Fuzz.Action.Pool.summarise)
+  Or_error.(cfg |> make_pool >>| Action_pool.summarise)

@@ -16,8 +16,6 @@ open Import
 
 (** {1 The configuration record} *)
 
-(** {2 Constructing a fuzzer configuration} *)
-
 (** Opaque type of fuzzer configurations. *)
 type t [@@deriving sexp]
 
@@ -54,7 +52,7 @@ val make_param_map : t -> Fuzz.Param_map.t
 
 (** {2 Actions on a fuzzer configuration} *)
 
-val make_pool : t -> Fuzz.Action.Pool.t Or_error.t
+val make_pool : t -> Action_pool.t Or_error.t
 (** [make_pool config] tries to create the weighted action pool given the
     weights in [config]. This pool can then be queried for weight information
     or used to drive a random fuzzer session. *)

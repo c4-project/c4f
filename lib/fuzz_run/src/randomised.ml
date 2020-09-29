@@ -26,7 +26,7 @@ let make_rng : int option -> Splittable_random.State.t = function
     specific to how we choose actions, etc). *)
 module Runner_state = struct
   type t =
-    { pool: Fuzz.Action.Pool.t
+    { pool: Action_pool.t
     ; random: Splittable_random.State.t
     ; trace: Fuzz.Trace.t
     ; params: Fuzz.Param_map.t }
@@ -83,16 +83,14 @@ let available (module A : Fuzz.Action_types.S)
       make_actx subject
       >>= fun ctx -> return_err (Fuzz.Availability.M.run A.available ~ctx)))
 
-let pick (pool : Fuzz.Action.Pool.t) :
-    (Fuzz.Action.Pool.t * (module Fuzz.Action_types.S)) Runner_state.Monad.t
-    =
+let pick (pool : Action_pool.t) :
+    (Action_pool.t * (module Fuzz.Action_types.S)) Runner_state.Monad.t =
   Runner_state.Monad.(
     Let_syntax.(
       let%bind random = peek Runner_state.random in
-      Runner_state.return_err (Fuzz.Action.Pool.pick pool ~random)))
+      Runner_state.return_err (Action_pool.pick pool ~random)))
 
-let rec pick_loop (pool : Fuzz.Action.Pool.t)
-    ~(subject : Fuzz.Subject.Test.t) :
+let rec pick_loop (pool : Action_pool.t) ~(subject : Fuzz.Subject.Test.t) :
     (module Fuzz.Action_types.S) Runner_state.Monad.t =
   Runner_state.Monad.Let_syntax.(
     let%bind pool', action = pick pool in

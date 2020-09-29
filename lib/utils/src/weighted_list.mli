@@ -1,24 +1,13 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the "Software"),
-   to deal in the Software without restriction, including without limitation
-   the rights to use, copy, modify, merge, publish, distribute, sublicense,
-   and/or sell copies of the Software, and to permit persons to whom the
-   Software is furnished to do so, subject to the following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included in
-   all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-   DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 (** Weighted lists
 
@@ -30,7 +19,7 @@
     This is similar in spirit to Core_extended's [Sampler], but slightly
     different in execution. *)
 
-open Core_kernel
+open Base
 
 (** Opaque type of weighted lists, parametrised on value. *)
 type 'a t [@@deriving sexp_of, quickcheck]
@@ -114,6 +103,6 @@ val sample_exn : 'a t -> random:Splittable_random.State.t -> 'a
 (** [sample_exn wl ~random] is [sample wl ~random], but raises an exception
     rather than returning an error monad. *)
 
-val sample_gen_exn : 'a t -> 'a Quickcheck.Generator.t
+val sample_gen_exn : 'a t -> 'a Base_quickcheck.Generator.t
 (** [sample_gen_exn wl] is [sample_exn], but wrapped up as a Quickcheck
     generator. *)

@@ -94,28 +94,6 @@ module Summary : sig
       weights. *)
 end
 
-(** A weighted pool of fuzzer actions. *)
-module Pool : sig
-  (** Action lists are just weighted lists of first-class action modules. *)
-  type t
-
-  val of_weighted_actions :
-    (With_default_weight.t, int option) List.Assoc.t -> t Or_error.t
-  (** [of_weighted_actions actions] tries to make a weighted action pool from
-      the action-to-weight association given in [actions]. *)
-
-  val summarise : t -> Summary.t Map.M(Common.Id).t
-  (** [summarise pool] generates a mapping from action names to summaries of
-      each action, including its adjusted weight in the pool. *)
-
-  val pick :
-       t
-    -> random:Splittable_random.State.t
-    -> (t * (module Action_types.S)) Or_error.t
-  (** [pick pool ~random] picks a random action module from [pool], returning
-      both it and the pool with that action removed. *)
-end
-
 (** {1 Helpers for building actions} *)
 
 (** Makes a basic logging function for an action. *)
