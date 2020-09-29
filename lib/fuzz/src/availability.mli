@@ -39,6 +39,10 @@ type t = bool M.t
 (** Availability checks can be composed together monoidically. *)
 include Container.Summable with type t := t
 
+val lift_state : (State.t -> 'a) -> 'a M.t
+(** [lift_state f] lifts a function from states to values into the check
+    monad. *)
+
 (** {2 Common checks} *)
 
 val always : t

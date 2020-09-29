@@ -132,7 +132,7 @@ module Make_surround (Basic : sig
 
   val available : Availability.t
 
-  val path_filter : Availability.Context.t -> Path_filter.t
+  val path_filter : State.t -> Path_filter.t
 
   val checkable_path_filter : Path_filter.t
 

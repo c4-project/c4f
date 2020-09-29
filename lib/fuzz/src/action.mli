@@ -143,7 +143,7 @@ module Make_surround (Basic : sig
       because, while many surround actions need only the existence of a
       thread, some have more complex needs. *)
 
-  val path_filter : Availability.Context.t -> Path_filter.t
+  val path_filter : State.t -> Path_filter.t
   (** [path_filter ctx] gets the path filter for this action, modulo the
       availability context [ctx]. *)
 

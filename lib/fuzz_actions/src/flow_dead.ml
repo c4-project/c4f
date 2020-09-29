@@ -40,7 +40,7 @@ module Insert = struct
         in
         {if_cond; kind})
 
-    let gen (path_filter : Fuzz.Availability.Context.t -> Fuzz.Path_filter.t)
+    let gen (path_filter : Fuzz.State.t -> Fuzz.Path_filter.t)
         (kind_filter : Fuzz.Path.Flagged.t -> Fir.Early_out.t -> bool)
         (gen_cond :
           Fuzz.Path.Flagged.t -> Fir.Expression.t option Fuzz.Payload_gen.t)
@@ -76,7 +76,7 @@ module Insert = struct
     let base_path_filter : Fuzz.Path_filter.t =
       Fuzz.Path_filter.require_flag In_dead_code
 
-    let path_filter (_ : Fuzz.Availability.Context.t) : Fuzz.Path_filter.t =
+    let path_filter (_ : Fuzz.State.t) : Fuzz.Path_filter.t =
       base_path_filter
 
     let available : Fuzz.Availability.t =
@@ -148,8 +148,7 @@ module Insert = struct
         | Return ->
             false
 
-      let path_filter (_ : Fuzz.Availability.Context.t) : Fuzz.Path_filter.t
-          =
+      let path_filter (_ : Fuzz.State.t) : Fuzz.Path_filter.t =
         base_path_filter
 
       let gen_cond' :
@@ -211,17 +210,12 @@ module Insert = struct
         labels in the same thread; it does not jump outside the thread.
       |}
 
-    let path_filter' (labels : Set.M(Common.Litmus_id).t) :
-        Fuzz.Path_filter.t =
+    let path_filter ({labels; _} : Fuzz.State.t) : Fuzz.Path_filter.t =
       let threads_with_labels =
         Set.filter_map (module Int) ~f:Common.Litmus_id.tid labels
       in
       Fuzz.Path_filter.(
         require_flag In_dead_code + in_threads_only threads_with_labels)
-
-    let path_filter ({state= {labels; _}; _} : Fuzz.Availability.Context.t) :
-        Fuzz.Path_filter.t =
-      path_filter' labels
 
     module Payload = struct
       type t = Common.C_id.t Fuzz.Payload_impl.Pathed.t [@@deriving sexp]
@@ -252,7 +246,7 @@ module Insert = struct
     let available : Fuzz.Availability.t =
       Fuzz.Availability.(
         M.(
-          lift path_filter
+          lift_state path_filter
           >>= Fuzz.Availability.is_filter_constructible ~kind:Insert))
 
     let make_goto (id : Common.C_id.t) : Fuzz.Subject.Statement.t =
@@ -264,7 +258,7 @@ module Insert = struct
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Fuzz.State.Monad.(
         Let_syntax.(
-          let%bind filter = with_labels path_filter' in
+          let%bind filter = peek path_filter in
           Fuzz.Payload_impl.Pathed.insert ~filter payload ~test ~f:make_goto))
   end
 end

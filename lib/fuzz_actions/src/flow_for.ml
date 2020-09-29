@@ -29,18 +29,19 @@ let kv_var_preds = [Fuzz.Var.Record.has_known_value; is_int]
 let kv_live_path_filter_static : Fuzz.Path_filter.t =
   Fuzz.Path_filter.(live_loop_surround + forbid_flag In_atomic)
 
-let kv_live_path_filter (ctx : Fuzz.Availability.Context.t) :
-    Fuzz.Path_filter.t =
+let kv_live_path_filter ({vars; _} : Fuzz.State.t) : Fuzz.Path_filter.t =
   Fuzz.Path_filter.(
     (* These may induce atomic loads, and so can't be in atomic blocks. *)
-    in_thread_with_variables ~predicates:kv_var_preds ctx.state.vars
+    in_thread_with_variables ~predicates:kv_var_preds vars
     + kv_live_path_filter_static)
 
 let kv_available (kind : Fuzz.Path_kind.t) : Fuzz.Availability.t =
   (* TODO(@MattWindsor91): is the has-variables redundant here? *)
   Fuzz.Availability.(
     has_variables ~predicates:kv_var_preds
-    + M.(lift kv_live_path_filter >>= is_filter_constructible ~kind))
+    + M.(
+        lift (fun {state; _} -> kv_live_path_filter state)
+        >>= is_filter_constructible ~kind))
 
 module Payload = struct
   module Counter = struct
@@ -261,11 +262,13 @@ module Surround = struct
         live_loop_surround
         + require_end_check (Stm_no_meta_restriction Once_only))
 
-    let path_filter (_ : Fuzz.Availability.Context.t) = checkable_path_filter
+    let path_filter (_ : Fuzz.State.t) = checkable_path_filter
 
     let available : Fuzz.Availability.t =
       Fuzz.Availability.(
-        M.(lift path_filter >>= is_filter_constructible ~kind:Transform_list))
+        M.(
+          lift_state path_filter
+          >>= is_filter_constructible ~kind:Transform_list))
 
     module Payload = struct
       include Payload.Simple

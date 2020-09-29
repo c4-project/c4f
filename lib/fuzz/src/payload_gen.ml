@@ -26,6 +26,9 @@ include Utils.Reader.Fix_context (Act_utils.Reader.With_errors) (Context)
 
 let lift_acc acc = lift (Accessor.get acc)
 
+let lift_state (f : State.t -> 'a) : 'a t =
+  lift (fun {actx= {state; _}; _} -> f state)
+
 let lift_opt_gen (type a) (g : a Opt_gen.t) : a t =
   Inner.lift (fun {action_id; random; _} ->
       let g' =

@@ -63,6 +63,9 @@ val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
 val lift : (Context.t -> 'a) -> 'a t
 (** [peek f] projects a value from the context using [f]. *)
 
+val lift_state : (State.t -> 'a) -> 'a t
+(** [lift_state f] lifts a function from states to values into the monad. *)
+
 val path_with_flags : Path_kind.t -> filter:Path_filter.t -> Path.Flagged.t t
 (** [path_with_flags kind ~filter] generates a path of kind [kind] respecting
     filter [filter], and returns it with its flags. *)

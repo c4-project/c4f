@@ -19,11 +19,10 @@ module Pathed = struct
   (* Can't derive this, it'll derive the arguments in the wrong order. *)
   let make (payload : 'a) ~(where : Path.Flagged.t) : 'a t = {payload; where}
 
-  let gen (kind : Path_kind.t)
-      (path_filter : Availability.Context.t -> Path_filter.t)
+  let gen (kind : Path_kind.t) (path_filter : State.t -> Path_filter.t)
       (gen_inner : Path.Flagged.t -> 'a Payload_gen.t) : 'a t Payload_gen.t =
     Payload_gen.(
-      let* filter = lift (fun {actx; _} -> path_filter actx) in
+      let* filter = lift_state path_filter in
       let* where = path_with_flags kind ~filter in
       let+ payload = gen_inner where in
       make payload ~where)
@@ -86,8 +85,7 @@ module Cond_pathed = struct
           let env = cond_env vars ~tid in
           lift_quickcheck (cond_gen env)))
 
-  let gen (kind : Path_kind.t)
-      (path_filter : Availability.Context.t -> Path_filter.t)
+  let gen (kind : Path_kind.t) (path_filter : State.t -> Path_filter.t)
       (cond_gen : Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t)
       : t Payload_gen.t =
     Pathed.gen kind path_filter (Staged.unstage (lift_cond_gen cond_gen))
@@ -98,7 +96,7 @@ module Cond_pathed = struct
     val cond_gen :
       Act_fir.Env.t -> Act_fir.Expression.t Base_quickcheck.Generator.t
 
-    val path_filter : Availability.Context.t -> Path_filter.t
+    val path_filter : State.t -> Path_filter.t
   end) : Payload_types.S with type t = t = struct
     type t = Fir.Expression.t Pathed.t [@@deriving sexp]
 

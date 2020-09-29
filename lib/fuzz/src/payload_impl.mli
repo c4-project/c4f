@@ -42,7 +42,7 @@ module Pathed : sig
 
   val gen :
        Path_kind.t
-    -> (Availability.Context.t -> Path_filter.t)
+    -> (State.t -> Path_filter.t)
     -> (Path.Flagged.t -> 'a Payload_gen.t)
     -> 'a t Payload_gen.t
   (** [gen kind gen_filter gen_payload] lifts the generator [gen_payload] to
@@ -122,7 +122,7 @@ module Cond_pathed : sig
         return a Quickcheck generator generating expressions over those
         variables. *)
 
-    val path_filter : Availability.Context.t -> Path_filter.t
+    val path_filter : State.t -> Path_filter.t
     (** [path_filter ctx] should generate the path filter needed for the
         action, given the availability context [ctx]. *)
   end) : Payload_types.S with type t = t

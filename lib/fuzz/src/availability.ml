@@ -19,6 +19,9 @@ end
 
 module M = Utils.Reader.Fix_context (Utils.Reader.With_errors) (Context)
 
+let lift_state (f : State.t -> 'a) : 'a M.t =
+  M.lift (fun {state; _} -> f state)
+
 type t = bool M.t
 
 let always : t = M.return true
