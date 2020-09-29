@@ -31,11 +31,11 @@ module Aux = struct
 end
 
 let run_on_litmus (test : Fir.Litmus.Test.t) ~(o : Act_common.Output.t)
-    ~(f : Fuzz.Subject.Test.t -> 'm Fuzz.Output.t Fuzz.State.Monad.t)
-    ~(params : Fuzz.Param_map.t) : (Fir.Litmus.Test.t * 'm) Or_error.t =
+    ~(f : Fuzz.Subject.Test.t -> 'm Fuzz.Output.t Fuzz.State.Monad.t) :
+    (Fir.Litmus.Test.t * 'm) Or_error.t =
   let subject = Fuzz.Subject.Test.of_litmus test in
   Or_error.Let_syntax.(
-    let%bind state = Fuzz.State.of_litmus ~o test ~params in
+    let%bind state = Fuzz.State.of_litmus ~o test in
     let%bind {vars; _}, output = Fuzz.State.Monad.run' (f subject) state in
     let%map test' =
       Fuzz.Subject.Test.to_litmus (Fuzz.Output.subject output) ~vars
@@ -44,11 +44,11 @@ let run_on_litmus (test : Fir.Litmus.Test.t) ~(o : Act_common.Output.t)
 
 let run_with_channels ?(path : string option) (ic : In_channel.t)
     (oc : Out_channel.t) ~(o : Act_common.Output.t)
-    ~(f : Fuzz.Subject.Test.t -> 'm Fuzz.Output.t Fuzz.State.Monad.t)
-    ~(params : Fuzz.Param_map.t) : 'm Or_error.t =
+    ~(f : Fuzz.Subject.Test.t -> 'm Fuzz.Output.t Fuzz.State.Monad.t) :
+    'm Or_error.t =
   Or_error.Let_syntax.(
     let%bind test = Litmus_c.Frontend.Fir.load_from_ic ?path ic in
-    let%map test', metadata = run_on_litmus ~o ~f ~params test in
+    let%map test', metadata = run_on_litmus ~o ~f test in
     Utils.My_format.fdump oc (Fmt.vbox Litmus_c.Reify.pp_litmus) test' ;
     metadata)
 
@@ -67,7 +67,6 @@ module Randomised = Plumbing.Filter.Make (struct
       ~path:(Plumbing.Input.to_string input)
       ic oc ~o
       ~f:(Randomised.run ?seed ~config)
-      ~params:(Config.make_param_map config)
 end)
 
 let resolve_action (id : Act_common.Id.t) : Fuzz.Action.t Or_error.t =
@@ -100,9 +99,5 @@ module Replay = Plumbing.Filter.Make (struct
     let input = Plumbing.Filter_context.input ctx in
     run_with_channels
       ~path:(Plumbing.Input.to_string input)
-      ic oc ~o
-      ~f:
-        (run_replay ~trace)
-        (* TODO(@MattWindsor91): get config map from trace *)
-      ~params:(Fuzz.Param_map.make ())
+      ic oc ~o ~f:(run_replay ~trace)
 end)

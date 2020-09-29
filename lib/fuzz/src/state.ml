@@ -17,16 +17,15 @@ type t =
     o: Common.Output.t [@default Common.Output.silent ()]
   ; labels: Set.M(Common.Litmus_id).t
         [@default Set.empty (module Common.Litmus_id)]
-  ; vars: Var.Map.t
-  ; params: Param_map.t }
+  ; vars: Var.Map.t }
 [@@deriving accessors, make]
 
-let of_litmus ?(o : Common.Output.t option) (lt : Fir.Litmus.Test.t)
-    ~(params : Param_map.t) : t Or_error.t =
+let of_litmus ?(o : Common.Output.t option) (lt : Fir.Litmus.Test.t) :
+    t Or_error.t =
   let labels = Label.labels_of_test lt in
   Or_error.Let_syntax.(
     let%map vars = Var.Map.make_existing_var_map lt in
-    make ?o ~vars ~labels ~params ())
+    make ?o ~vars ~labels ())
 
 let register_label (s : t) ~(label : Common.Litmus_id.t) : t =
   {s with labels= Set.add s.labels label}
@@ -67,10 +66,6 @@ module Monad = struct
 
   let with_labels (f : Set.M(Common.Litmus_id).t -> 'a) : 'a t =
     peek_acc labels >>| f
-
-  let get_flag (id : Act_common.Id.t) : Flag.t t =
-    peek_acc params
-    >>= fun pmap -> Monadic.return (Param_map.get_flag pmap ~id)
 
   let resolve (id : Common.C_id.t) ~(scope : Common.Scope.t) :
       Common.Litmus_id.t t =

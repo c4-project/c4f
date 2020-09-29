@@ -13,7 +13,7 @@ open Base
 open Import
 
 module Context = struct
-  type t = {subject: Subject.Test.t; state: State.t}
+  type t = {subject: Subject.Test.t; state: State.t; params: Param_map.t}
   [@@deriving accessors, make]
 end
 

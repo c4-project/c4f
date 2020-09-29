@@ -26,7 +26,7 @@ module Make_empty : Fuzz.Action_types.S with type Payload.t = unit = struct
   module Payload = Fuzz.Payload_impl.None
 
   let available : Fuzz.Availability.t =
-    Fuzz.Availability.M.Inner.lift (fun {subject; state= {params; _}} ->
+    Fuzz.Availability.M.Inner.lift (fun {subject; params; _} ->
         Or_error.Let_syntax.(
           let%map cap = Fuzz.Param_map.get_thread_cap params in
           List.length (Act_litmus.Test.Raw.threads subject) < cap))

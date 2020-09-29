@@ -20,6 +20,8 @@ module Context = struct
   [@@deriving accessors, make]
 
   let state = [%accessor actx @> Availability.Context.state]
+
+  let params = [%accessor actx @> Availability.Context.params]
 end
 
 include Utils.Reader.Fix_context (Act_utils.Reader.With_errors) (Context)
@@ -51,7 +53,7 @@ let path_with_flags (kind : Path_kind.t) ~(filter : Path_filter.t) :
   >>= lift_opt_gen
 
 let flag (id : Act_common.Id.t) : bool t =
-  let* param_map = lift_acc (Context.state @> State.params) in
+  let* param_map = lift_acc Context.params in
   let* random = lift_acc Context.random in
   let+ f = Inner.return (Param_map.get_flag param_map ~id) in
   Flag.eval f ~random

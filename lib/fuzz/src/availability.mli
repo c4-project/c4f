@@ -15,13 +15,14 @@ open Base
 
 (** {1 Context for availability checks}
 
-    Availability checks depend on two pieces of information:
+    Availability checks depend on three pieces of information:
 
     - a snapshot of the current test subject;
-    - a snapshot of the current fuzzer state. *)
+    - a snapshot of the current fuzzer state;
+    - the parameter map supplied to the top-level fuzz runner. *)
 module Context : sig
   (** Type of availability contexts. *)
-  type t = {subject: Subject.Test.t; state: State.t}
+  type t = {subject: Subject.Test.t; state: State.t; params: Param_map.t}
   [@@deriving accessors, make]
 end
 

@@ -21,8 +21,7 @@ type t =
   { o: Common.Output.t [@default Common.Output.silent ()]
   ; labels: Set.M(Common.Litmus_id).t
         [@default Set.empty (module Common.Litmus_id)]
-  ; vars: Var.Map.t
-  ; params: Param_map.t }
+  ; vars: Var.Map.t }
 [@@deriving accessors]
 
 (** {2 Constructing an initial fuzzer state} *)
@@ -31,20 +30,15 @@ val make :
      ?o:Common.Output.t
   -> ?labels:Set.M(Common.Litmus_id).t
   -> vars:Var.Map.t
-  -> params:Param_map.t
   -> unit
   -> t
-(** [make ?o ~labels ~vars ~params ()] creates an initial state with the
-    label set [labels], variable map [vars], and parameter map [params]. If
-    an output context [o] is provided, it can be used for logging
-    verbose/debug information during the fuzzing process. *)
+(** [make ?o ~labels ~vars ()] creates an initial state with the label set
+    [labels], and variable map [vars]. If an output context [o] is provided,
+    it can be used for logging verbose/debug information during the fuzzing
+    process. *)
 
-val of_litmus :
-     ?o:Common.Output.t
-  -> Fir.Litmus.Test.t
-  -> params:Param_map.t
-  -> t Or_error.t
-(** [of_litmus ?o lt ~params] tries to create an initial state by extracting
+val of_litmus : ?o:Common.Output.t -> Fir.Litmus.Test.t -> t Or_error.t
+(** [of_litmus ?o lt] tries to create an initial state by extracting
     information from [lt]'s auxiliary data. If an output context [o] is
     provided, it can be used for logging verbose/debug information during the
     fuzzing process. *)
@@ -85,10 +79,6 @@ module Monad : sig
 
   val output : unit -> Common.Output.t t
   (** [output ()] is a stateful action that gets the current output context. *)
-
-  val get_flag : Common.Id.t -> Flag.t t
-  (** [get_flag id] gets the flag with name [id] from the state's parameter
-      map. *)
 
   (** {2 Commands} *)
 
