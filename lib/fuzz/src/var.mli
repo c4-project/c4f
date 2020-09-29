@@ -144,6 +144,13 @@ module Map : sig
   (** [scopes_with_vars map ~predicates] gets a set of all scopes that
       contain variables satisfying [predicates]. *)
 
+  val threads_with_vars :
+    t -> predicates:(Record.t -> bool) list -> [`All | `These of Set.M(Int).t]
+  (** [threads_with_vars map ~predicates] gets a set of all thread IDs that
+      have, in scope, variables satisfying [predicates]. It returns [`All] if
+      every thread has a variable in scope (ie, there is a global variable
+      satisfying [predicates]). *)
+
   (** {3 Actions} *)
 
   val register_var :

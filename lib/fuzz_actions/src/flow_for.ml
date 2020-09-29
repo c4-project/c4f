@@ -33,7 +33,7 @@ let kv_live_path_filter (ctx : Fuzz.Availability.Context.t) :
     Fuzz.Path_filter.t =
   Fuzz.Path_filter.(
     (* These may induce atomic loads, and so can't be in atomic blocks. *)
-    Fuzz.Availability.in_thread_with_variables ~predicates:kv_var_preds ctx
+    in_thread_with_variables ~predicates:kv_var_preds ctx.state.vars
     + kv_live_path_filter_static)
 
 let kv_available (kind : Fuzz.Path_kind.t) : Fuzz.Availability.t =

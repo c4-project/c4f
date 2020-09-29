@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -12,7 +12,8 @@
 open Base
 
 module M = struct
-  type t = Local of int | Global [@@deriving compare, equal, sexp]
+  type t = Local of int | Global
+  [@@deriving accessors, compare, equal, sexp]
 end
 
 include M

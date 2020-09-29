@@ -40,19 +40,6 @@ let has_variables ~(predicates : (Var.Record.t -> bool) list) : t =
   M.lift (fun {state= {vars; _}; _} ->
       Map.exists ~f (Act_common.Scoped_map.to_litmus_id_map vars))
 
-(* TODO(@MattWindsor91): this is a path filter, and should be somewhere else! *)
-
-let threads_of : Set.M(Act_common.Scope).t -> Set.M(Int).t =
-  Set.filter_map
-    (module Int)
-    ~f:(function Act_common.Scope.Global -> None | Local i -> Some i)
-
-let in_thread_with_variables ({state= {vars; _}; _} : Context.t)
-    ~(predicates : (Var.Record.t -> bool) list) : Path_filter.t =
-  let scopes = Var.Map.scopes_with_vars vars ~predicates in
-  if Set.mem scopes Global then Path_filter.zero
-  else Path_filter.in_threads_only (threads_of scopes)
-
 include (
   struct
     let zero : t = always

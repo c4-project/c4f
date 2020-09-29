@@ -218,6 +218,14 @@ let live_loop_surround : t =
 let in_threads_only (threads : Set.M(Int).t) : t =
   {zero with threads= Some threads}
 
+let in_thread_with_variables (vars : Var.Map.t)
+    ~(predicates : (Var.Record.t -> bool) list) : t =
+  match Var.Map.threads_with_vars vars ~predicates with
+  | `All ->
+      zero
+  | `These tids ->
+      in_threads_only tids
+
 let error_of_flag (flag : Path_flag.t) ~(polarity : string) : unit Or_error.t
     =
   Or_error.errorf "Unmet %s flag condition: %s" polarity

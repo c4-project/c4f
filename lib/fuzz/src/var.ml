@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,44 +10,38 @@
    project root for more information. *)
 
 open Base
-
-open struct
-  module Acc = Accessor_base
-  module Ac = Act_common
-  module Tx = Travesty_base_exts
-end
+open Import
 
 module Record = struct
   module Access = struct
     type t =
-      { env_record: Act_fir.Env.Record.t
+      { env_record: Fir.Env.Record.t
       ; source: [`Existing | `Generated]
-      ; scope: Ac.Scope.t
+      ; scope: Common.Scope.t
       ; has_dependencies: bool [@default false]
       ; has_writes: bool [@default false] }
     [@@deriving accessors, make, equal]
 
-    let type_of = [%accessor Acc.(env_record @> Act_fir.Env.Record.type_of)]
+    let type_of = [%accessor env_record @> Fir.Env.Record.type_of]
 
-    let known_value =
-      [%accessor Acc.(env_record @> Act_fir.Env.Record.known_value)]
+    let known_value = [%accessor env_record @> Fir.Env.Record.known_value]
   end
 
   include Access
 
-  let type_of = Acc.get Access.type_of
+  let type_of = Accessor.get Access.type_of
 
-  let scope = Acc.get Access.scope
+  let scope = Accessor.get Access.scope
 
-  let known_value = Acc.get_option Access.known_value
+  let known_value = Accessor.get_option Access.known_value
 
-  let has_dependencies = Acc.get Access.has_dependencies
+  let has_dependencies = Accessor.get Access.has_dependencies
 
-  let has_writes = Acc.get Access.has_writes
+  let has_writes = Accessor.get Access.has_writes
 
-  let env_record : t -> Act_fir.Env.Record.t = Acc.get Access.env_record
+  let env_record : t -> Fir.Env.Record.t = Accessor.get Access.env_record
 
-  let is_global (r : t) : bool = Ac.Scope.is_global (scope r)
+  let is_global (r : t) : bool = Common.Scope.is_global (scope r)
 
   let was_generated : t -> bool = function
     | {source= `Generated; _} ->
@@ -58,73 +52,72 @@ module Record = struct
   let has_known_value (record : t) : bool =
     Option.is_some (known_value record)
 
-  let try_get_known_value (record : t) : Act_fir.Constant.t Or_error.t =
+  let try_get_known_value (record : t) : Fir.Constant.t Or_error.t =
     Result.of_option (known_value record)
       ~error:(Error.of_string "No known value for this record.")
 
-  let add_dependency : t -> t = Acc.set Access.has_dependencies ~to_:true
+  let add_dependency (x : t) : t = x.@(Access.has_dependencies) <- true
 
-  let add_write : t -> t = Acc.set Access.has_writes ~to_:true
+  let add_write (x : t) : t = x.@(Access.has_writes) <- true
 
-  let erase_value : t -> t =
-    Acc.(set (Access.env_record @> Act_fir.Env.Record.known_value_opt))
-      ~to_:None
+  let erase_value (x : t) : t =
+    x.@(Access.env_record @> Fir.Env.Record.known_value_opt) <- None
 
-  let make_existing (scope : Ac.Scope.t) (type_of : Act_fir.Type.t) : t =
+  let make_existing (scope : Common.Scope.t) (type_of : Fir.Type.t) : t =
     make ~source:`Existing ~scope
-      ~env_record:(Act_fir.Env.Record.make ~type_of ())
+      ~env_record:(Fir.Env.Record.make ~type_of ())
       ()
 
-  let make_generated ?(initial_value : Act_fir.Constant.t option)
-      (scope : Ac.Scope.t) (type_of : Act_fir.Type.t) : t =
+  let make_generated ?(initial_value : Fir.Constant.t option)
+      (scope : Common.Scope.t) (type_of : Fir.Type.t) : t =
     make ~source:`Generated ~scope
       ~env_record:
-        (Act_fir.Env.Record.make ~type_of ?known_value:initial_value ())
+        (Fir.Env.Record.make ~type_of ?known_value:initial_value ())
       ()
 end
 
 module Map = struct
-  type t = Record.t Ac.Scoped_map.t
+  type t = Record.t Common.Scoped_map.t
 
-  let make_existing_record (id : Ac.Litmus_id.t) (ty : Act_fir.Type.t) :
+  let make_existing_record (id : Common.Litmus_id.t) (ty : Fir.Type.t) :
       Record.t =
-    Record.make_existing (Ac.Litmus_id.scope id) ty
+    Record.make_existing (Common.Litmus_id.scope id) ty
 
-  let make_existing_var_map (test : Act_fir.Litmus.Test.t) : t Or_error.t =
+  let make_existing_var_map (test : Fir.Litmus.Test.t) : t Or_error.t =
     Or_error.(
-      test |> Act_fir.Litmus_vars.make_type_alist
+      test |> Fir.Litmus_vars.make_type_alist
       >>| List.map ~f:(fun (id, ty) -> (id, make_existing_record id ty))
       >>= Act_common.Scoped_map.of_litmus_id_alist)
 
-  let register_var ?(initial_value : Act_fir.Constant.t option) (map : t)
-      (id : Ac.Litmus_id.t) (ty : Act_fir.Type.t) : t =
-    let scope = Ac.Litmus_id.scope id in
+  let register_var ?(initial_value : Fir.Constant.t option) (map : t)
+      (id : Common.Litmus_id.t) (ty : Fir.Type.t) : t =
+    let scope = Common.Litmus_id.scope id in
     let record = Record.make_generated ?initial_value scope ty in
-    Ac.Scoped_map.set map ~id ~record
+    Common.Scoped_map.set map ~id ~record
 
-  let add_write : t -> id:Ac.Litmus_id.t -> t =
-    Ac.Scoped_map.map_record ~f:Record.add_write
+  let add_write : t -> id:Common.Litmus_id.t -> t =
+    Common.Scoped_map.map_record ~f:Record.add_write
 
-  let add_dependency : t -> id:Ac.Litmus_id.t -> t =
-    Ac.Scoped_map.map_record ~f:Record.add_dependency
+  let add_dependency : t -> id:Common.Litmus_id.t -> t =
+    Common.Scoped_map.map_record ~f:Record.add_dependency
 
-  let erase_value_inner : t -> id:Ac.Litmus_id.t -> t =
-    Ac.Scoped_map.map_record ~f:Record.erase_value
+  let erase_value_inner : t -> id:Common.Litmus_id.t -> t =
+    Common.Scoped_map.map_record ~f:Record.erase_value
 
-  let has_dependencies (map : t) ~(id : Ac.Litmus_id.t) : bool =
-    match Ac.Scoped_map.find_by_litmus_id map ~id with
+  let has_dependencies (map : t) ~(id : Common.Litmus_id.t) : bool =
+    match Common.Scoped_map.find_by_litmus_id map ~id with
     | Ok r ->
         Record.has_dependencies r
     | _ ->
         false
 
-  let dependency_error (var : Ac.Litmus_id.t) : unit Or_error.t =
+  let dependency_error (var : Common.Litmus_id.t) : unit Or_error.t =
     Or_error.error_s
       [%message
         "Tried to erase the known value of a depended-upon variable"
-          ~var:(var : Ac.Litmus_id.t)]
+          ~var:(var : Common.Litmus_id.t)]
 
-  let erase_value (map : t) ~(id : Ac.Litmus_id.t) : t Or_error.t =
+  let erase_value (map : t) ~(id : Common.Litmus_id.t) : t Or_error.t =
     Or_error.Let_syntax.(
       let%map () =
         Tx.Or_error.when_m (has_dependencies map ~id) ~f:(fun () ->
@@ -132,35 +125,49 @@ module Map = struct
       in
       erase_value_inner map ~id)
 
-  let records_satisfying_all (vars : t) ~(scope : Ac.Scope.t)
-      ~(predicates : (Record.t -> bool) list) : Record.t Map.M(Ac.C_id).t =
+  let records_satisfying_all (vars : t) ~(scope : Common.Scope.t)
+      ~(predicates : (Record.t -> bool) list) : Record.t Map.M(Common.C_id).t
+      =
     vars
-    |> Ac.Scoped_map.to_c_id_map ~scope
+    |> Common.Scoped_map.to_c_id_map ~scope
     |> Map.filter ~f:(Tx.List.all ~predicates)
 
-  let env_satisfying_all (vars : t) ~(scope : Ac.Scope.t)
-      ~(predicates : (Record.t -> bool) list) : Act_fir.Env.t =
+  let env_satisfying_all (vars : t) ~(scope : Common.Scope.t)
+      ~(predicates : (Record.t -> bool) list) : Fir.Env.t =
     vars
     |> records_satisfying_all ~scope ~predicates
     |> Map.map ~f:Record.env_record
 
-  let satisfying_all (vars : t) ~(scope : Ac.Scope.t)
-      ~(predicates : (Record.t -> bool) list) : Ac.C_id.t list =
+  let satisfying_all (vars : t) ~(scope : Common.Scope.t)
+      ~(predicates : (Record.t -> bool) list) : Common.C_id.t list =
     vars |> records_satisfying_all ~scope ~predicates |> Map.keys
 
-  let exists_satisfying_all (vars : t) ~(scope : Ac.Scope.t)
+  let exists_satisfying_all (vars : t) ~(scope : Common.Scope.t)
       ~(predicates : (Record.t -> bool) list) : bool =
     not (Map.is_empty (records_satisfying_all vars ~scope ~predicates))
 
   let scopes_with_vars (vars : t) ~(predicates : (Record.t -> bool) list) :
-      Set.M(Ac.Scope).t =
+      Set.M(Common.Scope).t =
     vars
-    |> Ac.Scoped_map.filter ~f:(Tx.List.all ~predicates)
-    |> Ac.Scoped_map.to_litmus_id_map |> Map.keys
-    |> List.map ~f:Ac.Litmus_id.scope
-    |> Set.of_list (module Ac.Scope)
+    |> Common.Scoped_map.filter ~f:(Tx.List.all ~predicates)
+    |> Common.Scoped_map.to_litmus_id_map |> Map.keys
+    |> List.map ~f:Common.Litmus_id.scope
+    |> Set.of_list (module Common.Scope)
 
-  let gen_fresh_var (map : t) : Ac.C_id.t Base_quickcheck.Generator.t =
-    Base_quickcheck.Generator.filter [%quickcheck.generator: Ac.C_id.Human.t]
-      ~f:(fun id -> not (Ac.Scoped_map.c_id_mem map ~id))
+  let threads_of : Set.M(Common.Scope).t -> Set.M(Int).t =
+    Accessor.Set.of_accessor
+      (module Int)
+      (Accessor.Set.each @> Common.Scope.local)
+
+  let threads_with_vars (vars : t) ~(predicates : (Record.t -> bool) list) :
+      [`All | `These of Set.M(Int).t] =
+    let scopes = scopes_with_vars vars ~predicates in
+    (* If the global scope has at least one variable matching the predicates,
+       all threads have matching variables. *)
+    if Set.mem scopes Global then `All else `These (threads_of scopes)
+
+  let gen_fresh_var (map : t) : Common.C_id.t Base_quickcheck.Generator.t =
+    Base_quickcheck.Generator.filter
+      [%quickcheck.generator: Common.C_id.Human.t] ~f:(fun id ->
+        not (Common.Scoped_map.c_id_mem map ~id))
 end

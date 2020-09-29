@@ -58,6 +58,12 @@ val in_threads_only : Set.M(Int).t -> t
 (** [in_threads_only threads] requires that any path must travel through at
     least one of the threads in [threads]. Such restrictions are cumulative. *)
 
+val in_thread_with_variables :
+  Var.Map.t -> predicates:(Var.Record.t -> bool) list -> t
+(** [in_thread_with_variables vars ~predicates] is a filter that requires the
+    path to pass through a thread with access to at least one thread for
+    which a variable in [vars], satisfying all of [predicates], is in scope *)
+
 val transaction_safe : t
 (** [transaction_safe] requires that any path must reach statements that are
     'transaction safe'; that is, it can appear inside an 'atomic' block. This
@@ -122,9 +128,11 @@ val ends_in_block : Block.t -> t
     To check that a path passes through, or does not pass through, a
     particular block, use path flags. *)
 
-(** {1 Consuming filters} *)
+(** {1 Consuming filters}
 
-(** {2 Checking paths} *)
+    Various parts of a path filter should be checked at various different
+    stages of path production and consumption; hence, there is no one 'check'
+    function. *)
 
 val is_thread_ok : t -> thread:int -> bool
 (** [is_thread_ok filter ~thread] checks whether paths may descend through

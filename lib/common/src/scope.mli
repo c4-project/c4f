@@ -12,11 +12,12 @@
 (** A lightweight notion of scope used in various bits of ACT. *)
 
 (** Type of scopes. *)
-type t = Local of int | Global [@@deriving compare, equal, sexp]
+type t = Local of int | Global [@@deriving compare, equal, sexp, accessors]
 
 include Base.Comparable.S with type t := t
 
 val is_global : t -> bool
+(** [is_global x] is true if [x] is global, and false otherwise. *)
 
 val reduce : t * 'a -> t * 'a -> t * 'a
 (** [reduce l r] returns [l] if the scope tag of [l] is local and [r] is

@@ -99,9 +99,9 @@ struct
            can be generated at filtered paths that is sound. *)
         f
 
-  let path_filter ctx =
+  let path_filter (ctx : Fuzz.Availability.Context.t) =
     Fuzz.Path_filter.(
-      Fuzz.Availability.in_thread_with_variables ctx
+      in_thread_with_variables ctx.state.vars
         ~predicates:
           (List.append
              (Lazy.force dst_restrictions)
