@@ -182,6 +182,15 @@ mem.strengthen:
     is compatible with the atomic action and also stronger than the old one.
     If 'mem.unsafe-weaken-orders' is true, this action will permit weakening
     of memory orders, likely resulting in a loss of semantics preservation.
+nop:
+  Weight: 5x
+  Summary:
+    Does nothing, but consumes an action step.
+    
+    This action is automatically executed if no other actions are available
+    during a step. If a weight is assigned to it in the action table, it will
+    also occasionally substitute for a real action; this is one way to
+    introduce variance into the action count.
 program.label:
   Weight: 15x
   Summary: Inserts a new, random label into the program.

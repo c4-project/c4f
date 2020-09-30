@@ -127,13 +127,8 @@ let pick_action (subject : Fuzz.Subject.Test.t) :
   Runner_state.Monad.(
     Let_syntax.(
       let%bind ao = pick_loop subject in
-      let%bind () = Runner_state.(modify_acc pool Action_pool.reset) in
-      (* TODO(@MattWindsor91): supply nop action *)
-      match ao with
-      | Some a ->
-          return a
-      | None ->
-          Runner_state.return_err (Or_error.error_string "no action picked")))
+      let%map () = Runner_state.(modify_acc pool Action_pool.reset) in
+      Option.value ao ~default:(module Fuzz.Action.Nop)))
 
 let log_action (type p)
     (action : (module Fuzz.Action_types.S with type Payload.t = p))

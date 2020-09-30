@@ -152,3 +152,6 @@ module Make_surround (Basic : sig
       [payload]. *)
 end) :
   Action_types.S with type Payload.t = Basic.Payload.t Payload_impl.Pathed.t
+
+(** An action that does absolutely nothing. *)
+module Nop : Action_types.S with type Payload.t = unit

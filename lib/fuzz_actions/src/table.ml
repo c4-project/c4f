@@ -44,6 +44,10 @@ let actions : Fuzz.Action.With_default_weight.t list Lazy.t =
       ; (module Var_assign.Insert.Int_dead) @-> 20
       ; (module Var_assign.Insert.Int_normal) @-> 20
       ; (module Var_assign.Insert.Int_redundant) @-> 15
+        (* This action gets fired if every other action is unavailable, so
+           giving it a weight here just makes it occasionally get chosen in
+           normal play. *)
+      ; (module Fuzz.Action.Nop) @-> 5
         (* These are disabled by default because they induce transactions.
            TODO(@MattWindsor91): gate them in another way. *)
       ; (module Flow_lock.Surround.Atomic) @-> 0

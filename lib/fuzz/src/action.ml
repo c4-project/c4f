@@ -152,3 +152,25 @@ end = struct
         (styled (`Fg `Green) Common.Id.pp)
         B.name)
 end
+
+module Nop : Action_types.S with type Payload.t = unit = struct
+  let name = Common.Id.("nop" @: empty)
+
+  let readme () =
+    Utils.My_string.format_for_readme
+      {| Does nothing, but consumes an action step.
+
+         This action is automatically executed if no other actions are available
+         during a step.  If a weight is assigned to it in the action table, it
+         will also occasionally substitute for a real action; this is one way
+         to introduce variance into the action count.
+      |}
+
+  let available = Availability.always
+
+  module Payload = Payload_impl.None
+
+  let run (subject : Subject.Test.t) ~payload:() :
+      Subject.Test.t State.Monad.t =
+    State.Monad.return subject
+end
