@@ -130,11 +130,20 @@ let pick_action (subject : Fuzz.Subject.Test.t) :
       let%map () = Runner_state.(modify_acc pool Action_pool.reset) in
       Option.value ao ~default:(module Fuzz.Action.Nop)))
 
+let add_recommendations (type p)
+    (module Action : Fuzz.Action_types.S with type Payload.t = p)
+    (payload : p) : unit Runner_state.Monad.t =
+  let names = Action.recommendations payload in
+  Runner_state.Monad.Monadic.modify
+    (Fuzz.State.Monad.Acc.map Runner_state.pool
+       ~f:
+         (Fn.compose Fuzz.State.Monad.Monadic.return
+            (Action_pool.recommend ~names)))
+
 let log_action (type p)
     (action : (module Fuzz.Action_types.S with type Payload.t = p))
     (payload : p) : unit Runner_state.Monad.t =
-  Runner_state.Monad.modify (fun x ->
-      {x with trace= Fuzz.Trace.add x.trace ~action ~payload})
+  Runner_state.(modify_acc trace (Fuzz.Trace.add ~action ~payload))
 
 let run_action (module Action : Fuzz.Action_types.S)
     (subject : Fuzz.Subject.Test.t) :
@@ -144,6 +153,7 @@ let run_action (module Action : Fuzz.Action_types.S)
        subject step runner would become dependent on the exact type of the
        payload, and this is encapsulated in [Action]. *)
     let%bind payload = generate_payload (module Action) subject in
+    let%bind () = add_recommendations (module Action) payload in
     let%bind () = log_action (module Action) payload in
     Runner_state.Monad.Monadic.return (Action.run subject ~payload))
 
