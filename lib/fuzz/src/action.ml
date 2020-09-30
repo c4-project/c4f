@@ -110,8 +110,6 @@ struct
         let%bind filter = peek Basic.path_filter in
         let%bind () = add_dependencies payload in
         let%bind test' = Basic.run_pre test ~payload:payload.payload in
-        (* TODO(@MattWindsor91): work out how to get the full path filter
-           over here *)
         Payload_impl.Pathed.surround ~filter payload ~test:test'
           ~f:(fun payload -> Basic.wrap ~payload)))
 end
