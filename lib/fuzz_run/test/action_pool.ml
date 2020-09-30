@@ -29,6 +29,12 @@ let%test_module "recommendation queue" =
         let run test ~payload:() = Fuzz.State.Monad.return test
       end : Fuzz.Action_types.S )
 
+    let opt_name : Fuzz.Action.t option -> Common.Id.t = function
+      | Some (module A) ->
+          A.name
+      | None ->
+          Common.Id.("NONE" @: empty)
+
     let action1_id = Common.Id.("test1" @: empty)
 
     let action2_id = Common.Id.("test2" @: empty)
@@ -62,10 +68,8 @@ let%test_module "recommendation queue" =
             (List.init n ~f:(fun _ -> ()))
             ~init:pool
             ~f:(fun pool () ->
-              let%map (module A), pool' =
-                Src.Action_pool.pick pool ~random
-              in
-              (pool', A.name))
+              let%map ao, pool' = Src.Action_pool.pick pool ~random in
+              (pool', opt_name ao))
         in
         xs)
 
@@ -98,11 +102,11 @@ let%test_module "recommendation queue" =
 
     let%expect_test "trying to take the same choice twice" =
       test_choice (Fuzz.Flag.exact true) 2 [] ;
-      [%expect {| No choices have a positive weight |}]
+      [%expect {| test1, NONE |}]
 
     let%expect_test "trying to take the same choice through rec and deck" =
       test_choice (Fuzz.Flag.exact true) 2 [action1_id] ;
-      [%expect {| No choices have a positive weight |}]
+      [%expect {| test1, NONE |}]
 
     let%expect_test "reset in between taking same choice" =
       let random =
@@ -113,10 +117,10 @@ let%test_module "recommendation queue" =
         Or_error.(
           Let_syntax.(
             let%bind pool = pool (Fuzz.Flag.exact true) in
-            let%bind (module A), pool = Src.Action_pool.pick pool ~random in
+            let%bind a, pool = Src.Action_pool.pick pool ~random in
             let pool = Src.Action_pool.reset pool in
-            let%map (module B), _ = Src.Action_pool.pick pool ~random in
-            [A.name; B.name])) ;
+            let%map b, _ = Src.Action_pool.pick pool ~random in
+            [opt_name a; opt_name b])) ;
       [%expect {| test1, test1 |}]
 
     let%expect_test "reset doesn't reset recommendations" =
@@ -131,12 +135,12 @@ let%test_module "recommendation queue" =
             let%bind pool =
               Src.Action_pool.recommend pool ~names:[action2_id; action3_id]
             in
-            let%bind (module A), pool = Src.Action_pool.pick pool ~random in
+            let%bind a, pool = Src.Action_pool.pick pool ~random in
             let pool = Src.Action_pool.reset pool in
-            let%bind (module B), pool = Src.Action_pool.pick pool ~random in
+            let%bind b, pool = Src.Action_pool.pick pool ~random in
             let pool = Src.Action_pool.reset pool in
-            let%map (module C), _ = Src.Action_pool.pick pool ~random in
-            [A.name; B.name; C.name])) ;
+            let%map c, _ = Src.Action_pool.pick pool ~random in
+            [opt_name a; opt_name b; opt_name c])) ;
       [%expect {| test2, test3, test1 |}]
 
     let%expect_test "reset in between taking choice as rec and taking from \
@@ -152,9 +156,9 @@ let%test_module "recommendation queue" =
             let%bind pool =
               Src.Action_pool.recommend pool ~names:[action1_id]
             in
-            let%bind (module A), pool = Src.Action_pool.pick pool ~random in
+            let%bind a, pool = Src.Action_pool.pick pool ~random in
             let pool = Src.Action_pool.reset pool in
-            let%map (module B), _ = Src.Action_pool.pick pool ~random in
-            [A.name; B.name])) ;
+            let%map b, _ = Src.Action_pool.pick pool ~random in
+            [opt_name a; opt_name b])) ;
       [%expect {| test1, test1 |}]
   end )

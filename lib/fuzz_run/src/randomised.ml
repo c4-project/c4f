@@ -38,9 +38,10 @@ module Runner_state = struct
     module Inner = Fuzz.State.Monad
   end)
 
-  (* TODO(@MattWindsor91): these should really be available in the monad,
-     as maybe a Travesty extension or summat. *)
+  (* TODO(@MattWindsor91): these should really be available in the monad, as
+     maybe a Travesty extension or summat. *)
   let peek_acc acc = Monad.peek (Accessor.get acc)
+
   let modify_acc acc f = Monad.modify (Accessor.map acc ~f)
 
   let make_actx (subject : Fuzz.Subject.Test.t) :
@@ -88,45 +89,51 @@ let available (module A : Fuzz.Action_types.S)
       make_actx subject
       >>= fun ctx -> return_err (Fuzz.Availability.M.run A.available ~ctx)))
 
-let pick (s : Runner_state.t) : (Runner_state.t * Fuzz.Action.t) Or_error.t =
+let pick (s : Runner_state.t) :
+    (Runner_state.t * Fuzz.Action.t option) Or_error.t =
   Or_error.Let_syntax.(
-    let%map (action, pool') = Action_pool.pick s.pool ~random:s.random in
-    let s' = s.@(Runner_state.pool) <- pool' in (s', action))
+    let%map action, pool' = Action_pool.pick s.pool ~random:s.random in
+    let s' = s.@(Runner_state.pool) <- pool' in
+    (s', action))
 
-let pick_step (mu : Fuzz.Action.t option -> Fuzz.Action.t option Runner_state.Monad.t)
-  ~(subject : Fuzz.Subject.Test.t)
-  : Fuzz.Action.t option Runner_state.Monad.t =
+let pick_step
+    (mu : Fuzz.Action.t option -> Fuzz.Action.t option Runner_state.Monad.t)
+    ~(subject : Fuzz.Subject.Test.t) :
+    Fuzz.Action.t option Runner_state.Monad.t =
   Runner_state.Monad.(
     Let_syntax.(
-      let%bind action = Monadic.make (Fn.compose Fuzz.State.Monad.Monadic.return pick) in
-      (* Keep going until we find an available action, or hit an error eg
-         running out of actions. *)
-      if%bind available action ~subject
-      then return (Some action)
-      else mu None
-   )
-  )
+      (* Keep going until we find an available action, or run out of actions. *)
+      match%bind
+        Monadic.make (Fn.compose Fuzz.State.Monad.Monadic.return pick)
+      with
+      | None ->
+          return None
+      | Some action ->
+          if%bind available action ~subject then return (Some action)
+          else mu None))
 
-let pick_loop (subject : Fuzz.Subject.Test.t) : Fuzz.Action.t option Runner_state.Monad.t =
-  Runner_state.Monad.(fix None ~f:(fun mu xo ->
-    match xo with
-    | Some x -> return (Some x)
-    | None -> pick_step mu ~subject
-  ))
+let pick_loop (subject : Fuzz.Subject.Test.t) :
+    Fuzz.Action.t option Runner_state.Monad.t =
+  Runner_state.Monad.(
+    fix None ~f:(fun mu xo ->
+        match xo with
+        | Some x ->
+            return (Some x)
+        | None ->
+            pick_step mu ~subject))
 
 let pick_action (subject : Fuzz.Subject.Test.t) :
-  (module Fuzz.Action_types.S) Runner_state.Monad.t =
-  Runner_state.Monad.(Let_syntax.(
-    let%bind ao = pick_loop subject in
-    let%bind () = Runner_state.(modify_acc pool Action_pool.reset) in
-    (* We should never end up with an empty action; either the picker should
-       fail to pick, or it should pick a concrete action.  Nevertheless, the
-       contrivances of the monad fixpoint mean we need to account for this. *)
-    match ao with
-    | Some a -> return a
-    | None -> Runner_state.return_err (Or_error.error_string "no action picked")
-  )
-)
+    (module Fuzz.Action_types.S) Runner_state.Monad.t =
+  Runner_state.Monad.(
+    Let_syntax.(
+      let%bind ao = pick_loop subject in
+      let%bind () = Runner_state.(modify_acc pool Action_pool.reset) in
+      (* TODO(@MattWindsor91): supply nop action *)
+      match ao with
+      | Some a ->
+          return a
+      | None ->
+          Runner_state.return_err (Or_error.error_string "no action picked")))
 
 let log_action (type p)
     (action : (module Fuzz.Action_types.S with type Payload.t = p))

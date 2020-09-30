@@ -107,13 +107,13 @@ module Cumulative = struct
         in
         (total', Some row')
 
-  let of_weighted_list (wl : 'a w) : 'a t Or_error.t =
+  let of_weighted_list (wl : 'a w) : 'a t option =
     let max, opt_rows = List.fold_map wl ~init:0 ~f:from_table_step in
     match List.filter_opt opt_rows with
     | [] ->
-        Or_error.error_string "No choices have a positive weight"
+        None
     | rows ->
-        Ok {max; rows}
+        Some {max; rows}
 
   let get (cl : 'a t) (position : int) : 'a =
     let possible =
@@ -127,12 +127,11 @@ module Cumulative = struct
     get cl position
 end
 
-let sample (wl : 'a t) ~(random : Splittable_random.State.t) : 'a Or_error.t
-    =
-  Or_error.(wl |> Cumulative.of_weighted_list >>| Cumulative.sample ~random)
+let sample (wl : 'a t) ~(random : Splittable_random.State.t) : 'a option =
+  Option.(wl |> Cumulative.of_weighted_list >>| Cumulative.sample ~random)
 
 let sample_exn (wl : 'a t) ~(random : Splittable_random.State.t) : 'a =
-  Or_error.ok_exn (sample wl ~random)
+  Option.value_exn (sample wl ~random)
 
 let sample_gen_exn (wl : 'a t) : 'a Quickcheck.Generator.t =
   Quickcheck.Generator.create (fun ~size -> ignore size ; sample_exn wl)

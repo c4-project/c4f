@@ -40,9 +40,12 @@ val recommend : t -> names:Common.Id.t list -> t Or_error.t
     initial deck; otherwise, an error occurs. *)
 
 val pick :
-  t -> random:Splittable_random.State.t -> (Fuzz.Action.t * t) Or_error.t
-(** [pick pool ~random] picks a random action from [pool], returning both it
-    and the pool with that action removed. Use [reset] to prepare the
+     t
+  -> random:Splittable_random.State.t
+  -> (Fuzz.Action.t option * t) Or_error.t
+(** [pick pool ~random] picks a random action from [pool]. If at least one
+    action is available, [pick] returns both it and the pool with that action
+    removed; else, it returns the pool unchanged. Use [reset] to prepare the
     returned pool for the next [pick], rather than reloading the previous
     pool. *)
 

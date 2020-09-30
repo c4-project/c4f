@@ -42,12 +42,12 @@ end
 module Rec_queue = struct
   type t = Fuzz.Action.t Core_kernel.Fqueue.t
 
-  let pick (rq : t) : (Fuzz.Action.t * t) Or_error.t =
-    rq |> Core_kernel.Fqueue.dequeue
-    |> Result.of_option
-         ~error:
-           (Error.of_string
-              "tried to pick from an empty recommendation list")
+  let pick (rq : t) : Fuzz.Action.t option * t =
+    match Core_kernel.Fqueue.dequeue rq with
+    | Some (a, rq') ->
+        (Some a, rq')
+    | None ->
+        (None, rq)
 
   let recommend (rq : t) ~(actions : Fuzz.Action.t list) : t =
     List.fold_left actions ~init:rq ~f:Core_kernel.Fqueue.enqueue
@@ -103,20 +103,27 @@ let use_queue ({rec_queue; queue_flag; _} : t)
   && Fuzz.Flag.eval queue_flag ~random
 
 let pick_without_remove (table : t) ~(random : Splittable_random.State.t) :
-    (Fuzz.Action.t * Rec_queue.t) Or_error.t =
-  if use_queue table ~random then Rec_queue.pick table.rec_queue
+    Fuzz.Action.t option * t =
+  if use_queue table ~random then
+    let ao, queue' = Rec_queue.pick table.rec_queue in
+    (ao, {table with rec_queue= queue'})
   else
-    Or_error.(
-      Utils.Weighted_list.sample table.deck ~random
-      >>| fun a -> (Fuzz.Action.With_default_weight.action a, table.rec_queue))
+    let wlo = Utils.Weighted_list.sample table.deck ~random in
+    (Option.map wlo ~f:Fuzz.Action.With_default_weight.action, table)
+
+let maybe_remove (table : t) : Fuzz.Action.t option -> t Or_error.t =
+  function
+  | None ->
+      Ok table
+  | Some (module A) ->
+      Utils.Accessor.On_error.map deck table ~f:(Deck.remove ~name:A.name)
 
 let pick (table : t) ~(random : Splittable_random.State.t) :
-    (Fuzz.Action.t * t) Or_error.t =
+    (Fuzz.Action.t option * t) Or_error.t =
+  let ao, table = pick_without_remove table ~random in
   Or_error.Let_syntax.(
-    let%bind (module A), queue' = pick_without_remove table ~random in
     (* We always remove the chosen action from the deck, even if it came from
        a recommendation. This is to make sure that, if a recommendation fails
        for whatever reason, we don't immediately try picking it again. *)
-    let%map deck' = Deck.remove table.deck ~name:A.name in
-    ( (module A : Fuzz.Action_types.S)
-    , {table with deck= deck'; rec_queue= queue'} ))
+    let%map table = maybe_remove table ao in
+    (ao, table))

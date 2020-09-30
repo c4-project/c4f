@@ -50,7 +50,7 @@ val iter : 'a t -> f:('a -> int -> unit) -> unit
 
 (** {1 Sampling} *)
 
-val sample : 'a t -> random:Splittable_random.State.t -> 'a Or_error.t
+val sample : 'a t -> random:Splittable_random.State.t -> 'a option
 (** [sample wl ~random] converts [wl] to a cumulative list, then samples it
     according to the random number generator [random]. It fails if the
     conversion fails.
@@ -71,7 +71,7 @@ module Cumulative : sig
   (** Opaque type of cumulative lists. *)
   type 'a t [@@deriving sexp_of]
 
-  val of_weighted_list : 'a w -> 'a t Or_error.t
+  val of_weighted_list : 'a w -> 'a t option
   (** [of_weighted_list wl] converts [wl] to a cumulative list. It fails if
       there are no items in [wl] with a nonzero weight. *)
 
