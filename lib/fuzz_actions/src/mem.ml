@@ -18,9 +18,8 @@ module Fence :
 struct
   let name : Common.Id.t = Common.Id.of_string "mem.fence"
 
-  let readme () : string =
-    Utils.My_string.format_for_readme
-      {| Inserts a randomly generated memory fence into the test. |}
+  let readme : string Lazy.t =
+    lazy {| Inserts a randomly generated memory fence into the test. |}
 
   module Payload = struct
     type t = Fir.Atomic_fence.t Fuzz.Payload_impl.Pathed.t [@@deriving sexp]
@@ -33,6 +32,8 @@ struct
 
     let gen = Fuzz.Payload_impl.Pathed.gen Insert path_filter gen'
   end
+
+  let recommendations (_ : Payload.t) : Common.Id.t list = []
 
   let available = Fuzz.Availability.has_threads
 
@@ -61,19 +62,20 @@ module Strengthen :
   include Name
   include Fuzz.Action.Make_log (Name)
 
-  let readme () : string =
-    Utils.My_string.format_for_readme
-      {| Replaces the memory order of a random atomic statement (not an atomic
+  let readme : string Lazy.t =
+    lazy
+      ( {| Replaces the memory order of a random atomic statement (not an atomic
          expression) with another memory order.
 
          Usually, this will only perform the replacement when the new memory
          order is compatible with the atomic action and also stronger than the
          old one.  If '|}
-    ^ Common.Id.to_string Fuzz.Config_tables.unsafe_weaken_orders_flag
-    ^ {|' is true, this action will
+      ^ Common.Id.to_string Fuzz.Config_tables.unsafe_weaken_orders_flag
+      ^ {|' is true, this action will
          permit weakening of memory orders, likely resulting in a loss of
          semantics preservation.
       |}
+      )
 
   let filter : Fuzz.Path_filter.t =
     Fuzz.Path_filter.(
@@ -92,6 +94,8 @@ module Strengthen :
         let+ mo = lift_quickcheck Fir.Mem_order.quickcheck_generator in
         {path; mo; can_weaken})
   end
+
+  let recommendations (_ : Payload.t) : Common.Id.t list = []
 
   let available : Fuzz.Availability.t =
     Fuzz.Availability.is_filter_constructible filter ~kind:Transform

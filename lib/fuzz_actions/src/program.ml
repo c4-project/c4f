@@ -15,8 +15,8 @@ open Import
 module Make_empty : Fuzz.Action_types.S with type Payload.t = unit = struct
   let name = Common.Id.of_string "program.make.empty"
 
-  let readme () =
-    Act_utils.My_string.format_for_readme
+  let readme =
+    lazy
       {|
     Generates a new, empty program at one end of the program list.
     This action isn't very useful on its own, but works well in combination
@@ -24,6 +24,10 @@ module Make_empty : Fuzz.Action_types.S with type Payload.t = unit = struct
     |}
 
   module Payload = Fuzz.Payload_impl.None
+
+  let recommendations () =
+    [ (* There should be quite a lot of recommendations here, eventually! *)
+      Var.Make.name ]
 
   let available : Fuzz.Availability.t =
     Fuzz.Availability.M.Inner.lift (fun {subject; params; _} ->
@@ -44,9 +48,7 @@ module Label :
 
   let available : Fuzz.Availability.t = Fuzz.Availability.has_threads
 
-  let readme () =
-    Act_utils.My_string.format_for_readme
-      {| Inserts a new, random label into the program. |}
+  let readme = lazy {| Inserts a new, random label into the program. |}
 
   module Payload = struct
     type t = Common.C_id.t Fuzz.Payload_impl.Pathed.t [@@deriving sexp]
@@ -60,6 +62,9 @@ module Label :
 
     let gen = Fuzz.Payload_impl.Pathed.gen Insert path_filter gen'
   end
+
+  let recommendations (_ : Payload.t) : Common.Id.t list =
+    [Flow_dead.Insert.Goto.name]
 
   let run (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
       Fuzz.Subject.Test.t Fuzz.State.Monad.t =

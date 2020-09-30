@@ -22,10 +22,13 @@ module Dummy_action :
   Src.Action_types.S with type Payload.t = Dummy_payload.t = struct
   let name = Act_common.Id.of_string "dummy.action"
 
+  let recommendations (_ : Dummy_payload.t) = []
+
   let available = Src.Availability.always
 
-  let readme () =
-    {| This is a module that is almost, but not quite, entirely unlike a fuzzer action. |}
+  let readme =
+    lazy
+      {| This is a module that is almost, but not quite, entirely unlike a fuzzer action. |}
 
   module Payload = Src.Payload_impl.Pure (Dummy_payload)
 
@@ -38,10 +41,13 @@ module Another_dummy_action : Src.Action_types.S with type Payload.t = unit =
 struct
   let name = Act_common.Id.of_string "another.dummy.action"
 
+  let recommendations () = []
+
   let available = Src.Availability.always
 
-  let readme () =
-    {| This is also a module that is almost, but not quite, entirely unlike a fuzzer action. |}
+  let readme =
+    lazy
+      {| This is also a module that is almost, but not quite, entirely unlike a fuzzer action. |}
 
   module Payload = Src.Payload_impl.None
 

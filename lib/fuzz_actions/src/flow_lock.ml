@@ -47,8 +47,6 @@ module Surround = struct
 
     let path_filter _ = Basic.path_filter
 
-    let checkable_path_filter = Basic.path_filter
-
     module Payload = struct
       type t = unit [@@deriving sexp]
 
@@ -57,6 +55,10 @@ module Surround = struct
       let gen (_ : Act_fuzz.Path.Flagged.t) : t Fuzz.Payload_gen.t =
         Fuzz.Payload_gen.return ()
     end
+
+    let recommendations (_ : unit Fuzz.Payload_impl.Pathed.t) :
+        Common.Id.t list =
+      []
 
     let run_pre (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =

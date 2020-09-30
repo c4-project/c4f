@@ -20,7 +20,9 @@ let%test_module "recommendation queue" =
       ( module struct
         let name = id
 
-        let readme () = "dummy action"
+        let readme = lazy "dummy action"
+
+        let recommendations () = []
 
         module Payload = Fuzz.Payload_impl.None
 

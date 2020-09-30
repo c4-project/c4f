@@ -204,8 +204,9 @@ module Transform = struct
     Fuzz.Action_types.S with type Payload.t = Fuzz.Path.Flagged.t = struct
     let name = prefix_name Common.Id.("transform" @: "xchgify" @: empty)
 
-    let readme () =
-      {| Promotes a random atomic store to an atomic exchange whose value is
+    let readme =
+      lazy
+        {| Promotes a random atomic store to an atomic exchange whose value is
        discarded. |}
 
     let path_filter : Fuzz.Path_filter.t Lazy.t =
@@ -222,6 +223,8 @@ module Transform = struct
         let filter = Lazy.force path_filter in
         Fuzz.Payload_gen.path_with_flags Transform ~filter
     end
+
+    let recommendations (_ : Payload.t) : Common.Id.t list = []
 
     let available : Fuzz.Availability.t =
       Fuzz.Availability.is_filter_constructible (Lazy.force path_filter)

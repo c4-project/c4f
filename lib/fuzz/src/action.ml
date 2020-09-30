@@ -54,7 +54,7 @@ module Summary = struct
   let of_action ?(user_weight : int option)
       ({action= (module M); default_weight} : With_default_weight.t) : t =
     let weight = Adjusted_weight.make ~default_weight ?user_weight in
-    let readme = M.readme () in
+    let readme = Utils.My_string.format_for_readme (Lazy.force M.readme) in
     {weight; readme}
 
   let pp (f : Formatter.t) ({weight; readme} : t) : unit =
@@ -72,41 +72,15 @@ module Summary = struct
                  (using (fun x -> x.weight) Adjusted_weight.pp)))))
 end
 
-module Make_surround (Basic : sig
-  val name : Common.Id.t
-
-  val surround_with : string
-
-  val readme_suffix : string
-
-  module Payload : sig
-    type t [@@deriving sexp]
-
-    val gen : Path.Flagged.t -> t Payload_gen.t
-
-    val src_exprs : t -> Act_fir.Expression.t list
-  end
-
-  val available : Availability.t
-
-  val path_filter : State.t -> Path_filter.t
-
-  val checkable_path_filter : Path_filter.t
-
-  val run_pre :
-    Subject.Test.t -> payload:Payload.t -> Subject.Test.t State.Monad.t
-
-  val wrap :
-    Subject.Statement.t list -> payload:Payload.t -> Subject.Statement.t
-end) :
+module Make_surround (Basic : Action_types.Basic_surround) :
   Action_types.S with type Payload.t = Basic.Payload.t Payload_impl.Pathed.t =
 struct
   let name = Basic.name
 
   let available = Basic.available
 
-  let readme () =
-    Act_utils.My_string.format_for_readme
+  let readme =
+    lazy
       (String.concat
          [ {| This action removes a sublist of statements from the program, replacing
           them with |}
@@ -123,6 +97,8 @@ struct
         Basic.Payload.gen
   end
 
+  let recommendations = Basic.recommendations
+
   let add_dependencies ({where; payload} : Payload.t) : unit State.Monad.t =
     let src_exprs = Basic.Payload.src_exprs payload in
     State.Monad.add_expression_dependencies_at_path src_exprs ~path:where
@@ -131,12 +107,13 @@ struct
       Subject.Test.t State.Monad.t =
     State.Monad.(
       Let_syntax.(
+        let%bind filter = peek Basic.path_filter in
         let%bind () = add_dependencies payload in
         let%bind test' = Basic.run_pre test ~payload:payload.payload in
         (* TODO(@MattWindsor91): work out how to get the full path filter
            over here *)
-        Payload_impl.Pathed.surround ~filter:Basic.checkable_path_filter
-          payload ~test:test' ~f:(fun payload -> Basic.wrap ~payload)))
+        Payload_impl.Pathed.surround ~filter payload ~test:test'
+          ~f:(fun payload -> Basic.wrap ~payload)))
 end
 
 module Make_log (B : sig
@@ -156,8 +133,8 @@ end
 module Nop : Action_types.S with type Payload.t = unit = struct
   let name = Common.Id.("nop" @: empty)
 
-  let readme () =
-    Utils.My_string.format_for_readme
+  let readme =
+    lazy
       {| Does nothing, but consumes an action step.
 
          This action is automatically executed if no other actions are available
@@ -169,6 +146,8 @@ module Nop : Action_types.S with type Payload.t = unit = struct
   let available = Availability.always
 
   module Payload = Payload_impl.None
+
+  let recommendations () = []
 
   let run (subject : Subject.Test.t) ~payload:() :
       Subject.Test.t State.Monad.t =

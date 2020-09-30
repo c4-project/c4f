@@ -15,6 +15,61 @@ open Import
 let prefix_name (rest : Common.Id.t) : Common.Id.t =
   Common.Id.("flow" @: "if" @: rest)
 
+module Transform = struct
+  module type S =
+    Fuzz.Action_types.S with type Payload.t = Fuzz.Path.Flagged.t
+
+  module Invert : S = struct
+    let name = prefix_name Common.Id.("transform" @: "invert" @: empty)
+
+    let readme =
+      lazy {| Flips the conditional and branches of an if statement. |}
+
+    let path_filter : Fuzz.Path_filter.t =
+      Fuzz.Path_filter.(require_end_check (Stm_class (Is, [If])))
+
+    let available : Fuzz.Availability.t =
+      Fuzz.Availability.is_filter_constructible path_filter ~kind:Transform
+
+    module Payload = struct
+      type t = Fuzz.Path.Flagged.t [@@deriving sexp]
+
+      let gen : Fuzz.Path.Flagged.t Fuzz.Payload_gen.t =
+        Fuzz.Payload_gen.path_with_flags Transform ~filter:path_filter
+    end
+
+    let recommendations (_ : Payload.t) : Common.Id.t list = []
+
+    let invert_if ({cond; t_branch; f_branch} : Fuzz.Subject.Statement.If.t)
+        : Fuzz.Subject.Statement.If.t =
+      Fir.If.make
+        ~cond:(Fir.Expression.l_not cond)
+        ~t_branch:f_branch (* intentional inversion *) ~f_branch:t_branch
+
+    (* as above *)
+
+    let not_an_if (type leg) (stm : Fuzz.Subject.Statement.t) (_ : leg) :
+        leg Or_error.t =
+      Or_error.error_s
+        [%message
+          "Tried to if-invert an invalid statement"
+            ~stm:(stm : Fuzz.Subject.Statement.t)]
+
+    module Bm = Fir.Statement_traverse.Base_map (Or_error)
+
+    let invert_stm (stm : Fuzz.Subject.Statement.t) :
+        Fuzz.Subject.Statement.t Or_error.t =
+      Bm.bmap stm ~prim:(not_an_if stm) ~flow:(not_an_if stm)
+        ~if_stm:(Fn.compose Or_error.return invert_if)
+
+    let run (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
+        Fuzz.Subject.Test.t Fuzz.State.Monad.t =
+      Fuzz.State.Monad.Monadic.return
+        (Fuzz.Path_consumers.consume_with_flags test ~filter:path_filter
+           ~path:payload ~action:(Transform invert_stm))
+  end
+end
+
 module Surround = struct
   module type S =
     Fuzz.Action_types.S with type Payload.t = Fuzz.Payload_impl.Cond_pathed.t
@@ -46,8 +101,6 @@ module Surround = struct
     val path_filter : Fuzz.Path_filter.t
     (** [path_filter] should apply any extra requirements on path filters. *)
   end) : S = Fuzz.Action.Make_surround (struct
-    let checkable_path_filter = Basic.path_filter
-
     let path_filter _ = Basic.path_filter
 
     let name =
@@ -67,6 +120,10 @@ module Surround = struct
         Staged.unstage
           (Fuzz.Payload_impl.Cond_pathed.lift_cond_gen Basic.cond_gen)
     end
+
+    let recommendations (_ : Payload.t Fuzz.Payload_impl.Pathed.t) :
+        Common.Id.t list =
+      [Transform.Invert.name]
 
     let available : Fuzz.Availability.t =
       Fuzz.Availability.is_filter_constructible Basic.path_filter
@@ -136,58 +193,4 @@ module Surround = struct
 
     let path_filter : Fuzz.Path_filter.t = Fuzz.Path_filter.zero
   end)
-end
-
-module Transform = struct
-  module type S =
-    Fuzz.Action_types.S with type Payload.t = Fuzz.Path.Flagged.t
-
-  module Invert : S = struct
-    let name = prefix_name Common.Id.("transform" @: "invert" @: empty)
-
-    let readme () =
-      Act_utils.My_string.format_for_readme
-        {| Flips the conditional and branches of an if statement. |}
-
-    let path_filter : Fuzz.Path_filter.t =
-      Fuzz.Path_filter.(require_end_check (Stm_class (Is, [If])))
-
-    let available : Fuzz.Availability.t =
-      Fuzz.Availability.is_filter_constructible path_filter ~kind:Transform
-
-    module Payload = struct
-      type t = Fuzz.Path.Flagged.t [@@deriving sexp]
-
-      let gen : Fuzz.Path.Flagged.t Fuzz.Payload_gen.t =
-        Fuzz.Payload_gen.path_with_flags Transform ~filter:path_filter
-    end
-
-    let invert_if ({cond; t_branch; f_branch} : Fuzz.Subject.Statement.If.t)
-        : Fuzz.Subject.Statement.If.t =
-      Fir.If.make
-        ~cond:(Fir.Expression.l_not cond)
-        ~t_branch:f_branch (* intentional inversion *) ~f_branch:t_branch
-
-    (* as above *)
-
-    let not_an_if (type leg) (stm : Fuzz.Subject.Statement.t) (_ : leg) :
-        leg Or_error.t =
-      Or_error.error_s
-        [%message
-          "Tried to if-invert an invalid statement"
-            ~stm:(stm : Fuzz.Subject.Statement.t)]
-
-    module Bm = Fir.Statement_traverse.Base_map (Or_error)
-
-    let invert_stm (stm : Fuzz.Subject.Statement.t) :
-        Fuzz.Subject.Statement.t Or_error.t =
-      Bm.bmap stm ~prim:(not_an_if stm) ~flow:(not_an_if stm)
-        ~if_stm:(Fn.compose Or_error.return invert_if)
-
-    let run (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
-        Fuzz.Subject.Test.t Fuzz.State.Monad.t =
-      Fuzz.State.Monad.Monadic.return
-        (Fuzz.Path_consumers.consume_with_flags test ~filter:path_filter
-           ~path:payload ~action:(Transform invert_stm))
-  end
 end

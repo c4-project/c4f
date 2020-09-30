@@ -24,8 +24,8 @@ module Insert = struct
     let name =
       prefix_name Common.Id.("insert" @: "while" @: "false" @: empty)
 
-    let readme () : string =
-      Act_utils.My_string.format_for_readme
+    let readme : string Lazy.t =
+      lazy
         {| Inserts an empty while loop whose condition is known to be false,
         and whose body is marked as dead-code for future actions. |}
 
@@ -49,6 +49,12 @@ module Insert = struct
 
       let gen = Fuzz.Payload_impl.Pathed.gen Insert path_filter gen'
     end
+
+    let recommendations (_ : Fuzz.Payload_impl.Cond_pathed.t) :
+        Common.Id.t list =
+      (* No point introducing dead-code actions if we're introducing dead
+         code. *)
+      []
 
     let make_while (to_insert : Fir.Expression.t) : Fuzz.Subject.Statement.t
         =
@@ -87,6 +93,9 @@ module Surround = struct
     val path_filter : Fuzz.Path_filter.t
     (** [path_filter ctx] generates the filter for the loop path. *)
 
+    val recommendations : Fuzz.Payload_impl.Cond_pathed.t -> Common.Id.t list
+    (** [recommendations p] gets the action recommendations given [p]. *)
+
     val cond_gen : Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t
     (** [cond_gen] generates the conditional for the loop. *)
   end) : S = Fuzz.Action.Make_surround (struct
@@ -101,7 +110,7 @@ module Surround = struct
 
     let path_filter _ = Basic.path_filter
 
-    let checkable_path_filter = Basic.path_filter
+    let recommendations = Basic.recommendations
 
     let available : Fuzz.Availability.t =
       Fuzz.Availability.(
@@ -147,6 +156,10 @@ module Surround = struct
 
     let path_filter : Fuzz.Path_filter.t =
       Fuzz.Path_filter.live_loop_surround
+
+    let recommendations (_ : Fuzz.Payload_impl.Cond_pathed.t) :
+        Common.Id.t list =
+      [Flow_dead.Insert.Early_out_loop_end.name]
   end)
 
   module Do_dead : S = Make (struct
@@ -166,6 +179,12 @@ module Surround = struct
 
     let path_filter : Fuzz.Path_filter.t =
       Fuzz.Path_filter.require_flag In_dead_code
+
+    let recommendations (_ : Fuzz.Payload_impl.Cond_pathed.t) :
+        Common.Id.t list =
+      (* No point introducing dead-code actions if we're surrounding dead
+         code. *)
+      []
   end)
 
   module Dead : S = Make (struct
@@ -185,5 +204,11 @@ module Surround = struct
 
     let path_filter : Fuzz.Path_filter.t =
       Fuzz.Path_filter.require_flag In_dead_code
+
+    let recommendations (_ : Fuzz.Payload_impl.Cond_pathed.t) :
+        Common.Id.t list =
+      (* No point introducing dead-code actions if we're surrounding dead
+         code. *)
+      []
   end)
 end

@@ -200,8 +200,8 @@ module Insert = struct
        reliable used as such. *)
     let name = prefix_name Common.Id.("kv-never" @: empty)
 
-    let readme () : string =
-      Act_utils.My_string.format_for_readme
+    let readme : string Lazy.t =
+      lazy
         {| Introduces a loop that initialises its
       (fresh) counter to the known value of an existing variable and
       compares it in such a way as to be dead-code. |}
@@ -217,6 +217,11 @@ module Insert = struct
       let gen =
         Fuzz.Payload_impl.Pathed.gen Insert path_filter Payload.Kv.gen
     end
+
+    let recommendations (_ : Payload.t) : Common.Id.t list =
+      (* No point introducing dead-code actions if we're introducing dead
+         code. *)
+      []
 
     let make_for (payload : Pd.Kv.t) : Fuzz.Subject.Statement.t =
       (* Comparing a var against its known value using < or >. *)
@@ -257,12 +262,10 @@ module Surround = struct
         upwards to a random, small, constant value.  This action does not
         surround non-generated or loop-unsafe statements. |}
 
-    let checkable_path_filter =
+    let path_filter (_ : Fuzz.State.t) =
       Fuzz.Path_filter.(
         live_loop_surround
         + require_end_check (Stm_no_meta_restriction Once_only))
-
-    let path_filter (_ : Fuzz.State.t) = checkable_path_filter
 
     let available : Fuzz.Availability.t =
       Fuzz.Availability.(
@@ -285,6 +288,10 @@ module Surround = struct
           in
           {Payload.Simple.lc; up_to= Int up_to})
     end
+
+    let recommendations (_ : Payload.t Fuzz.Payload_impl.Pathed.t) :
+        Common.Id.t list =
+      [Flow_dead.Insert.Early_out_loop_end.name]
 
     let run_pre (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
@@ -319,11 +326,13 @@ module Surround = struct
 
     let path_filter = kv_live_path_filter
 
-    let checkable_path_filter = kv_live_path_filter_static
-
     let available = kv_available Transform_list
 
     module Payload = Payload.Kv
+
+    let recommendations (_ : Payload.t Fuzz.Payload_impl.Pathed.t) :
+        Common.Id.t list =
+      [Flow_dead.Insert.Early_out_loop_end.name]
 
     let run_pre (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =

@@ -68,8 +68,8 @@ module Insert = struct
   module Early_out : Early_out_payload.S_action = struct
     let name = prefix_name Common.Id.("early-out" @: empty)
 
-    let readme () =
-      Act_utils.My_string.format_for_readme
+    let readme =
+      lazy
         {| Inserts a valid 'early-out' statement (break, continue, or return)
            into a random dead-code location. |}
 
@@ -96,6 +96,8 @@ module Insert = struct
             Fuzz.Payload_gen.return None)
     end
 
+    let recommendations (_ : Payload.t) : Common.Id.t list = []
+
     (* In generation, we pick the path first and then work out which
        early-out to apply; when checking the path, we go backwards and assert
        that the path must meet the filtering needs of the early-out. *)
@@ -120,8 +122,8 @@ module Insert = struct
       Fuzz.Path_filter.(
         ends_in_block (Flow (Some (Loop None))) + anchor Bottom)
 
-    let readme () =
-      Act_utils.My_string.format_for_readme
+    let readme =
+      lazy
         {| Inserts a continue (or break, if semantically appropriate) onto the
            end of a loop, and marks the area afterwards as dead code. |}
 
@@ -167,6 +169,8 @@ module Insert = struct
         Early_out_payload.gen path_filter kind_pred gen_cond
     end
 
+    let recommendations (_ : Payload.t) : Common.Id.t list = []
+
     (* As with Early_out, we're working backwards here! *)
 
     let kind_filter (kind : Fir.Early_out.t) : Fuzz.Path_filter.t =
@@ -201,8 +205,8 @@ module Insert = struct
       with type Payload.t = Common.C_id.t Fuzz.Payload_impl.Pathed.t = struct
     let name = goto_name
 
-    let readme () : string =
-      Act_utils.My_string.format_for_readme
+    let readme : string Lazy.t =
+      lazy
         {|
         Inserts a jump to a random thread-local label inside a dead-code block.
 
@@ -242,6 +246,8 @@ module Insert = struct
 
       let gen = Fuzz.Payload_impl.Pathed.gen Insert path_filter gen'
     end
+
+    let recommendations (_ : Payload.t) : Common.Id.t list = []
 
     let available : Fuzz.Availability.t =
       Fuzz.Availability.(

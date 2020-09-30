@@ -104,53 +104,7 @@ end) : sig
 end
 
 (** Makes a surrounding action. *)
-module Make_surround (Basic : sig
-  val name : Act_common.Id.t
-  (** [name] is the full name of the surround action. *)
-
-  val surround_with : string
-  (** [surround_with] is a phrase that specifies with what construct we're
-      surrounding the statements. *)
-
-  val readme_suffix : string
-  (** [readme_suffix] gives a suffix to append onto the readme; this can be
-      the empty string. *)
-
-  val available : Availability.t
-  (** [available] is the availability check for this action. It is required
-      because, while many surround actions need only the existence of a
-      thread, some have more complex needs. *)
-
-  val path_filter : State.t -> Path_filter.t
-  (** [path_filter ctx] gets the path filter for this action, modulo the
-      availability context [ctx]. *)
-
-  val checkable_path_filter : Path_filter.t
-  (** [checkable_path_filter] gets the subset of {!path_filter} that can be
-      checked without an availability context. This is a stopgap until the
-      fuzzer state monad is able to check the full filter. *)
-
-  module Payload : sig
-    type t [@@deriving sexp]
-
-    val gen : Path.Flagged.t -> t Payload_gen.t
-    (** [gen path] should generate an inner payload using [path]. *)
-
-    val src_exprs : t -> Act_fir.Expression.t list
-    (** [src_exprs pld] gets the list of source expressions, if any, from
-        [pld]. These are flagged as having dependencies. *)
-  end
-
-  val run_pre :
-    Subject.Test.t -> payload:Payload.t -> Subject.Test.t State.Monad.t
-  (** [run_pre test ~payload] performs any actions required before wrapping;
-      for instance, declaring new variables. *)
-
-  val wrap :
-    Subject.Statement.t list -> payload:Payload.t -> Subject.Statement.t
-  (** [wrap stms ~payload] surrounds [stms] in the construct induced by
-      [payload]. *)
-end) :
+module Make_surround (Basic : Action_types.Basic_surround) :
   Action_types.S with type Payload.t = Basic.Payload.t Payload_impl.Pathed.t
 
 (** An action that does absolutely nothing. *)

@@ -69,9 +69,10 @@ struct
     @ [ Printf.sprintf "This operation generates '%s's."
           (Fir.Type.Basic.to_string B.dst_type) ]
 
-  let readme () =
-    readme_chunks () |> String.concat ~sep:"\n\n"
-    |> Act_utils.My_string.format_for_readme
+  let readme =
+    lazy
+      ( readme_chunks () |> String.concat ~sep:"\n\n"
+      |> Act_utils.My_string.format_for_readme )
 
   let src_env (vars : Fuzz.Var.Map.t) ~(tid : int) : Fir.Env.t =
     let predicates = Lazy.force basic_src_restrictions in
@@ -180,6 +181,8 @@ struct
 
     let gen = Fuzz.Payload_impl.Pathed.gen Insert path_filter gen'
   end
+
+  let recommendations (_ : Payload.t) = [] (* for now *)
 
   let available : Fuzz.Availability.t =
     (* The path filter requires the path to be in a thread that has access to
