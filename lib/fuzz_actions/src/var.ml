@@ -51,8 +51,8 @@ module Make : Fuzz.Action_types.S with type Payload.t = Make_payload.t =
 struct
   let name = Common.Id.("var" @: "make" @: empty)
 
-  let readme () =
-    Act_utils.My_string.format_for_readme
+  let readme =
+    lazy
       {|
     Generates a new variable, with a random name, initial value,
     and primitive type.
@@ -88,6 +88,15 @@ struct
           lift_quickcheck (generator vars ~gen_scope)))
   end
 
+  let recommendations ({basic_type; _} : Payload.t) : Common.Id.t list =
+    match Fir.Type.Basic.prim basic_type with
+    | Bool ->
+        [] (* for now *)
+    | Int ->
+        if Fir.Type.Basic.is_atomic basic_type then
+          [Atomic_store.Insert.Int_redundant.name]
+        else [Var_assign.Insert.Int_redundant.name]
+
   let available : Fuzz.Availability.t = Fuzz.Availability.has_threads
 
   let run (subject : Fuzz.Subject.Test.t)
@@ -103,9 +112,8 @@ module Volatile :
   Fuzz.Action_types.S with type Payload.t = Common.Litmus_id.t = struct
   let name = Common.Id.("var" @: "volatile" @: empty)
 
-  let readme () =
-    Act_utils.My_string.format_for_readme
-      {|
+  let readme =
+    lazy {|
     Adds the 'volatile' qualifier to a local variable.
     |}
 
@@ -132,6 +140,8 @@ module Volatile :
     let gen : t Fuzz.Payload_gen.t =
       Fuzz.Payload_gen.(vars >>| gen_on_vars >>= lift_quickcheck)
   end
+
+  let recommendations (_ : Payload.t) : Common.Id.t list = []
 
   let available : Fuzz.Availability.t =
     Fuzz.Availability.has_variables ~predicates:[is_viable]
