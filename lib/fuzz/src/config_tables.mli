@@ -38,6 +38,11 @@ val wrap_early_out_flag : Common.Id.t
     early-out actions should wrap their early-outs in an 'if true', to
     confuse the compiler a little. This flag is usually stochastic. *)
 
+val take_recommendation_flag : Common.Id.t
+(** [take_recommendation_flag] names the flag that decides whether the
+    randomised fuzzer runner picks actions from the recommendation queue over
+    those in its weighted deck. This flag is usually stochastic. *)
+
 (** {2 Unsafe flags} *)
 
 val unsafe_weaken_orders_flag : Common.Id.t

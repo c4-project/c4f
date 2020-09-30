@@ -84,7 +84,7 @@ let available (module A : Fuzz.Action_types.S)
       >>= fun ctx -> return_err (Fuzz.Availability.M.run A.available ~ctx)))
 
 let pick (pool : Action_pool.t) :
-    (Action_pool.t * (module Fuzz.Action_types.S)) Runner_state.Monad.t =
+    ((module Fuzz.Action_types.S) * Action_pool.t) Runner_state.Monad.t =
   Runner_state.Monad.(
     Let_syntax.(
       let%bind random = peek Runner_state.random in
@@ -93,7 +93,8 @@ let pick (pool : Action_pool.t) :
 let rec pick_loop (pool : Action_pool.t) ~(subject : Fuzz.Subject.Test.t) :
     (module Fuzz.Action_types.S) Runner_state.Monad.t =
   Runner_state.Monad.Let_syntax.(
-    let%bind pool', action = pick pool in
+    (* TODO(@MattWindsor91): keep pool in monad, reset it *)
+    let%bind action, pool' = pick pool in
     if%bind available action ~subject then return action
     else pick_loop pool' ~subject)
 
@@ -158,8 +159,12 @@ let make_runner_state (seed : int option) (config : Config.t) :
   let random = make_rng seed in
   let trace = Fuzz.Trace.empty in
   Or_error.Let_syntax.(
-    let%map pool = Config.make_pool config in
     let params = Config.make_param_map config in
+    let%bind queue_flag =
+      Fuzz.Param_map.get_flag params
+        ~id:Fuzz.Config_tables.take_recommendation_flag
+    in
+    let%map pool = Config.make_pool config ~queue_flag in
     {Runner_state.random; trace; pool; params})
 
 let make_output (rstate : Runner_state.t) (subject : Fuzz.Subject.Test.t) :

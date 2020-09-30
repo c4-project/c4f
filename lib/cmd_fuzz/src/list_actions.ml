@@ -28,7 +28,7 @@ let list_fuzzer_actions_readme () : string =
     |}
 
 let summaries_of_config (cfg : Act_config.Global.t) :
-    Act_fuzz.Action.Summary.t Map.M(Ac.Id).t Or_error.t =
+    Act_fuzz.Action.Summary.t Map.M(Ac.Id).t =
   cfg |> Act_config.Global.fuzz |> Act_fuzz_run.Config.summarise
 
 let print (o : Ac.Output.t) (map : Act_fuzz.Action.Summary.t Map.M(Ac.Id).t)
@@ -41,7 +41,7 @@ let print (o : Ac.Output.t) (map : Act_fuzz.Action.Summary.t Map.M(Ac.Id).t)
 
 let run_list_fuzzer_actions (o : Ac.Output.t) (cfg : Act_config.Global.t) :
     unit Or_error.t =
-  Or_error.(cfg |> summaries_of_config >>| print o)
+  Ok (cfg |> summaries_of_config |> print o)
 
 let command : Command.t =
   Command.basic ~summary:"output the current fuzzer weight table"

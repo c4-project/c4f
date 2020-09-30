@@ -52,11 +52,12 @@ val make_param_map : t -> Fuzz.Param_map.t
 
 (** {2 Actions on a fuzzer configuration} *)
 
-val make_pool : t -> Action_pool.t Or_error.t
-(** [make_pool config] tries to create the weighted action pool given the
-    weights in [config]. This pool can then be queried for weight information
-    or used to drive a random fuzzer session. *)
+val make_pool : t -> queue_flag:Fuzz.Flag.t -> Action_pool.t Or_error.t
+(** [make_pool config ~queue_flag] tries to create the weighted action pool
+    given the weights in [config]. This pool can then be queried for weight
+    information or used to drive a random fuzzer session. [queue_flag] should
+    be taken from a previous call to {!make_param_map}. *)
 
-val summarise : t -> Fuzz.Action.Summary.t Map.M(Common.Id).t Or_error.t
-(** [summarise config] tries to get the effective fuzzer weights setup using
-    the weighting information in [config]. *)
+val summarise : t -> Fuzz.Action.Summary.t Map.M(Common.Id).t
+(** [summarise config] gets the effective fuzzer weights setup using the
+    weighting information in [config]. *)

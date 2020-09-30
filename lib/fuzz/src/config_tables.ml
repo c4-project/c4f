@@ -24,6 +24,9 @@ let make_global_flag : Common.Id.t =
 let wrap_early_out_flag : Common.Id.t =
   Common.Id.("flow" @: "dead" @: "early-out-loop-end" @: "wrap" @: empty)
 
+let take_recommendation_flag : Common.Id.t =
+  Common.Id.("action" @: "take-recommendation" @: empty)
+
 let make_param_spec_map (xs : (Common.Id.t, 'a Param_spec.t) List.Assoc.t) :
     'a Param_spec.t Map.M(Common.Id).t =
   xs |> Map.of_alist_exn (module Common.Id)
@@ -89,4 +92,21 @@ let flag_map : Param_spec.Bool.t Map.M(Common.Id).t Lazy.t =
 
                To permit both possibilities, this should be an inexact flag.
 |}
+         )
+       ; ( take_recommendation_flag
+         , Param_spec.make
+             ~default:(Or_error.ok_exn (Flag.try_make ~wins:1 ~losses:2))
+             ~description:
+               {|
+             If 'true', then whenever there is an action at the front of the
+             fuzzer's recommended actions queue, it will pick that action
+             instead of making a weighted choice from the action deck.
+
+             The fuzzer will always pick from the deck if no recommendations
+             are available in the queue, regardless of the value of this flag.
+
+             Making this flag inexact, as it is by default, means that the
+             fuzzer will sometimes pick from the queue and sometimes pick from
+             the deck.
+             |}
          ) ])

@@ -5,6 +5,7 @@
  (public_name act.fuzz_run)
  (synopsis "Automagic Compiler Tormentor: FIR fuzzer runner")
  (preprocess
-  (pps ppx_deriving.std ppx_jane))
- (libraries sexplib0 base stdio splittable_random fmt travesty plumbing
-   act.utils act.common act.fir act.litmus_c act.fuzz act.fuzz_actions))
+  (pps ppx_deriving.std ppx_accessor ppx_jane))
+ (libraries sexplib0 base core_kernel stdio splittable_random accessor
+   accessor_base fmt travesty plumbing act.utils act.common act.fir
+   act.litmus_c act.fuzz act.fuzz_actions))

@@ -10,7 +10,7 @@
    project root for more information. *)
 
 open Core_kernel
-module Tx = Travesty_base_exts
+module Accessor = Accessor_base
 
 module Weight = struct
   include Validated.Make (struct
@@ -41,26 +41,13 @@ module Weight = struct
 end
 
 module Row = struct
-  type 'a t = {item: 'a; weight: Weight.t} [@@deriving sexp_of, fields]
+  type 'a t = {item: 'a; weight: Weight.t} [@@deriving accessors, sexp_of]
 
   let adjust_weight (row : 'a t) ~(f : 'a -> int -> int) : 'a t Or_error.t =
     let open Or_error.Let_syntax in
     let raw_weight' = f row.item (Weight.raw row.weight) in
     let%map weight' = Weight.create raw_weight' in
     {row with weight= weight'}
-
-  module On_monad (M : sig
-    include Monad.S
-
-    val lift : 'a Or_error.t -> 'a t
-  end) =
-  struct
-    let adjust_weight_m (row : 'a t) ~(f : 'a -> int -> int M.t) : 'a t M.t =
-      let open M.Let_syntax in
-      let%bind raw_weight' = f row.item (Weight.raw row.weight) in
-      let%map weight' = M.lift (Weight.create raw_weight') in
-      {row with weight= weight'}
-  end
 
   module Qc : Quickcheck.S1 with type 'a t := 'a t = struct
     module G = Quickcheck.Generator
@@ -89,9 +76,9 @@ end
 type 'a t = 'a Row.t list [@@deriving sexp_of]
 
 let from_alist_row ((item, raw_weight) : 'a * int) : 'a Row.t Or_error.t =
-  let open Or_error.Let_syntax in
-  let%map weight = Weight.create raw_weight in
-  {Row.item; weight}
+  Or_error.Let_syntax.(
+    let%map weight = Weight.create raw_weight in
+    {Row.item; weight})
 
 let from_alist : ('a, int) List.Assoc.t -> 'a t Or_error.t = function
   | [] ->
@@ -99,27 +86,8 @@ let from_alist : ('a, int) List.Assoc.t -> 'a t Or_error.t = function
   | alist ->
       alist |> List.map ~f:from_alist_row |> Or_error.combine_errors
 
-let from_alist_exn (alist : ('a, int) List.Assoc.t) : 'a t =
-  Or_error.ok_exn (from_alist alist)
-
 let adjust_weights (wl : 'a t) ~(f : 'a -> int -> int) : 'a t Or_error.t =
   wl |> List.map ~f:(Row.adjust_weight ~f) |> Or_error.combine_errors
-
-let adjust_weights_exn (wl : 'a t) ~(f : 'a -> int -> int) : 'a t =
-  Or_error.ok_exn (adjust_weights wl ~f)
-
-module On_monad (M : sig
-  include Monad.S
-
-  val lift : 'a Or_error.t -> 'a t
-end) =
-struct
-  module L = Tx.List.On_monad (M)
-  module R = Row.On_monad (M)
-
-  let adjust_weights_m (wl : 'a t) ~(f : 'a -> int -> int M.t) : 'a t M.t =
-    L.map_m wl ~f:(R.adjust_weight_m ~f)
-end
 
 module Cumulative = struct
   type 'a w = 'a t
@@ -152,7 +120,7 @@ module Cumulative = struct
       List.drop_while cl.rows ~f:(fun {weight; _} ->
           Weight.raw weight < position)
     in
-    Row.item (List.hd_exn possible)
+    (List.hd_exn possible).item
 
   let sample (cl : 'a t) ~(random : Splittable_random.State.t) : 'a =
     let position = Splittable_random.int random ~lo:0 ~hi:cl.max in
@@ -168,6 +136,9 @@ let sample_exn (wl : 'a t) ~(random : Splittable_random.State.t) : 'a =
 
 let sample_gen_exn (wl : 'a t) : 'a Quickcheck.Generator.t =
   Quickcheck.Generator.create (fun ~size -> ignore size ; sample_exn wl)
+
+let find (wl : 'a t) ~(f : 'a -> bool) : 'a option =
+  Accessor.(find (List.each @> Row.item)) wl ~f
 
 let fold (wl : 'a t) ~(f : 'b -> 'a -> int -> 'b) : init:'b -> 'b =
   List.fold wl ~f:(fun acc {item; weight} -> f acc item (Weight.raw weight))
