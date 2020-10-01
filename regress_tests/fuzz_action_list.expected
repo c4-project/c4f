@@ -10,7 +10,7 @@ action.cap.upper:
     Caps the number of action passes that the fuzzer will run, including any
     extra actions.
 action.pick-extra:
-  Value: 9:1
+  Value: 100:1
   Summary:
     Checked every time the fuzzer considers taking an additional action
     (between action.cap.lower and action.cap.upper. If 'true', the fuzzer

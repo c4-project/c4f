@@ -57,3 +57,30 @@ let get (x : t) ~(id : Common.Id.t) : Value.t Or_error.t =
     find_ok
       [ (get_flag x ~id >>| fun x -> Value.Flag x)
       ; (get_param x ~id >>| fun x -> Value.Param x) ])
+
+let rec calc_action_cap (lower : int) (upper : int) (flag : Flag.t)
+    ~(random : Splittable_random.State.t) : int =
+  if upper <= lower || not (Flag.eval flag ~random) then lower
+  else calc_action_cap (lower + 1) upper flag ~random
+
+let get_action_cap (x : t) ~(random : Splittable_random.State.t) :
+    int Or_error.t =
+  Or_error.Let_syntax.(
+    let%bind flag = get_flag x ~id:Config_tables.extra_action_flag in
+    let%bind lower = get_param x ~id:Config_tables.action_cap_lower_param in
+    let%bind upper = get_param x ~id:Config_tables.action_cap_upper_param in
+    if upper < lower then
+      Or_error.error_s
+        [%message
+          "Upper action cap is below lower action cap"
+            ~upper:(upper : int)
+            ~lower:(lower : int)]
+    else
+      Ok
+        ( match Flag.to_exact_opt flag with
+        | Some true ->
+            upper (* Always pick every extra action *)
+        | Some false ->
+            lower (* Never pick any extra action *)
+        | None ->
+            calc_action_cap lower upper flag ~random ))

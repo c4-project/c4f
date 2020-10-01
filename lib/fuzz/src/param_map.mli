@@ -50,4 +50,9 @@ val get_flag : t -> id:Common.Id.t -> Flag.t Or_error.t
     fails if no such flag exists. The flag returned will need a random number
     generator to evaluate into a boolean. *)
 
+val get_action_cap : t -> random:Splittable_random.State.t -> int Or_error.t
+(** [get_action_cap map ~random] randomly chooses the number of actions that
+    an instance of the randomised fuzzer runner should generate, given the
+    caps and extra flag distribution in [map] and the randomiser [random]. *)
+
 (** See {!Config_tables} for well-known param and flag IDs. *)

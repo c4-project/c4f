@@ -118,7 +118,7 @@ let flag_map : Param_spec.Bool.t Map.M(Common.Id).t Lazy.t =
          )
        ; ( extra_action_flag
          , Param_spec.make
-             ~default:(Or_error.ok_exn (Flag.try_make ~wins:9 ~losses:1))
+             ~default:(Or_error.ok_exn (Flag.try_make ~wins:100 ~losses:1))
              ~description:
                (String.concat
                   [ {|

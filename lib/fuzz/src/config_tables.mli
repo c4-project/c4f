@@ -54,6 +54,12 @@ val wrap_early_out_flag : Common.Id.t
     early-out actions should wrap their early-outs in an 'if true', to
     confuse the compiler a little. This flag is usually stochastic. *)
 
+val extra_action_flag : Common.Id.t
+(** [extra_action_flag] names the flag that decides, each time the randomised
+    fuzzer runner considers picking an extra action, whether it does so or
+    gives up. This flag is usually stochastic, so as to form a sort-of
+    geometric distribution. *)
+
 val take_recommendation_flag : Common.Id.t
 (** [take_recommendation_flag] names the flag that decides whether the
     randomised fuzzer runner picks actions from the recommendation queue over

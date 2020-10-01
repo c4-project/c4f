@@ -172,10 +172,9 @@ let get_cap () : int Runner_state.Monad.t =
   Runner_state.(
     Monad.(
       Let_syntax.(
-        let%bind param_map = peek (fun x -> x.params) in
-        return_err
-          (Fuzz.Param_map.get_param param_map
-             ~id:Fuzz.Config_tables.action_cap_lower_param))))
+        let%bind random = peek_acc random in
+        let%bind params = peek_acc params in
+        return_err (Fuzz.Param_map.get_action_cap params ~random))))
 
 let mutate_subject (subject : Fuzz.Subject.Test.t) :
     Fuzz.Subject.Test.t Runner_state.Monad.t =
