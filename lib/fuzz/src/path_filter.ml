@@ -236,8 +236,14 @@ let error_of_flags (flags : Set.M(Path_flag).t) ~(polarity : string) :
   flags |> Set.to_list
   |> Tx.Or_error.combine_map_unit ~f:(error_of_flag ~polarity)
 
-let is_thread_ok (filter : t) ~(thread : int) : bool =
-  Option.for_all ~f:(fun t -> Set.mem t thread) filter.threads
+let check_thread_ok ({threads; _} : t) ~(thread : int) : unit Or_error.t =
+  if Option.for_all ~f:(fun t -> Set.mem t thread) threads then Ok ()
+  else
+    Or_error.error_s
+      [%message
+        "Thread not allowed by filter"
+          ~thread:(thread : int)
+          ~allowed:(threads : Set.M(Int).t option)]
 
 let check_req (filter : t) ~(flags : Set.M(Path_flag).t) : unit Or_error.t =
   Or_error.Let_syntax.(

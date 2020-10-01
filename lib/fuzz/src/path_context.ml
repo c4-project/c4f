@@ -49,10 +49,7 @@ let check_filter_stms (x : 'k t) ~(stms : Subject.Statement.t list) :
 
 let check_thread_ok (x : _ t) ~(thread : int) : unit Or_error.t =
   (* TODO(@MattWindsor91): push error into Path_filter? *)
-  if Path_filter.is_thread_ok x.filter ~thread then Ok ()
-  else
-    Or_error.error_s
-      [%message "Thread not allowed by filter" ~thread:(thread : int)]
+  Path_filter.check_thread_ok x.filter ~thread
 
 let lift_path (x : 'k t) ~(path : 'p) : 'p Path_flag.Flagged.t =
   Path_flag.Flagged.make path ~flags:x.flags

@@ -108,19 +108,24 @@ let%test_module "recommendation queue" =
         [action2_id; action3_id] ;
       [%expect {| test1 |}]
 
-    let%expect_test "choice when there are recommendations, and we always accept and use them" =
+    let%expect_test "choice when there are recommendations, and we always \
+                     accept and use them" =
       test_choice ~acc:(Fuzz.Flag.exact true) ~use:(Fuzz.Flag.exact true) 3
         [action2_id; action3_id] ;
       [%expect {| test2, test3, test1 |}]
 
-    let%expect_test "choice when there are recommendations, and we sometimes don't accept them" =
-      test_choice ~use:(Fuzz.Flag.exact true) ~acc:(Or_error.ok_exn (Fuzz.Flag.try_make ~wins:1 ~losses:1)) 3
-        [action2_id; action3_id] ;
+    let%expect_test "choice when there are recommendations, and we \
+                     sometimes don't accept them" =
+      test_choice ~use:(Fuzz.Flag.exact true)
+        ~acc:(Or_error.ok_exn (Fuzz.Flag.try_make ~wins:1 ~losses:1))
+        3 [action2_id; action3_id] ;
       [%expect {| test2, test1, NONE |}]
 
-    let%expect_test "choice when there are recommendations, and we sometimes don't use them" =
-      test_choice ~acc:(Fuzz.Flag.exact true) ~use:(Or_error.ok_exn (Fuzz.Flag.try_make ~wins:1 ~losses:1)) 3
-        [action2_id; action3_id] ;
+    let%expect_test "choice when there are recommendations, and we \
+                     sometimes don't use them" =
+      test_choice ~acc:(Fuzz.Flag.exact true)
+        ~use:(Or_error.ok_exn (Fuzz.Flag.try_make ~wins:1 ~losses:1))
+        3 [action2_id; action3_id] ;
       [%expect {| test2, test1, test3 |}]
 
     let%expect_test "trying to take the same choice twice" =

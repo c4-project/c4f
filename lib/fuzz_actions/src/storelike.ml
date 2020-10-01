@@ -267,7 +267,10 @@ struct
     let path = payload.where in
     Fuzz.State.Monad.(
       Let_syntax.(
-        let%bind () = do_bookkeeping to_insert ~path in
+        (* This can't be moved after the bookkeeping stage; otherwise, the
+           assumptions the path filter makes about the variables used in the
+           cmpxchg will change and may make the filter overly restrictive. *)
         let%bind filter = peek path_filter in
+        let%bind () = do_bookkeeping to_insert ~path in
         Monadic.return (do_insertions subject ~path ~to_insert ~filter)))
 end

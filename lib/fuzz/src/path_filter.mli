@@ -134,8 +134,8 @@ val ends_in_block : Block.t -> t
     stages of path production and consumption; hence, there is no one 'check'
     function. *)
 
-val is_thread_ok : t -> thread:int -> bool
-(** [is_thread_ok filter ~thread] checks whether paths may descend through
+val check_thread_ok : t -> thread:int -> unit Or_error.t
+(** [check_thread_ok filter ~thread] checks whether paths may descend through
     thread [thread]. This check is done early in the path production process,
     to avoid spurious generation of large amounts of dead paths. *)
 
