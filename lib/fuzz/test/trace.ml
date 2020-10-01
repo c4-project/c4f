@@ -64,6 +64,7 @@ let example_trace : Src.Trace.t Lazy.t =
            ~action:(module Dummy_action)
            ~payload:{foo= 27; bar= true; baz= "hello"}
       |> add ~action:(module Another_dummy_action) ~payload:()
+      |> add ~action:(module Src.Action.Nop) ~payload:()
       |> add
            ~action:(module Dummy_action)
            ~payload:{foo= 53; bar= false; baz= "world"})
@@ -75,6 +76,7 @@ let%test_module "S-expression representation" =
       [%expect {| () |}]
 
     let%expect_test "example trace" =
+      (* The nop shouldn't turn up in the trace. *)
       print_s [%sexp (Lazy.force example_trace : Src.Trace.t)] ;
       [%expect
         {|

@@ -11,7 +11,9 @@
 
 open Core_kernel (* for Fqueue *)
 
-type elt = {name: Act_common.Id.t; payload: Sexp.t} [@@deriving sexp]
+open Import
+
+type elt = {name: Common.Id.t; payload: Sexp.t} [@@deriving sexp]
 
 module M = struct
   type t = elt Fqueue.t [@@deriving sexp]
@@ -23,13 +25,16 @@ include Plumbing.Storable.Of_sexpable (M)
 
 let empty : t = Fqueue.empty
 
+let do_not_add (name : Common.Id.t) : bool =
+  Common.Id.equal name Action.Nop.name
+
 let add (type p) (trace : t)
     ~(action : (module Action_types.S with type Payload.t = p))
     ~(payload : p) : t =
   let (module Action) = action in
   let name = Action.name in
-  let payload = Action.Payload.sexp_of_t payload in
-  Fqueue.enqueue trace {name; payload}
+  if do_not_add name then trace
+  else Fqueue.enqueue trace {name; payload= Action.Payload.sexp_of_t payload}
 
 type step =
   | Stop
@@ -37,7 +42,7 @@ type step =
   | Error of Error.t
 
 let resolve_step ({name; payload= payload_sexp} : elt)
-    ~(resolve : Act_common.Id.t -> (module Action_types.S) Or_error.t) :
+    ~(resolve : Common.Id.t -> (module Action_types.S) Or_error.t) :
     (Subject.Test.t -> Subject.Test.t State.Monad.t) Or_error.t =
   Or_error.Let_syntax.(
     let%bind (module Action) = resolve name in
@@ -47,8 +52,7 @@ let resolve_step ({name; payload= payload_sexp} : elt)
     Action.run ~payload)
 
 let run_step (trace : t)
-    ~(resolve : Act_common.Id.t -> (module Action_types.S) Or_error.t) : step
-    =
+    ~(resolve : Common.Id.t -> (module Action_types.S) Or_error.t) : step =
   match Fqueue.dequeue trace with
   | None ->
       Stop
@@ -60,7 +64,7 @@ let run_step (trace : t)
         Error e )
 
 let run (trace : t) (test : Subject.Test.t)
-    ~(resolve : Act_common.Id.t -> (module Action_types.S) Or_error.t) :
+    ~(resolve : Common.Id.t -> (module Action_types.S) Or_error.t) :
     Subject.Test.t State.Monad.t =
   State.Monad.Let_syntax.(
     let%map _, test' =

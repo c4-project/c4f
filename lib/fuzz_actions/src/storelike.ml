@@ -250,13 +250,13 @@ struct
         Accessor.construct Fir.Statement.prim {meta; value})
 
   let do_insertions (target : Fuzz.Subject.Test.t)
-      ~(path : Fuzz.Path.Flagged.t) ~(to_insert : B.t) ~(filter : Fuzz.Path_filter.t):
-      Fuzz.Subject.Test.t Or_error.t =
+      ~(path : Fuzz.Path.Flagged.t) ~(to_insert : B.t)
+      ~(filter : Fuzz.Path_filter.t) : Fuzz.Subject.Test.t Or_error.t =
     let tid = Fuzz.Path.tid path.path in
     let stms = to_stms_with_metadata to_insert path.flags in
     Or_error.(
       target
-      |> Fuzz.Path_consumers.consume_with_flags ~filter~path
+      |> Fuzz.Path_consumers.consume_with_flags ~filter ~path
            ~action:(Insert stms)
       >>= insert_vars ~new_locals:(B.new_locals to_insert) ~tid)
 
