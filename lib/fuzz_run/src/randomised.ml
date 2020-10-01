@@ -134,11 +134,12 @@ let add_recommendations (type p)
     (module Action : Fuzz.Action_types.S with type Payload.t = p)
     (payload : p) : unit Runner_state.Monad.t =
   let names = Action.recommendations payload in
-  Runner_state.Monad.Monadic.modify
-    (Fuzz.State.Monad.Acc.map Runner_state.pool
-       ~f:
-         (Fn.compose Fuzz.State.Monad.Monadic.return
-            (Action_pool.recommend ~names)))
+  Runner_state.Monad.Monadic.modify (fun m ->
+      let random = m.random in
+      Fuzz.State.Monad.Acc.map Runner_state.pool m
+        ~f:
+          (Fn.compose Fuzz.State.Monad.Monadic.return
+             (Action_pool.recommend ~names ~random)))
 
 let log_action (type p)
     (action : (module Fuzz.Action_types.S with type Payload.t = p))
@@ -196,11 +197,7 @@ let make_runner_state (seed : int option) (config : Config.t) :
   let trace = Fuzz.Trace.empty in
   Or_error.Let_syntax.(
     let params = Config.make_param_map config in
-    let%bind queue_flag =
-      Fuzz.Param_map.get_flag params
-        ~id:Fuzz.Config_tables.take_recommendation_flag
-    in
-    let%map pool = Config.make_pool config ~queue_flag in
+    let%map pool = Config.make_pool config params in
     {Runner_state.random; trace; pool; params})
 
 let make_output (rstate : Runner_state.t) (subject : Fuzz.Subject.Test.t) :

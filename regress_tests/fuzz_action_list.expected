@@ -18,7 +18,16 @@ action.pick-extra:
     
     This should usually be an inexact flag, to induce a geometric
     distribution on the number of extra actions.
-action.take-recommendation:
+action.recommendation.accept:
+  Value: 1:1
+  Summary:
+    When the fuzzer receives recommended actions from an action, it evaluates
+    this flag for each recommendation, and pushes the recommended action into
+    its recommendation queue if the flag is 'true'.
+    
+    Making this flag inexact, as it is by default, means that the fuzzer will
+    sometimes drop recommendations.
+action.recommendation.use:
   Value: 1:2
   Summary:
     If 'true', then whenever there is an action at the front of the fuzzer's

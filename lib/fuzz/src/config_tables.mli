@@ -60,8 +60,15 @@ val extra_action_flag : Common.Id.t
     gives up. This flag is usually stochastic, so as to form a sort-of
     geometric distribution. *)
 
-val take_recommendation_flag : Common.Id.t
-(** [take_recommendation_flag] names the flag that decides whether the
+(** {2 Recommendation queue} *)
+
+val accept_recommendation_flag : Common.Id.t
+(** [accept_recommendation_flag] names the flag that decides whether the
+    randomised fuzzer runner accepts action recommendations. This flag is
+    usually stochastic. *)
+
+val use_recommendation_flag : Common.Id.t
+(** [use_recommendation_flag] names the flag that decides whether the
     randomised fuzzer runner picks actions from the recommendation queue over
     those in its weighted deck. This flag is usually stochastic. *)
 

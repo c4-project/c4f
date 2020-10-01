@@ -34,10 +34,19 @@ let make_weight_alist (config : t) :
   let actions = Lazy.force Act_fuzz_actions.Table.actions in
   List.map ~f:(make_weight_pair config.weights) actions
 
-let make_pool (config : t) ~(queue_flag : Fuzz.Flag.t) :
+let make_pool (config : t) (params : Fuzz.Param_map.t) :
     Action_pool.t Or_error.t =
   let weights = make_weight_alist config in
-  Action_pool.of_weighted_actions weights ~queue_flag
+  Or_error.Let_syntax.(
+    let%bind accept_rec_flag =
+      Fuzz.Param_map.get_flag params
+        ~id:Fuzz.Config_tables.accept_recommendation_flag
+    in
+    let%bind use_rec_flag =
+      Fuzz.Param_map.get_flag params
+        ~id:Fuzz.Config_tables.use_recommendation_flag
+    in
+    Action_pool.of_weighted_actions weights ~accept_rec_flag ~use_rec_flag)
 
 let make_merged_param_map (type v)
     (specs : v Fuzz.Param_spec.t Map.M(Common.Id).t Lazy.t)

@@ -25,19 +25,27 @@ type t
 
 val of_weighted_actions :
      (Fuzz.Action.With_default_weight.t, int option) List.Assoc.t
-  -> queue_flag:Fuzz.Flag.t
+  -> accept_rec_flag:Fuzz.Flag.t
+  -> use_rec_flag:Fuzz.Flag.t
   -> t Or_error.t
-(** [of_weighted_actions actions ~queue_flag] tries to make a weighted action
-    pool from the action-to-weight association given in [actions], using
-    [queue_flag] to determine when to access the recommendation queue. *)
+(** [of_weighted_actions actions ~accept_rec_flag ~use_rec_flag] tries to
+    make a weighted action pool from the action-to-weight association given
+    in [actions], using [accept_rec_flag] to determine when to add to the
+    recommendation queue, and [use_rec_flag] to determine when to access the
+    recommendation queue. *)
 
 (** {1 Using pools} *)
 
-val recommend : t -> names:Common.Id.t list -> t Or_error.t
-(** [recommend pool ~names] enqueues the actions with names [names] into
-    [pool]'s recommendation queue. The actions are queued in order, so that
-    the first action is chosen first. The actions must have been in the
-    initial deck; otherwise, an error occurs. *)
+val recommend :
+     t
+  -> names:Common.Id.t list
+  -> random:Splittable_random.State.t
+  -> t Or_error.t
+(** [recommend pool ~names ~random] enqueues the actions with names [names]
+    into [pool]'s recommendation queue. The actions are queued in order, so
+    that the first action is chosen first. The actions must have been in the
+    initial deck; otherwise, an error occurs. Whether the pool accepts the
+    recommendations or not depends on [random] and the pool's accept flag. *)
 
 val pick :
      t

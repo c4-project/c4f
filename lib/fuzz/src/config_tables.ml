@@ -38,8 +38,11 @@ let wrap_early_out_flag : Common.Id.t =
 let extra_action_flag : Common.Id.t =
   Common.Id.("action" @: "pick-extra" @: empty)
 
-let take_recommendation_flag : Common.Id.t =
-  Common.Id.("action" @: "take-recommendation" @: empty)
+let accept_recommendation_flag : Common.Id.t =
+  Common.Id.("action" @: "recommendation" @: "accept" @: empty)
+
+let use_recommendation_flag : Common.Id.t =
+  Common.Id.("action" @: "recommendation" @: "use" @: empty)
 
 let make_param_spec_map (xs : (Common.Id.t, 'a Param_spec.t) List.Assoc.t) :
     'a Param_spec.t Map.M(Common.Id).t =
@@ -135,7 +138,21 @@ let flag_map : Param_spec.Bool.t Map.M(Common.Id).t Lazy.t =
             distribution on the number of extra actions.
             |}
                   ]) )
-       ; ( take_recommendation_flag
+       ; ( accept_recommendation_flag
+         , Param_spec.make
+             ~default:(Or_error.ok_exn (Flag.try_make ~wins:1 ~losses:1))
+             ~description:
+               {|
+             When the fuzzer receives recommended actions from an action,
+             it evaluates this flag for each recommendation, and pushes the
+             recommended action into its recommendation queue if the flag is
+             'true'.
+
+             Making this flag inexact, as it is by default, means that the
+             fuzzer will sometimes drop recommendations.
+             |}
+         )
+       ; ( use_recommendation_flag
          , Param_spec.make
              ~default:(Or_error.ok_exn (Flag.try_make ~wins:1 ~losses:2))
              ~description:

@@ -49,15 +49,22 @@ module Rec_queue = struct
     | None ->
         (None, rq)
 
-  let recommend (rq : t) ~(actions : Fuzz.Action.t list) : t =
-    List.fold_left actions ~init:rq ~f:Core_kernel.Fqueue.enqueue
+  let maybe_enqueue (q : t) (action : Fuzz.Action.t) ~(flag : Fuzz.Flag.t)
+      ~(random : Splittable_random.State.t) : t =
+    if Fuzz.Flag.eval flag ~random then Core_kernel.Fqueue.enqueue q action
+    else q
+
+  let recommend (rq : t) ~(actions : Fuzz.Action.t list)
+      ~(flag : Fuzz.Flag.t) ~(random : Splittable_random.State.t) : t =
+    List.fold_left actions ~init:rq ~f:(maybe_enqueue ~flag ~random)
 end
 
 type t =
   { deck: Deck.t
   ; original_deck: Deck.t
   ; rec_queue: Rec_queue.t
-  ; queue_flag: Fuzz.Flag.t }
+  ; accept_rec_flag: Fuzz.Flag.t
+  ; use_rec_flag: Fuzz.Flag.t }
 [@@deriving accessors]
 
 let reset (x : t) : t = {x with deck= x.original_deck}
@@ -80,27 +87,31 @@ let find_many_in_originals (pool : t) ~(names : Common.Id.t list) :
   Or_error.combine_errors
     (List.map names ~f:(fun name -> find_in_originals pool ~name))
 
-let recommend (x : t) ~(names : Common.Id.t list) : t Or_error.t =
+let recommend (x : t) ~(names : Common.Id.t list)
+    ~(random : Splittable_random.State.t) : t Or_error.t =
   Or_error.Let_syntax.(
     let%map actions = find_many_in_originals x ~names in
-    Accessor.map rec_queue x ~f:(Rec_queue.recommend ~actions))
+    Accessor.map rec_queue x
+      ~f:(Rec_queue.recommend ~actions ~flag:x.accept_rec_flag ~random))
 
 let of_weighted_actions
     (weighted_actions :
       (Fuzz.Action.With_default_weight.t, int option) List.Assoc.t)
-    ~(queue_flag : Fuzz.Flag.t) : t Or_error.t =
+    ~(accept_rec_flag : Fuzz.Flag.t) ~(use_rec_flag : Fuzz.Flag.t) :
+    t Or_error.t =
   Or_error.(
     Deck.of_weighted_actions weighted_actions
     >>| fun deck ->
     { deck
     ; original_deck= deck
-    ; queue_flag
+    ; accept_rec_flag
+    ; use_rec_flag
     ; rec_queue= Core_kernel.Fqueue.empty })
 
-let use_queue ({rec_queue; queue_flag; _} : t)
+let use_queue ({rec_queue; use_rec_flag; _} : t)
     ~(random : Splittable_random.State.t) : bool =
   (not (Core_kernel.Fqueue.is_empty rec_queue))
-  && Fuzz.Flag.eval queue_flag ~random
+  && Fuzz.Flag.eval use_rec_flag ~random
 
 let pick_without_remove (table : t) ~(random : Splittable_random.State.t) :
     Fuzz.Action.t option * t =
