@@ -15,6 +15,17 @@
 open Base
 open Import
 
+let action_cap_lower_param : Common.Id.t =
+  Common.Id.("action" @: "cap" @: "lower" @: empty)
+
+let action_cap_upper_param : Common.Id.t =
+  Common.Id.("action" @: "cap" @: "upper" @: empty)
+
+let thread_cap_param : Common.Id.t =
+  (* TODO(@MattWindsor91): this should be given a better name, but the tester
+     depends on it having this name. *)
+  Common.Id.("cap" @: "threads" @: empty)
+
 let unsafe_weaken_orders_flag : Common.Id.t =
   Common.Id.("mem" @: "unsafe-weaken-orders" @: empty)
 
@@ -23,6 +34,9 @@ let make_global_flag : Common.Id.t =
 
 let wrap_early_out_flag : Common.Id.t =
   Common.Id.("flow" @: "dead" @: "early-out-loop-end" @: "wrap" @: empty)
+
+let extra_action_flag : Common.Id.t =
+  Common.Id.("action" @: "pick-extra" @: empty)
 
 let take_recommendation_flag : Common.Id.t =
   Common.Id.("action" @: "take-recommendation" @: empty)
@@ -34,14 +48,23 @@ let make_param_spec_map (xs : (Common.Id.t, 'a Param_spec.t) List.Assoc.t) :
 let param_map : Param_spec.Int.t Map.M(Common.Id).t Lazy.t =
   lazy
     (make_param_spec_map
-       [ ( Common.Id.("cap" @: "actions" @: empty)
-         , Param_spec.make ~default:40
+       [ ( action_cap_lower_param
+         , Param_spec.make ~default:20
              ~description:
                {|
-              Caps the number of action passes that the fuzzer will run.
+              Sets the guaranteed number of action passes that the fuzzer will
+              run, before any extra actions.
             |}
          )
-       ; ( Common.Id.("cap" @: "threads" @: empty)
+       ; ( action_cap_upper_param
+         , Param_spec.make ~default:200
+             ~description:
+               {|
+              Caps the number of action passes that the fuzzer will run,
+              including any extra actions.
+            |}
+         )
+       ; ( thread_cap_param
          , Param_spec.make ~default:16
              ~description:
                {|
@@ -93,6 +116,25 @@ let flag_map : Param_spec.Bool.t Map.M(Common.Id).t Lazy.t =
                To permit both possibilities, this should be an inexact flag.
 |}
          )
+       ; ( extra_action_flag
+         , Param_spec.make
+             ~default:(Or_error.ok_exn (Flag.try_make ~wins:9 ~losses:1))
+             ~description:
+               (String.concat
+                  [ {|
+            Checked every time the fuzzer considers taking an additional
+            action (between |}
+                  ; Act_common.Id.to_string action_cap_lower_param
+                  ; " and "
+                  ; Act_common.Id.to_string action_cap_upper_param
+                  ; {|.
+            If 'true', the fuzzer will take the action; if false, it will
+            abandon doing so.
+
+            This should usually be an inexact flag, to induce a geometric
+            distribution on the number of extra actions.
+            |}
+                  ]) )
        ; ( take_recommendation_flag
          , Param_spec.make
              ~default:(Or_error.ok_exn (Flag.try_make ~wins:1 ~losses:2))

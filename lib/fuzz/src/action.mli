@@ -48,52 +48,6 @@ module With_default_weight : sig
   (** [name a] is shorthand for [A.name], where [A] is [action a]. *)
 end
 
-(** {1 Summaries of actions}
-
-    To build these summaries, see {!Pool.summarise} below. *)
-
-(** A summary of the weight assigned to an action in an action pool. *)
-module Adjusted_weight : sig
-  (** Type of adjusted weight summaries. *)
-  type t =
-    | Not_adjusted of int  (** The user hasn't overridden this weight. *)
-    | Adjusted of {original: int; actual: int}
-        (** The weight has changed from [original] to [actual]. *)
-
-  (** Adjusted weights may be pretty-printed. *)
-  include Pretty_printer.S with type t := t
-end
-
-(** A summary of a fuzzer action after weight adjustment. *)
-module Summary : sig
-  (** Opaque type of summaries. *)
-  type t
-
-  val make : weight:Adjusted_weight.t -> readme:string -> t
-  (** [make ~weight ~summary] makes a fuzzer action summary. *)
-
-  val of_action : ?user_weight:int -> With_default_weight.t -> t
-  (** [of_action ?user_weight ~action] makes a fuzzer action summary using an
-      action [action] and the given user weighting [user_weight]. *)
-
-  val weight : t -> Adjusted_weight.t
-  (** [weight summary] gets the final 'adjusted' weight of the action
-      described by [summary]. *)
-
-  val readme : t -> string
-  (** [readme summary] gets the README of the action described by [summary]. *)
-
-  (** Summaries may be pretty-printed. *)
-  include Pretty_printer.S with type t := t
-
-  val pp_map : t Map.M(Common.Id).t Fmt.t
-  (** [pp_map f map] pretty-prints a map of summaries [map] on formatter [f]. *)
-
-  val pp_map_terse : t Map.M(Common.Id).t Fmt.t
-  (** [pp_map_terse f map] is like {!pp_map}, but only prints names and
-      weights. *)
-end
-
 (** {1 Helpers for building actions} *)
 
 (** Makes a basic logging function for an action. *)

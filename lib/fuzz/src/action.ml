@@ -24,54 +24,6 @@ module With_default_weight = struct
   let name ({action= (module M); _} : t) : Common.Id.t = M.name
 end
 
-module Adjusted_weight = struct
-  type t = Not_adjusted of int | Adjusted of {original: int; actual: int}
-
-  let make ?(user_weight : int option) ~(default_weight : int) : t =
-    Option.value_map user_weight
-      ~f:(fun actual -> Adjusted {original= default_weight; actual})
-      ~default:(Not_adjusted default_weight)
-
-  let pp_weight (f : Formatter.t) : int -> unit =
-    Fmt.(
-      function
-      | 0 ->
-          styled (`Fg `Red) (any "disabled") f ()
-      | k ->
-          styled (`Fg `Green) (int ++ any "x") f k)
-
-  let pp (f : Formatter.t) : t -> unit = function
-    | Not_adjusted o ->
-        pp_weight f o
-    | Adjusted {original; actual} ->
-        Fmt.pf f "%a (normally %a)" pp_weight actual pp_weight original
-end
-
-module Summary = struct
-  type t = {weight: Adjusted_weight.t; readme: string}
-  [@@deriving fields, make]
-
-  let of_action ?(user_weight : int option)
-      ({action= (module M); default_weight} : With_default_weight.t) : t =
-    let weight = Adjusted_weight.make ~default_weight ?user_weight in
-    let readme = Utils.My_string.format_for_readme (Lazy.force M.readme) in
-    {weight; readme}
-
-  let pp (f : Formatter.t) ({weight; readme} : t) : unit =
-    Fmt.pf f "@[<v>@[Weight:@ %a@]@,@[<hv 2>Summary:@ @[%a@]@]@]"
-      Adjusted_weight.pp weight Fmt.paragraphs readme
-
-  let pp_map : t Map.M(Common.Id).t Fmt.t = Common.Id.pp_map pp
-
-  let pp_map_terse : t Map.M(Common.Id).t Fmt.t =
-    Fmt.(
-      using Map.to_alist
-        (list ~sep:sp
-           (hbox
-              (pair ~sep:(any ":@ ") Common.Id.pp
-                 (using (fun x -> x.weight) Adjusted_weight.pp)))))
-end
-
 module Make_surround (Basic : Action_types.Basic_surround) :
   Action_types.S with type Payload.t = Basic.Payload.t Payload_impl.Pathed.t =
 struct

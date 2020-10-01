@@ -1,3 +1,68 @@
+# Params
+action.cap.lower:
+  Value: 20
+  Summary:
+    Sets the guaranteed number of action passes that the fuzzer will run,
+    before any extra actions.
+action.cap.upper:
+  Value: 200
+  Summary:
+    Caps the number of action passes that the fuzzer will run, including any
+    extra actions.
+action.pick-extra:
+  Value: 9:1
+  Summary:
+    Checked every time the fuzzer considers taking an additional action
+    (between action.cap.lower and action.cap.upper. If 'true', the fuzzer
+    will take the action; if false, it will abandon doing so.
+    
+    This should usually be an inexact flag, to induce a geometric
+    distribution on the number of extra actions.
+action.take-recommendation:
+  Value: 1:2
+  Summary:
+    If 'true', then whenever there is an action at the front of the fuzzer's
+    recommended actions queue, it will pick that action instead of making a
+    weighted choice from the action deck.
+    
+    The fuzzer will always pick from the deck if no recommendations are
+    available in the queue, regardless of the value of this flag.
+    
+    Making this flag inexact, as it is by default, means that the fuzzer will
+    sometimes pick from the queue and sometimes pick from the deck.
+cap.threads:
+  Value: 16
+  Summary:
+    Caps the maximum number of threads that the fuzzer can construct during a
+    fuzz run.
+    
+    If the input to the fuzzer already has more threads than the cap, no more
+    threads will be created, but no threads will be removed to meet the
+    cap.
+    
+    If fuzzing to target Litmus7, the cap should be set as the number of
+    logical cores in the target machine.
+flow.dead.early-out-loop-end.wrap:
+  Value: 3:1
+  Summary:
+    If 'true', loop-end early-out actions wrap the early-out in a truthy if
+    statement; else, they emit the early-out directly.
+    
+    To permit both possibilities, this should be an inexact flag.
+mem.unsafe-weaken-orders:
+  Value: off
+  Summary:
+    If 'true', lets actions that would normally strengthen memory orders
+    weaken them too (possibly changing semantics in undesirable ways).
+var.make.global:
+  Value: 1:1
+  Summary:
+    If 'true', variable making actions generate global variables; else, they
+    generate local variables over the range of current threads.
+    
+    To permit both global and local variable generation, this should be an
+    inexact flag.
+# Weights
 atomic.cmpxchg.insert.int.succeed:
   Weight: 30x
   Summary:

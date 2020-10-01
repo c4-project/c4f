@@ -25,6 +25,22 @@ val flag_map : Param_spec.Bool.t Map.M(Common.Id).t Lazy.t
 (** [flag_map] lazily evaluates to a map from Boolean flag IDs to their
     specifications, including their default values. *)
 
+(** {1 Parameter keys} *)
+
+val action_cap_lower_param : Common.Id.t
+(** [action_cap_lower_param] names the parameter that specifies the number of
+    actions that should always be applied by the fuzzer, before considering
+    extra actions. *)
+
+val action_cap_upper_param : Common.Id.t
+(** [action_cap_upper_param] names the parameter that specifies the maximum
+    number of actions that should be applied by the fuzzer, including extra
+    actions. *)
+
+val thread_cap_param : Common.Id.t
+(** [thread_cap_param] names the parameter that specifies the maximum number
+    of threads that should exist in a fuzzed test. *)
+
 (** {1 Flag keys} *)
 
 val make_global_flag : Common.Id.t

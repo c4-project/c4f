@@ -17,7 +17,7 @@
 open Base
 
 (** Opaque type of flag values. *)
-type t [@@deriving sexp]
+type t [@@deriving sexp, equal]
 
 (** {1 Interface implementations} *)
 

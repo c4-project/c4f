@@ -58,6 +58,39 @@ val make_pool : t -> queue_flag:Fuzz.Flag.t -> Action_pool.t Or_error.t
     information or used to drive a random fuzzer session. [queue_flag] should
     be taken from a previous call to {!make_param_map}. *)
 
-val summarise : t -> Fuzz.Action.Summary.t Map.M(Common.Id).t
-(** [summarise config] gets the effective fuzzer weights setup using the
-    weighting information in [config]. *)
+(** {2 Making summaries} *)
+
+(** A summary of each action in the config, and its calculated weight. *)
+module Weight_summary : sig
+  type elt := t
+
+  type t = int Summary.t Map.M(Common.Id).t
+
+  val summarise : elt -> t
+  (** [summarise config] summarises the effective fuzzer weights setup using
+      the weighting information in [config]. *)
+
+  val pp : t Fmt.t
+  (** [pp] pretty-prints a weight summary verbosely. *)
+
+  val pp_terse : t Fmt.t
+  (** [pp] pretty-prints a weight summary tersely. *)
+end
+
+(** A summary of each parameter and flag in the config, and its calculated
+    value. *)
+module Param_summary : sig
+  type elt := t
+
+  type t = Fuzz.Param_map.Value.t Summary.t Map.M(Common.Id).t
+
+  val summarise : elt -> t Or_error.t
+  (** [summarise config] summarises the effective fuzzer weights setup using
+      the weighting information in [config]. *)
+
+  val pp : t Fmt.t
+  (** [pp] pretty-prints a param summary verbosely. *)
+
+  val pp_terse : t Fmt.t
+  (** [pp] pretty-prints a param summary tersely. *)
+end

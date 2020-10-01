@@ -29,4 +29,5 @@ let command : Command.t =
     ; ("license", Common_cmd.License.command)
     ; ("replay", Replay.command)
     ; ("run", Run.command)
-    ; ("list-actions", List_actions.command) ]
+    ; ("list-actions", List_actions.command)
+    ; ("list-params", List_params.command) ]

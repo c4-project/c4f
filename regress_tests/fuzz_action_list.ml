@@ -9,20 +9,32 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Lists the available fuzz actions, their default weights, and their names
-    and READMEs. Intended to track unwanted changes to the action pool. *)
+(** Lists the available fuzz actions, parameters and flags, and their default
+    values; intended to track unwanted changes to these tables. *)
 
 open Core
 
 (* TODO(@MattWindsor91): merge with `act-fuzz list_actions`? *)
 
+let weight_summary (c : Act_fuzz_run.Config.t) : unit Or_error.t =
+  Stdio.print_endline "# Weights" ;
+  let ws = Act_fuzz_run.Config.Weight_summary.summarise c in
+  Act_utils.My_format.fdump Stdio.stdout
+    Act_fuzz_run.Config.Weight_summary.pp ws ;
+  Ok ()
+
+let param_summary (c : Act_fuzz_run.Config.t) : unit Or_error.t =
+  Stdio.print_endline "# Params" ;
+  Or_error.Let_syntax.(
+    let%map ps = Act_fuzz_run.Config.Param_summary.summarise c in
+    Act_utils.My_format.fdump Stdio.stdout
+      Act_fuzz_run.Config.Param_summary.pp ps)
+
 let run (_test_dir : Fpath.t) : unit Or_error.t =
-  Ok
-    ( Act_fuzz_run.Config.(make () |> summarise)
-    |> Fmt.pr "@[<v>%a@]@." Act_fuzz.Action.Summary.pp_map )
+  let c = Act_fuzz_run.Config.make () in
+  Or_error.all_unit [weight_summary c; param_summary c]
 
 let command : Command.t =
-  Common.make_regress_command ~summary:"runs fuzz action list regressions"
-    run
+  Common.make_regress_command ~summary:"runs fuzz list regressions" run
 
 let () = Command.run command

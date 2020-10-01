@@ -10,11 +10,12 @@
    project root for more information. *)
 
 open Base
-open Base_quickcheck
+open Import
 open Stdio
-module Src = Act_fuzz
 
 module Dummy_payload = struct
+  open Base_quickcheck
+
   type t = {foo: int; bar: bool; baz: string} [@@deriving sexp, quickcheck]
 end
 

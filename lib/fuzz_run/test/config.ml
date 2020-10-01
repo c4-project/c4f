@@ -10,26 +10,46 @@
    project root for more information. *)
 
 open Base
+open Import
 
-open struct
-  module Src = Act_fuzz_run
-  module F = Act_fuzz
-end
-
-let%test_module "default param map" =
+let%test_module "Weight summaries" =
   ( module struct
-    let conf : Src.Config.t = Src.Config.make ()
+    let%expect_test "pp: example summary" =
+      let value =
+        Src.Summary.Adjusted.(Adjusted {original= 27; actual= 53})
+      in
+      let readme =
+        {|
+        Why, hello there!  This is an example README.
 
-    let map : F.Param_map.t = Src.Config.make_param_map conf
+        It is very long...
 
-    let pp_param : int Or_error.t Fmt.t =
-      Fmt.(result ~error:Error.pp ~ok:Int.pp)
+        ...and has line breaks and other such interesting things in it.
+        Hopefully, it'll be enough to be able to test that the action
+        summary pretty-printer does what it's supposed to.
 
-    let%expect_test "action cap is present" =
-      Fmt.pr "@[%a@]@." pp_param (F.Param_map.get_action_cap map) ;
-      [%expect {| 40 |}]
+        Be seeing you.
+      |}
+      in
+      let map =
+        Map.singleton
+          (module Common.Id)
+          (Common.Id.of_string "foo")
+          {Src.Summary.value; readme}
+      in
+      Fmt.pr "%a@." Src.Config.Weight_summary.pp map ;
+      [%expect
+        {|
+      foo:
+        Weight: 53x (normally 27x)
+        Summary:
+          Why, hello there! This is an example README.
 
-    let%expect_test "thread cap is present" =
-      Fmt.pr "@[%a@]@." pp_param (F.Param_map.get_thread_cap map) ;
-      [%expect {| 16 |}]
+          It is very long...
+
+          ...and has line breaks and other such interesting things in it.
+          Hopefully, it'll be enough to be able to test that the action summary
+          pretty-printer does what it's supposed to.
+
+          Be seeing you. |}]
   end )
