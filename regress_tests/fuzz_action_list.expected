@@ -51,7 +51,7 @@ cap.threads:
     
     If fuzzing to target Litmus7, the cap should be set as the number of
     logical cores in the target machine.
-flow.dead.early-out-loop-end.wrap:
+dead.early-out-loop-end.wrap:
   Value: 3:1
   Summary:
     If 'true', loop-end early-out actions wrap the early-out in a truthy if
@@ -142,17 +142,17 @@ atomic.store.transform.xchgify:
   Summary:
     Promotes a random atomic store to an atomic exchange whose value is
     discarded.
-flow.dead.insert.early-out:
+dead.insert.early-out:
   Weight: 20x
   Summary:
     Inserts a valid 'early-out' statement (break, continue, or return) into a
     random dead-code location.
-flow.dead.insert.early-out-loop-end:
+dead.insert.early-out-loop-end:
   Weight: 20x
   Summary:
     Inserts a continue (or break, if semantically appropriate) onto the end
     of a loop, and marks the area afterwards as dead code.
-flow.dead.insert.goto:
+dead.insert.goto:
   Weight: 20x
   Summary:
     Inserts a jump to a random thread-local label inside a dead-code
@@ -160,7 +160,7 @@ flow.dead.insert.goto:
     
     This action only fires in dead-code blocks for which there are available
     labels in the same thread; it does not jump outside the thread.
-flow.if.surround.duplicate:
+if.surround.duplicate:
   Weight: 15x
   Summary:
     This action removes a sublist of statements from the program, replacing
@@ -170,7 +170,7 @@ flow.if.surround.duplicate:
     initialises both branches of the `if` statement with the original
     statements. It cannot fire if the statements contain any labels, to avoid
     duplicating them.
-flow.if.surround.tautology:
+if.surround.tautology:
   Weight: 15x
   Summary:
     This action removes a sublist of statements from the program, replacing
@@ -179,30 +179,30 @@ flow.if.surround.tautology:
     This version of the action generates an always-true condition, puts the
     original statements in the true block, and marks the false block as
     dead-code.
-flow.if.transform.invert:
+if.transform.invert:
   Weight: 10x
   Summary: Flips the conditional and branches of an if statement.
-flow.lock.surround.atomic:
+lock.surround.atomic:
   Weight: disabled
   Summary:
     This action removes a sublist of statements from the program, replacing
     them with an atomic block containing those statements.
-flow.lock.surround.sync:
+lock.surround.sync:
   Weight: disabled
   Summary:
     This action removes a sublist of statements from the program, replacing
     them with a synchronised block containing those statements.
-flow.loop.insert.for.kv-never:
+loop.insert.for.kv-never:
   Weight: 15x
   Summary:
     Introduces a loop that initialises its (fresh) counter to the known value
     of an existing variable and compares it in such a way as to be dead-code.
-flow.loop.insert.while.false:
+loop.insert.while.false:
   Weight: 15x
   Summary:
     Inserts an empty while loop whose condition is known to be false, and
     whose body is marked as dead-code for future actions.
-flow.loop.surround.do.dead:
+loop.surround.do.dead:
   Weight: 10x
   Summary:
     This action removes a sublist of statements from the program, replacing
@@ -210,7 +210,7 @@ flow.loop.surround.do.dead:
     
     This action will only surround portions of dead code, but the condition
     of the `do... while` loop can be anything.
-flow.loop.surround.do.false:
+loop.surround.do.false:
   Weight: 15x
   Summary:
     This action removes a sublist of statements from the program, replacing
@@ -218,7 +218,7 @@ flow.loop.surround.do.false:
     
     The condition of the `do... while` loop is statically guaranteed to be
     false, meaning the loop will iterate only once.
-flow.loop.surround.for.kv-once:
+loop.surround.for.kv-once:
   Weight: 10x
   Summary:
     This action removes a sublist of statements from the program, replacing
@@ -226,7 +226,7 @@ flow.loop.surround.for.kv-once:
     
     The for loop initialises its (fresh) counter to the known value of an
     existing variable and compares it in such a way as to execute only once.
-flow.loop.surround.for.simple:
+loop.surround.for.simple:
   Weight: 15x
   Summary:
     This action removes a sublist of statements from the program, replacing
@@ -235,7 +235,7 @@ flow.loop.surround.for.simple:
     The for loop initialises its (fresh) counter to zero, then counts upwards
     to a random, small, constant value. This action does not surround
     non-generated or loop-unsafe statements.
-flow.loop.surround.while.dead:
+loop.surround.while.dead:
   Weight: 10x
   Summary:
     This action removes a sublist of statements from the program, replacing

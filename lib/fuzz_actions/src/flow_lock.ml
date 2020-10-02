@@ -31,9 +31,7 @@ module Surround = struct
     (** [path_filter] is the path filter used on paths to statement spans
         being surrounded. *)
   end) : S = Fuzz.Action.Make_surround (struct
-    let name =
-      Act_common.Id.(
-        "flow" @: "lock" @: "surround" @: Basic.subname @: empty)
+    let name = Act_common.Id.("lock" @: "surround" @: Basic.subname @: empty)
 
     let surround_with : string = Basic.lock_type_name ^ " block"
 

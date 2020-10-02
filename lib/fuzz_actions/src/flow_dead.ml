@@ -13,7 +13,7 @@ open Base
 open Import
 
 let prefix_name (rest : Common.Id.t) : Common.Id.t =
-  Common.Id.("flow" @: "dead" @: rest)
+  Common.Id.("dead" @: rest)
 
 module Insert = struct
   let prefix_name (rest : Common.Id.t) : Common.Id.t =

@@ -12,8 +12,7 @@
 open Base
 open Import
 
-let prefix_name (rest : Common.Id.t) : Common.Id.t =
-  Common.Id.("flow" @: "if" @: rest)
+let prefix_name (rest : Common.Id.t) : Common.Id.t = Common.Id.("if" @: rest)
 
 module Transform = struct
   module type S =

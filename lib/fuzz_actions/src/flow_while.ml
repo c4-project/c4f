@@ -14,7 +14,7 @@ open Import
 
 let prefix_name (rest : Common.Id.t) : Common.Id.t =
   (* Shared with Flow_for. *)
-  Common.Id.("flow" @: "loop" @: rest)
+  Common.Id.("loop" @: rest)
 
 module Insert = struct
   module type S =

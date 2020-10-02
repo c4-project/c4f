@@ -33,7 +33,7 @@ let make_global_flag : Common.Id.t =
   Common.Id.("var" @: "make" @: "global" @: empty)
 
 let wrap_early_out_flag : Common.Id.t =
-  Common.Id.("flow" @: "dead" @: "early-out-loop-end" @: "wrap" @: empty)
+  Common.Id.("dead" @: "early-out-loop-end" @: "wrap" @: empty)
 
 let extra_action_flag : Common.Id.t =
   Common.Id.("action" @: "pick-extra" @: empty)

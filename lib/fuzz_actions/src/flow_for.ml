@@ -14,7 +14,7 @@ open Import
 
 let prefix_name (rest : Common.Id.t) : Common.Id.t =
   (* Shared with Flow_while. *)
-  Common.Id.("flow" @: "loop" @: rest)
+  Common.Id.("loop" @: rest)
 
 let is_int : Fuzz.Var.Record.t -> bool =
   (* TODO(@MattWindsor91): unify with the various 'has_variables_with' env
