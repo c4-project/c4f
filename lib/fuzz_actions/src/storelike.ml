@@ -34,30 +34,7 @@ module Dst_restriction = struct
       &&& Fuzz.Var.Record.was_generated)
 end
 
-module Make (B : sig
-  val name : Common.Id.t
-  (** [name] is the name of the action. *)
-
-  val readme_preamble : string list
-  (** [readme_preamble] is the part of the action readme specific to this
-      form of the storelike action. *)
-
-  val dst_type : Fir.Type.Basic.t
-  (** [dst_type] is the value type of the destination. *)
-
-  val path_filter : Fuzz.Path_filter.t
-  (** [path_filter] is the filter to apply on statement insertion paths
-      before considering them for the atomic store. *)
-
-  val extra_dst_restrictions : Dst_restriction.t list
-  (** [extra_dst_restrictions] is a list of additional restrictions to place
-      on the destination variables (for example, 'must not have
-      dependencies'). *)
-
-  module Flags : Storelike_types.Flags
-
-  include Storelike_types.Basic
-end) :
+module Make (B : Storelike_types.Basic) :
   Fuzz.Action_types.S with type Payload.t = B.t Fuzz.Payload_impl.Pathed.t =
 struct
   let name = B.name
@@ -182,7 +159,7 @@ struct
     let gen = Fuzz.Payload_impl.Pathed.gen Insert path_filter gen'
   end
 
-  let recommendations (_ : Payload.t) = [] (* for now *)
+  let recommendations = B.recommendations
 
   let available : Fuzz.Availability.t =
     (* The path filter requires the path to be in a thread that has access to

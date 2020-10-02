@@ -11,12 +11,14 @@
 
 (** Assignment actions. *)
 
+open Import
+
 (** {1 Actions that generate assignments} *)
 module Insert : sig
   (** Shorthand type for assignment insertion actions. *)
   module type S =
-    Act_fuzz.Action_types.S
-      with type Payload.t = Act_fir.Assign.t Act_fuzz.Payload_impl.Pathed.t
+    Fuzz.Action_types.S
+      with type Payload.t = Fir.Assign.t Fuzz.Payload_impl.Pathed.t
 
   (** [Int_normal] is a fuzzer action that generates a random int assignment. *)
   module Int_normal : S
@@ -28,4 +30,10 @@ module Insert : sig
   (** [Int_redundant] is an insertion action that only stores a destination's
       known value back to itself. *)
   module Int_redundant : S
+
+  (** {2 Recommendation helpers} *)
+
+  val int_action_names : Common.Id.t list Lazy.t
+  (** [int_action_names] evaluates to a list of all insert actions that are
+      available on integers. *)
 end

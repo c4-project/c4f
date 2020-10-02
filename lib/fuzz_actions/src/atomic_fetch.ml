@@ -95,6 +95,11 @@ module Insert = struct
     let src_exprs (x : Fir.Expression.t Fir.Atomic_fetch.t) :
         Fir.Expression.t list =
       x.@*(Fir.Atomic_fetch.arg)
+
+    let recommendations
+        (_ : Fir.Expression.t Fir.Atomic_fetch.t Fuzz.Payload_impl.Pathed.t)
+        : Common.Id.t list =
+      []
   end)
 
   (* TODO(@MattWindsor91): 'Int' module, which would need some care in order

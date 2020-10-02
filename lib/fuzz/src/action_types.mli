@@ -14,13 +14,23 @@
 open Base
 open Import
 
-(** {1 Module type of fuzzer actions} *)
-module type S = sig
-  (** {2 Metadata} *)
+(** Module type for the bits of metadata that are common across practically
+    every action module type. *)
+module type Basic_meta = sig
+  (** Type of payload, usually erased out in descendent types. *)
+  type pld
 
   val name : Common.Id.t
   (** [name] is the name of the action, as an act identifier. *)
 
+  val recommendations : pld -> Common.Id.t list
+  (** [recommendations p] contains the names of any actions that this action
+      'recommends' to run immediately after this one, given the prospective
+      payload [p]. *)
+end
+
+(** {1 Module type of fuzzer actions} *)
+module type S = sig
   val readme : string Lazy.t
   (** [readme] evaluates to a long synopsis of this action. *)
 
@@ -33,10 +43,8 @@ module type S = sig
   (** [available] is an availability check that must hold before the action
       can be chosen. *)
 
-  val recommendations : Payload.t -> Common.Id.t list
-  (** [recommendations p] contains the names of any actions that this action
-      'recommends' to run immediately after this one, given the prospective
-      payload [p]. *)
+  (** {2 Metadata} *)
+  include Basic_meta with type pld := Payload.t
 
   (** {2 Running} *)
 
@@ -50,9 +58,6 @@ end
 
 (** Specialised input signature of surround actions *)
 module type Basic_surround = sig
-  val name : Act_common.Id.t
-  (** [name] is the full name of the surround action. *)
-
   val surround_with : string
   (** [surround_with] is a phrase that specifies with what construct we're
       surrounding the statements. *)
@@ -81,8 +86,7 @@ module type Basic_surround = sig
         [pld]. These are flagged as having dependencies. *)
   end
 
-  val recommendations : Payload.t Payload_impl.Pathed.t -> Common.Id.t list
-  (** [recommendations p] behaves as its counterpart in {!S}. *)
+  include Basic_meta with type pld := Payload.t Payload_impl.Pathed.t
 
   val run_pre :
     Subject.Test.t -> payload:Payload.t -> Subject.Test.t State.Monad.t

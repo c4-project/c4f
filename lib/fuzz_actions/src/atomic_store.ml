@@ -15,6 +15,74 @@ open Import
 let prefix_name (rest : Common.Id.t) : Common.Id.t =
   Common.Id.("atomic" @: "store" @: rest)
 
+module Transform = struct
+  module Xchgify :
+    Fuzz.Action_types.S with type Payload.t = Fuzz.Path.Flagged.t = struct
+    let name = prefix_name Common.Id.("transform" @: "xchgify" @: empty)
+
+    let readme =
+      lazy
+        {| Promotes a random atomic store to an atomic exchange whose value is
+       discarded. |}
+
+    let path_filter : Fuzz.Path_filter.t Lazy.t =
+      lazy
+        Fuzz.Path_filter.(
+          require_end_check
+            (Stm_class
+               (Is, [Fir.Statement_class.atomic ~specifically:Store ()])))
+
+    module Payload = struct
+      type t = Fuzz.Path.Flagged.t [@@deriving sexp]
+
+      let gen : t Fuzz.Payload_gen.t =
+        let filter = Lazy.force path_filter in
+        Fuzz.Payload_gen.path_with_flags Transform ~filter
+    end
+
+    let recommendations (_ : Payload.t) : Common.Id.t list = []
+
+    let available : Fuzz.Availability.t =
+      Fuzz.Availability.is_filter_constructible (Lazy.force path_filter)
+        ~kind:Transform
+
+    module Atoms =
+      Travesty.Traversable.Chain0
+        (Fuzz.Subject.Statement.On_primitives)
+        (Fir.Prim_statement.On_atomics)
+    module AtomsM = Atoms.On_monad (Or_error)
+
+    let not_a_store_action (type a) (_ : a) :
+        Fir.Atomic_statement.t Or_error.t =
+      Or_error.error_string "not a store action"
+
+    let a_store_action (s : Fir.Atomic_store.t) :
+        Fir.Atomic_statement.t Or_error.t =
+      Ok
+        (Accessor.construct Fir.Atomic_statement.xchg
+           Fir.Atomic_store.(
+             Fir.Atomic_xchg.make ~obj:s.@(dst) ~desired:s.@(src) ~mo:s.@(mo)))
+
+    let xchgify_atomic :
+        Fir.Atomic_statement.t -> Fir.Atomic_statement.t Or_error.t =
+      Fir.Atomic_statement.value_map ~cmpxchg:not_a_store_action
+        ~fence:not_a_store_action ~fetch:not_a_store_action
+        ~xchg:not_a_store_action ~store:a_store_action
+
+    let xchgify :
+           Fuzz.Metadata.t Fir.Statement.t
+        -> Fuzz.Metadata.t Fir.Statement.t Or_error.t =
+      AtomsM.map_m ~f:xchgify_atomic
+
+    let run (subject : Fuzz.Subject.Test.t) ~(payload : Fuzz.Path.Flagged.t)
+        : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
+      Fuzz.State.Monad.Monadic.return
+        (Fuzz.Path_consumers.consume_with_flags subject
+           ~filter:(Lazy.force path_filter) ~path:payload
+           ~action:(Transform xchgify))
+  end
+end
+
 module Insert = struct
   module type S =
     Fuzz.Action_types.S
@@ -92,6 +160,10 @@ module Insert = struct
 
     let src_exprs (x : Fir.Atomic_store.t) : Fir.Expression.t list =
       x.@*(Fir.Atomic_store.src)
+
+    let recommendations (_ : Fir.Atomic_store.t Fuzz.Payload_impl.Pathed.t) :
+        Common.Id.t list =
+      [Transform.Xchgify.name]
   end)
 
   module Int_normal : S = Make (struct
@@ -197,72 +269,8 @@ module Insert = struct
             Fir.Atomic_store.make ~src ~dst ~mo)
     end
   end)
-end
 
-module Transform = struct
-  module Xchgify :
-    Fuzz.Action_types.S with type Payload.t = Fuzz.Path.Flagged.t = struct
-    let name = prefix_name Common.Id.("transform" @: "xchgify" @: empty)
-
-    let readme =
-      lazy
-        {| Promotes a random atomic store to an atomic exchange whose value is
-       discarded. |}
-
-    let path_filter : Fuzz.Path_filter.t Lazy.t =
-      lazy
-        Fuzz.Path_filter.(
-          require_end_check
-            (Stm_class
-               (Is, [Fir.Statement_class.atomic ~specifically:Store ()])))
-
-    module Payload = struct
-      type t = Fuzz.Path.Flagged.t [@@deriving sexp]
-
-      let gen : t Fuzz.Payload_gen.t =
-        let filter = Lazy.force path_filter in
-        Fuzz.Payload_gen.path_with_flags Transform ~filter
-    end
-
-    let recommendations (_ : Payload.t) : Common.Id.t list = []
-
-    let available : Fuzz.Availability.t =
-      Fuzz.Availability.is_filter_constructible (Lazy.force path_filter)
-        ~kind:Transform
-
-    module Atoms =
-      Travesty.Traversable.Chain0
-        (Fuzz.Subject.Statement.On_primitives)
-        (Fir.Prim_statement.On_atomics)
-    module AtomsM = Atoms.On_monad (Or_error)
-
-    let not_a_store_action (type a) (_ : a) :
-        Fir.Atomic_statement.t Or_error.t =
-      Or_error.error_string "not a store action"
-
-    let a_store_action (s : Fir.Atomic_store.t) :
-        Fir.Atomic_statement.t Or_error.t =
-      Ok
-        (Accessor.construct Fir.Atomic_statement.xchg
-           Fir.Atomic_store.(
-             Fir.Atomic_xchg.make ~obj:s.@(dst) ~desired:s.@(src) ~mo:s.@(mo)))
-
-    let xchgify_atomic :
-        Fir.Atomic_statement.t -> Fir.Atomic_statement.t Or_error.t =
-      Fir.Atomic_statement.value_map ~cmpxchg:not_a_store_action
-        ~fence:not_a_store_action ~fetch:not_a_store_action
-        ~xchg:not_a_store_action ~store:a_store_action
-
-    let xchgify :
-           Fuzz.Metadata.t Fir.Statement.t
-        -> Fuzz.Metadata.t Fir.Statement.t Or_error.t =
-      AtomsM.map_m ~f:xchgify_atomic
-
-    let run (subject : Fuzz.Subject.Test.t) ~(payload : Fuzz.Path.Flagged.t)
-        : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
-      Fuzz.State.Monad.Monadic.return
-        (Fuzz.Path_consumers.consume_with_flags subject
-           ~filter:(Lazy.force path_filter) ~path:payload
-           ~action:(Transform xchgify))
-  end
+  let int_action_names : Common.Id.t list Lazy.t =
+    (* TODO(@MattWindsor91): make this stuff type-agnostic? *)
+    lazy [Int_dead.name; Int_normal.name; Int_redundant.name]
 end

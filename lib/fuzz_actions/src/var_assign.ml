@@ -89,6 +89,10 @@ module Insert = struct
 
     let src_exprs (x : Fir.Assign.t) : Fir.Expression.t list =
       x.@*(Fir.Assign.src @> Fir.Assign.Source.exprs)
+
+    let recommendations (_ : Fir.Assign.t Fuzz.Payload_impl.Pathed.t) :
+        Common.Id.t list =
+      []
   end)
 
   (* TODO(@MattWindsor91): de-duplicate with Atomic_store *)
@@ -197,4 +201,8 @@ module Insert = struct
             Fir.Assign.make ~src ~dst)
     end
   end)
+
+  let int_action_names : Common.Id.t list Lazy.t =
+    (* TODO(@MattWindsor91): make this stuff type-agnostic? *)
+    lazy [Int_dead.name; Int_normal.name; Int_redundant.name]
 end

@@ -28,6 +28,25 @@ end
 (** Type of modules that describe a storelike statement and how to generate
     and manipulate it. *)
 module type Basic = sig
+  val readme_preamble : string list
+  (** [readme_preamble] is the part of the action readme specific to this
+      form of the storelike action. *)
+
+  val dst_type : Fir.Type.Basic.t
+  (** [dst_type] is the value type of the destination. *)
+
+  val path_filter : Fuzz.Path_filter.t
+  (** [path_filter] is the filter to apply on statement insertion paths
+      before considering them for the atomic store. *)
+
+  val extra_dst_restrictions : (Fuzz.Var.Record.t -> bool) list
+  (** [extra_dst_restrictions] is a list of additional restrictions to place
+      on the destination variables (for example, 'must not have
+      dependencies'). *)
+
+  (** Flags. *)
+  module Flags : Flags
+
   (** Type of storelike statements. *)
   type t [@@deriving sexp]
 
@@ -57,4 +76,8 @@ module type Basic = sig
 
   val to_stms : t -> Fir.Prim_statement.t list
   (** [to_stms s] lifts a storelike into a list of primitives. *)
+
+  include
+    Fuzz.Action_types.Basic_meta
+      with type pld := t Fuzz.Payload_impl.Pathed.t
 end

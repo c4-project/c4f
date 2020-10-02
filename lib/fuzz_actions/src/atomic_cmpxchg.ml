@@ -45,6 +45,10 @@ module Insert = struct
 
     type t = Inner_payload.t [@@deriving sexp]
 
+    let recommendations (_ : t Fuzz.Payload_impl.Pathed.t) : Common.Id.t list
+        =
+      []
+
     let path_filter = Fuzz.Path_filter.zero
 
     let extra_dst_restrictions =

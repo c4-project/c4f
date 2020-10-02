@@ -11,6 +11,8 @@
 
 (** Store instruction actions. *)
 
+open Import
+
 (** {1 Actions that generate stores} *)
 module Insert : sig
   (** Shorthand type for store insertion actions. *)
@@ -30,6 +32,12 @@ module Insert : sig
   (** [Int_redundant] is an insertion action that only stores a destination's
       known value back to itself. *)
   module Int_redundant : S
+
+  (** {2 Recommendation helpers} *)
+
+  val int_action_names : Common.Id.t list Lazy.t
+  (** [int_action_names] evaluates to a list of all insert actions that are
+      available on integers. *)
 end
 
 (** {1 Actions that transform stores} *)
