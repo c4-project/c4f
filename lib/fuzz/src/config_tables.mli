@@ -37,6 +37,10 @@ val action_cap_upper_param : Common.Id.t
     number of actions that should be applied by the fuzzer, including extra
     actions. *)
 
+val action_deck_size_param : Common.Id.t
+(** [action_deck_size_param] names the parameter that specifies the maximum
+    number of actions that should be kept in the deck. *)
+
 val thread_cap_param : Common.Id.t
 (** [thread_cap_param] names the parameter that specifies the maximum number
     of threads that should exist in a fuzzed test. *)

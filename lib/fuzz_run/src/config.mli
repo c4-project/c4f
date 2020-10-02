@@ -52,11 +52,16 @@ val make_param_map : t -> Fuzz.Param_map.t
 
 (** {2 Actions on a fuzzer configuration} *)
 
-val make_pool : t -> Fuzz.Param_map.t -> Action_pool.t Or_error.t
-(** [make_pool config params] tries to create the weighted action pool given
-    the weights in [config]. This pool can then be queried for weight
-    information or used to drive a random fuzzer session. [params] should be
-    taken from a previous call to {!make_param_map}. *)
+val make_pool :
+     t
+  -> Fuzz.Param_map.t
+  -> random:Splittable_random.State.t
+  -> Action_pool.t Or_error.t
+(** [make_pool config params ~random] tries to create the weighted action
+    pool given the weights in [config]. This pool can then be queried for
+    weight information or used to drive a random fuzzer session. [params]
+    should be taken from a previous call to {!make_param_map}; [random] will
+    be used if [params] requests pool sampling. *)
 
 (** {2 Making summaries} *)
 

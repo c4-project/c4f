@@ -70,29 +70,23 @@ type t =
 let reset (x : t) : t = {x with deck= x.original_deck}
 
 let find_in_originals ({original_deck; _} : t) ~(name : Common.Id.t) :
-    Fuzz.Action.t Or_error.t =
+    Fuzz.Action.t option =
+  (* Not finding a recommendation isn't an error; the deck might've been
+     subsampled, and the recommendation action might have been removed. *)
   original_deck
   |> Utils.Weighted_list.find ~f:(fun x ->
          Common.Id.equal name (Fuzz.Action.With_default_weight.name x))
   |> Option.map ~f:Fuzz.Action.With_default_weight.action
-  |> Result.of_option
-       ~error:
-         (Error.create_s
-            [%message
-              "Tried to recommend an action that isn't available"
-                ~name:(name : Common.Id.t)])
 
 let find_many_in_originals (pool : t) ~(names : Common.Id.t list) :
-    Fuzz.Action.t list Or_error.t =
-  Or_error.combine_errors
-    (List.map names ~f:(fun name -> find_in_originals pool ~name))
+    Fuzz.Action.t list =
+  List.filter_map names ~f:(fun name -> find_in_originals pool ~name)
 
 let recommend (x : t) ~(names : Common.Id.t list)
-    ~(random : Splittable_random.State.t) : t Or_error.t =
-  Or_error.Let_syntax.(
-    let%map actions = find_many_in_originals x ~names in
+    ~(random : Splittable_random.State.t) : t =
+    let actions = find_many_in_originals x ~names in
     Accessor.map rec_queue x
-      ~f:(Rec_queue.recommend ~actions ~flag:x.accept_rec_flag ~random))
+      ~f:(Rec_queue.recommend ~actions ~flag:x.accept_rec_flag ~random)
 
 let of_weighted_actions
     (weighted_actions :
@@ -138,3 +132,16 @@ let pick (table : t) ~(random : Splittable_random.State.t) :
        for whatever reason, we don't immediately try picking it again. *)
     let%map table = maybe_remove table ao in
     (ao, table))
+
+let pick_many (pool : t) ~(max : int) ~(random : Splittable_random.State.t) :
+    (Fuzz.Action.t list * t) Or_error.t =
+  Or_error.Let_syntax.(
+    let%map pool, xs =
+      Travesty_base_exts.List.With_errors.fold_map_m
+        (List.init max ~f:(fun _ -> ()))
+        ~init:pool
+        ~f:(fun pool () ->
+          let%map ao, pool' = pick pool ~random in
+          (pool', ao))
+    in
+    (List.filter_opt xs, pool))

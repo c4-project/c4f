@@ -93,10 +93,10 @@ struct
     | Bool ->
         [] (* for now *)
     | Int ->
-      Lazy.force (
-        if Fir.Type.Basic.is_atomic basic_type then
-          Atomic_store.Insert.int_action_names
-        else Var_assign.Insert.int_action_names)
+        Lazy.force
+          ( if Fir.Type.Basic.is_atomic basic_type then
+            Atomic_store.Insert.int_action_names
+          else Var_assign.Insert.int_action_names )
 
   let available : Fuzz.Availability.t = Fuzz.Availability.has_threads
 

@@ -40,12 +40,12 @@ val recommend :
      t
   -> names:Common.Id.t list
   -> random:Splittable_random.State.t
-  -> t Or_error.t
+  -> t
 (** [recommend pool ~names ~random] enqueues the actions with names [names]
     into [pool]'s recommendation queue. The actions are queued in order, so
     that the first action is chosen first. The actions must have been in the
-    initial deck; otherwise, an error occurs. Whether the pool accepts the
-    recommendations or not depends on [random] and the pool's accept flag. *)
+    initial deck to be accepted. Whether the pool accepts the
+    recommendations also depends on [random] and the pool's accept flag. *)
 
 val pick :
      t
@@ -56,6 +56,14 @@ val pick :
     removed; else, it returns the pool unchanged. Use [reset] to prepare the
     returned pool for the next [pick], rather than reloading the previous
     pool. *)
+
+val pick_many :
+     t
+  -> max:int
+  -> random:Splittable_random.State.t
+  -> (Fuzz.Action.t list * t) Or_error.t
+(** [pick_many pool ~max ~random] picks at most [max] actions from [pool]. It
+    may pick fewer than [max] if it runs out of actions to pick. *)
 
 val reset : t -> t
 (** [reset pool] reinstates into [pool] any actions removed by [pick]. *)

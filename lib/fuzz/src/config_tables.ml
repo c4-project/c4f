@@ -21,6 +21,9 @@ let action_cap_lower_param : Common.Id.t =
 let action_cap_upper_param : Common.Id.t =
   Common.Id.("action" @: "cap" @: "upper" @: empty)
 
+let action_deck_size_param : Common.Id.t =
+  Common.Id.("action" @: "deck" @: "size" @: empty)
+
 let thread_cap_param : Common.Id.t =
   (* TODO(@MattWindsor91): this should be given a better name, but the tester
      depends on it having this name. *)
@@ -81,6 +84,16 @@ let param_map : Param_spec.Int.t Map.M(Common.Id).t Lazy.t =
               If fuzzing to target Litmus7, the cap should be set as the number
               of logical cores in the target machine.
             |}
+         )
+       ; ( action_deck_size_param
+         , Param_spec.make ~default:20
+             ~description:
+               {| If positive, sets the maximum size of the action deck
+                 (the weighted table of actions used when not following
+                 recommendations).
+                 Actions will randomly be dropped, with uniform probability,
+                 to reach this size.
+              |}
          ) ])
 
 let flag_map : Param_spec.Bool.t Map.M(Common.Id).t Lazy.t =

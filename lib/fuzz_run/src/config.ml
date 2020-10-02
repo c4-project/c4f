@@ -34,9 +34,15 @@ let make_weight_alist (config : t) :
   let actions = Lazy.force Act_fuzz_actions.Table.actions in
   List.map ~f:(make_weight_pair config.weights) actions
 
-let make_pool (config : t) (params : Fuzz.Param_map.t) :
-    Action_pool.t Or_error.t =
-  let weights = make_weight_alist config in
+let make_sampled_weight_alist (config : t) ~(deck_size : int)
+    ~(random : Splittable_random.State.t) :
+    (Fuzz.Action.With_default_weight.t, int option) List.Assoc.t =
+  let wlist = make_weight_alist config in
+  if deck_size <= 0 then wlist
+  else Utils.My_list.Random.sample wlist deck_size ~random
+
+let make_pool (config : t) (params : Fuzz.Param_map.t)
+    ~(random : Splittable_random.State.t) : Action_pool.t Or_error.t =
   Or_error.Let_syntax.(
     let%bind accept_rec_flag =
       Fuzz.Param_map.get_flag params
@@ -46,6 +52,11 @@ let make_pool (config : t) (params : Fuzz.Param_map.t) :
       Fuzz.Param_map.get_flag params
         ~id:Fuzz.Config_tables.use_recommendation_flag
     in
+    let%bind deck_size =
+      Fuzz.Param_map.get_param params
+        ~id:Fuzz.Config_tables.action_deck_size_param
+    in
+    let weights = make_sampled_weight_alist config ~deck_size ~random in
     Action_pool.of_weighted_actions weights ~accept_rec_flag ~use_rec_flag)
 
 let make_merged_param_map (type v)

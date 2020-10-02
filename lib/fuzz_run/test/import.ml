@@ -12,5 +12,6 @@
 (** Common imports *)
 
 module Common = Act_common
+module Utils = Act_utils
 module Fuzz = Act_fuzz
 module Src = Act_fuzz_run
