@@ -29,17 +29,33 @@ let make_weight_pair (weight_overrides : int Map.M(Common.Id).t)
   in
   (action, weight)
 
-let make_weight_alist (config : t) :
-    (Fuzz.Action.With_default_weight.t, int option) List.Assoc.t =
+type weight_list =
+  (Fuzz.Action.With_default_weight.t, int option) List.Assoc.t
+
+let make_weight_alist (config : t) : weight_list =
   let actions = Lazy.force Act_fuzz_actions.Table.actions in
   List.map ~f:(make_weight_pair config.weights) actions
 
-let make_sampled_weight_alist (config : t) ~(deck_size : int)
+(* This papers over the possibility that the sampling scheme we use can
+   result in an empty weight table by replacing it with a table containing
+   just the NOP action.
+
+   We assume that the picking logic can handle a weight table that is
+   non-empty but has only zero weights.
+
+   TODO(@MattWindsor91): just allow an empty weight table? *)
+let nopify : weight_list -> weight_list = function
+  | [] ->
+      [(Fuzz.Action.(With_default_weight.((module Nop) @-> 1)), None)]
+  | wlist ->
+      wlist
+
+let make_sampled_weight_alist (config : t) ~(pick_flag : Fuzz.Flag.t)
     ~(random : Splittable_random.State.t) :
     (Fuzz.Action.With_default_weight.t, int option) List.Assoc.t =
-  let wlist = make_weight_alist config in
-  if deck_size <= 0 then wlist
-  else Utils.My_list.Random.sample wlist deck_size ~random
+  make_weight_alist config
+  |> List.filter ~f:(fun _ -> Fuzz.Flag.eval pick_flag ~random)
+  |> nopify
 
 let make_pool (config : t) (params : Fuzz.Param_map.t)
     ~(random : Splittable_random.State.t) : Action_pool.t Or_error.t =
@@ -52,11 +68,11 @@ let make_pool (config : t) (params : Fuzz.Param_map.t)
       Fuzz.Param_map.get_flag params
         ~id:Fuzz.Config_tables.use_recommendation_flag
     in
-    let%bind deck_size =
-      Fuzz.Param_map.get_param params
-        ~id:Fuzz.Config_tables.action_deck_size_param
+    let%bind pick_flag =
+      Fuzz.Param_map.get_flag params
+        ~id:Fuzz.Config_tables.action_enable_flag
     in
-    let weights = make_sampled_weight_alist config ~deck_size ~random in
+    let weights = make_sampled_weight_alist config ~pick_flag ~random in
     Action_pool.of_weighted_actions weights ~accept_rec_flag ~use_rec_flag)
 
 let make_merged_param_map (type v)

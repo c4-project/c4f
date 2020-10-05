@@ -9,12 +9,17 @@ action.cap.upper:
   Summary:
     Caps the number of action passes that the fuzzer will run, including any
     extra actions.
-action.deck.size:
-  Value: 20
+action.enable:
+  Value: 1:1
   Summary:
-    If positive, sets the maximum size of the action deck (the weighted table
-    of actions used when not following recommendations). Actions will
-    randomly be dropped, with uniform probability, to reach this size.
+    The fuzzer checks this flag once for each action before starting; if the
+    flag is false, the action is globally and permanently disabled.
+    
+    If all actions are disabled, the fuzzer will not perform any
+    fuzzing.
+    
+    Making this flag inexact, as it is by default, means that the fuzzer will
+    randomly choose some subset of the available actions.
 action.pick-extra:
   Value: 100:1
   Summary:

@@ -84,9 +84,9 @@ let find_many_in_originals (pool : t) ~(names : Common.Id.t list) :
 
 let recommend (x : t) ~(names : Common.Id.t list)
     ~(random : Splittable_random.State.t) : t =
-    let actions = find_many_in_originals x ~names in
-    Accessor.map rec_queue x
-      ~f:(Rec_queue.recommend ~actions ~flag:x.accept_rec_flag ~random)
+  let actions = find_many_in_originals x ~names in
+  Accessor.map rec_queue x
+    ~f:(Rec_queue.recommend ~actions ~flag:x.accept_rec_flag ~random)
 
 let of_weighted_actions
     (weighted_actions :

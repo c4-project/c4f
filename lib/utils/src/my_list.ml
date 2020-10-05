@@ -66,26 +66,6 @@ module Random = struct
 
   let item (xs : 'a list) ~(random : Splittable_random.State.t) : 'a option =
     Option.(index ~random xs >>= List.nth xs)
-
-  let permute (xs : 'a list) ~(random : Splittable_random.State.t) : 'a list
-      =
-    match xs with
-    | [] ->
-        []
-    | x :: _ ->
-        let len = List.length xs in
-        let ary = Array.create ~len x in
-        (* In-place version of Fisher-Yates algorithm, purloined from
-           Wikipedia. *)
-        List.iteri xs ~f:(fun i s ->
-            let j = Splittable_random.int random ~lo:0 ~hi:i in
-            if j <> i then ary.(i) <- ary.(j) ;
-            ary.(j) <- s) ;
-        Array.to_list ary
-
-  let sample (xs : 'a list) (num : int) ~(random : Splittable_random.State.t)
-      : 'a list =
-    List.take (permute xs ~random) num
 end
 
 let split_or_error (xs : 'a list) (n : int) : ('a list * 'a list) Or_error.t

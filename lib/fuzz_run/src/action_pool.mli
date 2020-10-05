@@ -37,15 +37,12 @@ val of_weighted_actions :
 (** {1 Using pools} *)
 
 val recommend :
-     t
-  -> names:Common.Id.t list
-  -> random:Splittable_random.State.t
-  -> t
+  t -> names:Common.Id.t list -> random:Splittable_random.State.t -> t
 (** [recommend pool ~names ~random] enqueues the actions with names [names]
     into [pool]'s recommendation queue. The actions are queued in order, so
     that the first action is chosen first. The actions must have been in the
-    initial deck to be accepted. Whether the pool accepts the
-    recommendations also depends on [random] and the pool's accept flag. *)
+    initial deck to be accepted. Whether the pool accepts the recommendations
+    also depends on [random] and the pool's accept flag. *)
 
 val pick :
      t

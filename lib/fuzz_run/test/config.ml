@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -14,19 +14,19 @@ open Import
 
 let%test_module "Pool making" =
   ( module struct
-    let test (size : int) : unit =
+    let test (flag : Fuzz.Flag.t) : unit =
       (* Basically, print a sample of 10 actions from the generated pool,
          with a deterministic randomiser.
 
          This test will change every time the action list changes, but we
          already have tests that do that, so _shrug_ *)
       let random = Splittable_random.State.of_int 0 in
-      let params =
+      let flags =
         Map.of_alist_exn
           (module Common.Id)
-          Fuzz.[(Config_tables.action_deck_size_param, size)]
+          [(Fuzz.Config_tables.action_enable_flag, flag)]
       in
-      let conf = Src.Config.make ~params () in
+      let conf = Src.Config.make ~flags () in
       let pmap = Src.Config.make_param_map conf in
       let result =
         Or_error.(
@@ -44,8 +44,8 @@ let%test_module "Pool making" =
                     Common.Id.pp)))
         result
 
-    let%expect_test "no cap" =
-      test (-1) ;
+    let%expect_test "always pick" =
+      test (Fuzz.Flag.exact true) ;
       [%expect
         {|
         loop.surround.do.false, var.assign.insert.int.redundant,
@@ -54,35 +54,23 @@ let%test_module "Pool making" =
         atomic.store.insert.int.redundant, var.make, var.assign.insert.int.dead,
         atomic.store.insert.int.dead |}]
 
-    let%expect_test "zero cap" =
-      test 0 ;
+    let%expect_test "never pick" =
+      test (Fuzz.Flag.exact false) ;
+      [%expect {|
+        nop |}]
+
+    let%expect_test "pick half the time" =
+      test (Or_error.ok_exn (Fuzz.Flag.try_make ~wins:1 ~losses:1)) ;
       [%expect
         {|
-        loop.surround.do.false, var.assign.insert.int.redundant,
-        dead.insert.early-out-loop-end, atomic.store.insert.int.normal,
-        loop.insert.while.false, atomic.cmpxchg.insert.int.succeed,
-        atomic.store.insert.int.redundant, var.make, var.assign.insert.int.dead,
-        atomic.store.insert.int.dead |}]
+        var.assign.insert.int.normal, var.make, nop, dead.insert.goto, mem.fence,
+        dead.insert.early-out-loop-end, var.volatile, loop.surround.for.kv-once,
+        loop.surround.do.false, mem.strengthen |}]
 
-    let%expect_test "one cap" =
-      test 1 ; [%expect {|
-        dead.insert.goto |}]
-
-    let%expect_test "cap higher than action list length" =
-      test 32767 ;
-      [%expect
-        {|
-        var.assign.insert.int.redundant, dead.insert.goto, if.surround.tautology,
-        atomic.fetch.insert.int.redundant, atomic.store.transform.xchgify,
-        var.assign.insert.int.dead, var.volatile, mem.strengthen,
-        if.surround.duplicate, loop.insert.while.false |}]
-
-    let%expect_test "representative cap" =
-      test 5 ;
-      [%expect
-        {|
-        dead.insert.goto, atomic.store.transform.xchgify, dead.insert.early-out,
-        var.make |}]
+    let%expect_test "pick almost never" =
+      test (Or_error.ok_exn (Fuzz.Flag.try_make ~wins:1 ~losses:10000000)) ;
+      [%expect {|
+        nop |}]
   end )
 
 let%test_module "Weight summaries" =

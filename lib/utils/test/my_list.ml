@@ -69,49 +69,6 @@ let%test_module "Random" =
              (check_random ~f:(Random.stride ~random) ~pred:(fun xs (i, n) ->
                   in_bounds xs i && n <= List.length (List.drop xs (i - 1)))))
 
-    let%expect_test "permute" =
-      let random = Splittable_random.State.of_int 0 in
-      let foo = List.init 10 ~f:Fn.id in
-      for _ = 0 to 10 do
-        let xs = Random.permute foo ~random in
-        print_s [%sexp (xs : int list)]
-      done ;
-      [%expect
-        {|
-        (9 4 7 1 2 3 8 5 0 6)
-        (1 3 4 5 0 2 7 6 8 9)
-        (7 8 9 4 3 1 6 2 0 5)
-        (9 3 6 5 2 8 7 1 4 0)
-        (8 9 0 6 5 3 2 1 4 7)
-        (6 4 9 0 3 1 8 5 2 7)
-        (2 5 0 3 6 7 8 4 9 1)
-        (6 2 5 0 4 3 8 9 1 7)
-        (7 3 4 0 1 6 9 2 5 8)
-        (5 3 0 4 9 6 2 7 1 8)
-        (3 8 4 5 6 9 7 0 2 1) |}]
-
-    let%expect_test "sample" =
-      let random = Splittable_random.State.of_int 0 in
-      let foo = List.init 10 ~f:Fn.id in
-      for max = 0 to 11 do
-        let xs = Random.sample foo max ~random in
-        print_s [%sexp (xs : int list)]
-      done ;
-      [%expect
-        {|
-        ()
-        (1)
-        (7 8)
-        (9 3 6)
-        (8 9 0 6)
-        (6 4 9 0 3)
-        (2 5 0 3 6 7)
-        (6 2 5 0 4 3 8)
-        (7 3 4 0 1 6 9 2)
-        (5 3 0 4 9 6 2 7 1)
-        (3 8 4 5 6 9 7 0 2 1)
-        (6 2 9 4 7 1 0 5 8 3) |}]
-
     let%test_module "item" =
       ( module struct
         let%expect_test "empty list" =

@@ -37,10 +37,6 @@ val action_cap_upper_param : Common.Id.t
     number of actions that should be applied by the fuzzer, including extra
     actions. *)
 
-val action_deck_size_param : Common.Id.t
-(** [action_deck_size_param] names the parameter that specifies the maximum
-    number of actions that should be kept in the deck. *)
-
 val thread_cap_param : Common.Id.t
 (** [thread_cap_param] names the parameter that specifies the maximum number
     of threads that should exist in a fuzzed test. *)
@@ -58,11 +54,17 @@ val wrap_early_out_flag : Common.Id.t
     early-out actions should wrap their early-outs in an 'if true', to
     confuse the compiler a little. This flag is usually stochastic. *)
 
+(** {2 Action choice} *)
+
 val extra_action_flag : Common.Id.t
 (** [extra_action_flag] names the flag that decides, each time the randomised
     fuzzer runner considers picking an extra action, whether it does so or
     gives up. This flag is usually stochastic, so as to form a sort-of
     geometric distribution. *)
+
+val action_enable_flag : Common.Id.t
+(** [action_enable_flag] names the flag that decides, for each action,
+    whether to enable it across a fuzzer run. *)
 
 (** {2 Recommendation queue} *)
 

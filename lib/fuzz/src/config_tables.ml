@@ -21,9 +21,6 @@ let action_cap_lower_param : Common.Id.t =
 let action_cap_upper_param : Common.Id.t =
   Common.Id.("action" @: "cap" @: "upper" @: empty)
 
-let action_deck_size_param : Common.Id.t =
-  Common.Id.("action" @: "deck" @: "size" @: empty)
-
 let thread_cap_param : Common.Id.t =
   (* TODO(@MattWindsor91): this should be given a better name, but the tester
      depends on it having this name. *)
@@ -37,6 +34,9 @@ let make_global_flag : Common.Id.t =
 
 let wrap_early_out_flag : Common.Id.t =
   Common.Id.("dead" @: "early-out-loop-end" @: "wrap" @: empty)
+
+let action_enable_flag : Common.Id.t =
+  Common.Id.("action" @: "enable" @: empty)
 
 let extra_action_flag : Common.Id.t =
   Common.Id.("action" @: "pick-extra" @: empty)
@@ -84,16 +84,6 @@ let param_map : Param_spec.Int.t Map.M(Common.Id).t Lazy.t =
               If fuzzing to target Litmus7, the cap should be set as the number
               of logical cores in the target machine.
             |}
-         )
-       ; ( action_deck_size_param
-         , Param_spec.make ~default:20
-             ~description:
-               {| If positive, sets the maximum size of the action deck
-                 (the weighted table of actions used when not following
-                 recommendations).
-                 Actions will randomly be dropped, with uniform probability,
-                 to reach this size.
-              |}
          ) ])
 
 let flag_map : Param_spec.Bool.t Map.M(Common.Id).t Lazy.t =
@@ -181,4 +171,20 @@ let flag_map : Param_spec.Bool.t Map.M(Common.Id).t Lazy.t =
              fuzzer will sometimes pick from the queue and sometimes pick from
              the deck.
              |}
+         )
+       ; ( action_enable_flag
+         , Param_spec.make
+             ~default:(Or_error.ok_exn (Flag.try_make ~wins:1 ~losses:1))
+             ~description:
+               {| The fuzzer checks this flag once for each action before
+                  starting; if the flag is false, the action is globally
+                  and permanently disabled.
+
+                  If all actions are disabled, the fuzzer will not perform any
+                  fuzzing.
+
+                  Making this flag inexact, as it is by default, means that the
+                  fuzzer will randomly choose some subset of the available
+                  actions.
+              |}
          ) ])

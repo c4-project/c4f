@@ -56,14 +56,6 @@ module Random : sig
   val item : 'a list -> random:Splittable_random.State.t -> 'a option
   (** [item xs ~random] behaves like Base's [List.random_element], but uses a
       splittable RNG for compatibility with Quickcheck etc. *)
-
-  val permute : 'a list -> random:Splittable_random.State.t -> 'a list
-  (** [permute xs ~random] behaves (hopefully) like Base's [List.permute],
-      but uses a splittable RNg for compatibility with Quickcheck etc. *)
-
-  val sample : 'a list -> int -> random:Splittable_random.State.t -> 'a list
-  (** [sample xs len ~random] behaves like {!permute}, but takes a sublist of
-      the permutation of maximum length [len]. *)
 end
 
 (** {1 Manipulating lists} *)
