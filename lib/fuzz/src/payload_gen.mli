@@ -82,6 +82,13 @@ val fresh_var :
 val vars : Var.Map.t t
 (** [vars] gets the current variable map at time of generation. *)
 
+val env_at_path :
+  ?predicates:(Var.Record.t -> bool) list -> Path.Flagged.t -> Fir.Env.t t
+(** [env_at_path ?predicates path] gets the environment of variables in scope
+    at [path], according to this payload generator's state snapshot. If
+    [predicates] is present, the environment will contain only those
+    variables for which all of [predicates] are true. *)
+
 val flag : Common.Id.t -> bool t
 (** [flag id] evaluates the (potentially stochastic) flag with ID [id]. *)
 

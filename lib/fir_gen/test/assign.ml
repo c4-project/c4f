@@ -242,3 +242,84 @@ let%test_unit "Bool: generated destination variables in environment" =
   Q.Test.run_exn
     (module Chk)
     ~f:([%test_pred: Fir.Assign.t] ~here:[[%here]] (dst_in_env env))
+
+let%expect_test "all: samples" =
+  let env = Lazy.force Fir_test.Env.test_env in
+  print_sample
+    ( module struct
+      include Fir.Assign
+
+      let quickcheck_generator = Src.Assign.any ~src:env ~dst:env
+
+      let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
+    end ) ;
+  [%expect
+    {|
+      barbaz = false;
+      barbaz = atomic_load_explicit(foobaz, memory_order_relaxed);
+      barbaz = atomic_load_explicit(foobaz, memory_order_consume);
+      barbaz =
+      ((atomic_load_explicit(bar, memory_order_relaxed) | foo - foo) & foo | foo)
+      !=
+      (atomic_fetch_xor_explicit(bar, 0, memory_order_relaxed) - 95 & 0 ^ 0 &
+       atomic_fetch_sub_explicit(&x, 0, memory_order_acq_rel) |
+       atomic_load_explicit(&y, memory_order_relaxed));
+      barbaz = atomic_load_explicit(&y, memory_order_consume) >=
+      (atomic_fetch_xor_explicit(&y, 0, memory_order_release) -
+       atomic_fetch_xor_explicit(&y, 0, memory_order_release) & -2054658);
+      barbaz = (atomic_load_explicit(&y, memory_order_consume) & 0) >= (foo & 0);
+      barbaz = (0 & -3937) < 0;
+      barbaz = barbaz && barbaz;
+      barbaz =
+      !((*blep ^ -2147483648 | atomic_load_explicit(&x, memory_order_relaxed) -
+         atomic_load_explicit(&x, memory_order_relaxed))
+        == 0)
+      ||
+      (atomic_load_explicit(&z, memory_order_seq_cst) ||
+       (atomic_load_explicit(&z, memory_order_seq_cst) ||
+        ((53 ^ atomic_load_explicit(&y, memory_order_acquire)) &
+         (atomic_load_explicit(bar, memory_order_acquire) -
+          atomic_load_explicit(bar, memory_order_acquire) |
+          (foo | atomic_load_explicit(bar, memory_order_consume)))
+         & 0 ^ 0)
+        == atomic_load_explicit(&x, memory_order_acquire) && true)
+       &&
+       ((95 ^
+         atomic_fetch_add_explicit(bar,
+                                   atomic_load_explicit(&y, memory_order_acquire) -
+                                   53, memory_order_release))
+        < *blep &&
+        (atomic_fetch_xor_explicit(bar,
+                                   atomic_fetch_add_explicit(bar, 0,
+                                                             memory_order_acq_rel)
+                                   & 0, memory_order_seq_cst)
+         >= (foo | -3494) && (0 & 95) >= 0)));
+      barbaz = !atomic_load_explicit(foobaz, memory_order_consume);
+      foo = 0;
+      foo = atomic_load_explicit(&y, memory_order_relaxed);
+      (*blep)--;
+      (*blep)++;
+      *blep = *blep - 99;
+      *blep = *blep ^ atomic_load_explicit(bar, memory_order_consume);
+      *blep =
+      atomic_fetch_xor_explicit(&y,
+                                atomic_fetch_xor_explicit(bar, 0,
+                                                          memory_order_seq_cst)
+                                -
+                                atomic_fetch_xor_explicit(bar, 0,
+                                                          memory_order_seq_cst),
+                                memory_order_seq_cst)
+      & atomic_load_explicit(bar, memory_order_relaxed) ^
+      atomic_fetch_xor_explicit(bar, foo ^ foo, memory_order_release); |}]
+
+let%test_unit "any: generated destination variables in environment" =
+  let env = Lazy.force Fir_test.Env.test_env in
+  Q.Test.run_exn
+    ( module struct
+      type t = Fir.Assign.t [@@deriving sexp]
+
+      let quickcheck_generator = Src.Assign.any ~src:env ~dst:env
+
+      let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
+    end )
+    ~f:([%test_pred: Fir.Assign.t] ~here:[[%here]] (dst_in_env env))

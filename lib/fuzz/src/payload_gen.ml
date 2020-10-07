@@ -60,6 +60,11 @@ let flag (id : Act_common.Id.t) : bool t =
 
 let vars : Var.Map.t t = lift_acc (Context.state @> State.vars)
 
+let env_at_path ?(predicates : (Var.Record.t -> bool) list = [])
+    ({Path_flag.Flagged.path; _} : Path.Flagged.t) : Fir.Env.t t =
+  vars
+  >>| Var.Map.env_satisfying_all ~predicates ~scope:(Local (Path.tid path))
+
 let fresh_var ?(such_that : (Act_common.Litmus_id.t -> bool) option)
     (scope : Act_common.Scope.t) : Act_common.Litmus_id.t t =
   let* v = vars in

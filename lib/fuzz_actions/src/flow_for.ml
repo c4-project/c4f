@@ -350,4 +350,84 @@ module Surround = struct
         Accessor.construct Statement.flow
           (Flow_block.for_loop_simple ~control body))
   end)
+
+  module Dead :
+    Fuzz.Action_types.S
+      with type Payload.t = Fir.Flow_block.For.t Fuzz.Payload_impl.Pathed.t =
+  Fuzz.Action.Make_surround (struct
+    let name = prefix_name Common.Id.("dead" @: empty)
+
+    let surround_with : string = "for-loops"
+
+    let readme_suffix : string =
+      {| This action introduces arbitrary, occasionally nonsensical for loops
+         into dead code. |}
+
+    let path_filter ({vars; _} : Fuzz.State.t) : Fuzz.Path_filter.t =
+      (* TODO(@MattWindsor91): this should be able to fire even if we don't
+         have variables, but the generators don't presently safely handle
+         this situation. *)
+      Fuzz.Path_filter.(
+        in_thread_with_variables ~predicates:[] vars
+        + Fuzz.Path_filter.require_flag In_dead_code)
+
+    let available =
+      Fuzz.Availability.(
+        M.(
+          lift_state path_filter
+          >>= is_filter_constructible ~kind:Transform_list))
+
+    module Payload = struct
+      type t = Fir.Flow_block.For.t [@@deriving sexp]
+
+      let src_exprs x = x.@*(Fir.Flow_block.For.exprs)
+
+      let gen_cmp (env : Fir.Env.t) : Fir.Expression.t Q.Generator.t =
+        let module CInt = Fir_gen.Expr.Int_values (struct
+          let env = env
+        end) in
+        let module CBool = Fir_gen.Expr.Bool_values (struct
+          let env = env
+        end) in
+        Q.Generator.union
+          [CInt.quickcheck_generator; CBool.quickcheck_generator]
+
+      let gen' (env : Fir.Env.t) : t Q.Generator.t =
+        let asn = Fir_gen.Assign.any ~src:env ~dst:env in
+        let cmp = gen_cmp env in
+        let module CInt = Fir_gen.Expr.Int_values (struct
+          let env = env
+        end) in
+        Q.Generator.(
+          Let_syntax.(
+            let%map init = option asn
+            and cmp = option cmp
+            and update = option asn in
+            Fir.Flow_block.For.make ?init ?cmp ?update ()))
+
+      let gen (path : Fuzz.Path.Flagged.t) : t Fuzz.Payload_gen.t =
+        Fuzz.(
+          Payload_gen.(
+            let* env = env_at_path path in
+            lift_quickcheck (gen' env)))
+    end
+
+    let recommendations (_ : Payload.t Fuzz.Payload_impl.Pathed.t) :
+        Common.Id.t list =
+      (* No need to recommend any dead-code introduction actions; this action
+         already introduces dead code! *)
+      []
+
+    let run_pre (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
+        Fuzz.Subject.Test.t Fuzz.State.Monad.t =
+      (* No need to do housekeeping if we're in dead code. *)
+      ignore payload ;
+      Fuzz.State.Monad.return test
+
+    let wrap (statements : Fuzz.Subject.Statement.t list)
+        ~(payload : Payload.t) : Fuzz.Subject.Statement.t =
+      let body = Fuzz.Subject.Block.make_dead_code ~statements () in
+      let loop = Fir.Flow_block.for_loop body ~control:payload in
+      Fir.(Accessor.construct Statement.flow loop)
+  end)
 end

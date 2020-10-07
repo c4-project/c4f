@@ -53,6 +53,11 @@ end
 
 (** {2 Surround actions} *)
 module Surround : sig
+  (** Action that surrounds dead code with (fairly) arbitrary for-loops. *)
+  module Dead :
+    Fuzz.Action_types.S
+      with type Payload.t = Fir.Flow_block.For.t Fuzz.Payload_impl.Pathed.t
+
   (** Action that surrounds things with for-loops with a small, constant
       number of iterations. *)
   module Simple : Payload.Simple.S_action

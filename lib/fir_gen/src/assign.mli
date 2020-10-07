@@ -25,3 +25,8 @@ module Int (Src : Fir.Env_types.S) (Dst : Fir.Env_types.S) : S
 (** Generates type-safe, but arbitrary, Boolean assigns over the given
     environments. *)
 module Bool (Src : Fir.Env_types.S) (Dst : Fir.Env_types.S) : S
+
+val any : src:Fir.Env.t -> dst:Fir.Env.t -> Fir.Assign.t Q.Generator.t
+(** [any ~src ~dst] randomly chooses to generate an integer or Boolean
+    assign, depending on the variables available in [src]. It is undefined if
+    no such variables exist. *)

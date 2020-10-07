@@ -229,6 +229,14 @@ loop.surround.do.false:
     
     The condition of the `do... while` loop is statically guaranteed to be
     false, meaning the loop will iterate only once.
+loop.surround.for.dead:
+  Weight: 10x
+  Summary:
+    This action removes a sublist of statements from the program, replacing
+    them with for-loops containing those statements.
+    
+    This action introduces arbitrary, occasionally nonsensical for loops into
+    dead code.
 loop.surround.for.kv-once:
   Weight: 10x
   Summary:

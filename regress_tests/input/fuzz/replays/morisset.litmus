@@ -1,0 +1,11 @@
+C Morisset
+
+{ g1 = 1; g2 = 0; }
+
+void P0(int *g1, int *g2) {
+	// TODO: make the validator accept empty threads
+	*g2 = 42;
+}
+
+forall (g2 == 42)
+

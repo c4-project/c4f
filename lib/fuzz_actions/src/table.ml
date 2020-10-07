@@ -33,6 +33,7 @@ let actions : Fuzz.Action.With_default_weight.t list Lazy.t =
       ; (module Flow_while.Surround.Do_dead) @-> 10
       ; (module Flow_while.Surround.Do_false) @-> 15
       ; (module Flow_for.Insert.Kv_never) @-> 15
+      ; (module Flow_for.Surround.Dead) @-> 10
       ; (module Flow_for.Surround.Kv_once) @-> 10
       ; (module Flow_for.Surround.Simple) @-> 15
       ; (module Mem.Fence) @-> 15

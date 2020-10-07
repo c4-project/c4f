@@ -48,11 +48,10 @@ let%test_module "Pool making" =
       test (Fuzz.Flag.exact true) ;
       [%expect
         {|
-        loop.surround.do.false, var.assign.insert.int.redundant,
-        dead.insert.early-out-loop-end, atomic.store.insert.int.normal,
-        loop.insert.while.false, atomic.cmpxchg.insert.int.succeed,
-        atomic.store.insert.int.redundant, var.make, var.assign.insert.int.dead,
-        atomic.store.insert.int.dead |}]
+        var.assign.insert.int.normal, atomic.fetch.insert.int.dead, dead.insert.goto,
+        atomic.store.insert.int.normal, loop.surround.while.dead, var.volatile,
+        dead.insert.early-out, if.transform.invert, atomic.store.transform.xchgify,
+        atomic.cmpxchg.insert.int.succeed |}]
 
     let%expect_test "never pick" =
       test (Fuzz.Flag.exact false) ;
@@ -63,9 +62,10 @@ let%test_module "Pool making" =
       test (Or_error.ok_exn (Fuzz.Flag.try_make ~wins:1 ~losses:1)) ;
       [%expect
         {|
-        var.assign.insert.int.normal, var.make, nop, dead.insert.goto, mem.fence,
-        dead.insert.early-out-loop-end, var.volatile, loop.surround.for.kv-once,
-        loop.surround.do.false, mem.strengthen |}]
+        var.assign.insert.int.dead, atomic.cmpxchg.insert.int.succeed,
+        var.assign.insert.int.normal, dead.insert.goto, if.surround.duplicate,
+        program.label, mem.strengthen, var.make, dead.insert.early-out-loop-end,
+        loop.surround.do.false |}]
 
     let%expect_test "pick almost never" =
       test (Or_error.ok_exn (Fuzz.Flag.try_make ~wins:1 ~losses:10000000)) ;
