@@ -263,8 +263,12 @@ module Surround = struct
         surround non-generated or loop-unsafe statements. |}
 
     let path_filter (_ : Fuzz.State.t) =
+      (* The restriction on not being in an execute-multiple block isn't for
+         soundness, it's to prevent the fuzzer from deeply nesting multiple
+         loops, which can quickly lead to overlong run times. *)
       Fuzz.Path_filter.(
         live_loop_surround
+        + Fuzz.Path_filter.forbid_flag In_execute_multi
         + require_end_check (Stm_no_meta_restriction Once_only))
 
     let available : Fuzz.Availability.t =
