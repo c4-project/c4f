@@ -12,11 +12,93 @@
 open Base
 open Import
 
+(* We define sexp conversion on paths through fragments. *)
+
 type index = int [@@deriving sexp, compare, equal]
 
 type length = int [@@deriving sexp, compare, equal]
 
 type branch = bool [@@deriving sexp, compare, equal]
+
+module Fragment = struct
+  type t =
+    | Branch of branch
+    | Body
+    | Cond
+    | Flow
+    | If
+    | Insert of index
+    | Range of index * length
+    | Stm of index
+    | Stms
+    | This
+    | Thread of int
+  [@@deriving sexp]
+
+  let pp_name (type a) fg (step_name : string) : a Fmt.t =
+    Fmt.(styled (`Fg fg) (const string step_name))
+
+  let pp_idx fg (kind : string) : int Fmt.t =
+    Fmt.(pp_name fg kind ++ brackets int)
+
+  let pp (f : Formatter.t) : t -> unit = function
+    | Branch false ->
+        pp_name `Magenta "False" f ()
+    | Branch true ->
+        pp_name `Magenta "False" f ()
+    | Body ->
+        pp_name `Magenta "Body" f ()
+    | Cond ->
+        pp_name `Green "Cond" f ()
+    | Flow ->
+        pp_name `Blue "Flow" f ()
+    | If ->
+        pp_name `Blue "If" f ()
+    | Insert idx ->
+        pp_idx `Green "Insert" f idx
+    | Range (idx, stride) ->
+        Fmt.(
+          styled
+            (`Fg `Green)
+            (any "Range" ++ brackets (pair ~sep:comma int int)))
+          f (idx, stride)
+    | Stm idx ->
+        pp_idx `Cyan "Stm" f idx
+    | Stms ->
+        pp_name `Yellow "Stms" f ()
+    | This ->
+        pp_name `Green "This" f ()
+    | Thread idx ->
+        pp_idx `Red "Thread" f idx
+
+  let bad_fragments (sort : string) (hd : t) (fs : t list) : 'a Or_error.t =
+    Or_error.error_s
+      [%message
+        "Path fragments are not valid for the expected type of path"
+          ~fragments:(hd :: fs : t list)
+          ~sort]
+
+  let not_enough (sort : string) : 'a Or_error.t =
+    Or_error.error_s [%message "Expected more path fragments here" ~sort]
+
+  let terminate (sort : string) (result : 'a) (overflow : t list) :
+      'a Or_error.t =
+    if List.is_empty overflow then Ok result
+    else
+      Or_error.error_s
+        [%message
+          "Too many path fragments in list"
+            ~overflow:(overflow : t list)
+            ~sort]
+
+  let lift_not_enough (sort : string) (xs : t list)
+      (f : t -> t list -> 'a Or_error.t) : 'a Or_error.t =
+    match xs with hd :: tl -> f hd tl | [] -> not_enough sort
+
+  let lift_continue (type a b) (f : t list -> a Or_error.t) (g : a -> b)
+      (rest : t list) : b Or_error.t =
+    Or_error.(f rest >>| g)
+end
 
 type 'a flow_block = In_block of 'a | This_cond
 [@@deriving sexp, compare, equal]
@@ -25,94 +107,124 @@ type stm =
   | In_if of (bool * stm_list) flow_block
   | In_flow of stm_list flow_block
   | This_stm
-[@@deriving sexp, compare, equal]
+[@@deriving compare, equal]
 
 and stm_list =
   | Insert of index
   | In_stm of index * stm
   | On_range of index * length
-[@@deriving sexp, equal]
+[@@deriving equal]
 
-let bang (type a) (f : Formatter.t) (a : a) : unit = Fmt.(any "@,!@,") f a
+let rec flow_block_of_fragments (rest : Fragment.t list) :
+    stm_list flow_block Or_error.t =
+  Fragment.(
+    lift_not_enough "flow" rest
+    @@ function
+    | Body ->
+        lift_continue stm_list_of_fragments (fun r -> In_block r)
+    | Cond ->
+        terminate "flow" This_cond
+    | x ->
+        bad_fragments "flow" x)
 
-let pp_name (type a) fg (step_name : string) : a Fmt.t =
-  Fmt.(styled (`Fg fg) (const string step_name))
+and if_of_fragments (rest : Fragment.t list) :
+    (bool * stm_list) flow_block Or_error.t =
+  Fragment.(
+    lift_not_enough "if" rest
+    @@ function
+    | Branch b ->
+        lift_continue stm_list_of_fragments (fun r -> In_block (b, r))
+    | Cond ->
+        terminate "if" This_cond
+    | x ->
+        bad_fragments "if" x)
 
-let pp_step (type a) fg (step_name : string) (pp_rest : a Fmt.t) : a Fmt.t =
-  Fmt.(pp_name fg step_name ++ bang ++ pp_rest)
+and stm_of_fragments (rest : Fragment.t list) : stm Or_error.t =
+  Fragment.(
+    lift_not_enough "statement" rest
+    @@ function
+    | Flow ->
+        lift_continue flow_block_of_fragments (fun r -> In_flow r)
+    | If ->
+        lift_continue if_of_fragments (fun r -> In_if r)
+    | This ->
+        terminate "statement" This_stm
+    | x ->
+        bad_fragments "statement" x)
 
-let pp_idx (kind : string) : int Fmt.t =
-  Fmt.(const string kind ++ brackets int)
+and stm_list_of_fragments (rest : Fragment.t list) : stm_list Or_error.t =
+  Fragment.(
+    lift_not_enough "statement-list" rest
+    @@ function
+    | Insert i ->
+        terminate "statement-list" (Insert i : stm_list)
+    | Stm i ->
+        lift_continue stm_of_fragments (fun r -> In_stm (i, r))
+    | Range (i, s) ->
+        terminate "statement-list" (On_range (i, s))
+    | x ->
+        bad_fragments "statement-list" x)
 
-let rec pp_stm (f : Formatter.t) : stm -> unit = function
-  | This_stm ->
-      pp_name `Green "This" f ()
-  | In_if rest ->
-      pp_step `Blue "If" pp_if f rest
-  | In_flow rest ->
-      pp_step `Blue "Flow-block" pp_flow f rest
-
-and pp_stms (f : Formatter.t) : stm_list -> unit = function
-  | Insert idx ->
-      Fmt.styled (`Fg `Green) (pp_idx "Insert") f idx
-  | In_stm (idx, rest) ->
-      Fmt.(pair ~sep:bang (styled (`Fg `Cyan) (pp_idx "Stm")) pp_stm)
-        f (idx, rest)
-  | On_range (idx, stride) ->
-      Fmt.(
-        styled
-          (`Fg `Green)
-          (any "Range" ++ brackets (pair ~sep:comma int int)))
-        f (idx, stride)
-
-and pp_if (f : Formatter.t) : (bool * stm_list) flow_block -> unit = function
-  | In_block (true, rest) ->
-      pp_step `Magenta "True" pp_stms f rest
-  | In_block (false, rest) ->
-      pp_step `Magenta "False" pp_stms f rest
-  | This_cond ->
-      pp_name `Green "Cond" f ()
-
-and pp_flow (f : Formatter.t) : stm_list flow_block -> unit = function
+let rec fragments_of_flow_block (x : stm_list flow_block) : Fragment.t list =
+  match x with
   | In_block rest ->
-      pp_step `Magenta "Body" pp_stms f rest
+      Body :: fragments_of_stm_list rest
   | This_cond ->
-      pp_name `Green "Cond" f ()
+      [Cond]
+
+and fragments_of_if (x : (bool * stm_list) flow_block) : Fragment.t list =
+  match x with
+  | In_block (b, rest) ->
+      Branch b :: fragments_of_stm_list rest
+  | This_cond ->
+      [Cond]
+
+and fragments_of_stm (x : stm) : Fragment.t list =
+  match x with
+  | In_flow rest ->
+      Flow :: fragments_of_flow_block rest
+  | In_if rest ->
+      If :: fragments_of_if rest
+  | This_stm ->
+      [This]
+
+and fragments_of_stm_list (xs : stm_list) : Fragment.t list =
+  match xs with
+  | Insert i ->
+      [Insert i]
+  | In_stm (i, rest) ->
+      Stm i :: fragments_of_stm rest
+  | On_range (i, len) ->
+      [Range (i, len)]
 
 module If = struct
-  type t = (bool * stm_list) flow_block [@@deriving sexp, compare, equal]
+  type t = (bool * stm_list) flow_block [@@deriving compare, equal]
 
   let in_branch (b : branch) (rest : stm_list) : t = In_block (b, rest)
 
   let this_cond : t = This_cond
-
-  let pp : t Fmt.t = pp_if
 end
 
 module Flow = struct
-  type t = stm_list flow_block [@@deriving sexp, compare, equal]
+  type t = stm_list flow_block [@@deriving compare, equal]
 
   let in_body (rest : stm_list) : t = In_block rest
 
   let this_cond : t = This_cond
-
-  let pp : t Fmt.t = pp_flow
 end
 
 module Stm = struct
-  type t = stm [@@deriving sexp, compare, equal]
+  type t = stm [@@deriving compare, equal]
 
   let in_if (rest : If.t) : t = In_if rest
 
   let in_flow (rest : Flow.t) : t = In_flow rest
 
   let this_stm : t = This_stm
-
-  let pp : t Fmt.t = pp_stm
 end
 
 module Stms = struct
-  type t = stm_list [@@deriving sexp, compare, equal]
+  type t = stm_list [@@deriving compare, equal]
 
   let index : type i. (i, index, t, [< field]) Accessor.Simple.t =
     [%accessor
@@ -155,32 +267,64 @@ module Stms = struct
 
   let singleton (i : index) : t = On_range (i, 1)
 
-  let pp : t Fmt.t = pp_stms
+  let sexp_of_t (path : t) : Sexp.t =
+    List.sexp_of_t Fragment.sexp_of_t (fragments_of_stm_list path)
+
+  let t_of_sexp (sexp : Sexp.t) : t =
+    let frags = List.t_of_sexp Fragment.t_of_sexp sexp in
+    Or_error.ok_exn (stm_list_of_fragments frags)
 end
 
 module Thread = struct
-  type t = In_stms of stm_list [@@deriving sexp, compare, equal]
+  type t = In_stms of stm_list [@@deriving compare, equal]
 
   let in_stms (rest : stm_list) : t = In_stms rest
 
-  let pp (f : Formatter.t) : t -> unit = function
+  let of_fragments (frags : Fragment.t list) : t Or_error.t =
+    Fragment.(
+      lift_not_enough "thread" frags
+      @@ function
+      | Stms ->
+          lift_continue stm_list_of_fragments (fun r -> In_stms r)
+      | x ->
+          bad_fragments "thread" x)
+
+  let fragments_of : t -> Fragment.t list = function
     | In_stms rest ->
-        Fmt.(styled (`Fg `Yellow) (any "Stms") ++ bang ++ Stms.pp) f rest
+        Stms :: fragments_of_stm_list rest
 end
 
 (* Defined in a separate module to make defining Flagged easier. *)
 module Complete = struct
-  type t = In_thread of index * Thread.t [@@deriving sexp, compare, equal]
+  type t = In_thread of index * Thread.t [@@deriving compare, equal]
 
   let in_thread (i : index) (rest : Thread.t) : t = In_thread (i, rest)
 
   let tid : t -> int = function In_thread (t, _) -> t
 
-  let pp_tid : int Fmt.t = Fmt.(styled (`Fg `Red) (any "P" ++ int))
+  let of_fragments (frags : Fragment.t list) : t Or_error.t =
+    Fragment.(
+      lift_not_enough "program" frags
+      @@ function
+      | Thread n ->
+          lift_continue Thread.of_fragments (fun r -> In_thread (n, r))
+      | x ->
+          bad_fragments "program" x)
 
-  let pp (f : Formatter.t) : t -> unit = function
-    | In_thread (tid, rest) ->
-        Fmt.(pair ~sep:bang pp_tid Thread.pp) f (tid, rest)
+  let fragments_of : t -> Fragment.t list = function
+    | In_thread (n, rest) ->
+        Thread n :: Thread.fragments_of rest
+
+  let sexp_of_t (path : t) : Sexp.t =
+    List.sexp_of_t Fragment.sexp_of_t (fragments_of path)
+
+  let t_of_sexp (sexp : Sexp.t) : t =
+    let frags = List.t_of_sexp Fragment.t_of_sexp sexp in
+    Or_error.ok_exn (of_fragments frags)
+
+  let sep (type a) (f : Formatter.t) (a : a) : unit = Fmt.(any "@,.@,") f a
+
+  let pp : t Fmt.t = Fmt.(using fragments_of (list ~sep Fragment.pp))
 end
 
 include Complete
@@ -190,7 +334,7 @@ module Flagged = struct
 
   let pp : t Fmt.t =
     Fmt.(
-      using (Accessor.get Path_flag.Flagged.path) Complete.pp
+      using (Accessor.get Path_flag.Flagged.path) pp
       ++ sp
       ++ using (Accessor.get Path_flag.Flagged.flags) Path_flag.pp_set)
 end

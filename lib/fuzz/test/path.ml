@@ -27,17 +27,16 @@ let%test_module "s-expression serialisation" =
           @@ If.in_branch true @@ Stms.in_stm 5 @@ Stm.this_stm) ;
       [%expect
         {|
-          (In_thread 0
-           (In_stms (In_stm 2 (In_if (In_block (true (In_stm 5 This_stm))))))) |}]
+          ((Thread 0) Stms (Stm 2) If (Branch true) (Stm 5) This) |}]
 
     let%expect_test "insert-statement example" =
       test P.(in_thread 3 @@ Thread.in_stms @@ Stms.insert 0) ;
-      [%expect {| (In_thread 3 (In_stms (Insert 0))) |}]
+      [%expect {| ((Thread 3) Stms (Insert 0)) |}]
 
     let%expect_test "if-statement conditional example" =
       test
         P.(
           in_thread 2 @@ Thread.in_stms @@ Stms.in_stm 9 @@ Stm.in_if
           @@ If.this_cond) ;
-      [%expect {| (In_thread 2 (In_stms (In_stm 9 (In_if This_cond)))) |}]
+      [%expect {| ((Thread 2) Stms (Stm 9) If Cond) |}]
   end )

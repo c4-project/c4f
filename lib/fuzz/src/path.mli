@@ -47,7 +47,7 @@ type 'a flow_block =
 
           This path, naturally, only makes sense on if statements, or flow
           blocks with a conditional. *)
-[@@deriving sexp, compare, equal]
+[@@deriving compare, equal]
 
 (** A path focusing on a statement. *)
 type stm =
@@ -56,7 +56,7 @@ type stm =
   | In_flow of stm_list flow_block
       (** Path passes through the body of a flow block. *)
   | This_stm  (** Path terminates on this statement. *)
-[@@deriving sexp, compare, equal]
+[@@deriving compare, equal]
 
 (** A path focusing on a list of statements. *)
 and stm_list =
@@ -64,7 +64,7 @@ and stm_list =
   | In_stm of index * stm  (** Traversing further into one statement. *)
   | On_range of index * length
       (** Appling something to an entire subrange of statements. *)
-[@@deriving sexp, compare, equal]
+[@@deriving compare, equal]
 
 (** {2 Submodules}
 
@@ -73,9 +73,7 @@ and stm_list =
 
 (** A path focusing on an if statement. *)
 module If : sig
-  type t = (branch * stm_list) flow_block [@@deriving sexp, compare, equal]
-
-  include Pretty_printer.S with type t := t
+  type t = (branch * stm_list) flow_block [@@deriving compare, equal]
 
   (** {3 Constructors} *)
 
@@ -89,9 +87,7 @@ end
 
 (** A path focusing on a flow block. *)
 module Flow : sig
-  type t = stm_list flow_block [@@deriving sexp, compare, equal]
-
-  include Pretty_printer.S with type t := t
+  type t = stm_list flow_block [@@deriving compare, equal]
 
   (** {3 Constructors} *)
 
@@ -104,9 +100,7 @@ module Flow : sig
 end
 
 module Stm : sig
-  type t = stm [@@deriving sexp, compare, equal]
-
-  include Pretty_printer.S with type t := t
+  type t = stm [@@deriving compare, equal]
 
   (** {3 Constructors} *)
 
@@ -122,8 +116,6 @@ end
 
 module Stms : sig
   type t = stm_list [@@deriving sexp, compare, equal]
-
-  include Pretty_printer.S with type t := t
 
   (** {3 Accessors and getters} *)
 
@@ -165,9 +157,7 @@ end
 
 (** A path focusing on a single thread. *)
 module Thread : sig
-  type t = In_stms of stm_list [@@deriving sexp, compare, equal]
-
-  include Pretty_printer.S with type t := t
+  type t = In_stms of stm_list [@@deriving compare, equal]
 
   (** {3 Constructors} *)
 
