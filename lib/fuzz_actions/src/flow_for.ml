@@ -363,13 +363,10 @@ module Surround = struct
       {| This action introduces arbitrary, occasionally nonsensical for loops
          into dead code. |}
 
-    let path_filter ({vars; _} : Fuzz.State.t) : Fuzz.Path_filter.t =
-      (* TODO(@MattWindsor91): this should be able to fire even if we don't
-         have variables, but the generators don't presently safely handle
-         this situation. *)
-      Fuzz.Path_filter.(
-        in_thread_with_variables ~predicates:[] vars
-        + Fuzz.Path_filter.require_flag In_dead_code)
+    let path_filter (_ : Fuzz.State.t) : Fuzz.Path_filter.t =
+      (* We make sure to handle the case where we have no variables available
+         to us in the generator, so the path filter doesn't have to. *)
+      Fuzz.Path_filter.require_flag In_dead_code
 
     let available =
       Fuzz.Availability.(
@@ -392,17 +389,17 @@ module Surround = struct
         Q.Generator.union
           [CInt.quickcheck_generator; CBool.quickcheck_generator]
 
+      let gen_assign (env : Fir.Env.t) : Fir.Assign.t option Q.Generator.t =
+        Option.value_map
+          (Fir_gen.Assign.any ~src:env ~dst:env)
+          ~default:(Q.Generator.return None) ~f:Q.Generator.option
+
       let gen' (env : Fir.Env.t) : t Q.Generator.t =
-        let asn = Fir_gen.Assign.any ~src:env ~dst:env in
-        let cmp = gen_cmp env in
-        let module CInt = Fir_gen.Expr.Int_values (struct
-          let env = env
-        end) in
         Q.Generator.(
           Let_syntax.(
-            let%map init = option asn
-            and cmp = option cmp
-            and update = option asn in
+            let%map init = gen_assign env
+            and cmp = option (gen_cmp env)
+            and update = gen_assign env in
             Fir.Flow_block.For.make ?init ?cmp ?update ()))
 
       let gen (path : Fuzz.Path.Flagged.t) : t Fuzz.Payload_gen.t =

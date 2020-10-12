@@ -243,13 +243,26 @@ let%test_unit "Bool: generated destination variables in environment" =
     (module Chk)
     ~f:([%test_pred: Fir.Assign.t] ~here:[[%here]] (dst_in_env env))
 
-let%expect_test "all: samples" =
+let%expect_test "any is defined on test env" =
+  let env = Lazy.force Fir_test.Env.test_env in
+  let asn = Src.Assign.any ~src:env ~dst:env in
+  Stdio.printf "%b" (Option.is_some asn) ;
+  [%expect {| true |}]
+
+let%expect_test "any is NOT defined on empty env" =
+  let env = Fir.Env.of_typing (Map.empty (module Act_common.C_id)) in
+  let asn = Src.Assign.any ~src:env ~dst:env in
+  Stdio.printf "%b" (Option.is_some asn) ;
+  [%expect {| false |}]
+
+let%expect_test "any: samples with valid env" =
   let env = Lazy.force Fir_test.Env.test_env in
   print_sample
     ( module struct
       include Fir.Assign
 
-      let quickcheck_generator = Src.Assign.any ~src:env ~dst:env
+      let quickcheck_generator =
+        Option.value_exn (Src.Assign.any ~src:env ~dst:env)
 
       let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
     end ) ;
@@ -318,7 +331,8 @@ let%test_unit "any: generated destination variables in environment" =
     ( module struct
       type t = Fir.Assign.t [@@deriving sexp]
 
-      let quickcheck_generator = Src.Assign.any ~src:env ~dst:env
+      let quickcheck_generator =
+        Option.value_exn (Src.Assign.any ~src:env ~dst:env)
 
       let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
     end )

@@ -26,7 +26,16 @@ module Int (Src : Fir.Env_types.S) (Dst : Fir.Env_types.S) : S
     environments. *)
 module Bool (Src : Fir.Env_types.S) (Dst : Fir.Env_types.S) : S
 
-val any : src:Fir.Env.t -> dst:Fir.Env.t -> Fir.Assign.t Q.Generator.t
-(** [any ~src ~dst] randomly chooses to generate an integer or Boolean
-    assign, depending on the variables available in [src]. It is undefined if
-    no such variables exist. *)
+val int : src:Fir.Env.t -> dst:Fir.Env.t -> Fir.Assign.t Q.Generator.t option
+(** [int ~src ~dst] tries to build an integer assign generator safely; it
+    returns [None] if no assignable integers exist in [src]. *)
+
+val bool :
+  src:Fir.Env.t -> dst:Fir.Env.t -> Fir.Assign.t Q.Generator.t option
+(** [int ~src ~dst] tries to build an Bool assign generator safely; it
+    returns [None] if no assignable Booleans exist in [src]. *)
+
+val any : src:Fir.Env.t -> dst:Fir.Env.t -> Fir.Assign.t Q.Generator.t option
+(** [any ~src ~dst] tries to build a generator that randomly chooses an
+    integer or Boolean assign, depending on the variables available in [src].
+    It is [None] if both [int ~src ~dst] and [bool ~src ~dst] are [None]. *)

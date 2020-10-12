@@ -26,31 +26,44 @@ module Bool (Src : Fir.Env_types.S) (Dst : Fir.Env_types.S) : S =
     (Fir.Assign.Source.Quickcheck_bool
        (Expr.Bool_values (Src))) (Lvalue.Bool_values (Dst))
 
-let any ~(src : Fir.Env.t) ~(dst : Fir.Env.t) : Fir.Assign.t Q.Generator.t =
-  (* TODO(@MattWindsor91): there must be an easier way to do this. *)
-  let module Src = struct
-    let env = src
-  end in
-  let module Dst = struct
-    let env = dst
-  end in
+let int ~(src : Fir.Env.t) ~(dst : Fir.Env.t) :
+    Fir.Assign.t Q.Generator.t option =
   (* Can't use prim_type here as we need the source variables to be
      non-atomic. *)
-  let has_int =
-    Fir.Env.has_vars_of_basic_type src ~basic:(Fir.Type.Basic.int ())
-  in
-  let has_bool =
-    Fir.Env.has_vars_of_basic_type src ~basic:(Fir.Type.Basic.bool ())
-  in
-  Q.Generator.union
-    (List.filter_opt
-       [ ( if has_int then
-           Some
-             (let module I = Int (Src) (Dst) in
-             I.quickcheck_generator)
-         else None )
-       ; ( if has_bool then
-           Some
-             (let module B = Bool (Src) (Dst) in
-             B.quickcheck_generator)
-         else None ) ])
+  if Fir.Env.has_vars_of_basic_type src ~basic:(Fir.Type.Basic.int ()) then
+    Some
+      (let module I =
+         Int
+           (struct
+             let env = src
+           end)
+           (struct
+             let env = dst
+           end)
+       in
+      I.quickcheck_generator)
+  else None
+
+let bool ~(src : Fir.Env.t) ~(dst : Fir.Env.t) :
+    Fir.Assign.t Q.Generator.t option =
+  (* Ditto. *)
+  if Fir.Env.has_vars_of_basic_type src ~basic:(Fir.Type.Basic.bool ()) then
+    Some
+      (let module B =
+         Bool
+           (struct
+             let env = src
+           end)
+           (struct
+             let env = dst
+           end)
+       in
+      B.quickcheck_generator)
+  else None
+
+let any ~(src : Fir.Env.t) ~(dst : Fir.Env.t) :
+    Fir.Assign.t Q.Generator.t option =
+  (* TODO(@MattWindsor91): there must be an easier way to do this. *)
+  Option.map
+    (Option.all [int ~src ~dst; bool ~src ~dst])
+    ~f:Q.Generator.union
