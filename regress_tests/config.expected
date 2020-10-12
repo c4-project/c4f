@@ -34,5 +34,20 @@ fuzz {
   
 }
 ```
+## params.conf
 
-Ran 3 test(s).
+```
+default {
+  
+}
+
+fuzz {
+  action var.make 10
+  set param action.cap.upper to 1000
+  set flag action.enable to 2:1
+  set flag action.pick-extra to no
+  set flag mem.unsafe-weaken-orders to yes
+}
+```
+
+Ran 4 test(s).

@@ -61,11 +61,11 @@ let num = [%sedlex.regexp? Plus digit]
 
 let eol = [%sedlex.regexp? '\n']
 
-let c_id_start = [%sedlex.regexp? alpha | '_']
+let id_start = [%sedlex.regexp? alpha | '_']
 
-let c_id_middle = [%sedlex.regexp? c_id_start | digit | '.']
+let id_middle = [%sedlex.regexp? id_start | digit | '-' | '.']
 
-let c_id = [%sedlex.regexp? c_id_start, Star c_id_middle]
+let id = [%sedlex.regexp? id_start, Star id_middle]
 
 let space = [%sedlex.regexp? Sub (white_space, '\n')]
 
@@ -96,7 +96,7 @@ let rec token (lexbuf : Sedlexing.lexbuf) : token =
       Lu.read_string (fun x -> STRING x) lexbuf
   | Opt '-', num ->
       INTEGER (Int.of_string (S.Utf8.lexeme lexbuf))
-  | c_id ->
+  | id ->
       lex_possible_keyword (S.Utf8.lexeme lexbuf)
   | _ ->
       F.lex_error ("Unexpected char: " ^ S.Utf8.lexeme lexbuf) lexbuf
