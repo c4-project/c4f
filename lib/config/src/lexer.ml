@@ -90,6 +90,8 @@ let rec token (lexbuf : Sedlexing.lexbuf) : token =
       LBRACE
   | '}' ->
       RBRACE
+  | ':' ->
+      COLON
   | '"' ->
       Lu.read_string (fun x -> STRING x) lexbuf
   | Opt '-', num ->
