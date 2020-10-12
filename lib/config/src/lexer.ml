@@ -41,6 +41,7 @@ let keywords : token String_map.t Lazy.t =
        ; ("on", BOOL true)
        ; ("off", BOOL false)
        ; ("param", PARAM)
+       ; ("ratio", RATIO)
        ; ("set", SET)
        ; ("ssh", SSH)
        ; ("style", STYLE)
