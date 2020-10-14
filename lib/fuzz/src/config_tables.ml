@@ -63,7 +63,7 @@ let param_map : Param_spec.Int.t Map.M(Common.Id).t Lazy.t =
             |}
          )
        ; ( action_cap_upper_param
-         , Param_spec.make ~default:200
+         , Param_spec.make ~default:1000
              ~description:
                {|
               Caps the number of action passes that the fuzzer will run,
