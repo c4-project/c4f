@@ -5,7 +5,7 @@ action.cap.lower:
     Sets the guaranteed number of action passes that the fuzzer will run,
     before any extra actions.
 action.cap.upper:
-  Value: 200
+  Value: 1000
   Summary:
     Caps the number of action passes that the fuzzer will run, including any
     extra actions.
