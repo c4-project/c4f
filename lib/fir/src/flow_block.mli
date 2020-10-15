@@ -140,8 +140,12 @@ module Header : sig
   (** Traversal over the expressions inside a header. *)
   module On_expressions :
     Travesty.Traversable_types.S0
-      with type t := t
-       and type Elt.t := Expression.t
+      with type t = t
+       and type Elt.t = Expression.t
+
+  (** Traversal over the lvalues inside a header. *)
+  module On_lvalues :
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t
 end
 
 (** {1 Flow blocks proper} *)

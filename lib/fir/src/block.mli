@@ -53,6 +53,16 @@ include
   Travesty.Bi_traversable_types.S2
     with type ('meta, 'stm) t := ('meta, 'stm) t
 
+(** Basic stopgap bitraversability over applicatives. *)
+module On_applicative (A : Applicative.S) : sig
+  val bi_map_a :
+       ('m1, 's1) t
+    -> left:('m1 -> 'm2 A.t)
+    -> right:('s1 -> 's2 A.t)
+    -> ('m2, 's2) t A.t
+  (** [bi_map_a block ~left ~right] applicatively bi-maps over [block]. *)
+end
+
 (** [On_statements] fixes the type of metadata and permits direct traversal
     over the statements of a block. *)
 module On_statements (Meta : T) :

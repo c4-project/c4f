@@ -199,6 +199,35 @@ module For = struct
   let simple : type i. (i, Simple.t, t, [< variant]) Accessor.Simple.t =
     [%accessor
       Accessor.variant ~match_:match_simple ~construct:construct_simple]
+
+  (* TODO(@MattWindsor91): this should be available as an accessor, too, but
+     would depend on being able to get the lvalues of expressions as such -
+     either needing applicative traversals or accessors all the way down. *)
+  module On_lvalues :
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
+  Travesty.Traversable.Make0 (struct
+    type nonrec t = t
+
+    module Elt = Lvalue
+    module ELN =
+      Travesty.Traversable.Chain0
+        (Expression_traverse.On_addresses)
+        (Address.On_lvalues)
+
+    module On_monad (M : Monad.S) = struct
+      module EL = ELN.On_monad (M)
+      module AL = Assign.On_lvalues.On_monad (M)
+      module A = Utils.Applicative.Of_monad_ext (M)
+      module O = Tx.Option.On_monad (M)
+
+      let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
+        A.map3
+          ~f:(fun init cmp update -> {init; cmp; update})
+          (O.map_m ~f:(AL.map_m ~f) x.init)
+          (O.map_m ~f:(EL.map_m ~f) x.cmp)
+          (O.map_m ~f:(AL.map_m ~f) x.update)
+    end
+  end)
 end
 
 module While = struct
@@ -228,6 +257,9 @@ module Header = struct
     | Implicit
   [@@deriving accessors, sexp, compare, equal]
 
+  (* Ideally we want an [lvalues_many] here, but it's stuck on the expression
+     traversals all being monadic. *)
+
   let exprs_many : t -> (t, Expression.t, Expression.t) Accessor.Many.t =
     Accessor.Many.(
       function
@@ -244,8 +276,8 @@ module Header = struct
   (** Traversal over the expressions inside a header. *)
   module On_expressions :
     Travesty.Traversable_types.S0
-      with type t := t
-       and type Elt.t := Expression.t = Travesty.Traversable.Make0 (struct
+      with type t = t
+       and type Elt.t = Expression.t = Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Expression
@@ -258,6 +290,33 @@ module Header = struct
       end)
 
       let map_m : t -> f:(Elt.t -> Elt.t M.t) -> t M.t = AccM.map exprs
+    end
+  end)
+
+  module On_lvalues :
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
+  Travesty.Traversable.Make0 (struct
+    type nonrec t = t
+
+    module Elt = Lvalue
+    module ELN =
+      Travesty.Traversable.Chain0
+        (Expression_traverse.On_addresses)
+        (Address.On_lvalues)
+
+    module On_monad (M : Monad.S) = struct
+      module EL = ELN.On_monad (M)
+      module FL = For.On_lvalues.On_monad (M)
+
+      let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
+        M.(
+          match x with
+          | For n ->
+              FL.map_m ~f n >>| fun f' -> For f'
+          | While (w, e) ->
+              EL.map_m ~f e >>| fun e' -> While (w, e')
+          | (Explicit | Implicit | Lock _) as x ->
+              return x)
     end
   end)
 end

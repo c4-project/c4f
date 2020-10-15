@@ -10,6 +10,221 @@
    project root for more information. *)
 
 open Base
+module Src = Act_fir
+
+let%test_module "On_lvalues" =
+  ( module struct
+    module FHList = Src.Flow_block.Header.On_lvalues.On_monad (List)
+    module F = Src.Statement_traverse.Flow_block.With_meta (Unit)
+    module FList = F.On_lvalues.On_monad (List)
+    module S = Src.Statement_traverse.With_meta (Unit)
+    module SList = S.On_lvalues.On_monad (List)
+
+    let header : Src.Flow_block.Header.t =
+      Src.(
+        For
+          { init=
+              Some
+                Assign.(
+                  Lvalue.of_variable_str_exn "x" @= Expression.int_lit 0)
+          ; cmp=
+              Some Expression.(Infix.(of_variable_str_exn "x" < int_lit 5))
+          ; update=
+              Some
+                (Assign.make ~dst:(Lvalue.of_variable_str_exn "x") ~src:Inc)
+          })
+
+    let fb =
+      Src.Flow_block.make ~header ~body:(Src.Block.make ~metadata:() ())
+
+
+    let%expect_test "for-loop header" =
+      let headers = FHList.map_m header ~f:(fun lv -> [lv; Deref lv]) in
+      Stdio.print_s [%sexp (headers : Src.Flow_block.Header.t list)] ;
+      [%expect
+        {|
+        ((For
+          ((init (((dst (Variable x)) (src (Expr (Constant (Int 0)))))))
+           (cmp ((Bop (Rel Lt) (Address (Lvalue (Variable x))) (Constant (Int 5)))))
+           (update (((dst (Variable x)) (src Inc))))))
+         (For
+          ((init (((dst (Variable x)) (src (Expr (Constant (Int 0)))))))
+           (cmp ((Bop (Rel Lt) (Address (Lvalue (Variable x))) (Constant (Int 5)))))
+           (update (((dst (Deref (Variable x))) (src Inc))))))
+         (For
+          ((init (((dst (Variable x)) (src (Expr (Constant (Int 0)))))))
+           (cmp
+            ((Bop (Rel Lt) (Address (Lvalue (Deref (Variable x))))
+              (Constant (Int 5)))))
+           (update (((dst (Variable x)) (src Inc))))))
+         (For
+          ((init (((dst (Variable x)) (src (Expr (Constant (Int 0)))))))
+           (cmp
+            ((Bop (Rel Lt) (Address (Lvalue (Deref (Variable x))))
+              (Constant (Int 5)))))
+           (update (((dst (Deref (Variable x))) (src Inc))))))
+         (For
+          ((init (((dst (Deref (Variable x))) (src (Expr (Constant (Int 0)))))))
+           (cmp ((Bop (Rel Lt) (Address (Lvalue (Variable x))) (Constant (Int 5)))))
+           (update (((dst (Variable x)) (src Inc))))))
+         (For
+          ((init (((dst (Deref (Variable x))) (src (Expr (Constant (Int 0)))))))
+           (cmp ((Bop (Rel Lt) (Address (Lvalue (Variable x))) (Constant (Int 5)))))
+           (update (((dst (Deref (Variable x))) (src Inc))))))
+         (For
+          ((init (((dst (Deref (Variable x))) (src (Expr (Constant (Int 0)))))))
+           (cmp
+            ((Bop (Rel Lt) (Address (Lvalue (Deref (Variable x))))
+              (Constant (Int 5)))))
+           (update (((dst (Variable x)) (src Inc))))))
+         (For
+          ((init (((dst (Deref (Variable x))) (src (Expr (Constant (Int 0)))))))
+           (cmp
+            ((Bop (Rel Lt) (Address (Lvalue (Deref (Variable x))))
+              (Constant (Int 5)))))
+           (update (((dst (Deref (Variable x))) (src Inc))))))) |}]
+
+    let%expect_test "for-loop" =
+      let fbs = FList.map_m fb ~f:(fun lv -> [lv; Deref lv]) in
+      Stdio.print_s [%sexp (fbs : (unit, _) Src.Flow_block.t list)] ;
+      [%expect
+        {|
+        (((header
+           (For
+            ((init (((dst (Variable x)) (src (Expr (Constant (Int 0)))))))
+             (cmp
+              ((Bop (Rel Lt) (Address (Lvalue (Variable x))) (Constant (Int 5)))))
+             (update (((dst (Variable x)) (src Inc)))))))
+          (body ((statements ()) (metadata ()))))
+         ((header
+           (For
+            ((init (((dst (Variable x)) (src (Expr (Constant (Int 0)))))))
+             (cmp
+              ((Bop (Rel Lt) (Address (Lvalue (Variable x))) (Constant (Int 5)))))
+             (update (((dst (Deref (Variable x))) (src Inc)))))))
+          (body ((statements ()) (metadata ()))))
+         ((header
+           (For
+            ((init (((dst (Variable x)) (src (Expr (Constant (Int 0)))))))
+             (cmp
+              ((Bop (Rel Lt) (Address (Lvalue (Deref (Variable x))))
+                (Constant (Int 5)))))
+             (update (((dst (Variable x)) (src Inc)))))))
+          (body ((statements ()) (metadata ()))))
+         ((header
+           (For
+            ((init (((dst (Variable x)) (src (Expr (Constant (Int 0)))))))
+             (cmp
+              ((Bop (Rel Lt) (Address (Lvalue (Deref (Variable x))))
+                (Constant (Int 5)))))
+             (update (((dst (Deref (Variable x))) (src Inc)))))))
+          (body ((statements ()) (metadata ()))))
+         ((header
+           (For
+            ((init (((dst (Deref (Variable x))) (src (Expr (Constant (Int 0)))))))
+             (cmp
+              ((Bop (Rel Lt) (Address (Lvalue (Variable x))) (Constant (Int 5)))))
+             (update (((dst (Variable x)) (src Inc)))))))
+          (body ((statements ()) (metadata ()))))
+         ((header
+           (For
+            ((init (((dst (Deref (Variable x))) (src (Expr (Constant (Int 0)))))))
+             (cmp
+              ((Bop (Rel Lt) (Address (Lvalue (Variable x))) (Constant (Int 5)))))
+             (update (((dst (Deref (Variable x))) (src Inc)))))))
+          (body ((statements ()) (metadata ()))))
+         ((header
+           (For
+            ((init (((dst (Deref (Variable x))) (src (Expr (Constant (Int 0)))))))
+             (cmp
+              ((Bop (Rel Lt) (Address (Lvalue (Deref (Variable x))))
+                (Constant (Int 5)))))
+             (update (((dst (Variable x)) (src Inc)))))))
+          (body ((statements ()) (metadata ()))))
+         ((header
+           (For
+            ((init (((dst (Deref (Variable x))) (src (Expr (Constant (Int 0)))))))
+             (cmp
+              ((Bop (Rel Lt) (Address (Lvalue (Deref (Variable x))))
+                (Constant (Int 5)))))
+             (update (((dst (Deref (Variable x))) (src Inc)))))))
+          (body ((statements ()) (metadata ()))))) |}]
+
+
+    let%expect_test "for-loop in an expression" =
+      let stm = Accessor.construct Src.Statement.flow fb in
+      let stms = SList.map_m stm ~f:(fun lv -> [lv; Deref lv]) in
+      Stdio.print_s [%sexp (stms : unit Src.Statement.t list)] ;
+      [%expect {|
+        ((Flow
+          ((header
+            (For
+             ((init (((dst (Variable x)) (src (Expr (Constant (Int 0)))))))
+              (cmp
+               ((Bop (Rel Lt) (Address (Lvalue (Variable x))) (Constant (Int 5)))))
+              (update (((dst (Variable x)) (src Inc)))))))
+           (body ((statements ()) (metadata ())))))
+         (Flow
+          ((header
+            (For
+             ((init (((dst (Variable x)) (src (Expr (Constant (Int 0)))))))
+              (cmp
+               ((Bop (Rel Lt) (Address (Lvalue (Variable x))) (Constant (Int 5)))))
+              (update (((dst (Deref (Variable x))) (src Inc)))))))
+           (body ((statements ()) (metadata ())))))
+         (Flow
+          ((header
+            (For
+             ((init (((dst (Variable x)) (src (Expr (Constant (Int 0)))))))
+              (cmp
+               ((Bop (Rel Lt) (Address (Lvalue (Deref (Variable x))))
+                 (Constant (Int 5)))))
+              (update (((dst (Variable x)) (src Inc)))))))
+           (body ((statements ()) (metadata ())))))
+         (Flow
+          ((header
+            (For
+             ((init (((dst (Variable x)) (src (Expr (Constant (Int 0)))))))
+              (cmp
+               ((Bop (Rel Lt) (Address (Lvalue (Deref (Variable x))))
+                 (Constant (Int 5)))))
+              (update (((dst (Deref (Variable x))) (src Inc)))))))
+           (body ((statements ()) (metadata ())))))
+         (Flow
+          ((header
+            (For
+             ((init (((dst (Deref (Variable x))) (src (Expr (Constant (Int 0)))))))
+              (cmp
+               ((Bop (Rel Lt) (Address (Lvalue (Variable x))) (Constant (Int 5)))))
+              (update (((dst (Variable x)) (src Inc)))))))
+           (body ((statements ()) (metadata ())))))
+         (Flow
+          ((header
+            (For
+             ((init (((dst (Deref (Variable x))) (src (Expr (Constant (Int 0)))))))
+              (cmp
+               ((Bop (Rel Lt) (Address (Lvalue (Variable x))) (Constant (Int 5)))))
+              (update (((dst (Deref (Variable x))) (src Inc)))))))
+           (body ((statements ()) (metadata ())))))
+         (Flow
+          ((header
+            (For
+             ((init (((dst (Deref (Variable x))) (src (Expr (Constant (Int 0)))))))
+              (cmp
+               ((Bop (Rel Lt) (Address (Lvalue (Deref (Variable x))))
+                 (Constant (Int 5)))))
+              (update (((dst (Variable x)) (src Inc)))))))
+           (body ((statements ()) (metadata ())))))
+         (Flow
+          ((header
+            (For
+             ((init (((dst (Deref (Variable x))) (src (Expr (Constant (Int 0)))))))
+              (cmp
+               ((Bop (Rel Lt) (Address (Lvalue (Deref (Variable x))))
+                 (Constant (Int 5)))))
+              (update (((dst (Deref (Variable x))) (src Inc)))))))
+           (body ((statements ()) (metadata ())))))) |}]
+  end )
 
 let%test_module "for loop simplification" =
   ( module struct

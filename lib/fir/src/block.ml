@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018-2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -25,6 +25,18 @@ let each_statement : ('i, 'stm, ('meta, 'stm) t, [< many]) Accessor.Simple.t
     =
   [%accessor statements @> Accessor.List.each]
 
+(* TODO(@MattWindsor91): ideally this would plumb into Travesty. *)
+module On_applicative (A : Applicative.S) = struct
+  module AccA = Accessor.Of_applicative (A)
+
+  let bi_map_a (type m1 m2 s1 s2) (block : (m1, s1) t) ~(left : m1 -> m2 A.t)
+      ~(right : s1 -> s2 A.t) : (m2, s2) t A.t =
+    A.map2
+      ~f:(fun metadata statements -> make ~metadata ~statements ())
+      (left block.metadata)
+      (AccA.map Accessor.List.each ~f:right block.statements)
+end
+
 module BT :
   Travesty.Bi_traversable_types.S2
     with type ('meta, 'stm) t = ('meta, 'stm) t =
@@ -32,14 +44,12 @@ Travesty.Bi_traversable.Make2 (struct
   type nonrec ('meta, 'stm) t = ('meta, 'stm) t
 
   module On_monad (M : Monad.S) = struct
-    module L = Tx.List.On_monad (M)
+    module A = Utils.Applicative.Of_monad_ext (M)
+    module X = On_applicative (A)
 
     let bi_map_m (type m1 m2 s1 s2) (block : (m1, s1) t)
         ~(left : m1 -> m2 M.t) ~(right : s1 -> s2 M.t) : (m2, s2) t M.t =
-      M.Let_syntax.(
-        let%map metadata' = left block.metadata
-        and statements' = L.map_m ~f:right block.statements in
-        make ~metadata:metadata' ~statements:statements' ())
+      X.bi_map_a ~left ~right block
   end
 end)
 

@@ -12,45 +12,48 @@
 open Base
 open Import
 
-module Base_map (M : Monad.S) = struct
-  (* TODO(@MattWindsor91): this should take an applicative, but can't because
-     it depends on bitraversal of blocks, and on this version of Travesty
-     that requires a monad.*)
-
+module Base_map_applicative (A : Applicative.S) = struct
   type 'meta t = 'meta Statement.t
 
   let bmap (type m1 m2) (x : m1 t)
       ~(prim :
             (m1, Prim_statement.t) With_meta.t
-         -> (m2, Prim_statement.t) With_meta.t M.t)
-      ~(if_stm : (m1, m1 t) If.t -> (m2, m2 t) If.t M.t)
-      ~(flow : (m1, m1 t) Flow_block.t -> (m2, m2 t) Flow_block.t M.t) :
-      m2 t M.t =
+         -> (m2, Prim_statement.t) With_meta.t A.t)
+      ~(if_stm : (m1, m1 t) If.t -> (m2, m2 t) If.t A.t)
+      ~(flow : (m1, m1 t) Flow_block.t -> (m2, m2 t) Flow_block.t A.t) :
+      m2 t A.t =
     Travesty_base_exts.Fn.Compose_syntax.(
       Statement.reduce_step x
-        ~prim:(prim >> M.map ~f:(Accessor.construct Statement.prim))
-        ~if_stm:(if_stm >> M.map ~f:(Accessor.construct Statement.if_stm))
-        ~flow:(flow >> M.map ~f:(Accessor.construct Statement.flow)))
+        ~prim:(prim >> A.map ~f:(Accessor.construct Statement.prim))
+        ~if_stm:(if_stm >> A.map ~f:(Accessor.construct Statement.if_stm))
+        ~flow:(flow >> A.map ~f:(Accessor.construct Statement.flow)))
 
-  module A = Act_utils.Applicative.Of_monad_ext (M)
   module IB = If.Base_map (A)
   module FB = Flow_block.Base_map (A)
-  module FE = Flow_block.Header.On_expressions.On_monad (M)
-  module Bk = Block.On_monad (M)
+  module Bk = Block.On_applicative (A)
 
+  (* Ideally, if we can get rid of Bk.bi_map_m, we should be able to use
+     applicatives throughout this. *)
   let bmap_flat (type m1 m2) (x : m1 t)
       ~(prim :
             (m1, Prim_statement.t) With_meta.t
-         -> (m2, Prim_statement.t) With_meta.t M.t)
-      ~(cond : Expression.t -> Expression.t M.t) ~(block_meta : m1 -> m2 M.t)
-      : m2 t M.t =
+         -> (m2, Prim_statement.t) With_meta.t A.t)
+      ~(flow_header : Flow_block.Header.t -> Flow_block.Header.t A.t)
+      ~(if_cond : Expression.t -> Expression.t A.t)
+      ~(block_meta : m1 -> m2 A.t) : m2 t A.t =
     let rec mu x =
-      let map_block = Bk.bi_map_m ~left:block_meta ~right:mu in
+      let map_block = Bk.bi_map_a ~left:block_meta ~right:mu in
       bmap x ~prim
-        ~if_stm:(IB.bmap ~cond ~t_branch:map_block ~f_branch:map_block)
-        ~flow:(FB.bmap ~body:map_block ~header:(FE.map_m ~f:cond))
+        ~if_stm:
+          (IB.bmap ~cond:if_cond ~t_branch:map_block ~f_branch:map_block)
+        ~flow:(FB.bmap ~body:map_block ~header:flow_header)
     in
     mu x
+end
+
+module Base_map (M : Monad.S) = struct
+  module A = Act_utils.Applicative.Of_monad_ext (M)
+  include Base_map_applicative (A)
 end
 
 module On_meta :
@@ -70,7 +73,7 @@ Travesty.Traversable.Make1 (struct
     let map_m (x : 'm1 t) ~(f : 'm1 -> 'm2 M.t) : 'm2 t M.t =
       B.bmap_flat x
         ~prim:(AccM.map With_meta.meta ~f)
-        ~cond:M.return ~block_meta:f
+        ~flow_header:M.return ~if_cond:M.return ~block_meta:f
   end
 end)
 
@@ -92,7 +95,12 @@ module With_meta (Meta : T) = struct
         with type t := Prim_statement.t
          and module Elt = Elt
 
-    module E :
+    module FH :
+      Travesty.Traversable_types.S0
+        with type t := Flow_block.Header.t
+         and module Elt = Elt
+
+    module IE :
       Travesty.Traversable_types.S0
         with type t := Expression.t
          and module Elt = Elt
@@ -105,7 +113,8 @@ module With_meta (Meta : T) = struct
     module On_monad (M : Monad.S) = struct
       module SBase = Base_map (M)
       module PM = Basic.P.On_monad (M)
-      module EM = Basic.E.On_monad (M)
+      module FHM = Basic.FH.On_monad (M)
+      module IEM = Basic.IE.On_monad (M)
 
       module AccM = Accessor.Of_monad (struct
         include M
@@ -116,7 +125,8 @@ module With_meta (Meta : T) = struct
       let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
         SBase.bmap_flat x
           ~prim:(AccM.map With_meta.value ~f:(PM.map_m ~f))
-          ~cond:(EM.map_m ~f) ~block_meta:M.return
+          ~flow_header:(FHM.map_m ~f) ~if_cond:(IEM.map_m ~f)
+          ~block_meta:M.return
     end
   end)
 
@@ -124,7 +134,8 @@ module With_meta (Meta : T) = struct
     Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
   Make_traversal (struct
     module Elt = Lvalue
-    module E =
+    module FH = Flow_block.Header.On_lvalues
+    module IE =
       Travesty.Traversable.Chain0
         (Expression_traverse.On_addresses)
         (Address.On_lvalues)
@@ -135,7 +146,11 @@ module With_meta (Meta : T) = struct
     Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t =
   Make_traversal (struct
     module Elt = Address
-    module E = Expression_traverse.On_addresses
+    module FH =
+      Travesty.Traversable.Chain0
+        (Flow_block.Header.On_expressions)
+        (Expression_traverse.On_addresses)
+    module IE = Expression_traverse.On_addresses
     module P = Prim_statement.On_addresses
   end)
 
@@ -144,7 +159,8 @@ module With_meta (Meta : T) = struct
       with type t = t
        and type Elt.t = Expression.t = Make_traversal (struct
     module Elt = Expression
-    module E =
+    module FH = Flow_block.Header.On_expressions
+    module IE =
       Travesty.Traversable.Fix_elt
         (Travesty_containers.Singleton)
         (Expression)
@@ -156,7 +172,9 @@ module With_meta (Meta : T) = struct
       with type t = t
        and type Elt.t = Prim_statement.t = Make_traversal (struct
     module Elt = Prim_statement
-    module E = Travesty.Traversable.Const (Expression) (Prim_statement)
+    module FH =
+      Travesty.Traversable.Const (Flow_block.Header) (Prim_statement)
+    module IE = Travesty.Traversable.Const (Expression) (Prim_statement)
     module P =
       Travesty.Traversable.Fix_elt
         (Travesty_containers.Singleton)
@@ -174,7 +192,12 @@ module Make_traversal_set
       (Basic : sig
          module Elt : Equal.S
 
-         module E :
+         module FH :
+           Travesty.Traversable_types.S0
+             with type t := Flow_block.Header.t
+              and module Elt = Elt
+
+         module LE :
            Travesty.Traversable_types.S0
              with type t := Expression.t
               and module Elt = Elt
@@ -196,7 +219,8 @@ struct
       with type t = Top.t
        and type Elt.t = Lvalue.t = F (struct
     module Elt = Lvalue
-    module E =
+    module FH = Flow_block.Header.On_lvalues
+    module LE =
       Travesty.Traversable.Chain0
         (Expression_traverse.On_addresses)
         (Address.On_lvalues)
@@ -208,7 +232,11 @@ struct
       with type t = Top.t
        and type Elt.t = Address.t = F (struct
     module Elt = Address
-    module E = Expression_traverse.On_addresses
+    module FH =
+      Travesty.Traversable.Chain0
+        (Flow_block.Header.On_expressions)
+        (Expression_traverse.On_addresses)
+    module LE = Expression_traverse.On_addresses
     module S = Sm.On_addresses
   end)
 
@@ -217,7 +245,8 @@ struct
       with type t = Top.t
        and type Elt.t = Expression.t = F (struct
     module Elt = Expression
-    module E =
+    module FH = Flow_block.Header.On_expressions
+    module LE =
       Travesty.Traversable.Fix_elt
         (Travesty_containers.Singleton)
         (Expression)
@@ -229,7 +258,9 @@ struct
       with type t = Top.t
        and type Elt.t = Prim_statement.t = F (struct
     module Elt = Prim_statement
-    module E = Travesty.Traversable.Const (Expression) (Prim_statement)
+    module FH =
+      Travesty.Traversable.Const (Flow_block.Header) (Prim_statement)
+    module LE = Travesty.Traversable.Const (Expression) (Prim_statement)
     module S = Sm.On_primitives
   end)
 end
@@ -275,7 +306,7 @@ struct
     module Make_traversal (Basic : sig
       module Elt : Equal.S
 
-      module E :
+      module LE :
         Travesty.Traversable_types.S0
           with type t := Expression.t
            and module Elt = Elt
@@ -293,7 +324,7 @@ struct
       module On_monad (M : Monad.S) = struct
         module IBase = Base_map (M)
         module Bk = Block_stms.On_monad (M)
-        module EM = Basic.E.On_monad (M)
+        module EM = Basic.LE.On_monad (M)
         module SM = Basic.S.On_monad (M)
 
         let map_m x ~f =
@@ -345,13 +376,13 @@ module Flow_block :
     module Block_stms = Block.On_statements (Meta)
 
     (** Does the legwork of implementing a particular type of traversal over
-        while loops. *)
+        flow blocks. *)
     module Make_traversal (Basic : sig
       module Elt : Equal.S
 
-      module E :
+      module FH :
         Travesty.Traversable_types.S0
-          with type t := Expression.t
+          with type t := Flow_block.Header.t
            and module Elt = Elt
 
       module S :
@@ -366,14 +397,12 @@ module Flow_block :
 
       module On_monad (M : Monad.S) = struct
         module FBase = Base_map (M)
-        module FHE = Flow_block.Header.On_expressions.On_monad (M)
         module Bk = Block_stms.On_monad (M)
-        module EM = Basic.E.On_monad (M)
+        module HM = Basic.FH.On_monad (M)
         module SM = Basic.S.On_monad (M)
 
         let map_m x ~f =
-          FBase.bmap x
-            ~header:(FHE.map_m ~f:(EM.map_m ~f))
+          FBase.bmap x ~header:(HM.map_m ~f)
             ~body:(Bk.map_m ~f:(SM.map_m ~f))
       end
     end)
