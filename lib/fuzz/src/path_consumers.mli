@@ -19,7 +19,7 @@ open Base
 val consume_with_flags :
      ?filter:Path_filter.t
   -> Subject.Test.t
-  -> path:Path.t Path_flag.Flagged.t
+  -> path:Path.Flagged.t
   -> action:Path_kind.With_action.t
   -> Subject.Test.t Or_error.t
 (** [consume_with_flags ?filter target ~path ~action] consumes [path] over

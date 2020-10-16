@@ -279,7 +279,7 @@ let consume (test : Subject.Test.t) ~(path : Path.t) ~(ctx : ctx) :
         ~f:(thread index ~path ~ctx)
 
 let consume_with_flags ?(filter : Path_filter.t option)
-    (test : Subject.Test.t) ~(path : Path.t Path_flag.Flagged.t)
+    (test : Subject.Test.t) ~(path : Path.Flagged.t)
     ~(action : Path_kind.With_action.t) : Subject.Test.t Or_error.t =
   let {Path_flag.Flagged.path; flags; _} = path in
   let filter =

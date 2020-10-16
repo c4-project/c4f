@@ -252,7 +252,7 @@ let produce (test : Subject.Test.t) ~(ctx : ctx) : Path.t t =
   |> Sequence.round_robin
 
 let produce_seq ?(filter : Path_filter.t option) (test : Subject.Test.t)
-    ~(kind : Path_kind.t) : Path.t Path_flag.Flagged.t Sequence.t =
+    ~(kind : Path_kind.t) : Path.Flagged.t Sequence.t =
   let ctx = Path_context.init kind ?filter in
   produce test ~ctx
 
@@ -262,7 +262,7 @@ let is_constructible ?(filter : Path_filter.t option) (test : Subject.Test.t)
 
 let try_gen_with_flags ?(filter : Path_filter.t option)
     (test : Subject.Test.t) ~(kind : Path_kind.t) :
-    Path.t Path_flag.Flagged.t Opt_gen.t =
+    Path.Flagged.t Opt_gen.t =
   match Sequence.to_list_rev (produce_seq test ~kind ?filter) with
   | [] ->
       Or_error.error_string "No valid paths generated"

@@ -206,7 +206,7 @@ module Test_data = struct
     (* These will need manually synchronising with the statements above. *)
 
     let flag (fs : Src.Path_flag.t list) (p : Src.Path.t Lazy.t) :
-        Src.Path.t Src.Path_flag.Flagged.t Lazy.t =
+        Src.Path.Flagged.t Lazy.t =
       Lazy.map p ~f:(fun path ->
           let flags = Set.of_list (module Src.Path_flag) fs in
           Src.Path_flag.Flagged.make path ~flags)
