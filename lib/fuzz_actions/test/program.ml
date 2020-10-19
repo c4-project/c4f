@@ -30,7 +30,7 @@ let run_and_dump_labels
 
 let%test_module "program.label" =
   ( module struct
-    let path : Fuzz.Path.Flagged.t Lazy.t =
+    let path : Fuzz.Path.With_meta.t Lazy.t =
       Fuzz_test.Subject.Test_data.Path.insert_live
 
     let random_state : Act_common.C_id.t Fuzz.Payload_impl.Pathed.t Lazy.t =

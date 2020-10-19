@@ -12,7 +12,7 @@
 open Base
 open Import
 
-let lift (path : Fuzz.Path.Flagged.t Lazy.t) :
+let lift (path : Fuzz.Path.With_meta.t Lazy.t) :
     unit Fuzz.Payload_impl.Pathed.t =
   Fuzz.Payload_impl.Pathed.make () ~where:(Lazy.force path)
 

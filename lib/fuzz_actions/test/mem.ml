@@ -22,10 +22,7 @@ let%test_module "running payloads on test subject" =
 
     let test (lpath : Fuzz.Path.t Lazy.t) (mo : Act_fir.Mem_order.t)
         (can_weaken : bool) : unit =
-      let path =
-        { Fuzz.Path_flag.Flagged.path= Lazy.force lpath
-        ; flags= Set.empty (module Fuzz.Path_flag) }
-      in
+      let path = Fuzz.Path_meta.With_meta.make (Lazy.force lpath) in
       let pld = Src.Mem.Strengthen_payload.make ~path ~mo ~can_weaken in
       let action = test_action pld in
       Fuzz_test.Action.Test_utils.run_and_dump_test action

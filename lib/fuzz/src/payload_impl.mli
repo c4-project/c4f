@@ -33,17 +33,17 @@ end) : Payload_types.S with type t = Basic.t
     for payloads with paths. *)
 module Pathed : sig
   (** Type of pathed payloads. *)
-  type 'a t = {payload: 'a; where: Path.Flagged.t}
+  type 'a t = {payload: 'a; where: Path.With_meta.t}
   [@@deriving sexp, accessors]
 
-  val make : 'a -> where:Path.Flagged.t -> 'a t
+  val make : 'a -> where:Path.With_meta.t -> 'a t
   (** [make payload ~where] makes a payload that expresses the desire to
       apply [payload] at path [where]. *)
 
   val gen :
        Path_kind.t
     -> (State.t -> Path_filter.t)
-    -> (Path.Flagged.t -> 'a Payload_gen.t)
+    -> (Path.With_meta.t -> 'a Payload_gen.t)
     -> 'a t Payload_gen.t
   (** [gen kind gen_filter gen_payload] lifts the generator [gen_payload] to
       a pathed generator, using [kind] and [gen_filter] to decide which sort
@@ -104,7 +104,7 @@ module Cond_pathed : sig
 
   val lift_cond_gen :
        (Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t)
-    -> (Path.Flagged.t -> Fir.Expression.t Payload_gen.t) Staged.t
+    -> (Path.With_meta.t -> Fir.Expression.t Payload_gen.t) Staged.t
   (** [gen_cond cg path] lifts a condition generator [cg] to one that, given
       path [path], generates all condition expressions over the environment
       of all variables in scope at [path]. *)

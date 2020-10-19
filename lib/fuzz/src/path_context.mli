@@ -27,7 +27,7 @@ val init : ?filter:Path_filter.t -> 'k -> 'k t
 (** [init ?filter k] constructs an initial context with kind [k] and optional
     path filter [filter]. *)
 
-val add_flags : 'k t -> Set.M(Path_flag).t -> 'k t Or_error.t
+val add_flags : 'k t -> Set.M(Path_meta.Flag).t -> 'k t Or_error.t
 (** [add_flags ctx flags] registers [flags] in [ctx]. *)
 
 val set_block_kind : 'k t -> Path_filter.Block.t -> 'k t
@@ -39,7 +39,7 @@ val set_block_kind : 'k t -> Path_filter.Block.t -> 'k t
 val kind : 'k t -> 'k
 (** [kind ctx] gets the kind of path [ctx] is being used to produce/consume. *)
 
-val lift_path : _ t -> path:'p -> 'p Path_flag.Flagged.t
+val lift_path : _ t -> path:'p -> 'p Path_meta.With_meta.t
 (** [lift_path ctx ~path] adds flag information to [path] taken from [ctx]. *)
 
 (** {2 Checking the path filter} *)

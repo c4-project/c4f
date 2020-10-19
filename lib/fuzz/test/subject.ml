@@ -205,22 +205,23 @@ module Test_data = struct
   module Path = struct
     (* These will need manually synchronising with the statements above. *)
 
-    let flag (fs : Src.Path_flag.t list) (p : Src.Path.t Lazy.t) :
-        Src.Path.Flagged.t Lazy.t =
+    let flag (fs : Src.Path_meta.Flag.t list) (p : Src.Path.t Lazy.t) :
+        Src.Path.With_meta.t Lazy.t =
       Lazy.map p ~f:(fun path ->
-          let flags = Set.of_list (module Src.Path_flag) fs in
-          Src.Path_flag.Flagged.make path ~flags)
+        Src.Path_meta.(
+          let meta = {flags= Set.of_list (module Flag) fs} in
+          With_meta.make path ~meta))
 
     let thread_0_stms (path : Src.Path.Stms.t) : Src.Path.t Lazy.t =
       lazy Src.Path.(in_thread 0 @@ Thread.in_stms @@ path)
 
-    let insert_live : Src.Path.Flagged.t Lazy.t =
+    let insert_live : Src.Path.With_meta.t Lazy.t =
       flag [] Src.Path.(thread_0_stms @@ Stms.insert pos_0_last_atom)
 
-    let insert_start : Src.Path.Flagged.t Lazy.t =
+    let insert_start : Src.Path.With_meta.t Lazy.t =
       flag [] Src.Path.(thread_0_stms @@ Stms.insert 0)
 
-    let insert_end : Src.Path.Flagged.t Lazy.t =
+    let insert_end : Src.Path.With_meta.t Lazy.t =
       flag []
         (Lazy.bind body_stms ~f:(fun stms ->
              Src.Path.(thread_0_stms @@ Stms.insert (List.length stms))))
@@ -236,7 +237,7 @@ module Test_data = struct
     let dead_else (path : Src.Path.Stms.t) : Src.Path.t Lazy.t =
       Src.Path.(known_true_if @@ If.in_branch false @@ path)
 
-    let insert_dead : Src.Path.Flagged.t Lazy.t =
+    let insert_dead : Src.Path.With_meta.t Lazy.t =
       flag [In_dead_code] Src.Path.(dead_else @@ Stms.insert 0)
 
     let once_loop (path : Src.Path.Flow.t) : Src.Path.t Lazy.t =
@@ -245,14 +246,14 @@ module Test_data = struct
         @@ Stms.in_stm pos_0_once_do_while
         @@ Stm.in_flow @@ path)
 
-    let insert_once_loop_end : Src.Path.Flagged.t Lazy.t =
+    let insert_once_loop_end : Src.Path.With_meta.t Lazy.t =
       flag [In_loop] Src.Path.(once_loop @@ Flow.in_body @@ Stms.insert 1)
 
     let multi_loop (path : Src.Path.Flow.t) : Src.Path.t Lazy.t =
       Src.Path.(
         thread_0_stms @@ Stms.in_stm pos_0_multi_for @@ Stm.in_flow @@ path)
 
-    let insert_multi_loop_end : Src.Path.Flagged.t Lazy.t =
+    let insert_multi_loop_end : Src.Path.With_meta.t Lazy.t =
       flag
         [In_execute_multi; In_loop]
         Src.Path.(multi_loop @@ Flow.in_body @@ Stms.insert 1)
@@ -261,32 +262,32 @@ module Test_data = struct
       Src.Path.(
         thread_0_stms @@ Stms.in_stm pos_0_dead_while @@ Stm.in_flow @@ path)
 
-    let insert_dead_loop : Src.Path.Flagged.t Lazy.t =
+    let insert_dead_loop : Src.Path.With_meta.t Lazy.t =
       flag [In_dead_code; In_loop]
         Src.Path.(dead_loop @@ Flow.in_body @@ Stms.insert 0)
 
     let in_stm : Src.Path.t Lazy.t = Src.Path.(thread_0_stms @@ Stms.stm 2)
 
-    let in_stm_flagged : Src.Path.Flagged.t Lazy.t = flag [] in_stm
+    let in_stm_flagged : Src.Path.With_meta.t Lazy.t = flag [] in_stm
 
-    let surround_atomic : Src.Path.Flagged.t Lazy.t =
+    let surround_atomic : Src.Path.With_meta.t Lazy.t =
       flag []
         Src.Path.(
           thread_0_stms @@ Stms.between pos_0_first_atom pos_0_last_atom)
 
-    let surround_label_direct : Src.Path.Flagged.t Lazy.t =
+    let surround_label_direct : Src.Path.With_meta.t Lazy.t =
       flag []
         Src.Path.(known_true_if @@ If.in_branch true @@ Stms.on_range 0 2)
 
-    let surround_label_indirect : Src.Path.Flagged.t Lazy.t =
+    let surround_label_indirect : Src.Path.With_meta.t Lazy.t =
       flag []
         Src.Path.(thread_0_stms @@ Stms.between pos_0_true_if pos_0_false_if)
 
-    let surround_dead : Src.Path.Flagged.t Lazy.t =
+    let surround_dead : Src.Path.With_meta.t Lazy.t =
       flag [In_dead_code]
         Src.Path.(known_false_if @@ If.in_branch true @@ Stms.on_range 0 1)
 
-    let surround_txsafe : Src.Path.Flagged.t Lazy.t =
+    let surround_txsafe : Src.Path.With_meta.t Lazy.t =
       flag [] Src.Path.(thread_0_stms @@ Stms.singleton pos_0_nop)
   end
 end

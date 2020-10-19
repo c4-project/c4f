@@ -50,7 +50,7 @@ module Surround = struct
 
       let src_exprs : t -> Fir.Expression.t list = Fn.const []
 
-      let gen (_ : Act_fuzz.Path.Flagged.t) : t Fuzz.Payload_gen.t =
+      let gen (_ : Act_fuzz.Path.With_meta.t) : t Fuzz.Payload_gen.t =
         Fuzz.Payload_gen.return ()
     end
 

@@ -104,7 +104,7 @@ struct
       metadata restriction set. This prevents actions that would wrap
       [to_insert] in a multi-execution loop from doing so. *)
   let apply_once_only (to_insert : B.t)
-      ~(path_flags : Set.M(Fuzz.Path_flag).t) : bool =
+      ~(path_flags : Set.M(Fuzz.Path_meta.Flag).t) : bool =
     if Set.mem path_flags In_dead_code then false
     else
       match B.Flags.execute_multi_safe with
@@ -133,7 +133,7 @@ struct
         [error_if_empty "src" src; error_if_empty "dst" dst]
 
     let filter_for_loop_safety (gen : B.t Q.Generator.t)
-        ~(path_flags : Set.M(Fuzz.Path_flag).t) : B.t Q.Generator.t =
+        ~(path_flags : Set.M(Fuzz.Path_meta.Flag).t) : B.t Q.Generator.t =
       (* We need to make sure that there is no situation where both
          In_execute_multi and Execute_multi_unsafe are generated on the same
          item. *)
@@ -141,17 +141,17 @@ struct
         Q.Generator.filter gen ~f:(Fn.non (apply_once_only ~path_flags))
       else gen
 
-    let gen_opt (vars : Fuzz.Var.Map.t) ~(where : Fuzz.Path.Flagged.t) :
+    let gen_opt (vars : Fuzz.Var.Map.t) ~(where : Fuzz.Path.With_meta.t) :
         B.t Fuzz.Opt_gen.t =
       let tid = Fuzz.Path.tid where.path in
       let src = src_env vars ~tid in
       let dst = dst_env vars ~tid in
       Or_error.Let_syntax.(
         let%map () = check_envs src dst in
-        filter_for_loop_safety ~path_flags:where.flags
+        filter_for_loop_safety ~path_flags:where.meta.flags
           (B.gen ~src ~dst ~vars ~tid))
 
-    let gen' (where : Fuzz.Path.Flagged.t) : B.t Fuzz.Payload_gen.t =
+    let gen' (where : Fuzz.Path.With_meta.t) : B.t Fuzz.Payload_gen.t =
       Fuzz.Payload_gen.(
         let* vars = vars in
         lift_opt_gen (gen_opt vars ~where))
@@ -192,7 +192,7 @@ struct
     AState.iter Accessor.List.each nls ~f:(fun (name, init) ->
         Fuzz.State.Monad.register_var (Common.Litmus_id.local tid name) init)
 
-  let do_bookkeeping (item : B.t) ~(path : Fuzz.Path.Flagged.t) :
+  let do_bookkeeping (item : B.t) ~(path : Fuzz.Path.With_meta.t) :
       unit Fuzz.State.Monad.t =
     let tid = Fuzz.Path.tid path.path in
     Fuzz.State.Monad.(
@@ -210,7 +210,7 @@ struct
           (Common.Litmus_id.local tid id)
           init)
 
-  let stm_metadata (to_insert : B.t) (path_flags : Set.M(Fuzz.Path_flag).t) :
+  let stm_metadata (to_insert : B.t) (path_flags : Set.M(Fuzz.Path_meta.Flag).t) :
       Fuzz.Metadata.t =
     let restrictions =
       if apply_once_only to_insert ~path_flags then
@@ -220,20 +220,20 @@ struct
     Generated (Fuzz.Metadata.Gen.make ~restrictions ())
 
   let to_stms_with_metadata (to_insert : B.t)
-      (path_flags : Set.M(Fuzz.Path_flag).t) : Fuzz.Subject.Statement.t list
+      (path_flags : Set.M(Fuzz.Path_meta.Flag).t) : Fuzz.Subject.Statement.t list
       =
     let meta = stm_metadata to_insert path_flags in
     List.map (B.to_stms to_insert) ~f:(fun value ->
         Accessor.construct Fir.Statement.prim {meta; value})
 
   let do_insertions (target : Fuzz.Subject.Test.t)
-      ~(path : Fuzz.Path.Flagged.t) ~(to_insert : B.t)
+      ~(path : Fuzz.Path.With_meta.t) ~(to_insert : B.t)
       ~(filter : Fuzz.Path_filter.t) : Fuzz.Subject.Test.t Or_error.t =
     let tid = Fuzz.Path.tid path.path in
-    let stms = to_stms_with_metadata to_insert path.flags in
+    let stms = to_stms_with_metadata to_insert path.meta.flags in
     Or_error.(
       target
-      |> Fuzz.Path_consumers.consume_with_flags ~filter ~path
+      |> Fuzz.Path_consumers.consume ~filter ~path
            ~action:(Insert stms)
       >>= insert_vars ~new_locals:(B.new_locals to_insert) ~tid)
 

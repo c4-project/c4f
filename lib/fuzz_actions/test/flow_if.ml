@@ -32,7 +32,7 @@ let%test_module "Surround" =
             (eq (of_variable_str_exn "x") (int_lit 27))
             (of_variable_str_exn "a")))
 
-    let where : Fuzz.Path.Flagged.t =
+    let where : Fuzz.Path.With_meta.t =
       Lazy.force Fuzz_test.Subject.Test_data.Path.surround_atomic
 
     let payload : Fuzz.Payload_impl.Cond_pathed.t =
@@ -132,7 +132,7 @@ let%test_module "Surround" =
           [%expect {|
           a=false x=27 |}]
 
-        let label_direct : Fuzz.Path.Flagged.t =
+        let label_direct : Fuzz.Path.With_meta.t =
           Lazy.force Fuzz_test.Subject.Test_data.Path.surround_label_direct
 
         let label_direct_payload : Fuzz.Payload_impl.Cond_pathed.t =
@@ -148,7 +148,7 @@ let%test_module "Surround" =
                ("while checking statements"
                 ("Statement failed check" (check (Stm_class Has_not_any ((Prim (Label)))))))) |}]
 
-        let label_indirect : Fuzz.Path.Flagged.t =
+        let label_indirect : Fuzz.Path.With_meta.t =
           Lazy.force Fuzz_test.Subject.Test_data.Path.surround_label_indirect
 
         let label_indirect_payload : Fuzz.Payload_impl.Cond_pathed.t =
@@ -174,8 +174,8 @@ let%test_module "Invert" =
     let test : Fuzz.Subject.Test.t =
       Lazy.force Fuzz_test.Subject.Test_data.test
 
-    let payload : Fuzz.Path.Flagged.t =
-      Fuzz.Path_flag.Flagged.make
+    let payload : Fuzz.Path.With_meta.t =
+      Fuzz.Path_meta.With_meta.make
         Fuzz.Path.(
           in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 3 @@ Stm.this_stm)
 

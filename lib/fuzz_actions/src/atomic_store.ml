@@ -17,7 +17,7 @@ let prefix_name (rest : Common.Id.t) : Common.Id.t =
 
 module Transform = struct
   module Xchgify :
-    Fuzz.Action_types.S with type Payload.t = Fuzz.Path.Flagged.t = struct
+    Fuzz.Action_types.S with type Payload.t = Fuzz.Path.With_meta.t = struct
     let name = prefix_name Common.Id.("transform" @: "xchgify" @: empty)
 
     let readme =
@@ -33,7 +33,7 @@ module Transform = struct
                (Is, [Fir.Statement_class.atomic ~specifically:Store ()])))
 
     module Payload = struct
-      type t = Fuzz.Path.Flagged.t [@@deriving sexp]
+      type t = Fuzz.Path.With_meta.t [@@deriving sexp]
 
       let gen : t Fuzz.Payload_gen.t =
         let filter = Lazy.force path_filter in
@@ -74,10 +74,10 @@ module Transform = struct
         -> Fuzz.Metadata.t Fir.Statement.t Or_error.t =
       AtomsM.map_m ~f:xchgify_atomic
 
-    let run (subject : Fuzz.Subject.Test.t) ~(payload : Fuzz.Path.Flagged.t)
+    let run (subject : Fuzz.Subject.Test.t) ~(payload : Fuzz.Path.With_meta.t)
         : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Fuzz.State.Monad.Monadic.return
-        (Fuzz.Path_consumers.consume_with_flags subject
+        (Fuzz.Path_consumers.consume subject
            ~filter:(Lazy.force path_filter) ~path:payload
            ~action:(Transform xchgify))
   end

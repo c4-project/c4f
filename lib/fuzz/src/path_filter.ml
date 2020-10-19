@@ -148,16 +148,16 @@ module End_check = struct
 end
 
 type t =
-  { req_flags: Set.M(Path_flag).t
-  ; not_flags: Set.M(Path_flag).t
+  { req_flags: Set.M(Path_meta.Flag).t
+  ; not_flags: Set.M(Path_meta.Flag).t
   ; end_checks: Set.M(End_check).t
   ; threads: Set.M(Int).t option
   ; anchor: Anchor.t option
   ; block: Block.chk option }
 
 let zero : t =
-  { req_flags= Set.empty (module Path_flag)
-  ; not_flags= Set.empty (module Path_flag)
+  { req_flags= Set.empty (module Path_meta.Flag)
+  ; not_flags= Set.empty (module Path_meta.Flag)
   ; end_checks= Set.empty (module End_check)
   ; threads= None
   ; anchor= None
@@ -178,15 +178,20 @@ let anchor (anc : Anchor.t) : t = {zero with anchor= Some anc}
 
 let ends_in_block (blk : Block.t) : t = {zero with block= Some (Valid blk)}
 
-let require_flags (req_flags : Set.M(Path_flag).t) : t = {zero with req_flags}
+let require_meta (meta : Path_meta.t) : t =
+  (* TODO(@MattWindsor91): do more here! *)
+  { zero with req_flags = meta.flags }
 
-let require_flag (req_flag : Path_flag.t) : t =
-  require_flags (Set.singleton (module Path_flag) req_flag)
+let require_flags (flags : Set.M(Path_meta.Flag).t) : t =
+  require_meta {flags}
 
-let forbid_flags (not_flags : Set.M(Path_flag).t) : t = {zero with not_flags}
+let require_flag (req_flag : Path_meta.Flag.t) : t =
+  require_flags (Set.singleton (module Path_meta.Flag) req_flag)
 
-let forbid_flag (not_flag : Path_flag.t) : t =
-  forbid_flags (Set.singleton (module Path_flag) not_flag)
+let forbid_flags (not_flags : Set.M(Path_meta.Flag).t) : t = {zero with not_flags}
+
+let forbid_flag (not_flag : Path_meta.Flag.t) : t =
+  forbid_flags (Set.singleton (module Path_meta.Flag) not_flag)
 
 let require_end_checks (end_checks : Set.M(End_check).t) : t =
   {zero with end_checks}
@@ -226,12 +231,12 @@ let in_thread_with_variables (vars : Var.Map.t)
   | `These tids ->
       in_threads_only tids
 
-let error_of_flag (flag : Path_flag.t) ~(polarity : string) : unit Or_error.t
+let error_of_flag (flag : Path_meta.Flag.t) ~(polarity : string) : unit Or_error.t
     =
   Or_error.errorf "Unmet %s flag condition: %s" polarity
-    (Path_flag.to_string flag)
+    (Path_meta.Flag.to_string flag)
 
-let error_of_flags (flags : Set.M(Path_flag).t) ~(polarity : string) :
+let error_of_flags (flags : Set.M(Path_meta.Flag).t) ~(polarity : string) :
     unit Or_error.t =
   flags |> Set.to_list
   |> Tx.Or_error.combine_map_unit ~f:(error_of_flag ~polarity)
@@ -245,15 +250,15 @@ let check_thread_ok ({threads; _} : t) ~(thread : int) : unit Or_error.t =
           ~thread:(thread : int)
           ~allowed:(threads : Set.M(Int).t option)]
 
-let check_req (filter : t) ~(flags : Set.M(Path_flag).t) : unit Or_error.t =
+let check_req (filter : t) ~(meta : Path_meta.t) : unit Or_error.t =
   Or_error.Let_syntax.(
     (* This might not be the best place to put this check, but it is a point
        where we have all of the flags that will be enabled on the path. *)
-    let%bind _ = Path_flag.check_contradiction_free flags in
-    error_of_flags ~polarity:"required" (Set.diff filter.req_flags flags))
+    let%bind _ = Path_meta.check_contradiction_free meta in
+    error_of_flags ~polarity:"required" (Set.diff filter.req_flags meta.flags))
 
-let check_not (filter : t) ~(flags : Set.M(Path_flag).t) : unit Or_error.t =
-  error_of_flags ~polarity:"forbidden" (Set.inter filter.not_flags flags)
+let check_not (filter : t) ~(meta : Path_meta.t) : unit Or_error.t =
+  error_of_flags ~polarity:"forbidden" (Set.inter filter.not_flags meta.flags)
 
 let check_anchor (filter : t) ~(path : Path.Stms.t) ~(block_len : int) :
     unit Or_error.t =

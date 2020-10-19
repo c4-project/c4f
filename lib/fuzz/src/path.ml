@@ -329,12 +329,15 @@ end
 
 include Complete
 
-module Flagged = struct
-  type t = Complete.t Path_flag.Flagged.t [@@deriving sexp, compare, equal]
+module With_meta = struct
+  type t = Complete.t Path_meta.With_meta.t [@@deriving sexp, compare, equal]
 
   let pp : t Fmt.t =
     Fmt.(
-      using (Accessor.get Path_flag.Flagged.path) pp
+      using (Accessor.get Path_meta.With_meta.path) pp
       ++ sp
-      ++ using (Accessor.get Path_flag.Flagged.flags) Path_flag.pp_set)
+      ++ using (Accessor.get Path_meta.With_meta.meta) Path_meta.pp)
+
+  let flag (f : Path_meta.Flag.t) : ('i, bool, t, [<field]) Accessor.Simple.t =
+    Path_meta.(With_meta.meta @> flags @> Accessor.Set.at f)
 end

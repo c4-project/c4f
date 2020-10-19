@@ -78,7 +78,7 @@ module type Basic_surround = sig
   module Payload : sig
     type t [@@deriving sexp]
 
-    val gen : Path.Flagged.t -> t Payload_gen.t
+    val gen : Path.With_meta.t -> t Payload_gen.t
     (** [gen path] should generate an inner payload using [path]. *)
 
     val src_exprs : t -> Act_fir.Expression.t list

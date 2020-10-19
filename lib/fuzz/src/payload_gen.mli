@@ -66,7 +66,7 @@ val lift : (Context.t -> 'a) -> 'a t
 val lift_state : (State.t -> 'a) -> 'a t
 (** [lift_state f] lifts a function from states to values into the monad. *)
 
-val path_with_flags : Path_kind.t -> filter:Path_filter.t -> Path.Flagged.t t
+val path_with_flags : Path_kind.t -> filter:Path_filter.t -> Path.With_meta.t t
 (** [path_with_flags kind ~filter] generates a path of kind [kind] respecting
     filter [filter], and returns it with its flags. *)
 
@@ -83,7 +83,7 @@ val vars : Var.Map.t t
 (** [vars] gets the current variable map at time of generation. *)
 
 val env_at_path :
-  ?predicates:(Var.Record.t -> bool) list -> Path.Flagged.t -> Fir.Env.t t
+  ?predicates:(Var.Record.t -> bool) list -> Path.With_meta.t -> Fir.Env.t t
 (** [env_at_path ?predicates path] gets the environment of variables in scope
     at [path], according to this payload generator's state snapshot. If
     [predicates] is present, the environment will contain only those

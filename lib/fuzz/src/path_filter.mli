@@ -35,20 +35,24 @@ val add_if : t -> when_:bool -> add:t -> t
 (** [add_if x ~when_ ~add] is [x + add] when [when_] is true, and [x]
     otherwise. *)
 
-(** {2 Filters that constrain path flags} *)
+(** {2 Filters that constrain path metadata} *)
 
-val require_flags : Set.M(Path_flag).t -> t
+val require_meta : Path_meta.t -> t
+(** [require_meta meta] is a path filter that requires every piece of metadata
+    in [meta] to be present. *)
+
+val require_flags : Set.M(Path_meta.Flag).t -> t
 (** [require_flags flags] is a path filter that requires every flag in
     [flags] to be present. *)
 
-val require_flag : Path_flag.t -> t
+val require_flag : Path_meta.Flag.t -> t
 (** [require_flag flag] is a path filter that requires [flag] to be present. *)
 
-val forbid_flags : Set.M(Path_flag).t -> t
+val forbid_flags : Set.M(Path_meta.Flag).t -> t
 (** [require_flags flags] is a path filter that forbids any flag in [flags]
     from being present. *)
 
-val forbid_flag : Path_flag.t -> t
+val forbid_flag : Path_meta.Flag.t -> t
 (** [forbid_flag flag] is a path filter that forbids [flag] from being
     present. *)
 
@@ -139,14 +143,14 @@ val check_thread_ok : t -> thread:int -> unit Or_error.t
     thread [thread]. This check is done early in the path production process,
     to avoid spurious generation of large amounts of dead paths. *)
 
-val check_not : t -> flags:Set.M(Path_flag).t -> unit Or_error.t
-(** [check_not filter ~flags] should be applied when adding new flags to a
-    path, and checks to make sure the [flags] so far obey the reject
+val check_not : t -> meta:Path_meta.t -> unit Or_error.t
+(** [check_not filter ~meta] should be applied when adding new metadata to a
+    path, and checks to make sure the [meta] so far obey the reject
     conditions in [filter]. *)
 
-val check_req : t -> flags:Set.M(Path_flag).t -> unit Or_error.t
-(** [check_req filter ~flags] should be applied before constructing any path,
-    and checks whether the path's [flags] satisfy the require conditions in
+val check_req : t -> meta:Path_meta.t -> unit Or_error.t
+(** [check_req filter ~meta] should be applied before constructing any path,
+    and checks whether the path's metadata satisfy the require conditions in
     [filter]. *)
 
 val check_final_statement : t -> stm:Subject.Statement.t -> unit Or_error.t

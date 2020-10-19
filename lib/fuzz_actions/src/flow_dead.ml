@@ -41,9 +41,9 @@ module Insert = struct
         {if_cond; kind})
 
     let gen (path_filter : Fuzz.State.t -> Fuzz.Path_filter.t)
-        (kind_filter : Fuzz.Path.Flagged.t -> Fir.Early_out.t -> bool)
+        (kind_filter : Fuzz.Path.With_meta.t -> Fir.Early_out.t -> bool)
         (gen_cond :
-          Fuzz.Path.Flagged.t -> Fir.Expression.t option Fuzz.Payload_gen.t)
+          Fuzz.Path.With_meta.t -> Fir.Expression.t option Fuzz.Payload_gen.t)
         : t Fuzz.Payload_impl.Pathed.t Fuzz.Payload_gen.t =
       Fuzz.Payload_impl.Pathed.gen Insert path_filter (fun path ->
           gen' (kind_filter path) (gen_cond path))
@@ -86,9 +86,9 @@ module Insert = struct
       type t = Early_out_payload.t Fuzz.Payload_impl.Pathed.t
       [@@deriving sexp]
 
-      let kind_pred ({flags; _} : Fuzz.Path.Flagged.t) :
+      let kind_pred (path : Fuzz.Path.With_meta.t) :
           Fir.Early_out.t -> bool =
-        if Set.mem flags In_loop then Fn.const true
+        if path.@(Fuzz.Path.With_meta.flag In_loop) then Fn.const true
         else Fn.non Fir.Early_out.in_loop_only
 
       let gen : t Fuzz.Payload_gen.t =
@@ -134,7 +134,7 @@ module Insert = struct
       type t = Early_out_payload.t Fuzz.Payload_impl.Pathed.t
       [@@deriving sexp]
 
-      let kind_pred ({flags; _} : Fuzz.Path.Flagged.t) :
+      let kind_pred (path : Fuzz.Path.With_meta.t) :
           Fir.Early_out.t -> bool =
         (* We can only break at the end of an arbitrary loop if we know that
            it can only be executed once, and it's never safe to return from
@@ -146,7 +146,7 @@ module Insert = struct
         | Continue ->
             true
         | Break ->
-            not (Set.mem flags In_execute_multi)
+            not path.@(Fuzz.Path.With_meta.flag In_execute_multi)
         | Return ->
             false
 
@@ -154,12 +154,12 @@ module Insert = struct
         base_path_filter
 
       let gen_cond' :
-          Fuzz.Path.Flagged.t -> Fir.Expression.t Fuzz.Payload_gen.t =
+          Fuzz.Path.With_meta.t -> Fir.Expression.t Fuzz.Payload_gen.t =
         Staged.unstage
           (Fuzz.Payload_impl.Cond_pathed.lift_cond_gen
              Fir_gen.Expr.tautology)
 
-      let gen_cond (p : Fuzz.Path.Flagged.t) :
+      let gen_cond (p : Fuzz.Path.With_meta.t) :
           Fir.Expression.t option Fuzz.Payload_gen.t =
         Fuzz.Payload_gen.(
           let* f = flag Fuzz.Config_tables.wrap_early_out_flag in
@@ -195,7 +195,7 @@ module Insert = struct
           ~path:payload.where
         >>= fun () ->
         Monadic.return
-          (Fuzz.Path_consumers.consume_with_flags test ~path:payload.where
+          (Fuzz.Path_consumers.consume test ~path:payload.where
              ~filter:(kind_filter payload.payload.kind)
              ~action:(Insert (make_contraption payload.payload))))
   end
@@ -225,7 +225,7 @@ module Insert = struct
       type t = Common.C_id.t Fuzz.Payload_impl.Pathed.t [@@deriving sexp]
 
       let reachable_labels (labels : Set.M(Common.Litmus_id).t)
-          ({path; _} : Fuzz.Path.Flagged.t) : Common.C_id.t list =
+          ({path; _} : Fuzz.Path.With_meta.t) : Common.C_id.t list =
         let from = Fuzz.Path.tid path in
         labels
         |> Set.filter_map
@@ -236,7 +236,7 @@ module Insert = struct
                  (Common.Litmus_id.variable_name x))
         |> Set.to_list
 
-      let gen' (ins_path : Fuzz.Path.Flagged.t) :
+      let gen' (ins_path : Fuzz.Path.With_meta.t) :
           Common.C_id.t Fuzz.Payload_gen.t =
         Fuzz.(
           Payload_gen.(

@@ -58,7 +58,7 @@ module Label :
 
     let path_filter _ = Fuzz.Path_filter.zero
 
-    let gen' (_ : Fuzz.Path.Flagged.t) : Common.C_id.t Fuzz.Payload_gen.t =
+    let gen' (_ : Fuzz.Path.With_meta.t) : Common.C_id.t Fuzz.Payload_gen.t =
       Fuzz.Payload_gen.(
         let* labels = lift_acc (Context.state @> Fuzz.State.labels) in
         lift_quickcheck (Fuzz.Label.gen_fresh labels))
@@ -85,6 +85,6 @@ module Label :
       Let_syntax.(
         let%bind () = register_label lid in
         Monadic.return
-          (Fuzz.Path_consumers.consume_with_flags test ~path
+          (Fuzz.Path_consumers.consume test ~path
              ~action:(Insert [label_stm]))))
 end

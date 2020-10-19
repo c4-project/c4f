@@ -13,11 +13,11 @@ open Base
 open Import
 open Base_quickcheck
 
-let print_sample (generator : Src.Path.Flagged.t Generator.t) : unit =
+let print_sample (generator : Src.Path.With_meta.t Generator.t) : unit =
   Act_utils.My_quickcheck.print_sample
-    ~printer:(Fmt.pr "@[%a@]@." Src.Path.Flagged.pp)
+    ~printer:(Fmt.pr "@[%a@]@." Src.Path.With_meta.pp)
     ( module struct
-      type t = Src.Path.Flagged.t [@@deriving compare, sexp]
+      type t = Src.Path.With_meta.t [@@deriving compare, sexp]
 
       let quickcheck_generator = generator
 
@@ -30,7 +30,7 @@ let%test_module "sample path output on example code" =
   ( module struct
     let test (kind : Src.Path_kind.t) (filter : Src.Path_filter.t) : unit =
       let test = Lazy.force Subject.Test_data.test in
-      let paths = Src.Path_producers.try_gen_with_flags test ~filter ~kind in
+      let paths = Src.Path_producers.try_gen test ~filter ~kind in
       print_sample (Or_error.ok_exn paths)
 
     let%expect_test "insert with no filtering" =

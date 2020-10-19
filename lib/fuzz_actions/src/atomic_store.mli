@@ -44,5 +44,5 @@ end
 module Transform : sig
   (** [Xchgify] converts store actions to exchange actions. *)
   module Xchgify :
-    Act_fuzz.Action_types.S with type Payload.t = Act_fuzz.Path.Flagged.t
+    Act_fuzz.Action_types.S with type Payload.t = Act_fuzz.Path.With_meta.t
 end

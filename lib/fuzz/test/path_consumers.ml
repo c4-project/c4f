@@ -27,14 +27,14 @@ let%test_module "Statement_list" =
           module P = Subject.Test_data.Path
         end
 
-        let test (path : F.Path.Flagged.t Lazy.t)
+        let test (path : F.Path.With_meta.t Lazy.t)
             ~(action : F.Path_kind.With_action.t) : unit =
           let {F.State.vars; _} = Lazy.force State.Test_data.state in
           Fmt.(
             pr "@[<v>%a@]@."
               (Act_utils.My_format.pp_or_error
                  Action.Test_utils.(using (Fn.flip reify_test vars) pp_tu))
-              (F.Path_consumers.consume_with_flags
+              (F.Path_consumers.consume
                  (Lazy.force Subject.Test_data.test)
                  ~path:(Lazy.force path) ~action))
 
@@ -48,7 +48,7 @@ let%test_module "Statement_list" =
 
         let%test_module "insert_stm" =
           ( module struct
-            let test_insert : F.Path.Flagged.t Lazy.t -> unit =
+            let test_insert : F.Path.With_meta.t Lazy.t -> unit =
               test ~action:(Insert [example_stm])
 
             let%expect_test "insert onto statement (invalid)" =
@@ -140,7 +140,7 @@ let%test_module "Statement_list" =
 
         let%test_module "transform_stm" =
           ( module struct
-            let test_transform : F.Path.Flagged.t Lazy.t -> unit =
+            let test_transform : F.Path.With_meta.t Lazy.t -> unit =
               test ~action:(Transform (Fn.const (Ok example_stm)))
 
             let%expect_test "transform a statement" =
@@ -233,7 +233,7 @@ let%test_module "Statement_list" =
                          (F.Subject.Block.make_generated ~statements ())
                        ~f_branch:(F.Subject.Block.make_generated ())) ]
 
-            let test_transform_list : F.Path.Flagged.t Lazy.t -> unit =
+            let test_transform_list : F.Path.With_meta.t Lazy.t -> unit =
               test ~action:(Transform_list iffify)
 
             let%expect_test "try to list-transform a statement (invalid)" =
@@ -289,11 +289,11 @@ let%test_module "Statement_list" =
               let kind = F.Path_kind.With_action.to_kind action in
               Test.run_exn
                 ( module struct
-                  type t = F.Path.Flagged.t [@@deriving sexp]
+                  type t = F.Path.With_meta.t [@@deriving sexp]
 
                   let quickcheck_generator =
                     Or_error.ok_exn
-                      (F.Path_producers.try_gen_with_flags ?filter ~kind
+                      (F.Path_producers.try_gen ?filter ~kind
                          (Lazy.force Subject.Test_data.test))
 
                   let quickcheck_shrinker =
@@ -304,7 +304,7 @@ let%test_module "Statement_list" =
                   [%test_result: unit Or_error.t] ~here:[[%here]]
                     ~expect:(Ok ())
                     (Or_error.map ~f:(Fn.const ())
-                       (F.Path_consumers.consume_with_flags ~path ?filter
+                       (F.Path_consumers.consume ~path ?filter
                           ~action
                           (Lazy.force Subject.Test_data.test))))
 

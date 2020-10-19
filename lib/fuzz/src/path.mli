@@ -180,11 +180,21 @@ val in_thread : index -> Thread.t -> t
 val tid : t -> int
 (** [tid] gets the thread ID of a program path. *)
 
-(** {2 Flagged paths} *)
+(** {1 Paths with metadata}
 
-module Flagged : sig
-  (** A type synonym for flagged complete paths. *)
-  type nonrec t = t Path_flag.Flagged.t [@@deriving sexp, compare, equal]
+    Most code that manipulates paths does so in the context of the metadata that
+    was produced by the path consumer.  This lets payload generators help
+    themselves to facts about the path site that were available at generation
+    time.
+    
+    This module is just a specialised form of {!Path_meta.With_meta}; the
+    latter exists to help us carry through metadata on incomplete paths. *)
+module With_meta : sig
+  (** A type synonym for complete paths with metadata. *)
+  type nonrec t = t Path_meta.With_meta.t [@@deriving sexp, compare, equal]
 
   include Pretty_printer.S with type t := t
+
+  val flag : Path_meta.Flag.t -> ('i, bool, t, [<field]) Accessor.Simple.t
+  (** [flag f] accesses whether [f] is set in this path's metadata. *)
 end

@@ -16,7 +16,7 @@ let prefix_name (rest : Common.Id.t) : Common.Id.t = Common.Id.("if" @: rest)
 
 module Transform = struct
   module type S =
-    Fuzz.Action_types.S with type Payload.t = Fuzz.Path.Flagged.t
+    Fuzz.Action_types.S with type Payload.t = Fuzz.Path.With_meta.t
 
   module Invert : S = struct
     let name = prefix_name Common.Id.("transform" @: "invert" @: empty)
@@ -31,9 +31,9 @@ module Transform = struct
       Fuzz.Availability.is_filter_constructible path_filter ~kind:Transform
 
     module Payload = struct
-      type t = Fuzz.Path.Flagged.t [@@deriving sexp]
+      type t = Fuzz.Path.With_meta.t [@@deriving sexp]
 
-      let gen : Fuzz.Path.Flagged.t Fuzz.Payload_gen.t =
+      let gen : Fuzz.Path.With_meta.t Fuzz.Payload_gen.t =
         Fuzz.Payload_gen.path_with_flags Transform ~filter:path_filter
     end
 
@@ -64,7 +64,7 @@ module Transform = struct
     let run (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Fuzz.State.Monad.Monadic.return
-        (Fuzz.Path_consumers.consume_with_flags test ~filter:path_filter
+        (Fuzz.Path_consumers.consume test ~filter:path_filter
            ~path:payload ~action:(Transform invert_stm))
   end
 end

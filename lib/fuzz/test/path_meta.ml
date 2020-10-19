@@ -12,19 +12,15 @@
 open Base
 open Import
 
-let print_flags : Set.M(Src.Path_flag).t -> unit =
-  Fmt.pr "@[%a@]@." Src.Path_flag.pp_set
+let print_flags : Set.M(Src.Path_meta.Flag).t -> unit =
+  Fmt.(pr "@[%a@]@." (using (fun flags -> {Src.Path_meta.flags}) Src.Path_meta.pp))
 
 let%test_module "check_contradiction_free" =
   ( module struct
-    let test (m : Src.Path_flag.t list) : unit =
-      let result =
-        Or_error.(
-          m
-          |> Set.of_list (module Src.Path_flag)
-          |> Src.Path_flag.check_contradiction_free
-          >>| fun _ -> ())
-      in
+    let test (m : Src.Path_meta.Flag.t list) : unit =
+      let flags = Set.of_list (module Src.Path_meta.Flag) m in
+      let meta = {Src.Path_meta.flags=flags} in
+      let result = Src.Path_meta.check_contradiction_free meta in
       Fmt.(pr "@[%a@]@." (result ~ok:nop ~error:Error.pp)) result
 
     let%expect_test "empty set" = test [] ; [%expect {||}]
@@ -45,7 +41,7 @@ let%test_module "check_contradiction_free" =
 let%test_module "flags_of_metadata" =
   ( module struct
     let test (m : Src.Metadata.t) : unit =
-      print_flags (Src.Path_flag.flags_of_metadata m)
+      print_flags (Src.Path_meta.flags_of_metadata m)
 
     let%expect_test "existing" =
       test Src.Metadata.Existing ;
@@ -76,7 +72,7 @@ let%test_module "flags_of_metadata" =
 let%test_module "flags_of_flow" =
   ( module struct
     let test (f : Src.Subject.Statement.Flow.t) : unit =
-      print_flags (Src.Path_flag.flags_of_flow f)
+      print_flags (Src.Path_meta.flags_of_flow f)
 
     let%expect_test "generated loop" =
       test

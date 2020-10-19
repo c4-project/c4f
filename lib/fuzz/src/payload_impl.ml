@@ -13,14 +13,14 @@ open Base
 open Import
 
 module Pathed = struct
-  type 'a t = {payload: 'a; where: Path.Flagged.t}
+  type 'a t = {payload: 'a; where: Path.With_meta.t}
   [@@deriving accessors, sexp]
 
   (* Can't derive this, it'll derive the arguments in the wrong order. *)
-  let make (payload : 'a) ~(where : Path.Flagged.t) : 'a t = {payload; where}
+  let make (payload : 'a) ~(where : Path.With_meta.t) : 'a t = {payload; where}
 
   let gen (kind : Path_kind.t) (path_filter : State.t -> Path_filter.t)
-      (gen_inner : Path.Flagged.t -> 'a Payload_gen.t) : 'a t Payload_gen.t =
+      (gen_inner : Path.With_meta.t -> 'a Payload_gen.t) : 'a t Payload_gen.t =
     Payload_gen.(
       let* filter = lift_state path_filter in
       let* where = path_with_flags kind ~filter in
@@ -32,14 +32,14 @@ module Pathed = struct
       ~(f : 'a -> Subject.Statement.t list -> Subject.Statement.t) :
       Subject.Test.t State.Monad.t =
     State.Monad.Monadic.return
-      (Path_consumers.consume_with_flags test ?filter ~path:where
+      (Path_consumers.consume test ?filter ~path:where
          ~action:(Transform_list (fun test -> Ok [f payload test])))
 
   let insert ?(filter : Path_filter.t option) ({payload; where} : 'a t)
       ~(test : Subject.Test.t) ~(f : 'a -> Subject.Statement.t) :
       Subject.Test.t State.Monad.t =
     State.Monad.Monadic.return
-      (Path_consumers.consume_with_flags test ?filter ~path:where
+      (Path_consumers.consume test ?filter ~path:where
          ~action:(Insert [f payload]))
 end
 
@@ -77,8 +77,8 @@ module Cond_pathed = struct
 
   let lift_cond_gen
       (cond_gen : Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t)
-      : (Path.Flagged.t -> Fir.Expression.t Payload_gen.t) Staged.t =
-    Staged.stage (fun {Path_flag.Flagged.path; _} ->
+      : (Path.With_meta.t -> Fir.Expression.t Payload_gen.t) Staged.t =
+    Staged.stage (fun {Path_meta.With_meta.path; _} ->
         let tid = Path.tid path in
         Payload_gen.(
           let* vars = lift_acc (Context.state @> State.vars) in

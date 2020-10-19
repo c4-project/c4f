@@ -139,7 +139,7 @@ module Monad : sig
       the perspective of scope [scope]. *)
 
   val add_expression_dependencies_at_path :
-    Fir.Expression.t list -> path:Path.Flagged.t -> unit t
+    Fir.Expression.t list -> path:Path.With_meta.t -> unit t
   (** [add_expression_dependencies_at_path expr ~path] behaves as
       {!act_multiple_expression_dependencies}, but takes the scope from
       [path], and does not add dependencies if [path] is flagged as being

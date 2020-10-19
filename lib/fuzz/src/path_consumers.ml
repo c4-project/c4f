@@ -22,7 +22,7 @@ type mu =
   -> Subject.Statement.t Or_error.t
 
 module Helpers = struct
-  let with_flags (flags : Set.M(Path_flag).t) ~(f : ctx -> 'a Or_error.t)
+  let with_flags (flags : Set.M(Path_meta.Flag).t) ~(f : ctx -> 'a Or_error.t)
       ~(ctx : ctx) : 'a Or_error.t =
     Or_error.(Path_context.add_flags ctx flags >>= f)
 
@@ -133,7 +133,7 @@ module Block = struct
   let consume (b : Subject.Block.t) ~(path : Path.Stms.t) ~(mu : mu) :
       ctx:ctx -> Subject.Block.t Or_error.t =
     let metadata = b.@(Fir.Block.metadata) in
-    with_flags (Path_flag.flags_of_block b) ~f:(fun ctx ->
+    with_flags (Path_meta.flags_of_block b) ~f:(fun ctx ->
         Or_error.Let_syntax.(
           let%map statements =
             consume_stms b.@(Fir.Block.statements) ~path ~mu ~ctx
@@ -159,7 +159,7 @@ module Make_flow (F : sig
   (** [block_kind branch x] gets the path-filter block kind for [x], used to
       check if paths terminating inside this block match block filters. *)
 
-  val thru_flags : t -> Set.M(Path_flag).t
+  val thru_flags : t -> Set.M(Path_meta.Flag).t
   (** [thru_flags x] gets any flags that should activate on passing through
       [x]. *)
 
@@ -200,7 +200,7 @@ module If = Make_flow (struct
 
   let block_kind ((b, _) : rest) (_ : t) : Path_filter.Block.t = If (Some b)
 
-  let thru_flags = Fn.const (Set.empty (module Path_flag))
+  let thru_flags = Fn.const (Set.empty (module Path_meta.Flag))
 
   module Map = Fir.If.Base_map (Or_error)
 
@@ -217,7 +217,7 @@ module Flow = Make_flow (struct
   let block_kind (_ : rest) (f : t) : Path_filter.Block.t =
     Flow (Fir.Statement_class.Flow.classify f)
 
-  let thru_flags = Path_flag.flags_of_flow
+  let thru_flags = Path_meta.flags_of_flow
 
   module Map = Fir.Flow_block.Base_map (Or_error)
 
@@ -248,7 +248,7 @@ module Stm = struct
   let consume (s : Subject.Statement.t) ~(path : Path.Stm.t) ~(ctx : ctx) :
       Subject.Statement.t Or_error.t =
     let rec mu s ~(path : Path.Stm.t) =
-      with_flags (Path_flag.flags_of_stm s) ~f:(fun ctx ->
+      with_flags (Path_meta.flags_of_stm s) ~f:(fun ctx ->
           match path with
           | This_stm ->
               this_stm s ~ctx
@@ -271,19 +271,19 @@ let thread (tid : int) (s : Subject.Thread.t) ~(path : Path.Thread.t)
         |> Block.consume_stms ~path ~ctx ~mu:Stm.consume
         >>| fun stms' -> {s with stms= stms'})
 
-let consume (test : Subject.Test.t) ~(path : Path.t) ~(ctx : ctx) :
+let consume' (test : Subject.Test.t) ~(path : Path.t) ~(ctx : ctx) :
     Subject.Test.t Or_error.t =
   match path with
   | In_thread (index, path) ->
       Act_litmus.Test.Raw.try_map_thread test ~index
         ~f:(thread index ~path ~ctx)
 
-let consume_with_flags ?(filter : Path_filter.t option)
-    (test : Subject.Test.t) ~(path : Path.Flagged.t)
+let consume ?(filter : Path_filter.t option)
+    (test : Subject.Test.t) ~(path : Path.With_meta.t)
     ~(action : Path_kind.With_action.t) : Subject.Test.t Or_error.t =
-  let {Path_flag.Flagged.path; flags; _} = path in
+  let {Path_meta.With_meta.path; meta; _} = path in
   let filter =
-    Path_filter.(Option.merge ~f:( + ) filter (Some (require_flags flags)))
+    Path_filter.(Option.merge ~f:( + ) filter (Some (require_meta meta)))
   in
   let ctx = Path_context.init action ?filter in
-  consume test ~path ~ctx
+  consume' test ~path ~ctx

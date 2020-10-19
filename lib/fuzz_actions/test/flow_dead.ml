@@ -13,7 +13,7 @@ open Import
 
 let%test_module "Early_out" =
   ( module struct
-    let action_on_example_program (wherez : Fuzz.Path.Flagged.t Lazy.t)
+    let action_on_example_program (wherez : Fuzz.Path.With_meta.t Lazy.t)
         (kind : Fir.Early_out.t) : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       let where = Lazy.force wherez in
       let test : Fuzz.Subject.Test.t =
@@ -25,7 +25,7 @@ let%test_module "Early_out" =
       in
       Src.Flow_dead.Insert.Early_out.run test ~payload
 
-    let test_on_example_program (wherez : Fuzz.Path.Flagged.t Lazy.t)
+    let test_on_example_program (wherez : Fuzz.Path.With_meta.t Lazy.t)
         (kind : Fir.Early_out.t) : unit =
       let initial_state : Fuzz.State.t =
         Lazy.force Fuzz_test.State.Test_data.state
@@ -121,7 +121,7 @@ let%test_module "Early_out" =
 let%test_module "Early_out_loop_end" =
   ( module struct
     let action_on_example_program ?(if_cond : Fir.Expression.t option)
-        (wherez : Fuzz.Path.Flagged.t Lazy.t) (kind : Fir.Early_out.t) :
+        (wherez : Fuzz.Path.With_meta.t Lazy.t) (kind : Fir.Early_out.t) :
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       let where = Lazy.force wherez in
       let test : Fuzz.Subject.Test.t =
@@ -134,7 +134,7 @@ let%test_module "Early_out_loop_end" =
       Src.Flow_dead.Insert.Early_out_loop_end.run test ~payload
 
     let test_on_example_program ?(if_cond : Fir.Expression.t option)
-        (wherez : Fuzz.Path.Flagged.t Lazy.t) (kind : Fir.Early_out.t) : unit
+        (wherez : Fuzz.Path.With_meta.t Lazy.t) (kind : Fir.Early_out.t) : unit
         =
       let initial_state : Fuzz.State.t =
         Lazy.force Fuzz_test.State.Test_data.state

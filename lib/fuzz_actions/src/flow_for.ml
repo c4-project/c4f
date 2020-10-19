@@ -174,7 +174,7 @@ module Payload = struct
         in
         lift_quickcheck (Fir.Env.gen_random_var_with_record env))
 
-    let gen (where : Fuzz.Path.Flagged.t) : t Fuzz.Payload_gen.t =
+    let gen (where : Fuzz.Path.With_meta.t) : t Fuzz.Payload_gen.t =
       Fuzz.Payload_gen.(
         let scope = Common.Scope.Local (Fuzz.Path.tid where.path) in
         let* kv_var = known_value_var scope in
@@ -280,7 +280,7 @@ module Surround = struct
     module Payload = struct
       include Payload.Simple
 
-      let gen (where : Fuzz.Path.Flagged.t) :
+      let gen (where : Fuzz.Path.With_meta.t) :
           Payload.Simple.t Fuzz.Payload_gen.t =
         let scope = Common.Scope.Local (Fuzz.Path.tid where.path) in
         Fuzz.Payload_gen.(
@@ -402,7 +402,7 @@ module Surround = struct
             and update = gen_assign env in
             Fir.Flow_block.For.make ?init ?cmp ?update ()))
 
-      let gen (path : Fuzz.Path.Flagged.t) : t Fuzz.Payload_gen.t =
+      let gen (path : Fuzz.Path.With_meta.t) : t Fuzz.Payload_gen.t =
         Fuzz.(
           Payload_gen.(
             let* env = env_at_path path in

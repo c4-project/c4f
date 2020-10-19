@@ -12,7 +12,7 @@
 open Base
 open Import
 
-type 'm t = 'm Path_flag.Flagged.t Sequence.t
+type 'm t = 'm Path_meta.With_meta.t Sequence.t
 
 type ctx = Path_kind.t Path_context.t
 
@@ -32,7 +32,7 @@ module Helpers = struct
 
   (** [with_flags flags ~f ~ctx] registers [flags] in [ctx], then, if the
       result satisfies the current path filter, proceeds according to [f]. *)
-  let with_flags (flags : Set.M(Path_flag).t) ~(f : ctx -> 'a t) ~(ctx : ctx)
+  let with_flags (flags : Set.M(Path_meta.Flag).t) ~(f : ctx -> 'a t) ~(ctx : ctx)
       : 'a t =
     Sequence.(Path_context.add_flags ctx flags |> lift_err >>= f)
 
@@ -50,7 +50,7 @@ module Helpers = struct
     branches |> Sequence.of_list |> Sequence.concat_map ~f:(fun f -> f x)
 
   let map_path (x : 'a t) ~(f : 'a -> 'b) : 'b t =
-    Sequence.map x ~f:(Path_flag.Flagged.map_left ~f)
+    Sequence.map x ~f:(Path_meta.With_meta.map_left ~f)
 end
 
 open Helpers
@@ -75,7 +75,7 @@ module Block = struct
 
   module Self_transform_list = struct
     let make_on_range (i : int) (width : int) ~(ctx : ctx) :
-        Path.Stms.t Path_flag.Flagged.t =
+        Path.Stms.t Path_meta.With_meta.t =
       Path_context.lift_path ctx ~path:(Path.Stms.on_range i width)
 
     (** [step i width ~stms ~ctx] produces one step of the transform-list
@@ -84,7 +84,7 @@ module Block = struct
         This step considers expanding a [width]-long slice at [i] to a
         [width+1]-long slice. *)
     let step (i : int) (width : int) ~(stms : Subject.Statement.t list)
-        ~(ctx : ctx) : (Path.Stms.t Path_flag.Flagged.t * int) option =
+        ~(ctx : ctx) : (Path.Stms.t Path_meta.With_meta.t * int) option =
       let width' = width + 1 in
       Option.Let_syntax.(
         let%bind stm = List.nth stms (i + width) in
@@ -127,7 +127,7 @@ module Block = struct
       Path.Stms.t t =
     xs |> List.mapi ~f:(in_stm ~mu ~ctx) |> Sequence.round_robin
 
-  let check_anchor (p : Path.Stms.t Path_flag.Flagged.t) ~(block_len : int)
+  let check_anchor (p : Path.Stms.t Path_meta.With_meta.t) ~(block_len : int)
       ~(ctx : ctx) : Path.Stms.t t =
     Sequence.(
       lift_err (Path_context.check_anchor ctx ~path:p.path ~block_len)
@@ -144,7 +144,7 @@ module Block = struct
          ; in_stms ~ctx ~mu ])
 
   let produce (b : Subject.Block.t) ~(mu : mu) : ctx:ctx -> Path.Stms.t t =
-    with_flags (Path_flag.flags_of_block b) ~f:(fun ctx ->
+    with_flags (Path_meta.flags_of_block b) ~f:(fun ctx ->
         produce_stms b.@(Fir.Block.statements) ~mu ~ctx)
 end
 
@@ -170,7 +170,7 @@ module Make_flow (F : sig
   (** [lift_path branch p] lifts the block path [b] into a statement path,
       going through branch [branch]. *)
 
-  val thru_flags : t -> Set.M(Path_flag).t
+  val thru_flags : t -> Set.M(Path_meta.Flag).t
   (** [thru_flags x] gets any flags that should activate on passing through
       [x]. *)
 end) =
@@ -199,7 +199,7 @@ module If = Make_flow (struct
 
   let lift_path b rest = Path.Stm.in_if @@ Path.If.in_branch b @@ rest
 
-  let thru_flags _ = Set.empty (module Path_flag)
+  let thru_flags _ = Set.empty (module Path_meta.Flag)
 end)
 
 module Flow = Make_flow (struct
@@ -214,7 +214,7 @@ module Flow = Make_flow (struct
 
   let lift_path () rest = Path.Stm.in_flow @@ Path.Flow.in_body @@ rest
 
-  let thru_flags = Path_flag.flags_of_flow
+  let thru_flags = Path_meta.flags_of_flow
 end)
 
 module Stm = struct
@@ -232,7 +232,7 @@ module Stm = struct
 
   let produce (s : Subject.Statement.t) ~(ctx : ctx) : Path.Stm.t t =
     let rec mu s =
-      with_flags (Path_flag.flags_of_stm s) ~f:(fun ctx ->
+      with_flags (Path_meta.flags_of_stm s) ~f:(fun ctx ->
           branch s [if_kind Transform ~f:self ~ctx; recursive ~mu ~ctx])
     in
     mu s ~ctx
@@ -252,7 +252,7 @@ let produce (test : Subject.Test.t) ~(ctx : ctx) : Path.t t =
   |> Sequence.round_robin
 
 let produce_seq ?(filter : Path_filter.t option) (test : Subject.Test.t)
-    ~(kind : Path_kind.t) : Path.Flagged.t Sequence.t =
+    ~(kind : Path_kind.t) : Path.With_meta.t Sequence.t =
   let ctx = Path_context.init kind ?filter in
   produce test ~ctx
 
@@ -260,9 +260,9 @@ let is_constructible ?(filter : Path_filter.t option) (test : Subject.Test.t)
     ~(kind : Path_kind.t) : bool =
   not (Sequence.is_empty (produce_seq test ?filter ~kind))
 
-let try_gen_with_flags ?(filter : Path_filter.t option)
+let try_gen ?(filter : Path_filter.t option)
     (test : Subject.Test.t) ~(kind : Path_kind.t) :
-    Path.Flagged.t Opt_gen.t =
+    Path.With_meta.t Opt_gen.t =
   match Sequence.to_list_rev (produce_seq test ~kind ?filter) with
   | [] ->
       Or_error.error_string "No valid paths generated"

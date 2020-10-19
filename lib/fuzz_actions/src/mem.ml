@@ -26,7 +26,7 @@ struct
 
     let path_filter _ = Fuzz.Path_filter.zero
 
-    let gen' (_ : Fuzz.Path.Flagged.t) :
+    let gen' (_ : Fuzz.Path.With_meta.t) :
         Fir.Atomic_fence.t Fuzz.Payload_gen.t =
       Fuzz.Payload_gen.lift_quickcheck Fir.Atomic_fence.quickcheck_generator
 
@@ -49,7 +49,7 @@ struct
 end
 
 module Strengthen_payload = struct
-  type t = {path: Fuzz.Path.Flagged.t; mo: Fir.Mem_order.t; can_weaken: bool}
+  type t = {path: Fuzz.Path.With_meta.t; mo: Fir.Mem_order.t; can_weaken: bool}
   [@@deriving sexp, make]
 end
 
@@ -120,6 +120,6 @@ module Strengthen :
       ~payload:({path; mo; can_weaken} : Payload.t) :
       Fuzz.Subject.Test.t Fuzz.State.Monad.t =
     Fuzz.State.Monad.Monadic.return
-      (Fuzz.Path_consumers.consume_with_flags subject ~path ~filter
+      (Fuzz.Path_consumers.consume subject ~path ~filter
          ~action:(Transform (change_mo ~mo ~can_weaken)))
 end

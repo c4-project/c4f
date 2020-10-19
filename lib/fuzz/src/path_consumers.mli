@@ -16,13 +16,13 @@
 
 open Base
 
-val consume_with_flags :
+val consume :
      ?filter:Path_filter.t
   -> Subject.Test.t
-  -> path:Path.Flagged.t
+  -> path:Path.With_meta.t
   -> action:Path_kind.With_action.t
   -> Subject.Test.t Or_error.t
-(** [consume_with_flags ?filter target ~path ~action] consumes [path] over
+(** [consume ?filter target ~path ~action] consumes [path] over
     [target], performing [action] at the end of it.
 
     If [filter] is present, the consumer will check that the path satisfies

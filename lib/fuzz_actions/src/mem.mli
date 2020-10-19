@@ -30,7 +30,7 @@ module Strengthen_payload : sig
   type t [@@deriving sexp]
 
   val make :
-       path:Act_fuzz.Path.Flagged.t
+       path:Act_fuzz.Path.With_meta.t
     -> mo:Act_fir.Mem_order.t
     -> can_weaken:bool
     -> t

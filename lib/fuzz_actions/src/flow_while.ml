@@ -36,7 +36,7 @@ module Insert = struct
 
       let path_filter _ = Fuzz.Path_filter.zero
 
-      let gen' ({path; _} : Fuzz.Path.Flagged.t) :
+      let gen' ({path; _} : Fuzz.Path.With_meta.t) :
           Fir.Expression.t Fuzz.Payload_gen.t =
         let tid = Fuzz.Path.tid path in
         Fuzz.Payload_gen.(

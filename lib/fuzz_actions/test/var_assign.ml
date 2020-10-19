@@ -26,7 +26,7 @@ end
 
 let%test_module "assign.insert.int.normal" =
   ( module struct
-    let path : Fuzz.Path.Flagged.t Lazy.t =
+    let path : Fuzz.Path.With_meta.t Lazy.t =
       Fuzz_test.Subject.Test_data.Path.insert_live
 
     let random_state (store : Fir.Assign.t Lazy.t) :
@@ -171,7 +171,7 @@ let%test_module "assign.insert.int.normal" =
 
     let%test_module "store.make.int.dead" =
       ( module struct
-        let path : Fuzz.Path.Flagged.t Lazy.t =
+        let path : Fuzz.Path.With_meta.t Lazy.t =
           Fuzz_test.Subject.Test_data.Path.insert_dead
 
         let random_state : Src.Var_assign.Insert.Int_dead.Payload.t Lazy.t =
@@ -247,7 +247,7 @@ let%test_module "assign.insert.int.normal" =
 
     let%test_module "store.make.int.redundant" =
       ( module struct
-        let path : Fuzz.Path.Flagged.t Lazy.t =
+        let path : Fuzz.Path.With_meta.t Lazy.t =
           Fuzz_test.Subject.Test_data.Path.insert_live
 
         (* TODO(@MattWindsor91): this is, ironically, overly redundant. *)

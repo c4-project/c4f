@@ -19,7 +19,7 @@
      ((src (Constant (Int 59774975))) (dst (Lvalue (Variable Is9Qk0n4Rhat)))
       (mo memory_order_relaxed)))
     (where ((path ((Thread 1) Stms (Insert 2)))
-            (flags ()))))))
+            (meta ((flags ()))))))))
  ((name (var make))
   (payload ((basic_type int) (initial_value (Int -29491608)) (var u))))
  ((name (var make))

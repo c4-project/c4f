@@ -52,7 +52,7 @@ end
 
 let%test_module "atomic.store.insert.int.normal" =
   ( module struct
-    let path : Fuzz.Path.Flagged.t Lazy.t =
+    let path : Fuzz.Path.With_meta.t Lazy.t =
       Fuzz_test.Subject.Test_data.Path.insert_live
 
     let random_state (store : Fir.Atomic_store.t Lazy.t) :
@@ -274,7 +274,7 @@ let%test_module "atomic.store.insert.int.normal" =
 
 let%test_module "store.make.int.dead" =
   ( module struct
-    let path : Fuzz.Path.Flagged.t Lazy.t =
+    let path : Fuzz.Path.With_meta.t Lazy.t =
       Fuzz_test.Subject.Test_data.Path.insert_dead
 
     let random_state : Src.Atomic_store.Insert.Int_dead.Payload.t Lazy.t =
@@ -356,7 +356,7 @@ let%test_module "store.make.int.dead" =
 
 let%test_module "store.make.int.redundant" =
   ( module struct
-    let path : Fuzz.Path.Flagged.t Lazy.t =
+    let path : Fuzz.Path.With_meta.t Lazy.t =
       Fuzz_test.Subject.Test_data.Path.insert_live
 
     (* TODO(@MattWindsor91): this is, ironically, overly redundant. *)
@@ -442,17 +442,14 @@ let%test_module "store.make.int.redundant" =
 
 let%test_module "xchgify" =
   ( module struct
-    let test_action (payload : Fuzz.Path.Flagged.t) :
+    let test_action (payload : Fuzz.Path.With_meta.t) :
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Src.Atomic_store.Transform.Xchgify.run
         (Lazy.force Fuzz_test.Subject.Test_data.test)
         ~payload
 
     let test (lpath : Fuzz.Path.t Lazy.t) : unit =
-      let path =
-        { Fuzz.Path_flag.Flagged.path= Lazy.force lpath
-        ; flags= Set.empty (module Fuzz.Path_flag) }
-      in
+      let path = Fuzz.Path_meta.With_meta.make (Lazy.force lpath) in
       let action = test_action path in
       Fuzz_test.Action.Test_utils.run_and_dump_test action
         ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state)

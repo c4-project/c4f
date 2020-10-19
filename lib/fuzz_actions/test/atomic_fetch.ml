@@ -31,7 +31,7 @@ end
 
 let%test_module "fetch.make.int.dead" =
   ( module struct
-    let path : Fuzz.Path.Flagged.t Lazy.t =
+    let path : Fuzz.Path.With_meta.t Lazy.t =
       Fuzz_test.Subject.Test_data.Path.insert_dead
 
     let random_state : Src.Atomic_fetch.Insert.Int_dead.Payload.t Lazy.t =
@@ -107,7 +107,7 @@ let%test_module "fetch.make.int.dead" =
 
 let%test_module "fetch.make.int.redundant" =
   ( module struct
-    let path : Fuzz.Path.Flagged.t Lazy.t =
+    let path : Fuzz.Path.With_meta.t Lazy.t =
       Fuzz_test.Subject.Test_data.Path.insert_live
 
     let random_state : Src.Atomic_fetch.Insert.Int_redundant.Payload.t Lazy.t
