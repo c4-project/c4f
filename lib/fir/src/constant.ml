@@ -112,25 +112,30 @@ let gen_bool : t Generator.t =
 let quickcheck_generator : t Generator.t =
   Base_quickcheck.Generator.union [gen_int32; gen_bool]
 
+let convert_as_bool : t -> bool Or_error.t =
+  (* Draft C11, 6.3.1.2 - sort of. We represent _Bool 0 as false, and _Bool 1
+     as true. *)
+  function
+  | Bool b ->
+      Ok b
+  | Int 0 ->
+      Ok false
+  | Int _ ->
+      Ok true
+
+let convert_as_int : t -> int Or_error.t = function
+  | Int k ->
+      Ok k
+  | Bool false ->
+      Ok 0
+  | Bool true ->
+      Ok 1
+
 let convert (x : t) ~(to_ : Type.Prim.t) : t Or_error.t =
   (* The Or_error wrapper is future-proofing for if we have unconvertable
      constants later on. *)
-  match (x, to_) with
-  | Int _, Int | Bool _, Bool ->
-      Ok x
-  (* Draft C11, 6.3.1.2 - sort of. We represent _Bool 0 as false, and _Bool 1
-     as true. *)
-  | Int 0, Bool ->
-      Ok (Bool false)
-  | Int _, Bool ->
-      Ok (Bool true)
-  | Bool false, Int ->
-      Ok (Int 0)
-  | Bool true, Int ->
-      Ok (Int 1)
-
-let convert_as_bool : t -> bool Or_error.t =
-  Travesty_base_exts.Or_error.(convert ~to_:Bool >=> as_bool)
-
-let convert_as_int : t -> int Or_error.t =
-  Travesty_base_exts.Or_error.(convert ~to_:Int >=> as_int)
+  match to_ with
+  | Bool ->
+      Or_error.(x |> convert_as_bool >>| fun x -> Bool x)
+  | Int ->
+      Or_error.(x |> convert_as_int >>| fun x -> Int x)
