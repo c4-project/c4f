@@ -114,7 +114,13 @@ val type_of : t -> Type.t
 (** {2 Specific Quickcheck generators} *)
 
 val gen_int32 : t Base_quickcheck.Generator.t
-(** [gen_int32] generates integer constants in the 32-bit range only. *)
+(** [gen_int32] generates integer constants in the 32-bit range only. It
+    weights towards corner cases:
+
+    - zero and one (for use in the expression generator's algebraic rules);
+    - 32-bit maxima and minima;
+    - powers of two;
+    - powers of two minus one. *)
 
 val gen_bool : t Base_quickcheck.Generator.t
 (** [gen_bool] generates Boolean constants. *)

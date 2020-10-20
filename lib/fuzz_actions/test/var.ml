@@ -56,21 +56,21 @@ let%test_module "Make" =
           print_sample Global ;
           [%expect
             {|
-            int opulent_yurt_1 = -24;
-            int xylophone = 22551631;
-            atomic_int robust_game_1 = -153;
-            atomic_int xylophone_0 = -1;
-            atomic_int zebra = 11676625; |}]
+            atomic_int extravagant_cucumber_0 = -38250;
+            atomic_int strong_zebra = -1;
+            atomic_int intriguing_xylophone_0 = 1;
+            atomic_int xenophilic_zodiac_3 = 470264907;
+            atomic_int poor_yurt_1 = 2147483647; |}]
 
         let%expect_test "thread 0: samples" =
           print_sample (Local 0) ;
           [%expect
             {|
-            bool 0:jocular_easel = true;
+            atomic_bool 0:extravagant_staple_1 = false;
+            atomic_bool 0:heap = true;
             atomic_bool 0:kelp_0 = true;
-            atomic_bool 0:opulent_heap = true;
-            atomic_int 0:strong_zebra = -1;
-            atomic_int 0:xylophone_0 = 33417; |}]
+            int 0:vice_3 = -378;
+            int 0:tall_house_1 = 1; |}]
 
         let test_type (scope : Common.Scope.t) : unit =
           Test.run_exn (make_gen' scope)

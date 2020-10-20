@@ -17,6 +17,8 @@ open struct
 end
 
 module Acc = struct
+  (* TODO(@MattWindsor91): convert to int32; int is potentially 31 bits wide
+     and the generators assume it isn't *)
   type t = Bool of bool | Int of int
   [@@deriving compare, equal, sexp, quickcheck, accessors]
 
@@ -100,14 +102,49 @@ let t_of_yojson' (json : Yojson.Safe.t) : (t, string) Result.t =
 let t_of_yojson (json : Yojson.Safe.t) : t =
   Result.ok_or_failwith (t_of_yojson' json)
 
-let gen_int32_as_int : int Generator.t =
-  Generator.map [%quickcheck.generator: int32] ~f:(fun x ->
-      Option.value ~default:0 (Int.of_int32 x))
-
-let gen_int32 : t Generator.t = Generator.map ~f:int gen_int32_as_int
-
 let gen_bool : t Generator.t =
   Generator.map ~f:bool [%quickcheck.generator: bool]
+
+let gen_int32_positive_pow2 : int32 Generator.t =
+  (* We can't safely generate up to 31 bits here, because that would give us
+     INT_MAX+1 on 32-bit-int architectures. *)
+  (* We already generate 1, so we don't need it here. *)
+  Generator.(map (int32_inclusive 1l 30l) ~f:(Int32.pow 2l))
+
+let gen_int32_negative_pow2 : int32 Generator.t =
+  (* This generator doesn't generate min_value; the intermediate calculation
+     would overflow if we did it naively, and we generate it in the main
+     generator anyway.. *)
+  Generator.map ~f:Int32.neg gen_int32_positive_pow2
+
+let gen_int32_positive_pow2min1 : int32 Generator.t =
+  (* This generator doesn't generate max_value; the intermediate calculation
+     would overflow if we did it naively, and we generate it in the main
+     generator anyway.. *)
+  Generator.map ~f:Int32.pred gen_int32_positive_pow2
+
+let gen_int32_negative_pow2plus1 : int32 Generator.t =
+  Generator.map ~f:Int32.succ gen_int32_negative_pow2
+
+let int32 (k : int32) : t = Int (Int32.to_int_trunc k)
+
+let gen_int32 : t Generator.t =
+  (* As usual, we're assuming that ints are 32-bit twos-complement. This is
+     slightly naughty. *)
+  Generator.map ~f:int32
+    Generator.(
+      weighted_union
+        [ (24.0, int32)
+        ; (3.0, return 1l)
+        ; (3.0, return 0l)
+        ; (2.0, return (-1l))
+        ; (2.0, return Int32.max_value)
+        ; (2.0, return Int32.min_value)
+          (* These don't generate min_value or max_value. *)
+        ; (1.0, gen_int32_positive_pow2)
+        ; (1.0, gen_int32_positive_pow2min1)
+        ; (1.0, gen_int32_negative_pow2)
+        ; (1.0, gen_int32_negative_pow2plus1) ])
 
 let quickcheck_generator : t Generator.t =
   Base_quickcheck.Generator.union [gen_int32; gen_bool]

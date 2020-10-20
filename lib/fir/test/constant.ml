@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,10 +10,50 @@
    project root for more information. *)
 
 open Base
+open Import
 
-open struct
-  module Src = Act_fir
-end
+let%test_module "gen_int32" =
+  ( module struct
+    module Gen = struct
+      include Src.Constant
+
+      let quickcheck_generator = Src.Constant.gen_int32
+    end
+
+    let%expect_test "sample" =
+      Utils.My_quickcheck.print_sample ~test_count:30
+        ~printer:(Fmt.pr "@[%a@]@." Src.Constant.pp)
+        (module Gen) ;
+      [%expect
+        {|
+           -2147483648
+           -879720314
+           -780780327
+           -52859389
+           -50348097
+           -37287526
+           -23556581
+           -15464318
+           -4713
+           -511
+           -209
+           -18
+           -1
+           0
+           1
+           664
+           1136
+           7471
+           7627
+           13418
+           489744
+           10703535
+           268435456
+           2147483647 |}]
+
+    let%test_unit "generator doesn't panic" =
+      Q.Test.run_exn (module Gen) ~f:(fun _ -> ())
+  end )
 
 let%test_module "convert" =
   ( module struct
