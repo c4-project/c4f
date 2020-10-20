@@ -32,8 +32,8 @@ module Helpers = struct
 
   (** [with_flags flags ~f ~ctx] registers [flags] in [ctx], then, if the
       result satisfies the current path filter, proceeds according to [f]. *)
-  let with_flags (flags : Set.M(Path_meta.Flag).t) ~(f : ctx -> 'a t) ~(ctx : ctx)
-      : 'a t =
+  let with_flags (flags : Set.M(Path_meta.Flag).t) ~(f : ctx -> 'a t)
+      ~(ctx : ctx) : 'a t =
     Sequence.(Path_context.add_flags ctx flags |> lift_err >>= f)
 
   (** [if_kind k x ~f ~ctx] is [f ~ctx x] if [ctx]'s kind is [k], and empty
@@ -260,9 +260,8 @@ let is_constructible ?(filter : Path_filter.t option) (test : Subject.Test.t)
     ~(kind : Path_kind.t) : bool =
   not (Sequence.is_empty (produce_seq test ?filter ~kind))
 
-let try_gen ?(filter : Path_filter.t option)
-    (test : Subject.Test.t) ~(kind : Path_kind.t) :
-    Path.With_meta.t Opt_gen.t =
+let try_gen ?(filter : Path_filter.t option) (test : Subject.Test.t)
+    ~(kind : Path_kind.t) : Path.With_meta.t Opt_gen.t =
   match Sequence.to_list_rev (produce_seq test ~kind ?filter) with
   | [] ->
       Or_error.error_string "No valid paths generated"

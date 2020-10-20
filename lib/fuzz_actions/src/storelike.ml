@@ -210,8 +210,8 @@ struct
           (Common.Litmus_id.local tid id)
           init)
 
-  let stm_metadata (to_insert : B.t) (path_flags : Set.M(Fuzz.Path_meta.Flag).t) :
-      Fuzz.Metadata.t =
+  let stm_metadata (to_insert : B.t)
+      (path_flags : Set.M(Fuzz.Path_meta.Flag).t) : Fuzz.Metadata.t =
     let restrictions =
       if apply_once_only to_insert ~path_flags then
         Set.singleton (module Fuzz.Metadata.Restriction) Once_only
@@ -220,8 +220,8 @@ struct
     Generated (Fuzz.Metadata.Gen.make ~restrictions ())
 
   let to_stms_with_metadata (to_insert : B.t)
-      (path_flags : Set.M(Fuzz.Path_meta.Flag).t) : Fuzz.Subject.Statement.t list
-      =
+      (path_flags : Set.M(Fuzz.Path_meta.Flag).t) :
+      Fuzz.Subject.Statement.t list =
     let meta = stm_metadata to_insert path_flags in
     List.map (B.to_stms to_insert) ~f:(fun value ->
         Accessor.construct Fir.Statement.prim {meta; value})
@@ -233,8 +233,7 @@ struct
     let stms = to_stms_with_metadata to_insert path.meta.flags in
     Or_error.(
       target
-      |> Fuzz.Path_consumers.consume ~filter ~path
-           ~action:(Insert stms)
+      |> Fuzz.Path_consumers.consume ~filter ~path ~action:(Insert stms)
       >>= insert_vars ~new_locals:(B.new_locals to_insert) ~tid)
 
   let run (subject : Fuzz.Subject.Test.t)

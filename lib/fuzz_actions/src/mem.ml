@@ -49,7 +49,8 @@ struct
 end
 
 module Strengthen_payload = struct
-  type t = {path: Fuzz.Path.With_meta.t; mo: Fir.Mem_order.t; can_weaken: bool}
+  type t =
+    {path: Fuzz.Path.With_meta.t; mo: Fir.Mem_order.t; can_weaken: bool}
   [@@deriving sexp, make]
 end
 

@@ -38,8 +38,8 @@ val add_if : t -> when_:bool -> add:t -> t
 (** {2 Filters that constrain path metadata} *)
 
 val require_meta : Path_meta.t -> t
-(** [require_meta meta] is a path filter that requires every piece of metadata
-    in [meta] to be present. *)
+(** [require_meta meta] is a path filter that requires every piece of
+    metadata in [meta] to be present. *)
 
 val require_flags : Set.M(Path_meta.Flag).t -> t
 (** [require_flags flags] is a path filter that requires every flag in

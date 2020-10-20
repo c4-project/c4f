@@ -22,8 +22,8 @@ val consume :
   -> path:Path.With_meta.t
   -> action:Path_kind.With_action.t
   -> Subject.Test.t Or_error.t
-(** [consume ?filter target ~path ~action] consumes [path] over
-    [target], performing [action] at the end of it.
+(** [consume ?filter target ~path ~action] consumes [path] over [target],
+    performing [action] at the end of it.
 
     If [filter] is present, the consumer will check that the path satisfies
     the path filter. This is the same check as used in {!Path_producers}; its

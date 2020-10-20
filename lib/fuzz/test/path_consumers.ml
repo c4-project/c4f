@@ -304,8 +304,7 @@ let%test_module "Statement_list" =
                   [%test_result: unit Or_error.t] ~here:[[%here]]
                     ~expect:(Ok ())
                     (Or_error.map ~f:(Fn.const ())
-                       (F.Path_consumers.consume ~path ?filter
-                          ~action
+                       (F.Path_consumers.consume ~path ?filter ~action
                           (Lazy.force Subject.Test_data.test))))
 
             let%test_unit "unfiltered transform-stm produces valid paths" =

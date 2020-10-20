@@ -134,8 +134,8 @@ let%test_module "Early_out_loop_end" =
       Src.Flow_dead.Insert.Early_out_loop_end.run test ~payload
 
     let test_on_example_program ?(if_cond : Fir.Expression.t option)
-        (wherez : Fuzz.Path.With_meta.t Lazy.t) (kind : Fir.Early_out.t) : unit
-        =
+        (wherez : Fuzz.Path.With_meta.t Lazy.t) (kind : Fir.Early_out.t) :
+        unit =
       let initial_state : Fuzz.State.t =
         Lazy.force Fuzz_test.State.Test_data.state
       in

@@ -37,7 +37,6 @@ let%test_module "On_lvalues" =
     let fb =
       Src.Flow_block.make ~header ~body:(Src.Block.make ~metadata:() ())
 
-
     let%expect_test "for-loop header" =
       let headers = FHList.map_m header ~f:(fun lv -> [lv; Deref lv]) in
       Stdio.print_s [%sexp (headers : Src.Flow_block.Header.t list)] ;
@@ -150,12 +149,12 @@ let%test_module "On_lvalues" =
              (update (((dst (Deref (Variable x))) (src Inc)))))))
           (body ((statements ()) (metadata ()))))) |}]
 
-
     let%expect_test "for-loop in an expression" =
       let stm = Accessor.construct Src.Statement.flow fb in
       let stms = SList.map_m stm ~f:(fun lv -> [lv; Deref lv]) in
       Stdio.print_s [%sexp (stms : unit Src.Statement.t list)] ;
-      [%expect {|
+      [%expect
+        {|
         ((Flow
           ((header
             (For

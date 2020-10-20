@@ -17,10 +17,12 @@ module Pathed = struct
   [@@deriving accessors, sexp]
 
   (* Can't derive this, it'll derive the arguments in the wrong order. *)
-  let make (payload : 'a) ~(where : Path.With_meta.t) : 'a t = {payload; where}
+  let make (payload : 'a) ~(where : Path.With_meta.t) : 'a t =
+    {payload; where}
 
   let gen (kind : Path_kind.t) (path_filter : State.t -> Path_filter.t)
-      (gen_inner : Path.With_meta.t -> 'a Payload_gen.t) : 'a t Payload_gen.t =
+      (gen_inner : Path.With_meta.t -> 'a Payload_gen.t) : 'a t Payload_gen.t
+      =
     Payload_gen.(
       let* filter = lift_state path_filter in
       let* where = path_with_flags kind ~filter in

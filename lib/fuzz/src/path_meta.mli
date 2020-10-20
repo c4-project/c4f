@@ -19,8 +19,8 @@ open Import
     flags are produced as a path gets generated, and used to check the path
     against a {!Path_filter}. *)
 module Flag : sig
-    (** Type of path flags. *)
-    type t =
+  (** Type of path flags. *)
+  type t =
     | Execute_multi_unsafe
         (** The path reaches a statement that is not safe to execute multiple
             times. *)
@@ -30,7 +30,7 @@ module Flag : sig
         (** The path passes through a block that MAY execute multiple times. *)
     | In_loop  (** The path passes through a loop body. *)
 
-    include Utils.Enum_types.Extension_table with type t := t
+  include Utils.Enum_types.Extension_table with type t := t
 end
 
 (** {1 Acquiring path flags} *)
@@ -56,23 +56,23 @@ val flags_of_stm : Subject.Statement.t -> Set.M(Flag).t
 
 (** {1 Metadata structures} *)
 
-type t = {flags: Set.M(Flag).t} [@@deriving accessors, sexp, compare, equal]
 (** Type of metadata. *)
+type t = {flags: Set.M(Flag).t} [@@deriving accessors, sexp, compare, equal]
 
-include Pretty_printer.S with type t := t
 (** We can pretty-print metadata. *)
+include Pretty_printer.S with type t := t
 
 val empty : t
 (** [empty] is an empty metadata set. *)
 
 val check_contradiction_free : t -> t Or_error.t
-(** [check_contradiction_free m] checks to see if there are contradictions
-    in [m]. For example, [m] having both 'execute-multi
-    unsafe' and 'in execute-multi' is a contradiction. Such contradictions
-    suggest an error in an action generator. *)
+(** [check_contradiction_free m] checks to see if there are contradictions in
+    [m]. For example, [m] having both 'execute-multi unsafe' and 'in
+    execute-multi' is a contradiction. Such contradictions suggest an error
+    in an action generator. *)
 
-type meta := t
 (** This exists solely to break a nonrec later on. *)
+type meta := t
 
 (** {1 Paths with metadata attached}
 

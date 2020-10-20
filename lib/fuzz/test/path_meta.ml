@@ -13,13 +13,15 @@ open Base
 open Import
 
 let print_flags : Set.M(Src.Path_meta.Flag).t -> unit =
-  Fmt.(pr "@[%a@]@." (using (fun flags -> {Src.Path_meta.flags}) Src.Path_meta.pp))
+  Fmt.(
+    pr "@[%a@]@."
+      (using (fun flags -> {Src.Path_meta.flags}) Src.Path_meta.pp))
 
 let%test_module "check_contradiction_free" =
   ( module struct
     let test (m : Src.Path_meta.Flag.t list) : unit =
       let flags = Set.of_list (module Src.Path_meta.Flag) m in
-      let meta = {Src.Path_meta.flags=flags} in
+      let meta = {Src.Path_meta.flags} in
       let result = Src.Path_meta.check_contradiction_free meta in
       Fmt.(pr "@[%a@]@." (result ~ok:nop ~error:Error.pp)) result
 

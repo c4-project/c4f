@@ -37,7 +37,7 @@ val try_gen :
   -> Subject.Test.t
   -> kind:Path_kind.t
   -> Path.With_meta.t Opt_gen.t
-(** [try_gen ?filter test ~kind] tries to choose a random path of
-    kind [kind] over test [test] that matches filter [filter]. It returns the
-    path alongside the flags that were enabled on it, and fails if such a
-    path is not constructible. *)
+(** [try_gen ?filter test ~kind] tries to choose a random path of kind [kind]
+    over test [test] that matches filter [filter]. It returns the path
+    alongside the flags that were enabled on it, and fails if such a path is
+    not constructible. *)

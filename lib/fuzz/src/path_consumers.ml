@@ -22,8 +22,8 @@ type mu =
   -> Subject.Statement.t Or_error.t
 
 module Helpers = struct
-  let with_flags (flags : Set.M(Path_meta.Flag).t) ~(f : ctx -> 'a Or_error.t)
-      ~(ctx : ctx) : 'a Or_error.t =
+  let with_flags (flags : Set.M(Path_meta.Flag).t)
+      ~(f : ctx -> 'a Or_error.t) ~(ctx : ctx) : 'a Or_error.t =
     Or_error.(Path_context.add_flags ctx flags >>= f)
 
   let bad_kind (got_wa : Path_kind.With_action.t) ~(want : Path_kind.t) :
@@ -278,9 +278,9 @@ let consume' (test : Subject.Test.t) ~(path : Path.t) ~(ctx : ctx) :
       Act_litmus.Test.Raw.try_map_thread test ~index
         ~f:(thread index ~path ~ctx)
 
-let consume ?(filter : Path_filter.t option)
-    (test : Subject.Test.t) ~(path : Path.With_meta.t)
-    ~(action : Path_kind.With_action.t) : Subject.Test.t Or_error.t =
+let consume ?(filter : Path_filter.t option) (test : Subject.Test.t)
+    ~(path : Path.With_meta.t) ~(action : Path_kind.With_action.t) :
+    Subject.Test.t Or_error.t =
   let {Path_meta.With_meta.path; meta; _} = path in
   let filter =
     Path_filter.(Option.merge ~f:( + ) filter (Some (require_meta meta)))

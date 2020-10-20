@@ -182,11 +182,11 @@ val tid : t -> int
 
 (** {1 Paths with metadata}
 
-    Most code that manipulates paths does so in the context of the metadata that
-    was produced by the path consumer.  This lets payload generators help
+    Most code that manipulates paths does so in the context of the metadata
+    that was produced by the path consumer. This lets payload generators help
     themselves to facts about the path site that were available at generation
     time.
-    
+
     This module is just a specialised form of {!Path_meta.With_meta}; the
     latter exists to help us carry through metadata on incomplete paths. *)
 module With_meta : sig
@@ -195,6 +195,6 @@ module With_meta : sig
 
   include Pretty_printer.S with type t := t
 
-  val flag : Path_meta.Flag.t -> ('i, bool, t, [<field]) Accessor.Simple.t
+  val flag : Path_meta.Flag.t -> ('i, bool, t, [< field]) Accessor.Simple.t
   (** [flag f] accesses whether [f] is set in this path's metadata. *)
 end

@@ -17,9 +17,9 @@ open Import
 module Surround : sig
   (** Type of surround modules.
 
-      Ideally, we would use just {!Fuzz.Path.With_meta.t} as the payload here.
-      However, {!Fuzz.Action.Make_surround} expects a payload of the form
-      [t Fuzz.Payload_impl.Pathed.t]. *)
+      Ideally, we would use just {!Fuzz.Path.With_meta.t} as the payload
+      here. However, {!Fuzz.Action.Make_surround} expects a payload of the
+      form [t Fuzz.Payload_impl.Pathed.t]. *)
   module type S =
     Fuzz.Action_types.S with type Payload.t = unit Fuzz.Payload_impl.Pathed.t
 

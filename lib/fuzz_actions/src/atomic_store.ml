@@ -74,12 +74,12 @@ module Transform = struct
         -> Fuzz.Metadata.t Fir.Statement.t Or_error.t =
       AtomsM.map_m ~f:xchgify_atomic
 
-    let run (subject : Fuzz.Subject.Test.t) ~(payload : Fuzz.Path.With_meta.t)
-        : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
+    let run (subject : Fuzz.Subject.Test.t)
+        ~(payload : Fuzz.Path.With_meta.t) :
+        Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Fuzz.State.Monad.Monadic.return
-        (Fuzz.Path_consumers.consume subject
-           ~filter:(Lazy.force path_filter) ~path:payload
-           ~action:(Transform xchgify))
+        (Fuzz.Path_consumers.consume subject ~filter:(Lazy.force path_filter)
+           ~path:payload ~action:(Transform xchgify))
   end
 end
 

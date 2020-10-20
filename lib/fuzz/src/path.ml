@@ -338,6 +338,7 @@ module With_meta = struct
       ++ sp
       ++ using (Accessor.get Path_meta.With_meta.meta) Path_meta.pp)
 
-  let flag (f : Path_meta.Flag.t) : ('i, bool, t, [<field]) Accessor.Simple.t =
+  let flag (f : Path_meta.Flag.t) :
+      ('i, bool, t, [< field]) Accessor.Simple.t =
     Path_meta.(With_meta.meta @> flags @> Accessor.Set.at f)
 end

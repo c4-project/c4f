@@ -86,8 +86,8 @@ module Insert = struct
       type t = Early_out_payload.t Fuzz.Payload_impl.Pathed.t
       [@@deriving sexp]
 
-      let kind_pred (path : Fuzz.Path.With_meta.t) :
-          Fir.Early_out.t -> bool =
+      let kind_pred (path : Fuzz.Path.With_meta.t) : Fir.Early_out.t -> bool
+          =
         if path.@(Fuzz.Path.With_meta.flag In_loop) then Fn.const true
         else Fn.non Fir.Early_out.in_loop_only
 
@@ -134,8 +134,8 @@ module Insert = struct
       type t = Early_out_payload.t Fuzz.Payload_impl.Pathed.t
       [@@deriving sexp]
 
-      let kind_pred (path : Fuzz.Path.With_meta.t) :
-          Fir.Early_out.t -> bool =
+      let kind_pred (path : Fuzz.Path.With_meta.t) : Fir.Early_out.t -> bool
+          =
         (* We can only break at the end of an arbitrary loop if we know that
            it can only be executed once, and it's never safe to return from
            an arbitrary part of live code.

@@ -64,8 +64,8 @@ module Transform = struct
     let run (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Fuzz.State.Monad.Monadic.return
-        (Fuzz.Path_consumers.consume test ~filter:path_filter
-           ~path:payload ~action:(Transform invert_stm))
+        (Fuzz.Path_consumers.consume test ~filter:path_filter ~path:payload
+           ~action:(Transform invert_stm))
   end
 end
 

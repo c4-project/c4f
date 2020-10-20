@@ -22,10 +22,11 @@ type 'k t =
 let init ?(filter : Path_filter.t = Path_filter.zero) (kind : 'k) : 'k t =
   {kind; last_block= Top; meta= Path_meta.empty; filter}
 
-let add_flags (x : 'k t) (flags : Set.M(Path_meta.Flag).t) : 'k t Or_error.t =
+let add_flags (x : 'k t) (flags : Set.M(Path_meta.Flag).t) : 'k t Or_error.t
+    =
   Or_error.Let_syntax.(
     (* TODO(@MattWindsor91): push meta further down. *)
-    let meta = {Path_meta.flags = Set.union x.meta.flags flags } in
+    let meta = {Path_meta.flags= Set.union x.meta.flags flags} in
     let%map () = Path_filter.check_not x.filter ~meta in
     {x with meta})
 
