@@ -56,6 +56,24 @@ module Flag = struct
             None)]
 end
 
+module Anchor = struct
+  type t = Top | Bottom | Full [@@deriving sexp, equal]
+
+  let merge (l : t) (r : t) : t =
+    match (l, r) with
+    | Top, Top ->
+        Top
+    | Bottom, Bottom ->
+        Bottom
+    | _ ->
+        Full
+
+  let merge_opt : t option -> t option -> t option = Option.merge ~f:merge
+
+  let incl_opt ?(includes : t option) (x : t option) : bool =
+    [%equal: t option] includes (merge_opt x includes)
+end
+
 let flag_contradictions : Set.M(Flag).t list Lazy.t =
   lazy
     (List.map

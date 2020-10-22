@@ -102,16 +102,7 @@ val require_end_check : End_check.t -> t
 (** [require_end_check check] requires that any statement(s) reached by this
     path meet the end check [check]. *)
 
-(** {2 Anchors} *)
-module Anchor : sig
-  (** Type of anchors. *)
-  type t =
-    | Top  (** Path must be located at the top of a block. *)
-    | Bottom  (** Path must be located at the bottom of a block. *)
-    | Full  (** Path must access the whole block. *)
-end
-
-val anchor : Anchor.t -> t
+val anchor : Path_meta.Anchor.t -> t
 (** [anchor anc] requires that any statement(s) reached by this path, or any
     insertion locations proposed by this path, respect the anchoring [anc]. *)
 

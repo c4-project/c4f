@@ -33,7 +33,7 @@ module Flag : sig
   include Utils.Enum_types.Extension_table with type t := t
 end
 
-(** {1 Acquiring path flags} *)
+(** {2 Acquiring path flags} *)
 
 val flags_of_metadata : Metadata.t -> Set.M(Flag).t
 (** [flags_of_metadata m] gets the path flags that passing through a
@@ -53,6 +53,36 @@ val flags_of_stm : Subject.Statement.t -> Set.M(Flag).t
     [s] will enable; this does not include any flags relating to passing
     through the statement's block (use {!flags_of_flow}, {!flags_of_block},
     etc.). *)
+
+(** {1 Anchors}
+
+    Path anchors specify the location of a path inside its innermost block,
+    and, in filter position, the location that a path must reach. For
+    instance, a top-anchored path touches the top of the block; a bottom path
+    touches the bottom; a full path spans the entirety of the block.
+
+    Anchors work over insert paths (full anchors imply that we're inserting
+    into an empty block), transform paths (full anchors imply that the
+    statement we're transforming is the only member of the block), and
+    transform-list paths (full anchors imply we're transforming every
+    statement in a block). *)
+module Anchor : sig
+  (** Type of anchors. *)
+  type t =
+    | Top  (** Path must be located at the top of a block. *)
+    | Bottom  (** Path must be located at the bottom of a block. *)
+    | Full  (** Path must access the whole block. *)
+  [@@deriving sexp]
+
+  val incl_opt : ?includes:t -> t option -> bool
+  (** [incl_opt ?includes x] is true if [x] includes [includes]. [Full]
+      includes everything, and everything includes [None] (so, anchors form a
+      lattice). *)
+
+  val merge_opt : t option -> t option -> t option
+  (** [merge_opt l r] merges two optional anchors, according to the lattice
+      formed by [incl_opt]. *)
+end
 
 (** {1 Metadata structures} *)
 

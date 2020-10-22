@@ -66,53 +66,6 @@ module Block = struct
         match_req block ~template
 end
 
-module Anchor = struct
-  type t = Top | Bottom | Full [@@deriving sexp]
-
-  let merge (l : t) (r : t) : t =
-    match (l, r) with
-    | Top, Top ->
-        Top
-    | Bottom, Bottom ->
-        Bottom
-    | _ ->
-        Full
-
-  module Check = struct
-    type t = {is_nested: bool; pos: int; len: int; block_len: int}
-    [@@deriving sexp]
-
-    let of_path (path : Path.Stms.t) ~(block_len : int) : t =
-      Path.Stms.
-        { pos= path.@(index)
-        ; len= len path
-        ; is_nested= is_nested path
-        ; block_len }
-  end
-
-  let is_anchored (anc : t) ~(check : Check.t) : bool =
-    check.is_nested
-    ||
-    match anc with
-    | Top ->
-        check.pos = 0
-    | Bottom ->
-        check.block_len <= check.pos + check.len
-    | Full ->
-        check.pos = 0 && check.block_len <= check.len
-
-  let check_anchor (anc : t) ~(path : Path.Stms.t) ~(block_len : int) :
-      unit Or_error.t =
-    let check = Check.of_path path ~block_len in
-    Tx.Or_error.unless_m (is_anchored anc ~check) ~f:(fun () ->
-        Or_error.error_s
-          [%message
-            "Path is not anchored properly"
-              ~anchor:(anc : t)
-              ~path_fragment:(path : Path.Stms.t)
-              ~check:(check : Check.t)])
-end
-
 (** Checks that can only be carried out at the end of a statement path. *)
 module End_check = struct
   module M = struct
@@ -152,7 +105,7 @@ type t =
   ; not_flags: Set.M(Path_meta.Flag).t
   ; end_checks: Set.M(End_check).t
   ; threads: Set.M(Int).t option
-  ; anchor: Anchor.t option
+  ; anchor: Path_meta.Anchor.t option
   ; block: Block.chk option }
 
 let zero : t =
@@ -168,13 +121,47 @@ let ( + ) (l : t) (r : t) : t =
   ; not_flags= Set.union l.not_flags r.not_flags
   ; end_checks= Set.union l.end_checks r.end_checks
   ; threads= Option.merge ~f:Set.inter l.threads r.threads
-  ; anchor= Option.merge ~f:Anchor.merge l.anchor r.anchor
+  ; anchor= Path_meta.Anchor.merge_opt l.anchor r.anchor
   ; block= Option.merge ~f:Block.merge l.block r.block }
 
 let add_if (x : t) ~(when_ : bool) ~(add : t) : t =
   if when_ then x + add else x
 
-let anchor (anc : Anchor.t) : t = {zero with anchor= Some anc}
+let anchor (anc : Path_meta.Anchor.t) : t = {zero with anchor= Some anc}
+
+module Anchor_check = struct
+  type t = {is_nested: bool; pos: int; len: int; block_len: int}
+  [@@deriving sexp]
+
+  let of_path (path : Path.Stms.t) ~(block_len : int) : t =
+    Path.Stms.
+      { pos= path.@(index)
+      ; len= len path
+      ; is_nested= is_nested path
+      ; block_len }
+end
+
+let is_anchored (anc : Path_meta.Anchor.t) ~(check : Anchor_check.t) : bool =
+  check.is_nested
+  ||
+  match anc with
+  | Top ->
+      check.pos = 0
+  | Bottom ->
+      check.block_len <= Int.(check.pos + check.len)
+  | Full ->
+      check.pos = 0 && check.block_len <= check.len
+
+let check_anchor (anc : Path_meta.Anchor.t) ~(path : Path.Stms.t)
+    ~(block_len : int) : unit Or_error.t =
+  let check = Anchor_check.of_path path ~block_len in
+  Tx.Or_error.unless_m (is_anchored anc ~check) ~f:(fun () ->
+      Or_error.error_s
+        [%message
+          "Path is not anchored properly"
+            ~anchor:(anc : Path_meta.Anchor.t)
+            ~path_fragment:(path : Path.Stms.t)
+            ~check:(check : Anchor_check.t)])
 
 let ends_in_block (blk : Block.t) : t = {zero with block= Some (Valid blk)}
 
@@ -265,7 +252,7 @@ let check_not (filter : t) ~(meta : Path_meta.t) : unit Or_error.t =
 let check_anchor (filter : t) ~(path : Path.Stms.t) ~(block_len : int) :
     unit Or_error.t =
   Tx.Option.With_errors.iter_m filter.anchor
-    ~f:(Anchor.check_anchor ~path ~block_len)
+    ~f:(check_anchor ~path ~block_len)
 
 let check_block (filter : t) ~(block : Block.t) : unit Or_error.t =
   Tx.Option.With_errors.iter_m filter.block ~f:(Block.check ~block)
