@@ -209,7 +209,8 @@ module Test_data = struct
         Src.Path.With_meta.t Lazy.t =
       Lazy.map p ~f:(fun path ->
           Src.Path_meta.(
-            let meta = {flags= Set.of_list (module Flag) fs} in
+            let anchor = None (* for now *) in
+            let meta = {flags= Set.of_list (module Flag) fs; anchor} in
             With_meta.make path ~meta))
 
     let thread_0_stms (path : Src.Path.Stms.t) : Src.Path.t Lazy.t =

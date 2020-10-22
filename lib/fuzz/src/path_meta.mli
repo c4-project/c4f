@@ -83,7 +83,7 @@ module Anchor : sig
   (** [merge_opt l r] merges two optional anchors, according to the lattice
       formed by [incl_opt]. *)
 
-  val of_dimensions : index: int -> len: int -> block_len: int -> t option
+  val of_dimensions : index:int -> len:int -> block_len:int -> t option
   (** [of_dimensions ~index ~len ~block_len] determines the anchor, if any,
       from the given dimensions. *)
 end
@@ -91,13 +91,20 @@ end
 (** {1 Metadata structures} *)
 
 (** Type of metadata. *)
-type t = {flags: Set.M(Flag).t} [@@deriving accessors, sexp, compare, equal]
+type t = {flags: Set.M(Flag).t; anchor: Anchor.t option}
+[@@deriving accessors, sexp, compare, equal]
 
 (** We can pretty-print metadata. *)
 include Pretty_printer.S with type t := t
 
-val empty : t
-(** [empty] is an empty metadata set. *)
+(** Metadata is a monoid: [zero] is an empty metadata set; [+] merges two
+    sets of metadata.
+
+    Note [+] is NOT the right operator for adding metadata from a block to
+    the existing metadata for a path, as it merges inmost-block-specific
+    metadata rather than replacing it. [+] is intended mostly for path filter
+    construction. *)
+include Container.Summable with type t := t
 
 val add_flags : t -> flags:Set.M(Flag).t -> t
 (** [add_flags meta ~flags] is shorthand for unifying [flags] and [meta]'s

@@ -20,7 +20,7 @@ type 'k t =
 [@@deriving fields]
 
 let init ?(filter : Path_filter.t = Path_filter.zero) (kind : 'k) : 'k t =
-  {kind; last_block= Top; meta= Path_meta.empty; filter}
+  {kind; last_block= Top; meta= Path_meta.zero; filter}
 
 let add_flags (x : 'k t) (flags : Set.M(Path_meta.Flag).t) : 'k t Or_error.t
     =

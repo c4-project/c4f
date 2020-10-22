@@ -101,33 +101,28 @@ module End_check = struct
 end
 
 type t =
-  { req_flags: Set.M(Path_meta.Flag).t
+  { req_meta: Path_meta.t
   ; not_flags: Set.M(Path_meta.Flag).t
   ; end_checks: Set.M(End_check).t
   ; threads: Set.M(Int).t option
-  ; anchor: Path_meta.Anchor.t option
   ; block: Block.chk option }
 
 let zero : t =
-  { req_flags= Set.empty (module Path_meta.Flag)
+  { req_meta= Path_meta.zero
   ; not_flags= Set.empty (module Path_meta.Flag)
   ; end_checks= Set.empty (module End_check)
   ; threads= None
-  ; anchor= None
   ; block= None }
 
 let ( + ) (l : t) (r : t) : t =
-  { req_flags= Set.union l.req_flags r.req_flags
+  { req_meta= Path_meta.(l.req_meta + r.req_meta)
   ; not_flags= Set.union l.not_flags r.not_flags
   ; end_checks= Set.union l.end_checks r.end_checks
   ; threads= Option.merge ~f:Set.inter l.threads r.threads
-  ; anchor= Path_meta.Anchor.merge_opt l.anchor r.anchor
   ; block= Option.merge ~f:Block.merge l.block r.block }
 
 let add_if (x : t) ~(when_ : bool) ~(add : t) : t =
   if when_ then x + add else x
-
-let anchor (anc : Path_meta.Anchor.t) : t = {zero with anchor= Some anc}
 
 module Anchor_check = struct
   type t = {is_nested: bool; pos: int; len: int; block_len: int}
@@ -143,10 +138,10 @@ end
 
 let is_anchored (anc : Path_meta.Anchor.t) ~(check : Anchor_check.t) : bool =
   check.is_nested
-  ||
-  Path_meta.Anchor.(incl_opt ~includes:anc
-    (of_dimensions ~index:check.pos ~len:check.len ~block_len:check.block_len)
-  )
+  || Path_meta.Anchor.(
+       incl_opt ~includes:anc
+         (of_dimensions ~index:check.pos ~len:check.len
+            ~block_len:check.block_len))
 
 let check_anchor (anc : Path_meta.Anchor.t) ~(path : Path.Stms.t)
     ~(block_len : int) : unit Or_error.t =
@@ -161,11 +156,13 @@ let check_anchor (anc : Path_meta.Anchor.t) ~(path : Path.Stms.t)
 
 let ends_in_block (blk : Block.t) : t = {zero with block= Some (Valid blk)}
 
-let require_meta (meta : Path_meta.t) : t =
-  (* TODO(@MattWindsor91): do more here! *)
-  {zero with req_flags= meta.flags}
+let require_meta (meta : Path_meta.t) : t = {zero with req_meta= meta}
 
-let require_flags (flags : Set.M(Path_meta.Flag).t) : t = require_meta {flags}
+let require_flags (flags : Set.M(Path_meta.Flag).t) : t =
+  require_meta {flags; anchor= None}
+
+let anchor (anc : Path_meta.Anchor.t) : t =
+  require_meta {flags= Set.empty (module Path_meta.Flag); anchor= Some anc}
 
 let require_flag (req_flag : Path_meta.Flag.t) : t =
   require_flags (Set.singleton (module Path_meta.Flag) req_flag)
@@ -234,12 +231,13 @@ let check_thread_ok ({threads; _} : t) ~(thread : int) : unit Or_error.t =
           ~allowed:(threads : Set.M(Int).t option)]
 
 let check_req (filter : t) ~(meta : Path_meta.t) : unit Or_error.t =
+  (* TODO(@MattWindsor91): check anchor here too. *)
   Or_error.Let_syntax.(
     (* This might not be the best place to put this check, but it is a point
        where we have all of the flags that will be enabled on the path. *)
     let%bind _ = Path_meta.check_contradiction_free meta in
     error_of_flags ~polarity:"required"
-      (Set.diff filter.req_flags meta.flags))
+      (Set.diff filter.req_meta.flags meta.flags))
 
 let check_not (filter : t) ~(meta : Path_meta.t) : unit Or_error.t =
   error_of_flags ~polarity:"forbidden"
@@ -247,7 +245,7 @@ let check_not (filter : t) ~(meta : Path_meta.t) : unit Or_error.t =
 
 let check_anchor (filter : t) ~(path : Path.Stms.t) ~(block_len : int) :
     unit Or_error.t =
-  Tx.Option.With_errors.iter_m filter.anchor
+  Tx.Option.With_errors.iter_m filter.req_meta.anchor
     ~f:(check_anchor ~path ~block_len)
 
 let check_block (filter : t) ~(block : Block.t) : unit Or_error.t =

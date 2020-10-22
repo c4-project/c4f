@@ -57,7 +57,8 @@ module Flag = struct
 end
 
 module Anchor = struct
-  type t = Top | Bottom | Full [@@deriving sexp, equal]
+  (* nb: the compare instance here is NOT inclusion. *)
+  type t = Top | Bottom | Full [@@deriving sexp, compare, equal]
 
   let merge (l : t) (r : t) : t =
     match (l, r) with
@@ -73,9 +74,10 @@ module Anchor = struct
   let incl_opt ?(includes : t option) (x : t option) : bool =
     [%equal: t option] x (merge_opt x includes)
 
-  let of_dimensions ~(index: int) ~(len: int) ~(block_len: int) : t option =
+  let of_dimensions ~(index : int) ~(len : int) ~(block_len : int) : t option
+      =
     let top = Option.some_if (0 = index) Top in
-    let bot = Option.some_if (block_len <= (index + len)) Bottom in
+    let bot = Option.some_if (block_len <= index + len) Bottom in
     merge_opt top bot
 end
 
@@ -125,13 +127,20 @@ let pp_flag_set : Set.M(Flag).t Fmt.t =
   Fmt.(braces (using Set.to_list (list ~sep:comma Flag.pp)))
 
 module Meta = struct
-  type t = {flags: Set.M(Flag).t}
+  type t =
+    { flags: Set.M(Flag).t
+          [@default Set.empty (module Flag)] [@sexp.drop_default.equal]
+    ; anchor: Anchor.t option [@sexp.option] }
   [@@deriving accessors, sexp, compare, equal]
 
-  let empty : t = {flags= Set.empty (module Flag)}
+  let zero : t = {flags= Set.empty (module Flag); anchor= None}
 
   let add_flags (x : t) ~(flags : Set.M(Flag).t) : t =
-    {flags= Set.union x.flags flags}
+    {x with flags= Set.union x.flags flags}
+
+  let ( + ) (l : t) (r : t) : t =
+    { flags= Set.union l.flags r.flags
+    ; anchor= Anchor.merge_opt l.anchor r.anchor }
 
   let check_contradiction_free (m : t) : t Or_error.t =
     let contra = flag_contradictions_of_set m.flags in
@@ -150,7 +159,7 @@ end
 include Meta
 
 module With_meta = struct
-  type 'p t = {path: 'p [@main]; meta: Meta.t [@default Meta.empty]}
+  type 'p t = {path: 'p [@main]; meta: Meta.t [@default Meta.zero]}
   [@@deriving make, accessors, sexp, compare, equal]
 
   include (
