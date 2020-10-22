@@ -26,7 +26,7 @@ let add_flags (x : 'k t) (flags : Set.M(Path_meta.Flag).t) : 'k t Or_error.t
     =
   Or_error.Let_syntax.(
     (* TODO(@MattWindsor91): push meta further down. *)
-    let meta = {Path_meta.flags= Set.union x.meta.flags flags} in
+    let meta = Path_meta.add_flags x.meta ~flags in
     let%map () = Path_filter.check_not x.filter ~meta in
     {x with meta})
 

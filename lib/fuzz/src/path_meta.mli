@@ -65,6 +65,10 @@ include Pretty_printer.S with type t := t
 val empty : t
 (** [empty] is an empty metadata set. *)
 
+val add_flags : t -> flags:Set.M(Flag).t -> t
+(** [add_flags meta ~flags] is shorthand for unifying [flags] and [meta]'s
+    existing flags, producing a new metadata structure. *)
+
 val check_contradiction_free : t -> t Or_error.t
 (** [check_contradiction_free m] checks to see if there are contradictions in
     [m]. For example, [m] having both 'execute-multi unsafe' and 'in

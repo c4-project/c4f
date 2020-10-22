@@ -107,6 +107,9 @@ module Meta = struct
 
   let empty : t = {flags= Set.empty (module Flag)}
 
+  let add_flags (x : t) ~(flags : Set.M(Flag).t) : t =
+    {flags= Set.union x.flags flags}
+
   let check_contradiction_free (m : t) : t Or_error.t =
     let contra = flag_contradictions_of_set m.flags in
     if List.is_empty contra then Ok m
