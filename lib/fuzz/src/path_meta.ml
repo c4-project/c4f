@@ -71,7 +71,12 @@ module Anchor = struct
   let merge_opt : t option -> t option -> t option = Option.merge ~f:merge
 
   let incl_opt ?(includes : t option) (x : t option) : bool =
-    [%equal: t option] includes (merge_opt x includes)
+    [%equal: t option] x (merge_opt x includes)
+
+  let of_dimensions ~(index: int) ~(len: int) ~(block_len: int) : t option =
+    let top = Option.some_if (0 = index) Top in
+    let bot = Option.some_if (block_len <= (index + len)) Bottom in
+    merge_opt top bot
 end
 
 let flag_contradictions : Set.M(Flag).t list Lazy.t =

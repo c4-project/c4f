@@ -144,13 +144,9 @@ end
 let is_anchored (anc : Path_meta.Anchor.t) ~(check : Anchor_check.t) : bool =
   check.is_nested
   ||
-  match anc with
-  | Top ->
-      check.pos = 0
-  | Bottom ->
-      check.block_len <= Int.(check.pos + check.len)
-  | Full ->
-      check.pos = 0 && check.block_len <= check.len
+  Path_meta.Anchor.(incl_opt ~includes:anc
+    (of_dimensions ~index:check.pos ~len:check.len ~block_len:check.block_len)
+  )
 
 let check_anchor (anc : Path_meta.Anchor.t) ~(path : Path.Stms.t)
     ~(block_len : int) : unit Or_error.t =
