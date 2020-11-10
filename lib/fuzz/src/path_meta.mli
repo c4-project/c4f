@@ -37,7 +37,7 @@ end
 
 val flags_of_metadata : Metadata.t -> Set.M(Flag).t
 (** [flags_of_metadata m] gets the path flags that passing through a
-    construct with metadata [m] will enable. *)
+    construct with FIR metadata [m] will enable. *)
 
 val flags_of_block : Subject.Block.t -> Set.M(Flag).t
 (** [flags_of_block b] gets the path flags that passing through a block [b]

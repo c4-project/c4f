@@ -76,7 +76,8 @@ module Block = struct
             (Path_context.check_filter_req ctx)
             ~tag:"checking flags on insertion"
           >>= fun () ->
-          Act_utils.My_list.splice b ~pos ~len:0 ~replace_f:(Fn.const stms))
+          Utils.My_list.splice b ~span:{pos; len= 0}
+            ~replace_f:(Fn.const stms))
     | x ->
         bad_kind x ~want:Insert
 
@@ -99,14 +100,14 @@ module Block = struct
           in
           f stms))
 
-  let on_range (b : Subject.Statement.t list) ~(pos : int) ~(len : int)
+  let on_range (b : Subject.Statement.t list) ~(span : Utils.My_list.Span.t)
       ~(ctx : ctx) : Subject.Statement.t list Or_error.t =
     match Path_context.kind ctx with
     | Transform f ->
-        Act_utils.My_list.try_map_sub b ~pos ~len
+        Utils.My_list.try_map_sub b ~span
           ~f:(checked_transform ~ctx ~f ~tag:"in on-range transform")
     | Transform_list f ->
-        Act_utils.My_list.try_splice b ~pos ~len
+        Utils.My_list.try_splice b ~span
           ~replace_f:(checked_transform_list_on_range ~ctx ~f)
     | x ->
         bad_kind x ~want:Transform_list
@@ -126,7 +127,7 @@ module Block = struct
       | Insert pos ->
           insert b ~pos ~ctx
       | On_range (pos, len) ->
-          on_range b ~pos ~len ~ctx
+          on_range b ~span:{pos; len} ~ctx
       | In_stm (pos, path) ->
           in_stm b ~pos ~path ~mu ~ctx)
 

@@ -11,6 +11,10 @@
 
 open Base
 
+module Span = struct
+  type t = {pos: int; len: int}
+end
+
 let find_at_most_one (type a b) ?(item_name : string = "item")
     (items : a list) ~(f : a -> b option) ~(on_empty : b Or_error.t) :
     b Or_error.t =
@@ -44,25 +48,25 @@ let guard_if_empty (xs : 'a list) ~(f : 'a list -> 'b) : 'b option =
 
 module Random = struct
   (* These functions probably raise exceptions on empty lists, so we don't
-     expose them directly: see `index` and `stride` later on. *)
+     expose them directly: see `index` and `span` later on. *)
 
   let index_raw (xs : 'a list) ~(random : Splittable_random.State.t) : int =
     Splittable_random.int random ~lo:0 ~hi:(List.length xs - 1)
 
-  let stride_raw (xs : 'a list) ~(random : Splittable_random.State.t) :
-      int * int =
+  let span_raw (xs : 'a list) ~(random : Splittable_random.State.t) : Span.t
+      =
     let xs_len = List.length xs in
     let pos = Splittable_random.int random ~lo:0 ~hi:(xs_len - 1) in
     let len = Splittable_random.int random ~lo:0 ~hi:(xs_len - pos) in
-    (pos, len)
+    {pos; len}
 
   let index (xs : 'a list) ~(random : Splittable_random.State.t) : int option
       =
     guard_if_empty xs ~f:(index_raw ~random)
 
-  let stride (xs : 'a list) ~(random : Splittable_random.State.t) :
-      (int * int) option =
-    guard_if_empty xs ~f:(stride_raw ~random)
+  let span (xs : 'a list) ~(random : Splittable_random.State.t) :
+      Span.t option =
+    guard_if_empty xs ~f:(span_raw ~random)
 
   let item (xs : 'a list) ~(random : Splittable_random.State.t) : 'a option =
     Option.(index ~random xs >>= List.nth xs)
@@ -79,7 +83,7 @@ let split_or_error (xs : 'a list) (n : int) : ('a list * 'a list) Or_error.t
 (* TODO(@MattWindsor91): if [try_]splice isn't woefully inefficient,
    [try_]map_sub is. Any more efficient implementations gratefully accepted. *)
 
-let try_splice (xs : 'a list) ~(pos : int) ~(len : int)
+let try_splice (xs : 'a list) ~span:({pos; len} : Span.t)
     ~(replace_f : 'a list -> 'a list Or_error.t) : 'a list Or_error.t =
   Or_error.Let_syntax.(
     let%bind prefix, rest = split_or_error xs pos in
@@ -87,15 +91,14 @@ let try_splice (xs : 'a list) ~(pos : int) ~(len : int)
     let%map output = replace_f input in
     List.concat [prefix; output; suffix])
 
-let splice (xs : 'a list) ~(pos : int) ~(len : int)
-    ~(replace_f : 'a list -> 'a list) : 'a list Or_error.t =
-  try_splice xs ~pos ~len ~replace_f:(Fn.compose Or_error.return replace_f)
+let splice (xs : 'a list) ~(span : Span.t) ~(replace_f : 'a list -> 'a list)
+    : 'a list Or_error.t =
+  try_splice xs ~span ~replace_f:(Fn.compose Or_error.return replace_f)
 
-let try_map_sub (xs : 'a list) ~(pos : int) ~(len : int)
-    ~(f : 'a -> 'a Or_error.t) : 'a list Or_error.t =
-  try_splice xs ~pos ~len
-    ~replace_f:(Travesty_base_exts.Or_error.combine_map ~f)
-
-let map_sub (xs : 'a list) ~(pos : int) ~(len : int) ~(f : 'a -> 'a) :
+let try_map_sub (xs : 'a list) ~(span : Span.t) ~(f : 'a -> 'a Or_error.t) :
     'a list Or_error.t =
-  splice xs ~pos ~len ~replace_f:(List.map ~f)
+  try_splice xs ~span ~replace_f:(Travesty_base_exts.Or_error.combine_map ~f)
+
+let map_sub (xs : 'a list) ~(span : Span.t) ~(f : 'a -> 'a) :
+    'a list Or_error.t =
+  splice xs ~span ~replace_f:(List.map ~f)

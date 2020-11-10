@@ -13,6 +13,13 @@
 
 open Base
 
+(** {1 Spans} *)
+
+module Span : sig
+  (** A span, containing a position and length. *)
+  type t = {pos: int; len: int}
+end
+
 (** {1 Finding and transforming specific amounts of items} *)
 
 val find_at_most_one :
@@ -45,13 +52,12 @@ module Random : sig
       [i] is a random number generated with [random] between [0] and
       [length xs] exclusive, otherwise. *)
 
-  val stride :
-    _ list -> random:Splittable_random.State.t -> (int * int) option
-  (** [index xs ~random] returns [None] if [xs] is empty, and [Some (i, n)],
-      where [i] is a random index generated with [random] between [0] and
-      [length xs] exclusive and [n] is a random length generated with
-      [random] between [0] and the [length] of the sub-list after [i],
-      otherwise. *)
+  val span : _ list -> random:Splittable_random.State.t -> Span.t option
+  (** [index xs ~random] returns [None] if [xs] is empty, otherwise
+      [Some {pos; len}], where [pos] is a random index generated with
+      [random] between [0] and [length xs] exclusive and [len] is a random
+      length generated with [random] between [0] and the [length] of the
+      sub-list after [pos]. *)
 
   val item : 'a list -> random:Splittable_random.State.t -> 'a option
   (** [item xs ~random] behaves like Base's [List.random_element], but uses a
@@ -66,37 +72,29 @@ val split_or_error : 'a list -> int -> ('a list * 'a list) Or_error.t
 
 val splice :
      'a list
-  -> pos:int
-  -> len:int
+  -> span:Span.t
   -> replace_f:('a list -> 'a list)
   -> 'a list Or_error.t
-(** [splice xs ~pos ~len ~replace_f] replaces the part of [xs] denoted by
-    [pos] and [len] with its image in [replace_f]. It returns an error if
-    [pos] is out of bounds, or the list from [pos] onwards is shorter than
-    [len]. *)
+(** [splice xs ~span ~replace_f] replaces the part of [xs] denoted by [pos]
+    and [len] with its image in [replace_f]. It returns an error if [pos] is
+    out of bounds, or the list from [pos] onwards is shorter than [len]. *)
 
 val try_splice :
      'a list
-  -> pos:int
-  -> len:int
+  -> span:Span.t
   -> replace_f:('a list -> 'a list Or_error.t)
   -> 'a list Or_error.t
-(** [try_splice xs ~pos ~len ~replace_f] behaves as {!splice}, but accepts a
+(** [try_splice xs ~span ~replace_f] behaves as {!splice}, but accepts a
     [replace_f] that can fail. *)
 
-val map_sub :
-  'a list -> pos:int -> len:int -> f:('a -> 'a) -> 'a list Or_error.t
-(** [map_sub xs ~pos ~len ~f] maps [f] over the part of [xs] denoted by [pos]
-    and [len]. *)
+val map_sub : 'a list -> span:Span.t -> f:('a -> 'a) -> 'a list Or_error.t
+(** [map_sub xs ~span ~f] maps [f] over the part of [xs] denoted by [pos] and
+    [len]. *)
 
 val try_map_sub :
-     'a list
-  -> pos:int
-  -> len:int
-  -> f:('a -> 'a Or_error.t)
-  -> 'a list Or_error.t
-(** [try_map_sub xs ~pos ~len ~f] maps [f] over the part of [xs] denoted by
-    [pos] and [len]. *)
+  'a list -> span:Span.t -> f:('a -> 'a Or_error.t) -> 'a list Or_error.t
+(** [try_map_sub xs ~span ~f] maps [f] over the part of [xs] denoted by [pos]
+    and [len]. *)
 
 (** {2 Guarding a function based on the emptiness of a list}
 

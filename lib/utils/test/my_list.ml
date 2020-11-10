@@ -60,14 +60,16 @@ let%test_module "Random" =
           ([%test_pred: int list] ~here:[[%here]]
              (check_random ~f:(Random.index ~random) ~pred:in_bounds))
 
-    let%test_unit "stride is always in bounds" =
+    let%test_unit "span is always in bounds" =
       let random = make_random () in
       Test.run_exn
         (module Int_list)
         ~f:
           ([%test_pred: int list] ~here:[[%here]]
-             (check_random ~f:(Random.stride ~random) ~pred:(fun xs (i, n) ->
-                  in_bounds xs i && n <= List.length (List.drop xs (i - 1)))))
+             (check_random ~f:(Random.span ~random)
+                ~pred:(fun xs {Span.pos; len} ->
+                  in_bounds xs pos
+                  && len <= List.length (List.drop xs (pos - 1)))))
 
     let%test_module "item" =
       ( module struct
@@ -97,7 +99,7 @@ let%test_module "splice" =
   ( module struct
     let test_fib ~(pos : int) ~(len : int)
         ~(replace_f : int list -> int list) : unit =
-      test_splice_like (splice fibs ~pos ~len ~replace_f)
+      test_splice_like (splice fibs ~span:{pos; len} ~replace_f)
 
     let%test_module "in-bounds" =
       ( module struct
@@ -152,7 +154,7 @@ let%test_module "splice" =
               [%test_result: int list Or_error.t] ~here:[[%here]]
                 ~equal:[%compare.equal: int list Or_error.t]
                 ~expect:(Or_error.return (f xs))
-                (splice xs ~pos:0 ~len:(List.length xs) ~replace_f:f))
+                (splice xs ~span:{pos= 0; len= List.length xs} ~replace_f:f))
       end )
   end )
 
@@ -160,7 +162,7 @@ let%test_module "try_splice" =
   ( module struct
     let test_fib ~(pos : int) ~(len : int)
         ~(replace_f : int list -> int list Or_error.t) : unit =
-      test_splice_like (try_splice fibs ~pos ~len ~replace_f)
+      test_splice_like (try_splice fibs ~span:{pos; len} ~replace_f)
 
     let%test_module "in-bounds" =
       ( module struct
@@ -181,7 +183,7 @@ let%test_module "try_splice" =
 let%test_module "map_sub" =
   ( module struct
     let test_fib ~(pos : int) ~(len : int) ~(f : int -> int) : unit =
-      test_splice_like (map_sub fibs ~pos ~len ~f)
+      test_splice_like (map_sub fibs ~span:{pos; len} ~f)
 
     let%test_module "in-bounds" =
       ( module struct
@@ -204,14 +206,14 @@ let%test_module "map_sub" =
           [%test_result: int list Or_error.t] ~here:[[%here]]
             ~equal:[%compare.equal: int list Or_error.t]
             ~expect:(Or_error.return (List.map ~f xs))
-            (map_sub xs ~pos:0 ~len:(List.length xs) ~f))
+            (map_sub xs ~span:{pos= 0; len= List.length xs} ~f))
   end )
 
 let%test_module "try_map_sub" =
   ( module struct
     let test_fib ~(pos : int) ~(len : int) ~(f : int -> int Or_error.t) :
         unit =
-      test_splice_like (try_map_sub fibs ~pos ~len ~f)
+      test_splice_like (try_map_sub fibs ~span:{pos; len} ~f)
 
     let%test_module "in-bounds" =
       ( module struct
