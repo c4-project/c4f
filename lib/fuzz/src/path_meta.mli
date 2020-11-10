@@ -83,9 +83,9 @@ module Anchor : sig
   (** [merge_opt l r] merges two optional anchors, according to the lattice
       formed by [incl_opt]. *)
 
-  val of_dimensions : index:int -> len:int -> block_len:int -> t option
-  (** [of_dimensions ~index ~len ~block_len] determines the anchor, if any,
-      from the given dimensions. *)
+  val of_dimensions : span:Utils.My_list.Span.t -> block_len:int -> t option
+  (** [of_dimensions ~span ~block_len] determines the anchor, if any, from
+      the given dimensions. *)
 end
 
 (** {1 Metadata structures} *)

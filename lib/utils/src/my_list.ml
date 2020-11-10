@@ -12,7 +12,9 @@
 open Base
 
 module Span = struct
-  type t = {pos: int; len: int}
+  type t = {pos: int; len: int} [@@deriving sexp]
+
+  let end_pos ({pos; len} : t) : int = pos + len
 end
 
 let find_at_most_one (type a b) ?(item_name : string = "item")

@@ -74,10 +74,12 @@ module Anchor = struct
   let incl_opt ?(includes : t option) (x : t option) : bool =
     [%equal: t option] x (merge_opt x includes)
 
-  let of_dimensions ~(index : int) ~(len : int) ~(block_len : int) : t option
-      =
-    let top = Option.some_if (0 = index) Top in
-    let bot = Option.some_if (block_len <= index + len) Bottom in
+  let of_dimensions ~(span : Utils.My_list.Span.t) ~(block_len : int) :
+      t option =
+    let top = Option.some_if (0 = span.pos) Top in
+    let bot =
+      Option.some_if (block_len <= Utils.My_list.Span.end_pos span) Bottom
+    in
     merge_opt top bot
 end
 

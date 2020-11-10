@@ -17,7 +17,10 @@ open Base
 
 module Span : sig
   (** A span, containing a position and length. *)
-  type t = {pos: int; len: int}
+  type t = {pos: int; len: int} [@@deriving sexp]
+
+  val end_pos : t -> int
+  (** [end_pos] is the end position of the span: [pos + len]. *)
 end
 
 (** {1 Finding and transforming specific amounts of items} *)

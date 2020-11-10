@@ -125,13 +125,12 @@ let add_if (x : t) ~(when_ : bool) ~(add : t) : t =
   if when_ then x + add else x
 
 module Anchor_check = struct
-  type t = {is_nested: bool; pos: int; len: int; block_len: int}
+  type t = {is_nested: bool; span: Utils.My_list.Span.t; block_len: int}
   [@@deriving sexp]
 
   let of_path (path : Path.Stms.t) ~(block_len : int) : t =
     Path.Stms.
-      { pos= path.@(index)
-      ; len= len path
+      { span= {pos= path.@(index); len= len path}
       ; is_nested= is_nested path
       ; block_len }
 end
@@ -140,8 +139,7 @@ let is_anchored (anc : Path_meta.Anchor.t) ~(check : Anchor_check.t) : bool =
   check.is_nested
   || Path_meta.Anchor.(
        incl_opt ~includes:anc
-         (of_dimensions ~index:check.pos ~len:check.len
-            ~block_len:check.block_len))
+         (of_dimensions ~span:check.span ~block_len:check.block_len))
 
 let check_anchor (anc : Path_meta.Anchor.t) ~(path : Path.Stms.t)
     ~(block_len : int) : unit Or_error.t =
