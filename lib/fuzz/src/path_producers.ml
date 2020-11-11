@@ -148,8 +148,8 @@ module Block = struct
   let produce_stms (b : Subject.Statement.t list) ~(mu : mu) ~(ctx : ctx) :
       Path.Stms.t t =
     let ctx = ctx.@(Path_context.block_len) <- List.length b in
-    (* We don't compute anchoring until we know exactly what the next fragment
-       of the path is going to be. *)
+    (* We don't compute anchoring until we know exactly what the next
+       fragment of the path is going to be. *)
     branch b
       [ if_kind Insert ~f:Self_insert.produce ~ctx
       ; if_kind Transform_list ~f:Self_transform_list.produce ~ctx
