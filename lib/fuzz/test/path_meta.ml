@@ -12,6 +12,87 @@
 open Base
 open Import
 
+let%test_module "anchor" =
+  ( module struct
+    let%test_unit "top: field law 1" =
+      Base_quickcheck.Test.run_exn
+        ( module struct
+          open Base_quickcheck
+
+          type t = Src.Path_meta.Anchor.t option * bool
+          [@@deriving sexp, quickcheck]
+        end )
+        ~f:(fun (at, a) ->
+          let l = Src.Path_meta.Anchor.top in
+          [%test_eq: bool] ~here:[[%here]] a (at.@(l) <- a).@(l))
+
+    let%test_unit "top: field law 2" =
+      Base_quickcheck.Test.run_exn
+        ( module struct
+          open Base_quickcheck
+
+          type t = Src.Path_meta.Anchor.t option
+          [@@deriving sexp, quickcheck]
+        end )
+        ~f:(fun at ->
+          let l = Src.Path_meta.Anchor.top in
+          [%test_eq: Src.Path_meta.Anchor.t option] ~here:[[%here]] at
+            (at.@(l) <- at.@(l)))
+
+    let%test_unit "top: field law 3" =
+      Base_quickcheck.Test.run_exn
+        ( module struct
+          open Base_quickcheck
+
+          type t = Src.Path_meta.Anchor.t option * bool * bool
+          [@@deriving sexp, quickcheck]
+        end )
+        ~f:(fun (at, a, b) ->
+          let l = Src.Path_meta.Anchor.top in
+          [%test_eq: Src.Path_meta.Anchor.t option] ~here:[[%here]]
+            ((at.@(l) <- a).@(l) <- b)
+            (at.@(l) <- b))
+
+    let%test_unit "bottom: field law 1" =
+      Base_quickcheck.Test.run_exn
+        ( module struct
+          open Base_quickcheck
+
+          type t = Src.Path_meta.Anchor.t option * bool
+          [@@deriving sexp, quickcheck]
+        end )
+        ~f:(fun (at, a) ->
+          let l = Src.Path_meta.Anchor.bottom in
+          [%test_eq: bool] ~here:[[%here]] a (at.@(l) <- a).@(l))
+
+    let%test_unit "bottom: field law 2" =
+      Base_quickcheck.Test.run_exn
+        ( module struct
+          open Base_quickcheck
+
+          type t = Src.Path_meta.Anchor.t option
+          [@@deriving sexp, quickcheck]
+        end )
+        ~f:(fun at ->
+          let l = Src.Path_meta.Anchor.bottom in
+          [%test_eq: Src.Path_meta.Anchor.t option] ~here:[[%here]] at
+            (at.@(l) <- at.@(l)))
+
+    let%test_unit "bottom: field law 3" =
+      Base_quickcheck.Test.run_exn
+        ( module struct
+          open Base_quickcheck
+
+          type t = Src.Path_meta.Anchor.t option * bool * bool
+          [@@deriving sexp, quickcheck]
+        end )
+        ~f:(fun (at, a, b) ->
+          let l = Src.Path_meta.Anchor.bottom in
+          [%test_eq: Src.Path_meta.Anchor.t option] ~here:[[%here]]
+            ((at.@(l) <- a).@(l) <- b)
+            (at.@(l) <- b))
+  end )
+
 let print_flags : Set.M(Src.Path_meta.Flag).t -> unit =
   Fmt.(
     pr "@[%a@]@."

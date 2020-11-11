@@ -58,7 +58,8 @@ end
 
 module Anchor = struct
   (* nb: the compare instance here is NOT inclusion. *)
-  type t = Top | Bottom | Full [@@deriving sexp, compare, equal]
+  type t = Top | Bottom | Full
+  [@@deriving sexp, compare, equal, quickcheck]
 
   let pp (f : Formatter.t) : t -> unit = function
     | Top ->
@@ -81,6 +82,38 @@ module Anchor = struct
 
   let incl_opt ?(includes : t option) (x : t option) : bool =
     [%equal: t option] x (merge_opt x includes)
+
+  let sub (x : t) ~(to_sub : t) : t option =
+    match (x, to_sub) with
+    | _, Full ->
+        None
+    | Top, Top | Bottom, Bottom ->
+        None
+    | Full, Top ->
+        Some Bottom
+    | Full, Bottom ->
+        Some Top
+    | x, _ ->
+        Some x
+
+  let sub_opt ?(to_sub : t option) (x : t option) : t option =
+    Option.value_map to_sub ~default:x ~f:(fun to_sub ->
+        Option.bind ~f:(sub ~to_sub) x)
+
+  let set (x : t option) ~(to_set : t) ~(to_ : bool) : t option =
+    if to_ then merge_opt x (Some to_set) else sub_opt x ~to_sub:to_set
+
+  (* This is not a well-formed field accessor in general; x=Full breaks the
+     second law. Hence, we only expose x=Top and x=Bottom. *)
+  let at (x : t) : ('i, bool, t option, [< field]) Accessor.Simple.t =
+    Accessor.field ~get:(incl_opt ~includes:x) ~set:(fun o to_ ->
+        set ~to_set:x o ~to_)
+
+  let top : ('i, bool, t option, [< field]) Accessor.Simple.t =
+    [%accessor at Top]
+
+  let bottom : ('i, bool, t option, [< field]) Accessor.Simple.t =
+    [%accessor at Bottom]
 
   let of_dimensions ~(span : Utils.My_list.Span.t) ~(block_len : int) :
       t option =

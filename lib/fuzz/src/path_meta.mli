@@ -67,12 +67,15 @@ val flags_of_stm : Subject.Statement.t -> Set.M(Flag).t
     transform-list paths (full anchors imply we're transforming every
     statement in a block). *)
 module Anchor : sig
-  (** Type of anchors. *)
+  (** Type of anchors.
+
+      Note that the compare instance here is NOT inclusion, but just the
+      total ordering on the definitions below. *)
   type t =
     | Top  (** Path must be located at the top of a block. *)
     | Bottom  (** Path must be located at the bottom of a block. *)
     | Full  (** Path must access the whole block. *)
-  [@@deriving sexp]
+  [@@deriving sexp, compare, equal, quickcheck]
 
   val incl_opt : ?includes:t -> t option -> bool
   (** [incl_opt ?includes x] is true if [x] includes [includes]. [Full]
@@ -86,6 +89,14 @@ module Anchor : sig
   val of_dimensions : span:Utils.My_list.Span.t -> block_len:int -> t option
   (** [of_dimensions ~span ~block_len] determines the anchor, if any, from
       the given dimensions. *)
+
+  val top : ('i, bool, t option, [< field]) Accessor.Simple.t
+  (** [top] is a field accessor that allows testing, setting, and clearing
+      the top anchor on optional anchors. *)
+
+  val bottom : ('i, bool, t option, [< field]) Accessor.Simple.t
+  (** [bottom] is a field accessor that allows testing, setting, and clearing
+      the top anchor on optional anchors. *)
 end
 
 (** {1 Metadata structures} *)
