@@ -16,7 +16,7 @@ P1(int *g1, int *g2)
 {
     int l = 0;
     for (l = 0; l <= 4; l++)
-    { if (*g1) { continue; } for (*g2 = 0; *g2 >= 26; (*g2)++) {  } }
+    { if (*g1) { break; } for (*g2 = 0; *g2 >= 26; (*g2)++) {  } }
 }
 
 forall (g2 == 42)

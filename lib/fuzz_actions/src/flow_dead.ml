@@ -136,7 +136,7 @@ module Insert = struct
 
       let kind_pred (path : Fuzz.Path.With_meta.t) : Fir.Early_out.t -> bool
           =
-        (* We can only break at the end of an arbitrary loop if we know that
+        (* We can only break at the end of a populated loop if we know that
            it can only be executed once, and it's never safe to return from
            an arbitrary part of live code.
 
@@ -146,7 +146,11 @@ module Insert = struct
         | Continue ->
             true
         | Break ->
-            not path.@(Fuzz.Path.With_meta.flag In_execute_multi)
+            (* We should already be in a bottom anchor, so this is equivalent
+               to checking for full, which, in turn, tells us that the loop
+               is unpopulated. *)
+            path.@(Fuzz.Path_meta.(With_meta.meta @> anchor @> Anchor.top))
+            || not path.@(Fuzz.Path.With_meta.flag In_execute_multi)
         | Return ->
             false
 
@@ -171,12 +175,20 @@ module Insert = struct
 
     let recommendations (_ : Payload.t) : Common.Id.t list = []
 
-    (* As with Early_out, we're working backwards here! *)
+    (* As with Early_out, we're working backwards here, trying to make sure
+       the conditions where break is not valid get checked. We don't have any
+       ability to disjoin filters, so this is a bit of a hack; hopefully the
+       actual metadata carried in the path performs a stronger check.
 
-    let kind_filter (kind : Fir.Early_out.t) : Fuzz.Path_filter.t =
+       TODO(@MattWindsor91): consider disjunction of filters. *)
+
+    let kind_filter (anc : Fuzz.Path_meta.Anchor.t option)
+        (kind : Fir.Early_out.t) : Fuzz.Path_filter.t =
       Fuzz.Path_filter.(
         add_if base_path_filter
-          ~when_:(Fir.Early_out.equal kind Break)
+          ~when_:
+            ( Fir.Early_out.equal kind Break
+            && not anc.@(Fuzz.Path_meta.Anchor.top) )
           ~add:(forbid_flag In_execute_multi))
 
     let make_contraption (pld : Early_out_payload.t) :
@@ -196,7 +208,8 @@ module Insert = struct
         >>= fun () ->
         Monadic.return
           (Fuzz.Path_consumers.consume test ~path:payload.where
-             ~filter:(kind_filter payload.payload.kind)
+             ~filter:
+               (kind_filter payload.where.meta.anchor payload.payload.kind)
              ~action:(Insert (make_contraption payload.payload))))
   end
 
