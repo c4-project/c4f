@@ -14,13 +14,18 @@ open Import
 
 type 'k t =
   { kind: 'k
-  ; last_block: Path_filter.Block.t
+  ; block_kind: Path_filter.Block.t
+  ; block_len: int
   ; meta: Path_meta.t
   ; filter: Path_filter.t }
-[@@deriving fields]
+[@@deriving accessors]
 
 let init ?(filter : Path_filter.t = Path_filter.zero) (kind : 'k) : 'k t =
-  {kind; last_block= Top; meta= Path_meta.zero; filter}
+  {kind; block_kind= Top; block_len= 0; meta= Path_meta.zero; filter}
+
+let update_anchor (x : 'k t) ~(span : Utils.My_list.Span.t) : 'k t =
+  let anchor = Path_meta.Anchor.of_dimensions ~span ~block_len:x.block_len in
+  x.@(meta @> Path_meta.anchor) <- anchor
 
 let add_flags (x : 'k t) (flags : Set.M(Path_meta.Flag).t) : 'k t Or_error.t
     =
@@ -30,17 +35,13 @@ let add_flags (x : 'k t) (flags : Set.M(Path_meta.Flag).t) : 'k t Or_error.t
     let%map () = Path_filter.check_not x.filter ~meta in
     {x with meta})
 
-let set_block_kind (x : 'k t) (kind : Path_filter.Block.t) : 'k t =
-  {x with last_block= kind}
-
-let check_anchor (x : 'k t) ~(path : Path.Stms.t) ~(block_len : int) :
-    unit Or_error.t =
-  Path_filter.check_anchor x.filter ~path ~block_len
+let check_anchor (x : 'k t) : unit Or_error.t =
+  Path_filter.check_anchor x.filter ?anchor:x.meta.anchor
 
 let check_filter_req (x : 'k t) : unit Or_error.t =
   Or_error.all_unit
     [ Path_filter.check_req x.filter ~meta:x.meta
-    ; Path_filter.check_block x.filter ~block:x.last_block ]
+    ; Path_filter.check_block x.filter ~block:x.block_kind ]
 
 let check_filter_stm (x : 'k t) ~(stm : Subject.Statement.t) :
     unit Or_error.t =
@@ -50,9 +51,19 @@ let check_filter_stms (x : 'k t) ~(stms : Subject.Statement.t list) :
     unit Or_error.t =
   Tx.Or_error.combine_map_unit stms ~f:(fun stm -> check_filter_stm x ~stm)
 
+let check_end (x : 'k t) ~(stms : Subject.Statement.t list) : unit Or_error.t
+    =
+  Or_error.(
+    all_unit
+      [ tag (check_filter_req x) ~tag:"while checking flags"
+      ; tag (check_filter_stms x ~stms) ~tag:"while checking statements"
+      ; tag (check_anchor x) ~tag:"while checking anchor" ])
+
 let check_thread_ok (x : _ t) ~(thread : int) : unit Or_error.t =
-  (* TODO(@MattWindsor91): push error into Path_filter? *)
   Path_filter.check_thread_ok x.filter ~thread
 
 let lift_path (x : 'k t) ~(path : 'p) : 'p Path_meta.With_meta.t =
   Path_meta.With_meta.make path ~meta:x.meta
+
+(* TODO(@MattWindsor91): do something about this overload? *)
+let kind (k : 'a t) : 'a = k.kind

@@ -122,6 +122,9 @@ module Stms : sig
   val index : ('i, index, t, [< field]) Accessor.Simple.t
   (** [index] focuses on the index of a statement-list path fragment. *)
 
+  val span : t -> Utils.My_list.Span.t
+  (** [span p] gets the span of statements accessed by [p]. *)
+
   val len : t -> int
   (** [len p] gets the number of statements accessed by [p]. *)
 
@@ -140,6 +143,8 @@ module Stms : sig
 
   val stm : index -> t
   (** [stm index] is shorthand for [in_stm index Stm.this_stm]. *)
+
+  (* TODO(@MattWindsor91): spans *)
 
   val on_range : index -> length -> t
   (** [on_range index length] focuses on an [length]-wide slice of a

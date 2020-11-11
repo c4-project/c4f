@@ -51,14 +51,7 @@ let checked_transform (stm : Subject.Statement.t) ~(ctx : ctx)
   Or_error.tag ~tag
     Or_error.(
       Let_syntax.(
-        let%bind () =
-          tag (Path_context.check_filter_req ctx) ~tag:"while checking flags"
-        in
-        let%bind () =
-          tag
-            (Path_context.check_filter_stm ctx ~stm)
-            ~tag:"while checking statements"
-        in
+        let%bind () = Path_context.check_end ctx ~stms:[stm] in
         f stm))
 
 open Helpers
@@ -76,6 +69,10 @@ module Block = struct
             (Path_context.check_filter_req ctx)
             ~tag:"checking flags on insertion"
           >>= fun () ->
+          tag
+            (Path_context.check_anchor ctx)
+            ~tag:"checking anchor on insertion"
+          >>= fun () ->
           Utils.My_list.splice b ~span:{pos; len= 0}
             ~replace_f:(Fn.const stms))
     | x ->
@@ -88,16 +85,7 @@ module Block = struct
     Or_error.(
       tag ~tag:"in on-range transform-list"
         Let_syntax.(
-          let%bind () =
-            tag
-              (Path_context.check_filter_req ctx)
-              ~tag:"while checking flags"
-          in
-          let%bind () =
-            tag
-              (Path_context.check_filter_stms ctx ~stms)
-              ~tag:"while checking statements"
-          in
+          let%bind () = Path_context.check_end ctx ~stms in
           f stms))
 
   let on_range (b : Subject.Statement.t list) ~(span : Utils.My_list.Span.t)
@@ -119,17 +107,15 @@ module Block = struct
 
   let consume_stms (b : Subject.Statement.t list) ~(path : Path.Stms.t)
       ~(mu : mu) ~(ctx : ctx) : Subject.Statement.t list Or_error.t =
-    Or_error.Let_syntax.(
-      let%bind () =
-        Path_context.check_anchor ctx ~block_len:(List.length b) ~path
-      in
-      match path with
-      | Insert pos ->
-          insert b ~pos ~ctx
-      | On_range (pos, len) ->
-          on_range b ~span:{pos; len} ~ctx
-      | In_stm (pos, path) ->
-          in_stm b ~pos ~path ~mu ~ctx)
+    let ctx = ctx.@(Path_context.block_len) <- List.length b in
+    let ctx = Path_context.update_anchor ctx ~span:(Path.Stms.span path) in
+    match path with
+    | Insert pos ->
+        insert b ~pos ~ctx
+    | On_range (pos, len) ->
+        on_range b ~span:{pos; len} ~ctx
+    | In_stm (pos, path) ->
+        in_stm b ~pos ~path ~mu ~ctx
 
   let consume (b : Subject.Block.t) ~(path : Path.Stms.t) ~(mu : mu) :
       ctx:ctx -> Subject.Block.t Or_error.t =
@@ -187,7 +173,7 @@ struct
             this_cond x ~ctx
         | In_block rest ->
             let ctx =
-              Path_context.set_block_kind ctx (F.block_kind rest x)
+              ctx.@(Path_context.block_kind) <- F.block_kind rest x
             in
             in_block x ~rest ~mu ~ctx)
 end

@@ -60,6 +60,14 @@ module Anchor = struct
   (* nb: the compare instance here is NOT inclusion. *)
   type t = Top | Bottom | Full [@@deriving sexp, compare, equal]
 
+  let pp (f : Formatter.t) : t -> unit = function
+    | Top ->
+        Fmt.(styled (`Fg `Red) (any "T") f ())
+    | Full ->
+        Fmt.(styled (`Fg `Magenta) (any "F") f ())
+    | Bottom ->
+        Fmt.(styled (`Fg `Blue) (any "B") f ())
+
   let merge (l : t) (r : t) : t =
     match (l, r) with
     | Top, Top ->
@@ -155,7 +163,10 @@ module Meta = struct
             ~flags:(m.flags : Set.M(Flag).t)
             ~contradictions:(contra : Set.M(Flag).t list)]
 
-  let pp : t Fmt.t = (* for now *) Fmt.using (fun x -> x.flags) pp_flag_set
+  let pp : t Fmt.t =
+    Fmt.(
+      using (fun x -> x.flags) pp_flag_set
+      ++ using (fun x -> x.anchor) (option (brackets Anchor.pp)))
 end
 
 include Meta

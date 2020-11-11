@@ -124,34 +124,6 @@ let ( + ) (l : t) (r : t) : t =
 let add_if (x : t) ~(when_ : bool) ~(add : t) : t =
   if when_ then x + add else x
 
-module Anchor_check = struct
-  type t = {is_nested: bool; span: Utils.My_list.Span.t; block_len: int}
-  [@@deriving sexp]
-
-  let of_path (path : Path.Stms.t) ~(block_len : int) : t =
-    Path.Stms.
-      { span= {pos= path.@(index); len= len path}
-      ; is_nested= is_nested path
-      ; block_len }
-end
-
-let is_anchored (anc : Path_meta.Anchor.t) ~(check : Anchor_check.t) : bool =
-  check.is_nested
-  || Path_meta.Anchor.(
-       incl_opt ~includes:anc
-         (of_dimensions ~span:check.span ~block_len:check.block_len))
-
-let check_anchor (anc : Path_meta.Anchor.t) ~(path : Path.Stms.t)
-    ~(block_len : int) : unit Or_error.t =
-  let check = Anchor_check.of_path path ~block_len in
-  Tx.Or_error.unless_m (is_anchored anc ~check) ~f:(fun () ->
-      Or_error.error_s
-        [%message
-          "Path is not anchored properly"
-            ~anchor:(anc : Path_meta.Anchor.t)
-            ~path_fragment:(path : Path.Stms.t)
-            ~check:(check : Anchor_check.t)])
-
 let ends_in_block (blk : Block.t) : t = {zero with block= Some (Valid blk)}
 
 let require_meta (meta : Path_meta.t) : t = {zero with req_meta= meta}
@@ -241,10 +213,16 @@ let check_not (filter : t) ~(meta : Path_meta.t) : unit Or_error.t =
   error_of_flags ~polarity:"forbidden"
     (Set.inter filter.not_flags meta.flags)
 
-let check_anchor (filter : t) ~(path : Path.Stms.t) ~(block_len : int) :
+let check_anchor ?(anchor : Path_meta.Anchor.t option) (filter : t) :
     unit Or_error.t =
-  Tx.Option.With_errors.iter_m filter.req_meta.anchor
-    ~f:(check_anchor ~path ~block_len)
+  let includes = filter.req_meta.anchor in
+  Tx.Or_error.unless_m (Path_meta.Anchor.incl_opt anchor ?includes)
+    ~f:(fun () ->
+      Or_error.error_s
+        [%message
+          "Path doesn't anchor to block as required by filter"
+            ~got:(anchor : Path_meta.Anchor.t option)
+            ~want:(includes : Path_meta.Anchor.t option)])
 
 let check_block (filter : t) ~(block : Block.t) : unit Or_error.t =
   Tx.Option.With_errors.iter_m filter.block ~f:(Block.check ~block)

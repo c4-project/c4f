@@ -248,6 +248,9 @@ module Stms = struct
     | On_range (_, l) ->
         l
 
+  (* TODO(@MattWindsor91): solve pos/index inconsistency*)
+  let span (p : t) : Utils.My_list.Span.t = {pos= p.@(index); len= len p}
+
   let is_nested : t -> bool = function
     | In_stm (_, In_if _) | In_stm (_, In_flow _) ->
         true

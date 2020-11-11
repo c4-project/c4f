@@ -17,6 +17,7 @@
     the shared context type used by both types of path operation. *)
 
 open Base
+open Import
 
 (** Type of context, predicated on the kind information [k]. *)
 type 'k t
@@ -30,9 +31,15 @@ val init : ?filter:Path_filter.t -> 'k -> 'k t
 val add_flags : 'k t -> Set.M(Path_meta.Flag).t -> 'k t Or_error.t
 (** [add_flags ctx flags] registers [flags] in [ctx]. *)
 
-val set_block_kind : 'k t -> Path_filter.Block.t -> 'k t
-(** [set_block_kind ctx kind] registers the inmost block kind in [ctx] as
-    being [ctx]. *)
+val block_kind : ('i, Path_filter.Block.t, 'k t, [< field]) Accessor.Simple.t
+(** [block_kind] is an accessor for the inmost block kind in [ctx]. *)
+
+val block_len : ('i, int, 'k t, [< field]) Accessor.Simple.t
+(** [block_len] is an accessor for the inmost block length in [ctx]. *)
+
+val update_anchor : 'k t -> span:Utils.My_list.Span.t -> 'k t
+(** [update_anchor ctx] uses [span] and the last entered block length to
+    deduce an anchor, and updates [ctx]'s metadata accordingly. *)
 
 (** {1 Using context data} *)
 
@@ -45,8 +52,8 @@ val lift_path : _ t -> path:'p -> 'p Path_meta.With_meta.t
 (** {2 Checking the path filter} *)
 
 val check_filter_req : _ t -> unit Or_error.t
-(** [check_filter_req ctx] checks [ctx]'s filter's positive requirements
-    against the context state. *)
+(** [check_filter_req ctx] checks [ctx]'s filter's positive metadata and
+    block-type requirements against the context state. *)
 
 val check_filter_stm : _ t -> stm:Subject.Statement.t -> unit Or_error.t
 (** [check_filter_stm ctx ~stm] performs [ctx]'s statement end-checks on
@@ -61,7 +68,11 @@ val check_thread_ok : _ t -> thread:int -> unit Or_error.t
 (** [check_thread_ok ctx] checks that [ctx]'s filter allows entering thread
     [thread]. *)
 
-val check_anchor :
-  _ t -> path:Path.Stms.t -> block_len:int -> unit Or_error.t
-(** [check_anchor ctx] checks [ctx]'s filter to see whether [path] meets the
-    anchoring requirements within a block of length [block_len]. *)
+val check_anchor : _ t -> unit Or_error.t
+(** [check_anchor ctx] checks [ctx]'s filter to see whether [span] (usually
+    [Path.Stms.span path]) meets the anchoring requirements. *)
+
+val check_end : _ t -> stms:Subject.Statement.t list -> unit Or_error.t
+(** [check_end ctx ~stms] runs {!check_filter_req}, {!check_filter_stms}, and
+    {!check_anchor} simultaneously. It should be used for consuming paths,
+    and producing statement-based paths; statement-list paths *)

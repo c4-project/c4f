@@ -77,7 +77,10 @@ val live_loop_surround : t
 (** [live_loop_surround] contains the restrictions that should apply on any
     attempt to surround statements with a live-code loop. *)
 
-(** {2 End checks} *)
+(** {2 End checks}
+
+    These don't apply to the statements we are adding with insertion paths;
+    only the statements reached by transforms and transform-lists. *)
 module End_check : sig
   (** Type of end checks. *)
   type t =
@@ -149,7 +152,10 @@ val check_final_statement : t -> stm:Subject.Statement.t -> unit Or_error.t
     a [This_stm] reference to [stm], and checks whether such a final
     statement destination is ok according to the predicates in [filter]. *)
 
-val check_anchor : t -> path:Path.Stms.t -> block_len:int -> unit Or_error.t
+val check_anchor : ?anchor:Path_meta.Anchor.t -> t -> unit Or_error.t
+(** [check_anchor ?anchor filter] checks whether the anchor represented by
+    [anchor], if any, satisfies the anchor requirement in [filter]. *)
+
 (** [check_anchor filter ~path ~block_len] should be applied before
     constructing any path targeting a member of a block of length
     [block_len], and checks whether [path] is properly anchored within it. *)

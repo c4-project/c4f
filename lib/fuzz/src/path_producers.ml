@@ -56,7 +56,19 @@ end
 open Helpers
 
 module Block = struct
+  let lift_with_checked_anchor (ctx : ctx) ~(path : Path.Stms.t) :
+      Path.Stms.t Path_meta.With_meta.t Or_error.t =
+    let span = Path.Stms.span path in
+    let ctx = Path_context.update_anchor ctx ~span in
+    Or_error.Let_syntax.(
+      let%map () = Path_context.check_anchor ctx in
+      Path_context.lift_path ~path ctx)
+
   module Self_insert = struct
+    let produce_at_pos (pos : int) ~(ctx : ctx) : Path.Stms.t t =
+      let path = Path.Stms.insert pos in
+      lift_err (lift_with_checked_anchor ctx ~path)
+
     (** [produce stms ~ctx] produces a statement-list path sequence producing
         every insert path targeting statements [stms]. *)
     let produce (stms : Subject.Statement.t list) ~(ctx : ctx) :
@@ -69,14 +81,14 @@ module Block = struct
         (* Both ends are inclusive to let us insert at the end of the list. *)
         Sequence.range 0 ~start:`inclusive (List.length stms)
           ~stop:`inclusive
-        |> Sequence.map ~f:(fun pos ->
-               Path_context.lift_path ctx ~path:(Path.Stms.insert pos)))
+        |> Sequence.bind ~f:(produce_at_pos ~ctx))
   end
 
   module Self_transform_list = struct
     let make_on_range (i : int) (width : int) ~(ctx : ctx) :
-        Path.Stms.t Path_meta.With_meta.t =
-      Path_context.lift_path ctx ~path:(Path.Stms.on_range i width)
+        Path.Stms.t Path_meta.With_meta.t option =
+      let path = Path.Stms.on_range i width in
+      Result.ok (lift_with_checked_anchor ctx ~path)
 
     (** [step i width ~stms ~ctx] produces one step of the transform-list
         path generator over [stms] and [ctx].
@@ -88,8 +100,9 @@ module Block = struct
       let width' = width + 1 in
       Option.Let_syntax.(
         let%bind stm = List.nth stms (i + width) in
-        let%map () = Result.ok (Path_context.check_filter_stm ctx ~stm) in
-        (make_on_range i width' ~ctx, width'))
+        let%bind () = Result.ok (Path_context.check_filter_stm ctx ~stm) in
+        let%map r = make_on_range i width' ~ctx in
+        (r, width'))
 
     (** [from i ~stms ~ctx] produces a statement-list path sequence producing
         every valid transform-list path targeting statement list [stms] and
@@ -97,7 +110,9 @@ module Block = struct
     let from (i : int) ~(stms : Subject.Statement.t list) ~(ctx : ctx) :
         Path.Stms.t t =
       let ind = Sequence.unfold ~init:0 ~f:(step i ~stms ~ctx) in
-      Sequence.shift_right ind (make_on_range i 0 ~ctx)
+      Option.value_map (make_on_range i 0 ~ctx)
+        ~f:(Sequence.shift_right ind)
+        ~default:ind
 
     (** [produce stms ~ctx] produces a statement-list path sequence producing
         every transform-list path targeting statements [stms]. *)
@@ -119,6 +134,9 @@ module Block = struct
       into statement number [i], with body [s]. *)
   let in_stm (i : int) (s : Subject.Statement.t) ~(mu : mu) ~(ctx : ctx) :
       Path.Stms.t t =
+    (* Until and unless we reach a new block inside this statement, any paths
+       are anchored by the statement's position within this block. *)
+    let ctx = Path_context.update_anchor ctx ~span:{pos= i; len= 1} in
     s |> mu ~ctx |> map_path ~f:(Path.Stms.in_stm i)
 
   (** [in_stms b ~mu ~ctx] produces a statement-list path sequence recursing
@@ -127,21 +145,16 @@ module Block = struct
       Path.Stms.t t =
     xs |> List.mapi ~f:(in_stm ~mu ~ctx) |> Sequence.round_robin
 
-  let check_anchor (p : Path.Stms.t Path_meta.With_meta.t) ~(block_len : int)
-      ~(ctx : ctx) : Path.Stms.t t =
-    Sequence.(
-      lift_err (Path_context.check_anchor ctx ~path:p.path ~block_len)
-      >>| fun () -> p)
-
   let produce_stms (b : Subject.Statement.t list) ~(mu : mu) ~(ctx : ctx) :
       Path.Stms.t t =
-    Sequence.bind
-      ~f:(check_anchor ~block_len:(List.length b) ~ctx)
-      (branch b
-         [ if_kind Insert ~f:Self_insert.produce ~ctx
-         ; if_kind Transform_list ~f:Self_transform_list.produce ~ctx
-           (* All 'transform' targets are inside this block's statements. *)
-         ; in_stms ~ctx ~mu ])
+    let ctx = ctx.@(Path_context.block_len) <- List.length b in
+    (* We don't compute anchoring until we know exactly what the next fragment
+       of the path is going to be. *)
+    branch b
+      [ if_kind Insert ~f:Self_insert.produce ~ctx
+      ; if_kind Transform_list ~f:Self_transform_list.produce ~ctx
+        (* All 'transform' targets are inside this block's statements. *)
+      ; in_stms ~ctx ~mu ]
 
   let produce (b : Subject.Block.t) ~(mu : mu) : ctx:ctx -> Path.Stms.t t =
     with_flags (Path_meta.flags_of_block b) ~f:(fun ctx ->
@@ -178,7 +191,7 @@ struct
   let produce_branch (b : F.branch) (i : F.t) ~(mu : mu) :
       ctx:ctx -> Path.Stm.t t =
     with_flags (F.thru_flags i) ~f:(fun ctx ->
-        let ctx = Path_context.set_block_kind ctx (F.block_kind b i) in
+        let ctx = ctx.@(Path_context.block_kind) <- F.block_kind b i in
         i.@(F.sel_branch b)
         |> Block.produce ~mu ~ctx
         |> map_path ~f:(F.lift_path b))
@@ -220,9 +233,7 @@ end)
 module Stm = struct
   let self (stm : Subject.Statement.t) ~(ctx : ctx) : Path.Stm.t t =
     Sequence.(
-      lift_err (Path_context.check_filter_req ctx)
-      >>= fun () ->
-      lift_err (Path_context.check_filter_stm ctx ~stm)
+      lift_err (Path_context.check_end ctx ~stms:[stm])
       >>| fun () -> Path_context.lift_path ctx ~path:Path.Stm.this_stm)
 
   let recursive (s : Subject.Statement.t) ~(mu : mu) ~(ctx : ctx) :
