@@ -72,19 +72,13 @@ module Fuzz = struct
 end
 
 module Top = struct
-  type t =
-    | Fuzz of Fuzz.t list [@sexp.list]
-  [@@deriving sexp]
+  type t = Fuzz of Fuzz.t list [@sexp.list] [@@deriving sexp]
 
-  let as_fuzz : t -> Fuzz.t list option = function
-    | Fuzz f ->
-        Some f
+  let as_fuzz : t -> Fuzz.t list option = function Fuzz f -> Some f
 
   let pp (f : Formatter.t) : t -> unit =
     Pp_helpers.(
-      function
-      | Fuzz fs ->
-          pp_simple_stanza Fuzz.pp f ("fuzz", fs))
+      function Fuzz fs -> pp_simple_stanza Fuzz.pp f ("fuzz", fs))
 end
 
 type t = (Top.t list[@sexp.list]) [@@deriving sexp]

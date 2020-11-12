@@ -14,7 +14,7 @@
     This is the processed form of the configuration that ACT loads from
     act.conf (or other such files). *)
 
-(** TODO(@MattWindsor91): consider replacing this directly with
+(** TODO(\@MattWindsor91): consider replacing this directly with
     [Act_fuzz_run.Config.t]. *)
 
 (** Opaque type of global configuration records. *)
@@ -22,13 +22,10 @@ type t
 
 (** {2 Construction and loading} *)
 
-val make :
-     ?fuzz:Act_fuzz_run.Config.t
-  -> unit
-  -> t
-(** [make ?fuzz ()] constructs a global configuration
-    record from the given pieces of configuration.  At time of writing, there
-    is only fuzzer configuration. *)
+val make : ?fuzz:Act_fuzz_run.Config.t -> unit -> t
+(** [make ?fuzz ()] constructs a global configuration record from the given
+    pieces of configuration. At time of writing, there is only fuzzer
+    configuration. *)
 
 (** Module for loading the global configuration from an act.conf file. *)
 module Load : Plumbing.Loadable_types.S with type t = t

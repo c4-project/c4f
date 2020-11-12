@@ -14,8 +14,6 @@ open Stdio
 
 open struct
   module Src = Act_config
-  module Ac = Act_common
-  module Am = Act_machine
 end
 
 module Data = struct
@@ -24,7 +22,8 @@ module Data = struct
 
   let global : Src.Global.t Lazy.t =
     Lazy.Let_syntax.(
-      let%map fuzz = fuzz in Src.Global.make ~fuzz ())
+      let%map fuzz = fuzz in
+      Src.Global.make ~fuzz ())
 end
 
 let%test_module "accessors" =

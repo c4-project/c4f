@@ -20,8 +20,7 @@ module Tx = Travesty_base_exts
 
 type t =
   { fuzz: Act_fuzz_run.Config.t
-        [@sexp.option] [@default Act_fuzz_run.Config.make ()]
-  }
+        [@sexp.option] [@default Act_fuzz_run.Config.make ()] }
 [@@deriving make, fields]
 
 module Load : Plumbing.Loadable_types.S with type t = t = struct

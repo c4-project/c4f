@@ -52,7 +52,6 @@ module Fuzz = struct
            ; reify_flags (Act_fuzz_run.Config.flags fuzz) ]) ]
 end
 
-let reify (config : Global.t) : Ast.t =
-  Fuzz.reify (Global.fuzz config)
+let reify (config : Global.t) : Ast.t = Fuzz.reify (Global.fuzz config)
 
 let pp : Global.t Fmt.t = Fmt.using reify Ast.pp

@@ -45,8 +45,7 @@ end
 
 (** Items at the top level *)
 module Top : sig
-  type t =
-    | Fuzz of Fuzz.t list  (** A fuzzer config block. *)
+  type t = Fuzz of Fuzz.t list  (** A fuzzer config block. *)
   [@@deriving sexp]
 
   include Pretty_printer.S with type t := t
