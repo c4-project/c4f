@@ -29,6 +29,9 @@ module In : sig
   val zero : Dir.t -> t
   (** [zero d] is short for [Const (d, int 0)]. *)
 
+  val minus_one : Dir.t -> t
+  (** [minus_one d] is short for [Const (d, int (-1))]. *)
+
   val zero' : Dir.t -> ('a, unit, t, [< Accessor.variant]) Accessor.Simple.t
   (** [zero' d] can be used to match on, or construct, a zero input. *)
 
@@ -58,8 +61,8 @@ end
 
 (** {1 The rule type} *)
 
-(** Opaque type of rules *)
-type t
+(** Type of rules. *)
+type t = {in_: In.t; out_: Out.t} [@@deriving sexp]
 
 val ( @-> ) : In.t -> Out.t -> t
 (** [i @-> o] constructs a rule from i to o. *)

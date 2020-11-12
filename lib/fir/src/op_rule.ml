@@ -17,10 +17,10 @@ end
 
 module In = struct
   module Dir = struct
-    type t = Left | Right [@@deriving equal, accessors]
+    type t = Left | Right [@@deriving sexp, equal, accessors]
   end
 
-  type t = Const of Dir.t * Constant.t | Refl [@@deriving accessors]
+  type t = Const of Dir.t * Constant.t | Refl [@@deriving sexp, accessors]
 
   let const_at (d : Dir.t) : ('a, Constant.t, t, [< A.variant]) A.Simple.t =
     [%accessor
@@ -36,13 +36,15 @@ module In = struct
 
   let zero (d : Dir.t) : t = Const (d, Constant.int 0)
 
+  let minus_one (d : Dir.t) : t = Const (d, Constant.int (-1))
+
   let true_ (d : Dir.t) : t = Const (d, Constant.truth)
 
   let false_ (d : Dir.t) : t = Const (d, Constant.falsehood)
 end
 
 module Out = struct
-  type t = Const of Constant.t | Idem [@@deriving equal, accessors]
+  type t = Const of Constant.t | Idem [@@deriving sexp, equal, accessors]
 
   let zero : t = Const (Constant.int 0)
 
@@ -51,7 +53,7 @@ module Out = struct
   let false_ : t = Const Constant.falsehood
 end
 
-type t = {in_: In.t; out_: Out.t} [@@deriving accessors]
+type t = {in_: In.t; out_: Out.t} [@@deriving sexp, accessors]
 
 let ( @-> ) (in_ : In.t) (out_ : Out.t) : t = {in_; out_}
 

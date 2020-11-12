@@ -54,6 +54,13 @@ module Binary = struct
     type t = And | Or | Xor
     [@@deriving enumerate, sexp, compare, equal, quickcheck]
 
+    (** Rules that are probably only valid in twos'-complement systems. *)
+    let twos_complement_rules : Op_rule.t list =
+      Op_rule.
+        [ In.minus_one Left @-> Idem (* x&-1 -> x*)
+        ; In.minus_one Right @-> Idem
+          (* -1&x -> x*) ]
+
     let rules : t -> Op_rule.t list =
       Op_rule.(
         function
@@ -62,6 +69,7 @@ module Binary = struct
             ; In.zero Right @-> Out.zero (* x&0 -> 0 *)
             ; Refl @-> Idem
               (* x&x -> x *) ]
+            @ twos_complement_rules
         | Or ->
             [ In.zero Left @-> Idem (* 0|x -> x *)
             ; In.zero Right @-> Idem (* x|0 -> x *)
