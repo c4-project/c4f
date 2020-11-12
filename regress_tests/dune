@@ -5,19 +5,18 @@
   (pps ppx_jane))
  (libraries result yojson ppx_yojson_conv_lib sexplib0 base.caml core_kernel
    core stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
-   act.backend act.backend_herd act.backend_litmus act.fir act.common
-   act.config act.delitmus act.fuzz act.litmus act.state act.utils))
+   act.fir act.common act.config act.delitmus act.fuzz act.litmus act.state act.utils))
 
 (executables
  (names config config_failures delitmus dump_header fuzz_replays
-   fuzz_action_list herd_observations litmus_observations)
+   fuzz_action_list)
  (modules config config_failures delitmus dump_header fuzz_replays
-   fuzz_action_list herd_observations litmus_observations)
+   fuzz_action_list)
  (preprocess
   (pps ppx_jane))
  (libraries result yojson ppx_yojson_conv_lib sexplib0 base.caml core_kernel
    core stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
-   act.backend act.backend_herd act.backend_litmus act.fir act.common
+   act.fir act.common
    act.config act.delitmus act.litmus_c act.fuzz act.fuzz_run act.litmus
    act.state act.utils common))
 
@@ -97,32 +96,6 @@
  (alias runtest)
  (action
   (diff fuzz_action_list.expected fuzz_action_list.output)))
-
-(rule
- (deps
-  (glob_files "input/observations/herd/*.txt"))
- (action
-  (with-stdout-to
-   herd_observations.output
-   (run ./herd_observations.exe input))))
-
-(rule
- (alias runtest)
- (action
-  (diff herd_observations.expected herd_observations.output)))
-
-(rule
- (deps
-  (glob_files "input/observations/litmus/*.txt"))
- (action
-  (with-stdout-to
-   litmus_observations.output
-   (run ./litmus_observations.exe input))))
-
-(rule
- (alias runtest)
- (action
-  (diff litmus_observations.expected litmus_observations.output)))
 
 (test
  (name dump_stats)

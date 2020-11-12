@@ -1,94 +1,6 @@
-main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE ARGV VIA
-##
-## Ends in an error in state: 38.
-##
-## argv -> ARGV . nonempty_list(STRING) [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## ARGV
-##
-
-Expected at least one quoted string after `argv`
-
-main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE STYLE VIA
-##
-## Ends in an error in state: 29.
-##
-## id_directive(STYLE) -> STYLE . IDENTIFIER [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## STYLE
-##
-main: DEFAULT LBRACE TRY BACKEND WEIGHT
-##
-## Ends in an error in state: 95.
-##
-## default_item -> TRY try_category . IDENTIFIER [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## TRY try_category
-##
-
-Expected a valid identifier argument
-
-##
-## Ends in an error in state: 53.
-##
-## compiler_item -> STYLE . IDENTIFIER [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## STYLE
-##
-main: MACHINE IDENTIFIER LBRACE BACKEND WEIGHT
-##
-## Ends in an error in state: 26.
-##
-## id_stanza(BACKEND,backend_item) -> BACKEND . IDENTIFIER LBRACE separated_nonempty_list(EOL,option(backend_item)) RBRACE [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## BACKEND
-##
-
-Expected a valid identifier before starting the stanza
-
-main: DEFAULT LBRACE WEIGHT
-##
-## Ends in an error in state: 90.
-##
-## simple_stanza(DEFAULT,default_item) -> DEFAULT LBRACE . separated_nonempty_list(EOL,option(default_item)) RBRACE [ EOL EOF ]
-##
-## The known suffix of the stack is as follows:
-## DEFAULT LBRACE
-##
-main: DEFAULT LBRACE EOL WEIGHT
-##
-## Ends in an error in state: 100.
-##
-## separated_nonempty_list(EOL,option(default_item)) -> option(default_item) EOL . separated_nonempty_list(EOL,option(default_item)) [ RBRACE ]
-##
-## The known suffix of the stack is as follows:
-## option(default_item) EOL
-##
-
-Expected a valid default item (`try CATEGORY ID`)
-
-main: DEFAULT LBRACE TRY WEIGHT
-##
-## Ends in an error in state: 91.
-##
-## default_item -> TRY . try_category IDENTIFIER [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## TRY
-##
-
-Expected a category after `try`; for example:
-- `machine`
-- `backend`
-
 main: FUZZ LBRACE WEIGHT
 ##
-## Ends in an error in state: 61.
+## Ends in an error in state: 2.
 ##
 ## simple_stanza(FUZZ,fuzz_item) -> FUZZ LBRACE . separated_nonempty_list(EOL,option(fuzz_item)) RBRACE [ EOL EOF ]
 ##
@@ -97,7 +9,7 @@ main: FUZZ LBRACE WEIGHT
 ##
 main: FUZZ LBRACE EOL WEIGHT
 ##
-## Ends in an error in state: 86.
+## Ends in an error in state: 28.
 ##
 ## separated_nonempty_list(EOL,option(fuzz_item)) -> option(fuzz_item) EOL . separated_nonempty_list(EOL,option(fuzz_item)) [ RBRACE ]
 ##
@@ -111,7 +23,7 @@ Expected a valid fuzz configuration item; for example:
 
 main: FUZZ LBRACE ACTION WEIGHT
 ##
-## Ends in an error in state: 77.
+## Ends in an error in state: 19.
 ##
 ## fuzz_item -> ACTION . IDENTIFIER option(fuzz_weight) [ RBRACE EOL ]
 ##
@@ -121,9 +33,9 @@ main: FUZZ LBRACE ACTION WEIGHT
 
 Expected an action identifier after `action`
 
-main: FUZZ LBRACE ACTION IDENTIFIER VIA
+main: FUZZ LBRACE ACTION IDENTIFIER TO
 ##
-## Ends in an error in state: 78.
+## Ends in an error in state: 20.
 ##
 ## fuzz_item -> ACTION IDENTIFIER . option(fuzz_weight) [ RBRACE EOL ]
 ##
@@ -135,7 +47,7 @@ Expected `weight NUMBER`, or a newline, after the action identifier
 
 main: FUZZ LBRACE ACTION IDENTIFIER WEIGHT WEIGHT
 ##
-## Ends in an error in state: 79.
+## Ends in an error in state: 21.
 ##
 ## fuzz_weight -> WEIGHT . INTEGER [ RBRACE EOL ]
 ##
@@ -147,7 +59,7 @@ Expected an integer weight after `weight`
 
 main: FUZZ LBRACE SET WEIGHT
 ##
-## Ends in an error in state: 62.
+## Ends in an error in state: 3.
 ##
 ## fuzz_item -> SET . fuzz_setter [ RBRACE EOL ]
 ##
@@ -159,7 +71,7 @@ Expected `flag` or `param`, followed by an identifier and value assignment
 
 main: FUZZ LBRACE SET PARAM WEIGHT
 ##
-## Ends in an error in state: 63.
+## Ends in an error in state: 4.
 ##
 ## fuzz_setter -> PARAM . IDENTIFIER option(TO) INTEGER [ RBRACE EOL ]
 ##
@@ -168,7 +80,7 @@ main: FUZZ LBRACE SET PARAM WEIGHT
 ##
 main: FUZZ LBRACE SET FLAG WEIGHT
 ##
-## Ends in an error in state: 67.
+## Ends in an error in state: 9.
 ##
 ## fuzz_setter -> FLAG . IDENTIFIER option(TO) fuzz_flag_value [ RBRACE EOL ]
 ##
@@ -180,7 +92,7 @@ Expected an identifier naming the fuzzer tunable to be set
 
 main: FUZZ LBRACE SET PARAM IDENTIFIER TO IDENTIFIER
 ##
-## Ends in an error in state: 65.
+## Ends in an error in state: 7.
 ##
 ## fuzz_setter -> PARAM IDENTIFIER option(TO) . INTEGER [ RBRACE EOL ]
 ##
@@ -192,7 +104,7 @@ Expected an integer value for this flag, optionally preceded by `to`
 
 main: FUZZ LBRACE SET PARAM IDENTIFIER WEIGHT
 ##
-## Ends in an error in state: 64.
+## Ends in an error in state: 5.
 ##
 ## fuzz_setter -> PARAM IDENTIFIER . option(TO) INTEGER [ RBRACE EOL ]
 ##
@@ -204,7 +116,7 @@ Expected an integer value for this flag
 
 main: FUZZ LBRACE SET FLAG IDENTIFIER WEIGHT
 ##
-## Ends in an error in state: 68.
+## Ends in an error in state: 10.
 ##
 ## fuzz_setter -> FLAG IDENTIFIER . option(TO) fuzz_flag_value [ RBRACE EOL ]
 ##
@@ -215,9 +127,9 @@ main: FUZZ LBRACE SET FLAG IDENTIFIER WEIGHT
 Expected a Boolean, or `ratio NUMBER : NUMBER`, value for this flag, optionally
 preceded by `to`
 
-main: FUZZ LBRACE SET FLAG IDENTIFIER TO BACKEND
+main: FUZZ LBRACE SET FLAG IDENTIFIER TO TO
 ##
-## Ends in an error in state: 69.
+## Ends in an error in state: 11.
 ##
 ## fuzz_setter -> FLAG IDENTIFIER option(TO) . fuzz_flag_value [ RBRACE EOL ]
 ##
@@ -229,7 +141,7 @@ Expected a Boolean, or `ratio NUMBER : NUMBER`, value for this flag
 
 main: FUZZ LBRACE SET FLAG IDENTIFIER RATIO WEIGHT
 ##
-## Ends in an error in state: 70.
+## Ends in an error in state: 12.
 ##
 ## fuzz_flag_value -> RATIO . INTEGER COLON INTEGER [ RBRACE EOL ]
 ##
@@ -241,7 +153,7 @@ Expected a ratio (`NUMBER : NUMBER`) after `ratio`
 
 main: FUZZ LBRACE SET FLAG IDENTIFIER RATIO INTEGER WEIGHT
 ##
-## Ends in an error in state: 71.
+## Ends in an error in state: 13.
 ##
 ## fuzz_flag_value -> RATIO INTEGER . COLON INTEGER [ RBRACE EOL ]
 ##
@@ -253,7 +165,7 @@ Expected `: NUMBER` after the denominator of a ratio
 
 main: FUZZ LBRACE SET FLAG IDENTIFIER RATIO INTEGER COLON WEIGHT
 ##
-## Ends in an error in state: 72.
+## Ends in an error in state: 14.
 ##
 ## fuzz_flag_value -> RATIO INTEGER COLON . INTEGER [ RBRACE EOL ]
 ##
@@ -263,126 +175,21 @@ main: FUZZ LBRACE SET FLAG IDENTIFIER RATIO INTEGER COLON WEIGHT
 
 Expected an integer numerator after `:`
 
-main: MACHINE IDENTIFIER LBRACE VIA SSH VIA
-##
-## Ends in an error in state: 5.
-##
-## simple_stanza(SSH,ssh_item) -> SSH . LBRACE separated_nonempty_list(EOL,option(ssh_item)) RBRACE [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## SSH
-##
 main: FUZZ WEIGHT
 ##
-## Ends in an error in state: 60.
+## Ends in an error in state: 1.
 ##
 ## simple_stanza(FUZZ,fuzz_item) -> FUZZ . LBRACE separated_nonempty_list(EOL,option(fuzz_item)) RBRACE [ EOL EOF ]
 ##
 ## The known suffix of the stack is as follows:
 ## FUZZ
 ##
-main: DEFAULT WEIGHT
-##
-## Ends in an error in state: 89.
-##
-## simple_stanza(DEFAULT,default_item) -> DEFAULT . LBRACE separated_nonempty_list(EOL,option(default_item)) RBRACE [ EOL EOF ]
-##
-## The known suffix of the stack is as follows:
-## DEFAULT
-##
 
 Expected an opening brace after the block name
 
-main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER VIA
-##
-## Ends in an error in state: 27.
-##
-## id_stanza(BACKEND,backend_item) -> BACKEND IDENTIFIER . LBRACE separated_nonempty_list(EOL,option(backend_item)) RBRACE [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## BACKEND IDENTIFIER
-##
-main: MACHINE IDENTIFIER VIA
-##
-## Ends in an error in state: 2.
-##
-## id_stanza(MACHINE,machine_item) -> MACHINE IDENTIFIER . LBRACE separated_nonempty_list(EOL,option(machine_item)) RBRACE [ EOL EOF ]
-##
-## The known suffix of the stack is as follows:
-## MACHINE IDENTIFIER
-##
-
-Expected an opening brace after the identifier
-
-main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE ASM_MODEL IDENTIFIER VIA
-##
-## Ends in an error in state: 36.
-##
-## backend_item -> ASM_MODEL IDENTIFIER . STRING [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## ASM_MODEL IDENTIFIER
-##
-
-Expected a quoted filename for this assembly model (after the architecture ID)
-
-main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE ASM_MODEL VIA
-##
-## Ends in an error in state: 35.
-##
-## backend_item -> ASM_MODEL . IDENTIFIER STRING [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## ASM_MODEL
-##
-
-Expected an architecture ID for this assembly model
-
-main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE CMD VIA
-##
-## Ends in an error in state: 33.
-##
-## cmd -> CMD . STRING [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## CMD
-##
-
-Expected a quoted command name or path
-
-main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE C_MODEL STRING VIA
-##
-## Ends in an error in state: 44.
-##
-## separated_nonempty_list(EOL,option(backend_item)) -> option(backend_item) . [ RBRACE ]
-## separated_nonempty_list(EOL,option(backend_item)) -> option(backend_item) . EOL separated_nonempty_list(EOL,option(backend_item)) [ RBRACE ]
-##
-## The known suffix of the stack is as follows:
-## option(backend_item)
-##
-main: MACHINE IDENTIFIER LBRACE VIA LOCAL VIA
-##
-## Ends in an error in state: 53.
-##
-## separated_nonempty_list(EOL,option(machine_item)) -> option(machine_item) . [ RBRACE ]
-## separated_nonempty_list(EOL,option(machine_item)) -> option(machine_item) . EOL separated_nonempty_list(EOL,option(machine_item)) [ RBRACE ]
-##
-## The known suffix of the stack is as follows:
-## option(machine_item)
-##
-main: MACHINE IDENTIFIER LBRACE VIA SSH LBRACE USER STRING VIA
-##
-## Ends in an error in state: 18.
-##
-## separated_nonempty_list(EOL,option(ssh_item)) -> option(ssh_item) . [ RBRACE ]
-## separated_nonempty_list(EOL,option(ssh_item)) -> option(ssh_item) . EOL separated_nonempty_list(EOL,option(ssh_item)) [ RBRACE ]
-##
-## The known suffix of the stack is as follows:
-## option(ssh_item)
-##
 main: FUZZ LBRACE ACTION IDENTIFIER WEIGHT INTEGER WEIGHT
 ##
-## Ends in an error in state: 85.
+## Ends in an error in state: 27.
 ##
 ## separated_nonempty_list(EOL,option(fuzz_item)) -> option(fuzz_item) . [ RBRACE ]
 ## separated_nonempty_list(EOL,option(fuzz_item)) -> option(fuzz_item) . EOL separated_nonempty_list(EOL,option(fuzz_item)) [ RBRACE ]
@@ -390,215 +197,10 @@ main: FUZZ LBRACE ACTION IDENTIFIER WEIGHT INTEGER WEIGHT
 ## The known suffix of the stack is as follows:
 ## option(fuzz_item)
 ##
-main: DEFAULT LBRACE TRY BACKEND IDENTIFIER EOF
-##
-## Ends in an error in state: 99.
-##
-## separated_nonempty_list(EOL,option(default_item)) -> option(default_item) . [ RBRACE ]
-## separated_nonempty_list(EOL,option(default_item)) -> option(default_item) . EOL separated_nonempty_list(EOL,option(default_item)) [ RBRACE ]
-##
-## The known suffix of the stack is as follows:
-## option(default_item)
-##
 
 Expected a closing brace (to terminate this block), or a newline
 
-main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE ARGV STRING VIA
-##
-## Ends in an error in state: 39.
-##
-## nonempty_list(STRING) -> STRING . [ RBRACE EOL ]
-## nonempty_list(STRING) -> STRING . nonempty_list(STRING) [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## STRING
-##
-
-Expected a closing brace (to terminate this block), another string, or a newline
-
-main: MACHINE IDENTIFIER LBRACE RBRACE VIA
-##
-## Ends in an error in state: 108.
-##
-## separated_nonempty_list(EOL,option(top_stanza)) -> option(top_stanza) . [ EOF ]
-## separated_nonempty_list(EOL,option(top_stanza)) -> option(top_stanza) . EOL separated_nonempty_list(EOL,option(top_stanza)) [ EOF ]
-##
-## The known suffix of the stack is as follows:
-## option(top_stanza)
-##
-
-Top-level items must be separated by newlines
-
-main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE C_MODEL VIA
-##
-## Ends in an error in state: 31.
-##
-## backend_item -> C_MODEL . STRING [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## C_MODEL
-##
-
-Expected a quoted filename for the C model
-
-main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE VIA
-##
-## Ends in an error in state: 28.
-##
-## id_stanza(BACKEND,backend_item) -> BACKEND IDENTIFIER LBRACE . separated_nonempty_list(EOL,option(backend_item)) RBRACE [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## BACKEND IDENTIFIER LBRACE
-##
-main: MACHINE IDENTIFIER LBRACE BACKEND IDENTIFIER LBRACE C_MODEL STRING EOL VIA
-##
-## Ends in an error in state: 45.
-##
-## separated_nonempty_list(EOL,option(backend_item)) -> option(backend_item) EOL . separated_nonempty_list(EOL,option(backend_item)) [ RBRACE ]
-##
-## The known suffix of the stack is as follows:
-## option(backend_item) EOL
-##
-
-Expected a valid backend configuration item; for example:
-- `cmd "/path/to/herd"`
-- `c_model "/path/to/C/model.cat"`
-- `asm_model ARCH-ID "/path/to/asm/model.cat"`
-
-main: MACHINE IDENTIFIER LBRACE ENABLED VIA
-##
-## Ends in an error in state: 24.
-##
-## enabled -> ENABLED . BOOL [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## ENABLED
-##
-
-Expected a Boolean (eg `true`, `false`, `yes`, `no`, `on`, or `off`)
-
-main: MACHINE IDENTIFIER LBRACE USER
-##
-## Ends in an error in state: 3.
-##
-## id_stanza(MACHINE,machine_item) -> MACHINE IDENTIFIER LBRACE . separated_nonempty_list(EOL,option(machine_item)) RBRACE [ EOL EOF ]
-##
-## The known suffix of the stack is as follows:
-## MACHINE IDENTIFIER LBRACE
-##
-main: MACHINE IDENTIFIER LBRACE VIA LOCAL EOL USER
-##
-## Ends in an error in state: 54.
-##
-## separated_nonempty_list(EOL,option(machine_item)) -> option(machine_item) EOL . separated_nonempty_list(EOL,option(machine_item)) [ RBRACE ]
-##
-## The known suffix of the stack is as follows:
-## option(machine_item) EOL
-##
-
-Expected a valid machine configuration item; for example:
-- `enabled BOOL`
-- `via local`
-- `via ssh { SSH-CONFIG }`
-
-main: MACHINE IDENTIFIER LBRACE VIA SSH LBRACE VIA
-##
-## Ends in an error in state: 6.
-##
-## simple_stanza(SSH,ssh_item) -> SSH LBRACE . separated_nonempty_list(EOL,option(ssh_item)) RBRACE [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## SSH LBRACE
-##
-main: MACHINE IDENTIFIER LBRACE VIA SSH LBRACE USER STRING EOL VIA
-##
-## Ends in an error in state: 19.
-##
-## separated_nonempty_list(EOL,option(ssh_item)) -> option(ssh_item) EOL . separated_nonempty_list(EOL,option(ssh_item)) [ RBRACE ]
-##
-## The known suffix of the stack is as follows:
-## option(ssh_item) EOL
-##
-
-Expected a valid SSH configuration item; for example:
-- `user "USERNAME"`
-- `host "HOSTNAME"`
-- `copy to "REMOTE-PATH"`
-
-
-main: MACHINE IDENTIFIER LBRACE VIA SSH LBRACE COPY TO VIA
-##
-## Ends in an error in state: 13.
-##
-## ssh_item -> COPY option(TO) . STRING [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## COPY option(TO)
-##
-
-Expected a quoted path after `copy to`
-
-main: MACHINE IDENTIFIER LBRACE VIA SSH LBRACE COPY VIA
-##
-## Ends in an error in state: 11.
-##
-## ssh_item -> COPY . option(TO) STRING [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## COPY
-##
-
-Expected `copy to`
-
-main: MACHINE IDENTIFIER LBRACE VIA SSH LBRACE HOST VIA
-##
-## Ends in an error in state: 9.
-##
-## ssh_item -> HOST . STRING [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## HOST
-##
-
-Expected a quoted hostname string
-
-main: MACHINE IDENTIFIER LBRACE VIA SSH LBRACE USER VIA
-##
-## Ends in an error in state: 7.
-##
-## ssh_item -> USER . STRING [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## USER
-##
-
-Expected a quoted username string
-
-main: MACHINE IDENTIFIER LBRACE VIA VIA
-##
-## Ends in an error in state: 4.
-##
-## machine_item -> VIA . via_stanza [ RBRACE EOL ]
-##
-## The known suffix of the stack is as follows:
-## VIA
-##
-
-Expected a valid `via` stanza: either `local` or `ssh { SSH-CONFIG }`
-
-main: MACHINE VIA
-##
-## Ends in an error in state: 1.
-##
-## id_stanza(MACHINE,machine_item) -> MACHINE . IDENTIFIER LBRACE separated_nonempty_list(EOL,option(machine_item)) RBRACE [ EOL EOF ]
-##
-## The known suffix of the stack is as follows:
-## MACHINE
-##
-
-Expected a identifier, or `default`, after `machine`
-
-main: VIA
+main: TO
 ##
 ## Ends in an error in state: 0.
 ##
@@ -607,9 +209,9 @@ main: VIA
 ## The known suffix of the stack is as follows:
 ##
 ##
-main: DEFAULT LBRACE RBRACE EOL TO
+main: FUZZ LBRACE RBRACE EOL TO
 ##
-## Ends in an error in state: 109.
+## Ends in an error in state: 36.
 ##
 ## separated_nonempty_list(EOL,option(top_stanza)) -> option(top_stanza) EOL . separated_nonempty_list(EOL,option(top_stanza)) [ EOF ]
 ##
@@ -618,6 +220,4 @@ main: DEFAULT LBRACE RBRACE EOL TO
 ##
 
 Expected a valid top-level item; for example:
-- `default { ... }`
-- `machine ID { ... }`
 - `fuzz { ... }`

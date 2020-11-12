@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -9,13 +9,13 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Core_kernel
+open Base
 module Sx = String_extended
 module Tx = Travesty_base_exts
 
 module T = struct
   (** [t] is the type of compiler IDs. *)
-  type t = String.Caseless.t list [@@deriving compare, hash, sexp, bin_io]
+  type t = String.Caseless.t list [@@deriving compare, hash, sexp]
 
   let allowed_id_splits : char list = ['.'; ' '; '/'; '\\']
 
@@ -77,7 +77,7 @@ let try_match_prefix (prefix : t) (value : 'v) ~(full_id : t) :
 
 let try_find_assoc_with_suggestions_prefix (assoc : (t, 'a) List.Assoc.t)
     (full_id : t) ~(id_type : string) : (t * 'a) Or_error.t =
-  List.find_map assoc ~f:(Tuple2.uncurry (try_match_prefix ~full_id))
+  List.find_map assoc ~f:(fun (k, v) -> try_match_prefix ~full_id k v)
   |> Option.map ~f:Or_error.return
   |> Tx.Option.value_f
        ~default_f:(error_with_suggestions assoc full_id ~id_type)
@@ -102,48 +102,3 @@ let pp_alist (ppe : 'e Fmt.t) : (t, 'e) List.Assoc.t Fmt.t =
 
 let pp_map (ppe : 'e Fmt.t) : (t, 'e, comparator_witness) Base.Map.t Fmt.t =
   Fmt.using Map.to_alist (pp_alist ppe)
-
-module Property = struct
-  type id = t
-
-  (* Putting this in a sub-module so as not to shadow [contains] when we
-     define [eval]. *)
-  module M = struct
-    type t = Has_tag of string | Has_prefix of string | Is of string
-    [@@deriving sexp, variants]
-  end
-
-  let eval (prop : M.t) ~(id : id) : bool =
-    match prop with
-    | M.Has_tag s ->
-        has_tag id s
-    | M.Has_prefix s ->
-        is_prefix ~prefix:(of_string s) id
-    | M.Is s ->
-        equal (of_string s) id
-
-  include M
-
-  let names : string list Lazy.t =
-    lazy (List.map ~f:fst Variants.descriptions)
-
-  let tree_docs : Property.Tree_doc.t =
-    [ ( "has_tag"
-      , { args= ["STRING"]
-        ; details=
-            {| Requires that any of the dot-separated items in this ID
-             matches the argument. |}
-        } )
-    ; ( "has_prefix"
-      , { args= ["PARTIAL-ID"]
-        ; details= {| Requires that the ID starts with the argument. |} } )
-    ; ( "is"
-      , { args= ["ID"]
-        ; details= {| Requires that the ID directly matches the argument. |}
-        } ) ]
-
-  let pp_tree : unit Fmt.t =
-    Property.Tree_doc.pp tree_docs (List.map ~f:fst Variants.descriptions)
-
-  let eval_b expr id = Blang.eval expr (eval ~id)
-end

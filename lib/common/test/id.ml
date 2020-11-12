@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -113,29 +113,5 @@ let%test_module "has_tag" =
 
     let%expect_test "invalid, empty string" =
       print_s [%sexp (has_tag (of_string "foo.BAR.baz") "" : bool)] ;
-      [%expect {| false |}]
-  end )
-
-let%test_module "Property" =
-  ( module struct
-    open Property
-    open Core_kernel
-
-    let%expect_test "eval_b: sample passing expression" =
-      let query =
-        Blang.t_of_sexp t_of_sexp
-          (Sexp.of_string "(and (has_tag bar) (has_prefix foo))")
-      in
-      let id = of_string "Foo.Bar.Baz" in
-      print_s [%sexp (eval_b query id : bool)] ;
-      [%expect {| true |}]
-
-    let%expect_test "eval_b: sample failing expression" =
-      let query =
-        Blang.t_of_sexp t_of_sexp
-          (Sexp.of_string "(and (has_tag bar) (is foo.bar))")
-      in
-      let id = of_string "Foo.Bar.Baz" in
-      print_s [%sexp (eval_b query id : bool)] ;
       [%expect {| false |}]
   end )

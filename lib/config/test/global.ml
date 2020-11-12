@@ -22,50 +22,16 @@ module Data = struct
   let fuzz : Act_fuzz_run.Config.t Lazy.t =
     Lazy.from_fun Act_fuzz_run.Config.make
 
-  (* These defaults should line up with the ones in Machine.Test.Qualified.
-
-     TODO(@MattWindsor91): unify them. *)
-
-  let defaults : Src.Default.t Lazy.t =
-    Lazy.from_fun
-      Ac.Id.(
-        Src.Default.make
-          ~machines:[of_string "foo"; of_string "bar"; of_string "localhost"]
-          ~arches:[of_string "x86.att"])
-
-  let machines : Am.Spec.Set.t Lazy.t =
-    Act_machine_test.Data.Spec_sets.single_local_machine
-
   let global : Src.Global.t Lazy.t =
     Lazy.Let_syntax.(
-      let%map fuzz = fuzz and defaults = defaults and machines = machines in
-      Src.Global.make ~fuzz ~defaults ~machines ())
+      let%map fuzz = fuzz in Src.Global.make ~fuzz ())
 end
 
 let%test_module "accessors" =
   ( module struct
     let global = Lazy.force Data.global
 
-    let%expect_test "defaults" =
-      print_s [%sexp (Src.Global.defaults global : Src.Default.t)] ;
-      [%expect
-        {|
-          ((arches ((x86 att))) (machines ((foo) (bar) (localhost))) (backends ())) |}]
-
     let%expect_test "fuzz" =
       print_s [%sexp (Src.Global.fuzz global : Act_fuzz_run.Config.t)] ;
       [%expect {| ((weights ()) (params ()) (flags ())) |}]
-
-    let%expect_test "machines" =
-      let machines =
-        global |> Src.Global.machines |> Act_common.Spec.Set.to_list
-      in
-      Fmt.(
-        pr "@[%a@]@."
-          (list
-             (concat ~sep:(any ":@ ")
-                [ using Act_common.Spec.With_id.id Act_common.Id.pp
-                ; using Act_common.Spec.With_id.spec Act_machine.Spec.pp ]))
-          machines) ;
-      [%expect {| localhost: local |}]
   end )

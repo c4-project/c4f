@@ -90,29 +90,3 @@ val pp_alist : 'e Fmt.t -> (t, 'e) List.Assoc.t Fmt.t
 val pp_map : 'e Fmt.t -> (t, 'e, comparator_witness) Map.t Fmt.t
 (** [pp_map ppe] vertically pretty-prints a map from identifiers to values
     printable by [ppe]. *)
-
-(** {2 Property language} *)
-
-(** [Property] contains a mini-language for querying IDs, suitable for use in
-    [Blang]. *)
-module Property : sig
-  (** [id] is a synonym for the identifier type. *)
-  type id = t
-
-  (** [t] is the opaque type of property queries. *)
-  type t [@@deriving sexp]
-
-  val has_tag : string -> t
-  (** [has_tag s str] constructs a membership test over a string [str]. *)
-
-  val is : string -> t
-  (** [is str] constructs an equality test over a string [str]. *)
-
-  val has_prefix : string -> t
-  (** [has_prefix str] constructs a prefix test over a string [str]. *)
-
-  val eval : t -> id:id -> bool
-  (** [eval property ~id] evaluates a single [property] over [id]. *)
-
-  include Property_types.S_bool with type t := t and type target := id
-end

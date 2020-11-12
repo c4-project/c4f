@@ -3,6 +3,12 @@
 Note that these changes are infrequently maintained and may not tell the
 whole story.
 
+## 2020-Nov-12
+
+- Removed backend support, because it is or will be subsumed by the
+  tester project.
+- Many more changes since Feb that I forgot to keep a changelog for.
+
 ## 2020-Feb-17
 
 - New command `act-c dump-stats`, which dumps some integer statistics about a

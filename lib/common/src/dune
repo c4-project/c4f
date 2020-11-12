@@ -4,7 +4,6 @@
  (name act_common)
  (public_name act.common)
  (synopsis "Automagic Compiler Tormentor: common infrastructure")
- (modules_without_implementation property_types)
  (preprocess
   (pps ppx_deriving.std ppx_accessor ppx_jane))
  (libraries bin_prot bin_prot.shape sexplib sexplib0 stdio fmt

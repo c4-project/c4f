@@ -61,57 +61,12 @@ module Other = struct
       ~f:(Fn.compose Or_error.ok_exn Plumbing.Output.of_string)
       Filename.arg_type
 
-  let backend ?(name : string = "-backend")
-      ?(doc : string = "the backend to use") () : Id.t option Command.Param.t
-      =
-    flag name (optional id_type) ~doc:("SIM_ID " ^ doc)
-
-  let arch ?(name : string = "-arch")
-      ?(doc : string = "the architecture to target") () :
-      Id.t option Command.Param.t =
-    flag name (optional id_type) ~doc:("ARCH_ID " ^ doc)
-
-  let backend_arch : Act_backend.Arch.t option Command.Param.t =
-    Command.Param.(
-      choose_one
-        [ flag_to_enum_choice Act_backend.Arch.c "-c"
-            ~doc:
-              "Tells the backend to treat the input as C, with no \
-               underlying target architecture"
-        ; map
-            ~f:
-              (Option.map ~f:(fun x ->
-                   Act_backend.Arch.C {underlying_arch= Some x}))
-            (arch ~name:"-carch"
-               ~doc:
-                 "tells the backend to treat the input as C, with the given \
-                  underlying target architecture"
-               ())
-        ; map
-            ~f:(Option.map ~f:(fun x -> Act_backend.Arch.Assembly x))
-            (arch
-               ~doc:
-                 "tells the backend to treat the input as assembly, with \
-                  the given target architecture"
-               ()) ]
-        ~if_nothing_chosen:Return_none)
-
   let aux_file : string option Command.Param.t =
     flag "aux-file"
       (optional Filename.arg_type)
       ~doc:
         "FILE path to a JSON file containing auxiliary litmus information \
          for this file"
-
-  let backend_predicate =
-    flag "filter-backends"
-      (optional (sexp_conv [%of_sexp: Act_backend.Property.t Blang.t]))
-      ~doc:"PREDICATE filter backends using this predicate"
-
-  let machine_predicate =
-    flag "filter-machines"
-      (optional (sexp_conv [%of_sexp: Act_machine.Property.t Blang.t]))
-      ~doc:"PREDICATE filter machines using this predicate"
 end
 
 include Other

@@ -7,4 +7,4 @@
   (pps ppx_jane))
  (libraries ppx_inline_test.config ppx_expect.common ppx_expect.config
    ppx_expect.config_types sexplib0 base base.caml stdio fmt act.common
-   act.config act.machine act.utils act.fuzz act.fuzz_run act_machine_test))
+   act.config act.machine act.utils act.fuzz act.fuzz_run))

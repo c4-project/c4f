@@ -3,22 +3,6 @@
 ## comments_only.conf
 
 ```
-default {
-  
-}
-
-fuzz {
-  
-}
-```
-## defaults.conf
-
-```
-default {
-  try machine localhost
-  try backend herd
-}
-
 fuzz {
   
 }
@@ -26,10 +10,6 @@ fuzz {
 ## empty.conf
 
 ```
-default {
-  
-}
-
 fuzz {
   
 }
@@ -37,10 +17,6 @@ fuzz {
 ## params.conf
 
 ```
-default {
-  
-}
-
 fuzz {
   action var.make 10
   set param action.cap.upper to 1000
@@ -50,4 +26,4 @@ fuzz {
 }
 ```
 
-Ran 4 test(s).
+Ran 3 test(s).

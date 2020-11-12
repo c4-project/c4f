@@ -23,8 +23,6 @@
  ("Parse error" (position input/config/failures/unknown_block.conf:1.1-1.5)
   (details
     "Expected a valid top-level item; for example:\
-   \n- `default { ... }`\
-   \n- `machine ID { ... }`\
    \n- `fuzz { ... }`\
    \n")))
 ```

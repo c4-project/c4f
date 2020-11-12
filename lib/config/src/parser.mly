@@ -15,17 +15,11 @@
 %token COLON  ":"
 %token EOF EOL
 
-%token (* main groups *) MACHINE BACKEND FUZZ
-%token (* default resolutipn *) DEFAULT TRY
-%token (* common keywords *) ENABLED CMD ARGV
+%token (* main groups *) FUZZ
 %token (* fuzz-specific keywords *) ACTION WEIGHT SET PARAM FLAG RATIO
-%token (* Herd-specific keywords *) ASM_MODEL C_MODEL
-%token (* machine-specific keywords *) VIA SSH HOST USER COPY LOCAL
-%token (* backend-specific keywords *) STYLE
 %token (* noise words *) TO
 
 %token <bool>   BOOL
-%token <string> STRING
 %token <int>    INTEGER
 %token <Act_common.Id.t>   IDENTIFIER
 
@@ -51,18 +45,7 @@ let main :=
   | ~ = line_list(top_stanza); EOF; <>
 
 let top_stanza :=
-  | ~ = default_stanza ; <                 Ast.Top.Default         >
-  | ~ = fuzz_stanza    ; <                 Ast.Top.Fuzz            >
-  | x = machine_stanza ; { let i, m = x in Ast.Top.Machine  (i, m) }
-
-let default_stanza := simple_stanza(DEFAULT, default_item)
-
-let default_item :=
-  | TRY; ~ = try_category; ~ = IDENTIFIER; < Ast.Default.Try >
-
-let try_category :=
-  | MACHINE  ; { Ast.Default.Category.Machine }
-  | BACKEND  ; { Ast.Default.Category.Backend }
+  | ~ = fuzz_stanza    ; <Ast.Top.Fuzz>
 
 let fuzz_stanza := simple_stanza(FUZZ, fuzz_item)
 
@@ -79,35 +62,3 @@ let fuzz_item :=
   | SET; ~ = fuzz_setter                    ; < Ast.Fuzz.Set    >
 
 let fuzz_weight := WEIGHT; INTEGER
-
-let backend_stanza := id_stanza(BACKEND, backend_item)
-
-let backend_item :=
-  | ~ = cmd                               ; < Ast.Backend.Cmd       >
-  | ~ = argv                              ; < Ast.Backend.Argv      >
-  | ~ = id_directive(STYLE)               ; < Ast.Backend.Style     >
-  | C_MODEL;   ~ = STRING                 ; < Ast.Backend.C_model   >
-  | ASM_MODEL; ~ = IDENTIFIER; s = STRING ; < Ast.Backend.Asm_model >
-
-let machine_stanza := id_stanza(MACHINE, machine_item)
-
-let machine_item :=
-  | ~ = enabled         ; <                 Ast.Machine.Enabled         >
-  | VIA; ~ = via_stanza ; <                 Ast.Machine.Via             >
-  | x = backend_stanza  ; { let i, s = x in Ast.Machine.Backend  (i, s) }
-
-let via_stanza :=
-  | LOCAL                           ; { Ast.Via.Local }
-  | ~ = simple_stanza(SSH, ssh_item); < Ast.Via.Ssh   >
-
-let ssh_item :=
-  | USER;      ~ = STRING ; < Ast.Ssh.User    >
-  | HOST;      ~ = STRING ; < Ast.Ssh.Host    >
-  | COPY; TO?; ~ = STRING ; < Ast.Ssh.Copy_to >
-
-let cmd := CMD; STRING
-
-let argv := ARGV; STRING+
-
-let enabled := ENABLED; BOOL
-

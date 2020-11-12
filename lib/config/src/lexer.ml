@@ -23,33 +23,17 @@ let keywords : token String_map.t Lazy.t =
     (Map.of_alist_exn
        (module String.Caseless)
        [ ("action", ACTION)
-       ; ("argv", ARGV)
-       ; ("asm_model", ASM_MODEL)
-       ; ("backend", BACKEND)
-       ; ("c_model", C_MODEL)
-       ; ("cmd", CMD)
-       ; ("copy", COPY)
-       ; ("default", DEFAULT)
-       ; ("enabled", ENABLED)
        ; ("false", BOOL false)
        ; ("flag", FLAG)
        ; ("fuzz", FUZZ)
-       ; ("host", HOST)
-       ; ("local", LOCAL)
-       ; ("machine", MACHINE)
        ; ("no", BOOL false)
        ; ("on", BOOL true)
        ; ("off", BOOL false)
        ; ("param", PARAM)
        ; ("ratio", RATIO)
        ; ("set", SET)
-       ; ("ssh", SSH)
-       ; ("style", STYLE)
        ; ("to", TO)
        ; ("true", BOOL true)
-       ; ("try", TRY)
-       ; ("user", USER)
-       ; ("via", VIA)
        ; ("weight", WEIGHT)
        ; ("yes", BOOL true) ])
 
@@ -92,8 +76,6 @@ let rec token (lexbuf : Sedlexing.lexbuf) : token =
       RBRACE
   | ':' ->
       COLON
-  | '"' ->
-      Lu.read_string (fun x -> STRING x) lexbuf
   | Opt '-', num ->
       INTEGER (Int.of_string (S.Utf8.lexeme lexbuf))
   | id ->

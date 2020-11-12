@@ -7,5 +7,4 @@
  (preprocess
   (pps ppx_jane))
  (libraries yojson sexplib0 stdio base.caml core_kernel core fpath fmt
-   fmt.tty unix travesty.base_exts plumbing act.common act.config act.machine
-   act.backend act.backend_herd act.backend_litmus act.utils))
+   fmt.tty unix travesty.base_exts plumbing act.common act.config act.utils))

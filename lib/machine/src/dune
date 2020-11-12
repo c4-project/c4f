@@ -1,9 +1,0 @@
-(library
- (name act_machine)
- (public_name act.machine)
- (synopsis "Automagic Compiler Tormentor: machine specifications")
- (modules_without_implementation lookup_types qualified_types spec_types)
- (preprocess
-  (pps ppx_deriving.std ppx_jane))
- (libraries sexplib0 fmt fpath travesty base base.caml travesty.base_exts
-   core_kernel act.common act.utils plumbing act.backend))
