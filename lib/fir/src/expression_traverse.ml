@@ -86,8 +86,9 @@ module Make_traversal_base (Basic : Basic) = struct
             ~xchg:(map_m_xchg ~f ~mu >> Ap.map ~f:xchg)))
 
     module B = Expression.Base_map (Ap)
+    module AccM = Accessor.Of_applicative (Ap)
 
-    let map_m x ~f =
+    let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
       let rec mu x =
         (* We could use reduce, but that'd preclude us being able to express
            map_m_ae et al. separately. *)
@@ -96,6 +97,7 @@ module Make_traversal_base (Basic : Basic) = struct
           ~uop:(fun (u, x) -> Ap.map ~f:(fun x' -> (u, x')) (mu x))
           ~bop:(fun (u, l, r) ->
             Ap.map2 ~f:(fun l' r' -> (u, l', r')) (mu l) (mu r))
+          ~ternary:(AccM.map ~f:mu Expr_ternary.exprs)
       in
       mu x
   end

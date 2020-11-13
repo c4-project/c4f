@@ -19,6 +19,7 @@ module Acc = struct
     | Atomic of t Atomic_expression.t
     | Bop of Op.Binary.t * t * t
     | Uop of Op.Unary.t * t
+    | Ternary of t Expr_ternary.t
   [@@deriving sexp, accessors, compare, equal]
 end
 
@@ -34,10 +35,12 @@ let bop o l r = Accessor.construct bop (o, l, r)
 
 let uop o x = Accessor.construct uop (o, x)
 
+let ternary t = Accessor.construct ternary t
+
 let reduce_step (expr : t) ~(constant : Constant.t -> 'a)
     ~(address : Address.t -> 'a) ~(atomic : t Atomic_expression.t -> 'a)
-    ~(bop : Op.Binary.t -> t -> t -> 'a) ~(uop : Op.Unary.t -> t -> 'a) : 'a
-    =
+    ~(bop : Op.Binary.t -> t -> t -> 'a) ~(uop : Op.Unary.t -> t -> 'a)
+    ~(ternary : t Expr_ternary.t -> 'a) : 'a =
   match expr with
   | Constant k ->
       constant k
@@ -49,6 +52,8 @@ let reduce_step (expr : t) ~(constant : Constant.t -> 'a)
       bop b x y
   | Uop (u, x) ->
       uop u x
+  | Ternary t ->
+      ternary t
 
 let anonymise =
   reduce_step
@@ -57,6 +62,7 @@ let anonymise =
     ~atomic:(fun a -> `C a)
     ~bop:(fun b x y -> `D (b, x, y))
     ~uop:(fun u x -> `E (u, x))
+    ~ternary:(fun t -> `F t)
 
 let quickcheck_observer : t Base_quickcheck.Observer.t =
   Base_quickcheck.Observer.(
@@ -67,7 +73,8 @@ let quickcheck_observer : t Base_quickcheck.Observer.t =
             | `B of Address.t
             | `C of [%custom Atomic_expression.quickcheck_observer mu]
             | `D of Op.Binary.t * [%custom mu] * [%custom mu]
-            | `E of Op.Unary.t * [%custom mu] ]]))
+            | `E of Op.Unary.t * [%custom mu]
+            | `F of [%custom Expr_ternary.quickcheck_observer mu] ]]))
 
 let lvalue (l : Lvalue.t) : t = Address (Lvalue l)
 
@@ -132,13 +139,14 @@ end
 
 let reduce (expr : t) ~(constant : Constant.t -> 'a)
     ~(address : Address.t -> 'a) ~(atomic : 'a Atomic_expression.t -> 'a)
-    ~(bop : Op.Binary.t -> 'a -> 'a -> 'a) ~(uop : Op.Unary.t -> 'a -> 'a) :
-    'a =
+    ~(bop : Op.Binary.t -> 'a -> 'a -> 'a) ~(uop : Op.Unary.t -> 'a -> 'a)
+    ~(ternary : 'a Expr_ternary.t -> 'a) : 'a =
   let rec mu (expr : t) =
     let bop b l r = bop b (mu l) (mu r) in
     let uop u x = uop u (mu x) in
     let atomic x = atomic (Atomic_expression.On_expressions.map ~f:mu x) in
-    reduce_step expr ~constant ~address ~atomic ~bop ~uop
+    let ternary t = ternary (Accessor.map Expr_ternary.exprs ~f:mu t) in
+    reduce_step expr ~constant ~address ~atomic ~bop ~uop ~ternary
   in
   mu expr
 
@@ -147,7 +155,8 @@ module Base_map (Ap : Applicative.S) = struct
       ~(address : Address.t -> Address.t Ap.t)
       ~(atomic : t Atomic_expression.t -> t Atomic_expression.t Ap.t)
       ~(bop : Op.Binary.t * t * t -> (Op.Binary.t * t * t) Ap.t)
-      ~(uop : Op.Unary.t * t -> (Op.Unary.t * t) Ap.t) : t Ap.t =
+      ~(uop : Op.Unary.t * t -> (Op.Unary.t * t) Ap.t)
+      ~(ternary : t Expr_ternary.t -> t Expr_ternary.t Ap.t) : t Ap.t =
     Travesty_base_exts.Fn.Compose_syntax.(
       reduce_step x
         ~constant:(constant >> Ap.map ~f:(Accessor.construct Acc.constant))
@@ -155,7 +164,8 @@ module Base_map (Ap : Applicative.S) = struct
         ~atomic:(atomic >> Ap.map ~f:(Accessor.construct Acc.atomic))
         ~bop:(fun o l r ->
           Ap.map ~f:(Accessor.construct Acc.bop) (bop (o, l, r)))
-        ~uop:(fun o x -> Ap.map ~f:(Accessor.construct Acc.uop) (uop (o, x))))
+        ~uop:(fun o x -> Ap.map ~f:(Accessor.construct Acc.uop) (uop (o, x)))
+        ~ternary:(ternary >> Ap.map ~f:(Accessor.construct Acc.ternary)))
 end
 
 let atomic_cmpxchg (f : t Atomic_cmpxchg.t) : t =
@@ -169,6 +179,7 @@ let atomic_load (l : Atomic_load.t) : t = atomic (Atomic_expression.load l)
 module Type_check (E : Env_types.S) = struct
   module Ad = Address.Type_check (E)
   module At = Atomic_expression.Type_check (E)
+  module Te = Expr_ternary.Type_check (E)
 
   let require_unified_bop_type (b : Op.Binary.t) ~(want : Type.t)
       ~(got : Type.t) : Type.t Or_error.t =
@@ -214,11 +225,15 @@ module Type_check (E : Env_types.S) = struct
 
   let type_of_atomic (a : Type.t Or_error.t Atomic_expression.t) :
       Type.t Or_error.t =
-    Or_error.Let_syntax.(
-      let%bind a' =
-        Atomic_expression.On_expressions.With_errors.sequence_m a
-      in
-      At.type_of a')
+    Or_error.(
+      a |> Atomic_expression.On_expressions.With_errors.sequence_m
+      >>= At.type_of)
+
+  let type_of_ternary (t : Type.t Or_error.t Expr_ternary.t) :
+      Type.t Or_error.t =
+    Or_error.(
+      Utils.Accessor.On_error.map ~f:Fn.id Expr_ternary.exprs t
+      >>= Te.type_of)
 
   let type_of : t -> Type.t Or_error.t =
     reduce
@@ -229,5 +244,5 @@ module Type_check (E : Env_types.S) = struct
           let%bind l = l and r = r in
           type_of_resolved_bop b l r))
       ~uop:(fun b -> Or_error.bind ~f:(type_of_resolved_uop b))
-      ~atomic:type_of_atomic
+      ~atomic:type_of_atomic ~ternary:type_of_ternary
 end

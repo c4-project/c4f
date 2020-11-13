@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -36,6 +36,9 @@ module Acc : sig
 
   val uop : ('i, Op.Unary.t * t, t, [< variant]) Accessor.Simple.t
   (** [uop] focuses on unary operation expressions. *)
+
+  val ternary : ('i, t Expr_ternary.t, t, [< variant]) Accessor.Simple.t
+  (** [ternary] focuses on ternary expressions. *)
 end
 
 (** {1 Constructors} *)
@@ -55,6 +58,9 @@ val bop : Op.Binary.t -> t -> t -> t
 
 val uop : Op.Unary.t -> t -> t
 (** [uop operator operand] builds an arbitrary unary operator expression. *)
+
+val ternary : t Expr_ternary.t -> t
+(** [ternary t] lifts a ternary expression [t] to an expression. *)
 
 (** {2 Convenience constructors} *)
 
@@ -182,10 +188,11 @@ val reduce_step :
   -> atomic:(t Atomic_expression.t -> 'a)
   -> bop:(Op.Binary.t -> t -> t -> 'a)
   -> uop:(Op.Unary.t -> t -> 'a)
+  -> ternary:(t Expr_ternary.t -> 'a)
   -> 'a
-(** [reduce_step expr ~constant ~lvalue ~atomic ~bop ~uop] reduces [expr] to
-    a single value, using the given functions at each corresponding stage of
-    the expression tree. *)
+(** [reduce_step expr ~constant ~lvalue ~atomic ~bop ~uop ~ternary] reduces
+    [expr] to a single value, using the given functions at each corresponding
+    stage of the expression tree. *)
 
 val reduce :
      t
@@ -194,10 +201,11 @@ val reduce :
   -> atomic:('a Atomic_expression.t -> 'a)
   -> bop:(Op.Binary.t -> 'a -> 'a -> 'a)
   -> uop:(Op.Unary.t -> 'a -> 'a)
+  -> ternary:('a Expr_ternary.t -> 'a)
   -> 'a
-(** [reduce expr ~constant ~address ~atomic ~bop ~uop] recursively reduces
-    [expr] to a single value, using the given functions at each corresponding
-    stage of the expression tree. *)
+(** [reduce expr ~constant ~address ~atomic ~bop ~uop ~ternary] recursively
+    reduces [expr] to a single value, using the given functions at each
+    corresponding stage of the expression tree. *)
 
 (** Primitive map for applicative traversal of expressions. *)
 module Base_map (Ap : Applicative.S) : sig
@@ -208,6 +216,7 @@ module Base_map (Ap : Applicative.S) : sig
     -> atomic:(t Atomic_expression.t -> t Atomic_expression.t Ap.t)
     -> bop:(Op.Binary.t * t * t -> (Op.Binary.t * t * t) Ap.t)
     -> uop:(Op.Unary.t * t -> (Op.Unary.t * t) Ap.t)
+    -> ternary:(t Expr_ternary.t -> t Expr_ternary.t Ap.t)
     -> t Ap.t
 end
 

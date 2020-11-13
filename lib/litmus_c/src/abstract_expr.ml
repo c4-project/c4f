@@ -130,6 +130,12 @@ let model_prefix (op : Operators.Pre.t) (x : Ast.Expr.t) ~(expr : mu) :
     Fir.Expression.t Or_error.t =
   Or_error.map2 (prefix_op op) (expr x) ~f:Fir.Expression.uop
 
+let ternary (if_ast : Ast.Expr.t) (then_ast : Ast.Expr.t)
+    (else_ast : Ast.Expr.t) ~(expr : mu) : Fir.Expression.t Or_error.t =
+  Or_error.map3 (expr if_ast) (expr then_ast) (expr else_ast)
+    ~f:(fun if_ then_ else_ ->
+      Accessor.construct Fir.Expression.Acc.ternary {if_; then_; else_})
+
 let rec model : Ast.Expr.t -> Fir.Expression.t Or_error.t = function
   | Brackets e ->
       model e
@@ -148,12 +154,9 @@ let rec model : Ast.Expr.t -> Fir.Expression.t Or_error.t = function
       model_prefix op x ~expr:model
   | Call {func; arguments} ->
       function_call func arguments ~expr:model
-  | ( Postfix _
-    | Ternary _
-    | Cast _
-    | Subscript _
-    | Field _
-    | Sizeof_type _
-    | String _ ) as e ->
+  | Ternary {cond; t_expr; f_expr} ->
+      ternary cond t_expr f_expr ~expr:model
+  | (Postfix _ | Cast _ | Subscript _ | Field _ | Sizeof_type _ | String _)
+    as e ->
       Or_error.error_s
         [%message "Unsupported expression" ~got:(e : Ast.Expr.t)]

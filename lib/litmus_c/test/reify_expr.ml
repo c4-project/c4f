@@ -21,6 +21,45 @@ let%test_module "examples" =
   ( module struct
     let test : Fir.Expression.t -> unit = Fmt.pr "@[%a@]@." Src.Reify_expr.pp
 
+    let%expect_test "nested ternary, right" =
+      test
+        Fir.Expression.(
+          ternary
+            { if_= of_variable_str_exn "a"
+            ; then_= int_lit 1
+            ; else_=
+                ternary
+                  { if_= of_variable_str_exn "b"
+                  ; then_= int_lit 2
+                  ; else_= int_lit 3 } }) ;
+      [%expect {| a ? 1 : b ? 2 : 3 |}]
+
+    let%expect_test "nested ternary, middle" =
+      test
+        Fir.Expression.(
+          ternary
+            { if_= of_variable_str_exn "a"
+            ; then_=
+                ternary
+                  { if_= of_variable_str_exn "b"
+                  ; then_= int_lit 1
+                  ; else_= int_lit 2 }
+            ; else_= int_lit 3 }) ;
+      [%expect {| a ? b ? 1 : 2 : 3 |}]
+
+    let%expect_test "nested ternary, left" =
+      test
+        Fir.Expression.(
+          ternary
+            { if_=
+                ternary
+                  { if_= of_variable_str_exn "a"
+                  ; then_= int_lit 1
+                  ; else_= int_lit 2 }
+            ; then_= of_variable_str_exn "b"
+            ; else_= int_lit 3 }) ;
+      [%expect {| (a ? 1 : 2) ? b : 3 |}]
+
     let%expect_test "subtract bracketing 1" =
       test
         Fir.Expression.(

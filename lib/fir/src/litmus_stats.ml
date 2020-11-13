@@ -163,6 +163,7 @@ let probe_expr : Expression.t -> unit Monad.t =
         let%bind () = l in
         r))
     ~uop:(fun _ u -> u)
+    ~ternary:nowt
 
 let probe_early_out : Early_out.t -> unit Monad.t = function
   | Return ->

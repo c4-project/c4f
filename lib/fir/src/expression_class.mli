@@ -20,7 +20,7 @@
 
 (** {1 Top-level expression classes} *)
 
-(** Enumeration of expressions. *)
+(** Enumeration of expression classes. *)
 type t =
   | Constant  (** This expression is a constant of some form. *)
   | Address
@@ -30,6 +30,7 @@ type t =
       (** This expression is a binary operation of some form. *)
   | Uop of Op.Unary.t option
       (** This expression is a unary operation of some form. *)
+  | Ternary  (** This expression is a ternary expression. *)
 [@@deriving compare, equal, sexp]
 
 include Class_types.S with type t := t and type 'e elt := Expression.t

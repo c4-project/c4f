@@ -127,6 +127,25 @@ module Needs_brackets = struct
         Operators.Bin.(
           binds_tighter o ~than:o' || (binds_same o o' && not is_left))
 
+  let ternary_if (x : Ast.Expr.t) : bool =
+    (* The only thing that binds looser than a ternary is another ternary. *)
+    match x with
+    | Ternary _ ->
+        true
+    | Brackets _
+    | Identifier _
+    | Constant _
+    | String _
+    | Call _
+    | Subscript _
+    | Field _
+    | Postfix _
+    | Binary _
+    | Prefix _
+    | Sizeof_type _
+    | Cast _ ->
+        false
+
   let maybe_bracket (expr : Ast.Expr.t) ~(f : Ast.Expr.t -> bool) :
       Ast.Expr.t =
     if f expr then Ast.Expr.Brackets expr else expr
@@ -145,9 +164,16 @@ let uop (op : Fir.Op.Unary.t) (x : Ast.Expr.t) : Ast.Expr.t =
   let x' = Needs_brackets.(maybe_bracket ~f:uop_pre) x in
   Ast.Expr.Prefix (op', x')
 
+let ternary ({if_; then_; else_} : Ast.Expr.t Fir.Expr_ternary.t) :
+    Ast.Expr.t =
+  let cond = Needs_brackets.(maybe_bracket ~f:ternary_if if_) in
+  (* TODO(@MattWindsor91): fix this redundancy somehow *)
+  Ast.Expr.Ternary {cond; t_expr= then_; f_expr= else_}
+
 let reify (x : Fir.Expression.t) : Ast.Expr.t =
   let atomic = Reify_atomic.reify_expr ~expr:Fn.id in
-  Reify_prim.(Fir.Expression.reduce x ~constant ~address ~atomic ~bop ~uop)
+  Reify_prim.(
+    Fir.Expression.reduce x ~constant ~address ~atomic ~bop ~uop ~ternary)
 
 let pp : Fir.Expression.t Fmt.t = Fmt.using reify Ast.Expr.pp
 

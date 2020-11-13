@@ -206,13 +206,19 @@ let eval_atomic (a : Expression.t Atomic_expression.t) ~(mu : mu) :
     ~fetch:(eval_atomic_fetch ~mu) ~load:eval_atomic_load
     ~xchg:(eval_atomic_xchg ~mu)
 
+let eval_ternary ({if_; then_; else_} : Expression.t Expr_ternary.t)
+    ~(mu : mu) : Constant.t Heap.Monad.t =
+  Heap.Monad.(
+    Let_syntax.(
+      let%bind ifc = mu if_ in
+      if%bind Monadic.return (Constant.convert_as_bool ifc) then mu then_
+      else mu else_))
+
 let as_constant (expr : expr) ~(env : Heap.t) : Constant.t Or_error.t =
-  let rec mu : Expression.t -> Constant.t Heap.Monad.t =
+  let rec mu (e : Expression.t) : Constant.t Heap.Monad.t =
     (* We reduce in single steps to support short-circuiting evaluation. *)
-    Expression.reduce_step ~constant:Heap.Monad.return
-      ~address:Heap.Monad.load
-      ~atomic:(fun o -> eval_atomic ~mu o)
-      ~bop:(fun o -> eval_bop mu o)
-      ~uop:(fun o -> eval_uop mu o)
+    Expression.reduce_step e ~constant:Heap.Monad.return
+      ~address:Heap.Monad.load ~atomic:(eval_atomic ~mu) ~bop:(eval_bop mu)
+      ~uop:(eval_uop mu) ~ternary:(eval_ternary ~mu)
   in
   Heap.Monad.run (mu expr) env

@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -11,13 +11,13 @@
 
 open Base
 
-(** Enumeration of expressions. *)
 type t =
   | Constant
   | Address
   | Atomic of Atomic_class.t option
   | Bop of Op.Binary.t option
   | Uop of Op.Unary.t option
+  | Ternary
 [@@deriving compare, equal, sexp]
 
 include Class.Make_ext (struct
@@ -29,6 +29,7 @@ include Class.Make_ext (struct
     match (clazz, template) with
     | Constant, Constant
     | Address, Address
+    | Ternary, Ternary
     | Atomic _, Atomic None
     | Bop _, Bop None
     | Uop _, Uop None ->
@@ -45,7 +46,7 @@ include Class.Make_ext (struct
   let classify : Expression.t -> t option =
     Expression.reduce_step
       ~constant:(Fn.const (Some Constant))
-      ~address:(Fn.const (Some Address))
+      ~address:(Fn.const (Some Address)) ~ternary:(Fn.const (Some Ternary))
       ~atomic:(fun x -> Some (Atomic (Atomic_class.classify_expr x)))
       ~bop:(fun o _ _ -> Some (Bop (Some o)))
       ~uop:(fun o _ -> Some (Uop (Some o)))
@@ -59,4 +60,5 @@ include Class.Make_ext (struct
         List.concat ([Atomic (Atomic_class.classify_expr x)] :: inner))
       ~bop:(fun o l r -> Bop (Some o) :: (l @ r))
       ~uop:(fun o x -> Uop (Some o) :: x)
+      ~ternary:(fun {if_; then_; else_} -> Ternary :: (if_ @ then_ @ else_))
 end)
