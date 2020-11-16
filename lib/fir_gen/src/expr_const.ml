@@ -59,11 +59,11 @@ let gen (k : Fir.Constant.t) (env : env) ~(gen_arb : env -> t Q.Generator.t)
       let%bind size = size in
       weighted_union
         (Utils.My_list.eval_guards
-           [ (0 < size, fun () -> (2.0, arb_bop k kv_env ~gen_arb))
+           [ (0 < size, fun () -> (3.0, arb_bop k kv_env ~gen_arb))
            ; ( 0 < size
                && Fir.Env.has_vars_of_prim_type kv_env
                     ~prim:(Fir.Constant.prim_type_of k)
-             , fun () -> (3.0, kv_bop k kv_env ~gen_load) )
+             , fun () -> (5.0, kv_bop k kv_env ~gen_load) )
            ; ( true
              , fun () -> (1.0, Q.Generator.return (Fir.Expression.constant k))
              ) ])))
