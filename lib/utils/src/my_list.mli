@@ -99,6 +99,12 @@ val try_map_sub :
 (** [try_map_sub xs ~span ~f] maps [f] over the part of [xs] denoted by [pos]
     and [len]. *)
 
+val eval_guards : (bool * (unit -> 'a)) list -> 'a list
+(** [eval_guards xs] filters [xs] to those entries [(b, f)] for which [b] is
+    true, and then maps to [f ()] for each. It is useful for presenting to
+    quickcheck [union] generators a list of sub-generators that may or may
+    not be viable at run-time depending on a Boolean flag. *)
+
 (** {2 Guarding a function based on the emptiness of a list}
 
     These functions don't distinguish in the type system between a non-empty

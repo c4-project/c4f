@@ -104,3 +104,6 @@ let try_map_sub (xs : 'a list) ~(span : Span.t) ~(f : 'a -> 'a Or_error.t) :
 let map_sub (xs : 'a list) ~(span : Span.t) ~(f : 'a -> 'a) :
     'a list Or_error.t =
   splice xs ~span ~replace_f:(List.map ~f)
+
+let eval_guards : (bool * (unit -> 'a)) list -> 'a list =
+  List.filter_map ~f:(fun (g, f) -> if g then Some (f ()) else None)
