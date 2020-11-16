@@ -108,10 +108,16 @@ let bop_of_indexed_rule
   Q.Generator.of_list operands.@*(bop_of_rule rule ~op:(promote op))
 
 let bop (type t) (module M : Fir.Op_types.S_binary with type t = t)
-    (operands : Operand_set.t) ~(promote : t -> Fir.Op.Binary.t)
-    ~(out : Fir.Op_rule.Out.t) : Fir.Expression.t Q.Generator.t =
+    ~(promote : t -> Fir.Op.Binary.t) ~(out : Fir.Op_rule.Out.t) :
+    (Operand_set.t -> Fir.Expression.t Q.Generator.t) option =
   (* TODO(@MattWindsor91): I suspect this is woefully inefficient. *)
-  let ins =
+  match
     Accessor.(to_listi (List.each @> in_rulesi (module M) out) M.all)
-  in
-  Q.Generator.(of_list ins >>= bop_of_indexed_rule ~promote ~operands)
+  with
+  | [] ->
+      None
+  | ins ->
+      Some
+        (fun operands ->
+          Q.Generator.(
+            of_list ins >>= bop_of_indexed_rule ~promote ~operands))

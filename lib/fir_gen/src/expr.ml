@@ -21,9 +21,9 @@ open struct
   type t = Fir.Expression.t [@@deriving sexp]
 end
 
-(** [gen_atomic_fetch_zero_nop env ~gen_k] generates atomic fetches that use
-    zero (from [gen_k]) to produce idempotent results. *)
-let gen_atomic_fetch_zero_nop (env : env)
+let gen_atomic_fetch_k_nop
+    (module Op_gen : Utils.My_quickcheck.S_with_sexp
+      with type t = Fir.Op.Fetch.t) (k : Fir.Constant.t) (env : env)
     ~(gen_k : Fir.Constant.t -> env -> t Q.Generator.t) :
     (t * Fir.Env.Record.t) Q.Generator.t =
   let module F =
@@ -31,7 +31,7 @@ let gen_atomic_fetch_zero_nop (env : env)
       (struct
         let env = env
       end)
-      (Fir.Op.Fetch.Gen_idem_zero_rhs)
+      (Op_gen)
       (struct
         let sexp_of_t = sexp_of_t
 
@@ -39,7 +39,7 @@ let gen_atomic_fetch_zero_nop (env : env)
 
         let quickcheck_shrinker = Q.Shrinker.atomic
 
-        let quickcheck_generator = gen_k (Int 0) env
+        let quickcheck_generator = gen_k k env
       end)
   in
   Expr_util.lift_loadlike [%quickcheck.generator: F.t]
@@ -47,15 +47,39 @@ let gen_atomic_fetch_zero_nop (env : env)
     ~to_var:(Accessor.get Fir.Atomic_fetch.variable_of)
     ~env
 
+(** [gen_atomic_fetch_zero_nop env ~gen_k] generates atomic fetches that use
+    zero (from [gen_k]) to produce idempotent results. *)
+let gen_atomic_fetch_zero_nop =
+  gen_atomic_fetch_k_nop (module Fir.Op.Fetch.Gen_idem_zero_rhs) (Int 0)
+
+(** [gen_atomic_fetch_neg1_nop env ~gen_k] generates atomic fetches that use
+    negative-1 (from [gen_k]) to produce idempotent results. *)
+let gen_atomic_fetch_neg1_nop =
+  gen_atomic_fetch_k_nop
+    ( module struct
+      include Fir.Op.Fetch
+
+      let quickcheck_generator = Q.Generator.return And
+    end )
+    (Int (-1))
+
+let gen_atomic_fetch_nop (env : env)
+    ~(gen_k : Fir.Constant.t -> env -> t Q.Generator.t) :
+    (t * Fir.Env.Record.t) Q.Generator.t =
+  (* TODO(@MattWindsor91): also add reflexivity here, but this'll require us
+     to restrict to KV variables, and this'll need a guard. *)
+  Q.Generator.weighted_union
+    [ (4.0, gen_atomic_fetch_zero_nop env ~gen_k)
+    ; (1.0, gen_atomic_fetch_neg1_nop env ~gen_k) ]
+
 let gen_int_loadlike (env : env)
     ~(gen_k : Fir.Constant.t -> env -> t Q.Generator.t) :
     (t * Fir.Env.Record.t) Q.Generator.t =
-  (* TODO(@MattWindsor91): &-1 fetches *)
   Q.Generator.weighted_union
     (Utils.My_list.eval_guards
        [ (true, fun () -> (3.0, Expr_prim.Int.gen_load env))
        ; ( Expr_util.has_ints env ~is_atomic:true
-         , fun () -> (1.0, gen_atomic_fetch_zero_nop env ~gen_k) ) ])
+         , fun () -> (1.0, gen_atomic_fetch_nop env ~gen_k) ) ])
 
 module Int_value_gen = struct
   (** Generates the terminal integer expressions. *)
@@ -65,11 +89,12 @@ module Int_value_gen = struct
     Utils.My_list.eval_guards
       [ (true, fun () -> (3.0, gen_k (Int 0) env))
       ; (true, fun () -> (3.0, Expr_prim.Int.gen env))
+        (* Prim.Int.gen subsumes Prim.Int.gen_load, so this serves to cover
+           the remaining case(s) in int_loadlike. *)
       ; ( Expr_util.has_ints env ~is_atomic:true
         , fun () ->
-            ( 2.0
-            , Q.Generator.map ~f:fst (gen_atomic_fetch_zero_nop env ~gen_k)
-            ) ) ]
+            (2.0, Q.Generator.map ~f:fst (gen_atomic_fetch_nop env ~gen_k))
+        ) ]
 
   let bitwise_bop (mu : t Q.Generator.t) : t Q.Generator.t =
     Q.Generator.(
@@ -242,7 +267,7 @@ let generate_known_bool_direct (target : bool) (var_ref : Fir.Expression.t)
 (** [gen_known_bop_rel target operands] generates binary operations over
     [operands] that are relational and result in [target]. *)
 let gen_known_bop_rel (target : bool) :
-    Op.Operand_set.t -> Fir.Expression.t Q.Generator.t =
+    (Op.Operand_set.t -> Fir.Expression.t Q.Generator.t) option =
   Op.bop
     (module Fir.Op.Binary.Rel)
     ~promote:(fun x -> Fir.Op.Binary.Rel x)
@@ -252,7 +277,7 @@ let gen_known_bop_rel (target : bool) :
     [operands] that are logical (and, so, require boolean inputs) and result
     in [target]. *)
 let gen_known_bop_logic (target : bool) :
-    Op.Operand_set.t -> Fir.Expression.t Q.Generator.t =
+    (Op.Operand_set.t -> Fir.Expression.t Q.Generator.t) option =
   Op.bop
     (module Fir.Op.Binary.Logical)
     ~promote:(fun x -> Fir.Op.Binary.Logical x)
@@ -271,16 +296,19 @@ end = struct
   let generate_int (var_ref : Fir.Expression.t) (value : int) :
       t Q.Generator.t =
     (* TODO(@MattWindsor91): do more here? *)
-    gen_known_bop_rel Basic.target
+    Option.value_exn
+      (gen_known_bop_rel Basic.target)
       (Two (var_ref, Fir.Expression.int_lit value))
 
   let generate_bool (var_ref : Fir.Expression.t) (value : bool) :
       t Q.Generator.t =
     Q.Generator.union
       [ generate_known_bool_direct Basic.target var_ref value
-      ; gen_known_bop_logic Basic.target
+      ; Option.value_exn
+          (gen_known_bop_logic Basic.target)
           (Two (var_ref, Fir.Expression.bool_lit value))
-      ; gen_known_bop_rel Basic.target
+      ; Option.value_exn
+          (gen_known_bop_rel Basic.target)
           (Two (var_ref, Fir.Expression.bool_lit value)) ]
 
   let make_var_ref (id : Act_common.C_id.t) (ty : Fir.Type.t) :
