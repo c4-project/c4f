@@ -15,16 +15,16 @@ open Import
 module type S =
   Utils.My_quickcheck.S_with_sexp with type t = Fir.Expression.t
 
-open struct 
+open struct
   type env = Fir.Env.t
+
   type t = Fir.Expression.t [@@deriving sexp]
 end
 
-
 (** [gen_atomic_fetch_zero_nop env ~gen_zero] generates atomic fetches that
     use zero (from [gen_zero]) to produce idempotent results. *)
-let gen_atomic_fetch_zero_nop (env : env) ~(gen_zero : t Q.Generator.t)
-    : (t * Fir.Env.Record.t) Q.Generator.t =
+let gen_atomic_fetch_zero_nop (env : env) ~(gen_zero : t Q.Generator.t) :
+    (t * Fir.Env.Record.t) Q.Generator.t =
   let module F =
     Atomic_fetch.Int
       (struct
@@ -56,8 +56,8 @@ let gen_int_loadlike (env : env) ~(gen_zero : t Q.Generator.t) :
          , fun () -> (1.0, gen_atomic_fetch_zero_nop env ~gen_zero) ) ])
 
 (* TODO(@MattWindsor91): Temporary until we refactor int-value expressions. *)
-let gen_int_with_fetch_nops (env : env) ~(gen_zero : t Q.Generator.t) :
-    t Q.Generator.t =
+let gen_int_with_fetch_nops (env : env)
+    ~(gen_k : Fir.Constant.t -> env -> t Q.Generator.t) : t Q.Generator.t =
   (* TODO(@MattWindsor91): &-1 fetches *)
   Q.Generator.weighted_union
     (Utils.My_list.eval_guards
@@ -66,36 +66,15 @@ let gen_int_with_fetch_nops (env : env) ~(gen_zero : t Q.Generator.t) :
          , fun () ->
              ( 1.0
              , Q.Generator.map ~f:fst
-                 (gen_atomic_fetch_zero_nop env ~gen_zero) ) ) ])
+                 (gen_atomic_fetch_zero_nop env
+                    ~gen_zero:(gen_k (Int 0) env (* for now *))) ) ) ])
 
-let rec gen_zero (env : env) : t Q.Generator.t =
-  let gen_load env = gen_int_loadlike env ~gen_zero:(gen_zero env) in
-  Expr_const.gen (Int 0) env ~gen_load ~gen_arb:(gen_int)
-and gen_int (env : env) : t Q.Generator.t =
-  (* for now *)
-  gen_int_with_fetch_nops env ~gen_zero:(gen_zero env)
-
-module Int_zeroes (E : Fir.Env_types.S) = struct
-  type t = Fir.Expression.t [@@deriving sexp]
-
-  let quickcheck_generator : t Q.Generator.t = gen_zero E.env
-
-  let quickcheck_observer : t Q.Observer.t =
-    [%quickcheck.observer: Fir.Expression.t]
-
-  (* TODO(@MattWindsor91): implement this *)
-  let quickcheck_shrinker : t Q.Shrinker.t = Q.Shrinker.atomic
-end
-
-module Int_values (E : Fir.Env_types.S) = struct
-  type t = Fir.Expression.t [@@deriving sexp]
-
-  module Z = Int_zeroes (E)
-
+module Int_value_gen = struct
   (** Generates the terminal integer expressions. *)
-  let base_generators : t Q.Generator.t list =
-    [ Z.quickcheck_generator
-    ; gen_int_with_fetch_nops E.env ~gen_zero:Z.quickcheck_generator ]
+  let base_generators (env : env)
+      ~(gen_k : Fir.Constant.t -> env -> t Q.Generator.t) :
+      t Q.Generator.t list =
+    [gen_k (Int 0) env; gen_int_with_fetch_nops env ~gen_k]
 
   let bitwise_bop (mu : t Q.Generator.t) : t Q.Generator.t =
     Q.Generator.(
@@ -108,8 +87,35 @@ module Int_values (E : Fir.Env_types.S) = struct
     (* TODO(@MattWindsor91): find some 'safe' recursive ops. *)
     [bitwise_bop mu]
 
-  let quickcheck_generator : t Q.Generator.t =
-    Q.Generator.recursive_union base_generators ~f:recursive_generators
+  let gen (env : env) ~(gen_k : Fir.Constant.t -> env -> t Q.Generator.t) :
+      t Q.Generator.t =
+    Q.Generator.recursive_union
+      (base_generators env ~gen_k)
+      ~f:recursive_generators
+end
+
+let rec gen_k (k : Fir.Constant.t) (env : env) : t Q.Generator.t =
+  let gen_load env = gen_int_loadlike env ~gen_zero:(gen_k (Int 0) env) in
+  Expr_const.gen k env ~gen_load ~gen_arb:gen_int
+
+and gen_int (env : env) : t Q.Generator.t = Int_value_gen.gen env ~gen_k
+
+module Int_zeroes (E : Fir.Env_types.S) = struct
+  type t = Fir.Expression.t [@@deriving sexp]
+
+  let quickcheck_generator : t Q.Generator.t = gen_k (Int 0) E.env
+
+  let quickcheck_observer : t Q.Observer.t =
+    [%quickcheck.observer: Fir.Expression.t]
+
+  (* TODO(@MattWindsor91): implement this *)
+  let quickcheck_shrinker : t Q.Shrinker.t = Q.Shrinker.atomic
+end
+
+module Int_values (E : Fir.Env_types.S) = struct
+  type t = Fir.Expression.t [@@deriving sexp]
+
+  let quickcheck_generator : t Q.Generator.t = gen_int E.env
 
   let quickcheck_observer : t Q.Observer.t =
     [%quickcheck.observer: Fir.Expression.t]
@@ -157,7 +163,8 @@ module Atomic_fetch_int_refl_nops (Obj : Fir.Env_types.S) :
       let%map mo = Fir.Mem_order.quickcheck_generator in
       Fir.Atomic_fetch.make ~obj ~arg ~mo ~op)
 
-  let quickcheck_generator = Expr_util.gen_kv_refl ~gen_load:gen_address ~gen_op
+  let quickcheck_generator =
+    Expr_util.gen_kv_refl ~gen_load:gen_address ~gen_op
 end
 
 module Atomic_fetch_int_nops (Obj : Fir.Env_types.S) (Arg : Fir.Env_types.S) :

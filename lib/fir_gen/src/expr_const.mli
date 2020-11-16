@@ -11,9 +11,15 @@
 
 open Import
 
+val gen :
+     Fir.Constant.t
+  -> Fir.Env.t
+  -> gen_arb:(Fir.Env.t -> Fir.Expression.t Q.Generator.t)
+  -> gen_load:
+       (Fir.Env.t -> (Fir.Expression.t * Fir.Env.Record.t) Q.Generator.t)
+  -> Fir.Expression.t Q.Generator.t
 (** [gen k env ~gen_arb ~gen_load] generates expressions over [env] that are
-    statically guaranteed to result in the value [k].  It assumes that at least
-    one bop rule that generates [k] exists.  It uses [gen_arb] to generate
-    arbitrary expressions, and [gen_load] to generate loads, both over
-    the known-value variables available in [env]. *)
-val gen : Fir.Constant.t -> Fir.Env.t -> gen_arb:(Fir.Env.t -> Fir.Expression.t Q.Generator.t) -> gen_load:(Fir.Env.t -> (Fir.Expression.t * Fir.Env.Record.t) Q.Generator.t) -> Fir.Expression.t Q.Generator.t
+    statically guaranteed to result in the value [k]. It assumes that at
+    least one bop rule that generates [k] exists. It uses [gen_arb] to
+    generate arbitrary expressions, and [gen_load] to generate loads, both
+    over the known-value variables available in [env]. *)

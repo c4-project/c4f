@@ -80,7 +80,7 @@ let%test_module "Int_values" =
       0
       foo
       atomic_load_explicit(&y, memory_order_seq_cst)
-      foo ^ foo
+      foo & 0
       *blep ^ foo |}]
 
     let%expect_test "sample (environment has only atomic_int*)" =
@@ -98,11 +98,10 @@ let%test_module "Int_values" =
       print_sample (Lazy.force Fir_test.Env.empty_env) ;
       [%expect
         {|
+        -1
         0
         1
-        31453
-        0 & -879720314
-        -22537 - -22537 ^ -378 |}]
+        0 & -209 ^ (-15464318 ^ 0 & 0) |}]
 
     let%test_unit "all expressions have 'int' type" =
       test_all_expressions_have_type
@@ -132,13 +131,10 @@ let%test_module "Int zeroes" =
       [%expect
         {|
           0
-          atomic_load_explicit(bar, memory_order_consume) - 95
-          4 & 0
-          foo ^ 4
-          atomic_fetch_xor_explicit(&y, atomic_load_explicit(bar, memory_order_consume)
-                                    - atomic_load_explicit(bar, memory_order_consume),
-                                    memory_order_seq_cst)
-          ^ 53 |}]
+          0 & 95
+          0 & 99
+          0 & (foo ^ 4)
+          4 & 0 |}]
 
     let test_fun (env : Fir.Env.t) :
         (module Q.Test.S with type t = Fir.Expression.t) =
@@ -222,13 +218,16 @@ let%test_module "Bool_values" =
       print_sample (Lazy.force Fir_test.Env.test_env) ;
       [%expect
         {|
-      true
+      barbaz
       atomic_load_explicit(&z, memory_order_consume)
       atomic_load_explicit(&z, memory_order_seq_cst)
-      foo < (*blep | 0 | foo ^ foo)
-      (foo > foo && true || (0 <= 0 || barbaz)) &&
-      ((foo | 0) < atomic_load_explicit(&y, memory_order_seq_cst) && (0 ^ 0) <
-       atomic_load_explicit(bar, memory_order_relaxed)) |}]
+      foo >= (*blep | 0 | 0 & 0)
+      (true && atomic_load_explicit(&z, memory_order_consume) ||
+       ((0 & atomic_load_explicit(bar, memory_order_acquire)) <= 0 ||
+        (0 > 0 || barbaz)))
+      && atomic_load_explicit(&y, memory_order_seq_cst) >
+      (atomic_fetch_sub_explicit(bar, 99 & 0, memory_order_acquire) ^ 0 | 0 & foo &
+       0) |}]
 
     let%expect_test "sample (environment has only atomic_int*)" =
       print_sample (Lazy.force Fir_test.Env.test_env_atomic_ptrs_only) ;
@@ -250,9 +249,8 @@ let%test_module "Bool_values" =
         (134217728 ^ (0 ^ 0)) <= -31235266
         (true && false || 0 <= 0) && !false
         !(0 != -23556581)
-        !((-1 | 0) == (0 ^ -780780327) && 2147483647 - 2147483647 == 6 - 6 || -1 !=
-          (2048 & 683) && (true && true) || !(0 > 0) && -309 == -1 &&
-          (false && true || (0 <= 0 || 0 > -847))) |}]
+        !((-1 | 0) == (0 ^ -780780327) && (0 & 0) < (-34 ^ -34) || -1048576 -
+          -1048576 > (0 & (0 & 0)) || true) |}]
 
     let test_fun (env : Fir.Env.t) =
       ( module Src.Expr.Bool_values (struct
@@ -287,17 +285,19 @@ let%test_module "Bool falsehoods" =
       [%expect
         {|
           false
+          95 < atomic_load_explicit(bar, memory_order_seq_cst)
           false && atomic_load_explicit(&y, memory_order_seq_cst) <= foo
           (95 < atomic_load_explicit(bar, memory_order_seq_cst) || true > barbaz &&
            true)
           && (!atomic_load_explicit(&z, memory_order_seq_cst) || barbaz)
           !(true || barbaz) && (0 > 0 || 0 >= *blep)
           !(!(99 != *blep) || false) &&
-          atomic_fetch_or_explicit(&y, 0 &
-                                   atomic_fetch_add_explicit(bar, 0,
-                                                             memory_order_consume),
-                                   memory_order_seq_cst)
-          < atomic_load_explicit(bar, memory_order_relaxed) |}]
+          atomic_fetch_or_explicit(bar,
+                                   (atomic_fetch_xor_explicit(bar, 0,
+                                                              memory_order_acquire)
+                                    | 0)
+                                   & 0, memory_order_seq_cst)
+          < *blep |}]
 
     let test_fun (env : Fir.Env.t) :
         (module Q.Test.S with type t = Fir.Expression.t) =
@@ -333,17 +333,19 @@ let%test_module "Bool tautologies" =
       [%expect
         {|
           true
+          95 <= atomic_load_explicit(bar, memory_order_seq_cst)
           true || atomic_load_explicit(&y, memory_order_seq_cst) <= foo
           95 <= atomic_load_explicit(bar, memory_order_seq_cst) &&
           (true >= barbaz || true) ||
           (!atomic_load_explicit(&z, memory_order_seq_cst) || barbaz)
           !(false && barbaz) || (0 > 0 || 0 >= *blep)
           !(!(99 == *blep) && false) ||
-          atomic_fetch_or_explicit(&y, 0 &
-                                   atomic_fetch_add_explicit(bar, 0,
-                                                             memory_order_consume),
-                                   memory_order_seq_cst)
-          < atomic_load_explicit(bar, memory_order_relaxed) |}]
+          atomic_fetch_or_explicit(bar,
+                                   (atomic_fetch_xor_explicit(bar, 0,
+                                                              memory_order_acquire)
+                                    | 0)
+                                   & 0, memory_order_seq_cst)
+          < *blep |}]
 
     let test_fun (env : Fir.Env.t) :
         (module Q.Test.S with type t = Fir.Expression.t) =
