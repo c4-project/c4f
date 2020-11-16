@@ -46,11 +46,13 @@ let truth : t = Bool true
 
 let falsehood : t = Bool false
 
-let type_of : t -> Type.t = function
+let prim_type_of : t -> Type.Prim.t = function
   | Bool _ ->
-      Type.bool ()
+      Bool
   | Int _ ->
-      Type.int ()
+      Int
+
+let type_of (x : t) : Type.t = Type.make (Type.Basic.make (prim_type_of x))
 
 let zero_of_type (t : Type.t) : t =
   if

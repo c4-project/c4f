@@ -31,3 +31,14 @@ let lift_loadlike (g : 'a Q.Generator.t) ~(to_expr : 'a -> Fir.Expression.t)
   Q.Generator.map
     ~f:(fun (l, r) -> (to_expr l, r))
     (with_record g ~to_var ~env)
+
+let gen_kv_refl (type v a) ~(gen_op : v -> Fir.Expression.t -> a Q.Generator.t)
+    ~(gen_load : (v * Fir.Env.Record.t) Q.Generator.t) : a Q.Generator.t =
+  Q.Generator.Let_syntax.(
+    let%bind v, kv =
+      Q.Generator.filter_map gen_load ~f:(fun (l, r) ->
+          Option.Let_syntax.(
+            let%map kv = Accessor.get_option Fir.Env.Record.known_value r in
+            (l, Fir.Expression.constant kv)))
+    in
+    gen_op v kv)

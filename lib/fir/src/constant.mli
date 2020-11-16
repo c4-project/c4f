@@ -108,6 +108,9 @@ val convert_as_int : t -> int Or_error.t
     Since constant checking never fails and doesn't require an environment,
     we {i don't} implement {{!Types.S_type_checkable} S_type_checkable}. *)
 
+val prim_type_of : t -> Type.Prim.t
+(** [prim_type_of k] gets the primitive type of constant [k]. *)
+
 val type_of : t -> Type.t
 (** [type_of k] gets the type of constant [k]. *)
 
