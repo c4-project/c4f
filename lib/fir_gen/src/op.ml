@@ -81,43 +81,38 @@ let bop_of_rule (rule : Fir.Op_rule.In.t) ~(op : Fir.Op.Binary.t) :
   | Const (dir, k) ->
       Operand_set.take_one @> bop_of_const f ~dir ~k
 
-let rulesi (type t) (module M : Fir.Op_types.S_binary with type t = t) :
-    ( (t * int) * 'a -> Fir.Op_rule.t -> Fir.Op_rule.t
-    , 'a -> t -> t
+let rulesi :
+    ( (Fir.Op.Binary.t * int) * 'a -> Fir.Op_rule.t -> Fir.Op_rule.t
+    , 'a -> Fir.Op.Binary.t -> Fir.Op.Binary.t
     , [< many_getter] )
     Accessor.t =
   Accessor.(
     many_getteri (fun op ->
-        op |> M.rules
+        op |> Fir.Op.Binary.rules
         |> Base.List.mapi ~f:(fun i r -> Many_getter.access ((op, i), r))
         |> Many_getter.of_list))
 
-let in_rulesi (type t) (module M : Fir.Op_types.S_binary with type t = t)
-    (out : Fir.Op_rule.Out.t) :
-    ( (t * int) * 'a -> Fir.Op_rule.In.t -> Fir.Op_rule.In.t
-    , 'a -> t -> t
+let in_rulesi (out : Fir.Op_rule.Out.t) :
+    ( (Fir.Op.Binary.t * int) * 'a -> Fir.Op_rule.In.t -> Fir.Op_rule.In.t
+    , 'a -> Fir.Op.Binary.t -> Fir.Op.Binary.t
     , [< many_getter] )
     Accessor.t =
-  rulesi (module M) @> Fir.Op_rule.single_in_matching out
+  rulesi @> Fir.Op_rule.single_in_matching out
 
 let bop_of_indexed_rule
     ((ix, rule) : (('a * int) * unit) Accessor.Index.t * Fir.Op_rule.In.t)
-    ~(operands : Operand_set.t) ~(promote : 'a -> Fir.Op.Binary.t) :
-    Fir.Expression.t Q.Generator.t =
+    ~(operands : Operand_set.t) : Fir.Expression.t Q.Generator.t =
   let op, _ = Accessor.Index.hd ix in
-  Q.Generator.of_list operands.@*(bop_of_rule rule ~op:(promote op))
+  Q.Generator.of_list operands.@*(bop_of_rule rule ~op)
 
-let bop (type t) (module M : Fir.Op_types.S_binary with type t = t)
-    ~(promote : t -> Fir.Op.Binary.t) ~(out : Fir.Op_rule.Out.t) :
+let bop_with_output ?(ops : Fir.Op.Binary.t list = Fir.Op.Binary.all)
+    (out : Fir.Op_rule.Out.t) :
     (Operand_set.t -> Fir.Expression.t Q.Generator.t) option =
   (* TODO(@MattWindsor91): I suspect this is woefully inefficient. *)
-  match
-    Accessor.(to_listi (List.each @> in_rulesi (module M) out) M.all)
-  with
+  match Accessor.(to_listi (List.each @> in_rulesi out) ops) with
   | [] ->
       None
   | ins ->
       Some
         (fun operands ->
-          Q.Generator.(
-            of_list ins >>= bop_of_indexed_rule ~promote ~operands))
+          Q.Generator.(of_list ins >>= bop_of_indexed_rule ~operands))
