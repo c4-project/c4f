@@ -21,39 +21,6 @@ open struct
   type t = Fir.Expression.t [@@deriving sexp]
 end
 
-module Bool_value_gen = struct
-  let gen_int_relational ~(gen_int : t Q.Generator.t) : t Q.Generator.t =
-    Q.Generator.(
-      Let_syntax.(
-        let%bind size = size in
-        let g = with_size gen_int ~size:(size / 2) in
-        let%map l = g
-        and r = g
-        and op = [%quickcheck.generator: Fir.Op.Binary.Rel.t] in
-        Fir.Expression.bop (Fir.Op.Binary.Rel op) l r))
-
-  (** Generates the terminal Boolean expressions. *)
-  let base_generators (env : env) ~(int : env -> t Q.Generator.t) :
-      (float * t Q.Generator.t) list =
-    (* Use thunks here to prevent accidentally evaluating a generator that
-       can't possibly work---eg, an atomic load when we don't have any atomic
-       variables. *)
-    Utils.My_list.eval_guards
-      [ (true, fun () -> (5.0, Expr_prim.Bool.gen env))
-      ; (true, fun () -> (5.0, gen_int_relational ~gen_int:(int env))) ]
-
-  let recursive_generators (mu : t Q.Generator.t) :
-      (float * t Q.Generator.t) list =
-    [ (3.0, Q.Generator.map2 mu mu ~f:Fir.Expression.l_and)
-    ; (3.0, Q.Generator.map2 mu mu ~f:Fir.Expression.l_or)
-    ; (2.0, Q.Generator.map mu ~f:Fir.Expression.l_not) ]
-
-  let gen (env : env) ~(int : env -> t Q.Generator.t) : t Q.Generator.t =
-    Q.Generator.weighted_recursive_union
-      (base_generators env ~int)
-      ~f:recursive_generators
-end
-
 let rec int_const (k : Fir.Constant.t) (env : env) : t Q.Generator.t =
   Expr_const.gen k env ~gen_load:int_load ~gen_arb:int
 
@@ -62,7 +29,7 @@ and int_load (env : env) : (t * Fir.Env.Record.t) Q.Generator.t =
 
 and int (env : env) : t Q.Generator.t = Expr_int.gen env ~int_const
 
-and bool (env : env) : t Q.Generator.t = Bool_value_gen.gen env ~int
+and bool (env : env) : t Q.Generator.t = Expr_bool.gen env ~int
 
 module Int_zeroes (E : Fir.Env_types.S) = struct
   type t = Fir.Expression.t [@@deriving sexp]
@@ -366,12 +333,6 @@ module Bool_known (E : Fir.Env_types.S) = struct
     let quickcheck_generator : t Q.Generator.t = Lazy.force ff_generator
   end
 end
-
-let bool (env : env) : Fir.Expression.t Q.Generator.t =
-  let module G = Bool_values (struct
-    let env = env
-  end) in
-  G.quickcheck_generator
 
 let tautology (env : env) : Fir.Expression.t Q.Generator.t =
   let module G = Bool_known (struct

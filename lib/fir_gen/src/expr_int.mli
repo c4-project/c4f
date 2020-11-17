@@ -15,7 +15,7 @@
     will usually recursively expect an arbitrary integer generator.
 
     For fully-formed, recursive generators, see {!Expr}. For known-constant
-    generators, see {!Int}. *)
+    generators, see {!Expr_const}. *)
 
 open Import
 
