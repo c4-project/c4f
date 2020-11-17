@@ -24,7 +24,7 @@ end
 let gen_atomic_fetch_k_nop
     (module Op_gen : Utils.My_quickcheck.S_with_sexp
       with type t = Fir.Op.Fetch.t) (k : Fir.Constant.t) (env : env)
-    ~(gen_k : Fir.Constant.t -> env -> t Q.Generator.t) :
+    ~(int_const : Fir.Constant.t -> env -> t Q.Generator.t) :
     (t * Fir.Env.Record.t) Q.Generator.t =
   let module F =
     Atomic_fetch.Int
@@ -39,7 +39,7 @@ let gen_atomic_fetch_k_nop
 
         let quickcheck_shrinker = Q.Shrinker.atomic
 
-        let quickcheck_generator = gen_k k env
+        let quickcheck_generator = int_const k env
       end)
   in
   Expr_util.lift_loadlike [%quickcheck.generator: F.t]
@@ -47,13 +47,13 @@ let gen_atomic_fetch_k_nop
     ~to_var:(Accessor.get Fir.Atomic_fetch.variable_of)
     ~env
 
-(** [gen_atomic_fetch_zero_nop env ~gen_k] generates atomic fetches that use
-    zero (from [gen_k]) to produce idempotent results. *)
+(** [gen_atomic_fetch_zero_nop env ~int_const] generates atomic fetches that use
+    zero (from [int_const]) to produce idempotent results. *)
 let gen_atomic_fetch_zero_nop =
   gen_atomic_fetch_k_nop (module Fir.Op.Fetch.Gen_idem_zero_rhs) (Int 0)
 
-(** [gen_atomic_fetch_neg1_nop env ~gen_k] generates atomic fetches that use
-    negative-1 (from [gen_k]) to produce idempotent results. *)
+(** [gen_atomic_fetch_neg1_nop env ~int_const] generates atomic fetches that use
+    negative-1 (from [int_const]) to produce idempotent results. *)
 let gen_atomic_fetch_neg1_nop =
   gen_atomic_fetch_k_nop
     ( module struct
@@ -64,36 +64,36 @@ let gen_atomic_fetch_neg1_nop =
     (Int (-1))
 
 let gen_atomic_fetch_nop (env : env)
-    ~(gen_k : Fir.Constant.t -> env -> t Q.Generator.t) :
+    ~(int_const : Fir.Constant.t -> env -> t Q.Generator.t) :
     (t * Fir.Env.Record.t) Q.Generator.t =
   (* TODO(@MattWindsor91): also add reflexivity here, but this'll require us
      to restrict to KV variables, and this'll need a guard. *)
   Q.Generator.weighted_union
-    [ (4.0, gen_atomic_fetch_zero_nop env ~gen_k)
-    ; (1.0, gen_atomic_fetch_neg1_nop env ~gen_k) ]
+    [ (4.0, gen_atomic_fetch_zero_nop env ~int_const)
+    ; (1.0, gen_atomic_fetch_neg1_nop env ~int_const) ]
 
 let gen_int_loadlike (env : env)
-    ~(gen_k : Fir.Constant.t -> env -> t Q.Generator.t) :
+    ~(int_const : Fir.Constant.t -> env -> t Q.Generator.t) :
     (t * Fir.Env.Record.t) Q.Generator.t =
   Q.Generator.weighted_union
     (Utils.My_list.eval_guards
        [ (true, fun () -> (3.0, Expr_prim.Int.gen_load env))
        ; ( Expr_util.has_ints env ~is_atomic:true
-         , fun () -> (1.0, gen_atomic_fetch_nop env ~gen_k) ) ])
+         , fun () -> (1.0, gen_atomic_fetch_nop env ~int_const) ) ])
 
 module Int_value_gen = struct
   (** Generates the terminal integer expressions. *)
   let base_generators (env : env)
-      ~(gen_k : Fir.Constant.t -> env -> t Q.Generator.t) :
+      ~(int_const : Fir.Constant.t -> env -> t Q.Generator.t) :
       (float * t Q.Generator.t) list =
     Utils.My_list.eval_guards
-      [ (true, fun () -> (3.0, gen_k (Int 0) env))
+      [ (true, fun () -> (3.0, int_const (Int 0) env))
       ; (true, fun () -> (3.0, Expr_prim.Int.gen env))
         (* Prim.Int.gen subsumes Prim.Int.gen_load, so this serves to cover
            the remaining case(s) in int_loadlike. *)
       ; ( Expr_util.has_ints env ~is_atomic:true
         , fun () ->
-            (2.0, Q.Generator.map ~f:fst (gen_atomic_fetch_nop env ~gen_k))
+            (2.0, Q.Generator.map ~f:fst (gen_atomic_fetch_nop env ~int_const))
         ) ]
 
   let bitwise_bop (mu : t Q.Generator.t) : t Q.Generator.t =
@@ -108,23 +108,54 @@ module Int_value_gen = struct
     (* TODO(@MattWindsor91): find some 'safe' recursive ops. *)
     [(4.0, bitwise_bop mu)]
 
-  let gen (env : env) ~(gen_k : Fir.Constant.t -> env -> t Q.Generator.t) :
+  let gen (env : env) ~(int_const : Fir.Constant.t -> env -> t Q.Generator.t) :
       t Q.Generator.t =
     Q.Generator.weighted_recursive_union
-      (base_generators env ~gen_k)
+      (base_generators env ~int_const)
       ~f:recursive_generators
 end
 
-let rec gen_k (k : Fir.Constant.t) (env : env) : t Q.Generator.t =
-  let gen_load env = gen_int_loadlike env ~gen_k in
-  Expr_const.gen k env ~gen_load ~gen_arb:gen_int
+module Bool_value_gen = struct
+  let gen_int_relational ~(gen_int : t Q.Generator.t) : t Q.Generator.t =
+    Q.Generator.(Let_syntax.(
+      let%bind size = size in
+      let g = with_size gen_int ~size:(size / 2) in
+      let%map l = g
+      and r = g
+      and op = [%quickcheck.generator: Fir.Op.Binary.Rel.t] in
+      Fir.Expression.bop (Fir.Op.Binary.Rel op) l r))
 
-and gen_int (env : env) : t Q.Generator.t = Int_value_gen.gen env ~gen_k
+  (** Generates the terminal Boolean expressions. *)
+  let base_generators (env : env) ~(int : env -> t Q.Generator.t): (float * t Q.Generator.t) list =
+    (* Use thunks here to prevent accidentally evaluating a generator that
+       can't possibly work---eg, an atomic load when we don't have any atomic
+       variables. *)
+    Utils.My_list.eval_guards
+      [ (true, fun () -> (5.0, Expr_prim.Bool.gen env))
+      ; (true, fun () -> (5.0, gen_int_relational ~gen_int:(int env))) ]
+
+  let recursive_generators (mu : t Q.Generator.t) :
+      (float * t Q.Generator.t) list =
+    [ (3.0, Q.Generator.map2 mu mu ~f:Fir.Expression.l_and)
+    ; (3.0, Q.Generator.map2 mu mu ~f:Fir.Expression.l_or)
+    ; (2.0, Q.Generator.map mu ~f:Fir.Expression.l_not) ]
+
+  let gen (env : env) ~(int : env -> t Q.Generator.t) : t Q.Generator.t =
+    Q.Generator.weighted_recursive_union (base_generators env ~int)
+      ~f:recursive_generators
+end
+
+let rec int_const (k : Fir.Constant.t) (env : env) : t Q.Generator.t =
+  let gen_load env = gen_int_loadlike env ~int_const in
+  Expr_const.gen k env ~gen_load ~gen_arb:int
+
+and int (env : env) : t Q.Generator.t = Int_value_gen.gen env ~int_const
+and bool (env : env) : t Q.Generator.t = Bool_value_gen.gen env ~int
 
 module Int_zeroes (E : Fir.Env_types.S) = struct
   type t = Fir.Expression.t [@@deriving sexp]
 
-  let quickcheck_generator : t Q.Generator.t = gen_k (Int 0) E.env
+  let quickcheck_generator : t Q.Generator.t = int_const (Int 0) E.env
 
   let quickcheck_observer : t Q.Observer.t =
     [%quickcheck.observer: Fir.Expression.t]
@@ -136,7 +167,7 @@ end
 module Int_values (E : Fir.Env_types.S) = struct
   type t = Fir.Expression.t [@@deriving sexp]
 
-  let quickcheck_generator : t Q.Generator.t = gen_int E.env
+  let quickcheck_generator : t Q.Generator.t = int E.env
 
   let quickcheck_observer : t Q.Observer.t =
     [%quickcheck.observer: Fir.Expression.t]
@@ -216,40 +247,13 @@ module Atomic_fetch_int_values
     with type t = Fir.Expression.t Fir.Atomic_fetch.t =
   Atomic_fetch.Int (Obj) (Fir.Op.Fetch) (Int_values (Arg))
 
-module Bool_values (E : Fir.Env_types.S) : sig
+  module Bool_values (E : Fir.Env_types.S) : sig
   type t = Fir.Expression.t [@@deriving sexp_of, quickcheck]
 end = struct
   type t = Fir.Expression.t [@@deriving sexp]
 
-  module Iv = Int_values (E)
-
-  (* As with Int_values. TODO(@MattWindsor91): extract this pattern somehow? *)
-
-  let gen_int_relational : t Q.Generator.t =
-    Q.Generator.Let_syntax.(
-      let%map l = [%quickcheck.generator: Iv.t]
-      and r = [%quickcheck.generator: Iv.t]
-      and op = [%quickcheck.generator: Fir.Op.Binary.Rel.t] in
-      Fir.Expression.bop (Fir.Op.Binary.Rel op) l r)
-
-  (** Generates the terminal Boolean expressions. *)
-  let base_generators : (float * t Q.Generator.t) list =
-    (* Use thunks here to prevent accidentally evaluating a generator that
-       can't possibly work---eg, an atomic load when we don't have any atomic
-       variables. *)
-    Utils.My_list.eval_guards
-      [ (true, fun () -> (5.0, Expr_prim.Bool.gen E.env))
-      ; (true, fun () -> (5.0, gen_int_relational)) ]
-
-  let recursive_generators (mu : t Q.Generator.t) :
-      (float * t Q.Generator.t) list =
-    [ (3.0, Q.Generator.map2 mu mu ~f:Fir.Expression.l_and)
-    ; (3.0, Q.Generator.map2 mu mu ~f:Fir.Expression.l_or)
-    ; (2.0, Q.Generator.map mu ~f:Fir.Expression.l_not) ]
-
   let quickcheck_generator : t Q.Generator.t =
-    Q.Generator.weighted_recursive_union base_generators
-      ~f:recursive_generators
+    bool E.env
 
   let quickcheck_observer : t Q.Observer.t =
     [%quickcheck.observer: Fir.Expression.t]

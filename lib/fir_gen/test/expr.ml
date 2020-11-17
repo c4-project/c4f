@@ -240,50 +240,35 @@ let%test_module "Bool_values" =
       print_sample (Lazy.force Fir_test.Env.test_env) ;
       [%expect
         {|
-      barbaz
+      false
       atomic_load_explicit(&z, memory_order_consume)
       atomic_load_explicit(&z, memory_order_seq_cst)
+      (0 & (atomic_fetch_add_explicit(&x, 0, memory_order_relaxed) ^ 0)) ==
+      (atomic_fetch_or_explicit(bar, 0, memory_order_consume) |
+       atomic_load_explicit(bar, memory_order_relaxed) |
+       atomic_fetch_xor_explicit(&y, 0, memory_order_relaxed) &
+       atomic_load_explicit(&x, memory_order_relaxed))
       atomic_fetch_sub_explicit(&y, 27 & 0, memory_order_release) <=
       atomic_load_explicit(&y, memory_order_acquire)
-      foo - 4 <
-      ((foo & atomic_fetch_xor_explicit(&y, 0, memory_order_acq_rel)) -
-       (foo & atomic_fetch_xor_explicit(&y, 0, memory_order_acq_rel)) |
-       atomic_fetch_sub_explicit(&x, 0, memory_order_acq_rel))
-      (atomic_load_explicit(bar, memory_order_acquire) - 95 | 0 ^
-       atomic_load_explicit(&y, memory_order_relaxed) |
-       atomic_load_explicit(&x, memory_order_relaxed))
-      != atomic_load_explicit(&x, memory_order_relaxed) -
-      atomic_load_explicit(&x, memory_order_relaxed) &&
-      (atomic_load_explicit(&y, memory_order_seq_cst) & 0) >= foo |}]
+      foo - 4 <= (0 | atomic_fetch_add_explicit(&y, 0, memory_order_acquire)) |}]
 
     let%expect_test "sample (environment has only atomic_int*)" =
       print_sample (Lazy.force Fir_test.Env.test_env_atomic_ptrs_only) ;
       [%expect
         {|
         atomic_load_explicit(foobaz, memory_order_consume)
-        atomic_load_explicit(foobaz, memory_order_acquire)
         atomic_load_explicit(foobaz, memory_order_seq_cst)
-        95 - atomic_load_explicit(bar, memory_order_consume) ==
-        atomic_fetch_xor_explicit(bar,
-                                  (0 |
-                                   atomic_fetch_xor_explicit(bar, 0,
-                                                             memory_order_acq_rel))
-                                  -
-                                  (0 |
-                                   atomic_fetch_xor_explicit(bar, 0,
-                                                             memory_order_acq_rel)),
-                                  memory_order_seq_cst)
         atomic_fetch_sub_explicit(bar, 95 & 0, memory_order_release) <=
         atomic_load_explicit(bar, memory_order_acquire)
+        95 - atomic_load_explicit(bar, memory_order_consume) <=
+        atomic_fetch_xor_explicit(bar, 0 &
+                                  atomic_load_explicit(bar, memory_order_seq_cst),
+                                  memory_order_seq_cst)
         (atomic_load_explicit(bar, memory_order_acquire) - 95 | 0 ^
-         atomic_load_explicit(bar, memory_order_relaxed) |
          atomic_load_explicit(bar, memory_order_relaxed))
-        != atomic_load_explicit(bar, memory_order_relaxed) -
-        atomic_load_explicit(bar, memory_order_relaxed) &&
-        (atomic_load_explicit(bar, memory_order_seq_cst) & 0) ==
-        atomic_load_explicit(bar, memory_order_consume) ||
-        !(atomic_load_explicit(foobaz, memory_order_consume) || 0 > 0 ||
-          !(atomic_load_explicit(bar, memory_order_relaxed) > (0 & 95))) |}]
+        == atomic_load_explicit(bar, memory_order_relaxed) || false
+        !atomic_load_explicit(foobaz, memory_order_seq_cst) ||
+        atomic_load_explicit(foobaz, memory_order_relaxed) |}]
 
     let%expect_test "sample (environment is empty)" =
       print_sample (Lazy.force Fir_test.Env.empty_env) ;
@@ -291,7 +276,9 @@ let%test_module "Bool_values" =
         {|
         false
         true
-        (0 ^ 470264907 | 2097152 - 2097152) <= -1 || 2147483647 >= -15623063 || true
+        (-8191 & 18659626 ^ -1073741824 - -1073741824) < 0 - 0
+        (-378 | 0) >= -879720314 || (-1 == -2 && 7627 <= 0 || (0 > 0 || true)) ||
+        false
         !(0 != 2147483647) |}]
 
     let test_fun (env : Fir.Env.t) =
