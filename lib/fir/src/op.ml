@@ -147,6 +147,16 @@ module Binary = struct
         Bitwise.rules o
     | Logical o ->
         Logical.rules o
+
+  let of_input_prim_type (ty : Type.Prim.t) : t list =
+    let if_int x = match ty with Int -> x | Bool -> [] in
+    let if_bool x = match ty with Bool -> x | Int -> [] in
+    (* not concat_no_order; this would make generators permute spuriously. *)
+    List.concat
+      [ List.map ~f:(fun x -> Rel x) Rel.all
+      ; if_int (List.map ~f:(fun x -> Arith x) Arith.all)
+      ; if_int (List.map ~f:(fun x -> Bitwise x) Bitwise.all)
+      ; if_bool (List.map ~f:(fun x -> Logical x) Logical.all) ]
 end
 
 module Fetch = struct

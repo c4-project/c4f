@@ -94,6 +94,10 @@ module Binary : sig
 
   include Op_types.S_binary with type t := t
 
+  val of_input_prim_type : Type.Prim.t -> t list
+  (** [of_input_prim_type t] gets a list of all operators that are compatible
+      with having both of their input operands be values of type [t]. *)
+
   (** {4 Convenience constructors} *)
 
   val eq : t

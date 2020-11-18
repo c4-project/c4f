@@ -21,8 +21,12 @@ open struct
   type t = Fir.Expression.t [@@deriving sexp]
 end
 
+let bool_load (env : env) : (t * Fir.Env.Record.t) Q.Generator.t =
+  (* We don't have any non-primitive load-like booleans yet. *)
+  Expr_prim.Bool.gen_load env
+
 let rec int_const (k : Fir.Constant.t) (env : env) : t Q.Generator.t =
-  Expr_const.gen k env ~gen_load:int_load ~gen_arb:int
+  Expr_const.gen k env ~int_load ~bool_load ~int ~bool
 
 and int_load (env : env) : (t * Fir.Env.Record.t) Q.Generator.t =
   Expr_int.gen_loadlike env ~int_const
@@ -150,20 +154,21 @@ let generate_known_bool_direct (target : bool) (var_ref : Fir.Expression.t)
     [operands] that are relational and result in [target]. *)
 let gen_known_bop_rel (target : bool) :
     (Op.Operand_set.t -> Fir.Expression.t Q.Generator.t) option =
-  Op.bop
-    (module Fir.Op.Binary.Rel)
-    ~promote:(fun x -> Fir.Op.Binary.Rel x)
-    ~out:(Const (Fir.Constant.bool target))
+  Op.bop_with_output
+    ~ops:(List.map ~f:(fun x -> Fir.Op.Binary.Rel x) Fir.Op.Binary.Rel.all)
+    (Const (Fir.Constant.bool target))
 
 (** [gen_known_bop_logic target operands] generates binary operations over
     [operands] that are logical (and, so, require boolean inputs) and result
     in [target]. *)
 let gen_known_bop_logic (target : bool) :
     (Op.Operand_set.t -> Fir.Expression.t Q.Generator.t) option =
-  Op.bop
-    (module Fir.Op.Binary.Logical)
-    ~promote:(fun x -> Fir.Op.Binary.Logical x)
-    ~out:(Const (Fir.Constant.bool target))
+  Op.bop_with_output
+    ~ops:
+      (List.map
+         ~f:(fun x -> Fir.Op.Binary.Logical x)
+         Fir.Op.Binary.Logical.all)
+    (Const (Fir.Constant.bool target))
 
 module Known_value_comparisons (Basic : sig
   module E : Fir.Env_types.S

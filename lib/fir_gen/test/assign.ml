@@ -43,26 +43,18 @@ let%expect_test "Int: samples" =
     {|
     foo--;
     foo++;
-    foo = atomic_load_explicit(&y, memory_order_acquire);
     foo =
-    (atomic_load_explicit(bar, memory_order_acquire) ^ 95 -
-     atomic_load_explicit(bar, memory_order_relaxed) |
-     atomic_load_explicit(&y, memory_order_seq_cst) - 53)
-    & (foo ^ atomic_fetch_xor_explicit(bar, 0 & 4, memory_order_release) | 0);
+    atomic_fetch_sub_explicit(bar, 0 +
+                              ((95 -
+                                atomic_load_explicit(bar, memory_order_consume) |
+                                0)
+                               + 0 | 0 | 0 & foo),
+                              memory_order_acq_rel)
+    & 0;
+    foo = 95 - atomic_load_explicit(bar, memory_order_consume) &
+    atomic_fetch_and_explicit(bar, -1 & -1, memory_order_acq_rel) ^ (foo ^ 4);
     (*blep)--;
-    (*blep)++;
-    *blep =
-    atomic_fetch_xor_explicit(&y,
-                              (2147483647 |
-                               atomic_load_explicit(&y, memory_order_consume))
-                              -
-                              (2147483647 |
-                               atomic_load_explicit(&y, memory_order_consume)),
-                              memory_order_seq_cst);
-    *blep = *blep ^ foo;
-    *blep = 95 - atomic_load_explicit(bar, memory_order_consume) &
-    atomic_fetch_and_explicit(&y, -1, memory_order_acq_rel) ^
-    (atomic_load_explicit(&x, memory_order_seq_cst) | 1); |}]
+    (*blep)++; |}]
 
 let%test_unit "Int: generated destination variables in environment" =
   let env = Lazy.force Fir_test.Env.test_env in
@@ -93,86 +85,45 @@ let%expect_test "Bool: samples" =
     barbaz = false;
     barbaz = true;
     barbaz = barbaz;
+    barbaz = *blep !=
+    (atomic_fetch_or_explicit(&x, 0 &
+                              atomic_load_explicit(bar, memory_order_consume),
+                              memory_order_acq_rel)
+     & atomic_load_explicit(&x, memory_order_consume));
     barbaz = *blep >
     (99 - *blep | 0 & 0 &
      (atomic_fetch_add_explicit(&y, 0, memory_order_acq_rel) & 0));
     barbaz =
-    (0 &
-     ((0 ^ atomic_fetch_and_explicit(bar, -1, memory_order_acquire) ^
-       atomic_load_explicit(bar, memory_order_relaxed) &
-       atomic_fetch_xor_explicit(bar, 0, memory_order_seq_cst))
-      & (0 & foo) | atomic_fetch_and_explicit(&y, -1, memory_order_seq_cst)))
-    >=
-    ((atomic_fetch_or_explicit(&y, 0, memory_order_seq_cst) ^
-      atomic_fetch_or_explicit(&y, 0, memory_order_seq_cst) |
-      atomic_fetch_sub_explicit(bar, 0 & (*blep & (0 - 0 ^ 0 - 0)),
-                                memory_order_relaxed))
-     ^ 53 -
-     atomic_fetch_or_explicit(&y, (0 & 95 | 1) &
-                              atomic_fetch_xor_explicit(&y, 0 &
-                                                        atomic_load_explicit
-                                                        (&x,
-                                                         memory_order_consume),
-                                                        memory_order_seq_cst)
-                              ^ (0 & 95 | 1) &
-                              atomic_fetch_xor_explicit(&y, 0 &
-                                                        atomic_load_explicit
-                                                        (&x,
-                                                         memory_order_consume),
-                                                        memory_order_seq_cst),
-                              memory_order_relaxed)
-     ^
-     (*blep | atomic_load_explicit(&x, memory_order_seq_cst) ^
-      atomic_load_explicit(&x, memory_order_seq_cst) |
-      atomic_fetch_or_explicit(bar,
-                               atomic_load_explicit(bar, memory_order_acquire) ^
-                               95, memory_order_acq_rel)));
-    barbaz = atomic_load_explicit(foobaz, memory_order_consume) &&
-    (barbaz || atomic_load_explicit(&x, memory_order_seq_cst) <
-     (atomic_load_explicit(bar, memory_order_seq_cst) ^
-      ((0 | 0) & atomic_fetch_sub_explicit(&x, 0, memory_order_seq_cst) |
-       atomic_load_explicit(&x, memory_order_seq_cst) & 0)
-      |
-      (0 & atomic_fetch_xor_explicit(bar, 0, memory_order_relaxed) ^ (0 | 0) |
-       (atomic_fetch_and_explicit(&x, -1, memory_order_acq_rel) ^
-        atomic_fetch_and_explicit(&x, -1, memory_order_acq_rel))
-       & (*blep & 0) |
-       (0 & atomic_load_explicit(&y, memory_order_acquire) |
-        atomic_load_explicit(&y, memory_order_consume) & foo)
-       ^ atomic_fetch_xor_explicit(&x, 0 & (*blep ^ 99), memory_order_release))));
-    barbaz = *blep ==
-    atomic_fetch_sub_explicit(&y, 0 &
-                              atomic_fetch_and_explicit(&x, -1,
-                                                        memory_order_relaxed),
-                              memory_order_consume)
-    &&
-    (atomic_load_explicit(bar, memory_order_seq_cst) ==
-     atomic_fetch_and_explicit(bar, -1, memory_order_release) || barbaz);
+    atomic_fetch_xor_explicit(bar, 0 | 0 &
+                              atomic_fetch_add_explicit(&x, 0 +
+                                                        (0 &
+                                                         atomic_load_explicit
+                                                         (&y,
+                                                          memory_order_consume)),
+                                                        memory_order_release),
+                              memory_order_release)
+    > (foo ^ atomic_load_explicit(&x, memory_order_relaxed) & 0);
     barbaz =
-    (foo | 0 ^ (atomic_fetch_and_explicit(&x, -1, memory_order_seq_cst) ^ 27) |
-     atomic_fetch_add_explicit(&x, foo - foo, memory_order_acq_rel) &
-     atomic_load_explicit(&x, memory_order_relaxed) ^
-     (0 & 27 |
-      atomic_fetch_add_explicit(&y,
-                                (atomic_load_explicit(bar, memory_order_seq_cst)
-                                 ^ 0)
-                                & (0 | 0) & 0, memory_order_seq_cst)
-      & 0))
-    >
-    (atomic_load_explicit(&x, memory_order_consume) - 27 &
-     (*blep | atomic_fetch_add_explicit(&y, *blep & 0, memory_order_relaxed)) -
-     (*blep | atomic_fetch_add_explicit(&y, *blep & 0, memory_order_relaxed)))
-    &&
-    ((foo |
-      (foo | *blep &
-       (0 ^ atomic_load_explicit(&x, memory_order_consume) ^ 53 & 0))
-      & *blep)
-     & (atomic_fetch_and_explicit(&x, -1, memory_order_relaxed) & (0 & 95)))
-    > (0 & 53);
-    barbaz = (atomic_fetch_add_explicit(&y, 0 & 0, memory_order_relaxed) & 0) <=
-    ((95 ^ atomic_load_explicit(bar, memory_order_relaxed)) &
-     atomic_load_explicit(&x, memory_order_relaxed))
-    && *blep > *blep;
+    atomic_fetch_xor_explicit(&y, atomic_load_explicit(bar, memory_order_relaxed)
+                              ^ foo & 0 ^
+                              (atomic_load_explicit(bar, memory_order_relaxed) ^
+                               foo & 0),
+                              memory_order_acquire)
+    < atomic_load_explicit(&x, memory_order_relaxed);
+    barbaz = atomic_load_explicit(foobaz, memory_order_consume) &&
+    (barbaz || atomic_load_explicit(&x, memory_order_seq_cst) !=
+     (atomic_load_explicit(bar, memory_order_seq_cst) ^
+      ((0 | 0) & atomic_fetch_sub_explicit(&y, 0 & -1, memory_order_seq_cst) |
+       atomic_fetch_sub_explicit(&y, 0 +
+                                 (53 -
+                                  atomic_load_explicit(&y, memory_order_relaxed)),
+                                 memory_order_acq_rel))
+      | atomic_load_explicit(&y, memory_order_consume)));
+    barbaz = (atomic_fetch_add_explicit(&y, 0 & 0, memory_order_relaxed) & 0) <
+    ((*blep - 99 | 0 ^ 0) &
+     (foo ^ atomic_fetch_add_explicit(bar, 0, memory_order_consume) &
+      atomic_load_explicit(&x, memory_order_consume)))
+    && false;
     barbaz =
     ((0 <= atomic_fetch_add_explicit(&y, 0, memory_order_acquire) || false) &&
      (atomic_fetch_add_explicit(&x, 0, memory_order_relaxed) <= 0 &&
@@ -181,77 +132,48 @@ let%expect_test "Bool: samples" =
     &&
     (!barbaz || !(atomic_fetch_xor_explicit(&x, 0, memory_order_relaxed) > 0));
     barbaz =
-    (99 ^ *blep | atomic_load_explicit(&y, memory_order_consume) &
-     ((*blep | 0 ^
-       (*blep | atomic_fetch_add_explicit(&y, 0, memory_order_consume) -
-        atomic_fetch_add_explicit(&y, 0, memory_order_consume))
-       & *blep)
-      & 0))
-    == (atomic_fetch_and_explicit(&x, -1, memory_order_acquire) ^ foo) ||
-    (0 & *blep) ==
-    (0 & foo & atomic_fetch_add_explicit(&y, 4 - foo, memory_order_release));
+    (*blep ^ atomic_fetch_or_explicit(&x, *blep ^ 99, memory_order_consume)) !=
+    atomic_load_explicit(&y, memory_order_relaxed) || false;
     barbaz = 0 > atomic_load_explicit(bar, memory_order_consume) ||
     atomic_load_explicit(&y, memory_order_acquire) !=
     atomic_fetch_or_explicit(&x, 0, memory_order_acquire);
-    barbaz = false ||
-    !((atomic_fetch_and_explicit(&y, -1, memory_order_acq_rel) & -3705786) >=
-      (*blep ^ foo))
-    ||
-    (atomic_fetch_or_explicit(bar, (0 | *blep) - (0 | *blep),
-                              memory_order_seq_cst)
-     & 0 & atomic_load_explicit(&x, memory_order_relaxed))
-    < atomic_fetch_sub_explicit(&x, 27 & 0, memory_order_seq_cst) ||
-    (!((false || (-2548 >= (1035516393 - 1035516393 ^ 0 | *blep ^ 99) || false))
-       &&
-       ((0 & atomic_load_explicit(bar, memory_order_consume) ^
-         (0 ^ 0 ^ atomic_fetch_xor_explicit(&y, 4 & 0, memory_order_seq_cst)))
-        == *blep &&
-        (atomic_fetch_xor_explicit(&x,
-                                   (atomic_load_explicit(bar,
-                                                         memory_order_relaxed)
-                                    ^ 0)
-                                   -
-                                   (atomic_load_explicit(bar,
-                                                         memory_order_relaxed)
-                                    ^ 0),
-                                   memory_order_acquire)
-         | foo)
-        ==
-        (atomic_fetch_sub_explicit(&y, 0, memory_order_consume) |
-         atomic_fetch_or_explicit(bar, 0, memory_order_seq_cst) &
-         atomic_fetch_and_explicit(&x, -1, memory_order_acquire) ^
-         (0 ^ atomic_fetch_xor_explicit(bar, 0, memory_order_seq_cst)))))
-     ||
-     (atomic_load_explicit(&z, memory_order_seq_cst) || barbaz &&
-      !((atomic_fetch_add_explicit(bar, foo - 4, memory_order_consume) ^ 0 &
-         atomic_fetch_xor_explicit(&y, 0, memory_order_acq_rel))
+    barbaz = atomic_load_explicit(&y, memory_order_consume) <
+    (53 - atomic_load_explicit(&y, memory_order_consume) & 1) ||
+    !(false ||
+      !((atomic_fetch_and_explicit(&x, 0 + -1 | -1 & -1, memory_order_acq_rel) &
+         (foo | *blep))
         <=
-        (atomic_load_explicit(&x, memory_order_relaxed) ^
-         atomic_load_explicit(&x, memory_order_relaxed) |
-         atomic_fetch_xor_explicit(&x, *blep & 0, memory_order_seq_cst))
-        ||
-        (false || (0 ^ -26143178) == (*blep & 0) &&
-         (*blep >= atomic_load_explicit(&x, memory_order_seq_cst) &&
-          (barbaz || true))))
-      ||
-      (((-3 ^ -3) & (0 | atomic_load_explicit(&y, memory_order_acquire)) ^
-        (0 | 0 | 27 - atomic_fetch_xor_explicit(&x, 0, memory_order_release)))
-       !=
-       (*blep - 99 ^
-        (atomic_fetch_xor_explicit(bar, *blep - *blep, memory_order_consume) ^
-         95))
-       || atomic_load_explicit(&x, memory_order_relaxed) >= -250109 ||
-       !(atomic_load_explicit(&x, memory_order_acquire) != 4 - foo))
-      ||
-      (atomic_load_explicit(foobaz, memory_order_relaxed) ||
-       (barbaz ||
-        (atomic_fetch_sub_explicit(&y, 0 ^ 0, memory_order_consume) ==
-         atomic_load_explicit(&x, memory_order_acquire) ||
-         (0 >= foo || atomic_load_explicit(&z, memory_order_seq_cst)) && barbaz)
-        || (atomic_load_explicit(&x, memory_order_relaxed) & 0 & -2147483648) >
-        (0 ^ 0 | atomic_fetch_or_explicit(&x, *blep ^ 99, memory_order_consume)))
-       || atomic_load_explicit(&z, memory_order_seq_cst))
-      && false));
+        (*blep ^
+         (*blep - *blep | atomic_fetch_sub_explicit(bar, 0, memory_order_acquire)
+          & *blep)))
+      || barbaz &&
+      !(atomic_fetch_and_explicit(&y, 0 | (-1 | -1) - 0, memory_order_relaxed) <
+        (atomic_fetch_xor_explicit(&y, *blep ^ *blep, memory_order_seq_cst) & 0 ^
+         0))
+      || true || atomic_fetch_xor_explicit(&y, 4 & 0, memory_order_seq_cst) ==
+      *blep);
+    barbaz = barbaz &&
+    atomic_fetch_sub_explicit(&x, -1 &
+                              (atomic_fetch_or_explicit(&y, 0,
+                                                        memory_order_consume)
+                               - 53 ^ 0),
+                              memory_order_acq_rel)
+    >=
+    ((0 ^ 27 - atomic_load_explicit(&x, memory_order_relaxed) - 0) &
+     (-4001688 & 0 & 0) ^
+     atomic_fetch_sub_explicit(&x, 0 & 99, memory_order_release))
+    ||
+    (atomic_fetch_or_explicit(bar, 0 &
+                              ((atomic_fetch_or_explicit(bar, 0,
+                                                         memory_order_relaxed)
+                                | -3)
+                               ^ foo),
+                              memory_order_consume)
+     !=
+     (27 - atomic_load_explicit(&x, memory_order_relaxed) | -1 &
+      (0 ^ atomic_load_explicit(&x, memory_order_consume) -
+       atomic_load_explicit(&x, memory_order_consume)))
+     || barbaz);
     barbaz = !atomic_load_explicit(&z, memory_order_acquire);
     barbaz =
     !(foo <=
@@ -295,104 +217,78 @@ let%expect_test "any: samples with valid env" =
   [%expect
     {|
       barbaz = barbaz;
-      barbaz = *blep == 2147483647;
-      barbaz = atomic_load_explicit(foobaz, memory_order_consume) &&
-      (barbaz || atomic_load_explicit(&x, memory_order_seq_cst) <
-       (atomic_load_explicit(bar, memory_order_seq_cst) ^
-        ((0 | 0) & atomic_fetch_sub_explicit(&x, 0, memory_order_seq_cst) |
-         atomic_load_explicit(&x, memory_order_seq_cst) & 0)
-        |
-        (0 & atomic_fetch_xor_explicit(bar, 0, memory_order_relaxed) ^ (0 | 0) |
-         (atomic_fetch_and_explicit(&x, -1, memory_order_acq_rel) ^
-          atomic_fetch_and_explicit(&x, -1, memory_order_acq_rel))
-         & (*blep & 0) |
-         (0 & atomic_load_explicit(&y, memory_order_acquire) |
-          atomic_load_explicit(&y, memory_order_consume) & foo)
-         ^ atomic_fetch_xor_explicit(&x, 0 & (*blep ^ 99), memory_order_release))));
-      barbaz = atomic_fetch_add_explicit(&y, *blep ^ *blep, memory_order_relaxed) -
-      atomic_fetch_add_explicit(&y, *blep ^ *blep, memory_order_relaxed) >
-      (95 ^ atomic_load_explicit(bar, memory_order_relaxed)) &&
-      (atomic_load_explicit(&z, memory_order_consume) &&
-       (((0 & 4 ^ 0 & 0) ==
-         atomic_fetch_sub_explicit(&y, 4 ^ foo, memory_order_relaxed) || barbaz ||
-         false)
-        && atomic_load_explicit(&z, memory_order_seq_cst)));
-      barbaz = (atomic_load_explicit(&y, memory_order_acquire) ^ foo) >= 0 &&
-      (atomic_load_explicit(bar, memory_order_seq_cst) <= foo && false ||
-       atomic_fetch_add_explicit(&x, 0, memory_order_relaxed) <= 0 &&
-       atomic_load_explicit(bar, memory_order_relaxed) == 0);
+      barbaz = 0 <
+      (atomic_fetch_sub_explicit(bar, 0 + 0, memory_order_acq_rel) &
+       atomic_load_explicit(&x, memory_order_consume) ^
+       (atomic_load_explicit(bar, memory_order_relaxed) ^ 95));
+      barbaz = (0 & 0 & -1) <
+      atomic_fetch_add_explicit(&y, *blep ^ *blep, memory_order_relaxed);
       barbaz =
-      (atomic_fetch_sub_explicit(bar, 0, memory_order_acq_rel) <=
-       atomic_load_explicit(&y, memory_order_acquire) ||
-       (atomic_load_explicit(bar, memory_order_acquire) |
-        atomic_fetch_or_explicit(&x,
-                                 (atomic_fetch_and_explicit(bar, -1,
-                                                            memory_order_seq_cst)
-                                  ^ (0 | 0))
-                                 & 0, memory_order_relaxed)
-        - 27 ^ (*blep ^ atomic_load_explicit(&y, memory_order_seq_cst)))
-       >=
-       (atomic_fetch_or_explicit(bar,
-                                 (atomic_load_explicit(&y, memory_order_seq_cst) |
-                                  (*blep |
-                                   atomic_fetch_sub_explicit(bar, 0,
-                                                             memory_order_relaxed))
-                                  & (0 ^ -26143178))
-                                 & 0, memory_order_relaxed)
-        ^ atomic_load_explicit(&x, memory_order_relaxed) |
-        atomic_fetch_sub_explicit(&x, 0 & 99, memory_order_release)))
-      &&
-      (atomic_fetch_or_explicit(bar,
-                                ((0 & -3 ^ foo |
-                                  atomic_load_explicit(&y, memory_order_acquire))
-                                 ^
-                                 (0 & foo | *blep |
-                                  atomic_fetch_xor_explicit(bar, 0,
-                                                            memory_order_release)
-                                  & 0 ^
-                                  atomic_fetch_and_explicit(&x, -1,
-                                                            memory_order_seq_cst)))
-                                & 0, memory_order_consume)
-       !=
-       (foo - 4 ^ (atomic_load_explicit(bar, memory_order_seq_cst) ^ 95) ^
-        atomic_load_explicit(bar, memory_order_relaxed) - 95)
-       ||
-       (atomic_load_explicit(foobaz, memory_order_seq_cst) || barbaz &&
-        atomic_load_explicit(foobaz, memory_order_relaxed)));
+      (atomic_fetch_xor_explicit(&x, 0, memory_order_consume) |
+       atomic_load_explicit(&x, memory_order_relaxed))
+      < ((0 ^ 0) & -1);
+      barbaz = atomic_load_explicit(foobaz, memory_order_consume) &&
+      (barbaz || atomic_load_explicit(&x, memory_order_seq_cst) !=
+       (atomic_load_explicit(bar, memory_order_seq_cst) ^
+        ((0 | 0) & atomic_fetch_sub_explicit(&y, 0 & -1, memory_order_seq_cst) |
+         atomic_fetch_sub_explicit(&y, 0 +
+                                   (53 -
+                                    atomic_load_explicit(&y, memory_order_relaxed)),
+                                   memory_order_acq_rel))
+        | atomic_load_explicit(&y, memory_order_consume)));
+      barbaz = (atomic_load_explicit(&y, memory_order_acquire) ^ foo) >= (-1 & 0)
+      && true;
       barbaz = false ||
-      (-2548 >= (1035516393 - 1035516393 ^ 0 | *blep ^ 99) || false);
-      barbaz = false ||
-      !((atomic_fetch_and_explicit(&y, -1, memory_order_acq_rel) & -3705786) >=
-        (*blep ^ foo))
-      ||
-      (atomic_fetch_or_explicit(bar, (0 | *blep) - (0 | *blep),
-                                memory_order_seq_cst)
-       & 0 & atomic_load_explicit(&x, memory_order_relaxed))
-      < atomic_fetch_sub_explicit(&x, 27 & 0, memory_order_seq_cst);
-      foo--;
+      ((0 + (atomic_load_explicit(bar, memory_order_relaxed) - 95) |
+        atomic_fetch_and_explicit(&x, -1 &
+                                  (-1 & (-1 | -1) - 0 | (0 | -1 | 0 + -1) ^ 0),
+                                  memory_order_relaxed)
+        ^ *blep)
+       == atomic_load_explicit(&x, memory_order_relaxed) -
+       atomic_load_explicit(&x, memory_order_relaxed) -
+       (atomic_load_explicit(&x, memory_order_relaxed) -
+        atomic_load_explicit(&x, memory_order_relaxed))
+       && atomic_load_explicit(&z, memory_order_seq_cst) || (*blep ^ 99 | 0 | 0) ==
+       atomic_load_explicit(&x, memory_order_consume))
+      && (false && atomic_load_explicit(&z, memory_order_consume)) &&
+      (!((atomic_fetch_and_explicit(&x, 0 + (-1 & (0 ^ (-1 | (-1 & -1 - 0) - 0))),
+                                    memory_order_relaxed)
+          & (*blep ^ 99))
+         < atomic_fetch_or_explicit(bar, 0, memory_order_acq_rel))
+       && atomic_load_explicit(foobaz, memory_order_seq_cst));
+      barbaz =
+      !(*blep !=
+        (atomic_fetch_or_explicit(&x, 0 &
+                                  atomic_load_explicit(bar, memory_order_consume),
+                                  memory_order_acq_rel)
+         & atomic_load_explicit(&x, memory_order_consume)));
       foo++;
       foo = 0;
-      foo = atomic_fetch_and_explicit(&y, -1, memory_order_seq_cst);
-      foo = atomic_load_explicit(bar, memory_order_seq_cst) -
-      atomic_load_explicit(bar, memory_order_seq_cst);
-      foo =
-      (atomic_load_explicit(bar, memory_order_acquire) ^ 95 -
-       atomic_load_explicit(bar, memory_order_relaxed) |
-       atomic_load_explicit(&y, memory_order_seq_cst) - 53)
-      & (foo ^ atomic_fetch_xor_explicit(bar, 0 & 4, memory_order_release) | 0);
+      foo = atomic_load_explicit(&y, memory_order_consume) &
+      (53 - atomic_load_explicit(&y, memory_order_consume) & 1);
+      foo = (27 & 0) + 0 & atomic_load_explicit(&x, memory_order_consume);
+      foo = (0 & 53 | 0) & -1 &
+      atomic_fetch_or_explicit(bar, foo - foo, memory_order_acquire);
       foo = atomic_fetch_xor_explicit(&x, 0, memory_order_acquire) ^ 0;
+      foo = atomic_load_explicit(&y, memory_order_seq_cst) &
+      atomic_fetch_xor_explicit(bar, 0 &
+                                atomic_load_explicit(bar, memory_order_seq_cst) &
+                                0, memory_order_seq_cst)
+      - 95 ^
+      (atomic_fetch_xor_explicit(&y, 0 &
+                                 (*blep ^
+                                  (atomic_fetch_or_explicit(bar, 0 + 0,
+                                                            memory_order_acq_rel)
+                                   -
+                                   atomic_fetch_or_explicit(bar, 0 + 0,
+                                                            memory_order_acq_rel)
+                                   |
+                                   atomic_fetch_or_explicit(&y, 0 & foo,
+                                                            memory_order_seq_cst))),
+                                 memory_order_release)
+       | atomic_fetch_and_explicit(&x, 0 + -1 ^ 0 | 0, memory_order_relaxed));
       (*blep)--;
-      (*blep)++;
-      *blep = atomic_load_explicit(bar, memory_order_consume) &
-      (95 ^ atomic_load_explicit(bar, memory_order_seq_cst) ^
-       (95 ^ atomic_load_explicit(bar, memory_order_seq_cst)) ^
-       atomic_load_explicit(&y, memory_order_acquire) ^
-       atomic_load_explicit(&x, memory_order_relaxed))
-      -
-      (95 ^ atomic_load_explicit(bar, memory_order_seq_cst) ^
-       (95 ^ atomic_load_explicit(bar, memory_order_seq_cst)) ^
-       atomic_load_explicit(&y, memory_order_acquire) ^
-       atomic_load_explicit(&x, memory_order_relaxed)); |}]
+      (*blep)++; |}]
 
 let%test_unit "any: generated destination variables in environment" =
   let env = Lazy.force Fir_test.Env.test_env in

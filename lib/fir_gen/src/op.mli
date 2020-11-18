@@ -40,12 +40,11 @@ module Operand_set : sig
         (** Type of operand sets. *)
 end
 
-val bop :
-     (module Fir.Op_types.S_binary with type t = 't)
-  -> promote:('t -> Fir.Op.Binary.t)
-  -> out:Fir.Op_rule.Out.t
+val bop_with_output :
+     ?ops:Fir.Op.Binary.t list
+  -> Fir.Op_rule.Out.t
   -> (Operand_set.t -> Fir.Expression.t Base_quickcheck.Generator.t) option
-(** [bop m ~promote ~out] tries to produce a generator generating a binary
-    operation with operators drawn from [m] via [promote], such that the
+(** [bop_with_output ?ops ~out] tries to produce a generator generating a
+    binary operation from [ops] (defaulting to all operators) such that the
     output is guaranteed to match output rule [out]; it returns [None] if
     there are no viable operators. *)
