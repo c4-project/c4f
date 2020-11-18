@@ -25,20 +25,20 @@ let bool_load (env : env) : (t * Fir.Env.Record.t) Q.Generator.t =
   (* We don't have any non-primitive load-like booleans yet. *)
   Expr_prim.Bool.gen_load env
 
-let rec int_const (k : Fir.Constant.t) (env : env) : t Q.Generator.t =
+let rec const (k : Fir.Constant.t) (env : env) : t Q.Generator.t =
   Expr_const.gen k env ~int_load ~bool_load ~int ~bool
 
 and int_load (env : env) : (t * Fir.Env.Record.t) Q.Generator.t =
-  Expr_int.gen_loadlike env ~int_const
+  Expr_int.gen_loadlike env ~const
 
-and int (env : env) : t Q.Generator.t = Expr_int.gen env ~int_const
+and int (env : env) : t Q.Generator.t = Expr_int.gen env ~bool ~const
 
 and bool (env : env) : t Q.Generator.t = Expr_bool.gen env ~int
 
 module Int_zeroes (E : Fir.Env_types.S) = struct
   type t = Fir.Expression.t [@@deriving sexp]
 
-  let quickcheck_generator : t Q.Generator.t = int_const (Int 0) E.env
+  let quickcheck_generator : t Q.Generator.t = const (Int 0) E.env
 
   let quickcheck_observer : t Q.Observer.t =
     [%quickcheck.observer: Fir.Expression.t]
