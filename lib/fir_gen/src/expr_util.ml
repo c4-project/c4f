@@ -43,3 +43,17 @@ let gen_kv_refl (type v a)
             (l, Fir.Expression.constant kv)))
     in
     gen_op v kv)
+
+let half (x : 'a Q.Generator.t) : 'a Q.Generator.t =
+  Q.Generator.(
+    Let_syntax.(
+      let%bind size = size in
+      with_size ~size:(size / 2) x))
+
+let ternary ~(gen_if : Fir.Expression.t Q.Generator.t)
+    ~(gen_then : Fir.Expression.t Q.Generator.t)
+    ~(gen_else : Fir.Expression.t Q.Generator.t) :
+    Fir.Expression.t Q.Generator.t =
+  (* TODO(@MattWindsor91): divide here? *)
+  Q.Generator.map ~f:Fir.Expression.ternary
+    (Fir.Expr_ternary.quickcheck_generator_ite ~gen_if ~gen_then ~gen_else)
