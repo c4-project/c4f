@@ -17,69 +17,31 @@ module Operand_set = struct
     | One of Fir.Expression.t
     | Two of Fir.Expression.t * Fir.Expression.t
 
-  (* Getters that can retrieve operands in any order, reusing them if
-     necessary. *)
+  let take_one : t -> Fir.Expression.t Q.Generator.t =
+    Q.Generator.(function One x -> return x | Two (l, r) -> of_list [l; r])
 
-  let take_one : ('a, Fir.Expression.t, t, [< many_getter]) Accessor.Simple.t
-      =
-    [%accessor
-      Accessor.(
-        many_getter (function
-          | Two (l, r) ->
-              Many_getter.(access l @ access r)
-          | One l ->
-              Many_getter.access l))]
-
-  let take_two :
-      ( 'a
-      , Fir.Expression.t * Fir.Expression.t
-      , t
-      , [< many_getter] )
-      Accessor.Simple.t =
-    [%accessor
-      Accessor.(
-        many_getter (function
-          | Two (l, r) ->
-              Many_getter.(access (l, r) @ access (r, l))
-          | One l ->
-              Many_getter.access (l, l)))]
+  let take_two : t -> (Fir.Expression.t * Fir.Expression.t) Q.Generator.t =
+    Q.Generator.(
+      function
+      | One x -> return (x, x) | Two (l, r) -> of_list [(l, r); (r, l)])
 end
-
-let bop_of_refl
-    (f : Fir.Expression.t -> Fir.Expression.t -> Fir.Expression.t) :
-    ( 'a
-    , Fir.Expression.t
-    , Fir.Expression.t * Fir.Expression.t
-    , [< many_getter] )
-    Accessor.Simple.t =
-  Accessor.getter (fun (l, r) -> f l r)
-
-let bop_of_const'
-    (f : Fir.Expression.t -> Fir.Expression.t -> Fir.Expression.t)
-    (x : Fir.Expression.t) ~(dir : Fir.Op_rule.In.Dir.t)
-    ~(k : Fir.Expression.t) =
-  Accessor.Many_getter.(
-    match dir with Left -> access (f k x) | Right -> access (f x k))
 
 let bop_of_const
     (f : Fir.Expression.t -> Fir.Expression.t -> Fir.Expression.t)
-    ~(dir : Fir.Op_rule.In.Dir.t) ~(k : Fir.Constant.t) :
-    ( 'a
-    , Fir.Expression.t
-    , Fir.Expression.t
-    , [< many_getter] )
-    Accessor.Simple.t =
-  Accessor.many_getter (bop_of_const' f ~dir ~k:(Fir.Expression.constant k))
+    (x : Fir.Expression.t) ~(dir : Fir.Op_rule.In.Dir.t)
+    ~(k : Fir.Constant.t) : Fir.Expression.t =
+  let k = Fir.Expression.constant k in
+  match dir with Left -> f k x | Right -> f x k
 
-let bop_of_rule (rule : Fir.Op_rule.In.t) ~(op : Fir.Op.Binary.t) :
-    ('a, Fir.Expression.t, Operand_set.t, [< many_getter]) Accessor.Simple.t
-    =
+let bop_of_rule (rule : Fir.Op_rule.In.t) (ops : Operand_set.t)
+    ~(op : Fir.Op.Binary.t) : Fir.Expression.t Q.Generator.t =
   let f = Fir.Expression.bop op in
-  match rule with
-  | Refl ->
-      Operand_set.take_two @> bop_of_refl f
-  | Const (dir, k) ->
-      Operand_set.take_one @> bop_of_const f ~dir ~k
+  Q.Generator.(
+    match rule with
+    | Refl ->
+        ops |> Operand_set.take_two >>| fun (l, r) -> f l r
+    | Const (dir, k) ->
+        ops |> Operand_set.take_one >>| bop_of_const f ~dir ~k)
 
 let rulesi :
     ( (Fir.Op.Binary.t * int) * 'a -> Fir.Op_rule.t -> Fir.Op_rule.t
@@ -103,7 +65,7 @@ let bop_of_indexed_rule
     ((ix, rule) : (('a * int) * unit) Accessor.Index.t * Fir.Op_rule.In.t)
     ~(operands : Operand_set.t) : Fir.Expression.t Q.Generator.t =
   let op, _ = Accessor.Index.hd ix in
-  Q.Generator.of_list operands.@*(bop_of_rule rule ~op)
+  bop_of_rule rule operands ~op
 
 let bop_with_output ?(ops : Fir.Op.Binary.t list = Fir.Op.Binary.all)
     (out : Fir.Op_rule.Out.t) :
