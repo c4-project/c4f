@@ -43,18 +43,16 @@ end
 val basic_lift_k : Fir.Constant.t -> Fir.Expression.t Q.Generator.t
 (** [basic_lift_k k] lifts constants into singleton expression generators. *)
 
-type bop_gen =
-  (Fir.Constant.t -> Fir.Expression.t Q.Generator.t)
-     -> Operand_set.t -> Fir.Expression.t Q.Generator.t
 (** Type of partially applied bop generators. *)
+type bop_gen =
+     (Fir.Constant.t -> Fir.Expression.t Q.Generator.t)
+  -> Operand_set.t
+  -> Fir.Expression.t Q.Generator.t
 
 val bop_with_output :
-     ?ops:Fir.Op.Binary.t list
-  -> Fir.Op_rule.Out.t
-  -> bop_gen option
+  ?ops:Fir.Op.Binary.t list -> Fir.Op_rule.Out.t -> bop_gen option
 (** [bop_with_output ?ops ~out] tries to produce a generator generating a
     binary operation from [ops] (defaulting to all operators) such that the
     output is guaranteed to match output rule [out]; it returns [None] if
-    there are no viable operators.  The returned generator should
-    provide an operand set and lifting generator for any constants
-    involved in the rule. *)
+    there are no viable operators. The returned generator should provide an
+    operand set and lifting generator for any constants involved in the rule. *)

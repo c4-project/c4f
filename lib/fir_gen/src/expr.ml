@@ -152,8 +152,7 @@ let generate_known_bool_direct (target : bool) (var_ref : Fir.Expression.t)
 
 (** [gen_known_bop_rel target operands] generates binary operations over
     [operands] that are relational and result in [target]. *)
-let gen_known_bop_rel (target : bool) :
-    Op.bop_gen option =
+let gen_known_bop_rel (target : bool) : Op.bop_gen option =
   Op.bop_with_output
     ~ops:(List.map ~f:(fun x -> Fir.Op.Binary.Rel x) Fir.Op.Binary.Rel.all)
     (Const (Fir.Constant.bool target))
@@ -161,8 +160,7 @@ let gen_known_bop_rel (target : bool) :
 (** [gen_known_bop_logic target operands] generates binary operations over
     [operands] that are logical (and, so, require boolean inputs) and result
     in [target]. *)
-let gen_known_bop_logic (target : bool) :
-    Op.bop_gen option =
+let gen_known_bop_logic (target : bool) : Op.bop_gen option =
   Op.bop_with_output
     ~ops:
       (List.map
