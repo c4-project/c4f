@@ -19,7 +19,7 @@ let%test_module "bop_with_output" =
       let x = Fir.Expression.of_variable_str_exn "x" in
       let y = Fir.Expression.of_variable_str_exn "y" in
       let gen =
-        Option.value_exn (Src.Op.bop_with_output ?ops out) (Two (x, y))
+        Option.value_exn (Src.Op.bop_with_output ?ops out) Src.Op.basic_lift_k (Two (x, y))
       in
       Act_utils.My_quickcheck.print_sample
         ~printer:(Fmt.pr "@[%a@]@." Act_litmus_c.Reify_expr.pp)

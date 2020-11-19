@@ -153,7 +153,7 @@ let generate_known_bool_direct (target : bool) (var_ref : Fir.Expression.t)
 (** [gen_known_bop_rel target operands] generates binary operations over
     [operands] that are relational and result in [target]. *)
 let gen_known_bop_rel (target : bool) :
-    (Op.Operand_set.t -> Fir.Expression.t Q.Generator.t) option =
+    Op.bop_gen option =
   Op.bop_with_output
     ~ops:(List.map ~f:(fun x -> Fir.Op.Binary.Rel x) Fir.Op.Binary.Rel.all)
     (Const (Fir.Constant.bool target))
@@ -162,7 +162,7 @@ let gen_known_bop_rel (target : bool) :
     [operands] that are logical (and, so, require boolean inputs) and result
     in [target]. *)
 let gen_known_bop_logic (target : bool) :
-    (Op.Operand_set.t -> Fir.Expression.t Q.Generator.t) option =
+    Op.bop_gen option =
   Op.bop_with_output
     ~ops:
       (List.map
@@ -185,6 +185,7 @@ end = struct
     (* TODO(@MattWindsor91): do more here? *)
     Option.value_exn
       (gen_known_bop_rel Basic.target)
+      Op.basic_lift_k
       (Two (var_ref, Fir.Expression.int_lit value))
 
   let generate_bool (var_ref : Fir.Expression.t) (value : bool) :
@@ -193,9 +194,11 @@ end = struct
       [ generate_known_bool_direct Basic.target var_ref value
       ; Option.value_exn
           (gen_known_bop_logic Basic.target)
+          Op.basic_lift_k
           (Two (var_ref, Fir.Expression.bool_lit value))
       ; Option.value_exn
           (gen_known_bop_rel Basic.target)
+          Op.basic_lift_k
           (Two (var_ref, Fir.Expression.bool_lit value)) ]
 
   let make_var_ref (id : Act_common.C_id.t) (ty : Fir.Type.t) :

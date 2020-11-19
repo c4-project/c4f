@@ -40,11 +40,21 @@ module Operand_set : sig
         (** Type of operand sets. *)
 end
 
+val basic_lift_k : Fir.Constant.t -> Fir.Expression.t Q.Generator.t
+(** [basic_lift_k k] lifts constants into singleton expression generators. *)
+
+type bop_gen =
+  (Fir.Constant.t -> Fir.Expression.t Q.Generator.t)
+     -> Operand_set.t -> Fir.Expression.t Q.Generator.t
+(** Type of partially applied bop generators. *)
+
 val bop_with_output :
      ?ops:Fir.Op.Binary.t list
   -> Fir.Op_rule.Out.t
-  -> (Operand_set.t -> Fir.Expression.t Base_quickcheck.Generator.t) option
+  -> bop_gen option
 (** [bop_with_output ?ops ~out] tries to produce a generator generating a
     binary operation from [ops] (defaulting to all operators) such that the
     output is guaranteed to match output rule [out]; it returns [None] if
-    there are no viable operators. *)
+    there are no viable operators.  The returned generator should
+    provide an operand set and lifting generator for any constants
+    involved in the rule. *)

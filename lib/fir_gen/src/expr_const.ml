@@ -22,13 +22,13 @@ end
 type gctx =
   { arb: t Q.Generator.t
   ; load: (t * Fir.Env.Record.t) Q.Generator.t option
-  ; kbop: (Op.Operand_set.t -> t Q.Generator.t) option
-  ; ibop: (Op.Operand_set.t -> t Q.Generator.t) option }
+  ; kbop: Op.bop_gen option
+  ; ibop: Op.bop_gen option }
 
 (** [kbop k in_type] tries to make a generator for binary operations that
     have operands of value type [in_type], but result in [k]. *)
 let kbop (k : Fir.Constant.t) ~(in_type : Fir.Type.Prim.t) :
-    (Op.Operand_set.t -> t Q.Generator.t) option =
+    (Op.bop_gen) option =
   (* TODO(@MattWindsor91): make sure the type is right. *)
   Op.bop_with_output
     ~ops:(Fir.Op.Binary.of_input_prim_type in_type)
@@ -36,7 +36,7 @@ let kbop (k : Fir.Constant.t) ~(in_type : Fir.Type.Prim.t) :
 
 (** [ibop t] tries to make a generator for binary operations that take inputs
     of type [t] and are idempotent. *)
-let ibop (t : Fir.Type.Prim.t) : (Op.Operand_set.t -> t Q.Generator.t) option
+let ibop (t : Fir.Type.Prim.t) : (Op.bop_gen) option
     =
   (* There is always at least one Idem operator: for example, bitwise OR for
      integers and logical OR for Booleans. *)
@@ -46,18 +46,19 @@ let ibop (t : Fir.Type.Prim.t) : (Op.Operand_set.t -> t Q.Generator.t) option
     [x op k2], or [k2 op x], where [x] is an arbitrary expression generated
     by [gen_arb], [k2] is a specific constant, and the resulting operation is
     known to produce the wanted constant. *)
-let arb_bop ~(gen_arb : t Q.Generator.t)
-    ~(bop : Op.Operand_set.t -> t Q.Generator.t) : t Q.Generator.t =
+let arb_bop ~(gen_arb : t Q.Generator.t) ~(k_mu : Fir.Constant.t -> t Q.Generator.t)
+    ~(bop : Op.bop_gen) : t Q.Generator.t =
   Q.Generator.Let_syntax.(
     let%bind p = Expr_util.half gen_arb in
-    bop (One p))
+    bop (Fn.compose Expr_util.half k_mu) (One p))
 
 (** [kv_bop ~gen_load ~bop] generates binary operations of the form [x op y],
     in which one of [x] and [y] is a variable, the other is its known value,
     and the operation is statically known to produce the wanted constant. *)
 let kv_bop ~(gen_load : (t * Fir.Env.Record.t) Q.Generator.t)
-    ~(bop : Op.Operand_set.t -> t Q.Generator.t) : t Q.Generator.t =
-  Expr_util.gen_kv_refl ~gen_load ~gen_op:(fun l r -> bop (Two (l, r)))
+    ~(k_mu : Fir.Constant.t -> t Q.Generator.t)
+    ~(bop : Op.bop_gen) : t Q.Generator.t =
+  Expr_util.gen_kv_refl ~gen_load ~gen_op:(fun l r -> bop (Fn.compose Expr_util.half k_mu) (Two (l, r)))
 
 let base_generators (k : Fir.Constant.t) : (float * t Q.Generator.t) list =
   (* TODO(@MattWindsor91): known values of kv_env variables *)
@@ -66,12 +67,13 @@ let base_generators (k : Fir.Constant.t) : (float * t Q.Generator.t) list =
 (** [kbop_generators gctx] produces a weighted list of all generators over a
     particular type's generator context that produce binary operations
     guaranteed to result in the given constant given semi-arbitrary data. *)
-let kbop_generators ({kbop; arb; load; _} : gctx) :
+let kbop_generators ({kbop; arb; load; _} : gctx)
+    ~(k_mu : Fir.Constant.t -> t Q.Generator.t) :
     (float * t Q.Generator.t) list =
   List.filter_opt
-    [ Option.map kbop ~f:(fun bop -> (3.0, arb_bop ~gen_arb:arb ~bop))
+    [ Option.map kbop ~f:(fun bop -> (3.0, arb_bop ~k_mu ~gen_arb:arb ~bop))
     ; Option.map2 kbop load ~f:(fun bop gen_load ->
-          (5.0, kv_bop ~gen_load ~bop)) ]
+          (5.0, kv_bop ~k_mu ~gen_load ~bop)) ]
 
 (** [recursive_generators mu ~k_mu ~int_ctx ~bool_ctx ~k_gctx] contains the
     various constant-value expression generators that either recurse directly
@@ -87,7 +89,7 @@ let recursive_generators (mu : t Q.Generator.t)
   let k_mu k = Option.value ~default:mu (k_mu k) in
   let truth = k_mu (Bool true) in
   let falsehood = k_mu (Bool false) in
-  kbop_generators int_gctx @ kbop_generators bool_gctx
+  kbop_generators ~k_mu int_gctx @ kbop_generators ~k_mu bool_gctx
   @ List.filter_opt
       [ Some
           ( 2.0
@@ -102,7 +104,7 @@ let recursive_generators (mu : t Q.Generator.t)
             ( 3.0
             , Q.Generator.Let_syntax.(
                 let%bind x = Expr_util.half mu and y = Expr_util.half mu in
-                bop (Two (x, y))) )) ]
+                bop (Fn.compose Expr_util.half k_mu) (Two (x, y))) )) ]
 
 let rec_on_other_constant (k : Fir.Constant.t) ~(this_k : Fir.Constant.t)
     ~(mu : Fir.Constant.t -> t Q.Generator.t) : t Q.Generator.t option =
