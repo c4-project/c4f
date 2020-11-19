@@ -21,18 +21,16 @@ open Import
 
 val gen_loadlike :
      Fir.Env.t
-  -> const:
-       (Fir.Constant.t -> Fir.Env.t -> Fir.Expression.t Q.Generator.t)
+  -> const:(Fir.Constant.t -> Fir.Env.t -> Fir.Expression.t Q.Generator.t)
   -> (Fir.Expression.t * Fir.Env.Record.t) Q.Generator.t
-(** [gen_loadlike env ~const] generates loads and load-like expressions
-    (eg no-op RMWs using [const]) over [env]. Each generated expression
-    comes with the record of the loaded variable. *)
+(** [gen_loadlike env ~const] generates loads and load-like expressions (eg
+    no-op RMWs using [const]) over [env]. Each generated expression comes
+    with the record of the loaded variable. *)
 
 val gen :
      Fir.Env.t
   -> bool:(Fir.Env.t -> Fir.Expression.t Q.Generator.t)
-  -> const:
-       (Fir.Constant.t -> Fir.Env.t -> Fir.Expression.t Q.Generator.t)
+  -> const:(Fir.Constant.t -> Fir.Env.t -> Fir.Expression.t Q.Generator.t)
   -> Fir.Expression.t Q.Generator.t
 (** [gen env ~bool ~const] generates arbitrary, type-safe, non-side-effectful
     integer expressions over [env], using [int_const] to generate expressions

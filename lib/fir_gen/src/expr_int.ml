@@ -44,13 +44,13 @@ let gen_atomic_fetch_k_nop
     ~to_var:(Accessor.get Fir.Atomic_fetch.variable_of)
     ~env
 
-(** [gen_atomic_fetch_zero_nop env ~const] generates atomic fetches that
-    use zero (from [const]) to produce idempotent results. *)
+(** [gen_atomic_fetch_zero_nop env ~const] generates atomic fetches that use
+    zero (from [const]) to produce idempotent results. *)
 let gen_atomic_fetch_zero_nop =
   gen_atomic_fetch_k_nop (module Fir.Op.Fetch.Gen_idem_zero_rhs) (Int 0)
 
-(** [gen_atomic_fetch_neg1_nop env ~const] generates atomic fetches that
-    use negative-1 (from [const]) to produce idempotent results. *)
+(** [gen_atomic_fetch_neg1_nop env ~const] generates atomic fetches that use
+    negative-1 (from [const]) to produce idempotent results. *)
 let gen_atomic_fetch_neg1_nop =
   gen_atomic_fetch_k_nop
     ( module struct
@@ -79,8 +79,8 @@ let base_generators (env : env)
          remaining case(s) in int_loadlike. *)
     ; ( Expr_util.has_ints env ~is_atomic:true
       , fun () ->
-          (2.0, Q.Generator.map ~f:fst (gen_atomic_fetch_nop env ~const))
-      ) ]
+          (2.0, Q.Generator.map ~f:fst (gen_atomic_fetch_nop env ~const)) )
+    ]
 
 let bitwise_bop (mu : t Q.Generator.t) : t Q.Generator.t =
   Q.Generator.(
@@ -89,13 +89,11 @@ let bitwise_bop (mu : t Q.Generator.t) : t Q.Generator.t =
         >>| fun x -> Fir.Op.Binary.Bitwise x )
     <*> mu <*> mu)
 
-let recursive_generators (mu : t Q.Generator.t)
-  ~(bool : t Q.Generator.t) :
+let recursive_generators (mu : t Q.Generator.t) ~(bool : t Q.Generator.t) :
     (float * t Q.Generator.t) list =
   (* TODO(@MattWindsor91): find some 'safe' recursive ops. *)
-  [(4.0, bitwise_bop mu)
-  ;(2.0, Expr_util.ternary ~gen_if:bool ~gen_then:mu ~gen_else:mu)
-  ]
+  [ (4.0, bitwise_bop mu)
+  ; (2.0, Expr_util.ternary ~gen_if:bool ~gen_then:mu ~gen_else:mu) ]
 
 let gen_loadlike (env : env)
     ~(const : Fir.Constant.t -> env -> t Q.Generator.t) :
@@ -106,8 +104,8 @@ let gen_loadlike (env : env)
        ; ( Expr_util.has_ints env ~is_atomic:true
          , fun () -> (1.0, gen_atomic_fetch_nop env ~const) ) ])
 
-let gen (env : env) ~(bool : env -> t Q.Generator.t) ~(const : Fir.Constant.t -> env -> t Q.Generator.t) :
-    t Q.Generator.t =
+let gen (env : env) ~(bool : env -> t Q.Generator.t)
+    ~(const : Fir.Constant.t -> env -> t Q.Generator.t) : t Q.Generator.t =
   (* TODO(@MattWindsor91): fix consts? *)
   let bool = Q.Generator.of_lazy (lazy (bool env)) in
   Q.Generator.weighted_recursive_union
