@@ -73,25 +73,20 @@ let kbop_generators ({kbop; arb; load; _} : gctx) :
     ; Option.map2 kbop load ~f:(fun bop gen_load ->
           (5.0, kv_bop ~gen_load ~bop)) ]
 
-(** [recursive_generators ?truth ?ibop mu ~int_ctx ~bool_ctx ~k_gctx]
-    contains the various constant-value expression generators that either
-    recurse directly over the same generator ([mu]), or summon other
-    expression generators which may or may not recurse back into this
+(** [recursive_generators mu ~k_mu ~int_ctx ~bool_ctx ~k_gctx] contains the
+    various constant-value expression generators that either recurse directly
+    over the same generator ([mu]), recurse into another constant generator
+    ([k_mu k] where [k] is not the constant being generated here), or summon
+    other expression generators which may or may not recurse back into this
     constant generator ([int_ctx], which has integer-typed generators;
     [bool_ctx], which has bool-typed generators; and [k_gctx], which has
-    generators typed the same as the constant in question).
-
-    The other parameters are as follows:
-
-    - [truth] is a recursive version of the constant generator that generates
-      always-true values, if different from [mu]; if absent, use [mu]
-      instead; *)
-let recursive_generators ?(truth : t Q.Generator.t option)
-    ?(falsehood : t Q.Generator.t option) (mu : t Q.Generator.t)
-    ~(int_gctx : gctx) ~(bool_gctx : gctx) ~(k_gctx : gctx) :
-    (float * t Q.Generator.t) list =
-  let truth = Option.value ~default:mu truth in
-  let falsehood = Option.value ~default:mu falsehood in
+    generators typed the same as the constant in question). *)
+let recursive_generators (mu : t Q.Generator.t)
+    ~(k_mu : Fir.Constant.t -> t Q.Generator.t option) ~(int_gctx : gctx)
+    ~(bool_gctx : gctx) ~(k_gctx : gctx) : (float * t Q.Generator.t) list =
+  let k_mu k = Option.value ~default:mu (k_mu k) in
+  let truth = k_mu (Bool true) in
+  let falsehood = k_mu (Bool false) in
   kbop_generators int_gctx @ kbop_generators bool_gctx
   @ List.filter_opt
       [ Some
@@ -109,9 +104,9 @@ let recursive_generators ?(truth : t Q.Generator.t option)
                 let%bind x = Expr_util.half mu and y = Expr_util.half mu in
                 bop (Two (x, y))) )) ]
 
-let rec_on_other_constant (k : Fir.Constant.t) ~(other_k : Fir.Constant.t)
-    (mu : Fir.Constant.t -> t Q.Generator.t) : t Q.Generator.t option =
-  if Fir.Constant.(k = other_k) then None
+let rec_on_other_constant (k : Fir.Constant.t) ~(this_k : Fir.Constant.t)
+    ~(mu : Fir.Constant.t -> t Q.Generator.t) : t Q.Generator.t option =
+  if Fir.Constant.(k = this_k) then None
   else
     Some
       Q.Generator.(
@@ -122,7 +117,7 @@ let rec_on_other_constant (k : Fir.Constant.t) ~(other_k : Fir.Constant.t)
              Let_syntax.(
                let%bind size = size in
                let size = if size = 0 then 0 else size - 1 in
-               with_size ~size (mu other_k)))
+               with_size ~size (mu k)))
 
 let gen (k : Fir.Constant.t) (env : env) ~(int : env -> t Q.Generator.t)
     ~(bool : env -> t Q.Generator.t)
@@ -157,10 +152,8 @@ let gen (k : Fir.Constant.t) (env : env) ~(int : env -> t Q.Generator.t)
       | Bool ->
           bool_gctx
     in
-    let truth = rec_on_other_constant k ~other_k:(Bool true) mu in
-    let falsehood = rec_on_other_constant k ~other_k:(Bool false) mu in
+    let k_mu = rec_on_other_constant ~this_k:k ~mu in
     Q.Generator.weighted_recursive_union (base_generators k)
-      ~f:
-        (recursive_generators ~int_gctx ~bool_gctx ~k_gctx ?truth ?falsehood)
+      ~f:(recursive_generators ~int_gctx ~bool_gctx ~k_gctx ~k_mu)
   in
   mu k
