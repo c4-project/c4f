@@ -423,7 +423,7 @@ let assignment_operator :=
 
 let conditional_expression :=
   | logical_or_expression
-  | cond = logical_or_expression; "?"; t_expr = expression; ":"; f_expr = expression;
+  | cond = logical_or_expression; "?"; t_expr = expression; ":"; f_expr = conditional_expression;
     { Expr.Ternary { cond; t_expr; f_expr } }
 
 let constant_expression := conditional_expression
