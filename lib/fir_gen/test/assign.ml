@@ -88,12 +88,6 @@ let%expect_test "Bool: samples" =
     barbaz = *blep ==
     (true ? atomic_load_explicit(bar, memory_order_acquire) :
      atomic_fetch_add_explicit(bar, 0, memory_order_consume));
-    barbaz = atomic_load_explicit(&x, memory_order_acquire) !=
-    (atomic_fetch_add_explicit(&x, false ? 0 : 0, memory_order_seq_cst) == 27 ?
-     (false ? *blep : 0) & atomic_load_explicit(&y, memory_order_consume) : false
-     ? 0 : 0);
-    barbaz = (true ? 0 : 0) >
-    (atomic_load_explicit(&y, memory_order_seq_cst) & *blep);
     barbaz =
     atomic_fetch_xor_explicit(&y,
                               atomic_fetch_and_explicit(bar, false ? *blep |
@@ -116,7 +110,16 @@ let%expect_test "Bool: samples" =
                                                          memory_order_seq_cst),
                                                         memory_order_seq_cst),
                               memory_order_acquire)
-    >= (*blep | ((true ? false : true) ? 0 & 0 ^ 0 & 0 : true ? 0 : 0));
+    ==
+    (*blep |
+     (!true ? atomic_fetch_or_explicit(&y, false ? 0 : 0, memory_order_relaxed) :
+      (true ? 0 : atomic_load_explicit(&x, memory_order_seq_cst)) ^ 0 & 0));
+    barbaz = atomic_load_explicit(&x, memory_order_acquire) !=
+    (atomic_fetch_add_explicit(&x, false ? 0 : 0, memory_order_seq_cst) == 27 ?
+     (false ? *blep : 0) & atomic_load_explicit(&y, memory_order_consume) : false
+     ? 0 : 0);
+    barbaz = (true ? 0 : 0) >
+    (atomic_load_explicit(&y, memory_order_seq_cst) & *blep);
     barbaz = atomic_load_explicit(foobaz, memory_order_consume) &&
     (barbaz || atomic_load_explicit(&x, memory_order_seq_cst) >=
      ((false || 0 > atomic_load_explicit(bar, memory_order_seq_cst) ? -18166770 :

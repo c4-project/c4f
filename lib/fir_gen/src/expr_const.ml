@@ -76,7 +76,7 @@ let kbop_generators ({kbop; arb; load; _} : gctx)
     ; Option.map2 kbop load ~f:(fun bop gen_load ->
           (5.0, kv_bop ~k_mu ~gen_load ~bop)) ]
 
-let gen_ternary ~(mu : t Q.Generator.t)
+let ternaries ~(mu : t Q.Generator.t)
     ~(k_mu : Fir.Constant.t -> t Q.Generator.t) ~(arb : t Q.Generator.t) :
     t Q.Generator.t =
   Q.Generator.union
@@ -84,7 +84,12 @@ let gen_ternary ~(mu : t Q.Generator.t)
     ; Expr_util.ternary ~gen_if:(k_mu (Bool false)) ~gen_then:arb
         ~gen_else:mu ]
 
-(** [recursive_generators mu ~k_mu ~int_ctx ~bool_ctx ~k_gctx] contains the
+let bool_specifics (this_val : bool)
+    ~(k_mu : Fir.Constant.t -> t Q.Generator.t) : t Q.Generator.t =
+  (* TODO(@MattWindsor91): consider other possibilities here? *)
+  Q.Generator.map (k_mu (Bool (not this_val))) ~f:Fir.Expression.l_not
+
+(** [recursive_generators k mu ~k_mu ~int_ctx ~bool_ctx ~k_gctx] contains the
     various constant-value expression generators that either recurse directly
     over the same generator ([mu]), recurse into another constant generator
     ([k_mu k] where [k] is not the constant being generated here), or summon
@@ -92,16 +97,18 @@ let gen_ternary ~(mu : t Q.Generator.t)
     constant generator ([int_ctx], which has integer-typed generators;
     [bool_ctx], which has bool-typed generators; and [k_gctx], which has
     generators typed the same as the constant in question). *)
-let recursive_generators (mu : t Q.Generator.t)
+let recursive_generators (k : Fir.Constant.t) (mu : t Q.Generator.t)
     ~(k_mu : Fir.Constant.t -> t Q.Generator.t option) ~(int_gctx : gctx)
     ~(bool_gctx : gctx) ~(k_gctx : gctx) : (float * t Q.Generator.t) list =
   let k_mu k = Option.value ~default:mu (k_mu k) in
   kbop_generators ~k_mu int_gctx
   @ kbop_generators ~k_mu bool_gctx
   @ List.filter_opt
-      [ Some (4.0, gen_ternary ~mu ~k_mu ~arb:k_gctx.arb)
-      ; (* This should actually always resolve. *)
-        Option.map k_gctx.ibop ~f:(fun bop ->
+      [ Some (4.0, ternaries ~mu ~k_mu ~arb:k_gctx.arb)
+      ; Option.map
+          (Result.ok (Fir.Constant.as_bool k))
+          ~f:(fun b -> (3.0, bool_specifics b ~k_mu))
+      ; Option.map k_gctx.ibop ~f:(fun bop ->
             ( 3.0
             , Q.Generator.Let_syntax.(
                 let%bind x = Expr_util.half mu and y = Expr_util.half mu in
@@ -165,6 +172,6 @@ let gen (k : Fir.Constant.t) (env : env) ~(int : env -> t Q.Generator.t)
     in
     let k_mu = rec_on_other_constant ~this_k:k ~mu:k_mu in
     Q.Generator.weighted_recursive_union (base_generators k)
-      ~f:(recursive_generators ~int_gctx ~bool_gctx ~k_gctx ~k_mu)
+      ~f:(recursive_generators k ~int_gctx ~bool_gctx ~k_gctx ~k_mu)
   in
   k_mu k
