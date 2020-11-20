@@ -363,14 +363,13 @@ let%test_module "Bool falsehoods" =
       [%expect
         {|
           false
-          4 != foo
-          false && *blep >= atomic_fetch_and_explicit(&y, -1, memory_order_seq_cst)
-          atomic_load_explicit(&z, memory_order_seq_cst) && false &&
-          !(*blep == foo || atomic_load_explicit(&y, memory_order_relaxed) > *blep - 99
-            || !atomic_load_explicit(&z, memory_order_relaxed))
-          && true
-          !(true || false || atomic_load_explicit(&y, memory_order_acquire) == foo) &&
-          !(*blep > *blep - 99 && barbaz) |}]
+          atomic_fetch_sub_explicit(&x, foo - 4, memory_order_consume) !=
+          atomic_fetch_sub_explicit(&x, foo - 4, memory_order_consume)
+          foo > 4
+          foo < foo
+          !barbaz
+          barbaz ? atomic_load_explicit(&z, memory_order_seq_cst) : foo <=
+          atomic_fetch_and_explicit(&y, *blep - 100, memory_order_relaxed) |}]
 
     let%test_unit "all expressions evaluate to false and vars are in \
                    environment" =
@@ -397,14 +396,13 @@ let%test_module "Bool tautologies" =
       [%expect
         {|
           true
-          4 == foo
-          true || *blep >= atomic_fetch_and_explicit(&y, -1, memory_order_seq_cst)
-          atomic_load_explicit(&z, memory_order_seq_cst) || true ||
-          !(*blep == foo || atomic_load_explicit(&y, memory_order_relaxed) > *blep - 99
-            || !atomic_load_explicit(&z, memory_order_relaxed))
-          || true
-          !(false && false && atomic_load_explicit(&y, memory_order_acquire) == foo) ||
-          !(*blep > *blep - 99 && barbaz) |}]
+          atomic_fetch_sub_explicit(&x, foo - 4, memory_order_consume) ==
+          atomic_fetch_sub_explicit(&x, foo - 4, memory_order_consume)
+          foo >= 4
+          foo <= foo
+          !!barbaz
+          barbaz ? !atomic_load_explicit(&z, memory_order_seq_cst) : foo <=
+          atomic_fetch_and_explicit(&y, *blep - 100, memory_order_relaxed) |}]
 
     let%test_unit "all expressions evaluate to true and vars are in \
                    environment" =

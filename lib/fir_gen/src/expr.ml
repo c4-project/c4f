@@ -35,6 +35,10 @@ and int (env : env) : t Q.Generator.t = Expr_int.gen env ~bool ~const
 
 and bool (env : env) : t Q.Generator.t = Expr_bool.gen env ~int
 
+let tautology : env -> Fir.Expression.t Q.Generator.t = const (Bool true)
+
+let falsehood : env -> Fir.Expression.t Q.Generator.t = const (Bool false)
+
 module Int_zeroes (E : Fir.Env_types.S) = struct
   type t = Fir.Expression.t [@@deriving sexp]
 
@@ -233,121 +237,17 @@ end
 module Bool_known (E : Fir.Env_types.S) = struct
   module BV = Bool_values (E)
 
-  type t = BV.t
-
-  (** [gen_bop_both bop mu] is a generator that creates binary operations
-      over [bop] where both sides are known-value Booleans created using
-      [mu].
-
-      The [bop] should be an operator where giving the intended known truth
-      value on both sides yields that truth value. For tautologies, [bop]
-      will usually be [l_and]; for falsehoods, [l_or]. *)
-  let gen_bop_both (bop : Fir.Op.Binary.t) (mu : t Q.Generator.t) :
-      t Q.Generator.t =
-    Q.Generator.map2 mu mu ~f:(Fir.Expression.bop bop)
-
-  (** [gen_bop_short bop mu] is a generator that creates binary operations
-      over [bop] where the LHS short-circuits using a known-value Boolean
-      created using [mu], and the RHS uses the generic value generator.
-
-      The [bop] should be an operator where giving the intended known truth
-      value on at least one side yields that truth value. For tautologies,
-      [bop] will usually be [l_or]; for falsehoods, [l_and]. *)
-  let gen_bop_short (bop : Fir.Op.Binary.t) (mu : t Q.Generator.t) :
-      t Q.Generator.t =
-    (* Ensuring short-circuit by using tautological generator first. *)
-    Q.Generator.map2 mu BV.quickcheck_generator ~f:(Fir.Expression.bop bop)
-
-  (** [gen_bop_long bop mu] is a generator that creates binary operations
-      over [bop] where the LHS uses a generic value generator, but the RHS
-      uses the known-value generator [mu].
-
-      The [bop] should be an operator where giving the intended known truth
-      value on at least one side yields that truth value. For tautologies,
-      [bop] will usually be [l_or]; for falsehoods, [l_and]. *)
-  let gen_bop_long (bop : Fir.Op.Binary.t) (mu : t Q.Generator.t) :
-      t Q.Generator.t =
-    (* We need at least one of the terms to be tautological; this is the
-       'long' version that only guarantees the RHS is. *)
-    Q.Generator.map2 BV.quickcheck_generator mu ~f:(Fir.Expression.bop bop)
-
-  let gen_not (mu : t Q.Generator.t) : t Q.Generator.t =
-    Q.Generator.map mu ~f:Fir.Expression.l_not
-
-  let is_var_eq_tenable : bool Lazy.t =
-    lazy (not (Map.is_empty (Fir.Env.variables_with_known_values E.env)))
-
-  (* Tautology and falsehood generators are mutually recursive at the
-     recursive-generator level. It's easier to do this mutual recursion over
-     functions than modules, but we expose a modular interface in the end. *)
-
-  let base_generators (target : bool) : t Q.Generator.t list =
-    (* Use thunks here to prevent accidentally evaluating a generator that
-       can't possibly work---eg, an atomic load when we don't have any atomic
-       variables. *)
-    Utils.My_list.eval_guards
-      [ (true, fun () -> Q.Generator.return (Fir.Expression.bool_lit target))
-      ; ( Lazy.force is_var_eq_tenable
-        , fun () ->
-            let module Var_eq = Known_value_comparisons (struct
-              module E = E
-
-              let target = target
-            end) in
-            Var_eq.quickcheck_generator ) ]
-
-  let mk_recursive_generator (mu : t Q.Generator.t)
-      ~(both_bop : Fir.Op.Binary.t) ~(circuiting_bop : Fir.Op.Binary.t)
-      ~(negated_gen : t Q.Generator.t Lazy.t) : t Q.Generator.t list =
-    Utils.My_list.eval_guards
-      [ (true, fun () -> gen_not (Q.Generator.of_lazy negated_gen))
-      ; (true, fun () -> gen_bop_both both_bop mu)
-      ; (true, fun () -> gen_bop_short circuiting_bop mu)
-      ; (true, fun () -> gen_bop_long circuiting_bop mu) ]
-
-  let tt_recursive_generators (mu : t Q.Generator.t)
-      ~(negated_gen : t Q.Generator.t Lazy.t) : t Q.Generator.t list =
-    mk_recursive_generator mu ~both_bop:Fir.Op.Binary.l_and
-      ~circuiting_bop:Fir.Op.Binary.l_or ~negated_gen
-
-  let ff_recursive_generators (mu : t Q.Generator.t)
-      ~(negated_gen : t Q.Generator.t Lazy.t) : t Q.Generator.t list =
-    mk_recursive_generator mu ~both_bop:Fir.Op.Binary.l_or
-      ~circuiting_bop:Fir.Op.Binary.l_and ~negated_gen
-
-  let rec tt_generator : t Q.Generator.t Lazy.t =
-    lazy
-      (Q.Generator.recursive_union (base_generators true)
-         ~f:(tt_recursive_generators ~negated_gen:ff_generator))
-
-  and ff_generator : t Q.Generator.t Lazy.t =
-    lazy
-      (Q.Generator.recursive_union (base_generators false)
-         ~f:(ff_recursive_generators ~negated_gen:tt_generator))
-
   module Tautologies : S = struct
     (* Define by using the bool-values quickcheck instance, but swap out the
        generator. *)
     include BV
 
-    let quickcheck_generator : t Q.Generator.t = Lazy.force tt_generator
+    let quickcheck_generator : t Q.Generator.t = tautology E.env
   end
 
   module Falsehoods : S = struct
     include BV
 
-    let quickcheck_generator : t Q.Generator.t = Lazy.force ff_generator
+    let quickcheck_generator : t Q.Generator.t = falsehood E.env
   end
 end
-
-let tautology (env : env) : Fir.Expression.t Q.Generator.t =
-  let module G = Bool_known (struct
-    let env = env
-  end) in
-  G.Tautologies.quickcheck_generator
-
-let falsehood (env : env) : Fir.Expression.t Q.Generator.t =
-  let module G = Bool_known (struct
-    let env = env
-  end) in
-  G.Falsehoods.quickcheck_generator
