@@ -23,20 +23,19 @@ type gctx =
   { arb: t Q.Generator.t
   ; load: (t * Fir.Env.Record.t) Q.Generator.t option
   ; kbop: Op.bop_gen option
-  ; ibop: Op.bop_gen option }
+  ; idem_bop: Op.bop_gen option }
 
 (** [kbop k in_type] tries to make a generator for binary operations that
     have operands of value type [in_type], but result in [k]. *)
 let kbop (k : Fir.Constant.t) ~(in_type : Fir.Type.Prim.t) :
     Op.bop_gen option =
-  (* TODO(@MattWindsor91): make sure the type is right. *)
   Op.bop_with_output
     ~ops:(Fir.Op.Binary.of_input_prim_type in_type)
     (Const k)
 
-(** [ibop t] tries to make a generator for binary operations that take inputs
-    of type [t] and are idempotent. *)
-let ibop (t : Fir.Type.Prim.t) : Op.bop_gen option =
+(** [idem_bop t] tries to make a generator for binary operations that take
+    inputs of type [t] and are idempotent. *)
+let idem_bop (t : Fir.Type.Prim.t) : Op.bop_gen option =
   (* There is always at least one Idem operator: for example, bitwise OR for
      integers and logical OR for Booleans. *)
   Op.bop_with_output ~ops:(Fir.Op.Binary.of_input_prim_type t) Idem
@@ -52,18 +51,57 @@ let arb_bop ~(gen_arb : t Q.Generator.t)
     let%bind p = Expr_util.half gen_arb in
     bop (Fn.compose Expr_util.half k_mu) (One p))
 
-(** [kv_bop ~gen_load ~bop] generates binary operations of the form [x op y],
-    in which one of [x] and [y] is a variable, the other is its known value,
-    and the operation is statically known to produce the wanted constant. *)
-let kv_bop ~(gen_load : (t * Fir.Env.Record.t) Q.Generator.t)
+(** [var_kv_bop ~gen_load ~bop] generates binary operations of the form
+    [x op y], in which one of [x] and [y] is a variable, the other is its
+    known value, and the operation is statically known to produce the wanted
+    constant. *)
+let var_kv_bop ~(gen_load : (t * Fir.Env.Record.t) Q.Generator.t)
     ~(k_mu : Fir.Constant.t -> t Q.Generator.t) ~(bop : Op.bop_gen) :
     t Q.Generator.t =
   Expr_util.gen_kv_refl ~gen_load ~gen_op:(fun l r ->
       bop (Fn.compose Expr_util.half k_mu) (Two (l, r)))
 
-let base_generators (k : Fir.Constant.t) : (float * t Q.Generator.t) list =
+let make_int_kv_equation (var : t) ~(target : int) ~(kv : int) : t =
+  (* We might need to make up any difference between the variable's value and
+     the target constant; this needs some care, but as both constants should
+     be within integer range we shouldn't hit UB. *)
+  let diff = target - kv in
+  Fir.Expression.(
+    if diff = 0 then var
+    else if diff > 0 then Infix.(var + int_lit diff)
+    else Infix.(var - int_lit (Int.abs diff)))
+
+let make_kv_equation (k : Fir.Constant.t) (var : t) (rc : Fir.Env.Record.t) :
+    t =
+  match (k, rc.@?(Fir.Env.Record.known_value)) with
+  | Int target, Some (Int kv) ->
+      make_int_kv_equation var ~target ~kv
+  | Bool b, Some (Bool b') ->
+      (* This duplicates the negation logic used to flip truth generators
+         into falsehood generators and vice versa, but oh well. *)
+      if Bool.equal b b' then var else Fir.Expression.l_not var
+  | _ ->
+      (* This shouldn't happen; the variable should have a known value, and
+         it should be of the same type. *)
+      Fir.Expression.constant k
+
+let gen_kv_equation (k : Fir.Constant.t)
+    ~(gen_load : (t * Fir.Env.Record.t) Q.Generator.t) : t Q.Generator.t =
+  Q.Generator.map gen_load ~f:(fun (var, rc) -> make_kv_equation k var rc)
+
+let base_generators (k : Fir.Constant.t) ~(k_gctx : gctx) :
+    (float * t Q.Generator.t) list =
+  (* Arguably, this should be in the recursive generators, as it indirectly
+     recurses into the constant generator. However, it is useful at the base
+     level to have something that can generate references to variables as
+     well as just references to constants. *)
+  let kveq =
+    Option.value_map k_gctx.load
+      ~f:(fun gen_load -> [(2.0, gen_kv_equation k ~gen_load)])
+      ~default:[]
+  in
   (* TODO(@MattWindsor91): known values of kv_env variables *)
-  [(1.0, Q.Generator.return (Fir.Expression.constant k))]
+  (1.0, Q.Generator.return (Fir.Expression.constant k)) :: kveq
 
 (** [kbop_generators gctx] produces a weighted list of all generators over a
     particular type's generator context that produce binary operations
@@ -74,8 +112,11 @@ let kbop_generators ({kbop; arb; load; _} : gctx)
   List.filter_opt
     [ Option.map kbop ~f:(fun bop -> (3.0, arb_bop ~k_mu ~gen_arb:arb ~bop))
     ; Option.map2 kbop load ~f:(fun bop gen_load ->
-          (5.0, kv_bop ~k_mu ~gen_load ~bop)) ]
+          (5.0, var_kv_bop ~k_mu ~gen_load ~bop)) ]
 
+(** [ternaries ~mu ~k_mu ~arb] generates ternary expressions where the
+    condition is a constant-value Boolean expression from [k_mu], the
+    statically-determined taken branch is [mu], and the other is [arb]. *)
 let ternaries ~(mu : t Q.Generator.t)
     ~(k_mu : Fir.Constant.t -> t Q.Generator.t) ~(arb : t Q.Generator.t) :
     t Q.Generator.t =
@@ -108,7 +149,7 @@ let recursive_generators (k : Fir.Constant.t) (mu : t Q.Generator.t)
       ; Option.map
           (Result.ok (Fir.Constant.as_bool k))
           ~f:(fun b -> (3.0, bool_specifics b ~k_mu))
-      ; Option.map k_gctx.ibop ~f:(fun bop ->
+      ; Option.map k_gctx.idem_bop ~f:(fun bop ->
             ( 3.0
             , Q.Generator.Let_syntax.(
                 let%bind x = Expr_util.half mu and y = Expr_util.half mu in
@@ -155,13 +196,16 @@ let gen (k : Fir.Constant.t) (env : env) ~(int : env -> t Q.Generator.t)
      [mu] where possible. *)
   let rec k_mu (k : Fir.Constant.t) =
     let int_gctx =
-      {arb= int; load= int_load; kbop= kbop k ~in_type:Int; ibop= ibop Int}
+      { arb= int
+      ; load= int_load
+      ; kbop= kbop k ~in_type:Int
+      ; idem_bop= idem_bop Int }
     in
     let bool_gctx =
       { arb= bool
       ; load= bool_load
       ; kbop= kbop k ~in_type:Bool
-      ; ibop= ibop Bool }
+      ; idem_bop= idem_bop Bool }
     in
     let k_gctx =
       match Fir.Constant.prim_type_of k with
@@ -171,7 +215,8 @@ let gen (k : Fir.Constant.t) (env : env) ~(int : env -> t Q.Generator.t)
           bool_gctx
     in
     let k_mu = rec_on_other_constant ~this_k:k ~mu:k_mu in
-    Q.Generator.weighted_recursive_union (base_generators k)
+    Q.Generator.weighted_recursive_union
+      (base_generators k ~k_gctx)
       ~f:(recursive_generators k ~int_gctx ~bool_gctx ~k_gctx ~k_mu)
   in
   k_mu k

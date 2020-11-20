@@ -94,6 +94,10 @@ val has_vars_of_prim_type : t -> prim:Type.Prim.t -> bool
 (** [has_vars_of_prim_type env ~prim] is true provided that [env] has at
     least one variable whose primitive type is [prim]. *)
 
+val variables_of_prim_type : t -> prim:Type.Prim.t -> t
+(** [variables_of_prim_type env ~prim] filters [env], returning a map binding
+    only variables whose prim type is [t]. *)
+
 val has_vars_of_basic_type : t -> basic:Type.Basic.t -> bool
 (** [has_vars_of_basic_type env ~basic] is true provided that [env] has at
     least one variable whose basic type is [basic]. *)

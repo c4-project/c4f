@@ -39,6 +39,9 @@ let prim_type = [%accessor basic_type @> Type.Basic.Access.prim]
 let has_vars_of_prim_type (env : t) ~(prim : Type.Prim.t) : bool =
   Map.exists env ~f:(Type.Prim.eq prim_type ~to_:prim)
 
+let variables_of_prim_type (env : t) ~(prim : Type.Prim.t) : t =
+  Map.filter env ~f:(Type.Prim.eq prim_type ~to_:prim)
+
 let has_vars_of_basic_type (env : t) ~(basic : Type.Basic.t) : bool =
   Map.exists env ~f:(Type.Basic.eq basic_type ~to_:basic)
 
