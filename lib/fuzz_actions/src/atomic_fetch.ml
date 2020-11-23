@@ -166,21 +166,16 @@ module Cond_insert = struct
     Fuzz.Action_types.S
       with type Payload.t = Payload.t Fuzz.Payload_impl.Pathed.t
 
-  module Make_cond (Basic : sig
+  module Make (Basic : sig
     val name_suffix : Common.Id.t
     (** [name_suffix] is the suffix of the action name. *)
 
-    val readme_preamble : string list
-    (** [readme_preamble] is the part of the action readme specific to this
+    val readme_insert : string
+    (** [readme_insert] is the part of the action readme specific to this
         form of the fetch-conditional action. *)
 
     val gen_inner :
-         Fir.Constant.t
-      -> ( Fir.Op.Fetch.t
-         * Fir.Constant.t
-         * Fir.Op.Binary.Rel.t
-         * Fir.Constant.t )
-         Q.Generator.t
+      int -> (Fir.Op.Fetch.t * int * Fir.Op.Binary.Rel.t * int) Q.Generator.t
     (** [gen_inner kv] should, given the known value [kv], produce a fetch
         operator, fetch argument, comparator operator, and target. *)
   end) : S = Storelike.Make (struct
@@ -193,7 +188,14 @@ module Cond_insert = struct
         Common.Id.t list =
       []
 
-    let readme_preamble = Basic.readme_preamble
+    let readme_preamble : string list =
+      [ {| This action inserts an if statement containing a destructive atomic
+         fetch in its condition. |}
+      ; Basic.readme_insert
+      ; {| This action intends to trigger optimisations that replace the
+           fetch-add or fetch-sub with a flag test on an atomic add or sub's
+           final value, as happens on x86 in LLVM. |}
+      ]
 
     let to_cond ({fetch; comparator; target} : t) : Fir.Expression.t =
       Fir.Expression.bop (Rel comparator)
@@ -246,18 +248,59 @@ module Cond_insert = struct
         in
         let obj = Fir.Address.on_address_of_typed_id typed_id in
         let kv =
-          rec_id.@?(Common.C_named.value @> Fir.Env.Record.known_value)
+          rec_id.@?(Common.C_named.value @> Fir.Env.Record.known_value
+                    @> Fir.Constant.Acc.int)
         in
         (* The variable should have a known value, but the type system
            doesn't know this. *)
         let%bind mo = Fir.Mem_order.quickcheck_generator in
         let%map op, arg_k, comparator, target_k =
-          Basic.gen_inner
-            (Option.value kv
-               ~default:(Fir.Constant.zero_of_type typed_id.value))
+          Basic.gen_inner (Option.value kv ~default:0)
         in
-        let arg = Fir.Expression.constant arg_k in
-        let target = Fir.Expression.constant target_k in
+        let arg = Fir.Expression.int_lit arg_k in
+        let target = Fir.Expression.int_lit target_k in
         {fetch= Fir.Atomic_fetch.make ~obj ~arg ~mo ~op; comparator; target})
+  end)
+
+  module Negated_addend : S = Make (struct
+    let name_suffix = Common.Id.of_string "negated-addend"
+
+    let readme_insert : string =
+      {| The generated fetch subtracts from its target the same value that is
+         compared against in the conditional. |}
+
+    let gen_inner (kv : int) :
+        (Fir.Op.Fetch.t * int * Fir.Op.Binary.Rel.t * int) Q.Generator.t =
+      Q.Generator.Let_syntax.(
+        (* TODO(@MattWindsor91): use a cautious add/sub generator of this ilk
+           to create a generic fetch action. *)
+        let%bind rel = Fir.Op.Binary.Rel.quickcheck_generator in
+        let%map v =
+          Q.Generator.int_inclusive 0 (Int.of_int32_trunc Int32.max_value)
+        in
+        (* Trying to avoid an underflow/overflow by always moving away from
+           the sign of the known value. *)
+        if kv >= 0 then (Fir.Op.Fetch.Sub, v, rel, v)
+        else (Add, v, rel, neg v))
+  end)
+
+  module Boundary : S = Make (struct
+    let name_suffix = Common.Id.of_string "boundary"
+
+    let readme_insert : string =
+      {| The generated fetch adds or subtracts 1 from its target and checks
+         whether the result crossed a boundary with regards to 0. |}
+
+    let gen_inner (kv : int) :
+        (Fir.Op.Fetch.t * int * Fir.Op.Binary.Rel.t * int) Q.Generator.t =
+      let not_max = kv < Int.of_int32_trunc Int32.max_value in
+      let not_min = kv > Int.of_int32_trunc Int32.min_value in
+      Q.Generator.of_list
+        (List.filter_map
+           ~f:(fun (cond, op, rel) -> Option.some_if cond (op, 1, rel, 0))
+           [ (not_max, Fir.Op.Fetch.Add, Fir.Op.Binary.Rel.Lt)
+           ; (not_max, Fir.Op.Fetch.Add, Fir.Op.Binary.Rel.Ge)
+           ; (not_min, Fir.Op.Fetch.Sub, Fir.Op.Binary.Rel.Gt)
+           ; (not_min, Fir.Op.Fetch.Sub, Fir.Op.Binary.Rel.Le) ])
   end)
 end

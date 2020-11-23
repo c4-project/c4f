@@ -96,6 +96,34 @@ atomic.cmpxchg.insert.int.succeed:
     The new variable is set up such that it has a known value of 'true'.
     
     This operation generates 'atomic_int's.
+atomic.fetch.insert.cond.boundary:
+  Weight: 15x
+  Summary:
+    This action inserts an if statement containing a destructive atomic fetch
+    in its condition.
+    
+    The generated fetch adds or subtracts 1 from its target and checks
+    whether the result crossed a boundary with regards to 0.
+    
+    This action intends to trigger optimisations that replace the fetch-add
+    or fetch-sub with a flag test on an atomic add or sub's final value, as
+    happens on x86 in LLVM.
+    
+    This operation generates 'atomic_int's.
+atomic.fetch.insert.cond.negated-addend:
+  Weight: 15x
+  Summary:
+    This action inserts an if statement containing a destructive atomic fetch
+    in its condition.
+    
+    The generated fetch subtracts from its target the same value that is
+    compared against in the conditional.
+    
+    This action intends to trigger optimisations that replace the fetch-add
+    or fetch-sub with a flag test on an atomic add or sub's final value, as
+    happens on x86 in LLVM.
+    
+    This operation generates 'atomic_int's.
 atomic.fetch.insert.int.dead:
   Weight: 20x
   Summary:
@@ -108,7 +136,7 @@ atomic.fetch.insert.int.dead:
     
     This operation generates 'atomic_int's.
 atomic.fetch.insert.int.redundant:
-  Weight: 20x
+  Weight: 15x
   Summary:
     Generates a fetch operation on a randomly selected fuzzer-generated
     global variable.
