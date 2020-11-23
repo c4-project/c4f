@@ -11,6 +11,10 @@
 
 open Base
 
+(* TODO(@MattWindsor91): eventually, it would be nice for this to use the
+   standard FIR traversals.  This would probably require a nice monoid for
+   (expression-level) statsets, to allow summing up of expression results. *)
+
 module Statset = struct
   type t =
     { threads: int
@@ -155,6 +159,11 @@ let probe_constant (k : Constant.t) : unit Monad.t =
   Monad.when_m (Constant.is_bool k) ~f:(fun () ->
       up_counter Statset.Fields.literal_bools 1)
 
+module AccM = Accessor.Of_monad (struct 
+  include Monad
+  let apply = `Define_using_bind
+end)
+
 let probe_expr : Expression.t -> unit Monad.t =
   Expression.reduce ~constant:probe_constant ~address:nowt
     ~atomic:probe_atomic_expr
@@ -163,7 +172,7 @@ let probe_expr : Expression.t -> unit Monad.t =
         let%bind () = l in
         r))
     ~uop:(fun _ u -> u)
-    ~ternary:nowt
+    ~ternary:(AccM.iter Expr_ternary.exprs ~f:Fn.id)
 
 let probe_early_out : Early_out.t -> unit Monad.t = function
   | Return ->
@@ -219,6 +228,9 @@ let probe_named_fn (fn : unit Function.t Act_common.C_named.t) : unit Monad.t
 let probe_threads : unit Function.t Act_common.C_named.t list -> unit Monad.t
     =
   MList.iter_m ~f:probe_named_fn
+
+let scrape_expr (e : Expression.t) : Statset.t =
+  fst (Monad.run' (probe_expr e) (Statset.init 0))
 
 let scrape (t : Litmus.Test.t) : Statset.t =
   let ts = Litmus.Test.threads t in

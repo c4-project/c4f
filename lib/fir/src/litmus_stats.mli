@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Extraction of various statistics from a C litmus test. *)
+(** Extraction of various statistics from a FIR litmus test. *)
 
 open Base
 
@@ -27,6 +27,9 @@ module Statset : sig
   (** We can pretty-print statistic outputs. *)
   include Pretty_printer.S with type t := t
 end
+
+val scrape_expr : Expression.t -> Statset.t
+(** [scrape_expr e] extracts partial statistics from the expression [e]. *)
 
 val scrape : Litmus.Test.t -> Statset.t
 (** [scrape test] extracts statistics from [test]. *)
