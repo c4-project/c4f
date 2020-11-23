@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -58,6 +58,10 @@ module Record : sig
   val has_dependencies : t -> bool
   (** [has_dependencies vr] returns true if [vr] has a known value that also
       has dependencies. *)
+
+  val can_safely_modify : t -> bool
+  (** [can_safely_modify vr] returns true if [vr] can safely set this variable
+      to a value other than its known value. *)
 
   val has_writes : t -> bool
   (** [has_writes vr] returns true if [vr] is known to have been written to. *)

@@ -12,27 +12,19 @@
 open Base
 open Import
 
+let lift_prims (ps : Fir.Prim_statement.t list) ~(meta : Fuzz.Metadata.t) : Fuzz.Subject.Statement.t list =
+  List.map ps ~f:(fun value ->
+    Accessor.construct Fir.Statement.prim {meta; value})
+
 (** Lists the restrictions we put on source variables. *)
 let basic_src_restrictions : (Fuzz.Var.Record.t -> bool) list Lazy.t =
   lazy []
 
-module Dst_restriction = struct
-  type t = Fuzz.Var.Record.t -> bool
-
-  let basic (dst_type : Fir.Type.Basic.t) : t list =
-    let bt =
-      Accessor.(Fuzz.Var.Record.Access.type_of @> Fir.Type.Access.basic_type)
-    in
-    [Fir.Type.Basic.eq bt ~to_:dst_type]
-
-  let forbid_dependencies : t =
-    Tx.Fn.(
-      Fn.non Fuzz.Var.Record.has_dependencies
-      (* We don't know whether variables that existed before fuzzing have any
-         dependencies, as we don't do any flow analysis of them. Maybe one
-         day this will be relaxed? *)
-      &&& Fuzz.Var.Record.was_generated)
-end
+let basic_dst_restrictions (dst_type : Fir.Type.Basic.t) : (Fuzz.Var.Record.t -> bool) list =
+  let bt =
+    Accessor.(Fuzz.Var.Record.Access.type_of @> Fir.Type.Access.basic_type)
+  in
+  [Fir.Type.Basic.eq bt ~to_:dst_type]
 
 module Make (B : Storelike_types.Basic) :
   Fuzz.Action_types.S with type Payload.t = B.t Fuzz.Payload_impl.Pathed.t =
@@ -56,7 +48,7 @@ struct
     Fuzz.Var.Map.env_satisfying_all ~predicates ~scope:(Local tid) vars
 
   let dst_restrictions : (Fuzz.Var.Record.t -> bool) list Lazy.t =
-    lazy (Dst_restriction.basic B.dst_type @ B.extra_dst_restrictions)
+    lazy (basic_dst_restrictions B.dst_type @ B.extra_dst_restrictions)
 
   let dst_env (vars : Fuzz.Var.Map.t) ~(tid : int) : Fir.Env.t =
     let predicates = Lazy.force dst_restrictions in
@@ -223,8 +215,7 @@ struct
       (path_flags : Set.M(Fuzz.Path_meta.Flag).t) :
       Fuzz.Subject.Statement.t list =
     let meta = stm_metadata to_insert path_flags in
-    List.map (B.to_stms to_insert) ~f:(fun value ->
-        Accessor.construct Fir.Statement.prim {meta; value})
+    B.to_stms to_insert ~meta
 
   let do_insertions (target : Fuzz.Subject.Test.t)
       ~(path : Fuzz.Path.With_meta.t) ~(to_insert : B.t)

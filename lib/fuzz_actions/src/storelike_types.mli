@@ -74,8 +74,9 @@ module type Basic = sig
   (** [src_exprs s] gets a list of any source expressions used in this
       storelike. *)
 
-  val to_stms : t -> Fir.Prim_statement.t list
-  (** [to_stms s] lifts a storelike into a list of primitives. *)
+  val to_stms : t -> meta:Fuzz.Metadata.t -> Fuzz.Subject.Statement.t list
+  (** [to_stms s ~meta] lifts a storelike into a list of statements, and
+      should apply [meta] to each. *)
 
   include
     Fuzz.Action_types.Basic_meta

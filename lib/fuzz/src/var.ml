@@ -49,6 +49,13 @@ module Record = struct
     | {source= `Existing; _} ->
         false
 
+  let can_safely_modify : t -> bool =
+    (* We don't know whether variables that existed before fuzzing have any
+       dependencies, as we don't do any flow analysis of them. Maybe one
+       day this will be relaxed? *)
+
+    Tx.Fn.(Fn.non has_dependencies &&& was_generated)
+
   let has_known_value (record : t) : bool =
     Option.is_some (known_value record)
 

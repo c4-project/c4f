@@ -52,7 +52,7 @@ module Insert = struct
     let path_filter = Fuzz.Path_filter.zero
 
     let extra_dst_restrictions =
-      [ Storelike.Dst_restriction.forbid_dependencies
+      [ Fuzz.Var.Record.can_safely_modify
       ; Fuzz.Var.Record.has_known_value ]
 
     module Flags = struct
@@ -145,7 +145,7 @@ module Insert = struct
          them as dests here. This might be a bad idea? *)
       (Fir.Atomic_cmpxchg.obj x.cmpxchg).@*(Fir.Address.variable_of)
 
-    let to_stms (x : Inner_payload.t) : Fir.Prim_statement.t list =
+    let to_stms (x : Inner_payload.t) : meta:Fuzz.Metadata.t -> Fuzz.Subject.Statement.t list =
       (* We shouldn't need a specific assignment of the expected variable,
          since, as it gets a dependency put on it, it should keep the
          expected value from its initialiser. *)
@@ -158,6 +158,6 @@ module Insert = struct
             (Common.Litmus_id.variable_name x.out_var)
           @= cmpxchg_expr)
       in
-      [Accessor.construct Fir.Prim_statement.assign cmpxchg_assign]
+      Storelike.lift_prims [Accessor.construct Fir.Prim_statement.assign cmpxchg_assign]
   end)
 end
