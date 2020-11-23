@@ -12,21 +12,25 @@
 open Base
 open Import
 
-let%test_module "expressions" = (module struct
-  let test (exp : Src.Expression.t) : unit =
-    Src.Litmus_stats.(
-      Utils.My_format.fdump Stdio.stdout Statset.pp (scrape_expr exp)
-    )
+let%test_module "expressions" =
+  ( module struct
+    let test (exp : Src.Expression.t) : unit =
+      Src.Litmus_stats.(
+        Utils.My_format.fdump Stdio.stdout Statset.pp (scrape_expr exp))
 
-  let%expect_test "regression: ternaries" =
-    test
-      Src.Expression.(
-        ternary { if_= truth; then_= int_lit 27; else_=
-        atomic_load (Src.Atomic_load.make ~src:(Src.Address.of_variable_str_exn "foo")
-        ~mo:Seq_cst)
-        }
-      );
-      [%expect {|
+    let%expect_test "regression: ternaries" =
+      test
+        Src.Expression.(
+          ternary
+            { if_= truth
+            ; then_= int_lit 27
+            ; else_=
+                atomic_load
+                  (Src.Atomic_load.make
+                     ~src:(Src.Address.of_variable_str_exn "foo")
+                     ~mo:Seq_cst) }) ;
+      [%expect
+        {|
         threads 0
         returns 0
         literals.bool 1
@@ -54,4 +58,4 @@ let%test_module "expressions" = (module struct
         mem-orders.statement.memory_order_release 0
         mem-orders.statement.memory_order_acq_rel 0
         mem-orders.statement.memory_order_seq_cst 0 |}]
-end)
+  end )

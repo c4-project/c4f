@@ -43,26 +43,24 @@ let%test_module "make_type_alist" =
       ; (Common.C_id.of_string "r0", Src.Initialiser.of_int 0) ]
 
     let p0_stms : unit Src.Statement.t list =
-      [ 
-          Src.(
-            Accessor.construct
-              (Statement.prim' @> Prim_statement.assign)
-              Assign.(
-                Lvalue.of_variable_str_exn "r0"
-                @= Expression.atomic_load
-                     (Atomic_load.make
-                        ~src:(Address.of_variable_str_exn "y")
-                        ~mo:Acquire)))
-      ; 
-          Src.(
-            Accessor.construct
-              (Statement.prim' @> Prim_statement.assign)
-              Assign.(
-                Lvalue.of_variable_str_exn "r1"
-                @= Expression.atomic_load
-                     (Atomic_load.make
-                        ~src:(Address.of_variable_str_exn "x")
-                        ~mo:Relaxed))) ]
+      [ Src.(
+          Accessor.construct
+            (Statement.prim' @> Prim_statement.assign)
+            Assign.(
+              Lvalue.of_variable_str_exn "r0"
+              @= Expression.atomic_load
+                   (Atomic_load.make
+                      ~src:(Address.of_variable_str_exn "y")
+                      ~mo:Acquire)))
+      ; Src.(
+          Accessor.construct
+            (Statement.prim' @> Prim_statement.assign)
+            Assign.(
+              Lvalue.of_variable_str_exn "r1"
+              @= Expression.atomic_load
+                   (Atomic_load.make
+                      ~src:(Address.of_variable_str_exn "x")
+                      ~mo:Relaxed))) ]
 
     let p0 : unit Src.Function.t =
       Src.Function.make ~body_decls:p0_decls ~body_stms:p0_stms ~parameters
@@ -71,20 +69,18 @@ let%test_module "make_type_alist" =
     let p1_decls : (Common.C_id.t, Src.Initialiser.t) List.Assoc.t = []
 
     let p1_stms : unit Src.Statement.t list =
-      [ 
-          Accessor.construct
-            Src.(
-              Statement.prim' @> Prim_statement.atomic
-              @> Atomic_statement.store)
+      [ Accessor.construct
+          Src.(
+            Statement.prim' @> Prim_statement.atomic
+            @> Atomic_statement.store)
           (Src.Atomic_store.make
              ~src:(Src.Expression.int_lit 1)
              ~dst:(Src.Address.of_variable_str_exn "x")
              ~mo:Src.Mem_order.Relaxed)
-      ; 
-          Accessor.construct
-            Src.(
-              Statement.prim' @> Prim_statement.atomic
-              @> Atomic_statement.store)
+      ; Accessor.construct
+          Src.(
+            Statement.prim' @> Prim_statement.atomic
+            @> Atomic_statement.store)
           (Src.Atomic_store.make
              ~src:(Src.Expression.int_lit 1)
              ~dst:(Src.Address.of_variable_str_exn "y")

@@ -24,7 +24,10 @@ module Make (B : Storelike_types.Basic) :
 
 (** {1 Helpers for writing storelikes} *)
 
+val lift_prims :
+     Fir.Prim_statement.t list
+  -> meta:Fuzz.Metadata.t
+  -> Fuzz.Subject.Statement.t list
 (** [lift_prims ps ~meta] applies [meta] to every prim in [ps] while lifting
-    them to statements.  This is useful for defining the [to_stms] of a
+    them to statements. This is useful for defining the [to_stms] of a
     storelike that doesn't introduce control flow. *)
-val lift_prims : Fir.Prim_statement.t list -> meta:Fuzz.Metadata.t -> Fuzz.Subject.Statement.t list

@@ -81,7 +81,8 @@ module Insert = struct
         Fir.Initialiser.t Common.C_named.Alist.t =
       []
 
-    let to_stms (x : Fir.Assign.t) : meta:Fuzz.Metadata.t -> Fuzz.Subject.Statement.t list =
+    let to_stms (x : Fir.Assign.t) :
+        meta:Fuzz.Metadata.t -> Fuzz.Subject.Statement.t list =
       Storelike.lift_prims [Accessor.construct Fir.Prim_statement.assign x]
 
     let dst_ids (x : Fir.Assign.t) : Common.C_id.t list =
@@ -106,8 +107,7 @@ module Insert = struct
 
     let path_filter = Fuzz.Path_filter.zero
 
-    let extra_dst_restrictions =
-      [Fuzz.Var.Record.can_safely_modify]
+    let extra_dst_restrictions = [Fuzz.Var.Record.can_safely_modify]
 
     module Flags = struct
       let erase_known_values = true

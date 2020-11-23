@@ -60,8 +60,8 @@ module Record : sig
       has dependencies. *)
 
   val can_safely_modify : t -> bool
-  (** [can_safely_modify vr] returns true if [vr] can safely set this variable
-      to a value other than its known value. *)
+  (** [can_safely_modify vr] returns true if [vr] can safely set this
+      variable to a value other than its known value. *)
 
   val has_writes : t -> bool
   (** [has_writes vr] returns true if [vr] is known to have been written to. *)

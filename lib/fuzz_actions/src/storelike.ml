@@ -12,15 +12,17 @@
 open Base
 open Import
 
-let lift_prims (ps : Fir.Prim_statement.t list) ~(meta : Fuzz.Metadata.t) : Fuzz.Subject.Statement.t list =
+let lift_prims (ps : Fir.Prim_statement.t list) ~(meta : Fuzz.Metadata.t) :
+    Fuzz.Subject.Statement.t list =
   List.map ps ~f:(fun value ->
-    Accessor.construct Fir.Statement.prim {meta; value})
+      Accessor.construct Fir.Statement.prim {meta; value})
 
 (** Lists the restrictions we put on source variables. *)
 let basic_src_restrictions : (Fuzz.Var.Record.t -> bool) list Lazy.t =
   lazy []
 
-let basic_dst_restrictions (dst_type : Fir.Type.Basic.t) : (Fuzz.Var.Record.t -> bool) list =
+let basic_dst_restrictions (dst_type : Fir.Type.Basic.t) :
+    (Fuzz.Var.Record.t -> bool) list =
   let bt =
     Accessor.(Fuzz.Var.Record.Access.type_of @> Fir.Type.Access.basic_type)
   in

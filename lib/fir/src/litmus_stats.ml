@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -12,7 +12,7 @@
 open Base
 
 (* TODO(@MattWindsor91): eventually, it would be nice for this to use the
-   standard FIR traversals.  This would probably require a nice monoid for
+   standard FIR traversals. This would probably require a nice monoid for
    (expression-level) statsets, to allow summing up of expression results. *)
 
 module Statset = struct
@@ -159,8 +159,9 @@ let probe_constant (k : Constant.t) : unit Monad.t =
   Monad.when_m (Constant.is_bool k) ~f:(fun () ->
       up_counter Statset.Fields.literal_bools 1)
 
-module AccM = Accessor.Of_monad (struct 
+module AccM = Accessor.Of_monad (struct
   include Monad
+
   let apply = `Define_using_bind
 end)
 
