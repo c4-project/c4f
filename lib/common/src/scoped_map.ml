@@ -88,3 +88,17 @@ let to_c_id_map (type a) (map : a t) ~(scope : Scope.t) : a Map.M(C_id).t =
 module Make_json (Record : Plumbing.Jsonable_types.S) :
   Plumbing.Jsonable_types.S with type t = Record.t t =
   Plumbing.Jsonable.Make_map (Litmus_id) (Record)
+
+let pp (type a) (pp_val : a Fmt.t) : a t Fmt.t =
+  Fmt.(
+    (* Trying to imitate fmt's record/field setup. *)
+    using (Map.to_alist)
+    (list ~sep:cut 
+      (box ~indent:1
+        (pair ~sep:(any ":@ ")
+          (styled `Yellow Litmus_id.pp)
+          pp_val
+        )
+      )
+    )
+  )

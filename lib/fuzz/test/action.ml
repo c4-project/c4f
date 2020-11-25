@@ -27,34 +27,18 @@ module Test_utils = struct
       Act_litmus_c.Ast.Translation_unit.t Src.State.Monad.t =
     Src.State.Monad.with_vars (reify_test test)
 
+  let pp_vars : Src.Var.Map.t Fmt.t =
+    Fmt.(
+      vbox ~indent:2
+      (any "Vars:" ++ cut ++ Common.Scoped_map.pp Src.Var.Record.pp)
+    )
+
   let run_and_dump_test (action : Src.Subject.Test.t Src.State.Monad.t)
       ~(initial_state : Src.State.t) : unit =
-    let r = Src.State.Monad.(run (action >>= reify_test_m) initial_state) in
-    Fmt.(pr "@[<v>%a@]@." (result ~ok:pp_tu ~error:Error.pp)) r
-
-  let pp_vars :
-      (Act_common.C_id.t, Act_fir.Constant.t option) List.Assoc.t Fmt.t =
-    Fmt.(
-      list ~sep:sp
-        (pair ~sep:(any "=") Act_common.C_id.pp (option Act_fir.Constant.pp)))
-
-  let run_and_dump_vars (action : Src.Subject.Test.t Src.State.Monad.t)
-      ~(predicates : (Src.Var.Record.t -> bool) list)
-      ~(scope : Act_common.Scope.t) ~(initial_state : Src.State.t) : unit =
-    let result =
-      Or_error.(
-        Src.State.Monad.(run' action initial_state)
-        >>| Accessor.(get (Tuple2.fst @> Src.State.vars))
-        >>| Src.Var.Map.env_satisfying_all ~scope ~predicates
-        >>| Map.to_alist
-        >>| Travesty_base_exts.Alist.map_right
-              ~f:(Accessor.get_option Act_fir.Env.Record.known_value))
+    let r = Or_error.(
+      Src.State.Monad.(run' (action >>= reify_test_m) initial_state)
+      >>| (fun (state, tu) -> (tu, state.@(Src.State.vars)))
+    )
     in
-    Fmt.(pr "@[%a@]@." (result ~error:Error.pp ~ok:pp_vars)) result
-
-  let run_and_dump_global_deps
-      (action : Src.Subject.Test.t Src.State.Monad.t)
-      ~(initial_state : Src.State.t) : unit =
-    run_and_dump_vars action ~initial_state ~scope:Act_common.Scope.Global
-      ~predicates:[Src.Var.Record.has_dependencies]
+    Fmt.(pr "@[<v>%a@]@." (result ~ok:(pair ~sep:(cut++cut) pp_tu pp_vars) ~error:Error.pp)) r
 end

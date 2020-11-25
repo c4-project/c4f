@@ -20,6 +20,8 @@ open Base
 module Record : sig
   type t [@@deriving equal]
 
+  include Pretty_printer.S with type t := t
+
   (** {3 Constructors} *)
 
   val make_existing : Act_common.Scope.t -> Act_fir.Type.t -> t

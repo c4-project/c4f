@@ -90,28 +90,34 @@ let%test_module "cmpxchg.make.int.succeed" =
       P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
          bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *gen1,
          atomic_int *gen2, int *gen3, int *gen4, atomic_int *x, atomic_int *y)
-      { loop: ; if (true) {  } else { goto loop; } } |}]
+      { loop: ; if (true) {  } else { goto loop; } }
 
-    let%expect_test "global variables" =
-      Storelike.Test_common.run_and_dump_globals test_action
-        ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
-      [%expect
-        {|
-        a=false b=true bar= barbaz= baz= c= d= e= foo= foobar= gen1= gen2=-55
-        gen3=1998 gen4=-4 x=27 y=53 |}]
-
-    let%expect_test "variables with known values" =
-      Storelike.Test_common.run_and_dump_kvs test_action
-        ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
-      [%expect
-        {|
-          a=false b=true expected=12345 gen2=-55 gen3=1998 gen4=-4 out=true r0=4004
-          r1=8008 x=27 y=53 |}]
-
-    let%expect_test "variables with dependencies" =
-      Storelike.Test_common.run_and_dump_deps test_action
-        ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
-      [%expect {| expected=12345 gen1= |}]
+      Vars:
+        a: bool, =false, @global, generated, []
+        b: atomic_bool, =true, @global, generated, []
+        bar: atomic_int, =?, @global, existing, []
+        barbaz: bool, =?, @global, existing, []
+        baz: atomic_int*, =?, @global, existing, []
+        c: bool, =?, @global, generated, []
+        d: int, =?, @global, existing, []
+        e: int, =?, @global, generated, []
+        foo: int, =?, @global, existing, []
+        foobar: atomic_bool, =?, @global, existing, []
+        gen1: atomic_int*, =?, @global, generated, [Dep;Write]
+        gen2: atomic_int*, =-55, @global, generated, []
+        gen3: int*, =1998, @global, generated, []
+        gen4: int*, =-4, @global, generated, []
+        x: atomic_int*, =27, @global, generated, []
+        y: atomic_int*, =53, @global, generated, []
+        0:expected: int, =12345, @P0, generated, [Dep]
+        0:out: bool, =true, @P0, generated, []
+        0:r0: atomic_int, =4004, @P0, generated, []
+        0:r1: int, =8008, @P0, generated, []
+        1:r0: bool, =?, @P1, existing, []
+        1:r1: int, =?, @P1, existing, []
+        2:r0: int, =?, @P2, existing, []
+        2:r1: bool, =?, @P2, existing, []
+        3:r0: int*, =?, @P3, existing, [] |}]
 
     (* TODO(@MattWindsor91): dedupe this with the above *)
     let payload_dead : Src.Atomic_cmpxchg.Insert.Int_succeed.Payload.t Lazy.t
@@ -129,8 +135,74 @@ let%test_module "cmpxchg.make.int.succeed" =
           (Lazy.force Fuzz_test.Subject.Test_data.test)
           ~payload:(Lazy.force payload_dead))
 
-    let%expect_test "variables with dependencies, in dead-code" =
-      Storelike.Test_common.run_and_dump_deps test_action_dead
+    let%expect_test "in dead-code" =
+      Fuzz_test.Action.Test_utils.run_and_dump_test test_action_dead
         ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
-      [%expect {| |}]
+      [%expect {|
+        void
+        P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+           bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *gen1,
+           atomic_int *gen2, int *gen3, int *gen4, atomic_int *x, atomic_int *y)
+        {
+            int expected = 12345;
+            bool out = true;
+            atomic_int r0 = 4004;
+            int r1 = 8008;
+            atomic_store_explicit(x, 42, memory_order_seq_cst);
+            ;
+            atomic_store_explicit(y, foo, memory_order_relaxed);
+            if (foo == y)
+            { atomic_store_explicit(x, 56, memory_order_seq_cst); kappa_kappa: ; }
+            else
+            {
+                out =
+                atomic_compare_exchange_strong_explicit(gen1, &expected, 54321,
+                                                        memory_order_seq_cst,
+                                                        memory_order_relaxed);
+            }
+            if (false)
+            {
+                atomic_store_explicit(y,
+                                      atomic_load_explicit(x, memory_order_seq_cst),
+                                      memory_order_seq_cst);
+            }
+            do { atomic_store_explicit(x, 44, memory_order_seq_cst); } while (4 ==
+            5);
+            for (r1 = 0; r1 <= 2; r1++)
+            { atomic_store_explicit(x, 99, memory_order_seq_cst); }
+            while (4 == 5) { atomic_store_explicit(x, 44, memory_order_seq_cst); }
+        }
+
+        void
+        P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
+           bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *gen1,
+           atomic_int *gen2, int *gen3, int *gen4, atomic_int *x, atomic_int *y)
+        { loop: ; if (true) {  } else { goto loop; } }
+
+        Vars:
+          a: bool, =false, @global, generated, []
+          b: atomic_bool, =true, @global, generated, []
+          bar: atomic_int, =?, @global, existing, []
+          barbaz: bool, =?, @global, existing, []
+          baz: atomic_int*, =?, @global, existing, []
+          c: bool, =?, @global, generated, []
+          d: int, =?, @global, existing, []
+          e: int, =?, @global, generated, []
+          foo: int, =?, @global, existing, []
+          foobar: atomic_bool, =?, @global, existing, []
+          gen1: atomic_int*, =?, @global, generated, [Write]
+          gen2: atomic_int*, =-55, @global, generated, []
+          gen3: int*, =1998, @global, generated, []
+          gen4: int*, =-4, @global, generated, []
+          x: atomic_int*, =27, @global, generated, []
+          y: atomic_int*, =53, @global, generated, []
+          0:expected: int, =12345, @P0, generated, []
+          0:out: bool, =true, @P0, generated, []
+          0:r0: atomic_int, =4004, @P0, generated, []
+          0:r1: int, =8008, @P0, generated, []
+          1:r0: bool, =?, @P1, existing, []
+          1:r1: int, =?, @P1, existing, []
+          2:r0: int, =?, @P2, existing, []
+          2:r1: bool, =?, @P2, existing, []
+          3:r0: int*, =?, @P3, existing, [] |}]
   end )

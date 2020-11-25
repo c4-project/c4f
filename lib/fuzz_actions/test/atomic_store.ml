@@ -113,26 +113,32 @@ let%test_module "atomic.store.insert.int.normal" =
       P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
          bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *gen1,
          atomic_int *gen2, int *gen3, int *gen4, atomic_int *x, atomic_int *y)
-      { loop: ; if (true) {  } else { goto loop; } } |}]
+      { loop: ; if (true) {  } else { goto loop; } }
 
-        let%expect_test "test int store: global variables" =
-          Storelike.Test_common.run_and_dump_globals test_action
-            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
-          [%expect
-            {|
-            a=false b=true bar= barbaz= baz= c= d= e= foo= foobar= gen1= gen2=-55
-            gen3=1998 gen4=-4 x=27 y=53 |}]
-
-        let%expect_test "test int store: variables with known values" =
-          Storelike.Test_common.run_and_dump_kvs test_action
-            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
-          [%expect
-            {| a=false b=true gen2=-55 gen3=1998 gen4=-4 r0=4004 r1=8008 x=27 y=53 |}]
-
-        let%expect_test "test int store: variables with dependencies" =
-          Storelike.Test_common.run_and_dump_deps test_action
-            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
-          [%expect {| gen2=-55 |}]
+      Vars:
+        a: bool, =false, @global, generated, []
+        b: atomic_bool, =true, @global, generated, []
+        bar: atomic_int, =?, @global, existing, []
+        barbaz: bool, =?, @global, existing, []
+        baz: atomic_int*, =?, @global, existing, []
+        c: bool, =?, @global, generated, []
+        d: int, =?, @global, existing, []
+        e: int, =?, @global, generated, []
+        foo: int, =?, @global, existing, []
+        foobar: atomic_bool, =?, @global, existing, []
+        gen1: atomic_int*, =?, @global, generated, [Write]
+        gen2: atomic_int*, =-55, @global, generated, [Dep]
+        gen3: int*, =1998, @global, generated, []
+        gen4: int*, =-4, @global, generated, []
+        x: atomic_int*, =27, @global, generated, []
+        y: atomic_int*, =53, @global, generated, []
+        0:r0: atomic_int, =4004, @P0, generated, []
+        0:r1: int, =8008, @P0, generated, []
+        1:r0: bool, =?, @P1, existing, []
+        1:r1: int, =?, @P1, existing, []
+        2:r0: int, =?, @P2, existing, []
+        2:r1: bool, =?, @P2, existing, []
+        3:r0: int*, =?, @P3, existing, [] |}]
       end )
 
     let%test_module "store of load to local" =
@@ -177,26 +183,32 @@ let%test_module "atomic.store.insert.int.normal" =
       P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
          bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *gen1,
          atomic_int *gen2, int *gen3, int *gen4, atomic_int *x, atomic_int *y)
-      { loop: ; if (true) {  } else { goto loop; } } |}]
+      { loop: ; if (true) {  } else { goto loop; } }
 
-        let%expect_test "test int store: global variables" =
-          Storelike.Test_common.run_and_dump_globals test_action
-            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
-          [%expect
-            {|
-            a=false b=true bar= barbaz= baz= c= d= e= foo= foobar= gen1=1337 gen2=-55
-            gen3=1998 gen4=-4 x=27 y=53 |}]
-
-        let%expect_test "test int store: variables with known values" =
-          Storelike.Test_common.run_and_dump_kvs test_action
-            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
-          [%expect
-            {| a=false b=true gen1=1337 gen2=-55 gen3=1998 gen4=-4 r1=8008 x=27 y=53 |}]
-
-        let%expect_test "test int store: variables with dependencies" =
-          Storelike.Test_common.run_and_dump_deps test_action
-            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
-          [%expect {| gen2=-55 |}]
+      Vars:
+        a: bool, =false, @global, generated, []
+        b: atomic_bool, =true, @global, generated, []
+        bar: atomic_int, =?, @global, existing, []
+        barbaz: bool, =?, @global, existing, []
+        baz: atomic_int*, =?, @global, existing, []
+        c: bool, =?, @global, generated, []
+        d: int, =?, @global, existing, []
+        e: int, =?, @global, generated, []
+        foo: int, =?, @global, existing, []
+        foobar: atomic_bool, =?, @global, existing, []
+        gen1: atomic_int*, =1337, @global, generated, []
+        gen2: atomic_int*, =-55, @global, generated, [Dep]
+        gen3: int*, =1998, @global, generated, []
+        gen4: int*, =-4, @global, generated, []
+        x: atomic_int*, =27, @global, generated, []
+        y: atomic_int*, =53, @global, generated, []
+        0:r0: atomic_int, =?, @P0, generated, [Write]
+        0:r1: int, =8008, @P0, generated, []
+        1:r0: bool, =?, @P1, existing, []
+        1:r1: int, =?, @P1, existing, []
+        2:r0: int, =?, @P2, existing, []
+        2:r1: bool, =?, @P2, existing, []
+        3:r0: int*, =?, @P3, existing, [] |}]
       end )
 
     let%test_module "store of self-referential fetching" =
@@ -249,26 +261,32 @@ let%test_module "atomic.store.insert.int.normal" =
       P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
          bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *gen1,
          atomic_int *gen2, int *gen3, int *gen4, atomic_int *x, atomic_int *y)
-      { loop: ; if (true) {  } else { goto loop; } } |}]
+      { loop: ; if (true) {  } else { goto loop; } }
 
-        let%expect_test "test int store: global variables" =
-          Storelike.Test_common.run_and_dump_globals test_action
-            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
-          [%expect
-            {|
-            a=false b=true bar= barbaz= baz= c= d= e= foo= foobar= gen1= gen2=-55
-            gen3=1998 gen4=-4 x=27 y=53 |}]
-
-        let%expect_test "test int store: variables with known values" =
-          Storelike.Test_common.run_and_dump_kvs test_action
-            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
-          [%expect
-            {| a=false b=true gen2=-55 gen3=1998 gen4=-4 r0=4004 r1=8008 x=27 y=53 |}]
-
-        let%expect_test "test int store: variables with dependencies" =
-          Storelike.Test_common.run_and_dump_deps test_action
-            ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
-          [%expect {| gen1= |}]
+      Vars:
+        a: bool, =false, @global, generated, []
+        b: atomic_bool, =true, @global, generated, []
+        bar: atomic_int, =?, @global, existing, []
+        barbaz: bool, =?, @global, existing, []
+        baz: atomic_int*, =?, @global, existing, []
+        c: bool, =?, @global, generated, []
+        d: int, =?, @global, existing, []
+        e: int, =?, @global, generated, []
+        foo: int, =?, @global, existing, []
+        foobar: atomic_bool, =?, @global, existing, []
+        gen1: atomic_int*, =?, @global, generated, [Dep;Write]
+        gen2: atomic_int*, =-55, @global, generated, []
+        gen3: int*, =1998, @global, generated, []
+        gen4: int*, =-4, @global, generated, []
+        x: atomic_int*, =27, @global, generated, []
+        y: atomic_int*, =53, @global, generated, []
+        0:r0: atomic_int, =4004, @P0, generated, []
+        0:r1: int, =8008, @P0, generated, []
+        1:r0: bool, =?, @P1, existing, []
+        1:r1: int, =?, @P1, existing, []
+        2:r0: int, =?, @P2, existing, []
+        2:r1: bool, =?, @P2, existing, []
+        3:r0: int*, =?, @P3, existing, [] |}]
       end )
   end )
 
@@ -332,26 +350,32 @@ let%test_module "store.make.int.dead" =
       P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
          bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *gen1,
          atomic_int *gen2, int *gen3, int *gen4, atomic_int *x, atomic_int *y)
-      { loop: ; if (true) {  } else { goto loop; } } |}]
+      { loop: ; if (true) {  } else { goto loop; } }
 
-    let%expect_test "test int store: global variables" =
-      Storelike.Test_common.run_and_dump_globals test_action
-        ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
-      [%expect
-        {|
-        a=false b=true bar= barbaz= baz= c= d= e= foo= foobar= gen1=1337 gen2=-55
-        gen3=1998 gen4=-4 x=27 y=53 |}]
-
-    let%expect_test "test int store: variables with known values" =
-      Storelike.Test_common.run_and_dump_kvs test_action
-        ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
-      [%expect
-        {| a=false b=true gen1=1337 gen2=-55 gen3=1998 gen4=-4 r0=4004 r1=8008 x=27 y=53 |}]
-
-    let%expect_test "test int store: variables with dependencies" =
-      Storelike.Test_common.run_and_dump_deps test_action
-        ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
-      [%expect {| |}]
+      Vars:
+        a: bool, =false, @global, generated, []
+        b: atomic_bool, =true, @global, generated, []
+        bar: atomic_int, =?, @global, existing, []
+        barbaz: bool, =?, @global, existing, []
+        baz: atomic_int*, =?, @global, existing, []
+        c: bool, =?, @global, generated, []
+        d: int, =?, @global, existing, []
+        e: int, =?, @global, generated, []
+        foo: int, =?, @global, existing, []
+        foobar: atomic_bool, =?, @global, existing, []
+        gen1: atomic_int*, =1337, @global, generated, [Write]
+        gen2: atomic_int*, =-55, @global, generated, []
+        gen3: int*, =1998, @global, generated, []
+        gen4: int*, =-4, @global, generated, []
+        x: atomic_int*, =27, @global, generated, []
+        y: atomic_int*, =53, @global, generated, []
+        0:r0: atomic_int, =4004, @P0, generated, []
+        0:r1: int, =8008, @P0, generated, []
+        1:r0: bool, =?, @P1, existing, []
+        1:r1: int, =?, @P1, existing, []
+        2:r0: int, =?, @P2, existing, []
+        2:r1: bool, =?, @P2, existing, []
+        3:r0: int*, =?, @P3, existing, [] |}]
   end )
 
 let%test_module "store.make.int.redundant" =
@@ -418,26 +442,32 @@ let%test_module "store.make.int.redundant" =
       P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
          bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *gen1,
          atomic_int *gen2, int *gen3, int *gen4, atomic_int *x, atomic_int *y)
-      { loop: ; if (true) {  } else { goto loop; } } |}]
+      { loop: ; if (true) {  } else { goto loop; } }
 
-    let%expect_test "test int store: global variables" =
-      Storelike.Test_common.run_and_dump_globals test_action
-        ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
-      [%expect
-        {|
-        a=false b=true bar= barbaz= baz= c= d= e= foo= foobar= gen1=1337 gen2=-55
-        gen3=1998 gen4=-4 x=27 y=53 |}]
-
-    let%expect_test "test int store: variables with known values" =
-      Storelike.Test_common.run_and_dump_kvs test_action
-        ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
-      [%expect
-        {| a=false b=true gen1=1337 gen2=-55 gen3=1998 gen4=-4 r0=4004 r1=8008 x=27 y=53 |}]
-
-    let%expect_test "test int store: variables with dependencies" =
-      Storelike.Test_common.run_and_dump_deps test_action
-        ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
-      [%expect {| |}]
+      Vars:
+        a: bool, =false, @global, generated, []
+        b: atomic_bool, =true, @global, generated, []
+        bar: atomic_int, =?, @global, existing, []
+        barbaz: bool, =?, @global, existing, []
+        baz: atomic_int*, =?, @global, existing, []
+        c: bool, =?, @global, generated, []
+        d: int, =?, @global, existing, []
+        e: int, =?, @global, generated, []
+        foo: int, =?, @global, existing, []
+        foobar: atomic_bool, =?, @global, existing, []
+        gen1: atomic_int*, =1337, @global, generated, [Write]
+        gen2: atomic_int*, =-55, @global, generated, []
+        gen3: int*, =1998, @global, generated, []
+        gen4: int*, =-4, @global, generated, []
+        x: atomic_int*, =27, @global, generated, []
+        y: atomic_int*, =53, @global, generated, []
+        0:r0: atomic_int, =4004, @P0, generated, []
+        0:r1: int, =8008, @P0, generated, []
+        1:r0: bool, =?, @P1, existing, []
+        1:r1: int, =?, @P1, existing, []
+        2:r0: int, =?, @P2, existing, []
+        2:r1: bool, =?, @P2, existing, []
+        3:r0: int*, =?, @P3, existing, [] |}]
   end )
 
 let%test_module "xchgify" =
@@ -490,5 +520,26 @@ let%test_module "xchgify" =
       P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
          bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
          atomic_int *y)
-      { loop: ; if (true) {  } else { goto loop; } } |}]
+      { loop: ; if (true) {  } else { goto loop; } }
+
+      Vars:
+        a: bool, =false, @global, generated, []
+        b: atomic_bool, =true, @global, generated, []
+        bar: atomic_int, =?, @global, existing, []
+        barbaz: bool, =?, @global, existing, []
+        baz: atomic_int*, =?, @global, existing, []
+        c: bool, =?, @global, generated, []
+        d: int, =?, @global, existing, []
+        e: int, =?, @global, generated, []
+        foo: int, =?, @global, existing, []
+        foobar: atomic_bool, =?, @global, existing, []
+        x: atomic_int*, =27, @global, generated, []
+        y: atomic_int*, =53, @global, generated, []
+        0:r0: atomic_int, =4004, @P0, generated, []
+        0:r1: int, =8008, @P0, generated, []
+        1:r0: bool, =?, @P1, existing, []
+        1:r1: int, =?, @P1, existing, []
+        2:r0: int, =?, @P2, existing, []
+        2:r1: bool, =?, @P2, existing, []
+        3:r0: int*, =?, @P3, existing, [] |}]
   end )

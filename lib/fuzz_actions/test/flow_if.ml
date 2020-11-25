@@ -76,13 +76,28 @@ let%test_module "Surround" =
         P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
            bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
            atomic_int *y)
-        { loop: ; if (true) {  } else { goto loop; } } |}]
+        { loop: ; if (true) {  } else { goto loop; } }
 
-        let%expect_test "global dependencies after running" =
-          Fuzz_test.Action.Test_utils.run_and_dump_global_deps action
-            ~initial_state:state ;
-          [%expect {|
-          a=false x=27 |}]
+        Vars:
+          a: bool, =false, @global, generated, [Dep]
+          b: atomic_bool, =true, @global, generated, []
+          bar: atomic_int, =?, @global, existing, []
+          barbaz: bool, =?, @global, existing, []
+          baz: atomic_int*, =?, @global, existing, []
+          c: bool, =?, @global, generated, []
+          d: int, =?, @global, existing, []
+          e: int, =?, @global, generated, []
+          foo: int, =?, @global, existing, []
+          foobar: atomic_bool, =?, @global, existing, []
+          x: atomic_int*, =27, @global, generated, [Dep]
+          y: atomic_int*, =53, @global, generated, []
+          0:r0: atomic_int, =4004, @P0, generated, []
+          0:r1: int, =8008, @P0, generated, []
+          1:r0: bool, =?, @P1, existing, []
+          1:r1: int, =?, @P1, existing, []
+          2:r0: int, =?, @P2, existing, []
+          2:r1: bool, =?, @P2, existing, []
+          3:r0: int*, =?, @P3, existing, [] |}]
       end )
 
     let%test_module "Duplicate" =
@@ -124,13 +139,28 @@ let%test_module "Surround" =
         P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
            bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
            atomic_int *y)
-        { loop: ; if (true) {  } else { goto loop; } } |}]
+        { loop: ; if (true) {  } else { goto loop; } }
 
-        let%expect_test "global dependencies after running" =
-          Fuzz_test.Action.Test_utils.run_and_dump_global_deps action
-            ~initial_state:state ;
-          [%expect {|
-          a=false x=27 |}]
+        Vars:
+          a: bool, =false, @global, generated, [Dep]
+          b: atomic_bool, =true, @global, generated, []
+          bar: atomic_int, =?, @global, existing, []
+          barbaz: bool, =?, @global, existing, []
+          baz: atomic_int*, =?, @global, existing, []
+          c: bool, =?, @global, generated, []
+          d: int, =?, @global, existing, []
+          e: int, =?, @global, generated, []
+          foo: int, =?, @global, existing, []
+          foobar: atomic_bool, =?, @global, existing, []
+          x: atomic_int*, =27, @global, generated, [Dep]
+          y: atomic_int*, =53, @global, generated, []
+          0:r0: atomic_int, =4004, @P0, generated, []
+          0:r1: int, =8008, @P0, generated, []
+          1:r0: bool, =?, @P1, existing, []
+          1:r1: int, =?, @P1, existing, []
+          2:r0: int, =?, @P2, existing, []
+          2:r1: bool, =?, @P2, existing, []
+          3:r0: int*, =?, @P3, existing, [] |}]
 
         let label_direct : Fuzz.Path.With_meta.t =
           Lazy.force Fuzz_test.Subject.Test_data.Path.surround_label_direct
@@ -214,5 +244,26 @@ let%test_module "Invert" =
         P1(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
            bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,
            atomic_int *y)
-        { loop: ; if (true) {  } else { goto loop; } } |}]
+        { loop: ; if (true) {  } else { goto loop; } }
+
+        Vars:
+          a: bool, =false, @global, generated, []
+          b: atomic_bool, =true, @global, generated, []
+          bar: atomic_int, =?, @global, existing, []
+          barbaz: bool, =?, @global, existing, []
+          baz: atomic_int*, =?, @global, existing, []
+          c: bool, =?, @global, generated, []
+          d: int, =?, @global, existing, []
+          e: int, =?, @global, generated, []
+          foo: int, =?, @global, existing, []
+          foobar: atomic_bool, =?, @global, existing, []
+          x: atomic_int*, =27, @global, generated, []
+          y: atomic_int*, =53, @global, generated, []
+          0:r0: atomic_int, =4004, @P0, generated, []
+          0:r1: int, =8008, @P0, generated, []
+          1:r0: bool, =?, @P1, existing, []
+          1:r1: int, =?, @P1, existing, []
+          2:r0: int, =?, @P2, existing, []
+          2:r1: bool, =?, @P2, existing, []
+          3:r0: int*, =?, @P3, existing, [] |}]
   end )

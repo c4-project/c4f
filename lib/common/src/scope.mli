@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -15,6 +15,7 @@
 type t = Local of int | Global [@@deriving compare, equal, sexp, accessors]
 
 include Base.Comparable.S with type t := t
+include Base.Pretty_printer.S with type t := t
 
 val is_global : t -> bool
 (** [is_global x] is true if [x] is global, and false otherwise. *)
