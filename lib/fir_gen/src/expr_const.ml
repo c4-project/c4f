@@ -61,21 +61,47 @@ let var_kv_bop ~(gen_load : (t * Fir.Env.Record.t) Q.Generator.t)
   Expr_util.gen_kv_refl ~gen_load ~gen_op:(fun l r ->
       bop (Fn.compose Expr_util.half k_mu) (Two (l, r)))
 
-let make_int_kv_equation (var : t) ~(target : int) ~(kv : int) : t =
-  (* We might need to make up any difference between the variable's value and
-     the target constant; this needs some care, but as both constants should
-     be within integer range we shouldn't hit UB. *)
-  let diff = target - kv in
-  Fir.Expression.(
-    if diff = 0 then var
-    else if diff > 0 then Infix.(var + int_lit diff)
-    else Infix.(var - int_lit (Int.abs diff)))
+(** [diff_will_underflow x y] checks whether [x - y] will underflow, without
+    explicitly calculating it. *)
+let diff_will_underflow (x : int32) (y : int32) : bool =
+  Int32.(0l < y && x < min_value + y)
+
+(** [diff_will_overflow x y] checks whether [x - y] will overflow, without
+    explicitly calculating it. *)
+let diff_will_overflow (x : int32) (y : int32) : bool =
+  Int32.(y < 0l && max_value + y < x)
+
+let make_int_kv_equation (var : t) ~(target : int32) ~(kv : int32) : t option
+    =
+  Int32.(
+    if target = kv then Some var
+      (* TODO(@MattWindsor91): try to rescue the equation here. *)
+    else if diff_will_underflow target kv then None
+    else if diff_will_overflow target kv then None
+    else
+      (* We might need to make up any difference between the variable's value
+         and the target constant; this needs some care, but as both constants
+         should be within integer range we shouldn't hit UB. *)
+      let diff32 = target - kv in
+      Option.map (to_int diff32) ~f:(fun diff ->
+          Fir.Expression.(
+            if diff32 = min_value || diff32 > 0l then
+              Infix.(var + int_lit diff)
+            else Infix.(var - int_lit (Int.abs diff)))))
 
 let make_kv_equation (k : Fir.Constant.t) (var : t) (rc : Fir.Env.Record.t) :
     t =
   match (k, rc.@?(Fir.Env.Record.known_value)) with
   | Int target, Some (Int kv) ->
-      make_int_kv_equation var ~target ~kv
+      (* TODO(@MattWindsor91): push these int32 conversions further down. *)
+      let kvx =
+        Option.(
+          Let_syntax.(
+            let%bind target = Int32.of_int target in
+            let%bind kv = Int32.of_int kv in
+            make_int_kv_equation var ~target ~kv))
+      in
+      Option.value kvx ~default:(Fir.Expression.constant k)
   | Bool b, Some (Bool b') ->
       (* This duplicates the negation logic used to flip truth generators
          into falsehood generators and vice versa, but oh well. *)
