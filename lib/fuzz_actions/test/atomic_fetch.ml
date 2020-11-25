@@ -179,5 +179,5 @@ let%test_module "fetch.make.int.redundant" =
     let%expect_test "test int fetch: variables with dependencies" =
       Storelike.Test_common.run_and_dump_deps test_action
         ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
-      [%expect {| |}]
+      [%expect {| gen1=1337 |}]
   end )

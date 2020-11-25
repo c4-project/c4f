@@ -15,6 +15,15 @@ open Import
 let prefix_name (rest : Common.Id.t) : Common.Id.t =
   Common.Id.("atomic" @: "fetch" @: rest)
 
+let fetch_dst_ids (x : Fir.Expression.t Fir.Atomic_fetch.t) :
+    Common.C_id.t list =
+  x.@*(Fir.Atomic_fetch.obj @> Fir.Address.variable_of)
+
+let fetch_src_exprs (x : Fir.Expression.t Fir.Atomic_fetch.t) :
+    Fir.Expression.t list =
+  (* Fetches are RMWs, so they form a circular dependency. *)
+  Fir.Expression.address x.obj :: x.@*(Fir.Atomic_fetch.arg)
+
 module Insert = struct
   module type S =
     Fuzz.Action_types.S
@@ -87,13 +96,9 @@ module Insert = struct
         Fir.Initialiser.t Common.C_named.Alist.t =
       []
 
-    let dst_ids (x : Fir.Expression.t Fir.Atomic_fetch.t) :
-        Common.C_id.t list =
-      x.@*(Fir.Atomic_fetch.obj @> Fir.Address.variable_of)
+    let dst_ids = fetch_dst_ids
 
-    let src_exprs (x : Fir.Expression.t Fir.Atomic_fetch.t) :
-        Fir.Expression.t list =
-      x.@*(Fir.Atomic_fetch.arg)
+    let src_exprs = fetch_src_exprs
 
     let recommendations
         (_ : Fir.Expression.t Fir.Atomic_fetch.t Fuzz.Payload_impl.Pathed.t)
@@ -204,13 +209,11 @@ module Cond_insert = struct
 
     let new_locals (_ : t) : Fir.Initialiser.t Common.C_named.Alist.t = []
 
-    let dst_ids ({fetch; _} : t) : Common.C_id.t list =
-      [ fetch.@(Fir.Atomic_fetch.obj @> Fir.Address.lvalue_of
-                @> Fir.Lvalue.variable_of) ]
+    let dst_ids ({fetch; _} : t) : Common.C_id.t list = fetch_dst_ids fetch
 
     let src_exprs ({fetch; target; _} : t) : Fir.Expression.t list =
       (* TODO(@MattWindsor91): is this correct? *)
-      [fetch.@(Fir.Atomic_fetch.arg); target]
+      target :: fetch_src_exprs fetch
 
     let to_stms (p : t) ~(meta : Fuzz.Metadata.t) :
         Fuzz.Subject.Statement.t list =
