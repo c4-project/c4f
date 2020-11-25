@@ -428,11 +428,12 @@ let%test_module "Early_out_loop_end" =
          in another thread. It took hours to debug, and so this test tries to
          avoid the problem happening again. *)
       let wherez = Fuzz_test.Subject.Test_data.Path.insert_once_loop_end in
-      test_on_example_program ~if_cond:
-             Fir.Expression.(
-               Infix.(of_variable_str_exn "r0" == int_lit 4004))
-        wherez Break;
-      [%expect {|
+      test_on_example_program
+        ~if_cond:
+          Fir.Expression.(Infix.(of_variable_str_exn "r0" == int_lit 4004))
+        wherez Break ;
+      [%expect
+        {|
         void
         P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
            bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *x,

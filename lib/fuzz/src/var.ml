@@ -27,19 +27,24 @@ module Record = struct
     let known_value = [%accessor env_record @> Fir.Env.Record.known_value]
 
     let pp_source (f : Formatter.t) (x : t) : unit =
-      (match x.source with
-      | `Existing -> Fmt.(styled `Red (any "existing"))
-      | `Generated -> Fmt.(styled `Green (any "generated"))) f ()
+      ( match x.source with
+      | `Existing ->
+          Fmt.(styled `Red (any "existing"))
+      | `Generated ->
+          Fmt.(styled `Green (any "generated")) )
+        f ()
 
-    let pp_ty : t Fmt.t = 
-      Fmt.(using
-        (Accessor.get (env_record @> Fir.Env.Record.type_of))
-        (of_to_string Fir.Type.to_string))
+    let pp_ty : t Fmt.t =
+      Fmt.(
+        using
+          (Accessor.get (env_record @> Fir.Env.Record.type_of))
+          (of_to_string Fir.Type.to_string))
 
     let pp_kv : t Fmt.t =
-      Fmt.(using
-        (Accessor.get (env_record @> Fir.Env.Record.known_value_opt))
-        (any "=" ++ option ~none:(any "?") Fir.Constant.pp))
+      Fmt.(
+        using
+          (Accessor.get (env_record @> Fir.Env.Record.known_value_opt))
+          (any "=" ++ option ~none:(any "?") Fir.Constant.pp))
 
     let pp_scope : t Fmt.t =
       Fmt.(using (Accessor.get scope) (any "@@" ++ Common.Scope.pp))
@@ -47,9 +52,8 @@ module Record = struct
     let flag_str (x : t) : string =
       String.concat ~sep:";"
         (List.filter_opt
-          [ Option.some_if x.has_dependencies "Dep"
-          ; Option.some_if x.has_writes "Write" 
-          ])
+           [ Option.some_if x.has_dependencies "Dep"
+           ; Option.some_if x.has_writes "Write" ])
 
     let pp : t Fmt.t =
       Fmt.concat ~sep:Fmt.comma
@@ -57,8 +61,7 @@ module Record = struct
         ; pp_kv
         ; pp_scope
         ; pp_source
-        ; Fmt.brackets (Fmt.of_to_string flag_str)
-        ]
+        ; Fmt.brackets (Fmt.of_to_string flag_str) ]
   end
 
   include Access

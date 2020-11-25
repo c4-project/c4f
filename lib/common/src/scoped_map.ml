@@ -92,13 +92,7 @@ module Make_json (Record : Plumbing.Jsonable_types.S) :
 let pp (type a) (pp_val : a Fmt.t) : a t Fmt.t =
   Fmt.(
     (* Trying to imitate fmt's record/field setup. *)
-    using (Map.to_alist)
-    (list ~sep:cut 
-      (box ~indent:1
-        (pair ~sep:(any ":@ ")
-          (styled `Yellow Litmus_id.pp)
-          pp_val
-        )
-      )
-    )
-  )
+    using Map.to_alist
+      (list ~sep:cut
+         (box ~indent:1
+            (pair ~sep:(any ":@ ") (styled `Yellow Litmus_id.pp) pp_val))))

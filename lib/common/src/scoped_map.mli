@@ -89,5 +89,5 @@ module Make_json (Record : Plumbing.Jsonable_types.S) :
 
 val pp : 'a Fmt.t -> 'a t Fmt.t
 (** [pp pp_v] creates a pretty-printer for a scoped map given the
-    pretty-printer [pp_v] for values.  The printer behaves similarly to a
+    pretty-printer [pp_v] for values. The printer behaves similarly to a
     [Fmt.record] printer; consider using a vbox. *)

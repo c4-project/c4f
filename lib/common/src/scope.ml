@@ -25,8 +25,4 @@ let reduce (type a) (l : t * a) (r : t * a) : t * a =
   if Int.(Comparable.lift ~f:fst [%compare: M.t] l r <= 0) then l else r
 
 let pp (f : Formatter.t) (x : t) : unit =
-  match x with
-  | Local i ->
-    Fmt.pf f "P%d" i
-  | Global ->
-    Fmt.pf f "global"
+  match x with Local i -> Fmt.pf f "P%d" i | Global -> Fmt.pf f "global"

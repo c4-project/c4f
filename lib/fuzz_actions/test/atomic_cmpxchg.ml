@@ -138,7 +138,8 @@ let%test_module "cmpxchg.make.int.succeed" =
     let%expect_test "in dead-code" =
       Fuzz_test.Action.Test_utils.run_and_dump_test test_action_dead
         ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state) ;
-      [%expect {|
+      [%expect
+        {|
         void
         P0(bool a, atomic_bool b, atomic_int bar, bool barbaz, atomic_int *baz,
            bool c, int d, int e, int foo, atomic_bool foobar, atomic_int *gen1,
