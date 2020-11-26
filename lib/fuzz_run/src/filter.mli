@@ -15,15 +15,26 @@
     auxiliary input and output concerns things like traces, seeds, and
     verbose output. *)
 
+open Import
+
 (** {1 Auxiliary inputs} *)
 
 module Aux : sig
+  (** {2 Auxiliary output for both filters}
+
+      Note that, while the replay filter returns a trace, it is exactly the
+      same trace as was put in. *)
+  module Output : sig
+    (** Type of auxiliary output. *)
+    type t = {trace: Fuzz.Trace.t; state: Fuzz.State.t}
+  end
+
   (** {2 Auxiliary input for the randomised runner} *)
   module Randomised : sig
     (** Opaque type of auxiliary input to the randomised runner filter. *)
     type t
 
-    val make : ?seed:int -> ?o:Act_common.Output.t -> Config.t -> t
+    val make : ?seed:int -> ?o:Common.Output.t -> Config.t -> t
     (** [make ?seed ?o config] makes an auxiliary input for the randomised
         filter given optional seed [seed], optional outputter [o], and fuzzer
         config [config]. *)
@@ -34,7 +45,7 @@ module Aux : sig
     (** Opaque type of auxiliary input to the replay runner filter. *)
     type t
 
-    val make : ?o:Act_common.Output.t -> Act_fuzz.Trace.t -> t
+    val make : ?o:Common.Output.t -> Act_fuzz.Trace.t -> t
     (** [make ?o trace] makes an auxiliary input for the replay filter given
         optional outputter [o] and trace-to-replay [trace]. *)
   end
@@ -47,7 +58,7 @@ end
 module Randomised :
   Plumbing.Filter_types.S
     with type aux_i = Aux.Randomised.t
-     and type aux_o = Act_fuzz.Trace.t
+     and type aux_o = Aux.Output.t
 
 (** {1 Replaying a trace with the fuzzer}
 
@@ -55,4 +66,4 @@ module Randomised :
 module Replay :
   Plumbing.Filter_types.S
     with type aux_i = Aux.Replay.t
-     and type aux_o = unit
+     and type aux_o = Aux.Output.t

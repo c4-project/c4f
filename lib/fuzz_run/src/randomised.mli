@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -12,14 +12,14 @@
 (** A fuzz runner that applies a random battery of fuzzer actions to a test. *)
 
 open Base
+open Import
 
 val run :
      ?seed:int
-  -> Act_fuzz.Subject.Test.t
+  -> Fuzz.Subject.Test.t
   -> config:Config.t
-  -> Act_fuzz.Trace.t Act_fuzz.Output.t Act_fuzz.State.Monad.t
+  -> Fuzz.Output.t Fuzz.State.Monad.t
 (** [run ?seed test ~config] mutates [test] using a random number generator
     seeded by [seed], and the fuzzer config given by [config]. It returns the
-    output of the fuzzing operation (including the final test, a trace of all
-    actions applied, and the final variable map) inside the main fuzzer state
-    monad. *)
+    output of the fuzzing operation (including the final test, final variable
+    map, and trace of actions applied) inside the main fuzzer state monad. *)

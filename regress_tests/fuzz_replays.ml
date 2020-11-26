@@ -20,15 +20,18 @@ open Core
 let litmus_path_of (trace_path : Fpath.t) : Fpath.t =
   trace_path |> Fpath.rem_ext ~multi:true |> Fpath.add_ext "litmus"
 
-let run_on_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t =
-  ignore file ;
+let run_on_file ~file:(_ : Fpath.t) ~(path : Fpath.t) : unit Or_error.t =
   let litmus_path = litmus_path_of path in
   Or_error.Let_syntax.(
     let%bind trace = Act_fuzz.Trace.load (Plumbing.Input.of_fpath path) in
     let aux = Act_fuzz_run.Filter.Aux.Replay.make trace in
-    Act_fuzz_run.Filter.Replay.run aux
-      (Plumbing.Input.of_fpath litmus_path)
-      Plumbing.Output.stdout)
+    let%map {state; _} =
+      Act_fuzz_run.Filter.Replay.run aux
+        (Plumbing.Input.of_fpath litmus_path)
+        Plumbing.Output.stdout
+    in
+    ignore state ; (* for now *)
+                   ())
 
 let run (test_dir : Fpath.t) : unit Or_error.t =
   let full_dir = Fpath.(test_dir / "fuzz" / "replays" / "") in

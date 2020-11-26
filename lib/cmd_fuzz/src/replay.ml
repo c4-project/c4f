@@ -18,9 +18,13 @@ let run ?(trace_input : string option)
     let%bind trace_in = Plumbing.Input.of_string_opt trace_input in
     let%bind trace = Act_fuzz.Trace.load trace_in in
     let aux_in = Act_fuzz_run.Filter.Aux.Replay.make ~o trace in
-    Common_cmd.Args.With_files.run_filter
-      (module Act_fuzz_run.Filter.Replay)
-      args ~aux_in)
+    (* TODO(@MattWindsor91): state output *)
+    let%map _ =
+      Common_cmd.Args.With_files.run_filter
+        (module Act_fuzz_run.Filter.Replay)
+        args ~aux_in
+    in
+    ())
 
 let readme () : string =
   Act_utils.My_string.format_for_readme

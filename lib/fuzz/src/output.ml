@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -9,6 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Base
+(* TODO(@MattWindsor91): this is quite wasteful - can we roll it into another
+   module? *)
 
-type 'a t = {subject: Subject.Test.t; metadata: 'a} [@@deriving fields, make]
+type t = {subject: Subject.Test.t; trace: Trace.t}

@@ -14,6 +14,10 @@ open Import
 open Stdio
 
 module Aux = struct
+  module Output = struct
+    type t = {trace: Fuzz.Trace.t; state: Fuzz.State.t}
+  end
+
   module Randomised = struct
     type t =
       { seed: int option
@@ -31,21 +35,21 @@ module Aux = struct
 end
 
 let run_on_litmus (test : Fir.Litmus.Test.t) ~(o : Act_common.Output.t)
-    ~(f : Fuzz.Subject.Test.t -> 'm Fuzz.Output.t Fuzz.State.Monad.t) :
-    (Fir.Litmus.Test.t * 'm) Or_error.t =
+    ~(f : Fuzz.Subject.Test.t -> Fuzz.Output.t Fuzz.State.Monad.t) :
+    (Fir.Litmus.Test.t * Aux.Output.t) Or_error.t =
   let subject = Fuzz.Subject.Test.of_litmus test in
   Or_error.Let_syntax.(
     let%bind state = Fuzz.State.of_litmus ~o test in
-    let%bind {vars; _}, output = Fuzz.State.Monad.run' (f subject) state in
-    let%map test' =
-      Fuzz.Subject.Test.to_litmus (Fuzz.Output.subject output) ~vars
+    let%bind state', {subject; trace} =
+      Fuzz.State.Monad.run' (f subject) state
     in
-    (test', Fuzz.Output.metadata output))
+    let%map test' = Fuzz.Subject.Test.to_litmus subject ~vars:state'.vars in
+    (test', {Aux.Output.state= state'; trace}))
 
 let run_with_channels ?(path : string option) (ic : In_channel.t)
     (oc : Out_channel.t) ~(o : Act_common.Output.t)
-    ~(f : Fuzz.Subject.Test.t -> 'm Fuzz.Output.t Fuzz.State.Monad.t) :
-    'm Or_error.t =
+    ~(f : Fuzz.Subject.Test.t -> Fuzz.Output.t Fuzz.State.Monad.t) :
+    Aux.Output.t Or_error.t =
   Or_error.Let_syntax.(
     let%bind test = Litmus_c.Frontend.Fir.load_from_ic ?path ic in
     let%map test', metadata = run_on_litmus ~o ~f test in
@@ -55,12 +59,12 @@ let run_with_channels ?(path : string option) (ic : In_channel.t)
 module Randomised = Plumbing.Filter.Make (struct
   type aux_i = Aux.Randomised.t
 
-  type aux_o = Fuzz.Trace.t
+  type aux_o = Aux.Output.t
 
   let name = "Fuzzer (random)"
 
   let run (ctx : Aux.Randomised.t Plumbing.Filter_context.t)
-      (ic : In_channel.t) (oc : Out_channel.t) : Fuzz.Trace.t Or_error.t =
+      (ic : In_channel.t) (oc : Out_channel.t) : Aux.Output.t Or_error.t =
     let {Aux.Randomised.seed; o; config} = Plumbing.Filter_context.aux ctx in
     let input = Plumbing.Filter_context.input ctx in
     run_with_channels
@@ -78,23 +82,23 @@ let resolve_action (id : Act_common.Id.t) : Fuzz.Action.t Or_error.t =
     >>| Fuzz.Action.With_default_weight.action)
 
 let run_replay (subject : Fuzz.Subject.Test.t) ~(trace : Fuzz.Trace.t) :
-    unit Fuzz.Output.t Fuzz.State.Monad.t =
+    Fuzz.Output.t Fuzz.State.Monad.t =
   Fuzz.State.Monad.(
     Let_syntax.(
-      let%map subject' =
+      let%map subject =
         Fuzz.Trace.run trace subject ~resolve:resolve_action
       in
-      Fuzz.Output.make ~subject:subject' ~metadata:()))
+      {Fuzz.Output.subject; trace}))
 
 module Replay = Plumbing.Filter.Make (struct
   type aux_i = Aux.Replay.t
 
-  type aux_o = unit
+  type aux_o = Aux.Output.t
 
   let name = "Fuzzer (replay)"
 
   let run (ctx : Aux.Replay.t Plumbing.Filter_context.t) (ic : In_channel.t)
-      (oc : Out_channel.t) : unit Or_error.t =
+      (oc : Out_channel.t) : Aux.Output.t Or_error.t =
     let {Aux.Replay.o; trace} = Plumbing.Filter_context.aux ctx in
     let input = Plumbing.Filter_context.input ctx in
     run_with_channels

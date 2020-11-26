@@ -25,12 +25,13 @@ let run ?(seed : int option) ?(trace_output : Plumbing.Output.t option)
   let config = Act_config.Global.fuzz global_config in
   let aux_in = Act_fuzz_run.Filter.Aux.Randomised.make ~o ?seed config in
   Or_error.Let_syntax.(
-    let%bind aux_out =
+    let%bind {trace; _} =
       Common_cmd.Args.With_files.run_filter
         (module Act_fuzz_run.Filter.Randomised)
         args ~aux_in
     in
-    write_trace aux_out ?trace_output)
+    (* TODO(@MattWindsor91): state output *)
+    write_trace trace ?trace_output)
 
 let readme () : string =
   Act_utils.My_string.format_for_readme

@@ -198,18 +198,14 @@ let make_runner_state (seed : int option) (config : Config.t) :
     let%map pool = Config.make_pool config params ~random in
     {Runner_state.random; trace; pool; params})
 
-let make_output (rstate : Runner_state.t) (subject : Fuzz.Subject.Test.t) :
-    Fuzz.Trace.t Fuzz.Output.t =
-  Fuzz.Output.make ~subject ~metadata:rstate.trace
-
 let run ?(seed : int option) (subject : Fuzz.Subject.Test.t)
-    ~(config : Config.t) : Fuzz.Trace.t Fuzz.Output.t Fuzz.State.Monad.t =
+    ~(config : Config.t) : Fuzz.Output.t Fuzz.State.Monad.t =
   Fuzz.State.Monad.(
     Let_syntax.(
       let%bind runner_state =
         Monadic.return (make_runner_state seed config)
       in
-      let%map state, subject' =
+      let%map {trace; _}, subject =
         Runner_state.Monad.run' (mutate_subject subject) runner_state
       in
-      make_output state subject'))
+      {Fuzz.Output.trace; subject}))
