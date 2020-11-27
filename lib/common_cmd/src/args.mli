@@ -131,9 +131,7 @@ module With_files : sig
 
   (** {3 Running filters using the given arguments} *)
   val run_filter :
-       (module Plumbing.Filter_types.S
-          with type aux_i = 'i
-           and type aux_o = 'o)
+       ('i -> Plumbing.Input.t -> Plumbing.Output.t -> 'o Or_error.t)
     -> _ t
     -> aux_in:'i
     -> 'o Or_error.t

@@ -28,7 +28,7 @@ let run ?(seed : int option) ?(state_output : Plumbing.Output.t option)
   let aux_in = Act_fuzz_run.Filter.Aux.Randomised.make ~o ?seed config in
   Or_error.(
     Common_cmd.Args.With_files.run_filter
-      (module Act_fuzz_run.Filter.Randomised)
+      Act_fuzz_run.Filter.Randomised.run
       args ~aux_in
     >>= write_aux ?state_output ?trace_output)
 

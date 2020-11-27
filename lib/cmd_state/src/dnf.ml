@@ -15,7 +15,7 @@ open Act_common
 let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t)
     (_o : Output.t) : unit Or_error.t =
   Common_cmd.Args.With_files.run_filter
-    (module Act_state.Dnf.Filter)
+    Act_state.Dnf.Filter.run
     args ~aux_in:()
 
 let readme () =

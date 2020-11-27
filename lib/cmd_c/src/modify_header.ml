@@ -20,7 +20,7 @@ let run ?(name : [< `Keep | `Replace_with of string] option)
       Act_litmus_c.Header.Change_set.of_args ?name ?postcondition ()
     in
     Common_cmd.Args.With_files.run_filter
-      (module Act_litmus_c.Header.Filters.Modify)
+      Act_litmus_c.Header.Filters.Modify.run
       args ~aux_in:changes)
 
 let readme () : string =
