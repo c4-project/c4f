@@ -62,15 +62,15 @@ let func_signature :
       Or_error.error_string "Pointers not supported yet"
   | {pointer= None; direct= Fun_decl (Id name, param_list)} ->
       Or_error.(param_list |> param_type_list >>| Tuple2.create name)
-  | {pointer= None; direct= Fun_call (Id name, param_list)} as x ->
-    (match param_list with
-     | [] -> Ok (name, [])
-     | _ ->
-      Or_error.error_s
-        [%message
-          "K&R style function parameter lists not supported"
-            ~got:(x.direct : Ast.Direct_declarator.t)]
-    )
+  | {pointer= None; direct= Fun_call (Id name, param_list)} as x -> (
+    match param_list with
+    | [] ->
+        Ok (name, [])
+    | _ ->
+        Or_error.error_s
+          [%message
+            "K&R style function parameter lists not supported"
+              ~got:(x.direct : Ast.Direct_declarator.t)] )
   | x ->
       Or_error.error_s
         [%message
