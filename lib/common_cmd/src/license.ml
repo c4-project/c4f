@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -19,7 +19,7 @@ let license : string Lazy.t =
     (Act_utils.My_string.format_for_readme
        {| The Automagic Compiler Tormentor
 
-         Copyright (c) 2018--2019 Matt Windsor and contributors
+         Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
          ACT itself is licensed under the MIT License. See the LICENSE file in the
          project root for more information.
