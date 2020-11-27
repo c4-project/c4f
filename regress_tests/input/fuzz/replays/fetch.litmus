@@ -1,0 +1,13 @@
+C Fetch
+// Test-bed for inserting atomic fetches.
+//
+// Some fetches need a generated variable, so we can't supply all of the
+// necessary variables in this litmus test.
+
+{}
+
+void P0() {
+}
+
+forall (true)
+

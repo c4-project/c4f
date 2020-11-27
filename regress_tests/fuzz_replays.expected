@@ -1,5 +1,45 @@
 # Fuzz replay tests
 
+## fetch.insert-boundary.trace
+
+```
+C Fetch
+
+{ x = 42; }
+
+void
+P0(atomic_int *x)
+{ if (atomic_fetch_add_explicit(x, 1, memory_order_seq_cst) < 0) {  } }
+
+forall (true)
+
+/*
+Labels
+  {}
+Vars
+  x: atomic_int*, =42, @global, generated, [Dep;Write]
+*/
+```
+## fetch.insert-negated-addend.trace
+
+```
+C Fetch
+
+{ x = 42; }
+
+void
+P0(atomic_int *x)
+{ if (atomic_fetch_sub_explicit(x, 64, memory_order_seq_cst) < 64) {  } }
+
+forall (true)
+
+/*
+Labels
+  {}
+Vars
+  x: atomic_int*, =42, @global, generated, [Dep;Write]
+*/
+```
 ## morisset.1.trace
 
 ```
@@ -94,4 +134,4 @@ Vars
 */
 ```
 
-Ran 2 test(s).
+Ran 4 test(s).

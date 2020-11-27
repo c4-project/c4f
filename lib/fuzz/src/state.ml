@@ -151,5 +151,5 @@ Plumbing.Storable.Make (struct
 
   let store_to_oc ?path:(_ : string option) (state : t)
       ~(dest : Stdio.Out_channel.t) : unit Or_error.t =
-    Ok (Utils.My_format.fdump dest pp state)
+    Ok (Utils.My_format.fdump dest (Fmt.vbox pp) state)
 end)
