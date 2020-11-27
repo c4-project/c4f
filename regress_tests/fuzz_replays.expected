@@ -20,6 +20,15 @@ P1(int *g1, int *g2)
 }
 
 forall (g2 == 42)
+
+/*
+Labels
+  {}
+Vars
+  g1: int*, =?, @global, existing, [Dep]
+  g2: int*, =?, @global, existing, []
+  1:l: int, =?, @P1, generated, [Dep]
+*/
 ```
 ## sbsc.1.trace
 
@@ -64,6 +73,25 @@ P1(int *BNFKW, atomic_int *Is9Qk0n4Rhat, atomic_int *UcoE3gzvYko,
 }
 
 exists (0:a == 0 /\ 1:a == 0)
+
+/*
+Labels
+  {}
+Vars
+  BNFKW: int*, =-123, @global, generated, []
+  Is9Qk0n4Rhat: atomic_int*, =?, @global, generated, [Write]
+  UcoE3gzvYko: atomic_int*, =203657823, @global, generated, []
+  Xv8jOk6fGbC: atomic_int*, =2147483647, @global, generated, []
+  cP: int*, =13, @global, generated, []
+  cQHO4Qc5Vo4: atomic_bool*, =-2147483648, @global, generated, []
+  cQpyaUbj5gR: atomic_bool*, =-521, @global, generated, []
+  kx0hFmyY7lL6: bool*, =-42175, @global, generated, []
+  u: int*, =-29491608, @global, generated, []
+  x: atomic_int*, =?, @global, existing, []
+  y: atomic_int*, =?, @global, existing, []
+  0:a: int, =?, @P0, existing, []
+  1:a: int, =?, @P1, existing, []
+*/
 ```
 
 Ran 2 test(s).

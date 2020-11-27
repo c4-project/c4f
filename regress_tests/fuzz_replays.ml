@@ -25,13 +25,17 @@ let run_on_file ~file:(_ : Fpath.t) ~(path : Fpath.t) : unit Or_error.t =
   Or_error.Let_syntax.(
     let%bind trace = Act_fuzz.Trace.load (Plumbing.Input.of_fpath path) in
     let aux = Act_fuzz_run.Filter.Aux.Replay.make trace in
-    let%map {state; _} =
+    let%bind {state; _} =
       Act_fuzz_run.Filter.Replay.run aux
         (Plumbing.Input.of_fpath litmus_path)
         Plumbing.Output.stdout
     in
-    ignore state ; (* for now *)
-                   ())
+    Stdio.print_endline "" ;
+    Stdio.print_endline "/*" ;
+    let%map () =
+      Act_fuzz.State.Dump.store_to_oc state ~dest:Stdio.Out_channel.stdout
+    in
+    Stdio.print_endline "*/")
 
 let run (test_dir : Fpath.t) : unit Or_error.t =
   let full_dir = Fpath.(test_dir / "fuzz" / "replays" / "") in
