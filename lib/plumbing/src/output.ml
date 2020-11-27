@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -38,7 +38,7 @@ end)
 
 let as_input : t -> Input.t Or_error.t = function
   | File f ->
-      Or_error.return (Input.file f)
+      Ok (Input.file f)
   | x ->
       Or_error.errorf "Can't use %s as an input source" (to_string x)
 
@@ -62,6 +62,9 @@ let with_output (snk : t) ~(f : Out_channel.t -> 'a Or_error.t) :
       with_stdout_output )
     f
 
+let with_opt (snk : t option) ~(f : t -> unit Or_error.t) : unit Or_error.t =
+  match snk with None -> Ok () | Some x -> f x
+
 let with_output_opt (snk : t option) ~(f : Out_channel.t -> unit Or_error.t)
     : unit Or_error.t =
-  match snk with None -> Ok () | Some x -> with_output x ~f
+  with_opt snk ~f:(with_output ~f)

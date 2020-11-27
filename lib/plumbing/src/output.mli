@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -44,6 +44,10 @@ val temp : prefix:string -> ext:string -> t
 val as_input : t -> Input.t Or_error.t
 (** [as_input o] tries to get an {{!Input.t} input} pointing to the same data
     as [o]. *)
+
+val with_opt : t option -> f:(t -> unit Or_error.t) -> unit Or_error.t
+(** [with_opt o ~f] does nothing if [o] is None, and applies [f] if [o] is
+    [Some o']. *)
 
 val with_output : t -> f:(Out_channel.t -> 'a Or_error.t) -> 'a Or_error.t
 (** [with_output o ~f] runs [f] connected to the output channel pointed to by

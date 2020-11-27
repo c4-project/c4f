@@ -3,6 +3,12 @@
 Note that these changes are infrequently maintained and may not tell the
 whole story.
 
+## 2020-Nov-27
+
+- Added new `-state-output` flag to fuzz `run` and `replay` subcommands; this
+  dumps a human-readable representation of the final fuzzer state to the named
+  file.
+
 ## 2020-Nov-12
 
 - Removed backend support, because it is or will be subsumed by the

@@ -145,3 +145,15 @@ module Monad : sig
       [path], and does not add dependencies if [path] is flagged as being
       inside dead code. *)
 end
+
+(** {1 Dumping state representations}
+
+    For debug and testing purposes, we can dump a pretty-printed summary of the
+    fuzzer state.  We can either do this directly using {!pp}, or by using a
+    {!Plumbing} wrapper. *)
+
+include Pretty_printer.S with type t := t
+(** Pretty-printing for states; consider wrapping in [vbox]. *)
+
+module Dump : Plumbing.Storable_types.S with type t = t
+(** Plumbing wrapper for the dumping pretty-printer. *)
