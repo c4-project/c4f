@@ -28,8 +28,8 @@ let run ?(aux_output : Plumbing.Output.t option)
   Or_error.Let_syntax.(
     let%bind aux_out =
       Common_cmd.Args.With_files.run_filter
-        Act_delitmus.Filter.run
-        args ~aux_in:config
+        (Act_delitmus.Filter.run ~config)
+        args
     in
     Plumbing.Output.with_output_opt aux_output ~f:(write_aux aux_out))
 

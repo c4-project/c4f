@@ -36,7 +36,7 @@ let delitmus_file_with_config (config : Act_delitmus.Config.t)
   summarise_config config ;
   Or_error.Let_syntax.(
     let%map output =
-      Act_delitmus.Filter.run config
+      Act_delitmus.Filter.run ~config
         (Plumbing.Input.of_fpath path)
         Plumbing.Output.stdout
     in

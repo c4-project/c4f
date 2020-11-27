@@ -17,8 +17,8 @@ let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o
     let%bind header_input = Plumbing.Input.of_string header_file in
     let%bind header = Act_litmus_c.Header.load header_input in
     Common_cmd.Args.With_files.run_filter
-      Act_litmus_c.Header.Filters.Replace.run
-      args ~aux_in:header)
+      (Act_litmus_c.Header.Filters.Replace.run header)
+      args)
 
 let readme () : string =
   Act_utils.My_string.format_for_readme

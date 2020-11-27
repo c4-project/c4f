@@ -36,7 +36,7 @@ let delitmusify_and_print (test : Act_fir.Litmus.Test.t)
     Act_utils.My_format.fdump oc (Fmt.vbox pp_del) dl ;
     dl)
 
-let run (config : Config.t) (input : Plumbing.Input.t) (output : Plumbing.Output.t)
+let run (input : Plumbing.Input.t) (output : Plumbing.Output.t) ~(config : Config.t) 
   : Output.t Or_error.t =
   Plumbing.Io_helpers.with_input_and_output input output ~f:(fun ic oc ->
     Or_error.Let_syntax.(

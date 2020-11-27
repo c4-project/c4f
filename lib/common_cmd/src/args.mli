@@ -131,13 +131,12 @@ module With_files : sig
 
   (** {3 Running filters using the given arguments} *)
   val run_filter :
-       ('i -> Plumbing.Input.t -> Plumbing.Output.t -> 'o Or_error.t)
+       (Plumbing.Input.t -> Plumbing.Output.t -> 'o Or_error.t)
     -> _ t
-    -> aux_in:'i
     -> 'o Or_error.t
-  (** [run_filter f args ~aux_in] runs the filter [f] with the file input and
-      output arguments specified in [args], and the auxiliary input [aux_in],
-      returning the auxiliary output or errors arising. *)
+  (** [run_filter f args] runs the filter [f] with the file input and
+      output arguments specified in [args], returning auxiliary output or
+      errors arising. *)
 end
 
 (** {2 Miscellaneous argument helpers} *)

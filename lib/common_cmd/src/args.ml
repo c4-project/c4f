@@ -174,11 +174,11 @@ module With_files = struct
   let outfile_sink (args : _ t) : Plumbing.Output.t Or_error.t =
     args |> outfile_raw |> Plumbing.Output.of_string_opt
 
-  let run_filter (type i o)
-      (f : i -> Plumbing.Input.t -> Plumbing.Output.t -> o Or_error.t)
-        (args : _ t) ~(aux_in : i) : o Or_error.t =
+  let run_filter (type o)
+      (f : Plumbing.Input.t -> Plumbing.Output.t -> o Or_error.t)
+        (args : _ t) : o Or_error.t =
     Or_error.Let_syntax.(
       let%bind input = infile_source args in
       let%bind output = outfile_sink args in
-      f aux_in input output)
+      f input output)
 end

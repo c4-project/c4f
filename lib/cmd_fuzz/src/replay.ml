@@ -21,8 +21,8 @@ let run ?(state_output : Plumbing.Output.t option)
        input one. *)
     let%bind {state; _} =
       Common_cmd.Args.With_files.run_filter
-        Act_fuzz_run.Filter.Replay.run
-        args ~aux_in
+        (Act_fuzz_run.Filter.Replay.run aux_in)
+        args
     in
     Plumbing.Output.with_opt state_output ~f:(fun dest ->
         Act_fuzz.State.Dump.store state ~dest))
