@@ -13,9 +13,7 @@ open Core_kernel
 
 let run ?(state_output : Plumbing.Output.t option)
     (args : _ Common_cmd.Args.With_files.t) (o : Act_common.Output.t)
-    ~(trace_input : Plumbing.Input.t) 
-    :
-    unit Or_error.t =
+    ~(trace_input : Plumbing.Input.t) : unit Or_error.t =
   Or_error.Let_syntax.(
     let%bind trace = Act_fuzz.Trace.load trace_input in
     let aux_in = Act_fuzz_run.Filter.Aux.Replay.make ~o trace in
@@ -26,8 +24,8 @@ let run ?(state_output : Plumbing.Output.t option)
         (module Act_fuzz_run.Filter.Replay)
         args ~aux_in
     in
-    Plumbing.Output.with_opt state_output ~f:(fun dest -> Act_fuzz.State.Dump.store state ~dest
-    ))
+    Plumbing.Output.with_opt state_output ~f:(fun dest ->
+        Act_fuzz.State.Dump.store state ~dest))
 
 let readme () : string =
   Act_utils.My_string.format_for_readme
@@ -49,8 +47,8 @@ let command : Command.t =
         flag "state-output"
           (optional Common_cmd.Args.output_type)
           ~doc:
-            "FILE if given, dump a summary of the final fuzzer state to this \
-             filename"
+            "FILE if given, dump a summary of the final fuzzer state to \
+             this filename"
       in
       fun () ->
         Common_cmd.Args.Standard.lift_command

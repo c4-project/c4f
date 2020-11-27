@@ -135,20 +135,21 @@ end
 let pp_labels : Set.M(Common.Litmus_id).t Fmt.t =
   Utils.My_format.pp_set Common.Litmus_id.pp
 
-let pp_map : Var.Map.t Fmt.t =
-  Common.Scoped_map.pp Var.Record.pp
+let pp_map : Var.Map.t Fmt.t = Common.Scoped_map.pp Var.Record.pp
 
 let pp : t Fmt.t =
   Fmt.(
     concat
-      [ vbox ~indent:2 (any "Labels" ++ sp ++ using (Accessor.get labels) pp_labels)
+      [ vbox ~indent:2
+          (any "Labels" ++ sp ++ using (Accessor.get labels) pp_labels)
       ; vbox ~indent:2 (any "Vars" ++ sp ++ using (Accessor.get vars) pp_map)
-      ]
-  )
+      ])
 
-module Dump : Plumbing.Storable_types.S with type t = t = Plumbing.Storable.Make (struct
+module Dump : Plumbing.Storable_types.S with type t = t =
+Plumbing.Storable.Make (struct
   type nonrec t = t
 
-  let store_to_oc ?path:(_ : string option) (state : t) ~(dest: Stdio.Out_channel.t) : unit Or_error.t = 
+  let store_to_oc ?path:(_ : string option) (state : t)
+      ~(dest : Stdio.Out_channel.t) : unit Or_error.t =
     Ok (Utils.My_format.fdump dest pp state)
 end)
