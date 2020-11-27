@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -11,6 +11,6 @@
 
 (** Frontend onto {!Act_fir.Litmus_stats} using the Litmus/C frontend. *)
 
-(** Filter from Litmus/C test files to statistic outputs. *)
-module Filter :
-  Plumbing.Filter_types.S with type aux_i = unit and type aux_o = unit
+val run : Plumbing.Input.t -> Plumbing.Output.t -> unit Base.Or_error.t
+(** [run input output] reads in a Litmus/C test from [input], scrapes its
+    statistics, and dumps the statset to [output]. *)

@@ -37,3 +37,7 @@ val poc : Stdio.Out_channel.t -> ('a, Formatter.t, unit) format -> 'a
 val fdump : Stdio.Out_channel.t -> 'a Fmt.t -> 'a -> unit
 (** [fdump oc ppx x] dumps [x] to [oc] with a newline, using [ppx] to print
     it. *)
+
+val odump : Plumbing.Output.t -> 'a Fmt.t -> 'a -> unit Or_error.t
+(** [odump output ppx x] tries to dump [x] to [output] with a newline, using
+    [ppx] to print it. *)

@@ -134,9 +134,9 @@ module With_files : sig
        (Plumbing.Input.t -> Plumbing.Output.t -> 'o Or_error.t)
     -> _ t
     -> 'o Or_error.t
-  (** [run_filter f args] runs the filter [f] with the file input and
-      output arguments specified in [args], returning auxiliary output or
-      errors arising. *)
+  (** [run_filter f args] runs the filter [f] with the file input and output
+      arguments specified in [args], returning auxiliary output or errors
+      arising. *)
 end
 
 (** {2 Miscellaneous argument helpers} *)

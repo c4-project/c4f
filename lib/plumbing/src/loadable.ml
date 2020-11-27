@@ -66,15 +66,3 @@ module Of_jsonable (B : Jsonable_types.Of) :
           "Could not parse JSON" ~path ~error:(Exn.to_string exn)
             ~json_fragment:(Yojson.Safe.to_string t)]
 end)
-
-module To_filter (L : Loadable_types.S) :
-  Filter_types.S with type aux_i = unit and type aux_o = L.t =
-Filter.Make (struct
-  type aux_i = unit
-
-  type aux_o = L.t
-
-  let name = "(loading)"
-
-  let run _ctx ic _oc = L.load_from_ic ic
-end)

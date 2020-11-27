@@ -30,25 +30,14 @@ let convert_states (entries : Set.M(Entry).t) :
 let convert : Observation.t -> string Act_litmus.Postcondition.t =
   Fn.compose convert_states Observation.states
 
-let print_postcondition (oc : Stdio.Out_channel.t) :
-    string Act_litmus.Postcondition.t -> unit =
-  Act_utils.My_format.fdump oc
+let print_postcondition (output : Plumbing.Output.t) :
+    string Act_litmus.Postcondition.t -> unit Or_error.t =
+  Act_utils.My_format.odump output
     (Fmt.hbox (Act_litmus.Postcondition.pp ~pp_const:String.pp))
 
-module Filter :
-  Plumbing.Filter_types.S with type aux_i = unit and type aux_o = unit =
-Plumbing.Filter.Make (struct
-  let name = "DNF"
-
-  type aux_i = unit
-
-  type aux_o = unit
-
-  let run (ctx : unit Plumbing.Filter_context.t) (ic : Stdio.In_channel.t)
-      (oc : Stdio.Out_channel.t) : unit Or_error.t =
-    let path = Plumbing.Filter_context.input_path_string ctx in
+module Filter = struct
+  let run (input : Plumbing.Input.t) (output : Plumbing.Output.t) :
+      unit Or_error.t =
     Or_error.(
-      ic
-      |> Observation.load_from_ic ~path
-      >>| convert >>| print_postcondition oc)
-end)
+      input |> Observation.load >>| convert >>= print_postcondition output)
+end

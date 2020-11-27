@@ -13,7 +13,11 @@ open Base
 
 (** C delitmusifying as a filter over Litmus files. *)
 
-val run : Plumbing.Input.t -> Plumbing.Output.t -> config:Config.t -> Output.t Or_error.t
-(** [run i o ~config] runs a delitmus pass over the Litmus arriving through [i],
-    behaving according to [config], outputting to [o], and returning auxiliary
-    output. *)
+val run :
+     Plumbing.Input.t
+  -> Plumbing.Output.t
+  -> config:Config.t
+  -> Output.t Or_error.t
+(** [run i o ~config] runs a delitmus pass over the Litmus arriving through
+    [i], behaving according to [config], outputting to [o], and returning
+    auxiliary output. *)

@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -138,25 +138,11 @@ let make (aux : Aux.t) : Act_fir.Litmus.Test.t Or_error.t =
     in
     Act_fir.Litmus.Test.make ~header ~threads)
 
-module Filter :
-  Plumbing.Filter_types.S with type aux_i = unit and type aux_o = unit =
-Plumbing.Filter.Make (struct
-  type aux_i = unit
-
-  type aux_o = unit
-
-  let name = "make-stub"
-
-  let run (ctx : aux_i Plumbing.Filter_context.t) (ic : Stdio.In_channel.t)
-      (oc : Stdio.Out_channel.t) : aux_o Or_error.t =
-    Or_error.Let_syntax.(
-      let%bind aux =
-        Aux.load_from_ic
-          ~path:(Plumbing.Filter_context.input_path_string ctx)
-          ic
-      in
-      let%map stub = make aux in
-      Act_utils.My_format.fdump oc
-        (Fmt.vbox Act_litmus_c.Reify.pp_litmus)
-        stub)
-end)
+module Filter = struct
+  let run (input : Plumbing.Input.t) (output : Plumbing.Output.t) :
+      unit Or_error.t =
+    Or_error.(
+      input |> Aux.load >>= make
+      >>= Act_utils.My_format.odump output
+            (Fmt.vbox Act_litmus_c.Reify.pp_litmus))
+end

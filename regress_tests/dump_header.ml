@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -13,10 +13,9 @@
 
 open Core
 
-let dump_header_of_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t
-    =
-  ignore file ;
-  Act_litmus_c.Header.Filters.Dump.run ()
+let dump_header_of_file ~file:(_ : Fpath.t) ~(path : Fpath.t) :
+    unit Or_error.t =
+  Act_litmus_c.Header.Filters.run_dump
     (Plumbing.Input.of_fpath path)
     Plumbing.Output.stdout
 

@@ -15,9 +15,9 @@ let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o
     ~(header_file : string) : unit Or_error.t =
   Or_error.Let_syntax.(
     let%bind header_input = Plumbing.Input.of_string header_file in
-    let%bind header = Act_litmus_c.Header.load header_input in
+    let%bind replacement = Act_litmus_c.Header.load header_input in
     Common_cmd.Args.With_files.run_filter
-      (Act_litmus_c.Header.Filters.Replace.run header)
+      (Act_litmus_c.Header.Filters.run_replace ~replacement)
       args)
 
 let readme () : string =

@@ -33,3 +33,7 @@ let poc (type a) (oc : Stdio.Out_channel.t) :
 
 let fdump (type a) (oc : Stdio.Out_channel.t) (fmt : a Fmt.t) : a -> unit =
   poc oc "@[%a@]@." fmt
+
+let odump (type a) (output : Plumbing.Output.t) (fmt : a Fmt.t) (x : a) :
+    unit Or_error.t =
+  Plumbing.Output.with_output output ~f:(fun oc -> Ok (fdump oc fmt x))

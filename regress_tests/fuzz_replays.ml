@@ -26,7 +26,7 @@ let run_on_file ~file:(_ : Fpath.t) ~(path : Fpath.t) : unit Or_error.t =
     let%bind trace = Act_fuzz.Trace.load (Plumbing.Input.of_fpath path) in
     let aux = Act_fuzz_run.Filter.Aux.Replay.make trace in
     let%bind {state; _} =
-      Act_fuzz_run.Filter.Replay.run aux
+      Act_fuzz_run.Filter.run_replay ~aux
         (Plumbing.Input.of_fpath litmus_path)
         Plumbing.Output.stdout
     in

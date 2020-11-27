@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -36,7 +36,9 @@ val convert : Observation.t -> string Act_litmus.Postcondition.t
 
 (** {1 As a filter} *)
 
-(** Wraps {!convert} up as a filter that parses an observation JSON file,
-    then emits a Litmus postcondition. *)
-module Filter :
-  Plumbing.Filter_types.S with type aux_i = unit and type aux_o = unit
+module Filter : sig
+  val run : Plumbing.Input.t -> Plumbing.Output.t -> unit Or_error.t
+  (** [run input output] parses an observation JSON file from [input], uses
+      [convert] to turn it into a postcondition, and them emits it on
+      [output]. *)
+end

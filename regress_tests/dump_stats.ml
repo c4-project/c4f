@@ -13,10 +13,9 @@
 
 open Core
 
-let dump_stats_of_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t
-    =
-  ignore file ;
-  Act_litmus_c.Dump_stats.Filter.run ()
+let dump_stats_of_file ~file:(_ : Fpath.t) ~(path : Fpath.t) :
+    unit Or_error.t =
+  Act_litmus_c.Dump_stats.run
     (Plumbing.Input.of_fpath path)
     Plumbing.Output.stdout
 

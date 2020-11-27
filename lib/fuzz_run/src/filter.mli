@@ -15,6 +15,7 @@
     auxiliary input and output concerns things like traces, seeds, and
     verbose output. *)
 
+open Base
 open Import
 
 (** {1 Auxiliary inputs} *)
@@ -51,19 +52,20 @@ module Aux : sig
   end
 end
 
-(** {1 Running the fuzzer with random actions}
+val run_randomised :
+     Plumbing.Input.t
+  -> Plumbing.Output.t
+  -> aux:Aux.Randomised.t
+  -> Aux.Output.t Or_error.t
+(** [run_randomised input output ~aux] runs the randomised runner over a
+    litmus test coming from [input], outputting the new test to [output], and
+    pulling various bits of side-data from [aux]. *)
 
-    Here, the 'rest' parameter to the auxiliary input is an optional seed to
-    use to start the random number generator. *)
-module Randomised :
-  Plumbing.Filter_types.S
-    with type aux_i = Aux.Randomised.t
-     and type aux_o = Aux.Output.t
-
-(** {1 Replaying a trace with the fuzzer}
-
-    Here, the 'rest' parameter to the auxiliary input is the trace to replay. *)
-module Replay :
-  Plumbing.Filter_types.S
-    with type aux_i = Aux.Replay.t
-     and type aux_o = Aux.Output.t
+val run_replay :
+     Plumbing.Input.t
+  -> Plumbing.Output.t
+  -> aux:Aux.Replay.t
+  -> Aux.Output.t Or_error.t
+(** [run_replay input output ~aux] replays a trace runner over a litmus test
+    coming from [input], outputting the new test to [output], and pulling the
+    trace and various bits of side-data from [aux]. *)

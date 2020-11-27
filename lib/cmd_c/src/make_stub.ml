@@ -9,13 +9,11 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Core
+open Core_kernel
 
 let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o :
     unit Or_error.t =
-  Common_cmd.Args.With_files.run_filter
-    (Act_delitmus.Stub.Filter.run ())
-    args
+  Common_cmd.Args.With_files.run_filter Act_delitmus.Stub.Filter.run args
 
 let readme () : string =
   Act_utils.My_string.format_for_readme

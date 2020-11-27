@@ -176,7 +176,7 @@ module With_files = struct
 
   let run_filter (type o)
       (f : Plumbing.Input.t -> Plumbing.Output.t -> o Or_error.t)
-        (args : _ t) : o Or_error.t =
+      (args : _ t) : o Or_error.t =
     Or_error.Let_syntax.(
       let%bind input = infile_source args in
       let%bind output = outfile_sink args in

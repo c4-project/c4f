@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -65,57 +65,25 @@ end
 
 module Filters = struct
   (* replace-header and modify-header share similar boilerplate. *)
-  let lift_on_header (ctx : 'aux_i Plumbing.Filter_context.t)
-      (ic : Stdio.In_channel.t) (oc : Stdio.Out_channel.t)
-      ~(f : 'aux_i -> t -> t) : unit Or_error.t =
-    let aux = Plumbing.Filter_context.aux ctx in
-    Or_error.Let_syntax.(
-      let%bind test =
-        Frontend.Fir.load_from_ic ic
-          ~path:(Plumbing.Filter_context.input_path_string ctx)
-      in
-      let%map test' =
-        Fir.Litmus.Test.try_map_header test ~f:(fun header ->
-            Or_error.return (f aux header))
-      in
-      Act_utils.My_format.fdump oc (Fmt.vbox Reify.pp_litmus) test')
+  let lift_on_header (input : Plumbing.Input.t) (output : Plumbing.Output.t)
+      ~(f : t -> t) : unit Or_error.t =
+    Or_error.(
+      input |> Frontend.Fir.load
+      >>= Fir.Litmus.Test.try_map_header ~f:(fun header -> Ok (f header))
+      >>= Act_utils.My_format.odump output (Fmt.vbox Reify.pp_litmus))
 
-  module Dump = Plumbing.Filter.Make (struct
-    let name = "dump-header"
+  let run_dump (input : Plumbing.Input.t) (output : Plumbing.Output.t) :
+      unit Or_error.t =
+    Or_error.(
+      input |> Frontend.Fir.load >>| Fir.Litmus.Test.header
+      >>= store ~dest:output)
 
-    type aux_i = unit
+  let run_modify (input : Plumbing.Input.t) (output : Plumbing.Output.t)
+      ~(changes : Change_set.t) : unit Or_error.t =
+    lift_on_header input output ~f:(fun header ->
+        Act_litmus.Header.Change_set.apply changes ~header)
 
-    type aux_o = unit
-
-    let run (ctx : aux_i Plumbing.Filter_context.t) (ic : Stdio.In_channel.t)
-        (oc : Stdio.Out_channel.t) : aux_o Or_error.t =
-      Or_error.Let_syntax.(
-        let%bind test =
-          Frontend.Fir.load_from_ic ic
-            ~path:(Plumbing.Filter_context.input_path_string ctx)
-        in
-        store_to_oc ~dest:oc (Fir.Litmus.Test.header test))
-  end)
-
-  module Modify = Plumbing.Filter.Make (struct
-    let name = "modify-header"
-
-    type aux_i = Change_set.t
-
-    type aux_o = unit
-
-    let run =
-      lift_on_header ~f:(fun changes header ->
-          Act_litmus.Header.Change_set.apply changes ~header)
-  end)
-
-  module Replace = Plumbing.Filter.Make (struct
-    let name = "replace-header"
-
-    type aux_i = t
-
-    type aux_o = unit
-
-    let run = lift_on_header ~f:Fn.const
-  end)
+  let run_replace (input : Plumbing.Input.t) (output : Plumbing.Output.t)
+      ~(replacement : t) : unit Or_error.t =
+    lift_on_header input output ~f:(Fn.const replacement)
 end

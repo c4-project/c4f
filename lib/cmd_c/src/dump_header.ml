@@ -13,8 +13,7 @@ open Core
 
 let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o :
     unit Or_error.t =
-  Common_cmd.Args.With_files.run_filter
-    (Act_litmus_c.Header.Filters.Dump.run ())
+  Common_cmd.Args.With_files.run_filter Act_litmus_c.Header.Filters.run_dump
     args
 
 let readme () : string =

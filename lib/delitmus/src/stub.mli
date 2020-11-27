@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -24,6 +24,8 @@ val make : Aux.t -> Act_fir.Litmus.Test.t Or_error.t
 (** [make aux] tries to produce a stub for the delitmus run described by
     [aux]. *)
 
-(** [Filter] is [make] as a filter from aux JSON files to tests. *)
-module Filter :
-  Plumbing.Filter_types.S with type aux_i = unit and type aux_o = unit
+module Filter : sig
+  val run : Plumbing.Input.t -> Plumbing.Output.t -> unit Or_error.t
+  (** [run input output] runs [make] over the auxiliary input incoming as
+      JSON over [input], dumping the stub to [output]. *)
+end

@@ -16,12 +16,12 @@ let run ?(state_output : Plumbing.Output.t option)
     ~(trace_input : Plumbing.Input.t) : unit Or_error.t =
   Or_error.Let_syntax.(
     let%bind trace = Act_fuzz.Trace.load trace_input in
-    let aux_in = Act_fuzz_run.Filter.Aux.Replay.make ~o trace in
+    let aux = Act_fuzz_run.Filter.Aux.Replay.make ~o trace in
     (* There's no point exposing the trace here; it'll be the same as the
        input one. *)
     let%bind {state; _} =
       Common_cmd.Args.With_files.run_filter
-        (Act_fuzz_run.Filter.Replay.run aux_in)
+        (Act_fuzz_run.Filter.run_replay ~aux)
         args
     in
     Plumbing.Output.with_opt state_output ~f:(fun dest ->

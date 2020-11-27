@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -45,17 +45,22 @@ end
     These filters make use of the JSON form of {!t}. *)
 
 module Filters : sig
-  (** A filter for extracting the header of a FIR Litmus test. *)
-  module Dump :
-    Plumbing.Filter_types.S with type aux_i = unit and type aux_o = unit
+  val run_dump : Plumbing.Input.t -> Plumbing.Output.t -> unit Or_error.t
+  (** [run_dump input output] reads a Litmus/C test in through [input], and
+      dumps the header in JSON form on [output]. *)
 
-  (** A filter for modifying parts of the header of a FIR Litmus test. *)
-  module Modify :
-    Plumbing.Filter_types.S
-      with type aux_i = Change_set.t
-       and type aux_o = unit
+  val run_modify :
+       Plumbing.Input.t
+    -> Plumbing.Output.t
+    -> changes:Change_set.t
+    -> unit Or_error.t
+  (** [run_modify input output ~change_set] reads a Litmus/C test in through
+      [input], makes the changes mentioned in [change_set] to its header,
+      then dumps the modified test on [output]. *)
 
-  (** A filter for replacing the header of a FIR Litmus test. *)
-  module Replace :
-    Plumbing.Filter_types.S with type aux_i = t and type aux_o = unit
+  val run_replace :
+    Plumbing.Input.t -> Plumbing.Output.t -> replacement:t -> unit Or_error.t
+  (** [run_modify input output ~replacement] reads a Litmus/C test in through
+      [input], replaces its header with [replacement], then dumps the
+      modified test on [output]. *)
 end
