@@ -17,7 +17,7 @@ forall (true)
 Labels
   {}
 Vars
-  x: atomic_int*, =42, @global, generated, [Dep;Write]
+  x: atomic_int*, =?, @global, generated, [Dep;Write]
 */
 ```
 ## fetch.insert-negated-addend.trace
@@ -37,7 +37,7 @@ forall (true)
 Labels
   {}
 Vars
-  x: atomic_int*, =42, @global, generated, [Dep;Write]
+  x: atomic_int*, =?, @global, generated, [Dep;Write]
 */
 ```
 ## morisset.1.trace

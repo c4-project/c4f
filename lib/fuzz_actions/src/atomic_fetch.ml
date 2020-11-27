@@ -230,7 +230,8 @@ module Cond_insert = struct
       [Fuzz.Var.Record.has_known_value; Fuzz.Var.Record.can_safely_modify]
 
     module Flags = struct
-      let erase_known_values = false
+      (* We're destructively modifying the objects. *)
+      let erase_known_values = true
 
       (* This is to prevent underflows/overflows, as we specifically
          calculate the possible addends against a known value. *)
