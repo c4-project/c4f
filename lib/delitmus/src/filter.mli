@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -9,9 +9,11 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** C delitmusifying as a filter. *)
+open Base
 
-include
-  Plumbing.Filter_types.S
-    with type aux_i = Config.t
-     and type aux_o = Output.t
+(** C delitmusifying as a filter over Litmus files. *)
+
+val run : Config.t -> Plumbing.Input.t -> Plumbing.Output.t -> Output.t Or_error.t
+(** [run config i o] runs a delitmus pass over the Litmus arriving through [i],
+    behaving according to [config], outputting to [o], and returning auxiliary
+    output. *)

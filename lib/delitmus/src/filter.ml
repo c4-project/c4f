@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -36,21 +36,13 @@ let delitmusify_and_print (test : Act_fir.Litmus.Test.t)
     Act_utils.My_format.fdump oc (Fmt.vbox pp_del) dl ;
     dl)
 
-include Pb.Filter.Make (struct
-  type aux_i = Config.t
-
-  type aux_o = Output.t
-
-  let name = "delitmus"
-
-  let run (ctx : Config.t Pb.Filter_context.t) ic oc : aux_o Or_error.t =
-    let config = Pb.Filter_context.aux ctx in
-    let input = Pb.Filter_context.input ctx in
+let run (config : Config.t) (input : Plumbing.Input.t) (output : Plumbing.Output.t)
+  : Output.t Or_error.t =
+  Plumbing.Io_helpers.with_input_and_output input output ~f:(fun ic oc ->
     Or_error.Let_syntax.(
       let%bind vast =
         Act_litmus_c.Frontend.Fir.load_from_ic
           ~path:(Pb.Input.to_string input)
           ic
       in
-      delitmusify_and_print vast oc ~config)
-end)
+      delitmusify_and_print vast oc ~config))
