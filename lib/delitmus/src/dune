@@ -2,11 +2,11 @@
 
 (library
  (name act_delitmus)
- (public_name act.delitmus)
+ (public_name c4f.delitmus)
  (synopsis "Automagic Compiler Tormentor: C de-litmusifier")
  (preprocess
   (pps ppx_deriving.std ppx_yojson_conv ppx_jane))
  (modules_without_implementation runner_types)
  (libraries sexplib0 result base base.caml core_kernel accessor accessor_base
-   stdio fmt yojson travesty travesty.base_exts plumbing act.litmus_c act.fir
-   act.common act.litmus act.utils))
+   stdio fmt yojson travesty travesty.base_exts plumbing c4f.litmus_c c4f.fir
+   c4f.common c4f.litmus c4f.utils))

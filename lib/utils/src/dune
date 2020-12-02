@@ -2,7 +2,7 @@
 
 (library
  (name act_utils)
- (public_name act.utils)
+ (public_name c4f.utils)
  (synopsis "Automagic Compiler Tormentor: non-ACT-specific utility modules")
  (modules_without_implementation enum_types fs_types reader_types)
  (preprocess

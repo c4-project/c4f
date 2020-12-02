@@ -2,7 +2,7 @@
 
 (library
  (name plumbing)
- (public_name act.plumbing)
+ (public_name c4f.plumbing)
  (synopsis "Modules for building Unix-style filters and other pipework")
  (modules_without_implementation convert_types io_types jsonable_types
    loadable_types storable_types)

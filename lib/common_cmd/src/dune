@@ -7,4 +7,4 @@
  (preprocess
   (pps ppx_jane))
  (libraries yojson sexplib0 stdio base.caml core_kernel core fpath fmt
-   fmt.tty unix travesty.base_exts plumbing act.common act.config act.utils))
+   fmt.tty unix travesty.base_exts plumbing c4f.common c4f.config c4f.utils))

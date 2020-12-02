@@ -2,7 +2,7 @@
 
 (library
  (name act_fir)
- (public_name act.fir)
+ (public_name c4f.fir)
  (synopsis
    "Automagic Compiler Tormentor: Fuzzable Intermediate Representation")
  (modules_without_implementation class_types env_types expression_types types
@@ -10,5 +10,5 @@
  (preprocess
   (pps ppx_deriving.std ppx_accessor ppx_jane))
  (libraries splittable_random sexplib0 stdio base.caml accessor accessor_base
-   fmt travesty travesty.base_exts travesty.containers plumbing act.common
-   act.litmus act.utils yojson))
+   fmt travesty travesty.base_exts travesty.containers plumbing c4f.common
+   c4f.litmus c4f.utils yojson))

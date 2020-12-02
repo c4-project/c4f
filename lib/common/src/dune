@@ -2,10 +2,10 @@
 
 (library
  (name act_common)
- (public_name act.common)
+ (public_name c4f.common)
  (synopsis "Automagic Compiler Tormentor: common infrastructure")
  (preprocess
   (pps ppx_deriving.std ppx_accessor ppx_jane))
  (libraries bin_prot bin_prot.shape sexplib sexplib0 stdio fmt
    shell.string_extended core_kernel base base.caml accessor accessor_base
-   travesty travesty.base_exts act.utils plumbing yojson))
+   travesty travesty.base_exts c4f.utils plumbing yojson))

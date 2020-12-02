@@ -5,8 +5,8 @@
   (pps ppx_jane))
  (libraries result yojson ppx_yojson_conv_lib sexplib0 base.caml core_kernel
    core stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
-   act.fir act.common act.config act.delitmus act.fuzz act.litmus act.state
-   act.utils))
+   c4f.fir c4f.common c4f.config c4f.delitmus c4f.fuzz c4f.litmus c4f.state
+   c4f.utils))
 
 (executables
  (names config config_failures delitmus dump_header fuzz_replays
@@ -17,8 +17,8 @@
   (pps ppx_jane))
  (libraries result yojson ppx_yojson_conv_lib sexplib0 base.caml core_kernel
    core stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
-   act.fir act.common act.config act.delitmus act.litmus_c act.fuzz
-   act.fuzz_run act.litmus act.state act.utils common))
+   c4f.fir c4f.common c4f.config c4f.delitmus c4f.litmus_c c4f.fuzz
+   c4f.fuzz_run c4f.litmus c4f.state c4f.utils common))
 
 (rule
  (deps
@@ -104,7 +104,7 @@
   (pps ppx_jane))
  (libraries result yojson ppx_yojson_conv_lib sexplib0 base.caml core_kernel
    core stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
-   act.fir act.common act.config act.litmus act.utils act.litmus_c common)
+   c4f.fir c4f.common c4f.config c4f.litmus c4f.utils c4f.litmus_c common)
  (action
   (run %{test} input))
  (deps
@@ -117,7 +117,7 @@
   (pps ppx_jane))
  (libraries result yojson ppx_yojson_conv_lib sexplib0 base.caml core_kernel
    core stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
-   act.fir act.common act.config act.litmus act.litmus_c act.utils common)
+   c4f.fir c4f.common c4f.config c4f.litmus c4f.litmus_c c4f.utils common)
  (action
   (run %{test} input))
  (deps

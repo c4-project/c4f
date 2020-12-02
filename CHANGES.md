@@ -3,6 +3,12 @@
 Note that these changes are infrequently maintained and may not tell the
 whole story.
 
+## 2020-Dec-02
+
+- Renamed the OPAM package from `act` to `c4f`, also renaming any public
+  libraries from `act.X` to `c4f.X`.  (This does not change the name of the
+  binaries yet; they are still `act_X`.)
+
 ## 2020-Nov-27
 
 - Added new `-state-output` flag to fuzz `run` and `replay` subcommands; this

@@ -2,11 +2,11 @@
 
 (library
  (name act_fuzz_actions)
- (public_name act.fuzz_actions)
+ (public_name c4f.fuzz_actions)
  (synopsis "Automagic Compiler Tormentor: FIR fuzzer action implementations")
  (preprocess
   (pps ppx_deriving.std ppx_jane))
  (modules_without_implementation storelike_types)
  (libraries sexplib0 base base.caml stdio splittable_random accessor
-   accessor_base travesty travesty.base_exts act.common act.litmus act.utils
-   act.fuzz act.fir act.fir_gen))
+   accessor_base travesty travesty.base_exts c4f.common c4f.litmus c4f.utils
+   c4f.fuzz c4f.fir c4f.fir_gen))

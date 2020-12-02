@@ -9,5 +9,5 @@
  (libraries ppx_inline_test.config expect_test_helpers_core splittable_random
    ppx_expect.common ppx_expect.config ppx_expect.config_types sexplib0 stdio
    base.caml core_kernel accessor accessor_base fmt travesty
-   travesty.base_exts plumbing act.common act.config act.litmus act.utils
-   act.litmus_c act.fir))
+   travesty.base_exts plumbing c4f.common c4f.config c4f.litmus c4f.utils
+   c4f.litmus_c c4f.fir))

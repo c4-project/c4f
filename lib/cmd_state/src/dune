@@ -7,4 +7,4 @@
  (preprocess
   (pps ppx_jane))
  (libraries stdio base base.caml core_kernel core fmt plumbing common_cmd
-   act.common act.config act.state act.utils))
+   c4f.common c4f.config c4f.state c4f.utils))

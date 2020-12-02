@@ -7,4 +7,4 @@
  (preprocess
   (pps ppx_jane))
  (libraries sexplib0 stdio base base.caml core_kernel core fmt fpath plumbing
-   shell common_cmd act.common act.config act.fuzz act.fuzz_run act.utils))
+   shell common_cmd c4f.common c4f.config c4f.fuzz c4f.fuzz_run c4f.utils))

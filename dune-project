@@ -1,7 +1,6 @@
 (lang dune 2.0)
-(name act)
+(name c4f)
 
-; Doesn't work well with the latest jane street, so disabling for now.
 (implicit_transitive_deps false)
 (generate_opam_files true)
 (formatting (enabled_for dune ocaml))
@@ -11,13 +10,13 @@
 (license MIT)
 (maintainers "Matt Windsor <m.windsor@imperial.ac.uk>")
 (authors "Matt Windsor <m.windsor@imperial.ac.uk>")
-(source (github MattWindsor91/act))
+(source (github MattWindsor91/c4f))
 (documentation "https://automagic-compiler-tormentor.readthedocs.io")
 
 (package
-  (name act)
-  (synopsis "Automagic compiler tormentor")
-  (description "'act' is a toolkit for testing memory-model behaviour of compilers.")
+  (name c4f)
+  (synopsis "Metamorphic fuzzer for C litmus tests")
+  (description "'c4f' (the 'C Compiler Concurrency Checker' fuzzer) is a toolkit for randomly expanding C litmus tests in a semantics-refining way.")
   (depends
     (ocaml (and (>= 4.09) (< 4.11)))
     (accessor (and (>= v0.14) (< v0.15)))
