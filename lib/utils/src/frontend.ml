@@ -13,40 +13,12 @@ open Core_kernel
 open Sedlexing
 
 module Error_range = struct
-  module M = struct
-    open Lexing
+  open Lexing
 
-    type t = position * position
+  type t = position * position
 
-    let from_file (from, _) = from.pos_fname
-
-    let from_line (from, _) = from.pos_lnum
-
-    let until_line (_, until) = until.pos_lnum
-
-    let column lpos = lpos.pos_cnum - lpos.pos_bol + 1
-
-    let from_column (from, _) = column from
-
-    let until_column (_, until) = column until
-
-    let file_from_until pos =
-      (* assuming both positions refer to the same file *)
-      ( from_file pos
-      , ((from_line pos, from_column pos), (until_line pos, until_column pos))
-      )
-
-    let colon = Fmt.(const char ':')
-
-    let pp = Fmt.(using file_from_until (pair ~sep:colon string text_loc))
-
-    let to_string = Fmt.to_to_string pp
-
-    let of_string _ = failwith "unimplemented"
-  end
-
-  include M
-  include Sexpable.Of_stringable (M)
+    (* range 'ends in a newline character', and also contains ':' *)
+  let to_string = MenhirLib.LexerUtil.range
 end
 
 exception LexError of string * Error_range.t
@@ -68,19 +40,24 @@ end
 
 module Make (B : Basic) : Plumbing.Loadable_types.S with type t = B.ast =
 struct
-  let fail (_lexbuf : lexbuf) = function
-    | B.I.HandlingError env ->
-        let state = B.I.current_state_number env in
-        let details = B.message state in
-        Or_error.error_s
-          [%message
-            "Parse error"
-              ~position:(B.I.positions env : Error_range.t)
-              ~details]
-    | _ ->
-        assert false
+  let env : B.ast B.I.checkpoint -> B.ast B.I.env =
+    function
+    | B.I.HandlingError env -> env
+    | _ -> assert false
 
-  let loop (lexbuf : lexbuf) checkpoint =
+  let err (pos : Error_range.t) (ty : string) (details : string) : 'a Or_error.t =
+    Or_error.errorf "%s%s error: %s" (Error_range.to_string pos) ty details
+
+  let fail (_lexbuf : lexbuf) (cp : B.ast B.I.checkpoint) : B.ast Or_error.t =
+    let env = env cp in
+    let state = B.I.current_state_number env in
+    let position : Error_range.t = B.I.positions env in
+    (* Can't easily use the error reporting stuff here, as we often load from
+       stdin? *)
+    let details = B.message state in
+    err position "parse" details
+
+  let loop (lexbuf : lexbuf) (checkpoint : B.ast B.I.checkpoint) : B.ast Or_error.t =
     let supplier = Sedlexing.with_tokenizer B.lex lexbuf in
     B.I.loop_handle Or_error.return (fail lexbuf) supplier checkpoint
 
@@ -88,9 +65,7 @@ struct
     let _, cur_pos = Sedlexing.lexing_positions lexbuf in
     try loop lexbuf (B.parse cur_pos)
     with LexError (details, position) ->
-      Or_error.error_s
-        [%message
-          "Lexing error" ~position:(position : Error_range.t) ~details]
+      err position "lexing" details
 
   module Load : Plumbing.Loadable_types.Basic with type t = B.ast = struct
     type t = B.ast

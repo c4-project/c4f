@@ -12,7 +12,7 @@
 open Sedlexing
 
 module Error_range : sig
-  type t = Lexing.position * Lexing.position [@@deriving sexp_of]
+  type t = Lexing.position * Lexing.position
 end
 
 exception LexError of string * Error_range.t

@@ -4,27 +4,26 @@
 
 ```
 ("While reading from file:" input/config/failures/fuzz_empty_action.conf
- ("Parse error"
-  (position input/config/failures/fuzz_empty_action.conf:2.9-3.1)
-  (details "Expected an action identifier after `action`\n")))
+  "File \"input/config/failures/fuzz_empty_action.conf\", line 2, characters 8-9:\
+ \nparse error: Expected an action identifier after `action`\
+ \n")
 ```
 ## fuzz_empty_weight.conf
 
 ```
 ("While reading from file:" input/config/failures/fuzz_empty_weight.conf
- ("Parse error"
-  (position input/config/failures/fuzz_empty_weight.conf:2.33-3.1)
-  (details "Expected an integer weight after `weight`\n")))
+  "File \"input/config/failures/fuzz_empty_weight.conf\", line 2, characters 32-33:\
+ \nparse error: Expected an integer weight after `weight`\
+ \n")
 ```
 ## unknown_block.conf
 
 ```
 ("While reading from file:" input/config/failures/unknown_block.conf
- ("Parse error" (position input/config/failures/unknown_block.conf:1.1-1.5)
-  (details
-    "Expected a valid top-level item; for example:\
-   \n- `fuzz { ... }`\
-   \n")))
+  "File \"input/config/failures/unknown_block.conf\", line 1, characters 0-4:\
+ \nparse error: Expected a valid top-level item; for example:\
+ \n- `fuzz { ... }`\
+ \n")
 ```
 
 Ran 3 test(s).

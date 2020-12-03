@@ -13,9 +13,6 @@
 
 open Sedlexing
 
-val skip_ml_comment : lexbuf -> unit
-(** [skip_ml_comment lexbuf] lexes an ML-style comment, discarding it. *)
-
 val skip_c_comment : lexbuf -> unit
 (** [skip_c_comment lexbuf] lexes a C-style block comment, discarding it. *)
 

@@ -29,7 +29,7 @@
     (core (and (>= v0.14) (< v0.15)))
     (fmt (and (>= 0.8.7) (< 0.9)))
     (fpath (and (>= 0.7.2) (< 0.8)))
-    (menhir (>= 20200211))
+    (menhir (>= 20201201))
     (sedlex (and (>= 2.1) (< 3)))
     (shell (and (>= v0.14) (< v0.15)))
     (textutils_kernel (and (>= v0.14) (< v0.15)))
