@@ -17,7 +17,7 @@ module Error_range = struct
 
   type t = position * position
 
-    (* range 'ends in a newline character', and also contains ':' *)
+  (* range 'ends in a newline character', and also contains ':' *)
   let to_string = MenhirLib.LexerUtil.range
 end
 
@@ -40,15 +40,18 @@ end
 
 module Make (B : Basic) : Plumbing.Loadable_types.S with type t = B.ast =
 struct
-  let env : B.ast B.I.checkpoint -> B.ast B.I.env =
-    function
-    | B.I.HandlingError env -> env
-    | _ -> assert false
+  let env : B.ast B.I.checkpoint -> B.ast B.I.env = function
+    | B.I.HandlingError env ->
+        env
+    | _ ->
+        assert false
 
-  let err (pos : Error_range.t) (ty : string) (details : string) : 'a Or_error.t =
+  let err (pos : Error_range.t) (ty : string) (details : string) :
+      'a Or_error.t =
     Or_error.errorf "%s%s error: %s" (Error_range.to_string pos) ty details
 
-  let fail (_lexbuf : lexbuf) (cp : B.ast B.I.checkpoint) : B.ast Or_error.t =
+  let fail (_lexbuf : lexbuf) (cp : B.ast B.I.checkpoint) : B.ast Or_error.t
+      =
     let env = env cp in
     let state = B.I.current_state_number env in
     let position : Error_range.t = B.I.positions env in
@@ -57,15 +60,15 @@ struct
     let details = B.message state in
     err position "parse" details
 
-  let loop (lexbuf : lexbuf) (checkpoint : B.ast B.I.checkpoint) : B.ast Or_error.t =
+  let loop (lexbuf : lexbuf) (checkpoint : B.ast B.I.checkpoint) :
+      B.ast Or_error.t =
     let supplier = Sedlexing.with_tokenizer B.lex lexbuf in
     B.I.loop_handle Or_error.return (fail lexbuf) supplier checkpoint
 
   let parse (lexbuf : lexbuf) =
     let _, cur_pos = Sedlexing.lexing_positions lexbuf in
     try loop lexbuf (B.parse cur_pos)
-    with LexError (details, position) ->
-      err position "lexing" details
+    with LexError (details, position) -> err position "lexing" details
 
   module Load : Plumbing.Loadable_types.Basic with type t = B.ast = struct
     type t = B.ast
