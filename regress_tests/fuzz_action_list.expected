@@ -60,8 +60,8 @@ cap.threads:
     threads will be created, but no threads will be removed to meet the
     cap.
     
-    If targeting Litmus7, consider setting the cap to the number of logical
-    cores in the target machine.
+    If targeting Litmus7, consider capping to the number of logical cores in
+    the target machine.
 dead.early-out-loop-end.wrap:
   Value: 3:1
   Summary:
@@ -84,8 +84,8 @@ var.make.cap:
     more variables will be created, but no variables will be removed to meet
     the cap.
     
-    If targeting particular ISA simulators, consider setting the cap to be
-    the number of parameters that can be passed by register in that ISA.
+    If targeting particular ISA simulators, consider capping to the number of
+    parameters that can be passed by register in that ISA.
 var.make.global:
   Value: 1:1
   Summary:
