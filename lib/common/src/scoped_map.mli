@@ -57,6 +57,9 @@ val filter : 'a t -> f:('a -> bool) -> 'a t
 
 (** {2 Projections of scoped maps} *)
 
+val length : _ t -> int
+(** [length map] gets the number of entries in [map]. *)
+
 val build_set :
      (module Comparable.S with type t = 'e and type comparator_witness = 'w)
   -> 'a t

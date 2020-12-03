@@ -41,6 +41,10 @@ val thread_cap_param : Common.Id.t
 (** [thread_cap_param] names the parameter that specifies the maximum number
     of threads that should exist in a fuzzed test. *)
 
+val var_cap_param : Common.Id.t
+(** [var_cap_param] names the parameter that specifies the maximum number of
+    variables that should exist in a fuzzed test. *)
+
 (** {1 Flag keys} *)
 
 val make_global_flag : Common.Id.t

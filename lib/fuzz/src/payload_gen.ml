@@ -24,12 +24,12 @@ module Context = struct
   let params = [%accessor actx @> Availability.Context.params]
 end
 
-include Utils.Reader.Fix_context (Act_utils.Reader.With_errors) (Context)
+include Utils.Reader.Fix_context (Utils.Reader.With_errors) (Context)
 
 let lift_acc acc = lift (Accessor.get acc)
 
 let lift_state (f : State.t -> 'a) : 'a t =
-  lift (fun {actx= {state; _}; _} -> f state)
+  lift_acc Accessor.(Context.state @> getter f)
 
 let lift_opt_gen (type a) (g : a Opt_gen.t) : a t =
   Inner.lift (fun {action_id; random; _} ->

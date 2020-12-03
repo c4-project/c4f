@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -12,6 +12,7 @@
 (** Availability checks and helpers for constructing them. *)
 
 open Base
+open Import
 
 (** {1 Context for availability checks}
 
@@ -29,20 +30,29 @@ end
 (** {1 Availability checks} *)
 
 (** Reader monad useful for constructing availability checks. *)
-module M :
-  Act_utils.Reader_types.S
-    with type 'r Inner.t = 'r Or_error.t
-     and type ctx = Context.t
+module M : sig
+  include
+    Utils.Reader_types.S
+      with type 'r Inner.t = 'r Or_error.t
+       and type ctx = Context.t
+
+  val lift_acc :
+    (unit -> 'a -> 'b, unit -> ctx -> 'c, [> getter]) Accessor.t -> 'a t
+  (** [lift_acc acc] is shorthand for [lift (Accessor.get acc)]. *)
+
+  val lift_state : (State.t -> 'a) -> 'a t
+  (** [lift_state f] lifts a function from states to values into the check
+      monad. *)
+
+  val param : Common.Id.t -> int t
+  (** [param id] retrieves the integer fuzzer parameter with type [id]. *)
+end
 
 (** Type of availability checks. *)
 type t = bool M.t
 
 (** Availability checks can be composed together monoidically. *)
 include Container.Summable with type t := t
-
-val lift_state : (State.t -> 'a) -> 'a M.t
-(** [lift_state f] lifts a function from states to values into the check
-    monad. *)
 
 (** {2 Common checks} *)
 

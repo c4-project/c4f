@@ -33,6 +33,8 @@ let map_record (type a) (m : a t) ~(f : a -> a) ~(id : Litmus_id.t) : a t =
 
 let filter (type a) : a t -> f:(a -> bool) -> a t = Map.filter
 
+let length (type a) : a t -> int = Map.length
+
 let build_set (type a e w)
     (module Carrier : Comparable.S
       with type t = e

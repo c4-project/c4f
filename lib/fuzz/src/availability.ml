@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -17,10 +17,18 @@ module Context = struct
   [@@deriving accessors, make]
 end
 
-module M = Utils.Reader.Fix_context (Utils.Reader.With_errors) (Context)
+module M = struct
+  include Utils.Reader.Fix_context (Utils.Reader.With_errors) (Context)
 
-let lift_state (f : State.t -> 'a) : 'a M.t =
-  M.lift (fun {state; _} -> f state)
+  let lift_acc acc = lift (Accessor.get acc)
+
+  let lift_state (f : State.t -> 'a) : 'a t =
+    lift_acc Accessor.(Context.state @> getter f)
+
+  let param (id : Common.Id.t) : int t =
+    let* ps = lift_acc Context.params in
+    Inner.return (Param_map.get_param ps ~id)
+end
 
 type t = bool M.t
 
