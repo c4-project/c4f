@@ -26,11 +26,15 @@ let thread_cap_param : Common.Id.t =
      depends on it having this name. *)
   Common.Id.("cap" @: "threads" @: empty)
 
+let var_make (rest : Common.Id.t) : Common.Id.t =
+  Common.Id.("var" @: "make" @: rest)
+
+let var_cap_param : Common.Id.t = Common.Id.(var_make ("cap" @: empty))
+
 let unsafe_weaken_orders_flag : Common.Id.t =
   Common.Id.("mem" @: "unsafe-weaken-orders" @: empty)
 
-let make_global_flag : Common.Id.t =
-  Common.Id.("var" @: "make" @: "global" @: empty)
+let make_global_flag : Common.Id.t = Common.Id.(var_make ("global" @: empty))
 
 let wrap_early_out_flag : Common.Id.t =
   Common.Id.("dead" @: "early-out-loop-end" @: "wrap" @: empty)
@@ -50,6 +54,19 @@ let use_recommendation_flag : Common.Id.t =
 let make_param_spec_map (xs : (Common.Id.t, 'a Param_spec.t) List.Assoc.t) :
     'a Param_spec.t Map.M(Common.Id).t =
   xs |> Map.of_alist_exn (module Common.Id)
+
+let resource_cap_description ?(caveat : string option)
+    ?(details : string option) (plural : string) : string =
+  Printf.sprintf
+    {| Caps the maximum number of %s%s that the fuzzer can construct during a
+       fuzz run.
+
+       If the input to the fuzzer already has more %s than the cap, no more
+       %s will be created, but no %s will be removed to meet the cap.%s|}
+    plural
+    (Option.value_map ~f:(fun x -> "(" ^ x ^ ")") ~default:"" caveat)
+    plural plural plural
+    (Option.value_map ~f:(fun x -> "\n\n" ^ x) ~default:"" details)
 
 let param_map : Param_spec.Int.t Map.M(Common.Id).t Lazy.t =
   lazy
@@ -73,18 +90,19 @@ let param_map : Param_spec.Int.t Map.M(Common.Id).t Lazy.t =
        ; ( thread_cap_param
          , Param_spec.make ~default:16
              ~description:
-               {|
-              Caps the maximum number of threads that the fuzzer can construct
-              during a fuzz run.
-
-              If the input to the fuzzer already has more threads than the cap,
-              no more threads will be created, but no threads will be removed
-              to meet the cap.
-
-              If fuzzing to target Litmus7, the cap should be set as the number
-              of logical cores in the target machine.
-            |}
-         ) ])
+               (resource_cap_description "threads"
+                  ~details:
+                    "If targeting Litmus7, consider capping to the number \
+                     of logical cores in the target machine.") )
+       ; ( var_cap_param
+         , Param_spec.make ~default:20
+             ~description:
+               (resource_cap_description "variables"
+                  ~caveat:"across all scopes"
+                  ~details:
+                    "If targeting particular ISA simulators, consider \
+                     capping to the number of parameters that can be passed \
+                     by register in that ISA.") ) ])
 
 let flag_map : Param_spec.Bool.t Map.M(Common.Id).t Lazy.t =
   lazy

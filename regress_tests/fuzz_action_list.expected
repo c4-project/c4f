@@ -60,8 +60,8 @@ cap.threads:
     threads will be created, but no threads will be removed to meet the
     cap.
     
-    If fuzzing to target Litmus7, the cap should be set as the number of
-    logical cores in the target machine.
+    If targeting Litmus7, consider setting the cap to the number of logical
+    cores in the target machine.
 dead.early-out-loop-end.wrap:
   Value: 3:1
   Summary:
@@ -74,6 +74,18 @@ mem.unsafe-weaken-orders:
   Summary:
     If 'true', lets actions that would normally strengthen memory orders
     weaken them too (possibly changing semantics in undesirable ways).
+var.make.cap:
+  Value: 20
+  Summary:
+    Caps the maximum number of variables(across all scopes) that the fuzzer
+    can construct during a fuzz run.
+    
+    If the input to the fuzzer already has more variables than the cap, no
+    more variables will be created, but no variables will be removed to meet
+    the cap.
+    
+    If targeting particular ISA simulators, consider setting the cap to be
+    the number of parameters that can be passed by register in that ISA.
 var.make.global:
   Value: 1:1
   Summary:
