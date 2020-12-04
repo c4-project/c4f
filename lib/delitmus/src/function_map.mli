@@ -13,22 +13,23 @@
     Litmus to C. *)
 
 open Base
+open Import
 
 (** {1 Information about function parameters} *)
 
 module Record : sig
   type t [@@deriving yojson, equal]
 
-  val make : ?is_thread_body:bool -> c_id:Act_common.C_id.t -> unit -> t
+  val make : ?is_thread_body:bool -> c_id:Common.C_id.t -> unit -> t
 
-  val c_id : t -> Act_common.C_id.t
+  val c_id : t -> Common.C_id.t
 
   val is_thread_body : t -> bool
 end
 
 (** {1 JSON encodable shorthand for a function map} *)
 
-type t = Record.t Map.M(Act_common.C_id).t [@@deriving equal, yojson]
+type t = Record.t Map.M(Common.C_id).t [@@deriving equal, yojson]
 
 (** {1 Accessors} *)
 

@@ -10,35 +10,34 @@
    project root for more information. *)
 
 open Base
+open Import
 
 type t =
   { aux: Aux.t
   ; local_inits:
-      ( int
-      , (Act_common.C_id.t, Act_fir.Constant.t) List.Assoc.t )
-      List.Assoc.t }
+      (int, (Common.C_id.t, Fir.Constant.t) List.Assoc.t) List.Assoc.t }
 [@@deriving fields]
 
 let make = Fields.create
 
 let var_map (ctx : t) : Var_map.t = Aux.var_map (aux ctx)
 
-let lookup_initial_value_global (ctx : t) ~(id : Act_common.C_id.t) :
-    Act_fir.Constant.t option =
+let lookup_initial_value_global (ctx : t) ~(id : Common.C_id.t) :
+    Fir.Constant.t option =
   let init = ctx |> aux |> Aux.litmus_header |> Act_litmus.Header.init in
-  List.Assoc.find ~equal:Act_common.C_id.equal init id
+  List.Assoc.find ~equal:Common.C_id.equal init id
 
-let lookup_initial_value_local (ctx : t) ~(tid : int)
-    ~(id : Act_common.C_id.t) : Act_fir.Constant.t option =
+let lookup_initial_value_local (ctx : t) ~(tid : int) ~(id : Common.C_id.t) :
+    Fir.Constant.t option =
   Option.(
     List.Assoc.find ~equal:Int.equal (local_inits ctx) tid
-    >>= fun init -> List.Assoc.find ~equal:Act_common.C_id.equal init id)
+    >>= fun init -> List.Assoc.find ~equal:Common.C_id.equal init id)
 
-let lookup_initial_value (ctx : t) ~(id : Act_common.Litmus_id.t) :
-    Act_fir.Constant.t option =
-  match Act_common.Litmus_id.as_local id with
+let lookup_initial_value (ctx : t) ~(id : Common.Litmus_id.t) :
+    Fir.Constant.t option =
+  match Common.Litmus_id.as_local id with
   | Some (tid, id) ->
       lookup_initial_value_local ctx ~tid ~id
   | None ->
-      Option.bind (Act_common.Litmus_id.as_global id) ~f:(fun id ->
+      Option.bind (Common.Litmus_id.as_global id) ~f:(fun id ->
           lookup_initial_value_global ctx ~id)

@@ -12,6 +12,7 @@
 (** Delitmusifier: thread contexts as modules. *)
 
 open Base
+open Import
 
 (** Module type of modularised thread contexts. *)
 module type S = sig
@@ -20,7 +21,7 @@ module type S = sig
 
   val when_local :
        'a
-    -> over:('a -> Act_common.C_id.t)
+    -> over:('a -> Common.C_id.t)
     -> f:('a -> 'a Or_error.t)
     -> 'a Or_error.t
   (** [when_local x ~over ~f] returns [f x] when [over x] is local, and [x]
@@ -28,7 +29,7 @@ module type S = sig
 
   val when_global :
        'a
-    -> over:('a -> Act_common.C_id.t)
+    -> over:('a -> Common.C_id.t)
     -> f:('a -> 'a Or_error.t)
     -> 'a Or_error.t
   (** [when_local x ~over ~f] returns [x] when [over x] is local, and [f x]
@@ -39,5 +40,5 @@ end
 module Make (B : sig
   val tid : int
 
-  val locals : Set.M(Act_common.C_id).t
+  val locals : Set.M(Common.C_id).t
 end) : S

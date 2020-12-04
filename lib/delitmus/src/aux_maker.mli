@@ -12,11 +12,12 @@
 (** Delitmus auxiliary record makers. *)
 
 open Base
+open Import
 
 (** Given the basic shape of a delitmus runner, this functor constructs a
     one-function module that produces auxiliary records. *)
 module Make (B : Runner_types.Basic) : sig
-  val make_aux : Act_fir.Litmus.Test.t -> Aux.t Or_error.t
+  val make_aux : Fir.Litmus.Test.t -> Aux.t Or_error.t
   (** [make_aux test] tries to extract an auxiliary record for [test]. This
       record details the various function and variable mappings that should
       be performed by the delitmusifier, and can be used both in the delitmus

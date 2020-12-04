@@ -10,12 +10,13 @@
    project root for more information. *)
 
 open Base
+open Import
 
 module type S = sig
   val rewrite_all :
-       unit Act_fir.Function.t Act_common.C_named.t list
+       unit Fir.Function.t Common.C_named.t list
     -> context:Context.t
-    -> unit Act_fir.Function.t Act_common.C_named.t list Or_error.t
+    -> unit Fir.Function.t Common.C_named.t list Or_error.t
   (** [rewrite_all fs ~context] rewrites all functions in [fs], using the
       mappings in [context] to resolve lifted locals. *)
 end

@@ -10,6 +10,7 @@
    project root for more information. *)
 
 open Base
+open Import
 
 module Style = struct
   module M = struct
@@ -23,9 +24,9 @@ module Style = struct
 
   include M
 
-  include Act_utils.Enum.Extend_table (struct
+  include Utils.Enum.Extend_table (struct
     include M
-    include Act_utils.Enum.Make_from_enumerate (M)
+    include Utils.Enum.Make_from_enumerate (M)
   end)
 
   let to_rewriter : t -> (module Function_rewriter.S) = function

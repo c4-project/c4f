@@ -10,20 +10,20 @@
    project root for more information. *)
 
 open Base
-module Mini = Act_fir
+open Import
 
 module type S = sig
   val tid : int
 
   val when_local :
        'a
-    -> over:('a -> Act_common.C_id.t)
+    -> over:('a -> Common.C_id.t)
     -> f:('a -> 'a Or_error.t)
     -> 'a Or_error.t
 
   val when_global :
        'a
-    -> over:('a -> Act_common.C_id.t)
+    -> over:('a -> Common.C_id.t)
     -> f:('a -> 'a Or_error.t)
     -> 'a Or_error.t
 end
@@ -31,17 +31,17 @@ end
 module Make (B : sig
   val tid : int
 
-  val locals : Set.M(Act_common.C_id).t
+  val locals : Set.M(Common.C_id).t
 end) : S = struct
   let tid = B.tid
 
-  let is_local : Act_common.C_id.t -> bool = Set.mem B.locals
+  let is_local : Common.C_id.t -> bool = Set.mem B.locals
 
-  let when_local (v : 'a) ~(over : 'a -> Act_common.C_id.t)
+  let when_local (v : 'a) ~(over : 'a -> Common.C_id.t)
       ~(f : 'a -> 'a Or_error.t) : 'a Or_error.t =
-    if is_local (over v) then f v else Or_error.return v
+    if is_local (over v) then f v else Ok v
 
-  let when_global (v : 'a) ~(over : 'a -> Act_common.C_id.t)
+  let when_global (v : 'a) ~(over : 'a -> Common.C_id.t)
       ~(f : 'a -> 'a Or_error.t) : 'a Or_error.t =
-    if is_local (over v) then Or_error.return v else f v
+    if is_local (over v) then Ok v else f v
 end

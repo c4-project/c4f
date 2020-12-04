@@ -10,26 +10,27 @@
    project root for more information. *)
 
 open Base
+open Import
 
 (* Note: These functions don't yet make sure that they're generating fresh
    (ie not globally shadowed) names. Eventually, they should all take an
    optional set of global identifiers, and should try some munging if they
    generate clashes. *)
 
-let litmus_id ?(qualify_locals : bool = true) (id : Act_common.Litmus_id.t) :
-    Act_common.C_id.t =
-  ( if qualify_locals then Act_common.Litmus_id.to_memalloy_id
-  else Act_common.Litmus_id.variable_name )
+let litmus_id ?(qualify_locals : bool = true) (id : Common.Litmus_id.t) :
+    Common.C_id.t =
+  ( if qualify_locals then Common.Litmus_id.to_memalloy_id
+  else Common.Litmus_id.variable_name )
     id
 
 let postcondition ?(qualify_locals : bool = true)
-    (pc : Act_fir.Constant.t Act_litmus.Postcondition.t) :
-    Act_fir.Constant.t Act_litmus.Postcondition.t =
+    (pc : Fir.Constant.t Litmus.Postcondition.t) :
+    Fir.Constant.t Litmus.Postcondition.t =
   (* We can't just map over [litmus_id ~qualify_locals], as it'll lose the
      thread IDs in the postcondition. *)
   (* TODO(@MattWindsor91): perhaps don't qualify things we've already
    * qualified. *)
   if qualify_locals then
-    Act_litmus.Postcondition.map_left pc
-      ~f:(Fn.compose Act_common.Litmus_id.global litmus_id)
+    Litmus.Postcondition.map_left pc
+      ~f:(Fn.compose Common.Litmus_id.global litmus_id)
   else pc

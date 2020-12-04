@@ -10,13 +10,13 @@
    project root for more information. *)
 
 open Base
+open Import
 
 module M = struct
   type t =
-    { litmus_header: Act_litmus_c.Header.t [@default Act_litmus.Header.empty]
-    ; function_map: Function_map.t
-          [@default Map.empty (module Act_common.C_id)]
-    ; var_map: Var_map.t [@default Act_common.Scoped_map.empty] }
+    { litmus_header: Litmus_c.Header.t [@default Litmus.Header.empty]
+    ; function_map: Function_map.t [@default Map.empty (module Common.C_id)]
+    ; var_map: Var_map.t [@default Common.Scoped_map.empty] }
   [@@deriving make, fields, equal, yojson]
 end
 
@@ -27,7 +27,7 @@ include M
 
 let symbols (aux : t) : string list =
   aux |> var_map |> Var_map.global_c_variables |> Set.to_list
-  |> List.map ~f:Act_common.C_id.to_string
+  |> List.map ~f:Common.C_id.to_string
 
 let empty : t = make ()
 

@@ -10,7 +10,7 @@
    project root for more information. *)
 
 open Base
-module Pb = Plumbing
+open Import
 
 let prelude : string list =
   [ "// <!> Auto-generated from a litmus test by ACT."
@@ -20,11 +20,11 @@ let prelude : string list =
 
 let pp_prelude (type a) : a Fmt.t = Fmt.(const (list ~sep:sp string) prelude)
 
-let pp_unit : Act_litmus_c.Ast.Translation_unit.t Fmt.t =
-  Fmt.(vbox (pp_prelude ++ Act_litmus_c.Ast.Translation_unit.pp))
+let pp_unit : Litmus_c.Ast.Translation_unit.t Fmt.t =
+  Fmt.(vbox (pp_prelude ++ Litmus_c.Ast.Translation_unit.pp))
 
-let c_of_output : Output.t -> Act_litmus_c.Ast.Translation_unit.t =
-  Fn.compose Act_litmus_c.Reify.program Output.program
+let c_of_output : Output.t -> Litmus_c.Ast.Translation_unit.t =
+  Fn.compose Litmus_c.Reify.program Output.program
 
 let pp_del : Output.t Fmt.t = Fmt.(using c_of_output pp_unit)
 
@@ -32,7 +32,7 @@ let run (input : Plumbing.Input.t) (output : Plumbing.Output.t)
     ~(config : Config.t) : Output.t Or_error.t =
   let (module R) = Config.to_runner config in
   Or_error.Let_syntax.(
-    let%bind test = Act_litmus_c.Frontend.Fir.load input in
+    let%bind test = Litmus_c.Frontend.Fir.load input in
     let%bind dl = R.run test in
     let%map () = Act_utils.My_format.odump output (Fmt.vbox pp_del) dl in
     dl)

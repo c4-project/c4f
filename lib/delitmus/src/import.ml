@@ -9,16 +9,13 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Base
-open Import
+(** Common imports *)
 
-module Record = struct
-  type t = {is_thread_body: bool [@default false]; c_id: Common.C_id.t}
-  [@@deriving yojson, equal, make, fields]
-end
-
-include Plumbing.Jsonable.Make_map (Common.C_id) (Record)
-
-let equal : t -> t -> bool = Map.equal Record.equal
-
-let num_threads : t -> int = Map.count ~f:Record.is_thread_body
+module Accessor = Accessor_base
+include Accessor.O
+module Common = Act_common
+module Utils = Act_utils
+module Fir = Act_fir
+module Litmus = Act_litmus
+module Litmus_c = Act_litmus_c
+module Tx = Travesty_base_exts

@@ -9,5 +9,6 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-type t = {program: unit Act_fir.Program.t; aux: Aux.t}
-[@@deriving make, fields]
+open Import
+
+type t = {program: unit Fir.Program.t; aux: Aux.t} [@@deriving make, fields]

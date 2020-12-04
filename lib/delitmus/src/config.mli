@@ -25,6 +25,7 @@
     command-line flags. *)
 
 open Base
+open Import
 
 (** {1 Styles of delitmusification} *)
 
@@ -33,7 +34,7 @@ module Style : sig
   type t = Vars_as_globals | Vars_as_parameters
   [@@deriving compare, equal, enumerate]
 
-  include Act_utils.Enum_types.Extension_table with type t := t
+  include Utils.Enum_types.Extension_table with type t := t
 end
 
 (** {1 Config records} *)

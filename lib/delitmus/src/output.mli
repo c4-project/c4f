@@ -11,16 +11,18 @@
 
 (** The output from a de-litmusification round. *)
 
+open Import
+
 (** Opaque type of de-litmusification output. *)
 type t
 
 (** {2 Constructors} *)
 
-val make : program:unit Act_fir.Program.t -> aux:Aux.t -> t
+val make : program:unit Fir.Program.t -> aux:Aux.t -> t
 
 (** {2 Accessors} *)
 
-val program : t -> unit Act_fir.Program.t
+val program : t -> unit Fir.Program.t
 (** [program output] gets the de-litmusified program. *)
 
 val aux : t -> Aux.t
