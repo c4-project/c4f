@@ -34,5 +34,5 @@ let run (input : Plumbing.Input.t) (output : Plumbing.Output.t)
   Or_error.Let_syntax.(
     let%bind test = Litmus_c.Frontend.Fir.load input in
     let%bind dl = R.run test in
-    let%map () = Act_utils.My_format.odump output (Fmt.vbox pp_del) dl in
+    let%map () = Utils.My_format.odump output (Fmt.vbox pp_del) dl in
     dl)

@@ -38,7 +38,7 @@ module Make (B : Runner_types.Basic) = struct
       let%map c_type =
         (* Globals in a valid C litmus test come through as pointers. *)
         if is_global then Fir.Type.deref orig_type
-        else Or_error.return orig_type
+        else Ok orig_type
       in
       Var_map.Record.make ~c_type ~mapped_to ~c_id)
 
