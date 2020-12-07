@@ -37,16 +37,15 @@ module Make (B : Runner_types.Basic) = struct
     Or_error.Let_syntax.(
       let%map c_type =
         (* Globals in a valid C litmus test come through as pointers. *)
-        if is_global then Fir.Type.deref orig_type
-        else Ok orig_type
+        if is_global then Fir.Type.deref orig_type else Ok orig_type
       in
       Var_map.Record.make ~c_type ~mapped_to ~c_id)
 
   let make_var_map (test : Fir.Litmus.Test.t) : Var_map.t Or_error.t =
     Or_error.(
-      test |> Fir.Litmus_vars.make_type_alist
-      >>| List.mapi ~f:(fun index (id, ty) ->
-              make_var_record index id ty >>| fun rc -> (id, rc))
+      test |> Fir.Litmus.Var.make_alist
+      >>| List.map ~f:(fun (id, {Fir.Litmus.Var.Record.ty; param_index}) ->
+              make_var_record param_index id ty >>| fun rc -> (id, rc))
       >>= Or_error.combine_errors
       >>= Map.of_alist_or_error (module Common.Litmus_id)
       >>| Common.Scoped_map.of_litmus_id_map)
@@ -56,7 +55,7 @@ module Make (B : Runner_types.Basic) = struct
     Option.value_map B.impl_suffix
       ~f:(fun suffix ->
         Common.C_id.create (Common.C_id.to_string name ^ suffix))
-      ~default:(Or_error.return name)
+      ~default:(Ok name)
 
   let make_named_function_record
       (func : unit Fir.Function.t Common.C_named.t) :

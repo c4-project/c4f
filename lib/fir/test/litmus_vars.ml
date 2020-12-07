@@ -12,7 +12,7 @@
 open Base
 open Import
 
-let%test_module "make_type_alist" =
+let%test_module "make_alist" =
   ( module struct
     (* This is a hand-translation of a Memalloy output (test '10' when using
        ACT's default Memalloy parameters, at time of writing). *)
@@ -100,11 +100,16 @@ let%test_module "make_type_alist" =
     let test : Src.Litmus.Test.t =
       Or_error.ok_exn (Src.Litmus.Test.make ~header ~threads)
 
-    let%expect_test "make_type_alist on example test" =
+    let%expect_test "make_alist on example test" =
       Stdio.print_s
         [%sexp
-          ( Src.Litmus_vars.make_type_alist test
-            : (Common.Litmus_id.t, Src.Type.t) List.Assoc.t Or_error.t )] ;
+          ( Src.Litmus.Var.make_alist test
+            : (Common.Litmus_id.t, Src.Litmus.Var.Record.t) List.Assoc.t
+              Or_error.t )] ;
       [%expect
-        {| (Ok ((x atomic_int*) (y atomic_int*) (0:r1 int) (0:r0 int))) |}]
+        {|
+          (Ok
+           ((x ((ty atomic_int*) (param_index 0)))
+            (y ((ty atomic_int*) (param_index 1))) (0:r1 ((ty int) (param_index 2)))
+            (0:r0 ((ty int) (param_index 3))))) |}]
   end )

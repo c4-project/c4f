@@ -9,409 +9,48 @@
 // suffix: (none)
 //
 
-// <!> Auto-generated from a litmus test by ACT.
-#include <stdatomic.h>
-#include <stdbool.h>
-atomic_int x = 0;
-atomic_int y = 0;
-int r0 = 0;
-int r1 = 0;
-void
-P0()
-{
-    atomic_store_explicit(&x, 1, memory_order_relaxed);
-    atomic_thread_fence(memory_order_release);
-    atomic_store_explicit(&y, 1, memory_order_relaxed);
-}
-void
-P1()
-{
-    atomic_fetch_add_explicit(&y, 1, memory_order_relaxed);
-    atomic_thread_fence(memory_order_acquire);
-    r0 = atomic_load_explicit(&x, memory_order_relaxed);
-}
-void
-P2()
-{ r1 = atomic_load_explicit(&y, memory_order_relaxed); }
-
-/* --Begin auxiliary output--
-
-{
-  "litmus_header": {
-    "name": "deacon2018_big",
-    "locations": null,
-    "init": { "x": 0, "y": 0 },
-    "postcondition": "exists (1:r0 == 0 /\\ 2:r1 == 2)"
-  },
-  "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" }
-  },
-  "var_map": {
-    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Global" ] },
-    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Global" ] },
-    "1:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Global" ] },
-    "2:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Global" ] }
-  }
-} 
---End auxiliary output-- */
 //
 // style: vars-as-globals
 // qualify-locals: false
 // suffix: _body
 //
 
-// <!> Auto-generated from a litmus test by ACT.
-#include <stdatomic.h>
-#include <stdbool.h>
-atomic_int x = 0;
-atomic_int y = 0;
-int r0 = 0;
-int r1 = 0;
-void
-P0_body()
-{
-    atomic_store_explicit(&x, 1, memory_order_relaxed);
-    atomic_thread_fence(memory_order_release);
-    atomic_store_explicit(&y, 1, memory_order_relaxed);
-}
-void
-P1_body()
-{
-    atomic_fetch_add_explicit(&y, 1, memory_order_relaxed);
-    atomic_thread_fence(memory_order_acquire);
-    r0 = atomic_load_explicit(&x, memory_order_relaxed);
-}
-void
-P2_body()
-{ r1 = atomic_load_explicit(&y, memory_order_relaxed); }
-
-/* --Begin auxiliary output--
-
-{
-  "litmus_header": {
-    "name": "deacon2018_big",
-    "locations": null,
-    "init": { "x": 0, "y": 0 },
-    "postcondition": "exists (1:r0 == 0 /\\ 2:r1 == 2)"
-  },
-  "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" }
-  },
-  "var_map": {
-    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Global" ] },
-    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Global" ] },
-    "1:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Global" ] },
-    "2:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Global" ] }
-  }
-} 
---End auxiliary output-- */
 //
 // style: vars-as-globals
 // qualify-locals: true
 // suffix: (none)
 //
 
-// <!> Auto-generated from a litmus test by ACT.
-#include <stdatomic.h>
-#include <stdbool.h>
-atomic_int x = 0;
-atomic_int y = 0;
-int t1r0 = 0;
-int t2r1 = 0;
-void
-P0()
-{
-    atomic_store_explicit(&x, 1, memory_order_relaxed);
-    atomic_thread_fence(memory_order_release);
-    atomic_store_explicit(&y, 1, memory_order_relaxed);
-}
-void
-P1()
-{
-    atomic_fetch_add_explicit(&y, 1, memory_order_relaxed);
-    atomic_thread_fence(memory_order_acquire);
-    t1r0 = atomic_load_explicit(&x, memory_order_relaxed);
-}
-void
-P2()
-{ t2r1 = atomic_load_explicit(&y, memory_order_relaxed); }
-
-/* --Begin auxiliary output--
-
-{
-  "litmus_header": {
-    "name": "deacon2018_big",
-    "locations": null,
-    "init": { "x": 0, "y": 0 },
-    "postcondition": "exists (t1r0 == 0 /\\ t2r1 == 2)"
-  },
-  "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" }
-  },
-  "var_map": {
-    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Global" ] },
-    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Global" ] },
-    "1:r0": { "c_type": "int", "c_id": "t1r0", "mapped_to": [ "Global" ] },
-    "2:r1": { "c_type": "int", "c_id": "t2r1", "mapped_to": [ "Global" ] }
-  }
-} 
---End auxiliary output-- */
 //
 // style: vars-as-globals
 // qualify-locals: true
 // suffix: _body
 //
 
-// <!> Auto-generated from a litmus test by ACT.
-#include <stdatomic.h>
-#include <stdbool.h>
-atomic_int x = 0;
-atomic_int y = 0;
-int t1r0 = 0;
-int t2r1 = 0;
-void
-P0_body()
-{
-    atomic_store_explicit(&x, 1, memory_order_relaxed);
-    atomic_thread_fence(memory_order_release);
-    atomic_store_explicit(&y, 1, memory_order_relaxed);
-}
-void
-P1_body()
-{
-    atomic_fetch_add_explicit(&y, 1, memory_order_relaxed);
-    atomic_thread_fence(memory_order_acquire);
-    t1r0 = atomic_load_explicit(&x, memory_order_relaxed);
-}
-void
-P2_body()
-{ t2r1 = atomic_load_explicit(&y, memory_order_relaxed); }
-
-/* --Begin auxiliary output--
-
-{
-  "litmus_header": {
-    "name": "deacon2018_big",
-    "locations": null,
-    "init": { "x": 0, "y": 0 },
-    "postcondition": "exists (t1r0 == 0 /\\ t2r1 == 2)"
-  },
-  "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" }
-  },
-  "var_map": {
-    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Global" ] },
-    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Global" ] },
-    "1:r0": { "c_type": "int", "c_id": "t1r0", "mapped_to": [ "Global" ] },
-    "2:r1": { "c_type": "int", "c_id": "t2r1", "mapped_to": [ "Global" ] }
-  }
-} 
---End auxiliary output-- */
 //
 // style: vars-as-parameters
 // qualify-locals: false
 // suffix: (none)
 //
 
-// <!> Auto-generated from a litmus test by ACT.
-#include <stdatomic.h>
-#include <stdbool.h>
-void
-P0(atomic_int *x, atomic_int *y)
-{
-    atomic_store_explicit(x, 1, memory_order_relaxed);
-    atomic_thread_fence(memory_order_release);
-    atomic_store_explicit(y, 1, memory_order_relaxed);
-}
-void
-P1(atomic_int *x, atomic_int *y, int *r0)
-{
-    atomic_fetch_add_explicit(y, 1, memory_order_relaxed);
-    atomic_thread_fence(memory_order_acquire);
-    *r0 = atomic_load_explicit(x, memory_order_relaxed);
-}
-void
-P2(atomic_int *x, atomic_int *y, int *r1)
-{ *r1 = atomic_load_explicit(y, memory_order_relaxed); }
-
-/* --Begin auxiliary output--
-
-{
-  "litmus_header": {
-    "name": "deacon2018_big",
-    "locations": null,
-    "init": { "x": 0, "y": 0 },
-    "postcondition": "exists (1:r0 == 0 /\\ 2:r1 == 2)"
-  },
-  "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" }
-  },
-  "var_map": {
-    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Param", 0 ] },
-    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 1 ] },
-    "1:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 2 ] },
-    "2:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 3 ] }
-  }
-} 
---End auxiliary output-- */
 //
 // style: vars-as-parameters
 // qualify-locals: false
 // suffix: _body
 //
 
-// <!> Auto-generated from a litmus test by ACT.
-#include <stdatomic.h>
-#include <stdbool.h>
-void
-P0_body(atomic_int *x, atomic_int *y)
-{
-    atomic_store_explicit(x, 1, memory_order_relaxed);
-    atomic_thread_fence(memory_order_release);
-    atomic_store_explicit(y, 1, memory_order_relaxed);
-}
-void
-P1_body(atomic_int *x, atomic_int *y, int *r0)
-{
-    atomic_fetch_add_explicit(y, 1, memory_order_relaxed);
-    atomic_thread_fence(memory_order_acquire);
-    *r0 = atomic_load_explicit(x, memory_order_relaxed);
-}
-void
-P2_body(atomic_int *x, atomic_int *y, int *r1)
-{ *r1 = atomic_load_explicit(y, memory_order_relaxed); }
-
-/* --Begin auxiliary output--
-
-{
-  "litmus_header": {
-    "name": "deacon2018_big",
-    "locations": null,
-    "init": { "x": 0, "y": 0 },
-    "postcondition": "exists (1:r0 == 0 /\\ 2:r1 == 2)"
-  },
-  "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" }
-  },
-  "var_map": {
-    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Param", 0 ] },
-    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 1 ] },
-    "1:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 2 ] },
-    "2:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 3 ] }
-  }
-} 
---End auxiliary output-- */
 //
 // style: vars-as-parameters
 // qualify-locals: true
 // suffix: (none)
 //
 
-// <!> Auto-generated from a litmus test by ACT.
-#include <stdatomic.h>
-#include <stdbool.h>
-void
-P0(atomic_int *x, atomic_int *y)
-{
-    atomic_store_explicit(x, 1, memory_order_relaxed);
-    atomic_thread_fence(memory_order_release);
-    atomic_store_explicit(y, 1, memory_order_relaxed);
-}
-void
-P1(atomic_int *x, atomic_int *y, int *t1r0)
-{
-    atomic_fetch_add_explicit(y, 1, memory_order_relaxed);
-    atomic_thread_fence(memory_order_acquire);
-    *t1r0 = atomic_load_explicit(x, memory_order_relaxed);
-}
-void
-P2(atomic_int *x, atomic_int *y, int *t2r1)
-{ *t2r1 = atomic_load_explicit(y, memory_order_relaxed); }
-
-/* --Begin auxiliary output--
-
-{
-  "litmus_header": {
-    "name": "deacon2018_big",
-    "locations": null,
-    "init": { "x": 0, "y": 0 },
-    "postcondition": "exists (t1r0 == 0 /\\ t2r1 == 2)"
-  },
-  "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" }
-  },
-  "var_map": {
-    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Param", 0 ] },
-    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 1 ] },
-    "1:r0": { "c_type": "int", "c_id": "t1r0", "mapped_to": [ "Param", 2 ] },
-    "2:r1": { "c_type": "int", "c_id": "t2r1", "mapped_to": [ "Param", 3 ] }
-  }
-} 
---End auxiliary output-- */
 //
 // style: vars-as-parameters
 // qualify-locals: true
 // suffix: _body
 //
 
-// <!> Auto-generated from a litmus test by ACT.
-#include <stdatomic.h>
-#include <stdbool.h>
-void
-P0_body(atomic_int *x, atomic_int *y)
-{
-    atomic_store_explicit(x, 1, memory_order_relaxed);
-    atomic_thread_fence(memory_order_release);
-    atomic_store_explicit(y, 1, memory_order_relaxed);
-}
-void
-P1_body(atomic_int *x, atomic_int *y, int *t1r0)
-{
-    atomic_fetch_add_explicit(y, 1, memory_order_relaxed);
-    atomic_thread_fence(memory_order_acquire);
-    *t1r0 = atomic_load_explicit(x, memory_order_relaxed);
-}
-void
-P2_body(atomic_int *x, atomic_int *y, int *t2r1)
-{ *t2r1 = atomic_load_explicit(y, memory_order_relaxed); }
-
-/* --Begin auxiliary output--
-
-{
-  "litmus_header": {
-    "name": "deacon2018_big",
-    "locations": null,
-    "init": { "x": 0, "y": 0 },
-    "postcondition": "exists (t1r0 == 0 /\\ t2r1 == 2)"
-  },
-  "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" }
-  },
-  "var_map": {
-    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to": [ "Param", 0 ] },
-    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 1 ] },
-    "1:r0": { "c_type": "int", "c_id": "t1r0", "mapped_to": [ "Param", 2 ] },
-    "2:r1": { "c_type": "int", "c_id": "t2r1", "mapped_to": [ "Param", 3 ] }
-  }
-} 
---End auxiliary output-- */
-```
 ## fuzz_local_bools.c.litmus
 
 ```
@@ -1043,12 +682,12 @@ P2(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
     "1:asymptote": {
       "c_type": "volatile atomic_bool",
       "c_id": "asymptote",
-      "mapped_to": [ "Param", 7 ]
+      "mapped_to": [ "Param", 6 ]
     },
     "2:kelp_10": {
       "c_type": "volatile atomic_int",
       "c_id": "kelp_10",
-      "mapped_to": [ "Param", 8 ]
+      "mapped_to": [ "Param", 6 ]
     }
   }
 } 
@@ -1171,12 +810,12 @@ P2_body(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
     "1:asymptote": {
       "c_type": "volatile atomic_bool",
       "c_id": "asymptote",
-      "mapped_to": [ "Param", 7 ]
+      "mapped_to": [ "Param", 6 ]
     },
     "2:kelp_10": {
       "c_type": "volatile atomic_int",
       "c_id": "kelp_10",
-      "mapped_to": [ "Param", 8 ]
+      "mapped_to": [ "Param", 6 ]
     }
   }
 } 
@@ -1298,12 +937,12 @@ P2(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
     "1:asymptote": {
       "c_type": "volatile atomic_bool",
       "c_id": "t1asymptote",
-      "mapped_to": [ "Param", 7 ]
+      "mapped_to": [ "Param", 6 ]
     },
     "2:kelp_10": {
       "c_type": "volatile atomic_int",
       "c_id": "t2kelp_10",
-      "mapped_to": [ "Param", 8 ]
+      "mapped_to": [ "Param", 6 ]
     }
   }
 } 
@@ -1426,12 +1065,12 @@ P2_body(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
     "1:asymptote": {
       "c_type": "volatile atomic_bool",
       "c_id": "t1asymptote",
-      "mapped_to": [ "Param", 7 ]
+      "mapped_to": [ "Param", 6 ]
     },
     "2:kelp_10": {
       "c_type": "volatile atomic_int",
       "c_id": "t2kelp_10",
-      "mapped_to": [ "Param", 8 ]
+      "mapped_to": [ "Param", 6 ]
     }
   }
 } 
@@ -1729,8 +1368,8 @@ P3(atomic_int *x, atomic_int *y, int *r0, int *r1)
     "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 1 ] },
     "2:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 2 ] },
     "2:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 3 ] },
-    "3:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 4 ] },
-    "3:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 5 ] }
+    "3:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 2 ] },
+    "3:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 3 ] }
   }
 } 
 --End auxiliary output-- */
@@ -1783,8 +1422,8 @@ P3_body(atomic_int *x, atomic_int *y, int *r0, int *r1)
     "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 1 ] },
     "2:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 2 ] },
     "2:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 3 ] },
-    "3:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 4 ] },
-    "3:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 5 ] }
+    "3:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 2 ] },
+    "3:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 3 ] }
   }
 } 
 --End auxiliary output-- */
@@ -1837,8 +1476,8 @@ P3(atomic_int *x, atomic_int *y, int *t3r0, int *t3r1)
     "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 1 ] },
     "2:r0": { "c_type": "int", "c_id": "t2r0", "mapped_to": [ "Param", 2 ] },
     "2:r1": { "c_type": "int", "c_id": "t2r1", "mapped_to": [ "Param", 3 ] },
-    "3:r0": { "c_type": "int", "c_id": "t3r0", "mapped_to": [ "Param", 4 ] },
-    "3:r1": { "c_type": "int", "c_id": "t3r1", "mapped_to": [ "Param", 5 ] }
+    "3:r0": { "c_type": "int", "c_id": "t3r0", "mapped_to": [ "Param", 2 ] },
+    "3:r1": { "c_type": "int", "c_id": "t3r1", "mapped_to": [ "Param", 3 ] }
   }
 } 
 --End auxiliary output-- */
@@ -1891,8 +1530,8 @@ P3_body(atomic_int *x, atomic_int *y, int *t3r0, int *t3r1)
     "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 1 ] },
     "2:r0": { "c_type": "int", "c_id": "t2r0", "mapped_to": [ "Param", 2 ] },
     "2:r1": { "c_type": "int", "c_id": "t2r1", "mapped_to": [ "Param", 3 ] },
-    "3:r0": { "c_type": "int", "c_id": "t3r0", "mapped_to": [ "Param", 4 ] },
-    "3:r1": { "c_type": "int", "c_id": "t3r1", "mapped_to": [ "Param", 5 ] }
+    "3:r0": { "c_type": "int", "c_id": "t3r0", "mapped_to": [ "Param", 2 ] },
+    "3:r1": { "c_type": "int", "c_id": "t3r1", "mapped_to": [ "Param", 3 ] }
   }
 } 
 --End auxiliary output-- */
@@ -2434,8 +2073,8 @@ P4(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
     "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 6 ] },
     "3:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 7 ] },
     "3:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 8 ] },
-    "4:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 9 ] },
-    "4:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 10 ] }
+    "4:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 7 ] },
+    "4:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 8 ] }
   }
 } 
 --End auxiliary output-- */
@@ -2539,8 +2178,8 @@ P4_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
     "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 6 ] },
     "3:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 7 ] },
     "3:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 8 ] },
-    "4:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 9 ] },
-    "4:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 10 ] }
+    "4:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 7 ] },
+    "4:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 8 ] }
   }
 } 
 --End auxiliary output-- */
@@ -2644,8 +2283,8 @@ P4(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
     "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 6 ] },
     "3:r0": { "c_type": "int", "c_id": "t3r0", "mapped_to": [ "Param", 7 ] },
     "3:r1": { "c_type": "int", "c_id": "t3r1", "mapped_to": [ "Param", 8 ] },
-    "4:r0": { "c_type": "int", "c_id": "t4r0", "mapped_to": [ "Param", 9 ] },
-    "4:r1": { "c_type": "int", "c_id": "t4r1", "mapped_to": [ "Param", 10 ] }
+    "4:r0": { "c_type": "int", "c_id": "t4r0", "mapped_to": [ "Param", 7 ] },
+    "4:r1": { "c_type": "int", "c_id": "t4r1", "mapped_to": [ "Param", 8 ] }
   }
 } 
 --End auxiliary output-- */
@@ -2749,8 +2388,8 @@ P4_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
     "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 6 ] },
     "3:r0": { "c_type": "int", "c_id": "t3r0", "mapped_to": [ "Param", 7 ] },
     "3:r1": { "c_type": "int", "c_id": "t3r1", "mapped_to": [ "Param", 8 ] },
-    "4:r0": { "c_type": "int", "c_id": "t4r0", "mapped_to": [ "Param", 9 ] },
-    "4:r1": { "c_type": "int", "c_id": "t4r1", "mapped_to": [ "Param", 10 ] }
+    "4:r0": { "c_type": "int", "c_id": "t4r0", "mapped_to": [ "Param", 7 ] },
+    "4:r1": { "c_type": "int", "c_id": "t4r1", "mapped_to": [ "Param", 8 ] }
   }
 } 
 --End auxiliary output-- */
@@ -3584,7 +3223,7 @@ P2(atomic_int *x, atomic_int *y, int *r0)
     "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 1 ] },
     "1:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 2 ] },
     "1:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 3 ] },
-    "2:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 4 ] }
+    "2:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 2 ] }
   }
 } 
 --End auxiliary output-- */
@@ -3632,7 +3271,7 @@ P2_body(atomic_int *x, atomic_int *y, int *r0)
     "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 1 ] },
     "1:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 2 ] },
     "1:r1": { "c_type": "int", "c_id": "r1", "mapped_to": [ "Param", 3 ] },
-    "2:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 4 ] }
+    "2:r0": { "c_type": "int", "c_id": "r0", "mapped_to": [ "Param", 2 ] }
   }
 } 
 --End auxiliary output-- */
@@ -3680,7 +3319,7 @@ P2(atomic_int *x, atomic_int *y, int *t2r0)
     "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 1 ] },
     "1:r0": { "c_type": "int", "c_id": "t1r0", "mapped_to": [ "Param", 2 ] },
     "1:r1": { "c_type": "int", "c_id": "t1r1", "mapped_to": [ "Param", 3 ] },
-    "2:r0": { "c_type": "int", "c_id": "t2r0", "mapped_to": [ "Param", 4 ] }
+    "2:r0": { "c_type": "int", "c_id": "t2r0", "mapped_to": [ "Param", 2 ] }
   }
 } 
 --End auxiliary output-- */
@@ -3728,10 +3367,8 @@ P2_body(atomic_int *x, atomic_int *y, int *t2r0)
     "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to": [ "Param", 1 ] },
     "1:r0": { "c_type": "int", "c_id": "t1r0", "mapped_to": [ "Param", 2 ] },
     "1:r1": { "c_type": "int", "c_id": "t1r1", "mapped_to": [ "Param", 3 ] },
-    "2:r0": { "c_type": "int", "c_id": "t2r0", "mapped_to": [ "Param", 4 ] }
+    "2:r0": { "c_type": "int", "c_id": "t2r0", "mapped_to": [ "Param", 2 ] }
   }
 } 
 --End auxiliary output-- */
 ```
-
-Ran 7 test(s).

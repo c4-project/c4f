@@ -128,8 +128,9 @@ module Map = struct
 
   let make_existing_var_map (test : Fir.Litmus.Test.t) : t Or_error.t =
     Or_error.(
-      test |> Fir.Litmus_vars.make_type_alist
-      >>| List.map ~f:(fun (id, ty) -> (id, make_existing_record id ty))
+      test |> Fir.Litmus.Var.make_alist
+      >>| List.map ~f:(fun (id, {Fir.Litmus.Var.Record.ty; _}) ->
+              (id, make_existing_record id ty))
       >>= Act_common.Scoped_map.of_litmus_id_alist)
 
   let register_var ?(initial_value : Fir.Constant.t option) (map : t)
