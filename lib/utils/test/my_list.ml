@@ -226,7 +226,7 @@ let%test_module "try_map_sub" =
 
         let%expect_test "in-bounds, partial" =
           test_in_bounds ~f:(fun x ->
-              if x % 2 = 0 then Or_error.return x else Or_error.errorf "%d" x) ;
+              if x % 2 = 0 then Ok x else Or_error.errorf "%d" x) ;
           [%expect {| (3 5) |}]
 
         let%expect_test "in-bounds, fail" =
@@ -234,3 +234,27 @@ let%test_module "try_map_sub" =
           [%expect {| (2 3 5) |}]
       end )
   end )
+
+let%test_module "merge_preserving_order" = (module struct
+  let test (l : string) (r : string) : unit =
+    let lcs = String.to_list l in
+    let rcs = String.to_list r in
+    let mcs = merge_preserving_order Char.equal lcs rcs in
+    Stdio.print_endline (String.of_char_list mcs)
+
+  let%expect_test "stack overflow example 1" =
+    test "whijk" "awtin";
+    [%expect {| awhtijkn |}]
+
+  let%expect_test "stack overflow example 2" =
+    test "whijk" "jwmna";
+    [%expect {| jwhikmna |}]
+
+  let%expect_test "stack overflow example 3" =
+    test "jwmna" "whijk";
+    [%expect {| whijmnak |}]
+
+  let%expect_test "stack overflow example 4" =
+    test "abcd" "efgh";
+    [%expect {| abcdefgh |}]
+end)

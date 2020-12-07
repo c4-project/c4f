@@ -67,29 +67,38 @@ module Var = struct
       (ty : Type.t) : Record.t =
     {ty; param_index}
 
+  let merge_parameters (pss : Type.t Common.C_named.Alist.t list)
+    : Type.t Common.C_named.Alist.t Or_error.t =
+    Or_error.Let_syntax.(
+      let%bind ps =
+        pss
+        |> List.reduce ~f:(Utils.My_list.merge_preserving_order [%equal: (Common.C_id.t * Type.t)])
+        |> Result.of_option ~error:(Error.of_string "need at least one function")
+      in
+      let%map () =
+        ps |> List.find_all_dups ~compare:(Comparable.lift ~f:fst Common.C_id.compare)
+        |> List.map ~f:(fun (d, _) -> Or_error.errorf "parameter type inconsistency: %s" (Common.C_id.to_string d))
+        |> Or_error.combine_errors_unit
+      in
+      ps)
+
   let merge_and_number_parameters (pss : Type.t Common.C_named.Alist.t list)
       : Record.t Common.C_named.Alist.t Or_error.t =
     Or_error.(
       pss
-      |> Accessor.(
-           mapi (List.each @> List.eachi @> Tuple2.snd) ~f:number_parameter)
-      |> Tx.Or_error.combine_map
-           ~f:(Map.of_alist_or_error (module Common.C_id))
-      >>= Utils.My_map.merge_with_overlap ~compare:Record.compare
-      >>| Map.to_alist)
+      |> merge_parameters
+      >>| Accessor.(
+           mapi (List.eachi @> Tuple2.snd) ~f:number_parameter))
+
 
   let make_global_alist (progs : Test.Lang.Program.t list) :
       (Common.Litmus_id.t, Record.t) List.Assoc.t Or_error.t =
-    match progs with
-    | [] ->
-        Or_error.error_string "need at least one function"
-    | xs ->
         Or_error.(
           Accessor_base.(
-            xs.@*(List.each @> Common.C_named.value
+            progs.@*(List.each @> Common.C_named.value
                   @> Function.Access.parameters))
           |> merge_and_number_parameters
-          |> Or_error.tag ~tag:"Functions do not agree on parameter lists"
+          |> Or_error.tag ~tag:"couldn't deduce global parameters"
           >>| Tx.Alist.map_left ~f:Act_common.Litmus_id.global)
 
   let make_local_alist (tid : int) (prog : Test.Lang.Program.t)
