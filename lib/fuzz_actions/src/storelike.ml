@@ -160,7 +160,8 @@ struct
        variables satisfying both source and destination restrictions, so we
        need not specify those restrictions separately. *)
     Fuzz.Availability.(
-      M.(lift_state path_filter >>= is_filter_constructible ~kind:Insert))
+      in_var_cap ~after_adding:B.new_local_cap
+      + M.(lift_state path_filter >>= is_filter_constructible ~kind:Insert))
 
   let bookkeep_dst (x : Common.C_id.t) ~(tid : int) : unit Fuzz.State.Monad.t
       =

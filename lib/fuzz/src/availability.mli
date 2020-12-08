@@ -77,4 +77,6 @@ val has_variables : predicates:(Var.Record.t -> bool) list -> t
 
 val in_var_cap : after_adding:int -> t
 (** [in_var_cap ~after_adding] holds if, after adding [after_adding]
-    variables, we are within the variable cap. *)
+    variables, we are within the variable cap. If [after_adding] is zero or
+    negative, this will return [true] regardless of whether the number of
+    variables already exceeds the cap. *)

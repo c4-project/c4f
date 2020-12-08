@@ -77,6 +77,8 @@ module Insert = struct
       let module G = B.Quickcheck (Src) (Dst) in
       ignore vars ; ignore tid ; G.quickcheck_generator
 
+    let new_local_cap : int = 0
+
     let new_locals (_ : Fir.Assign.t) :
         Fir.Initialiser.t Common.C_named.Alist.t =
       []

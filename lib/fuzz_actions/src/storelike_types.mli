@@ -61,6 +61,11 @@ module type Basic = sig
       [dst], a variable map [var] for fresh variable generation, and the
       target thread ID [tid]. *)
 
+  val new_local_cap : int
+  (** [new_local_cap] is the maximum number of new locals that will be added
+      for this storelike; the action will refuse to fire if adding this
+      amount exceeds the variable cap. *)
+
   val new_locals : t -> Fir.Initialiser.t Act_common.C_named.Alist.t
   (** [new_locals s] gets a list of any new local variables created for this
       storelike, which should be registered and added to both the thread's

@@ -92,6 +92,8 @@ module Insert = struct
             Fir.(Prim_statement.atomic @> Atomic_statement.fetch)
             x ]
 
+    let new_local_cap : int = 0
+
     let new_locals (_ : Fir.Expression.t Fir.Atomic_fetch.t) :
         Fir.Initialiser.t Common.C_named.Alist.t =
       []
@@ -206,6 +208,8 @@ module Cond_insert = struct
       Fir.Expression.bop (Rel comparator)
         (Fir.Expression.atomic_fetch fetch)
         target
+
+    let new_local_cap : int = 0
 
     let new_locals (_ : t) : Fir.Initialiser.t Common.C_named.Alist.t = []
 

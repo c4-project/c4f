@@ -126,8 +126,12 @@ module Insert = struct
 
     let dst_type : Fir.Type.Basic.t = Fir.Type.Basic.int ~is_atomic:true ()
 
+    let new_local_cap : int = 2
+
     let new_locals (x : Inner_payload.t) :
         Fir.Initialiser.t Common.C_named.Alist.t =
+      (* TODO(@MattWindsor91): possibly piggyback off an existing known-true
+         variable for out *)
       [ ( Common.Litmus_id.variable_name x.out_var
         , Fir.Initialiser.make ~ty:(Fir.Type.bool ())
             ~value:Fir.Constant.truth )
