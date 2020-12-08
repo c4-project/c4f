@@ -47,6 +47,9 @@ module Payload = struct
   module Counter = struct
     type t = {var: Common.Litmus_id.t; ty: Fir.Type.t} [@@deriving sexp]
 
+    let can_make : Fuzz.Availability.t =
+      Fuzz.Availability.in_var_cap ~after_adding:1
+
     let lc_expr ({var; ty} : t) : Fir.Expression.t =
       let name = Common.Litmus_id.variable_name var in
       let lc_tvar = Common.C_named.make ty ~name in
@@ -206,8 +209,8 @@ module Insert = struct
       (fresh) counter to the known value of an existing variable and
       compares it in such a way as to be dead-code. |}
 
-    (* These may induce atomic loads, and so can't be in atomic blocks. *)
-    let available = kv_available Insert
+    let available : Fuzz.Availability.t =
+      Fuzz.Availability.(Pd.Counter.can_make + kv_available Insert)
 
     let path_filter = kv_live_path_filter
 
@@ -273,9 +276,10 @@ module Surround = struct
 
     let available : Fuzz.Availability.t =
       Fuzz.Availability.(
-        M.(
-          lift_state path_filter
-          >>= is_filter_constructible ~kind:Transform_list))
+        Pd.Counter.can_make
+        + M.(
+            lift_state path_filter
+            >>= is_filter_constructible ~kind:Transform_list))
 
     module Payload = struct
       include Payload.Simple
@@ -330,7 +334,8 @@ module Surround = struct
 
     let path_filter = kv_live_path_filter
 
-    let available = kv_available Transform_list
+    let available : Fuzz.Availability.t =
+      Fuzz.Availability.(Pd.Counter.can_make + kv_available Transform_list)
 
     module Payload = Payload.Kv
 
@@ -368,11 +373,12 @@ module Surround = struct
          to us in the generator, so the path filter doesn't have to. *)
       Fuzz.Path_filter.require_flag In_dead_code
 
-    let available =
+    let available : Fuzz.Availability.t =
       Fuzz.Availability.(
-        M.(
-          lift_state path_filter
-          >>= is_filter_constructible ~kind:Transform_list))
+        Pd.Counter.can_make
+        + M.(
+            lift_state path_filter
+            >>= is_filter_constructible ~kind:Transform_list))
 
     module Payload = struct
       type t = Fir.Flow_block.For.t [@@deriving sexp]
