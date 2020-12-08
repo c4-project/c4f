@@ -67,11 +67,14 @@ val has_threads : t
     one thread exists. *)
 
 val is_filter_constructible : Path_filter.t -> kind:Path_kind.t -> t
-(** [is_filter_constructible filter ~kind] is an availability check that
-    returns true if at least one path of kind [kind] is constructible from
-    the subject that satisfies [filter]. *)
+(** [is_filter_constructible filter ~kind] holds if returns true if at least
+    one path of kind [kind] is constructible from the subject that satisfies
+    [filter]. *)
 
 val has_variables : predicates:(Var.Record.t -> bool) list -> t
-(** [has_variables ~predicates] is an availability check that returns true if
-    there exists at least one variable in the current map that satisfies all
-    of [predicates]. *)
+(** [has_variables ~predicates] holds if there exists at least one variable
+    in the current map that satisfies all of [predicates]. *)
+
+val in_var_cap : after_adding:int -> t
+(** [in_var_cap ~after_adding] holds if, after adding [after_adding]
+    variables, we are within the variable cap. *)

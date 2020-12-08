@@ -51,6 +51,12 @@ let has_variables ~(predicates : (Var.Record.t -> bool) list) : t =
   M.lift (fun {state= {vars; _}; _} ->
       Map.exists ~f (Act_common.Scoped_map.to_litmus_id_map vars))
 
+let in_var_cap ~(after_adding : int) : t =
+  M.(
+    let* cap = param Config_tables.var_cap_param in
+    let+ vars = lift_acc (Context.state @> State.vars) in
+    Common.Scoped_map.length vars + after_adding <= cap)
+
 include (
   struct
     let zero : t = always

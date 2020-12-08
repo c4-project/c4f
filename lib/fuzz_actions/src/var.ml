@@ -98,15 +98,8 @@ struct
             Atomic_store.Insert.int_action_names
           else Var_assign.Insert.int_action_names )
 
-  let in_cap : Fuzz.Availability.t =
-    Fuzz.Availability.(
-      M.(
-        let* cap = param Fuzz.Config_tables.var_cap_param in
-        let+ vars = lift_acc (Context.state @> Fuzz.State.vars) in
-        Common.Scoped_map.length vars < cap))
-
   let available : Fuzz.Availability.t =
-    Fuzz.Availability.(has_threads + in_cap)
+    Fuzz.Availability.(has_threads + in_var_cap ~after_adding:1)
 
   let run (subject : Fuzz.Subject.Test.t)
       ~payload:({basic_type; initial_value; var} : Payload.t) :
