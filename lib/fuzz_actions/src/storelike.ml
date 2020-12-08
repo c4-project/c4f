@@ -200,6 +200,7 @@ struct
       Fuzz.Subject.Test.t Or_error.t =
     Tx.List.With_errors.fold_m new_locals ~init:target
       ~f:(fun subject (id, init) ->
+        (* Variable registration happens as part of the bookkeeping pass. *)
         Fuzz.Subject.Test.declare_var subject
           (Common.Litmus_id.local tid id)
           init)

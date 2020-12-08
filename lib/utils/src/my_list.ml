@@ -108,18 +108,20 @@ let map_sub (xs : 'a list) ~(span : Span.t) ~(f : 'a -> 'a) :
 let eval_guards : (bool * (unit -> 'a)) list -> 'a list =
   List.filter_map ~f:(fun (g, f) -> if g then Some (f ()) else None)
 
-let merge_preserving_order (equal: 'a -> 'a -> bool) (l : 'a list) (r : 'a list) : 'a list =
+let merge_preserving_order (equal : 'a -> 'a -> bool) (l : 'a list)
+    (r : 'a list) : 'a list =
   (* https://stackoverflow.com/a/36132099 *)
-  let (pos, merged) = List.fold l ~init:(0, [])
-    ~f:(fun (pos, merged) x ->
-      if List.mem merged x ~equal
-      then (pos, merged)
-      else (
-        match List.findi r ~f:(Fn.const (equal x)) with
-        | Some (xpos, _) ->
-          (xpos + 1, x::(List.rev_append (List.sub r ~pos ~len:(xpos - pos)) merged))
-        | None -> (pos, x::merged)
-      )
-    )
+  let pos, merged =
+    List.fold l ~init:(0, []) ~f:(fun (pos, merged) x ->
+        if List.mem merged x ~equal then (pos, merged)
+        else
+          match List.findi r ~f:(Fn.const (equal x)) with
+          | Some (xpos, _) ->
+              ( xpos + 1
+              , x
+                :: List.rev_append (List.sub r ~pos ~len:(xpos - pos)) merged
+              )
+          | None ->
+              (pos, x :: merged))
   in
   List.rev_append merged (List.drop r pos)

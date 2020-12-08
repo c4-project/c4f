@@ -69,16 +69,16 @@ end
 
 (** {1 Manipulating lists} *)
 
-val merge_preserving_order : ('a -> 'a -> bool) -> 'a list -> 'a list -> 'a list
+val merge_preserving_order :
+  ('a -> 'a -> bool) -> 'a list -> 'a list -> 'a list
 (** [merge_preserving_order equal l r] merges [l] and [r] in such a way that:
 
     - if [l] and [r] are duplicate-free, so is the result;
     - the order of the elements is the same as in [l] and [r], preferring the
       order in [r] if there is a clash.
-    
+
     This merge is the same as that described in
-    https://stackoverflow.com/questions/36128200.
-*)
+    https://stackoverflow.com/questions/36128200. *)
 
 val split_or_error : 'a list -> int -> ('a list * 'a list) Or_error.t
 (** [split_or_error xs n] behaves like [split xs n], but returns an error if
