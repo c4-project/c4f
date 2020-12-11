@@ -1,0 +1,25 @@
+C test_7
+
+{ x = 0; }
+
+void
+P0(atomic_int *x)
+{
+    int expected = 0;
+    expected = 2;
+    atomic_compare_exchange_strong_explicit(x, &expected, 1,
+                                            memory_order_relaxed,
+                                            memory_order_relaxed);
+}
+
+void
+P1(atomic_int *x)
+{
+    int expected = 0;
+    expected = 1;
+    atomic_compare_exchange_strong_explicit(x, &expected, 2,
+                                            memory_order_relaxed,
+                                            memory_order_relaxed);
+}
+
+forall (0:r0 == 0 /\ 1:r0 == 0 /\ x == 0)

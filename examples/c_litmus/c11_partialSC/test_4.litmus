@@ -1,0 +1,9 @@
+C test_4
+
+{ x = 0; }
+
+void
+P0(atomic_int *x)
+{ *x = 2; *x = 1; }
+
+forall (x == 1)

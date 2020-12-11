@@ -1,0 +1,9 @@
+C test_0
+
+{ x = 0; }
+
+void
+P0(int *x)
+{ int r0 = 0; r0 = *x; *x = 1; }
+
+forall (0:r0 == 0 /\ x == 1)
