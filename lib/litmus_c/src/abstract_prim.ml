@@ -140,14 +140,16 @@ let value_of_initialiser : Ast.Initialiser.t -> Fir.Constant.t Or_error.t =
 
 let decl (d : Ast.Decl.t) : Fir.Initialiser.t Common.C_named.t Or_error.t =
   Or_error.Let_syntax.(
-    let%bind idecl = Tx.List.one d.declarator in
-    let%bind name, is_pointer = declarator_to_id idecl.declarator in
+    let%bind {declarator; initialiser} = Tx.List.one d.declarator in
+    let%bind name, is_pointer = declarator_to_id declarator in
     let%bind ty = qualifiers_to_type d.qualifiers ~is_pointer in
-    let%bind init =
-      Result.of_option idecl.initialiser
-        ~error:(Error.of_string "Empty initialisers not supported")
+    (* Ideally, we'd forbid empty initialisers entirely here, but Memalloy
+       occasionally outputs them (eg for compare-exchanges). This is a
+       compromise that slightly changes semantics. *)
+    let%map value =
+      Option.value_map initialiser ~f:value_of_initialiser
+        ~default:(Ok (Fir.Constant.zero_of_type ty))
     in
-    let%map value = value_of_initialiser init in
     Common.C_named.make ~name (Fir.Initialiser.make ~ty ~value))
 
 let param_decl : Ast.Param_decl.t -> Fir.Type.t Common.C_named.t Or_error.t =
