@@ -61,10 +61,10 @@ end
 
 module M = struct
   type t =
-    { flags: Flag_set.t
-    ; states: Entry.Set.t
-    ; witnesses: Entry.Set.t
-    ; counter_examples: Entry.Set.t }
+    { flags: Flag_set.t [@default Set.empty (module Flag)]
+    ; states: Entry.Set.t [@default Set.empty (module Entry)]
+    ; witnesses: Entry.Set.t [@default Set.empty (module Entry)]
+    ; counter_examples: Entry.Set.t [@default Set.empty (module Entry)] }
   [@@deriving fields, sexp_of, quickcheck, yojson]
 end
 
