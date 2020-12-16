@@ -36,36 +36,32 @@ module Make (Basic : sig
 end) =
 struct
   module Rewriter_with_thread (Ctx : sig
-    module T : Thread.S
+    val thread : Thread.t
 
     val context : Context.t
   end) =
   struct
     let rewrite_lvalue_if_global : Fir.Lvalue.t -> Fir.Lvalue.t Or_error.t =
-      Ctx.T.when_global
-        ~over:(Accessor.get Fir.Lvalue.variable_of)
+      Thread.when_global Ctx.thread ~over:Fir.Lvalue.variable_of
         ~f:Basic.rewrite_global_lvalue
 
     let rewrite_address_if_global : Fir.Address.t -> Fir.Address.t Or_error.t
         =
-      Ctx.T.when_global
-        ~over:(Accessor.get Fir.Address.variable_of)
+      Thread.when_global Ctx.thread ~over:Fir.Address.variable_of
         ~f:Basic.rewrite_global_address
 
     let rewrite_lvalue_if_local : Fir.Lvalue.t -> Fir.Lvalue.t Or_error.t =
-      Ctx.T.when_local
-        ~over:(Accessor.get Fir.Lvalue.variable_of)
+      Thread.when_local Ctx.thread ~over:Fir.Lvalue.variable_of
         ~f:Basic.rewrite_local_lvalue
 
     let rewrite_address_if_local : Fir.Address.t -> Fir.Address.t Or_error.t
         =
-      Ctx.T.when_local
-        ~over:(Accessor.get Fir.Address.variable_of)
+      Thread.when_local Ctx.thread ~over:Fir.Address.variable_of
         ~f:Basic.rewrite_local_address
 
     let rewrite_id_if_local : Common.C_id.t -> Common.C_id.t Or_error.t =
-      Ctx.T.when_local ~over:Fn.id
-        ~f:(Basic.rewrite_local_cid ~context:Ctx.context ~tid:Ctx.T.tid)
+      Thread.when_local Ctx.thread ~over:Accessor.id
+        ~f:(Basic.rewrite_local_cid ~context:Ctx.context ~tid:Ctx.thread.tid)
 
     module C_stm_meta = Fir.Statement_traverse.With_meta (Unit)
 
@@ -113,7 +109,7 @@ struct
            (Common.Litmus_id.t, Var_map.Record.t) List.Assoc.t
         -> (Common.Litmus_id.t, Var_map.Record.t) List.Assoc.t =
       List.filter ~f:(fun (k, _) ->
-          Common.Litmus_id.is_in_local_scope k ~from:Ctx.T.tid)
+          Common.Litmus_id.is_in_local_scope k ~from:Ctx.thread.tid)
 
     let expand_parameter (record : Var_map.Record.t) :
         (Common.C_id.t * Fir.Type.t) Or_error.t =
@@ -137,21 +133,18 @@ struct
     let rewrite : unit Fir.Function.t -> unit Fir.Function.t Or_error.t =
       F.map_m
         ~parameters:(fun _ -> populate_parameters ())
-        ~body_decls:(fun _ -> Or_error.return [])
+        ~body_decls:(fun _ -> Ok [])
         ~body_stms:rewrite_statements
   end
 
   let rewrite (tid : int) (func : unit Fir.Function.t) ~(context : Context.t)
       : unit Fir.Function.t Or_error.t =
-    let module T = Thread.Make (struct
-      let tid = tid
-
-      let locals =
-        func |> Fir.Function.body_decls |> List.map ~f:fst
-        |> Set.of_list (module Common.C_id)
-    end) in
+    let locals =
+      func |> Fir.Function.body_decls |> List.map ~f:fst
+      |> Set.of_list (module Common.C_id)
+    in
     let module M = Rewriter_with_thread (struct
-      module T = T
+      let thread = {Thread.tid; locals}
 
       let context = context
     end) in

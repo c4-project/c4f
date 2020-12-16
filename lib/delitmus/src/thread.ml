@@ -12,36 +12,16 @@
 open Base
 open Import
 
-module type S = sig
-  val tid : int
+type t = {tid: int; locals: Set.M(Common.C_id).t}
 
-  val when_local :
-       'a
-    -> over:('a -> Common.C_id.t)
-    -> f:('a -> 'a Or_error.t)
-    -> 'a Or_error.t
+let is_local ({locals; _} : t) : Common.C_id.t -> bool = Set.mem locals
 
-  val when_global :
-       'a
-    -> over:('a -> Common.C_id.t)
-    -> f:('a -> 'a Or_error.t)
-    -> 'a Or_error.t
-end
+let when_local (t : t) (v : 'a)
+    ~(over : (unit, Common.C_id.t, 'a, getter) Accessor.Simple.t)
+    ~(f : 'a -> 'a Or_error.t) : 'a Or_error.t =
+  if is_local t v.@(over) then f v else Ok v
 
-module Make (B : sig
-  val tid : int
-
-  val locals : Set.M(Common.C_id).t
-end) : S = struct
-  let tid = B.tid
-
-  let is_local : Common.C_id.t -> bool = Set.mem B.locals
-
-  let when_local (v : 'a) ~(over : 'a -> Common.C_id.t)
-      ~(f : 'a -> 'a Or_error.t) : 'a Or_error.t =
-    if is_local (over v) then f v else Ok v
-
-  let when_global (v : 'a) ~(over : 'a -> Common.C_id.t)
-      ~(f : 'a -> 'a Or_error.t) : 'a Or_error.t =
-    if is_local (over v) then Ok v else f v
-end
+let when_global (t : t) (v : 'a)
+    ~(over : (unit, Common.C_id.t, 'a, getter) Accessor.Simple.t)
+    ~(f : 'a -> 'a Or_error.t) : 'a Or_error.t =
+  if is_local t v.@(over) then Ok v else f v

@@ -9,36 +9,28 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Delitmusifier: thread contexts as modules. *)
+(** Delitmusifier: thread contexts. *)
 
 open Base
 open Import
 
-(** Module type of modularised thread contexts. *)
-module type S = sig
-  val tid : int
-  (** [tid] is the thread ID of the thread. *)
+(** Type of thread context. *)
+type t = {tid: int; locals: Set.M(Common.C_id).t}
 
-  val when_local :
-       'a
-    -> over:('a -> Common.C_id.t)
-    -> f:('a -> 'a Or_error.t)
-    -> 'a Or_error.t
-  (** [when_local x ~over ~f] returns [f x] when [over x] is local, and [x]
-      otherwise. *)
+val when_local :
+     t
+  -> 'a
+  -> over:(unit, Common.C_id.t, 'a, getter) Accessor.Simple.t
+  -> f:('a -> 'a Or_error.t)
+  -> 'a Or_error.t
+(** [when_local t x ~over ~f] returns [f x] when [x.@(over)] is local in [t],
+    and [x] otherwise. *)
 
-  val when_global :
-       'a
-    -> over:('a -> Common.C_id.t)
-    -> f:('a -> 'a Or_error.t)
-    -> 'a Or_error.t
-  (** [when_local x ~over ~f] returns [x] when [over x] is local, and [f x]
-      otherwise. *)
-end
-
-(** Makes a thread context module from a thread ID and local environment. *)
-module Make (B : sig
-  val tid : int
-
-  val locals : Set.M(Common.C_id).t
-end) : S
+val when_global :
+     t
+  -> 'a
+  -> over:(unit, Common.C_id.t, 'a, getter) Accessor.Simple.t
+  -> f:('a -> 'a Or_error.t)
+  -> 'a Or_error.t
+(** [when_local t x ~over ~f] returns [x] when [x.@(over)] is local in [t],
+    and [f x] otherwise. *)

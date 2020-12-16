@@ -5,8 +5,7 @@
   (pps ppx_jane))
  (libraries result yojson ppx_yojson_conv_lib sexplib0 base.caml core_kernel
    core stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
-   c4f.fir c4f.common c4f.config c4f.delitmus c4f.fuzz c4f.litmus
-   c4f.utils))
+   c4f.fir c4f.common c4f.config c4f.delitmus c4f.fuzz c4f.litmus c4f.utils))
 
 (executables
  (names config config_failures delitmus dump_header fuzz_replays
