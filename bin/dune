@@ -9,9 +9,3 @@
  (public_name act-fuzz)
  (modules act_fuzz)
  (libraries base core_kernel core common_cmd cmd_fuzz))
-
-(executable
- (name act_state)
- (public_name act-state)
- (modules act_state)
- (libraries base core_kernel core common_cmd cmd_state))
