@@ -12,8 +12,8 @@
 open Base
 
 type t = {ty: Type.t; value: Constant.t}
-[@@deriving sexp, make, compare, equal, accessors, quickcheck]
+[@@deriving sexp, compare, equal, accessors, quickcheck]
 
 let of_int ?(is_atomic : bool = false) ?(is_volatile : bool = false)
     (value : int) =
-  make ~ty:(Type.int ~is_atomic ~is_volatile ()) ~value:(Constant.int value)
+  {ty= Type.int ~is_atomic ~is_volatile (); value= Constant.int value}

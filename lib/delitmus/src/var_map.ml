@@ -17,8 +17,12 @@ module Mapping = struct
 end
 
 module Record = struct
-  type t = {c_type: Fir.Type.t; c_id: Common.C_id.t; mapped_to: Mapping.t}
-  [@@deriving fields, make, yojson, equal]
+  type t =
+    { c_type: Fir.Type.t
+    ; c_id: Common.C_id.t
+    ; mapped_to: Mapping.t
+    ; initial_value: Fir.Constant.t option [@yojson.option] }
+  [@@deriving accessors, yojson, equal]
 
   let mapped_to_global : t -> bool = function
     | {mapped_to= Global; _} ->
@@ -39,7 +43,7 @@ let lookup_and_require_global (map : t) ~(id : Common.Litmus_id.t) :
     Common.C_id.t Or_error.t =
   Or_error.Let_syntax.(
     let%bind r = Common.Scoped_map.find_by_litmus_id map ~id in
-    if Record.mapped_to_global r then Ok (Record.c_id r)
+    if Record.mapped_to_global r then Ok r.c_id
     else
       Or_error.error_s
         [%message
@@ -51,7 +55,7 @@ let lookup_and_require_param (map : t) ~(id : Common.Litmus_id.t) :
     Common.C_id.t Or_error.t =
   Or_error.Let_syntax.(
     let%bind r = Common.Scoped_map.find_by_litmus_id map ~id in
-    if Record.mapped_to_param r then Ok (Record.c_id r)
+    if Record.mapped_to_param r then Ok r.c_id
     else
       Or_error.error_s
         [%message
@@ -60,7 +64,7 @@ let lookup_and_require_param (map : t) ~(id : Common.Litmus_id.t) :
 
 let to_param_opt (lit_id : Common.Litmus_id.t) (rc : Record.t) :
     (int * (Common.Litmus_id.t * Record.t)) option =
-  match Record.mapped_to rc with
+  match rc.mapped_to with
   | Param k ->
       Some (k, (lit_id, rc))
   | Global ->
@@ -82,7 +86,7 @@ let globally_mapped_vars : t -> (Common.Litmus_id.t, Record.t) List.Assoc.t =
 let global_c_variables : t -> Set.M(Common.C_id).t =
   Common.Scoped_map.build_set
     (module Common.C_id)
-    ~f:(fun _ r -> Record.(Option.some_if (mapped_to_global r) (c_id r)))
+    ~f:(fun _ r -> Record.(Option.some_if (mapped_to_global r) r.c_id))
 
 module Json = Common.Scoped_map.Make_json (Record)
 

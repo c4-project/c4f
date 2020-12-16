@@ -31,17 +31,17 @@ let%test_module "decls" =
         let%expect_test "atomic bool" =
           test
             (Ac.C_named.make ~name:(Ac.C_id.of_string "bar")
-               (Fir.Initialiser.make
-                  ~ty:(Fir.Type.bool ~is_atomic:true ())
-                  ~value:Fir.Constant.truth)) ;
+               Fir.
+                 { Initialiser.ty= Type.bool ~is_atomic:true ()
+                 ; value= Constant.truth }) ;
           [%expect {| atomic_bool bar = true; |}]
 
         let%expect_test "volatile int" =
           test
             (Ac.C_named.make ~name:(Ac.C_id.of_string "foo")
-               (Fir.Initialiser.make
-                  ~ty:(Fir.Type.int ~is_volatile:true ())
-                  ~value:(Fir.Constant.int 42))) ;
+               Fir.
+                 { Initialiser.ty= Type.int ~is_volatile:true ()
+                 ; value= Constant.int 42 }) ;
           [%expect {| int volatile foo = 42; |}]
       end )
 

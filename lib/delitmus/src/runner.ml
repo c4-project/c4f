@@ -15,23 +15,18 @@ open Import
 module Make (B : Runner_types.Basic) : Runner_types.S = struct
   module Amake = Aux_maker.Make (B)
 
-  let make_global (ctx : Context.t) (id : Common.Litmus_id.t)
-      (record : Var_map.Record.t) : Common.C_id.t * Fir.Initialiser.t =
-    let ty = Var_map.Record.c_type record in
-    (* TODO(@MattWindsor91): is this correct? *)
+  let make_global ({c_type; c_id; initial_value; _} : Var_map.Record.t) :
+      Common.C_id.t * Fir.Initialiser.t =
     let value =
-      Option.value
-        (Context.lookup_initial_value ~id ctx)
-        ~default:(Fir.Constant.zero_of_type ty)
+      Option.value initial_value ~default:(Fir.Constant.zero_of_type c_type)
     in
-    let cid = Var_map.Record.c_id record in
-    (cid, Fir.Initialiser.make ~ty ~value)
+    (c_id, Fir.{Initialiser.ty= c_type; value})
 
   let make_globals (ctx : Context.t) :
       (Common.C_id.t, Fir.Initialiser.t) List.Assoc.t =
     let vm = Context.var_map ctx in
     let global_recs = Var_map.globally_mapped_vars vm in
-    List.map ~f:(fun (i, v) -> make_global ctx i v) global_recs
+    List.map ~f:(fun (_, v) -> make_global v) global_recs
 
   let make_program (input : Fir.Litmus.Test.t) (context : Context.t) :
       unit Fir.Program.t Or_error.t =

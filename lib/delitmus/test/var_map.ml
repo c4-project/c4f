@@ -25,18 +25,25 @@ let%test_module "with example map" =
         (Map.of_alist_exn
            (module Li)
            [ ( Li.of_string "0:r0"
-             , Rc.make ~c_id:(Ci.of_string "t0r0") ~c_type:(Ct.int ())
-                 ~mapped_to:Global )
+             , { M.Record.c_id= Ci.of_string "t0r0"
+               ; c_type= Ct.int ()
+               ; mapped_to= Global
+               ; initial_value= Some (Act_fir.Constant.Int 0) } )
            ; ( Li.of_string "1:r0"
-             , Rc.make ~c_id:(Ci.of_string "t1r0") ~c_type:(Ct.bool ())
-                 ~mapped_to:Global )
+             , { M.Record.c_id= Ci.of_string "t1r0"
+               ; c_type= Ct.bool ()
+               ; mapped_to= Global
+               ; initial_value= Some Act_fir.Constant.falsehood } )
            ; ( Li.of_string "1:tmp"
-             , Rc.make ~c_id:(Ci.of_string "t1tmp") ~c_type:(Ct.int ())
-                 ~mapped_to:(Param 0) )
+             , { M.Record.c_id= Ci.of_string "t1tmp"
+               ; c_type= Ct.int ()
+               ; mapped_to= Param 0
+               ; initial_value= Some (Act_fir.Constant.Int 0) } )
            ; ( Li.of_string "x"
-             , Rc.make ~c_id:(Ci.of_string "x")
-                 ~c_type:(Ct.int ~is_atomic:true ())
-                 ~mapped_to:Global ) ])
+             , { M.Record.c_id= Ci.of_string "x"
+               ; c_type= Ct.int ~is_atomic:true ()
+               ; mapped_to= Global
+               ; initial_value= Some (Act_fir.Constant.Int 0) } ) ])
 
     let%expect_test "global_c_variables" =
       Set.iter

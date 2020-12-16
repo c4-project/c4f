@@ -109,7 +109,8 @@ let%test_module "make_alist" =
       [%expect
         {|
           (Ok
-           ((x ((ty atomic_int*) (param_index 0)))
-            (y ((ty atomic_int*) (param_index 1))) (0:r1 ((ty int) (param_index 2)))
-            (0:r0 ((ty int) (param_index 3))))) |}]
+           ((x ((ty atomic_int*) (param_index 0) (initial_value ((Int 0)))))
+            (y ((ty atomic_int*) (param_index 1) (initial_value ((Int 0)))))
+            (0:r1 ((ty int) (param_index 2) (initial_value ((Int 0)))))
+            (0:r0 ((ty int) (param_index 3) (initial_value ((Int 0))))))) |}]
   end )

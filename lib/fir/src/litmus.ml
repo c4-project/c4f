@@ -60,12 +60,15 @@ module Var = struct
     (* TODO(MattWindsor91): merge this with one of the 9000 other variable
        record modules? *)
 
-    type t = {ty: Type.t; param_index: int} [@@deriving compare, sexp]
+    type t = {ty: Type.t; param_index: int; initial_value: Constant.t option}
+    [@@deriving compare, sexp]
   end
 
-  let number_parameter ([param_index] : (int * unit) Accessor.Index.t)
-      (ty : Type.t) : Record.t =
-    {ty; param_index}
+  let expand_parameter (param_index : int)
+      ~(init : Constant.t Common.C_named.Alist.t)
+      ((id, ty) : Common.C_id.t * Type.t) : Common.C_id.t * Record.t =
+    let initial_value = List.Assoc.find init ~equal:Common.C_id.equal id in
+    (id, {ty; param_index; initial_value})
 
   let merge_parameters (pss : Type.t Common.C_named.Alist.t list) :
       Type.t Common.C_named.Alist.t Or_error.t =
@@ -84,25 +87,26 @@ module Var = struct
         |> List.find_all_dups
              ~compare:(Comparable.lift ~f:fst Common.C_id.compare)
         |> List.map ~f:(fun (d, _) ->
-               Or_error.errorf "parameter type inconsistency: %s"
+               Or_error.errorf "parameter definition inconsistency: %s"
                  (Common.C_id.to_string d))
         |> Or_error.combine_errors_unit
       in
       ps)
 
-  let merge_and_number_parameters (pss : Type.t Common.C_named.Alist.t list)
-      : Record.t Common.C_named.Alist.t Or_error.t =
+  let merge_and_expand_parameters (init : Constant.t Common.C_named.Alist.t)
+      (pss : Type.t Common.C_named.Alist.t list) :
+      Record.t Common.C_named.Alist.t Or_error.t =
     Or_error.(
-      pss |> merge_parameters
-      >>| Accessor.(mapi (List.eachi @> Tuple2.snd) ~f:number_parameter))
+      pss |> merge_parameters >>| List.mapi ~f:(expand_parameter ~init))
 
-  let make_global_alist (progs : Test.Lang.Program.t list) :
+  let make_global_alist (init : Constant.t Common.C_named.Alist.t)
+      (progs : Test.Lang.Program.t list) :
       (Common.Litmus_id.t, Record.t) List.Assoc.t Or_error.t =
     Or_error.(
       Accessor_base.(
         progs.@*(List.each @> Common.C_named.value
                  @> Function.Access.parameters))
-      |> merge_and_number_parameters
+      |> merge_and_expand_parameters init
       |> Or_error.tag ~tag:"couldn't deduce global parameters"
       >>| Tx.Alist.map_left ~f:Act_common.Litmus_id.global)
 
@@ -111,18 +115,20 @@ module Var = struct
     let decs =
       Accessor.to_listi
         ( Common.C_named.value @> Function.Access.body_decls
-        @> Accessor.List.eachi @> Accessor.Tuple2.sndi @> Initialiser.ty )
+        @> Accessor.List.eachi @> Accessor.Tuple2.sndi )
         prog
     in
-    List.map decs ~f:(fun ([name; ix], ty) ->
+    List.map decs ~f:(fun ([name; ix], {Initialiser.ty; value}) ->
         let param_index = ix + starts_at in
-        (Common.Litmus_id.local tid name, {Record.ty; param_index}))
+        ( Common.Litmus_id.local tid name
+        , {Record.ty; param_index; initial_value= Some value} ))
 
   let make_alist (vast : Test.t) :
       (Act_common.Litmus_id.t, Record.t) List.Assoc.t Or_error.t =
+    let init = Test.init vast in
     let programs = Test.threads vast in
     Or_error.Let_syntax.(
-      let%map global_alist = make_global_alist programs in
+      let%map global_alist = make_global_alist init programs in
       let local_alist =
         List.concat_mapi programs
           ~f:(make_local_alist ~starts_at:(List.length global_alist))

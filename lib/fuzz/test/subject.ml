@@ -21,13 +21,13 @@ module Test_data = struct
   let body_decls : Fir.Initialiser.t Act_common.C_named.Alist.t Lazy.t =
     lazy
       [ ( Act_common.C_id.of_string "r0"
-        , Fir.Initialiser.make
-            ~ty:(Fir.Type.int ~is_atomic:true ())
-            ~value:(Fir.Constant.int 4004) )
+        , Fir.
+            { Initialiser.ty= Fir.Type.int ~is_atomic:true ()
+            ; value= Fir.Constant.int 4004 } )
       ; ( Act_common.C_id.of_string "r1"
-        , Fir.Initialiser.make
-            ~ty:(Fir.Type.int ~is_atomic:false ())
-            ~value:(Fir.Constant.int 8008) ) ]
+        , Fir.
+            { Initialiser.ty= Fir.Type.int ~is_atomic:false ()
+            ; value= Fir.Constant.int 8008 } ) ]
 
   let mk_store (a : Fir.Atomic_store.t) : Src.Subject.Statement.t =
     Src.Subject.Statement.make_generated_prim

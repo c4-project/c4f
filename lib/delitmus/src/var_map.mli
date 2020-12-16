@@ -37,25 +37,13 @@ end
 (** {1 Records} *)
 
 module Record : sig
-  type t [@@deriving yojson, equal]
-
-  val make :
-    c_type:Fir.Type.t -> c_id:Common.C_id.t -> mapped_to:Mapping.t -> t
-  (** [make ~c_type ~c_id ~mapped_to] constructs a variable map record for a
-      variable with mapped C name [c_id] and type [c_id], and delitmus
-      mapping information supplied by [mapped_to]. *)
-
-  (** {2 Accessors} *)
-
-  val c_type : t -> Fir.Type.t
-  (** [c_type r] gets the C type of [r]. *)
-
-  val c_id : t -> Common.C_id.t
-  (** [c_id r] gets the delitmusified C variable name of [r]. *)
-
-  val mapped_to : t -> Mapping.t
-  (** [mapped_to_global r] gets how [r]'s variable maps into the
-      delitmusified version of the test. *)
+  (** Type of delitmus variable records. *)
+  type t =
+    { c_type: Fir.Type.t
+    ; c_id: Common.C_id.t
+    ; mapped_to: Mapping.t
+    ; initial_value: Fir.Constant.t option }
+  [@@deriving accessors, yojson, equal]
 
   val mapped_to_global : t -> bool
   (** [mapped_to_global r] gets whether [r]'s variable has been mapped into

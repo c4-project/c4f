@@ -20,9 +20,9 @@ let try_parse_program_id (id : Common.C_id.t) : int Or_error.t =
 
 let to_param_opt (lit_id : Common.Litmus_id.t) (rc : Var_map.Record.t) :
     (int * (Common.Litmus_id.t * Fir.Type.t)) option =
-  match Var_map.Record.mapped_to rc with
+  match rc.mapped_to with
   | Param k ->
-      Some (k, (lit_id, Var_map.Record.c_type rc))
+      Some (k, (lit_id, rc.c_type))
   | Global ->
       None
 
@@ -73,9 +73,10 @@ let local_decls (tid : int) :
       if [%equal: int option] (Common.Litmus_id.tid id) (Some tid) then
         Some
           ( Common.Litmus_id.variable_name id
-          , Fir.Initialiser.make
-              ~ty (* TODO(@MattWindsor91): fix this properly. *)
-              ~value:(Fir.Constant.int 0) )
+          , Fir.
+              { Initialiser.ty
+              ; (* TODO(@MattWindsor91): fix this properly. *)
+                value= Fir.Constant.int 0 } )
       else None)
 
 let inner_call_argument (lid : Common.Litmus_id.t) (ty : Fir.Type.t) :

@@ -133,10 +133,10 @@ module Insert = struct
       (* TODO(@MattWindsor91): possibly piggyback off an existing known-true
          variable for out *)
       [ ( Common.Litmus_id.variable_name x.out_var
-        , Fir.Initialiser.make ~ty:(Fir.Type.bool ())
-            ~value:Fir.Constant.truth )
+        , Fir.{Initialiser.ty= Fir.Type.bool (); value= Fir.Constant.truth}
+        )
       ; ( Common.Litmus_id.variable_name x.exp_var
-        , Fir.Initialiser.make ~ty:(Fir.Type.int ()) ~value:x.exp_val ) ]
+        , Fir.{Initialiser.ty= Fir.Type.int (); value= x.exp_val} ) ]
 
     let src_exprs (x : Inner_payload.t) : Fir.Expression.t list =
       [ Fir.Atomic_cmpxchg.desired x.cmpxchg

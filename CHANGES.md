@@ -3,6 +3,15 @@
 Note that these changes are infrequently maintained and may not tell the
 whole story.
 
+## 2020-Dec-16
+
+- Delitmus aux output now carries an extra, optional `initial_value`
+  key for every variable in the `var_map`.  This follows the existing
+  `init` in the litmus header, but also includes any initialised value
+  for local variables.  (Local variable initialisers are still not yet
+  translated by the delitmusifier into assignments, but this may be
+  added as an option later.)
+
 ## 2020-Dec-02
 
 - Renamed the OPAM package from `act` to `c4f`, also renaming any public
@@ -45,14 +54,14 @@ whole story.
 
 - `get_a_backend` has been removed; use `act-backend find` instead.
 
-## 2020-Jan-17
+## 2020-Jan-17
 
 - New command `act-backend find`, which takes a style ID and zero or more
   machines, and returns the first viable backend with that style in the
   combination of given and default machines (in order of specification).
   This will eventually replace the `get_a_backend` script.
 
-## 2020-Jan-16
+## 2020-Jan-16
 
 - New _experimental_ command `act-config probe`, which probes a machine
   (local or SSH) for compilers and backends, and emits an `act.conf`
@@ -63,7 +72,7 @@ whole story.
   the `.att` prefix to `x86` no longer has any meaning.  You may need to
   update your `act.conf`.
 
-## 2020-Jan-14
+## 2020-Jan-14
 
 - Fuzzer action `store.make.int.single` is now `store.make.int.normal`.
 - New fuzzer action `store.make.int.dead`, which behaves as
@@ -110,7 +119,7 @@ whole story.
 - New command, `act-machine xrun`, whose sole purpose is to copy a binary to
   a remote machine and run it.
 
-## 2019-Nov-05
+## 2019-Nov-05
 
 - `act-config list-compilers` is now `act-c list-compilers`.
 - (And many other changes; I haven't been diligent in maintaining the
@@ -130,7 +139,7 @@ whole story.
 - State observation comparison results come as JSON by default; pass
   `-human-readable` for pretty-printed equivalent.
 
-## 2019-Jul-29
+## 2019-Jul-29
 
 - Amongst other things, `act c fuzz` is now `act-fuzz run` (ie a new program).
 - Action weight listing is now `act-fuzz list-actions`.

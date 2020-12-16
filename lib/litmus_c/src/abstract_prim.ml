@@ -150,7 +150,7 @@ let decl (d : Ast.Decl.t) : Fir.Initialiser.t Common.C_named.t Or_error.t =
       Option.value_map initialiser ~f:value_of_initialiser
         ~default:(Ok (Fir.Constant.zero_of_type ty))
     in
-    Common.C_named.make ~name (Fir.Initialiser.make ~ty ~value))
+    Common.C_named.make ~name {Fir.Initialiser.ty; value})
 
 let param_decl : Ast.Param_decl.t -> Fir.Type.t Common.C_named.t Or_error.t =
   function

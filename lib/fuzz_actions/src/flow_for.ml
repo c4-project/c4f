@@ -59,7 +59,7 @@ module Payload = struct
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Fuzz.State.Monad.Let_syntax.(
         let value = Fir.Constant.zero_of_type ty in
-        let init = Fir.Initialiser.make ~ty ~value in
+        let init = Fir.{Initialiser.ty; value} in
         let%bind test' =
           Fuzz.State.Monad.register_and_declare_var var init test
         in

@@ -21,26 +21,24 @@ module Test_common = struct
       all_unit
         [ register_var
             (Act_common.Litmus_id.of_string "gen1")
-            Act_fir.(
-              Initialiser.make
-                ~ty:Type.(int ~is_pointer:true ~is_atomic:true ())
-                ~value:(Act_fir.Constant.int 1337))
+            Act_fir.
+              { Initialiser.ty= Type.(int ~is_pointer:true ~is_atomic:true ())
+              ; value= Act_fir.Constant.int 1337 }
         ; register_var
             (Act_common.Litmus_id.of_string "gen2")
-            Act_fir.(
-              Initialiser.make
-                ~ty:Type.(int ~is_pointer:true ~is_atomic:true ())
-                ~value:(Act_fir.Constant.int (-55)))
+            Act_fir.
+              { Initialiser.ty= Type.(int ~is_pointer:true ~is_atomic:true ())
+              ; value= Act_fir.Constant.int (-55) }
         ; register_var
             (Act_common.Litmus_id.of_string "gen3")
-            Act_fir.(
-              Initialiser.make
-                ~ty:Type.(int ~is_pointer:true ~is_atomic:false ())
-                ~value:(Act_fir.Constant.int 1998))
+            Act_fir.
+              { Initialiser.ty=
+                  Type.(int ~is_pointer:true ~is_atomic:false ())
+              ; value= Act_fir.Constant.int 1998 }
         ; register_var
             (Act_common.Litmus_id.of_string "gen4")
-            Act_fir.(
-              Initialiser.make
-                ~ty:Type.(int ~is_pointer:true ~is_atomic:false ())
-                ~value:(Act_fir.Constant.int (-4))) ])
+            Act_fir.
+              { Initialiser.ty=
+                  Type.(int ~is_pointer:true ~is_atomic:false ())
+              ; value= Act_fir.Constant.int (-4) } ])
 end

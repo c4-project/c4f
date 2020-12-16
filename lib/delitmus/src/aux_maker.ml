@@ -28,7 +28,8 @@ module Make (B : Runner_types.Basic) = struct
     Act_litmus.Header.make ~name ?postcondition ~init ?locations ()
 
   let make_var_record (index : int) (id : Common.Litmus_id.t)
-      (orig_type : Fir.Type.t) : Var_map.Record.t Or_error.t =
+      (orig_type : Fir.Type.t) (initial_value : Fir.Constant.t option) :
+      Var_map.Record.t Or_error.t =
     let is_global = Common.Litmus_id.is_global id in
     let mapped_to =
       (if is_global then B.global_mapping else B.local_mapping) index
@@ -39,13 +40,17 @@ module Make (B : Runner_types.Basic) = struct
         (* Globals in a valid C litmus test come through as pointers. *)
         if is_global then Fir.Type.deref orig_type else Ok orig_type
       in
-      Var_map.Record.make ~c_type ~mapped_to ~c_id)
+      Var_map.{Record.c_type; mapped_to; c_id; initial_value})
 
   let make_var_map (test : Fir.Litmus.Test.t) : Var_map.t Or_error.t =
     Or_error.(
       test |> Fir.Litmus.Var.make_alist
-      >>| List.map ~f:(fun (id, {Fir.Litmus.Var.Record.ty; param_index}) ->
-              make_var_record param_index id ty >>| fun rc -> (id, rc))
+      >>| List.map
+            ~f:(fun
+                 (id, {Fir.Litmus.Var.Record.ty; param_index; initial_value})
+               ->
+              make_var_record param_index id ty initial_value
+              >>| fun rc -> (id, rc))
       >>= Or_error.combine_errors
       >>= Map.of_alist_or_error (module Common.Litmus_id)
       >>| Common.Scoped_map.of_litmus_id_map)

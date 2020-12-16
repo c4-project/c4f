@@ -80,6 +80,17 @@
   "postcondition": "exists (0:r0 == 0 /\\ x == 1)"
 }
 ```
+## nonzero_local.c.litmus
+
+```
+{
+  "name": "test_8",
+  "locations": null,
+  "init": { "x": 0 },
+  "postcondition":
+    "forall\n((0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 1) \\/ (0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 2))"
+}
+```
 ## rwc.c.litmus
 
 ```
@@ -91,4 +102,4 @@
 }
 ```
 
-Ran 7 test(s).
+Ran 8 test(s).

@@ -106,7 +106,8 @@ struct
       Fuzz.Subject.Test.t Fuzz.State.Monad.t =
     let is_global = Common.Litmus_id.is_global var in
     let ty = Fir.Type.make basic_type ~is_pointer:is_global in
-    let init = Fir.Initialiser.make ~ty ~value:initial_value in
+    (* TODO(@MattWindsor91): the payload should carry an initialiser now. *)
+    let init = Fir.{Initialiser.ty; value= initial_value} in
     Fuzz.State.Monad.register_and_declare_var var init subject
 end
 

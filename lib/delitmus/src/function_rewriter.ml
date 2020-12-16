@@ -111,12 +111,11 @@ struct
       List.filter ~f:(fun (k, _) ->
           Common.Litmus_id.is_in_local_scope k ~from:Ctx.thread.tid)
 
-    let expand_parameter (record : Var_map.Record.t) :
+    let expand_parameter ({c_id; c_type; _} : Var_map.Record.t) :
         (Common.C_id.t * Fir.Type.t) Or_error.t =
-      let ty = Var_map.Record.c_type record in
       Or_error.Let_syntax.(
-        let%map pty = Fir.Type.ref ty in
-        (Var_map.Record.c_id record, pty))
+        let%map pty = Fir.Type.ref c_type in
+        (c_id, pty))
 
     let expand_parameters :
            (Common.Litmus_id.t, Var_map.Record.t) List.Assoc.t

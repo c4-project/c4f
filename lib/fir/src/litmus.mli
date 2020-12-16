@@ -40,9 +40,11 @@ module Var : sig
   module Record : sig
     (** Type of records returned by variable queries.
 
-        These include the type of the variable and its intended index in any
-        parameter list. *)
-    type t = {ty: Type.t; param_index: int} [@@deriving compare, sexp]
+        These include the type of the variable, its intended index in any
+        parameter list, and any initial value (from the Litmus init block,
+        for globals, and from the thread's declarations, for locals). *)
+    type t = {ty: Type.t; param_index: int; initial_value: Constant.t option}
+    [@@deriving compare, sexp]
   end
 
   val make_alist :
