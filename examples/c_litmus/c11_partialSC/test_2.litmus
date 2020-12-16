@@ -5,9 +5,8 @@ C test_2
 void
 P0(atomic_int *x)
 {
-    int expected = 0;
-    expected = 0;
-    atomic_compare_exchange_strong_explicit(x, &expected, 1,
+    int r0 = 0;
+    atomic_compare_exchange_strong_explicit(x, &r0, 1,
                                             memory_order_relaxed,
                                             memory_order_relaxed);
 }
@@ -15,12 +14,11 @@ P0(atomic_int *x)
 void
 P1(atomic_int *x)
 {
-    int expected = 0;
-    expected = 0;
-    atomic_compare_exchange_strong_explicit(x, &expected, 2,
+    int r0 = 0;
+    atomic_compare_exchange_strong_explicit(x, &r0, 2,
                                             memory_order_relaxed,
                                             memory_order_relaxed);
 }
 
 forall
-((0:r0 == 0 /\ 1:r0 == 0 /\ x == 1) \/ (0:r0 == 0 /\ 1:r0 == 0 /\ x == 2))
+((0:r0 == 0 /\ 1:r0 == 1 /\ x == 1) \/ (0:r0 == 2 /\ 1:r0 == 0 /\ x == 2))
