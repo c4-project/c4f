@@ -28,16 +28,34 @@ module Insert = struct
 
     let gen_obj_and_kv (dst : Fir.Env.t) :
         (Fir.Address.t * Fir.Constant.t) Base_quickcheck.Generator.t =
-      let module Dst = struct
+      let module Obj = Fir_gen.Address.Atomic_int_pointers (struct
         let env = dst
-      end in
-      let module Obj = Fir_gen.Address.Atomic_int_pointers (Dst) in
+      end) in
       Base_quickcheck.Generator.(
         filter_map Obj.quickcheck_generator ~f:(fun obj ->
             dst
             |> Fir.Env.known_value ~id:obj.@(Fir.Address.variable_of)
             |> Result.ok
             |> Option.bind ~f:(Option.map ~f:(fun v -> (obj, v)))))
+
+    let gen_const :
+        Fir.Type.Prim.t -> Fir.Constant.t Base_quickcheck.Generator.t =
+      (* TODO(@MattWindsor91): can this be generalised? *)
+      function
+      | Int ->
+          Fir.Constant.gen_int32
+      | Bool ->
+          Fir.Constant.gen_bool
+
+    let gen_obj_and_arb (ty : Fir.Type.Prim.t) (dst : Fir.Env.t) :
+        (Fir.Address.t * Fir.Constant.t) Base_quickcheck.Generator.t =
+      let module Obj = Fir_gen.Address.Atomic_int_pointers (struct
+        let env = dst
+      end) in
+      Base_quickcheck.Generator.(
+        map2
+          ~f:(fun obj exp -> (obj, exp))
+          Obj.quickcheck_generator (gen_const ty))
 
     let gen_mos (allow_ub : bool) :
         (Fir.Mem_order.t * Fir.Mem_order.t) Base_quickcheck.Generator.t =
@@ -121,9 +139,6 @@ module Insert = struct
         agree with the type of the object and expected variables, and is used
         to generate the desired value. *)
 
-    val is_dead : bool
-    (** [is_dead] is true if this action is targeting dead code. *)
-
     val gen_obj_and_exp :
          Fir.Env.t
       -> (Fir.Address.t * Fir.Constant.t) Base_quickcheck.Generator.t
@@ -138,6 +153,10 @@ module Insert = struct
     val can_fail : bool
     (** [can_fail] tracks whether the compare-exchange can fail; if so, then
         the expected value is potentially invalidated. *)
+
+    val needs_kv : bool
+    (** [needs_kv] tracks whether the compare-exchange depends on a known
+        object value. *)
   end) : S = Storelike.Make (struct
     let name = int_name Basic.name
 
@@ -155,23 +174,25 @@ module Insert = struct
         =
       []
 
-    let path_filter =
-      Fuzz.Path_filter.(
-        if Basic.is_dead then require_flag In_dead_code else zero)
+    let path_filter = Fuzz.Path_filter.zero
 
     let extra_dst_restrictions =
-      if Basic.is_dead then []
-      else
-        [Fuzz.Var.Record.can_safely_modify; Fuzz.Var.Record.has_known_value]
+      (* TODO(@MattWindsor91): make this a function of whether we're in
+         deadcode or not. *)
+      List.filter_opt
+        [ Option.some_if Basic.can_succeed Fuzz.Var.Record.can_safely_modify
+        ; Option.some_if Basic.needs_kv Fuzz.Var.Record.has_known_value ]
 
     module Flags = struct
-      let erase_known_values = not Basic.is_dead
+      let erase_known_values = true
 
-      (* These compare-exchanges are always unsafe in non-dead loops, since
-         they change the value of the destination; future iterations of the
-         same compare-exchange will fail, and not only return false but also
-         change the value of the expected-variable. See issue 212. *)
-      let execute_multi_safe = if Basic.is_dead then `Always else `Never
+      (* Compare-exchanges with statically expected success/failure are
+         always unsafe in non-dead loops, since they change the value of the
+         destination; future iterations of the same compare-exchange will
+         fail, and not only return false but also change the value of the
+         expected-variable. See issue 212. *)
+      let execute_multi_safe =
+        if Basic.can_fail && Basic.can_succeed then `Always else `Never
     end
 
     let gen :
@@ -180,8 +201,9 @@ module Insert = struct
         -> vars:Fuzz.Var.Map.t
         -> tid:int
         -> Inner_payload.t Base_quickcheck.Generator.t =
-      Inner_payload.gen ?strength:Basic.strength ~allow_ub:Basic.is_dead
-        ~gen_obj_and_exp:Basic.gen_obj_and_exp ~prim_type:Basic.prim_type
+      Inner_payload.gen ?strength:Basic.strength
+        ~allow_ub:false (* for now *) ~gen_obj_and_exp:Basic.gen_obj_and_exp
+        ~prim_type:Basic.prim_type
 
     let dst_type = Fir.Type.Basic.make ~is_atomic:true Basic.prim_type
 
@@ -261,7 +283,7 @@ module Insert = struct
         -> (Fir.Address.t * Fir.Constant.t) Base_quickcheck.Generator.t =
       Inner_payload.gen_obj_and_kv
 
-    let is_dead : bool = false
+    let needs_kv : bool = true
 
     let can_succeed : bool = true
 
@@ -303,13 +325,37 @@ module Insert = struct
              (o, perturb_constant e)))
         Inner_payload.gen_obj_and_kv
 
-    let is_dead : bool = false
+    let needs_kv : bool = true
 
     let can_succeed : bool = false
 
     let can_fail : bool = true
 
     (* A failure is a failure, no matter how strong. *)
+    let strength : Fir.Atomic_cmpxchg.Strength.t option = None
+  end)
+
+  module Int_arbitrary : S = Make_int (struct
+    let name = Common.Id.("arbitrary" @: empty)
+
+    let prim_type : Fir.Type.Prim.t = Int
+
+    let readme_tail : string =
+      {| This compare-exchange is entirely random. |}
+
+    let gen_obj_and_exp :
+           Fir.Env.t
+        -> (Fir.Address.t * Fir.Constant.t) Base_quickcheck.Generator.t =
+      Inner_payload.gen_obj_and_arb Int
+
+    let needs_kv : bool = false
+
+    let can_succeed : bool = true
+
+    let can_fail : bool = true
+
+    (* Succeeding cmpxchgs can't be weak, as weak cmpxchgs can spuriously
+       fail. *)
     let strength : Fir.Atomic_cmpxchg.Strength.t option = None
   end)
 end

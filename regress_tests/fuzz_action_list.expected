@@ -95,6 +95,15 @@ var.make.global:
     To permit both global and local variable generation, this should be an
     inexact flag.
 # Weights
+atomic.cmpxchg.insert.int.arbitrary:
+  Weight: 10x
+  Summary:
+    Inserts a strong or weak atomic int compare-exchange, and a new local
+    Boolean variable that receives its result.
+    
+    This compare-exchange is entirely random.
+    
+    This operation generates 'atomic_int's.
 atomic.cmpxchg.insert.int.fail:
   Weight: 20x
   Summary:

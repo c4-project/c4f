@@ -1,5 +1,46 @@
 # Fuzz replay tests
 
+## cmpxchg.insert-int-arbitrary.trace
+
+```
+C Cmpxchg
+
+{ y = 53; x = 27; }
+
+void
+P0(atomic_int *x, atomic_int *y)
+{
+    int expected_dead = 0;
+    bool out_dead = true;
+    int expected_live = 42;
+    bool out_live = true;
+    out_live =
+    atomic_compare_exchange_weak_explicit(x, expected_live, 95,
+                                          memory_order_seq_cst,
+                                          memory_order_seq_cst);
+    while (false)
+    {
+        out_dead =
+        atomic_compare_exchange_weak_explicit(y, expected_dead, 98,
+                                              memory_order_seq_cst,
+                                              memory_order_seq_cst);
+    }
+}
+
+forall (true)
+
+/*
+Labels
+  {}
+Vars
+  x: atomic_int*, =?, @global, generated, [Dep;Write]
+  y: atomic_int*, =?, @global, generated, [Write]
+  0:expected_dead: int, =?, @P0, generated, [Write]
+  0:expected_live: int, =?, @P0, generated, [Dep;Write]
+  0:out_dead: bool, =?, @P0, generated, [Write]
+  0:out_live: bool, =?, @P0, generated, [Write]
+*/
+```
 ## cmpxchg.insert-int-fail.trace
 
 ```
@@ -192,4 +233,4 @@ Vars
 */
 ```
 
-Ran 6 test(s).
+Ran 7 test(s).

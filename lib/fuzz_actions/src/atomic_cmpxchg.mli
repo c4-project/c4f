@@ -40,4 +40,8 @@ module Insert : sig
   (** Inserts a strong or weak atomic int compare-exchange that always
       succeeds, and a new local Boolean variable that receives its result. *)
   module Int_fail : S
+
+  (** Inserts an arbitrary strong or weak atomic int compare-exchange, and a
+      new local Boolean variable that receives its result. *)
+  module Int_arbitrary : S
 end
