@@ -64,7 +64,10 @@ end
 (** {2 Generators only} *)
 
 val bool : Fir.Env.t -> Fir.Expression.t Q.Generator.t
-(** [bool env] is shorthand for the [Bool_values] generator over [env]. *)
+(** [bool env] generates arbitrary Boolean expressions over [env]. *)
+
+val int : Fir.Env.t -> Fir.Expression.t Q.Generator.t
+(** [int env] generates arbitrary integer expressions over [env]. *)
 
 val tautology : Fir.Env.t -> Fir.Expression.t Q.Generator.t
 (** [tautology env] is shorthand for the [Tautologies] generator of an

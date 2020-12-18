@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,10 +10,7 @@
    project root for more information. *)
 
 open Base
-
-open struct
-  module Au = Act_utils
-end
+open Import
 
 module Prim = struct
   type t = Bool | Int [@@deriving variants, equal, enumerate]
@@ -49,11 +46,11 @@ module Basic = struct
 
   module M_enum = struct
     include Access
-    include Au.Enum.Make_from_enumerate (Access)
+    include Utils.Enum.Make_from_enumerate (Access)
   end
 
   include Access
-  include Au.Enum.Extend_table (M_enum)
+  include Utils.Enum.Extend_table (M_enum)
 
   let eq (type x) (acc : (unit, t, x, [> Accessor.getter]) Accessor.Simple.t)
       (x : x) ~(to_ : t) : bool =

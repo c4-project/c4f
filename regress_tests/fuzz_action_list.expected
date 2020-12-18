@@ -98,14 +98,12 @@ var.make.global:
 atomic.cmpxchg.insert.int.succeed:
   Weight: 30x
   Summary:
-    Inserts an atomic int compare-exchange that always succeeds, and a new
-    local Boolean variable that receives its result.
+    Inserts a strong atomic int compare-exchange, and a new local Boolean
+    variable that receives its result.
     
     This compare-exchange guarantees static success by storing the known
     value of a variable to another fresh variable, then using that as the
-    'expected' value.
-    
-    The new variable is set up such that it has a known value of 'true'.
+    'expected' value. This variable will have a known value of 'true'.
     
     This operation generates 'atomic_int's.
 atomic.fetch.insert.cond.boundary:
