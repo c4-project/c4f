@@ -11,61 +11,61 @@
 
 open Base
 open Stdio
-module Src = Act_fuzz
-module Ac = Act_common
-module Con = Act_fir.Constant
-module Ty = Act_fir.Type
-module Tx = Travesty_base_exts
+open Import
 
 module Test_data = struct
-  let existing_global : Ty.t -> Src.Var.Record.t =
-    Src.Var.Record.make_existing Ac.Scope.Global
+  let existing_global : Fir.Type.t -> Src.Var.Record.t =
+    Src.Var.Record.make_existing Common.Scope.Global
 
-  let generated_global ?(initial_value : Con.t option) :
-      Ty.t -> Src.Var.Record.t =
-    Src.Var.Record.make_generated ?initial_value Ac.Scope.Global
+  let generated_global ?(initial_value : Fir.Constant.t option) :
+      Fir.Type.t -> Src.Var.Record.t =
+    Src.Var.Record.make_generated ?initial_value Common.Scope.Global
 
-  let existing_local (tid : int) : Ty.t -> Src.Var.Record.t =
-    Src.Var.Record.make_existing (Ac.Scope.Local tid)
+  let existing_local (tid : int) : Fir.Type.t -> Src.Var.Record.t =
+    Src.Var.Record.make_existing (Common.Scope.Local tid)
 
-  let generated_local ?(initial_value : Con.t option) (tid : int) :
-      Ty.t -> Src.Var.Record.t =
+  let generated_local ?(initial_value : Fir.Constant.t option) (tid : int) :
+      Fir.Type.t -> Src.Var.Record.t =
     Src.Var.Record.make_generated ?initial_value (Local tid)
 
   let test_map : Src.Var.Map.t Lazy.t =
     lazy
-      ( [ ("foo", existing_global (Ty.int ()))
-        ; ("bar", existing_global (Ty.int ~is_atomic:true ()))
+      ( [ ("foo", existing_global (Fir.Type.int ()))
+        ; ("bar", existing_global (Fir.Type.int ~is_atomic:true ()))
         ; ( "baz"
-          , existing_global (Ty.int ~is_atomic:true ~is_pointer:true ()) )
-        ; ("foobar", existing_global (Ty.bool ~is_atomic:true ()))
-        ; ("barbaz", existing_global (Ty.bool ()))
-        ; ("a", generated_global ~initial_value:Con.falsehood (Ty.bool ()))
+          , existing_global
+              (Fir.Type.int ~is_atomic:true ~is_pointer:true ()) )
+        ; ("foobar", existing_global (Fir.Type.bool ~is_atomic:true ()))
+        ; ("barbaz", existing_global (Fir.Type.bool ()))
+        ; ( "a"
+          , generated_global ~initial_value:Fir.Constant.falsehood
+              (Fir.Type.bool ()) )
         ; ( "b"
-          , generated_global ~initial_value:Con.truth
-              (Ty.bool ~is_atomic:true ()) )
-        ; ("c", generated_global (Ty.bool ()))
-        ; ("d", existing_global (Ty.int ()))
-        ; ("e", generated_global (Ty.int ()))
+          , generated_global ~initial_value:Fir.Constant.truth
+              (Fir.Type.bool ~is_atomic:true ()) )
+        ; ("c", generated_global (Fir.Type.bool ()))
+        ; ("d", existing_global (Fir.Type.int ()))
+        ; ("e", generated_global (Fir.Type.int ()))
         ; ( "x"
-          , generated_global ~initial_value:(Con.int 27)
-              (Ty.int ~is_pointer:true ~is_atomic:true ()) )
+          , generated_global ~initial_value:(Fir.Constant.int 27)
+              (Fir.Type.int ~is_pointer:true ~is_atomic:true ()) )
         ; ( "y"
-          , generated_global ~initial_value:(Con.int 53)
-              (Ty.int ~is_pointer:true ~is_atomic:true ()) )
+          , generated_global ~initial_value:(Fir.Constant.int 53)
+              (Fir.Type.int ~is_pointer:true ~is_atomic:true ()) )
         ; ( "0:r0"
-          , generated_local 0 ~initial_value:(Con.int 4004)
-              (Ty.int ~is_atomic:true ()) )
+          , generated_local 0 ~initial_value:(Fir.Constant.int 4004)
+              (Fir.Type.int ~is_atomic:true ()) )
         ; ( "0:r1"
-          , generated_local 0 ~initial_value:(Con.int 8008) (Ty.int ()) )
-        ; ("1:r0", existing_local 1 (Ty.bool ()))
-        ; ("1:r1", existing_local 1 (Ty.int ()))
-        ; ("2:r0", existing_local 2 (Ty.int ()))
-        ; ("2:r1", existing_local 2 (Ty.bool ()))
-        ; ("3:r0", existing_local 3 (Ty.int ~is_pointer:true ())) ]
-      |> Tx.Alist.map_left ~f:Ac.Litmus_id.of_string
-      |> Map.of_alist_exn (module Ac.Litmus_id)
-      |> Ac.Scoped_map.of_litmus_id_map )
+          , generated_local 0 ~initial_value:(Fir.Constant.int 8008)
+              (Fir.Type.int ()) )
+        ; ("1:r0", existing_local 1 (Fir.Type.bool ()))
+        ; ("1:r1", existing_local 1 (Fir.Type.int ()))
+        ; ("2:r0", existing_local 2 (Fir.Type.int ()))
+        ; ("2:r1", existing_local 2 (Fir.Type.bool ()))
+        ; ("3:r0", existing_local 3 (Fir.Type.int ~is_pointer:true ())) ]
+      |> Tx.Alist.map_left ~f:Common.Litmus_id.of_string
+      |> Map.of_alist_exn (module Common.Litmus_id)
+      |> Common.Scoped_map.of_litmus_id_map )
 end
 
 let%test_module "scopes_with_vars" =
@@ -75,17 +75,35 @@ let%test_module "scopes_with_vars" =
         Test_data.test_map |> Lazy.force
         |> Src.Var.Map.scopes_with_vars ~predicates
       in
-      print_s [%sexp (scopes : Set.M(Ac.Scope).t)]
+      print_s [%sexp (scopes : Set.M(Common.Scope).t)]
 
     let%expect_test "all vars" =
       test [] ;
       [%expect {| ((Local 0) (Local 1) (Local 2) (Local 3) Global) |}]
   end )
 
+let%test_module "gen_fresh_vars" =
+  ( module struct
+    let%test_unit "gen_fresh_vars generates unique fresh variables" =
+      Base_quickcheck.Test.run_exn
+        ( module struct
+          type t = Common.C_id.t list [@@deriving sexp]
+
+          let quickcheck_generator =
+            Base_quickcheck.Generator.of_lazy
+              Lazy.(Test_data.test_map >>| Src.Var.Map.gen_fresh_vars ~n:20)
+
+          let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
+        end )
+        ~f:
+          ([%test_pred: Common.C_id.t list] ~here:[[%here]]
+             (Fn.non (List.contains_dup ~compare:[%compare: Common.C_id.t])))
+  end )
+
 let%test_module "environment modules in a test map" =
   ( module struct
-    let test_variables_of_basic_type (scope : Ac.Scope.t)
-        (basic : Ty.Basic.t) : unit =
+    let test_variables_of_basic_type (scope : Common.Scope.t)
+        (basic : Fir.Type.Basic.t) : unit =
       let env =
         Src.Var.Map.env_satisfying_all
           (Lazy.force Test_data.test_map)
@@ -96,26 +114,30 @@ let%test_module "environment modules in a test map" =
         |> Act_fir.Env.variables_of_basic_type ~basic
         |> Act_fir.Env.typing |> Map.to_alist
       in
-      print_s [%sexp (vals : (Ac.C_id.t, Ty.t) List.Assoc.t)]
+      print_s [%sexp (vals : (Common.C_id.t, Fir.Type.t) List.Assoc.t)]
 
     let%expect_test "all integer variables from thread 1" =
-      test_variables_of_basic_type (Ac.Scope.Local 1) (Ty.Basic.int ()) ;
+      test_variables_of_basic_type (Common.Scope.Local 1)
+        (Fir.Type.Basic.int ()) ;
       [%expect {| ((d int) (e int) (foo int) (r1 int)) |}]
 
     let%expect_test "all boolean variables from thread 2" =
-      test_variables_of_basic_type (Ac.Scope.Local 2) (Ty.Basic.bool ()) ;
+      test_variables_of_basic_type (Common.Scope.Local 2)
+        (Fir.Type.Basic.bool ()) ;
       [%expect {| ((a bool) (barbaz bool) (c bool) (r1 bool)) |}]
 
     let%expect_test "known values in environment form" =
       let env =
         Src.Var.Map.env_satisfying_all
           (Lazy.force Test_data.test_map)
-          ~scope:Ac.Scope.Global ~predicates:[]
+          ~scope:Common.Scope.Global ~predicates:[]
       in
       let vals =
         env |> Act_fir.Env.variables_with_known_values |> Map.to_alist
       in
-      print_s [%sexp (vals : (Ac.C_id.t, Ty.t * Con.t) List.Assoc.t)] ;
+      print_s
+        [%sexp
+          (vals : (Common.C_id.t, Fir.Type.t * Fir.Constant.t) List.Assoc.t)] ;
       [%expect
         {|
         ((a (bool (Bool false))) (b (atomic_bool (Bool true)))

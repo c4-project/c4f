@@ -210,8 +210,26 @@ module Map = struct
        all threads have matching variables. *)
     if Set.mem scopes Global then `All else `These (threads_of scopes)
 
-  let gen_fresh_var (map : t) : Common.C_id.t Base_quickcheck.Generator.t =
+  let gen_fresh_var' (exists : Common.C_id.t -> bool) :
+      Common.C_id.t Base_quickcheck.Generator.t =
     Base_quickcheck.Generator.filter
-      [%quickcheck.generator: Common.C_id.Human.t] ~f:(fun id ->
-        not (Common.Scoped_map.c_id_mem map ~id))
+      [%quickcheck.generator: Common.C_id.Human.t] ~f:(Fn.non exists)
+
+  let gen_fresh_var (map : t) : Common.C_id.t Base_quickcheck.Generator.t =
+    gen_fresh_var' (fun id -> Common.Scoped_map.c_id_mem map ~id)
+
+  let gen_fresh_vars (map : t) ~(n : int) :
+      Common.C_id.t list Base_quickcheck.Generator.t =
+    let existing =
+      Common.Scoped_map.build_set
+        (module Common.C_id)
+        ~f:(fun k _ -> Some (Common.Litmus_id.variable_name k))
+        map
+    in
+    Base_quickcheck.Generator.(
+      Sequence.fold_m (Sequence.init n ~f:Fn.id)
+        ~init:(existing, []) ~bind ~return ~f:(fun (existing, vs) _ ->
+          gen_fresh_var' (Set.mem existing)
+          >>| fun v -> (Set.add existing v, v :: vs))
+      >>| snd)
 end

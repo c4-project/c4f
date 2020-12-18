@@ -58,7 +58,7 @@ module type Basic = sig
     -> t Base_quickcheck.Generator.t
   (** [gen ~src ~dst ~vars ~tid] returns a quickcheck instance for atomic
       stores given source and destination variable environments [src] and
-      [dst], a variable map [var] for fresh variable generation, and the
+      [dst], a variable map [vars] for fresh variable generation, and the
       target thread ID [tid]. *)
 
   val new_local_cap : int

@@ -9,6 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+open Base
 open Import
 
 let prefix_name (rest : Common.Id.t) : Common.Id.t =
@@ -64,17 +65,6 @@ module Insert = struct
       let execute_multi_safe = `Never
     end
 
-    let gen_vars ~(vars : Fuzz.Var.Map.t) :
-        (Common.C_id.t * Common.C_id.t) Base_quickcheck.Generator.t =
-      Base_quickcheck.Generator.(
-        Let_syntax.(
-          let%bind out_var = Fuzz.Var.Map.gen_fresh_var vars in
-          let%map exp_var =
-            filter (Fuzz.Var.Map.gen_fresh_var vars) ~f:(fun id ->
-                not (Common.C_id.equal id out_var))
-          in
-          (out_var, exp_var)))
-
     let gen_obj ~(dst : Fir.Env.t) :
         (Fir.Address.t * Fir.Constant.t) Base_quickcheck.Generator.t =
       let module Dst = struct
@@ -110,19 +100,21 @@ module Insert = struct
       let module Expr = Fir_gen.Expr.Int_values (Src) in
       Base_quickcheck.Generator.(
         Let_syntax.(
-          let%bind out_var_c, exp_var_c = gen_vars ~vars in
+          let%bind out_var_c, exp_var_c =
+            vars
+            |> Fuzz.Var.Map.gen_fresh_vars ~n:2
+            >>| Fn.compose Or_error.ok_exn Tx.List.two
+          in
           let%bind succ, fail = gen_mos in
           let%bind obj, exp_val = gen_obj ~dst in
           let%map desired = Expr.quickcheck_generator in
           let strength = Fir.Atomic_cmpxchg.Strength.Strong (* for now *) in
-          let out_var = Common.Litmus_id.local tid out_var_c in
-          let exp_var = Common.Litmus_id.local tid exp_var_c in
           let expected =
             Accessor.construct Fir.Address.variable_ref exp_var_c
           in
           Inner_payload.
-            { out_var
-            ; exp_var
+            { out_var= Common.Litmus_id.local tid out_var_c
+            ; exp_var= Common.Litmus_id.local tid exp_var_c
             ; exp_val
             ; cmpxchg=
                 { Fir.Atomic_cmpxchg.obj
