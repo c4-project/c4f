@@ -151,16 +151,16 @@ let eval_uop (mu : mu) : Op.Unary.t -> expr -> Constant.t Heap.Monad.t =
 let eval_atomic_cmpxchg (c : Expression.t Atomic_cmpxchg.t) ~(mu : mu) :
     Constant.t Heap.Monad.t =
   Heap.Monad.Let_syntax.(
-    let obj = Address.deref (Atomic_cmpxchg.obj c) in
-    let expected = Address.deref (Atomic_cmpxchg.expected c) in
-    let desired = Atomic_cmpxchg.desired c in
+    (* NB: this evaluation doesn't handle cmpxchg strength. *)
+    let obj = Address.deref c.obj in
+    let expected = Address.deref c.expected in
     let%bind obj_c = Heap.Monad.load obj in
     let%bind exp_c = Heap.Monad.load expected in
-    let%bind des_c = mu desired in
+    let%bind des_c = mu c.desired in
     let equal = Constant.equal obj_c exp_c in
     let%map () =
       if equal then Heap.Monad.store obj des_c
-      else Heap.Monad.store expected obj_c
+      else Heap.Monad.store c.expected obj_c
     in
     Constant.bool equal)
 

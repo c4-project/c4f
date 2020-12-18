@@ -23,11 +23,12 @@ let ensure_statements :
 
 let expr = Abstract_expr.model
 
-let model_atomic_cmpxchg_stm (args : Ast.Expr.t list) :
+let model_atomic_cmpxchg_stm (args : Ast.Expr.t list)
+    ~(strength : Fir.Atomic_cmpxchg.Strength.t) :
     unit Fir.Statement.t Or_error.t =
   Or_error.(
     args
-    |> Abstract_atomic.model_cmpxchg ~expr
+    |> Abstract_atomic.model_cmpxchg ~strength ~expr
     >>| Accessor.construct
           Fir.(
             Statement.prim' @> Prim_statement.atomic
@@ -79,10 +80,10 @@ let expr_stm_call_table :
     Abstract_atomic.(
       Map.of_alist_exn
         (module Common.C_id)
-        ( fetch_call_alist model_atomic_fetch_stm
+        ( cmpxchg_call_alist model_atomic_cmpxchg_stm
+        @ fetch_call_alist model_atomic_fetch_stm
         @ fence_call_alist model_atomic_fence_stm
-        @ [ (Common.C_id.of_string cmpxchg_name, model_atomic_cmpxchg_stm)
-          ; (Common.C_id.of_string store_name, model_atomic_store_stm)
+        @ [ (Common.C_id.of_string store_name, model_atomic_store_stm)
           ; (Common.C_id.of_string xchg_name, model_atomic_xchg_stm) ] ))
 
 let arbitrary_procedure_call (function_id : Common.C_id.t)

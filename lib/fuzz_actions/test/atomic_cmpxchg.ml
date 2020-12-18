@@ -15,14 +15,15 @@ open Import
 module Test_data = struct
   let cmpxchg : Act_fir.Expression.t Act_fir.Atomic_cmpxchg.t Lazy.t =
     lazy
-      Act_fir.(
-        Atomic_cmpxchg.make
-          ~obj:(Address.of_variable_str_exn "gen1")
-          ~expected:
-            (Accessor.construct Address.variable_ref
-               (Act_common.C_id.of_string "expected"))
-          ~desired:(Expression.int_lit 54321)
-          ~succ:Seq_cst ~fail:Relaxed)
+      Fir.
+        { Atomic_cmpxchg.obj= Address.of_variable_str_exn "gen1"
+        ; expected=
+            Accessor.construct Address.variable_ref
+              (Act_common.C_id.of_string "expected")
+        ; desired= Expression.int_lit 54321
+        ; strength= Strong
+        ; succ= Seq_cst
+        ; fail= Relaxed }
 
   let cmpxchg_payload : Src.Atomic_cmpxchg.Insert.Inner_payload.t Lazy.t =
     Lazy.map cmpxchg ~f:(fun cmpxchg ->

@@ -26,12 +26,13 @@ let cmpxchg (cmpxchg : 'e Fir.Atomic_cmpxchg.t) ~(expr : 'e -> Ast.Expr.t) :
     Ast.Expr.t =
   Fir.(
     Atomic_cmpxchg.(
-      known_call Abstract_atomic.cmpxchg_name
-        [ Prim.address (obj cmpxchg)
-        ; Prim.address (expected cmpxchg)
-        ; expr (desired cmpxchg)
-        ; mem_order (succ cmpxchg)
-        ; mem_order (fail cmpxchg) ]))
+      known_call
+        (Abstract_atomic.cmpxchg_name cmpxchg.strength)
+        [ Prim.address cmpxchg.obj
+        ; Prim.address cmpxchg.expected
+        ; expr cmpxchg.desired
+        ; mem_order cmpxchg.succ
+        ; mem_order cmpxchg.fail ]))
 
 let fence (fence : Fir.Atomic_fence.t) : Ast.Expr.t =
   let call = Abstract_atomic.fence_name (Fir.Atomic_fence.mode fence) in

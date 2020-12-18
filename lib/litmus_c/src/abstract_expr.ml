@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,20 +10,17 @@
    project root for more information. *)
 
 open Base
-
-open struct
-  module Ac = Act_common
-  module Fir = Act_fir
-end
+open Import
 
 (** Type of recursive expression abstractors. *)
 type mu = Ast.Expr.t -> Fir.Expression.t Or_error.t
 
-let model_atomic_cmpxchg_expr (args : Ast.Expr.t list) ~(expr : mu) :
+let model_atomic_cmpxchg_expr (args : Ast.Expr.t list)
+    ~(strength : Fir.Atomic_cmpxchg.Strength.t) ~(expr : mu) :
     Fir.Expression.t Or_error.t =
   Or_error.(
     args
-    |> Abstract_atomic.model_cmpxchg ~expr
+    |> Abstract_atomic.model_cmpxchg ~strength ~expr
     >>| Fir.Expression.atomic_cmpxchg)
 
 let model_atomic_fetch_expr (args : Ast.Expr.t list) ~(op : Fir.Op.Fetch.t)
@@ -41,18 +38,17 @@ let model_atomic_load_expr (args : Ast.Expr.t list) ~(expr : mu) :
 
 let expr_call_table :
     (Ast.Expr.t list -> expr:mu -> Fir.Expression.t Or_error.t)
-    Map.M(Ac.C_id).t
+    Map.M(Common.C_id).t
     Lazy.t =
   lazy
     (Map.of_alist_exn
-       (module Ac.C_id)
-       ( Abstract_atomic.fetch_call_alist model_atomic_fetch_expr
-       @ [ ( Ac.C_id.of_string Abstract_atomic.cmpxchg_name
-           , model_atomic_cmpxchg_expr )
-         ; ( Ac.C_id.of_string Abstract_atomic.load_name
+       (module Common.C_id)
+       ( Abstract_atomic.cmpxchg_call_alist model_atomic_cmpxchg_expr
+       @ Abstract_atomic.fetch_call_alist model_atomic_fetch_expr
+       @ [ ( Common.C_id.of_string Abstract_atomic.load_name
            , model_atomic_load_expr ) ] ))
 
-let expr_call_handler (func_name : Ac.C_id.t) :
+let expr_call_handler (func_name : Common.C_id.t) :
     (Ast.Expr.t list -> expr:mu -> Fir.Expression.t Or_error.t) Or_error.t =
   func_name
   |> Map.find (Lazy.force expr_call_table)
@@ -61,7 +57,7 @@ let expr_call_handler (func_name : Ac.C_id.t) :
          (Error.create_s
             [%message
               "Unsupported function in expression position"
-                ~got:(func_name : Ac.C_id.t)])
+                ~got:(func_name : Common.C_id.t)])
 
 let function_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list)
     ~(expr : mu) : Fir.Expression.t Or_error.t =
@@ -70,7 +66,7 @@ let function_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list)
     let%bind call_handler = expr_call_handler func_name in
     call_handler arguments ~expr)
 
-let identifier_to_expr (id : Ac.C_id.t) : Fir.Expression.t =
+let identifier_to_expr (id : Common.C_id.t) : Fir.Expression.t =
   match Abstract_prim.identifier_to_constant id with
   | Some k ->
       Fir.Expression.constant k

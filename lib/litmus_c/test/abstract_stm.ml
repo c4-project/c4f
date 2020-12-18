@@ -193,5 +193,6 @@ let%test_module "model" =
            (Cmpxchg
             ((obj (Ref (Lvalue (Variable x))))
              (expected (Ref (Lvalue (Variable y)))) (desired (Constant (Int 42)))
-             (succ memory_order_relaxed) (fail memory_order_relaxed)))))))) |}]
+             (strength strong) (succ memory_order_relaxed)
+             (fail memory_order_relaxed)))))))) |}]
   end )

@@ -10,14 +10,28 @@
    project root for more information. *)
 
 open Base
+open Import
+
+module Strength = struct
+  module M = struct
+    type t = Strong | Weak [@@deriving enum]
+
+    let table : (t, string) List.Assoc.t =
+      [(Strong, "strong"); (Weak, "weak")]
+  end
+
+  include M
+  include Utils.Enum.Extend_table (M)
+end
 
 type 'e t =
   { obj: Address.t
   ; expected: Address.t
   ; desired: 'e
+  ; strength: Strength.t
   ; succ: Mem_order.t
   ; fail: Mem_order.t [@quickcheck.generator Mem_order.gen_cmpxchg_fail] }
-[@@deriving sexp, fields, make, compare, equal, quickcheck]
+[@@deriving sexp, accessors, compare, equal, quickcheck]
 
 (* The 'fail' memory order cannot be stronger than the 'succ' order. (At time
    of writing, quickcheck shrinkers for mem-orders are atomic, and so we
@@ -36,15 +50,16 @@ let ensure_mo_compat (old : 'a t) (succ : Mem_order.t) (fail : Mem_order.t) :
 module Base_map (Ap : Applicative.S) = struct
   let bmap (x : 'a t) ~(obj : Address.t -> Address.t Ap.t)
       ~(expected : Address.t -> Address.t Ap.t) ~(desired : 'a -> 'b Ap.t)
+      ~(strength : Strength.t -> Strength.t Ap.t)
       ~(succ : Mem_order.t -> Mem_order.t Ap.t)
       ~(fail : Mem_order.t -> Mem_order.t Ap.t) : 'b t Ap.t =
     Ap.(
-      let m obj expected desired succ fail =
+      let m obj expected desired strength succ fail =
         let succ, fail = ensure_mo_compat x succ fail in
-        make ~obj ~expected ~desired ~succ ~fail
+        {obj; expected; desired; strength; succ; fail}
       in
       return m <*> obj x.obj <*> expected x.expected <*> desired x.desired
-      <*> succ x.succ <*> fail x.fail)
+      <*> strength x.strength <*> succ x.succ <*> fail x.fail)
 end
 
 module On_expressions : Travesty.Traversable_types.S1 with type 'e t = 'e t =
@@ -55,8 +70,8 @@ Travesty.Traversable.Make1 (struct
     module B = Base_map (Act_utils.Applicative.Of_monad_ext (M))
 
     let map_m (x : 'a t) ~(f : 'a -> 'b M.t) : 'b t M.t =
-      B.bmap x ~obj:M.return ~expected:M.return ~desired:f ~succ:M.return
-        ~fail:M.return
+      B.bmap x ~obj:M.return ~expected:M.return ~desired:f ~strength:M.return
+        ~succ:M.return ~fail:M.return
   end
 end)
 
@@ -80,11 +95,11 @@ module Type_check (Env : Env_types.S) = struct
   let type_of (c : t) : Type.t Or_error.t =
     Or_error.Let_syntax.(
       (* A* *)
-      let%bind obj = Ad.type_of (obj c) in
+      let%bind obj = Ad.type_of c.obj in
       (* C* *)
-      let%bind expected = Ad.type_of (expected c) in
+      let%bind expected = Ad.type_of c.expected in
       (* C *)
-      let desired = desired c in
+      let desired = c.desired in
       let%bind _ = check_expected_desired ~expected ~desired in
       let%map _ = check_expected_obj ~expected ~obj in
       (* Compare-exchanges return a boolean: whether or not they were

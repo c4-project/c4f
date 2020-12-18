@@ -114,15 +114,23 @@ module Insert = struct
           let%bind succ, fail = gen_mos in
           let%bind obj, exp_val = gen_obj ~dst in
           let%map desired = Expr.quickcheck_generator in
+          let strength = Fir.Atomic_cmpxchg.Strength.Strong (* for now *) in
           let out_var = Common.Litmus_id.local tid out_var_c in
           let exp_var = Common.Litmus_id.local tid exp_var_c in
           let expected =
             Accessor.construct Fir.Address.variable_ref exp_var_c
           in
-          let cmpxchg =
-            Fir.Atomic_cmpxchg.make ~obj ~expected ~desired ~succ ~fail
-          in
-          Inner_payload.{out_var; exp_var; exp_val; cmpxchg}))
+          Inner_payload.
+            { out_var
+            ; exp_var
+            ; exp_val
+            ; cmpxchg=
+                { Fir.Atomic_cmpxchg.obj
+                ; expected
+                ; desired
+                ; strength
+                ; succ
+                ; fail } }))
 
     let dst_type : Fir.Type.Basic.t = Fir.Type.Basic.int ~is_atomic:true ()
 
@@ -139,14 +147,14 @@ module Insert = struct
         , Fir.{Initialiser.ty= Fir.Type.int (); value= x.exp_val} ) ]
 
     let src_exprs (x : Inner_payload.t) : Fir.Expression.t list =
-      [ Fir.Atomic_cmpxchg.desired x.cmpxchg
-      ; Fir.Expression.address (Fir.Atomic_cmpxchg.obj x.cmpxchg)
-      ; Fir.Expression.address (Fir.Atomic_cmpxchg.expected x.cmpxchg) ]
+      [ x.cmpxchg.desired
+      ; Fir.Expression.address x.cmpxchg.obj
+      ; Fir.Expression.address x.cmpxchg.expected ]
 
     let dst_ids (x : Inner_payload.t) : Common.C_id.t list =
       (* exp_val/expected and out_val have known values, so we don't treat
          them as dests here. This might be a bad idea? *)
-      (Fir.Atomic_cmpxchg.obj x.cmpxchg).@*(Fir.Address.variable_of)
+      x.cmpxchg.@*(Fir.Atomic_cmpxchg.obj @> Fir.Address.variable_of)
 
     let to_stms (x : Inner_payload.t) :
         meta:Fuzz.Metadata.t -> Fuzz.Subject.Statement.t list =

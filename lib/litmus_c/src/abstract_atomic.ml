@@ -10,13 +10,11 @@
    project root for more information. *)
 
 open Base
+open Import
 
-open struct
-  module Ac = Act_common
-  module Fir = Act_fir
-end
-
-let cmpxchg_name : string = "atomic_compare_exchange_strong_explicit"
+let cmpxchg_name (strength : Fir.Atomic_cmpxchg.Strength.t) : string =
+  Printf.sprintf "atomic_compare_exchange_%s_explicit"
+    (Fir.Atomic_cmpxchg.Strength.to_string strength)
 
 let fence_name (mode : Fir.Atomic_fence.Mode.t) : string =
   Printf.sprintf "atomic_%s_fence" (Fir.Atomic_fence.Mode.to_string mode)
@@ -30,22 +28,31 @@ let store_name : string = "atomic_store_explicit"
 
 let xchg_name : string = "atomic_exchange_explicit"
 
+let cmpxchg_call_alist
+    (modeller :
+      Ast.Expr.t list -> strength:Fir.Atomic_cmpxchg.Strength.t -> 'a) :
+    (Common.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t =
+  List.map (Fir.Atomic_cmpxchg.Strength.all_list ()) ~f:(fun strength ->
+      let name = Common.C_id.of_string (cmpxchg_name strength) in
+      (name, modeller ~strength))
+
 let fence_call_alist
     (modeller : Ast.Expr.t list -> mode:Fir.Atomic_fence.Mode.t -> 'a) :
-    (Ac.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t =
+    (Common.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t =
   List.map (Fir.Atomic_fence.Mode.all_list ()) ~f:(fun mode ->
-      let name = Ac.C_id.of_string (fence_name mode) in
+      let name = Common.C_id.of_string (fence_name mode) in
       (name, modeller ~mode))
 
 let fetch_call_alist (modeller : Ast.Expr.t list -> op:Fir.Op.Fetch.t -> 'a)
-    : (Ac.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t =
+    : (Common.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t =
   List.map (Fir.Op.Fetch.all_list ()) ~f:(fun op ->
-      let name = Ac.C_id.of_string (fetch_name op) in
+      let name = Common.C_id.of_string (fetch_name op) in
       (name, modeller ~op))
 
-let model_cmpxchg_with_args ~(raw_obj : Ast.Expr.t)
-    ~(raw_expected : Ast.Expr.t) ~(raw_desired : Ast.Expr.t)
-    ~(raw_succ : Ast.Expr.t) ~(raw_fail : Ast.Expr.t)
+let model_cmpxchg_with_args ~(strength : Fir.Atomic_cmpxchg.Strength.t)
+    ~(raw_obj : Ast.Expr.t) ~(raw_expected : Ast.Expr.t)
+    ~(raw_desired : Ast.Expr.t) ~(raw_succ : Ast.Expr.t)
+    ~(raw_fail : Ast.Expr.t)
     ~(expr : Ast.Expr.t -> Fir.Expression.t Or_error.t) :
     Fir.Expression.t Fir.Atomic_cmpxchg.t Or_error.t =
   Or_error.Let_syntax.(
@@ -57,15 +64,16 @@ let model_cmpxchg_with_args ~(raw_obj : Ast.Expr.t)
       Abstract_prim.expr_to_memory_order raw_fail
       (* memory_order *)
     in
-    Fir.Atomic_cmpxchg.make ~obj ~expected ~desired ~succ ~fail)
+    {Fir.Atomic_cmpxchg.obj; expected; desired; strength; succ; fail})
 
 let model_cmpxchg (args : Ast.Expr.t list)
+    ~(strength : Fir.Atomic_cmpxchg.Strength.t)
     ~(expr : Ast.Expr.t -> Fir.Expression.t Or_error.t) :
     Fir.Expression.t Fir.Atomic_cmpxchg.t Or_error.t =
   match args with
   | [raw_obj; raw_expected; raw_desired; raw_succ; raw_fail] ->
-      model_cmpxchg_with_args ~raw_obj ~raw_expected ~raw_desired ~raw_succ
-        ~raw_fail ~expr
+      model_cmpxchg_with_args ~strength ~raw_obj ~raw_expected ~raw_desired
+        ~raw_succ ~raw_fail ~expr
   | _ ->
       Or_error.error_s
         [%message
