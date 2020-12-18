@@ -267,6 +267,49 @@ module Insert = struct
 
     let can_fail : bool = false
 
+    (* Succeeding cmpxchgs can't be weak, as weak cmpxchgs can spuriously
+       fail. *)
     let strength : Fir.Atomic_cmpxchg.Strength.t option = Some Strong
+  end)
+
+  module Int_fail : S = Make_int (struct
+    let name = Common.Id.("fail" @: empty)
+
+    let prim_type : Fir.Type.Prim.t = Int
+
+    let readme_tail : string =
+      {| This compare-exchange guarantees static failure by storing the
+        known value of a variable to another fresh variable, calculating a
+        different value, then using that
+        as the 'expected' value.  This variable will have a known value of
+        'false'. |}
+
+    let perturb_constant : Fir.Constant.t -> Fir.Constant.t =
+      (* Trying to avoid overflow by heading towards 0. *)
+      (* TODO(@MattWindsor91): can this be used elsewhere? *)
+      function
+      | Int k when k <= 0 ->
+          Int (k + 1)
+      | Int k ->
+          Int (k - 1)
+      | Bool b ->
+          Bool (not b)
+
+    let gen_obj_and_exp :
+           Fir.Env.t
+        -> (Fir.Address.t * Fir.Constant.t) Base_quickcheck.Generator.t =
+      Fn.compose
+        (Base_quickcheck.Generator.map ~f:(fun (o, e) ->
+             (o, perturb_constant e)))
+        Inner_payload.gen_obj_and_kv
+
+    let is_dead : bool = false
+
+    let can_succeed : bool = false
+
+    let can_fail : bool = true
+
+    (* A failure is a failure, no matter how strong. *)
+    let strength : Fir.Atomic_cmpxchg.Strength.t option = None
   end)
 end

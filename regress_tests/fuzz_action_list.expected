@@ -95,8 +95,20 @@ var.make.global:
     To permit both global and local variable generation, this should be an
     inexact flag.
 # Weights
+atomic.cmpxchg.insert.int.fail:
+  Weight: 20x
+  Summary:
+    Inserts a strong or weak atomic int compare-exchange, and a new local
+    Boolean variable that receives its result.
+    
+    This compare-exchange guarantees static failure by storing the known
+    value of a variable to another fresh variable, calculating a different
+    value, then using that as the 'expected' value. This variable will have a
+    known value of 'false'.
+    
+    This operation generates 'atomic_int's.
 atomic.cmpxchg.insert.int.succeed:
-  Weight: 30x
+  Weight: 20x
   Summary:
     Inserts a strong atomic int compare-exchange, and a new local Boolean
     variable that receives its result.

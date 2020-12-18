@@ -15,7 +15,8 @@ open Import
 let actions : Fuzz.Action.With_default_weight.t list Lazy.t =
   lazy
     Fuzz.Action.With_default_weight.
-      [ (module Atomic_cmpxchg.Insert.Int_succeed) @-> 30
+      [ (module Atomic_cmpxchg.Insert.Int_succeed) @-> 20
+      ; (module Atomic_cmpxchg.Insert.Int_fail) @-> 20
       ; (module Atomic_store.Insert.Int_dead) @-> 20
       ; (module Atomic_store.Insert.Int_normal) @-> 20
       ; (module Atomic_store.Insert.Int_redundant) @-> 15

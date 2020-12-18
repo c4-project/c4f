@@ -1,5 +1,34 @@
 # Fuzz replay tests
 
+## cmpxchg.insert-int-fail.trace
+
+```
+C Cmpxchg
+
+{ x = 27; }
+
+void
+P0(atomic_int *x)
+{
+    int expected = 26;
+    bool out = false;
+    out =
+    atomic_compare_exchange_weak_explicit(x, expected, 53,
+                                          memory_order_seq_cst,
+                                          memory_order_seq_cst);
+}
+
+forall (true)
+
+/*
+Labels
+  {}
+Vars
+  x: atomic_int*, =27, @global, generated, [Dep]
+  0:expected: int, =?, @P0, generated, [Dep;Write]
+  0:out: bool, =false, @P0, generated, []
+*/
+```
 ## cmpxchg.insert-int-succeed.trace
 
 ```
@@ -163,4 +192,4 @@ Vars
 */
 ```
 
-Ran 5 test(s).
+Ran 6 test(s).
