@@ -2,10 +2,10 @@
 
    Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
-   CommonT itself is licensed under the MIT License. See the LICENSE file in
+   ACT itself is licensed under the MIT License. See the LICENSE file in
    the project root for more information.
 
-   CommonT is based in part on code from the Herdtools7 project
+   ACT is based in part on code from the Herdtools7 project
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
