@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    CommonT itself is licensed under the MIT License. See the LICENSE file in
    the project root for more information.
@@ -23,14 +23,74 @@ module Insert = struct
       ; exp_val: Fir.Constant.t
       ; cmpxchg: Fir.Expression.t Fir.Atomic_cmpxchg.t }
     [@@deriving compare, sexp]
+
+    let gen_obj (dst : Fir.Env.t) :
+        (Fir.Address.t * Fir.Constant.t) Base_quickcheck.Generator.t =
+      let module Dst = struct
+        let env = dst
+      end in
+      let module Obj = Fir_gen.Address.Atomic_int_pointers (Dst) in
+      Base_quickcheck.Generator.(
+        filter_map Obj.quickcheck_generator ~f:(fun obj ->
+            dst
+            |> Fir.Env.known_value ~id:obj.@(Fir.Address.variable_of)
+            |> Result.ok
+            |> Option.bind ~f:(Option.map ~f:(fun v -> (obj, v)))))
+
+    let gen_mos (allow_ub : bool) :
+        (Fir.Mem_order.t * Fir.Mem_order.t) Base_quickcheck.Generator.t =
+      let gfail = Fir.Mem_order.gen_cmpxchg_fail in
+      Base_quickcheck.Generator.(
+        Let_syntax.(
+          let%bind succ = Fir.Mem_order.quickcheck_generator in
+          let%map fail =
+            if allow_ub then gfail
+            else filter gfail ~f:(fun fail -> Fir.Mem_order.(fail <= succ))
+          in
+          (succ, fail)))
+
+    let gen ~(src : Fir.Env.t) ~(dst : Fir.Env.t) ~(vars : Fuzz.Var.Map.t)
+        ~(tid : int) ~(strength : Fir.Atomic_cmpxchg.Strength.t)
+        ~(gen_obj :
+              Fir.Env.t
+           -> (Fir.Address.t * Fir.Constant.t) Base_quickcheck.Generator.t)
+        ~(allow_ub : bool) : t Base_quickcheck.Generator.t =
+      let module Expr = Fir_gen.Expr.Int_values (struct
+        let env = src
+      end) in
+      Base_quickcheck.Generator.(
+        Let_syntax.(
+          let%bind out_var_c, exp_var_c =
+            vars
+            |> Fuzz.Var.Map.gen_fresh_vars ~n:2
+            >>| Fn.compose Or_error.ok_exn Tx.List.two
+          in
+          let%bind succ, fail = gen_mos allow_ub in
+          let%bind obj, exp_val = gen_obj dst in
+          let%map desired = Expr.quickcheck_generator in
+          let expected =
+            Accessor.construct Fir.Address.variable_ref exp_var_c
+          in
+          { out_var= Common.Litmus_id.local tid out_var_c
+          ; exp_var= Common.Litmus_id.local tid exp_var_c
+          ; exp_val
+          ; cmpxchg=
+              { Fir.Atomic_cmpxchg.obj
+              ; expected
+              ; desired
+              ; strength
+              ; succ
+              ; fail } }))
   end
+
+  let int_name (rest : Common.Id.t) : Common.Id.t =
+    prefix_name Common.Id.("insert" @: "int" @: rest)
 
   module Int_succeed :
     Fuzz.Action_types.S
       with type Payload.t = Inner_payload.t Fuzz.Payload_impl.Pathed.t =
   Storelike.Make (struct
-    let name =
-      prefix_name Common.Id.("insert" @: "int" @: "succeed" @: empty)
+    let name = int_name Common.Id.("succeed" @: empty)
 
     let readme_preamble : string list =
       [ {| Inserts an atomic int compare-exchange that always succeeds, and a new
@@ -65,64 +125,14 @@ module Insert = struct
       let execute_multi_safe = `Never
     end
 
-    let gen_obj ~(dst : Fir.Env.t) :
-        (Fir.Address.t * Fir.Constant.t) Base_quickcheck.Generator.t =
-      let module Dst = struct
-        let env = dst
-      end in
-      let module Obj = Fir_gen.Address.Atomic_int_pointers (Dst) in
-      Base_quickcheck.Generator.(
-        filter_map Obj.quickcheck_generator ~f:(fun obj ->
-            match
-              Fir.Env.known_value dst ~id:obj.@(Fir.Address.variable_of)
-            with
-            | Ok (Some v) ->
-                Some (obj, v)
-            | _ ->
-                None))
-
-    let gen_mos :
-        (Fir.Mem_order.t * Fir.Mem_order.t) Base_quickcheck.Generator.t =
-      Base_quickcheck.Generator.(
-        Let_syntax.(
-          let%bind succ = Fir.Mem_order.quickcheck_generator in
-          let%map fail =
-            filter Fir.Mem_order.gen_cmpxchg_fail ~f:(fun fail ->
-                Fir.Mem_order.(fail <= succ))
-          in
-          (succ, fail)))
-
-    let gen ~(src : Fir.Env.t) ~(dst : Fir.Env.t) ~(vars : Fuzz.Var.Map.t)
-        ~(tid : int) : Inner_payload.t Base_quickcheck.Generator.t =
-      let module Src = struct
-        let env = src
-      end in
-      let module Expr = Fir_gen.Expr.Int_values (Src) in
-      Base_quickcheck.Generator.(
-        Let_syntax.(
-          let%bind out_var_c, exp_var_c =
-            vars
-            |> Fuzz.Var.Map.gen_fresh_vars ~n:2
-            >>| Fn.compose Or_error.ok_exn Tx.List.two
-          in
-          let%bind succ, fail = gen_mos in
-          let%bind obj, exp_val = gen_obj ~dst in
-          let%map desired = Expr.quickcheck_generator in
-          let strength = Fir.Atomic_cmpxchg.Strength.Strong (* for now *) in
-          let expected =
-            Accessor.construct Fir.Address.variable_ref exp_var_c
-          in
-          Inner_payload.
-            { out_var= Common.Litmus_id.local tid out_var_c
-            ; exp_var= Common.Litmus_id.local tid exp_var_c
-            ; exp_val
-            ; cmpxchg=
-                { Fir.Atomic_cmpxchg.obj
-                ; expected
-                ; desired
-                ; strength
-                ; succ
-                ; fail } }))
+    let gen :
+           src:Fir.Env.t
+        -> dst:Fir.Env.t
+        -> vars:Fuzz.Var.Map.t
+        -> tid:int
+        -> Inner_payload.t Base_quickcheck.Generator.t =
+      Inner_payload.gen ~allow_ub:false ~strength:Strong
+        ~gen_obj:Inner_payload.gen_obj
 
     let dst_type : Fir.Type.Basic.t = Fir.Type.Basic.int ~is_atomic:true ()
 
