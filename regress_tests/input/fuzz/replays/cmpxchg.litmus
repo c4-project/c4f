@@ -1,0 +1,13 @@
+C Cmpxchg
+// Test-bed for inserting atomic compare-exchanges.
+//
+// Like fetches, we generate variables in traces, because we want to make sure
+// we get the dependency edges right.
+
+{}
+
+void P0() {
+}
+
+forall (true)
+
