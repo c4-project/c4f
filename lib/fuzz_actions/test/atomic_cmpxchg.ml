@@ -30,8 +30,8 @@ module Test_data = struct
         Src.Atomic_cmpxchg.Insert.Inner_payload.
           { cmpxchg
           ; exp_val= Act_fir.Constant.int 12345
-          ; exp_var= Act_common.Litmus_id.of_string "0:expected"
-          ; out_var= Act_common.Litmus_id.of_string "0:out" })
+          ; exp_var= Act_common.C_id.of_string "expected"
+          ; out_var= Act_common.C_id.of_string "out" })
 end
 
 let%test_module "cmpxchg.make.int.succeed" =

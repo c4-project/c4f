@@ -20,8 +20,8 @@ module Insert : sig
   (** Inner payload for insertions. *)
   module Inner_payload : sig
     type t =
-      { out_var: Common.Litmus_id.t
-      ; exp_var: Common.Litmus_id.t
+      { out_var: Common.C_id.t
+      ; exp_var: Common.C_id.t
       ; exp_val: Fir.Constant.t
       ; cmpxchg: Fir.Expression.t Fir.Atomic_cmpxchg.t }
     [@@deriving compare, sexp]

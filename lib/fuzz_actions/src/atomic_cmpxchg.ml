@@ -18,8 +18,8 @@ let prefix_name (rest : Common.Id.t) : Common.Id.t =
 module Insert = struct
   module Inner_payload = struct
     type t =
-      { out_var: Common.Litmus_id.t
-      ; exp_var: Common.Litmus_id.t
+      { out_var: Common.C_id.t
+      ; exp_var: Common.C_id.t
       ; exp_val: Fir.Constant.t
             (* TODO(@MattWindsor91): this should be an expression, but that
                complicates initialisation. *)
@@ -76,14 +76,14 @@ module Insert = struct
 
     let gen ?(strength : Fir.Atomic_cmpxchg.Strength.t option)
         ~(prim_type : Fir.Type.Prim.t) ~(src : Fir.Env.t) ~(dst : Fir.Env.t)
-        ~(vars : Fuzz.Var.Map.t) ~(tid : int)
+        ~(vars : Fuzz.Var.Map.t) ~tid:(_ : int)
         ~(gen_obj_and_exp :
               Fir.Env.t
            -> (Fir.Address.t * Fir.Constant.t) Base_quickcheck.Generator.t)
         ~(allow_ub : bool) : t Base_quickcheck.Generator.t =
       Base_quickcheck.Generator.(
         Let_syntax.(
-          let%bind out_var_c, exp_var_c =
+          let%bind out_var, exp_var =
             vars
             |> Fuzz.Var.Map.gen_fresh_vars ~n:2
             >>| Fn.compose Or_error.ok_exn Tx.List.two
@@ -96,10 +96,10 @@ module Insert = struct
           in
           let%map desired = gen_expr prim_type src in
           let expected =
-            Accessor.construct Fir.Address.variable_ref exp_var_c
+            Accessor.construct Fir.Address.variable_ref exp_var
           in
-          { out_var= Common.Litmus_id.local tid out_var_c
-          ; exp_var= Common.Litmus_id.local tid exp_var_c
+          { out_var
+          ; exp_var
           ; exp_val
           ; cmpxchg=
               { Fir.Atomic_cmpxchg.obj
@@ -217,11 +217,11 @@ module Insert = struct
       let out_val = Basic.can_succeed in
       (* TODO(@MattWindsor91): possibly piggyback off an existing variable
          for out *)
-      [ ( Common.Litmus_id.variable_name x.out_var
+      [ ( x.out_var
         , Fir.
             { Initialiser.ty= Fir.Type.bool ()
             ; value= Fir.Constant.bool out_val } )
-      ; ( Common.Litmus_id.variable_name x.exp_var
+      ; ( x.exp_var
         , Fir.
             { Initialiser.ty=
                 Fir.Type.make (Fir.Type.Basic.strip_atomic dst_type)
@@ -245,9 +245,7 @@ module Insert = struct
                         @> Fir.Address.variable_of)
         ; (* If both possibilities are available, we can't guarantee a known
              value for the output variable. *)
-          Option.some_if
-            (Basic.can_succeed && Basic.can_fail)
-            (Common.Litmus_id.variable_name x.out_var) ]
+          Option.some_if (Basic.can_succeed && Basic.can_fail) x.out_var ]
 
     let to_stms (x : Inner_payload.t) :
         meta:Fuzz.Metadata.t -> Fuzz.Subject.Statement.t list =
@@ -259,9 +257,7 @@ module Insert = struct
       in
       let cmpxchg_assign =
         Fir.Assign.(
-          Accessor.construct Fir.Lvalue.variable
-            (Common.Litmus_id.variable_name x.out_var)
-          @= cmpxchg_expr)
+          Accessor.construct Fir.Lvalue.variable x.out_var @= cmpxchg_expr)
       in
       Storelike.lift_prims
         [Accessor.construct Fir.Prim_statement.assign cmpxchg_assign]
