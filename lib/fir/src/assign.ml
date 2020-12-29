@@ -104,14 +104,11 @@ let exprs : ('i, Expression.t, t, [< many]) Accessor.Simple.t =
 (* We can't easily do lvalues yet, because we'd need an accessor for all the
    lvalues in an expression. *)
 
-module Base_map (M : Monad.S) = struct
-  module F = Travesty.Traversable.Helpers (M)
-
-  let bmap (assign : t) ~(dst : Lvalue.t F.traversal)
-      ~(src : Source.t F.traversal) : t M.t =
-    M.Let_syntax.(
-      let%map dst' = dst assign.dst and src' = src assign.src in
-      make ~dst:dst' ~src:src')
+module Base_map (M : Applicative.S) = struct
+  let bmap (assign : t) ~(dst : Lvalue.t -> Lvalue.t M.t)
+      ~(src : Source.t -> Source.t M.t) : t M.t =
+    M.map2 (dst assign.dst) (src assign.src) ~f:(fun dst src ->
+        make ~dst ~src)
 end
 
 module On_lvalues :
@@ -121,19 +118,14 @@ Travesty.Traversable.Make0 (struct
 
   module Elt = Lvalue
 
-  module On_monad (M : Monad.S) = struct
+  module On (M : Applicative.S) = struct
     module B = Base_map (M)
     module EL =
       Travesty.Traversable.Chain0
         (Expression_traverse.On_addresses)
         (Address.On_lvalues)
-    module E = EL.On_monad (M)
-
-    module MAcc = Accessor.Of_monad (struct
-      include M
-
-      let apply = `Define_using_bind
-    end)
+    module E = EL.On (M)
+    module MAcc = Accessor.Of_applicative (M)
 
     let map_m x ~f =
       B.bmap x ~dst:f ~src:(MAcc.map Source.exprs ~f:(E.map_m ~f))
@@ -147,12 +139,8 @@ Travesty.Traversable.Make0 (struct
 
   module Elt = Expression
 
-  module On_monad (M : Monad.S) = struct
-    module MAcc = Accessor.Of_monad (struct
-      include M
-
-      let apply = `Define_using_bind
-    end)
+  module On (M : Applicative.S) = struct
+    module MAcc = Accessor.Of_applicative (M)
 
     let map_m x ~f = MAcc.map exprs x ~f
   end

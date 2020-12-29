@@ -18,7 +18,7 @@
 
 (** {1 Traversing over statements} *)
 
-module Base_map (M : Base.Monad.S) : sig
+module Base_map (M : Base.Applicative.S) : sig
   val bmap :
        'm1 Statement.t
     -> prim:

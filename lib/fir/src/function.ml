@@ -36,7 +36,7 @@ let with_body_stms (type m1 m2) (func : m1 t)
     (new_stms : m2 Statement.t list) : m2 t =
   {func with body_stms= new_stms}
 
-module On_monad (M : Monad.S) = struct
+module On (M : Applicative.S) = struct
   let map_m (type m1 m2) (func : m1 t)
       ~(parameters :
             (Ac.C_id.t, Type.t) List.Assoc.t
@@ -46,16 +46,12 @@ module On_monad (M : Monad.S) = struct
          -> (Ac.C_id.t, Initialiser.t) List.Assoc.t M.t)
       ~(body_stms : m1 Statement.t list -> m2 Statement.t list M.t) :
       m2 t M.t =
-    M.Let_syntax.(
-      let%map parameters' = parameters func.parameters
-      and body_decls' = body_decls func.body_decls
-      and body_stms' = body_stms func.body_stms in
-      { parameters= parameters'
-      ; body_decls= body_decls'
-      ; body_stms= body_stms' })
+    M.map3 (parameters func.parameters) (body_decls func.body_decls)
+      (body_stms func.body_stms) ~f:(fun parameters body_decls body_stms ->
+        {parameters; body_decls; body_stms})
 end
 
-module Mid = On_monad (Monad.Ident)
+module Mid = On (Travesty.Monad_exts.App (Monad.Ident))
 
 let map (type m1) (func : m1 t) = Mid.map_m func
 
@@ -75,10 +71,10 @@ module With_meta (Meta : Equal.S) = struct
       type t = Initialiser.t Named.t [@@deriving equal]
     end
 
-    module On_monad (M : Monad.S) = struct
-      module B = On_monad (M)
+    module On (M : Applicative.S) = struct
+      module B = On (M)
       module Al = Named.Alist.As_named (Initialiser)
-      module L = Al.On_monad (M)
+      module L = Al.On (M)
 
       let map_m (func : t)
           ~(f : Initialiser.t Named.t -> Initialiser.t Named.t M.t) =

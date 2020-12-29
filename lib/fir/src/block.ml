@@ -25,31 +25,21 @@ let each_statement : ('i, 'stm, ('meta, 'stm) t, [< many]) Accessor.Simple.t
     =
   [%accessor statements @> Accessor.List.each]
 
-(* TODO(@MattWindsor91): ideally this would plumb into Travesty. *)
-module On_applicative (A : Applicative.S) = struct
-  module AccA = Accessor.Of_applicative (A)
-
-  let bi_map_a (type m1 m2 s1 s2) (block : (m1, s1) t) ~(left : m1 -> m2 A.t)
-      ~(right : s1 -> s2 A.t) : (m2, s2) t A.t =
-    A.map2
-      ~f:(fun metadata statements -> make ~metadata ~statements ())
-      (left block.metadata)
-      (AccA.map Accessor.List.each ~f:right block.statements)
-end
-
 module BT :
   Travesty.Bi_traversable_types.S2
     with type ('meta, 'stm) t = ('meta, 'stm) t =
 Travesty.Bi_traversable.Make2 (struct
   type nonrec ('meta, 'stm) t = ('meta, 'stm) t
 
-  module On_monad (M : Monad.S) = struct
-    module A = Utils.Applicative.Of_monad_ext (M)
-    module X = On_applicative (A)
+  module On (M : Applicative.S) = struct
+    module AccM = Accessor.Of_applicative (M)
 
     let bi_map_m (type m1 m2 s1 s2) (block : (m1, s1) t)
         ~(left : m1 -> m2 M.t) ~(right : s1 -> s2 M.t) : (m2, s2) t M.t =
-      X.bi_map_a ~left ~right block
+      M.map2
+        ~f:(fun metadata statements -> make ~metadata ~statements ())
+        (left block.metadata)
+        (AccM.map Accessor.List.each ~f:right block.statements)
   end
 end)
 
@@ -61,12 +51,8 @@ module On_statements (Meta : T) :
     (Travesty.Bi_traversable.Fix2_left (BT) (Meta))
 
 module On_meta_statement_list (Stm : T1) = struct
-  module On_monad (M : Monad.S) = struct
-    module AccM = Accessor.Of_monad (struct
-      include M
-
-      let apply = `Define_using_bind
-    end)
+  module On (M : Applicative.S) = struct
+    module AccM = Accessor.Of_applicative (M)
 
     let map_m (type meta) (block : (meta, meta Stm.t) t)
         ~(f : meta Stm.t list -> meta Stm.t list M.t) :

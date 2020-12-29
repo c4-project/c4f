@@ -50,14 +50,9 @@ Travesty.Traversable.Make0 (struct
 
   module Elt = Address
 
-  module On_monad (M : Monad.S) = struct
-    module B = Base_map (struct
-      type 'a t = 'a M.t
-
-      include Applicative.Of_monad (M)
-    end)
-
-    module E = Expression_traverse.On_addresses.On_monad (M)
+  module On (M : Applicative.S) = struct
+    module B = Base_map (M)
+    module E = Expression_traverse.On_addresses.On (M)
 
     let map_m x ~f = B.bmap x ~src:(E.map_m ~f) ~dst:f ~mo:M.return
   end
@@ -70,12 +65,8 @@ Travesty.Traversable.Make0 (struct
 
   module Elt = Expression
 
-  module On_monad (M : Monad.S) = struct
-    module B = Base_map (struct
-      type 'a t = 'a M.t
-
-      include Applicative.Of_monad (M)
-    end)
+  module On (M : Applicative.S) = struct
+    module B = Base_map (M)
 
     let map_m x ~f = B.bmap x ~src:f ~dst:M.return ~mo:M.return
   end
@@ -88,14 +79,9 @@ Travesty.Traversable.Make0 (struct
 
   module Elt = Mem_order
 
-  module On_monad (M : Monad.S) = struct
-    module B = Base_map (struct
-      type 'a t = 'a M.t
-
-      include Applicative.Of_monad (M)
-    end)
-
-    module E = Expression_traverse.On_mem_orders.On_monad (M)
+  module On (M : Applicative.S) = struct
+    module B = Base_map (M)
+    module E = Expression_traverse.On_mem_orders.On (M)
 
     let map_m x ~f = B.bmap x ~src:(E.map_m ~f) ~dst:M.return ~mo:f
   end

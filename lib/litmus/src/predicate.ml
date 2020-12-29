@@ -12,7 +12,6 @@
 open Core_kernel (* not Base; for extended quickcheck *)
 
 module Id = Act_common.Litmus_id
-module Tx = Travesty_base_exts
 
 module Element = struct
   type 'const t = Bool of bool | Eq of Id.t * 'const
@@ -37,16 +36,14 @@ module Element = struct
 
     type left = Id.t
 
-    module On_monad (M : Monad.S) = struct
+    module On (M : Applicative.S) = struct
       let bi_map_m (t : 'a t) ~(left : Id.t -> Id.t M.t)
           ~(right : 'a -> 'b M.t) : 'b t M.t =
         match t with
         | Bool k ->
             M.return (Bool k)
         | Eq (id, c) ->
-            M.Let_syntax.(
-              let%map id' = left id and c' = right c in
-              Eq (id', c'))
+            M.map2 ~f:(fun id' c' -> Eq (id', c')) (left id) (right c)
     end
   end)
 
@@ -63,9 +60,9 @@ module Element = struct
 
     type left = Act_common.C_id.t
 
-    module On_monad (M : Monad.S) = struct
-      module Lid_cid = Act_common.Litmus_id.On_c_identifiers.On_monad (M)
-      module B = On_monad (M)
+    module On (M : Applicative.S) = struct
+      module Lid_cid = Act_common.Litmus_id.On_c_identifiers.On (M)
+      module B = On (M)
 
       let bi_map_m (t : 'a t)
           ~(left : Act_common.C_id.t -> Act_common.C_id.t M.t)
@@ -156,20 +153,18 @@ module BT :
 
   type left = Id.t
 
-  module On_monad (M : Monad.S) = struct
-    module Pe = Element.On_monad (M)
+  module On (M : Applicative.S) = struct
+    module Pe = Element.On (M)
 
     let rec bi_map_m (t : 'a t) ~(left : Id.t -> Id.t M.t)
         ~(right : 'a -> 'b M.t) : 'b t M.t =
-      M.Let_syntax.(
-        match t with
-        | Bop (op, l, r) ->
-            let%map l' = bi_map_m ~left ~right l
-            and r' = bi_map_m ~left ~right r in
-            Bop (op, l', r')
-        | Elt x ->
-            let%map x' = Pe.bi_map_m ~left ~right x in
-            Elt x')
+      match t with
+      | Bop (op, l, r) ->
+          M.map2
+            ~f:(fun l' r' -> Bop (op, l', r'))
+            (bi_map_m ~left ~right l) (bi_map_m ~left ~right r)
+      | Elt x ->
+          M.map (Pe.bi_map_m ~left ~right x) ~f:(fun x' -> Elt x')
   end
 end)
 
@@ -184,9 +179,9 @@ Travesty.Bi_traversable.Make1_right (struct
 
   type left = Act_common.C_id.t
 
-  module On_monad (M : Monad.S) = struct
-    module Lid_cid = Act_common.Litmus_id.On_c_identifiers.On_monad (M)
-    module B = On_monad (M)
+  module On (M : Applicative.S) = struct
+    module Lid_cid = Act_common.Litmus_id.On_c_identifiers.On (M)
+    module B = On (M)
 
     let bi_map_m (t : 'a t)
         ~(left : Act_common.C_id.t -> Act_common.C_id.t M.t)

@@ -25,13 +25,12 @@ Travesty.Traversable.Make0 (struct
 
   module Elt = Expression
 
-  module On_monad (M : Monad.S) = struct
-    module Ls = Tx.List.On_monad (M)
+  module On (M : Applicative.S) = struct
+    module Ls = Tx.List.On (M)
 
     let map_m (x : t) ~(f : Expression.t -> Expression.t M.t) : t M.t =
-      M.Let_syntax.(
-        let%map arguments = Ls.map_m ~f x.arguments in
-        make ~function_id:x.function_id ~arguments ())
+      M.map (Ls.map_m ~f x.arguments) ~f:(fun arguments ->
+          make ~function_id:x.function_id ~arguments ())
   end
 end)
 

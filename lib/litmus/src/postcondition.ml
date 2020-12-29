@@ -11,7 +11,6 @@
 
 open Base
 module Id = Act_common.Litmus_id
-module Tx = Travesty_base_exts
 
 module Quantifier = struct
   module M = struct
@@ -42,15 +41,15 @@ module BT :
 
   type left = Id.t
 
-  module On_monad (M : Monad.S) = struct
-    module Pr = Predicate.On_monad (M)
+  module On (M : Applicative.S) = struct
+    module Pr = Predicate.On (M)
 
     let bi_map_m (t : 'a t) ~(left : Id.t -> Id.t M.t)
         ~(right : 'a -> 'b M.t) : 'b t M.t =
       let quantifier = quantifier t in
-      M.Let_syntax.(
-        let%map predicate = Pr.bi_map_m ~left ~right (predicate t) in
-        make ~quantifier ~predicate)
+      M.map
+        (Pr.bi_map_m ~left ~right (predicate t))
+        ~f:(fun predicate -> make ~quantifier ~predicate)
   end
 end)
 
@@ -65,9 +64,9 @@ Travesty.Bi_traversable.Make1_right (struct
 
   type left = Act_common.C_id.t
 
-  module On_monad (M : Monad.S) = struct
-    module Lid_cid = Act_common.Litmus_id.On_c_identifiers.On_monad (M)
-    module B = On_monad (M)
+  module On (M : Applicative.S) = struct
+    module Lid_cid = Act_common.Litmus_id.On_c_identifiers.On (M)
+    module B = On (M)
 
     let bi_map_m (t : 'a t)
         ~(left : Act_common.C_id.t -> Act_common.C_id.t M.t)

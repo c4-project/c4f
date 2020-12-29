@@ -46,21 +46,14 @@ module Make_traversal_base (Basic : Basic) = struct
 
   module Elt = Basic.Elt
 
-  module On_monad (M : Monad.S) = struct
-    module A = Basic.A.On_monad (M)
-    module C = Basic.C.On_monad (M)
-    module L = Basic.L.On_monad (M)
-    module O = Basic.O.On_monad (M)
-
-    module Ap = struct
-      type 'a t = 'a M.t
-
-      include Applicative.Of_monad (M)
-    end
-
-    module AC = Atomic_cmpxchg.Base_map (Ap)
-    module AF = Atomic_fetch.Base_map (Ap)
-    module AX = Atomic_xchg.Base_map (Ap)
+  module On (M : Applicative.S) = struct
+    module A = Basic.A.On (M)
+    module C = Basic.C.On (M)
+    module L = Basic.L.On (M)
+    module O = Basic.O.On (M)
+    module AC = Atomic_cmpxchg.Base_map (M)
+    module AF = Atomic_fetch.Base_map (M)
+    module AX = Atomic_xchg.Base_map (M)
 
     let map_m_cmpxchg (x : t Atomic_cmpxchg.t) ~(f : Elt.t -> Elt.t M.t)
         ~(mu : t -> t M.t) : t Atomic_cmpxchg.t M.t =
@@ -81,13 +74,13 @@ module Make_traversal_base (Basic : Basic) = struct
       Travesty_base_exts.Fn.Compose_syntax.(
         Atomic_expression.(
           reduce ae
-            ~cmpxchg:(map_m_cmpxchg ~f ~mu >> Ap.map ~f:cmpxchg)
-            ~fetch:(map_m_fetch ~f ~mu >> Ap.map ~f:fetch)
-            ~load:(L.map_m ~f >> Ap.map ~f:load)
-            ~xchg:(map_m_xchg ~f ~mu >> Ap.map ~f:xchg)))
+            ~cmpxchg:(map_m_cmpxchg ~f ~mu >> M.map ~f:cmpxchg)
+            ~fetch:(map_m_fetch ~f ~mu >> M.map ~f:fetch)
+            ~load:(L.map_m ~f >> M.map ~f:load)
+            ~xchg:(map_m_xchg ~f ~mu >> M.map ~f:xchg)))
 
-    module B = Expression.Base_map (Ap)
-    module AccM = Accessor.Of_applicative (Ap)
+    module B = Expression.Base_map (M)
+    module AccM = Accessor.Of_applicative (M)
 
     let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
       let rec mu x =
@@ -95,9 +88,9 @@ module Make_traversal_base (Basic : Basic) = struct
            map_m_ae et al. separately. *)
         B.bmap x ~constant:(C.map_m ~f) ~address:(A.map_m ~f)
           ~atomic:(map_m_ae ~f ~mu)
-          ~uop:(fun (u, x) -> Ap.map ~f:(fun x' -> (u, x')) (mu x))
+          ~uop:(fun (u, x) -> M.map ~f:(fun x' -> (u, x')) (mu x))
           ~bop:(fun (u, l, r) ->
-            Ap.map2 ~f:(fun l' r' -> (u, l', r')) (mu l) (mu r))
+            M.map2 ~f:(fun l' r' -> (u, l', r')) (mu l) (mu r))
           ~ternary:(AccM.map ~f:mu Expr_ternary.exprs)
       in
       mu x
@@ -154,8 +147,8 @@ struct
     module Elt = Basic.Elt
     module TB = Make_traversal_base (Basic)
 
-    module On_monad (M : Monad.S) = struct
-      module TM = TB.On_monad (M)
+    module On (M : Applicative.S) = struct
+      module TM = TB.On (M)
 
       let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
         TM.map_m_cmpxchg x ~f ~mu:(TM.map_m ~f)
@@ -210,8 +203,8 @@ struct
     module Elt = Basic.Elt
     module TB = Make_traversal_base (Basic)
 
-    module On_monad (M : Monad.S) = struct
-      module TM = TB.On_monad (M)
+    module On (M : Applicative.S) = struct
+      module TM = TB.On (M)
 
       let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
         TM.map_m_fetch x ~f ~mu:(TM.map_m ~f)
@@ -266,8 +259,8 @@ struct
     module Elt = Basic.Elt
     module TB = Make_traversal_base (Basic)
 
-    module On_monad (M : Monad.S) = struct
-      module TM = TB.On_monad (M)
+    module On (M : Applicative.S) = struct
+      module TM = TB.On (M)
 
       let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
         TM.map_m_xchg x ~f ~mu:(TM.map_m ~f)
@@ -322,8 +315,8 @@ module Atomic :
     module Elt = Basic.Elt
     module TB = Make_traversal_base (Basic)
 
-    module On_monad (M : Monad.S) = struct
-      module TM = TB.On_monad (M)
+    module On (M : Applicative.S) = struct
+      module TM = TB.On (M)
 
       let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
         TM.map_m_ae x ~f ~mu:(TM.map_m ~f)

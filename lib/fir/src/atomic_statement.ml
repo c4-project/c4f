@@ -11,10 +11,6 @@
 
 open Base
 
-open struct
-  module A = Accessor_base
-end
-
 type t =
   | Cmpxchg of Expression.t Atomic_cmpxchg.t
   | Fence of Atomic_fence.t
@@ -97,18 +93,13 @@ Travesty.Traversable.Make0 (struct
 
   module Elt = Basic.Elt
 
-  module On_monad (M : Monad.S) = struct
-    module SBase = Base_map (struct
-      type 'a t = 'a M.t
-
-      include Applicative.Of_monad (M)
-    end)
-
-    module C = Basic.C.On_monad (M)
-    module F = Basic.F.On_monad (M)
-    module N = Basic.N.On_monad (M)
-    module S = Basic.S.On_monad (M)
-    module X = Basic.X.On_monad (M)
+  module On (M : Applicative.S) = struct
+    module SBase = Base_map (M)
+    module C = Basic.C.On (M)
+    module F = Basic.F.On (M)
+    module N = Basic.N.On (M)
+    module S = Basic.S.On (M)
+    module X = Basic.X.On (M)
 
     let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
       SBase.bmap x ~cmpxchg:(C.map_m ~f) ~fence:(N.map_m ~f)

@@ -48,12 +48,10 @@ module BT :
 
   type left = C_id.t
 
-  module On_monad (M : Monad.S) = struct
+  module On (M : Applicative.S) = struct
     let bi_map_m (n : 'r1 t) ~(left : left -> left M.t)
         ~(right : 'r1 -> 'r2 M.t) : 'r2 t M.t =
-      M.Let_syntax.(
-        let%map name = left n.@(name) and value = right n.@(value) in
-        make value ~name)
+      M.map2 ~f:(fun name -> make ~name) (left n.@(name)) (right n.@(value))
   end
 end)
 
@@ -72,15 +70,12 @@ module Alist = struct
       type t = A.t M.t [@@deriving equal]
     end
 
-    module On_monad (M : Monad.S) = struct
-      module L = Travesty_base_exts.List.On_monad (M)
+    module On (M : Applicative.S) = struct
+      module L = Travesty_base_exts.List.On (M)
 
       let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
         L.map_m x ~f:(fun (name, value) ->
-            M.Let_syntax.(
-              let m = make ~name value in
-              let%map m' = f m in
-              (m'.name, m'.value)))
+            M.map ~f:(fun m' -> (m'.name, m'.value)) (f (make ~name value)))
     end
   end)
 end

@@ -85,7 +85,7 @@ val map :
 
 (** {3 Traversals} *)
 
-module On_monad (M : Monad.S) : sig
+module On (M : Applicative.S) : sig
   val map_m :
        'm1 t
     -> parameters:

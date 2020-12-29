@@ -12,7 +12,7 @@
 open Base
 open Import
 
-module Base_map_applicative (A : Applicative.S) = struct
+module Base_map (A : Applicative.S) = struct
   type 'meta t = 'meta Statement.t
 
   let bmap (type m1 m2) (x : m1 t)
@@ -30,7 +30,7 @@ module Base_map_applicative (A : Applicative.S) = struct
 
   module IB = If.Base_map (A)
   module FB = Flow_block.Base_map (A)
-  module Bk = Block.On_applicative (A)
+  module Bk = Block.On (A)
 
   (* Ideally, if we can get rid of Bk.bi_map_m, we should be able to use
      applicatives throughout this. *)
@@ -42,7 +42,7 @@ module Base_map_applicative (A : Applicative.S) = struct
       ~(if_cond : Expression.t -> Expression.t A.t)
       ~(block_meta : m1 -> m2 A.t) : m2 t A.t =
     let rec mu x =
-      let map_block = Bk.bi_map_a ~left:block_meta ~right:mu in
+      let map_block = Bk.bi_map_m ~left:block_meta ~right:mu in
       bmap x ~prim
         ~if_stm:
           (IB.bmap ~cond:if_cond ~t_branch:map_block ~f_branch:map_block)
@@ -51,24 +51,14 @@ module Base_map_applicative (A : Applicative.S) = struct
     mu x
 end
 
-module Base_map (M : Monad.S) = struct
-  module A = Act_utils.Applicative.Of_monad_ext (M)
-  include Base_map_applicative (A)
-end
-
 module On_meta :
   Travesty.Traversable_types.S1 with type 'meta t := 'meta Statement.t =
 Travesty.Traversable.Make1 (struct
   type 'meta t = 'meta Statement.t
 
-  module On_monad (M : Monad.S) = struct
+  module On (M : Applicative.S) = struct
     module B = Base_map (M)
-
-    module AccM = Accessor.Of_monad (struct
-      include M
-
-      let apply = `Define_using_bind
-    end)
+    module AccM = Accessor.Of_applicative (M)
 
     let map_m (x : 'm1 t) ~(f : 'm1 -> 'm2 M.t) : 'm2 t M.t =
       B.bmap_flat x
@@ -110,17 +100,12 @@ module With_meta (Meta : T) = struct
 
     module Elt = Basic.Elt
 
-    module On_monad (M : Monad.S) = struct
+    module On (M : Applicative.S) = struct
       module SBase = Base_map (M)
-      module PM = Basic.P.On_monad (M)
-      module FHM = Basic.FH.On_monad (M)
-      module IEM = Basic.IE.On_monad (M)
-
-      module AccM = Accessor.Of_monad (struct
-        include M
-
-        let apply = `Define_using_bind
-      end)
+      module PM = Basic.P.On (M)
+      module FHM = Basic.FH.On (M)
+      module IEM = Basic.IE.On (M)
+      module AccM = Accessor.Of_applicative (M)
 
       let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
         SBase.bmap_flat x
@@ -270,18 +255,15 @@ module If :
 struct
   type 'meta t = 'meta Statement.If.t
 
-  module Base_map (M : Monad.S) =
-    If.Base_map (Act_utils.Applicative.Of_monad_ext (M))
-
   module On_meta :
     Travesty.Traversable_types.S1 with type 'meta t := 'meta t =
   Travesty.Traversable.Make1 (struct
     type nonrec 'meta t = 'meta t
 
-    module On_monad (M : Monad.S) = struct
-      module B = Base_map (M)
-      module Mn = On_meta.On_monad (M)
-      module Bk = Block.On_monad (M)
+    module On (M : Applicative.S) = struct
+      module B = If.Base_map (M)
+      module Mn = On_meta.On (M)
+      module Bk = Block.On (M)
 
       let map_m (x : 'm1 t) ~(f : 'm1 -> 'm2 M.t) : 'm2 t M.t =
         B.bmap x ~cond:M.return
@@ -321,11 +303,11 @@ struct
 
       module Elt = Basic.Elt
 
-      module On_monad (M : Monad.S) = struct
-        module IBase = Base_map (M)
-        module Bk = Block_stms.On_monad (M)
-        module EM = Basic.LE.On_monad (M)
-        module SM = Basic.S.On_monad (M)
+      module On (M : Applicative.S) = struct
+        module IBase = If.Base_map (M)
+        module Bk = Block_stms.On (M)
+        module EM = Basic.LE.On (M)
+        module SM = Basic.S.On (M)
 
         let map_m x ~f =
           IBase.bmap x ~cond:(EM.map_m ~f)
@@ -344,18 +326,15 @@ module Flow_block :
   type 'meta t = ('meta, 'meta Statement.t) Flow_block.t
   [@@deriving sexp, compare, equal]
 
-  module Base_map (M : Monad.S) =
-    Flow_block.Base_map (Act_utils.Applicative.Of_monad_ext (M))
-
   module On_meta :
     Travesty.Traversable_types.S1 with type 'meta t := 'meta t =
   Travesty.Traversable.Make1 (struct
     type nonrec 'meta t = 'meta t
 
-    module On_monad (M : Monad.S) = struct
-      module B = Base_map (M)
-      module Mn = On_meta.On_monad (M)
-      module Bk = Block.On_monad (M)
+    module On (M : Applicative.S) = struct
+      module B = Flow_block.Base_map (M)
+      module Mn = On_meta.On (M)
+      module Bk = Block.On (M)
 
       let map_m (x : 'm1 t) ~(f : 'm1 -> 'm2 M.t) : 'm2 t M.t =
         B.bmap x
@@ -395,11 +374,11 @@ module Flow_block :
 
       module Elt = Basic.Elt
 
-      module On_monad (M : Monad.S) = struct
-        module FBase = Base_map (M)
-        module Bk = Block_stms.On_monad (M)
-        module HM = Basic.FH.On_monad (M)
-        module SM = Basic.S.On_monad (M)
+      module On (M : Applicative.S) = struct
+        module FBase = Flow_block.Base_map (M)
+        module Bk = Block_stms.On (M)
+        module HM = Basic.FH.On (M)
+        module SM = Basic.S.On (M)
 
         let map_m x ~f =
           FBase.bmap x ~header:(HM.map_m ~f)

@@ -32,7 +32,7 @@ Travesty.Traversable.Make0 (struct
 
   module Elt = Mem_order
 
-  module On_monad (M : Monad.S) = struct
+  module On (M : Applicative.S) = struct
     let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
       M.(x.mo |> f >>| fun mo -> {x with mo})
   end

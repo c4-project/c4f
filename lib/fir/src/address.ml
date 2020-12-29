@@ -57,12 +57,8 @@ Travesty.Traversable.Make0 (struct
 
   module Elt = Lvalue
 
-  module On_monad (M : Monad.S) = struct
-    module AccM = Accessor.Of_monad (struct
-      include M
-
-      let apply = `Define_using_bind
-    end)
+  module On (M : Applicative.S) = struct
+    module AccM = Accessor.Of_applicative (M)
 
     let map_m : t -> f:(Elt.t -> Elt.t M.t) -> t M.t = AccM.map lvalue_of
   end

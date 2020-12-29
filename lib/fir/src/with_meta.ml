@@ -32,14 +32,10 @@ module BT :
 Travesty.Bi_traversable.Make2 (struct
   type nonrec ('m, 'v) t = ('m, 'v) t
 
-  module On_monad (M : Monad.S) = struct
-    module A = Applicative.Of_monad (M)
-
+  module On (M : Applicative.S) = struct
     let bi_map_m (x : ('m1, 'v1) t) ~(left : 'm1 -> 'm2 M.t)
         ~(right : 'v1 -> 'v2 M.t) : ('m2, 'v2) t M.t =
-      A.(
-        return (fun meta value -> make ~meta value)
-        <*> left x.meta <*> right x.value)
+      M.map2 ~f:(fun meta -> make ~meta) (left x.meta) (right x.value)
   end
 end)
 

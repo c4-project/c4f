@@ -40,18 +40,8 @@ Travesty.Traversable.Make0 (struct
 
   module Elt = Address
 
-  module On_monad (M : Monad.S) = struct
-    module AccM = Accessor.Of_monad (struct
-      include M
-
-      let apply = `Define_using_bind
-    end)
-
-    module B = Base_map (struct
-      type 'a t = 'a M.t
-
-      include Applicative.Of_monad (M)
-    end)
+  module On (M : Applicative.S) = struct
+    module AccM = Accessor.Of_applicative (M)
 
     let map_m : t -> f:(Address.t -> Address.t M.t) -> t M.t = AccM.map src
   end
@@ -64,12 +54,8 @@ Travesty.Traversable.Make0 (struct
 
   module Elt = Mem_order
 
-  module On_monad (M : Monad.S) = struct
-    module B = Base_map (struct
-      type 'a t = 'a M.t
-
-      include Applicative.Of_monad (M)
-    end)
+  module On (M : Applicative.S) = struct
+    module B = Base_map (M)
 
     let map_m x ~f = B.bmap x ~src:M.return ~mo:f
   end

@@ -79,14 +79,13 @@ Travesty.Traversable.Make0 (struct
 
   module Elt = C_id
 
-  module On_monad (M : Monad.S) = struct
-    module H = Travesty.Traversable.Helpers (M)
-
+  module On (M : Applicative.S) = struct
     let map_m (lid : t) ~(f : C_id.t -> C_id.t M.t) : t M.t =
-      Variants.map lid ~global:(H.proc_variant1 f)
-        ~local:
-          (H.proc_variant2 (fun (tid, x) ->
-               M.(x |> f >>| fun x' -> (tid, x'))))
+      match lid with
+      | Global g ->
+          M.map ~f:(fun g -> Global g) (f g)
+      | Local (tid, l) ->
+          M.map ~f:(fun l -> Local (tid, l)) (f l)
   end
 end)
 

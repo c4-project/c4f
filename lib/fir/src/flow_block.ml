@@ -214,14 +214,13 @@ module For = struct
         (Expression_traverse.On_addresses)
         (Address.On_lvalues)
 
-    module On_monad (M : Monad.S) = struct
-      module EL = ELN.On_monad (M)
-      module AL = Assign.On_lvalues.On_monad (M)
-      module A = Utils.Applicative.Of_monad_ext (M)
-      module O = Tx.Option.On_monad (M)
+    module On (M : Applicative.S) = struct
+      module EL = ELN.On (M)
+      module AL = Assign.On_lvalues.On (M)
+      module O = Tx.Option.On (M)
 
       let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
-        A.map3
+        M.map3
           ~f:(fun init cmp update -> {init; cmp; update})
           (O.map_m ~f:(AL.map_m ~f) x.init)
           (O.map_m ~f:(EL.map_m ~f) x.cmp)
@@ -282,12 +281,8 @@ module Header = struct
 
     module Elt = Expression
 
-    module On_monad (M : Monad.S) = struct
-      module AccM = Accessor.Of_monad (struct
-        include M
-
-        let apply = `Define_using_bind
-      end)
+    module On (M : Applicative.S) = struct
+      module AccM = Accessor.Of_applicative (M)
 
       let map_m : t -> f:(Elt.t -> Elt.t M.t) -> t M.t = AccM.map exprs
     end
@@ -304,9 +299,9 @@ module Header = struct
         (Expression_traverse.On_addresses)
         (Address.On_lvalues)
 
-    module On_monad (M : Monad.S) = struct
-      module EL = ELN.On_monad (M)
-      module FL = For.On_lvalues.On_monad (M)
+    module On (M : Applicative.S) = struct
+      module EL = ELN.On (M)
+      module FL = For.On_lvalues.On (M)
 
       let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
         M.(
@@ -354,6 +349,6 @@ module Base_map (A : Applicative.S) = struct
     A.(return make <*> header flow.header <*> body flow.body)
 end
 
-module Bident = Base_map (Act_utils.Applicative.Ident)
+module Bident = Base_map (Travesty.Monad_exts.App (Monad.Ident))
 
 let map = Bident.bmap

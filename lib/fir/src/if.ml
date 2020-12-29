@@ -40,6 +40,6 @@ module Base_map (A : Applicative.S) = struct
       <*> f_branch if_stm.f_branch)
 end
 
-module Bident = Base_map (Act_utils.Applicative.Ident)
+module Bident = Base_map (Travesty.Monad_exts.App (Monad.Ident))
 
 let map = Bident.bmap

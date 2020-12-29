@@ -214,12 +214,12 @@ module With_meta = struct
 
       type right = Meta.t
 
-      module On_monad (Mo : Monad.S) = struct
+      module On (Mo : Applicative.S) = struct
         let bi_map_m (x : 'a t) ~(left : 'a -> 'b Mo.t)
             ~(right : right -> right Mo.t) : 'b t Mo.t =
-          Mo.Let_syntax.(
-            let%map path' = left x.path and meta' = right x.meta in
-            {path= path'; meta= meta'})
+          Mo.map2
+            ~f:(fun path meta -> {path; meta})
+            (left x.path) (right x.meta)
       end
     end) :
       Travesty.Bi_traversable_types.S1_left

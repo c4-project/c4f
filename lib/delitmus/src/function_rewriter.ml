@@ -127,7 +127,7 @@ struct
       Ctx.context |> Context.var_map |> Var_map.param_mapped_vars
       |> filter_by_scope |> expand_parameters
 
-    module F = Fir.Function.On_monad (Or_error)
+    module F = Fir.Function.On (Or_error)
 
     let rewrite : unit Fir.Function.t -> unit Fir.Function.t Or_error.t =
       F.map_m

@@ -51,23 +51,23 @@ Travesty.Bi_traversable.Make1_right (struct
 
   type left = Act_common.C_id.t
 
-  module On_monad (M : Monad.S) = struct
-    module MA = Travesty_base_exts.Alist.On_monad (M)
+  module On (M : Applicative.S) = struct
+    module MA = Travesty_base_exts.Alist.On (M)
     module PostO =
       Travesty.Bi_traversable.Chain_Bi1_right_Traverse1
         (Postcondition.On_c_identifiers)
         (Travesty_base_exts.Option)
-    module MP = PostO.On_monad (M)
-    module Mx = Travesty.Monad_exts.Extend (M)
+    module MP = PostO.On (M)
 
     let bi_map_m (type a b) (aux : a t) ~(left : Ac.C_id.t -> Ac.C_id.t M.t)
         ~(right : a -> b M.t) : b t M.t =
       let name = name aux in
       let locations = locations aux in
-      M.Let_syntax.(
-        let%map init = MA.bi_map_m (init aux) ~left ~right
-        and postcondition = MP.bi_map_m (postcondition aux) ~left ~right in
-        make ~name ~init ?locations ?postcondition ())
+      M.map2
+        (MA.bi_map_m (init aux) ~left ~right)
+        (MP.bi_map_m (postcondition aux) ~left ~right)
+        ~f:(fun init postcondition ->
+          make ~name ~init ?locations ?postcondition ())
   end
 end)
 

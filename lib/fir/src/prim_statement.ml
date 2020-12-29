@@ -10,10 +10,7 @@
    project root for more information. *)
 
 open Base
-
-open struct
-  module Ac = Act_common
-end
+open Import
 
 (* This module wrapper exists to let us refer to the generated variant
    constructors in Base_map. *)
@@ -22,8 +19,8 @@ module P = struct
     | Assign of Assign.t
     | Atomic of Atomic_statement.t
     | Early_out of Early_out.t
-    | Label of Ac.C_id.t
-    | Goto of Ac.C_id.t
+    | Label of Common.C_id.t
+    | Goto of Common.C_id.t
     | Nop
     | Procedure_call of Call.t
   [@@deriving accessors, sexp, compare, equal]
@@ -39,8 +36,8 @@ let return : t = Early_out Return
 
 let value_map (type result) (x : t) ~(assign : Assign.t -> result)
     ~(atomic : Atomic_statement.t -> result)
-    ~(early_out : Early_out.t -> result) ~(label : Ac.C_id.t -> result)
-    ~(goto : Ac.C_id.t -> result) ~(nop : unit -> result)
+    ~(early_out : Early_out.t -> result) ~(label : Common.C_id.t -> result)
+    ~(goto : Common.C_id.t -> result) ~(nop : unit -> result)
     ~(procedure_call : Call.t -> result) : result =
   match x with
   | Assign a ->
@@ -58,12 +55,12 @@ let value_map (type result) (x : t) ~(assign : Assign.t -> result)
   | Procedure_call p ->
       procedure_call p
 
-module Base_map (M : Monad.S) = struct
+module Base_map (M : Applicative.S) = struct
   let bmap (x : t) ~(assign : Assign.t -> Assign.t M.t)
       ~(atomic : Atomic_statement.t -> Atomic_statement.t M.t)
       ~(early_out : Early_out.t -> Early_out.t M.t)
-      ~(label : Ac.C_id.t -> Ac.C_id.t M.t)
-      ~(goto : Ac.C_id.t -> Ac.C_id.t M.t)
+      ~(label : Common.C_id.t -> Common.C_id.t M.t)
+      ~(goto : Common.C_id.t -> Common.C_id.t M.t)
       ~(procedure_call : Call.t -> Call.t M.t) : t M.t =
     Travesty_base_exts.Fn.Compose_syntax.(
       value_map x
@@ -100,11 +97,11 @@ Travesty.Traversable.Make0 (struct
 
   module Elt = Basic.Elt
 
-  module On_monad (M : Monad.S) = struct
+  module On (M : Applicative.S) = struct
     module SBase = Base_map (M)
-    module AM = Basic.A.On_monad (M)
-    module CM = Basic.C.On_monad (M)
-    module TM = Basic.T.On_monad (M)
+    module AM = Basic.A.On (M)
+    module CM = Basic.C.On (M)
+    module TM = Basic.T.On (M)
 
     let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
       SBase.bmap x ~assign:(AM.map_m ~f) ~atomic:(TM.map_m ~f)

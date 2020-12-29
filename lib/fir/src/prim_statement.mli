@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -82,8 +82,8 @@ val value_map :
     ~procedure_call] reduces a primitive statement [x] to a particular result
     type by applying the appropriate function. *)
 
-(** Creates a basic monadic map over [M]. *)
-module Base_map (M : Monad.S) : sig
+(** Creates a basic applicative map over [M]. *)
+module Base_map (M : Applicative.S) : sig
   val bmap :
        t
     -> assign:(Assign.t -> Assign.t M.t)
