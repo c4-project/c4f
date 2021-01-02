@@ -15,16 +15,15 @@
 open Base
 open Import
 
-(** {1 Information about function parameters} *)
+(** {1 Information about functions} *)
 
 module Record : sig
-  type t [@@deriving yojson, equal]
-
-  val make : ?is_thread_body:bool -> c_id:Common.C_id.t -> unit -> t
-
-  val c_id : t -> Common.C_id.t
+  (** Type of function records. *)
+  type t = {tid: int option [@default None]; c_id: Common.C_id.t}
+  [@@deriving yojson, equal, accessors]
 
   val is_thread_body : t -> bool
+  (** [is_thread_body r] is true if [r] has an assigned thread ID. *)
 end
 
 (** {1 JSON encodable shorthand for a function map} *)

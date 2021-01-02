@@ -162,7 +162,9 @@ struct
 
   let rewrite_function_name (name : Common.C_id.t) ~(context : Context.t) :
       Common.C_id.t Or_error.t =
-    Or_error.map (lookup_function name ~context) ~f:Function_map.Record.c_id
+    Or_error.map
+      (lookup_function name ~context)
+      ~f:(Accessor.get Function_map.Record.c_id)
 
   let rewrite_named (tid : int) (fn : unit Fir.Function.t Common.C_named.t)
       ~(context : Context.t) :

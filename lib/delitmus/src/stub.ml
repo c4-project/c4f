@@ -125,9 +125,7 @@ let make (aux : Aux.t) : Fir.Litmus.Test.t Or_error.t =
       |> Map.to_alist ~key_order:`Increasing
       |> List.filter_map ~f:(fun (old_id, record) ->
              if Function_map.Record.is_thread_body record then
-               Some
-                 (make_function_stub vars ~old_id
-                    ~new_id:(Function_map.Record.c_id record))
+               Some (make_function_stub vars ~old_id ~new_id:record.c_id)
              else None)
       |> Or_error.combine_errors
     in

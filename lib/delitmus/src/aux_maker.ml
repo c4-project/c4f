@@ -62,22 +62,20 @@ module Make (B : Runner_types.Basic) = struct
         Common.C_id.create (Common.C_id.to_string name ^ suffix))
       ~default:(Ok name)
 
-  let make_named_function_record
+  let make_named_function_record ?(tid : int option)
       (func : unit Fir.Function.t Common.C_named.t) :
       (Common.C_id.t * Function_map.Record.t) Or_error.t =
-    let name = Accessor.get Common.C_named.name func in
+    let name = func.@(Common.C_named.name) in
     Or_error.Let_syntax.(
-      let%map new_name = rewrite_function_name name in
-      ( name
-      , (* TODO(@MattWindsor91): if we introduce non-thread-body functions,
-           change this hard-coded 'true' flag. *)
-        Function_map.Record.make ~is_thread_body:true ~c_id:new_name () ))
+      let%map c_id = rewrite_function_name name in
+      (name, {Function_map.Record.c_id; tid}))
 
   let make_function_map (threads : unit Fir.Function.t Common.C_named.t list)
       : Function_map.t Or_error.t =
     Or_error.(
       threads
-      |> Tx.Or_error.combine_map ~f:make_named_function_record
+      |> List.mapi ~f:(fun tid -> make_named_function_record ~tid)
+      |> Or_error.combine_errors
       >>= Map.of_alist_or_error (module Common.C_id))
 
   let make_aux (input : Fir.Litmus.Test.t) : Aux.t Or_error.t =

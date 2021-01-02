@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020, 2021 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -13,8 +13,10 @@ open Base
 open Import
 
 module Record = struct
-  type t = {is_thread_body: bool [@default false]; c_id: Common.C_id.t}
-  [@@deriving yojson, equal, make, fields]
+  type t = {tid: int option [@default None]; c_id: Common.C_id.t}
+  [@@deriving yojson, equal, accessors]
+
+  let is_thread_body ({tid; _} : t) : bool = Option.is_some tid
 end
 
 include Plumbing.Jsonable.Make_map (Common.C_id) (Record)

@@ -44,9 +44,9 @@ P2()
     "postcondition": "exists (1:r0 == 0 /\\ 2:r1 == 2)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" },
+    "P2": { "tid": 2, "c_id": "P2" }
   },
   "var_map": {
     "x": {
@@ -117,9 +117,9 @@ P2_body()
     "postcondition": "exists (1:r0 == 0 /\\ 2:r1 == 2)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" },
+    "P2": { "tid": 2, "c_id": "P2_body" }
   },
   "var_map": {
     "x": {
@@ -190,9 +190,9 @@ P2()
     "postcondition": "exists (t1r0 == 0 /\\ t2r1 == 2)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" },
+    "P2": { "tid": 2, "c_id": "P2" }
   },
   "var_map": {
     "x": {
@@ -263,9 +263,9 @@ P2_body()
     "postcondition": "exists (t1r0 == 0 /\\ t2r1 == 2)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" },
+    "P2": { "tid": 2, "c_id": "P2_body" }
   },
   "var_map": {
     "x": {
@@ -332,9 +332,9 @@ P2(atomic_int *x, atomic_int *y, int *r1)
     "postcondition": "exists (1:r0 == 0 /\\ 2:r1 == 2)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" },
+    "P2": { "tid": 2, "c_id": "P2" }
   },
   "var_map": {
     "x": {
@@ -401,9 +401,9 @@ P2_body(atomic_int *x, atomic_int *y, int *r1)
     "postcondition": "exists (1:r0 == 0 /\\ 2:r1 == 2)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" },
+    "P2": { "tid": 2, "c_id": "P2_body" }
   },
   "var_map": {
     "x": {
@@ -470,9 +470,9 @@ P2(atomic_int *x, atomic_int *y, int *t2r1)
     "postcondition": "exists (t1r0 == 0 /\\ t2r1 == 2)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" },
+    "P2": { "tid": 2, "c_id": "P2" }
   },
   "var_map": {
     "x": {
@@ -539,9 +539,9 @@ P2_body(atomic_int *x, atomic_int *y, int *t2r1)
     "postcondition": "exists (t1r0 == 0 /\\ t2r1 == 2)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" },
+    "P2": { "tid": 2, "c_id": "P2_body" }
   },
   "var_map": {
     "x": {
@@ -662,9 +662,9 @@ P2()
       "forall\n((x == 1 /\\ (y == 1 /\\ 0:r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ 0:r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ 0:r0 == 0))))"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" },
+    "P2": { "tid": 2, "c_id": "P2" }
   },
   "var_map": {
     "clumsy_unicorn_10": {
@@ -811,9 +811,9 @@ P2_body()
       "forall\n((x == 1 /\\ (y == 1 /\\ 0:r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ 0:r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ 0:r0 == 0))))"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" },
+    "P2": { "tid": 2, "c_id": "P2_body" }
   },
   "var_map": {
     "clumsy_unicorn_10": {
@@ -960,9 +960,9 @@ P2()
       "forall\n((x == 1 /\\ (y == 1 /\\ t0r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ t0r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ t0r0 == 0))))"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" },
+    "P2": { "tid": 2, "c_id": "P2" }
   },
   "var_map": {
     "clumsy_unicorn_10": {
@@ -1109,9 +1109,9 @@ P2_body()
       "forall\n((x == 1 /\\ (y == 1 /\\ t0r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ t0r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ t0r0 == 0))))"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" },
+    "P2": { "tid": 2, "c_id": "P2_body" }
   },
   "var_map": {
     "clumsy_unicorn_10": {
@@ -1252,9 +1252,9 @@ P2(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
       "forall\n((x == 1 /\\ (y == 1 /\\ 0:r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ 0:r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ 0:r0 == 0))))"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" },
+    "P2": { "tid": 2, "c_id": "P2" }
   },
   "var_map": {
     "clumsy_unicorn_10": {
@@ -1397,9 +1397,9 @@ P2_body(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
       "forall\n((x == 1 /\\ (y == 1 /\\ 0:r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ 0:r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ 0:r0 == 0))))"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" },
+    "P2": { "tid": 2, "c_id": "P2_body" }
   },
   "var_map": {
     "clumsy_unicorn_10": {
@@ -1541,9 +1541,9 @@ P2(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
       "forall\n((x == 1 /\\ (y == 1 /\\ t0r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ t0r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ t0r0 == 0))))"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" },
+    "P2": { "tid": 2, "c_id": "P2" }
   },
   "var_map": {
     "clumsy_unicorn_10": {
@@ -1686,9 +1686,9 @@ P2_body(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
       "forall\n((x == 1 /\\ (y == 1 /\\ t0r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ t0r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ t0r0 == 0))))"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" },
+    "P2": { "tid": 2, "c_id": "P2_body" }
   },
   "var_map": {
     "clumsy_unicorn_10": {
@@ -1797,10 +1797,10 @@ P3()
       "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" },
-    "P3": { "is_thread_body": true, "c_id": "P3" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" },
+    "P2": { "tid": 2, "c_id": "P2" },
+    "P3": { "tid": 3, "c_id": "P3" }
   },
   "var_map": {
     "x": {
@@ -1887,10 +1887,10 @@ P3_body()
       "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" },
-    "P3": { "is_thread_body": true, "c_id": "P3_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" },
+    "P2": { "tid": 2, "c_id": "P2_body" },
+    "P3": { "tid": 3, "c_id": "P3_body" }
   },
   "var_map": {
     "x": {
@@ -1977,10 +1977,10 @@ P3()
       "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" },
-    "P3": { "is_thread_body": true, "c_id": "P3" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" },
+    "P2": { "tid": 2, "c_id": "P2" },
+    "P3": { "tid": 3, "c_id": "P3" }
   },
   "var_map": {
     "x": {
@@ -2067,10 +2067,10 @@ P3_body()
       "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" },
-    "P3": { "is_thread_body": true, "c_id": "P3_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" },
+    "P2": { "tid": 2, "c_id": "P2_body" },
+    "P3": { "tid": 3, "c_id": "P3_body" }
   },
   "var_map": {
     "x": {
@@ -2151,10 +2151,10 @@ P3(atomic_int *x, atomic_int *y, int *r0, int *r1)
       "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" },
-    "P3": { "is_thread_body": true, "c_id": "P3" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" },
+    "P2": { "tid": 2, "c_id": "P2" },
+    "P3": { "tid": 3, "c_id": "P3" }
   },
   "var_map": {
     "x": {
@@ -2235,10 +2235,10 @@ P3_body(atomic_int *x, atomic_int *y, int *r0, int *r1)
       "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" },
-    "P3": { "is_thread_body": true, "c_id": "P3_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" },
+    "P2": { "tid": 2, "c_id": "P2_body" },
+    "P3": { "tid": 3, "c_id": "P3_body" }
   },
   "var_map": {
     "x": {
@@ -2319,10 +2319,10 @@ P3(atomic_int *x, atomic_int *y, int *t3r0, int *t3r1)
       "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" },
-    "P3": { "is_thread_body": true, "c_id": "P3" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" },
+    "P2": { "tid": 2, "c_id": "P2" },
+    "P3": { "tid": 3, "c_id": "P3" }
   },
   "var_map": {
     "x": {
@@ -2403,10 +2403,10 @@ P3_body(atomic_int *x, atomic_int *y, int *t3r0, int *t3r1)
       "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" },
-    "P3": { "is_thread_body": true, "c_id": "P3_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" },
+    "P2": { "tid": 2, "c_id": "P2_body" },
+    "P3": { "tid": 3, "c_id": "P3_body" }
   },
   "var_map": {
     "x": {
@@ -2520,11 +2520,11 @@ P4()
       "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" },
-    "P3": { "is_thread_body": true, "c_id": "P3" },
-    "P4": { "is_thread_body": true, "c_id": "P4" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" },
+    "P2": { "tid": 2, "c_id": "P2" },
+    "P3": { "tid": 3, "c_id": "P3" },
+    "P4": { "tid": 4, "c_id": "P4" }
   },
   "var_map": {
     "MaJgQmON3yu": {
@@ -2664,11 +2664,11 @@ P4_body()
       "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" },
-    "P3": { "is_thread_body": true, "c_id": "P3_body" },
-    "P4": { "is_thread_body": true, "c_id": "P4_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" },
+    "P2": { "tid": 2, "c_id": "P2_body" },
+    "P3": { "tid": 3, "c_id": "P3_body" },
+    "P4": { "tid": 4, "c_id": "P4_body" }
   },
   "var_map": {
     "MaJgQmON3yu": {
@@ -2808,11 +2808,11 @@ P4()
       "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" },
-    "P3": { "is_thread_body": true, "c_id": "P3" },
-    "P4": { "is_thread_body": true, "c_id": "P4" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" },
+    "P2": { "tid": 2, "c_id": "P2" },
+    "P3": { "tid": 3, "c_id": "P3" },
+    "P4": { "tid": 4, "c_id": "P4" }
   },
   "var_map": {
     "MaJgQmON3yu": {
@@ -2952,11 +2952,11 @@ P4_body()
       "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" },
-    "P3": { "is_thread_body": true, "c_id": "P3_body" },
-    "P4": { "is_thread_body": true, "c_id": "P4_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" },
+    "P2": { "tid": 2, "c_id": "P2_body" },
+    "P3": { "tid": 3, "c_id": "P3_body" },
+    "P4": { "tid": 4, "c_id": "P4_body" }
   },
   "var_map": {
     "MaJgQmON3yu": {
@@ -3090,11 +3090,11 @@ P4(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
       "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" },
-    "P3": { "is_thread_body": true, "c_id": "P3" },
-    "P4": { "is_thread_body": true, "c_id": "P4" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" },
+    "P2": { "tid": 2, "c_id": "P2" },
+    "P3": { "tid": 3, "c_id": "P3" },
+    "P4": { "tid": 4, "c_id": "P4" }
   },
   "var_map": {
     "MaJgQmON3yu": {
@@ -3230,11 +3230,11 @@ P4_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
       "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" },
-    "P3": { "is_thread_body": true, "c_id": "P3_body" },
-    "P4": { "is_thread_body": true, "c_id": "P4_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" },
+    "P2": { "tid": 2, "c_id": "P2_body" },
+    "P3": { "tid": 3, "c_id": "P3_body" },
+    "P4": { "tid": 4, "c_id": "P4_body" }
   },
   "var_map": {
     "MaJgQmON3yu": {
@@ -3370,11 +3370,11 @@ P4(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
       "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" },
-    "P3": { "is_thread_body": true, "c_id": "P3" },
-    "P4": { "is_thread_body": true, "c_id": "P4" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" },
+    "P2": { "tid": 2, "c_id": "P2" },
+    "P3": { "tid": 3, "c_id": "P3" },
+    "P4": { "tid": 4, "c_id": "P4" }
   },
   "var_map": {
     "MaJgQmON3yu": {
@@ -3510,11 +3510,11 @@ P4_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
       "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" },
-    "P3": { "is_thread_body": true, "c_id": "P3_body" },
-    "P4": { "is_thread_body": true, "c_id": "P4_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" },
+    "P2": { "tid": 2, "c_id": "P2_body" },
+    "P3": { "tid": 3, "c_id": "P3_body" },
+    "P4": { "tid": 4, "c_id": "P4_body" }
   },
   "var_map": {
     "MaJgQmON3yu": {
@@ -3622,8 +3622,8 @@ P1()
     "postcondition": "exists (0:r0 == 0 /\\ x == 2)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" }
   },
   "var_map": {
     "x": {
@@ -3673,8 +3673,8 @@ P1_body()
     "postcondition": "exists (0:r0 == 0 /\\ x == 2)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" }
   },
   "var_map": {
     "x": {
@@ -3725,8 +3725,8 @@ P1()
     "postcondition": "exists (t0r0 == 0 /\\ x == 2)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" }
   },
   "var_map": {
     "x": {
@@ -3777,8 +3777,8 @@ P1_body()
     "postcondition": "exists (t0r0 == 0 /\\ x == 2)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" }
   },
   "var_map": {
     "x": {
@@ -3826,8 +3826,8 @@ P1(atomic_int *x)
     "postcondition": "exists (0:r0 == 0 /\\ x == 2)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" }
   },
   "var_map": {
     "x": {
@@ -3875,8 +3875,8 @@ P1_body(atomic_int *x)
     "postcondition": "exists (0:r0 == 0 /\\ x == 2)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" }
   },
   "var_map": {
     "x": {
@@ -3924,8 +3924,8 @@ P1(atomic_int *x)
     "postcondition": "exists (t0r0 == 0 /\\ x == 2)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" }
   },
   "var_map": {
     "x": {
@@ -3973,8 +3973,8 @@ P1_body(atomic_int *x)
     "postcondition": "exists (t0r0 == 0 /\\ x == 2)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" }
   },
   "var_map": {
     "x": {
@@ -4020,7 +4020,7 @@ P0()
     "init": { "x": 0 },
     "postcondition": "exists (0:r0 == 0 /\\ x == 1)"
   },
-  "function_map": { "P0": { "is_thread_body": true, "c_id": "P0" } },
+  "function_map": { "P0": { "tid": 0, "c_id": "P0" } },
   "var_map": {
     "x": {
       "c_type": "int",
@@ -4061,7 +4061,7 @@ P0_body()
     "init": { "x": 0 },
     "postcondition": "exists (0:r0 == 0 /\\ x == 1)"
   },
-  "function_map": { "P0": { "is_thread_body": true, "c_id": "P0_body" } },
+  "function_map": { "P0": { "tid": 0, "c_id": "P0_body" } },
   "var_map": {
     "x": {
       "c_type": "int",
@@ -4102,7 +4102,7 @@ P0()
     "init": { "x": 0 },
     "postcondition": "exists (t0r0 == 0 /\\ x == 1)"
   },
-  "function_map": { "P0": { "is_thread_body": true, "c_id": "P0" } },
+  "function_map": { "P0": { "tid": 0, "c_id": "P0" } },
   "var_map": {
     "x": {
       "c_type": "int",
@@ -4143,7 +4143,7 @@ P0_body()
     "init": { "x": 0 },
     "postcondition": "exists (t0r0 == 0 /\\ x == 1)"
   },
-  "function_map": { "P0": { "is_thread_body": true, "c_id": "P0_body" } },
+  "function_map": { "P0": { "tid": 0, "c_id": "P0_body" } },
   "var_map": {
     "x": {
       "c_type": "int",
@@ -4182,7 +4182,7 @@ P0(int *x, int *r0)
     "init": { "x": 0 },
     "postcondition": "exists (0:r0 == 0 /\\ x == 1)"
   },
-  "function_map": { "P0": { "is_thread_body": true, "c_id": "P0" } },
+  "function_map": { "P0": { "tid": 0, "c_id": "P0" } },
   "var_map": {
     "x": {
       "c_type": "int",
@@ -4221,7 +4221,7 @@ P0_body(int *x, int *r0)
     "init": { "x": 0 },
     "postcondition": "exists (0:r0 == 0 /\\ x == 1)"
   },
-  "function_map": { "P0": { "is_thread_body": true, "c_id": "P0_body" } },
+  "function_map": { "P0": { "tid": 0, "c_id": "P0_body" } },
   "var_map": {
     "x": {
       "c_type": "int",
@@ -4260,7 +4260,7 @@ P0(int *x, int *t0r0)
     "init": { "x": 0 },
     "postcondition": "exists (t0r0 == 0 /\\ x == 1)"
   },
-  "function_map": { "P0": { "is_thread_body": true, "c_id": "P0" } },
+  "function_map": { "P0": { "tid": 0, "c_id": "P0" } },
   "var_map": {
     "x": {
       "c_type": "int",
@@ -4299,7 +4299,7 @@ P0_body(int *x, int *t0r0)
     "init": { "x": 0 },
     "postcondition": "exists (t0r0 == 0 /\\ x == 1)"
   },
-  "function_map": { "P0": { "is_thread_body": true, "c_id": "P0_body" } },
+  "function_map": { "P0": { "tid": 0, "c_id": "P0_body" } },
   "var_map": {
     "x": {
       "c_type": "int",
@@ -4356,8 +4356,8 @@ P1()
       "forall\n((0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 1) \\/ (0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 2))"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" }
   },
   "var_map": {
     "x": {
@@ -4417,8 +4417,8 @@ P1_body()
       "forall\n((0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 1) \\/ (0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 2))"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" }
   },
   "var_map": {
     "x": {
@@ -4480,8 +4480,8 @@ P1()
       "forall\n((t0r0 == 0 /\\ t1r0 == 0 /\\ x == 1) \\/ (t0r0 == 0 /\\ t1r0 == 0 /\\ x == 2))"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" }
   },
   "var_map": {
     "x": {
@@ -4543,8 +4543,8 @@ P1_body()
       "forall\n((t0r0 == 0 /\\ t1r0 == 0 /\\ x == 1) \\/ (t0r0 == 0 /\\ t1r0 == 0 /\\ x == 2))"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" }
   },
   "var_map": {
     "x": {
@@ -4601,8 +4601,8 @@ P1(atomic_int *x, int *r0)
       "forall\n((0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 1) \\/ (0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 2))"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" }
   },
   "var_map": {
     "x": {
@@ -4659,8 +4659,8 @@ P1_body(atomic_int *x, int *r0)
       "forall\n((0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 1) \\/ (0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 2))"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" }
   },
   "var_map": {
     "x": {
@@ -4717,8 +4717,8 @@ P1(atomic_int *x, int *t1r0)
       "forall\n((t0r0 == 0 /\\ t1r0 == 0 /\\ x == 1) \\/ (t0r0 == 0 /\\ t1r0 == 0 /\\ x == 2))"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" }
   },
   "var_map": {
     "x": {
@@ -4775,8 +4775,8 @@ P1_body(atomic_int *x, int *t1r0)
       "forall\n((t0r0 == 0 /\\ t1r0 == 0 /\\ x == 1) \\/ (t0r0 == 0 /\\ t1r0 == 0 /\\ x == 2))"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" }
   },
   "var_map": {
     "x": {
@@ -4844,9 +4844,9 @@ P2()
     "postcondition": "exists (1:r0 == 1 /\\ 1:r1 == 0 /\\ 2:r0 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" },
+    "P2": { "tid": 2, "c_id": "P2" }
   },
   "var_map": {
     "x": {
@@ -4922,9 +4922,9 @@ P2_body()
     "postcondition": "exists (1:r0 == 1 /\\ 1:r1 == 0 /\\ 2:r0 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" },
+    "P2": { "tid": 2, "c_id": "P2_body" }
   },
   "var_map": {
     "x": {
@@ -5000,9 +5000,9 @@ P2()
     "postcondition": "exists (t1r0 == 1 /\\ t1r1 == 0 /\\ t2r0 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" },
+    "P2": { "tid": 2, "c_id": "P2" }
   },
   "var_map": {
     "x": {
@@ -5078,9 +5078,9 @@ P2_body()
     "postcondition": "exists (t1r0 == 1 /\\ t1r1 == 0 /\\ t2r0 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" },
+    "P2": { "tid": 2, "c_id": "P2_body" }
   },
   "var_map": {
     "x": {
@@ -5151,9 +5151,9 @@ P2(atomic_int *x, atomic_int *y, int *r0)
     "postcondition": "exists (1:r0 == 1 /\\ 1:r1 == 0 /\\ 2:r0 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" },
+    "P2": { "tid": 2, "c_id": "P2" }
   },
   "var_map": {
     "x": {
@@ -5224,9 +5224,9 @@ P2_body(atomic_int *x, atomic_int *y, int *r0)
     "postcondition": "exists (1:r0 == 1 /\\ 1:r1 == 0 /\\ 2:r0 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" },
+    "P2": { "tid": 2, "c_id": "P2_body" }
   },
   "var_map": {
     "x": {
@@ -5297,9 +5297,9 @@ P2(atomic_int *x, atomic_int *y, int *t2r0)
     "postcondition": "exists (t1r0 == 1 /\\ t1r1 == 0 /\\ t2r0 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0" },
-    "P1": { "is_thread_body": true, "c_id": "P1" },
-    "P2": { "is_thread_body": true, "c_id": "P2" }
+    "P0": { "tid": 0, "c_id": "P0" },
+    "P1": { "tid": 1, "c_id": "P1" },
+    "P2": { "tid": 2, "c_id": "P2" }
   },
   "var_map": {
     "x": {
@@ -5370,9 +5370,9 @@ P2_body(atomic_int *x, atomic_int *y, int *t2r0)
     "postcondition": "exists (t1r0 == 1 /\\ t1r1 == 0 /\\ t2r0 == 0)"
   },
   "function_map": {
-    "P0": { "is_thread_body": true, "c_id": "P0_body" },
-    "P1": { "is_thread_body": true, "c_id": "P1_body" },
-    "P2": { "is_thread_body": true, "c_id": "P2_body" }
+    "P0": { "tid": 0, "c_id": "P0_body" },
+    "P1": { "tid": 1, "c_id": "P1_body" },
+    "P2": { "tid": 2, "c_id": "P2_body" }
   },
   "var_map": {
     "x": {

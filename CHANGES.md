@@ -3,6 +3,13 @@
 Note that these changes are infrequently maintained and may not tell the
 whole story.
 
+## 2021-Jan-02
+
+- Delitmus aux output function maps no longer carry a `is_thread_body` key;
+  instead, they carry an optional `tid` key (containing an integer thread ID)
+  which is defined if and only if the thread is a thread body.  Use this instead
+  of parsing the thread ID from the function name.
+
 ## 2020-Dec-16
 
 - Delitmus aux output now carries an extra, optional `initial_value`
