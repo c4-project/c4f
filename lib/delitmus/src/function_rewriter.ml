@@ -151,14 +151,15 @@ struct
 
   let lookup_function (name : Common.C_id.t) ~(context : Context.t) :
       Function_map.Record.t Or_error.t =
-    let fmap = context |> Context.aux |> Aux.function_map in
-    Map.find fmap name
-    |> Result.of_option
-         ~error:
-           (Error.create_s
-              [%message
-                "Could not find function in function map."
-                  ~name:(name : Common.C_id.t)])
+    let fn =
+      (Context.aux context).@(Aux.function_map @> Accessor.Map.at name)
+    in
+    Result.of_option fn
+      ~error:
+        (Error.create_s
+           [%message
+             "Could not find function in function map."
+               ~name:(name : Common.C_id.t)])
 
   let rewrite_function_name (name : Common.C_id.t) ~(context : Context.t) :
       Common.C_id.t Or_error.t =

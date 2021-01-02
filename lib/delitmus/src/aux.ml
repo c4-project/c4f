@@ -17,7 +17,7 @@ module M = struct
     { litmus_header: Litmus_c.Header.t [@default Litmus.Header.empty]
     ; function_map: Function_map.t [@default Map.empty (module Common.C_id)]
     ; var_map: Var_map.t [@default Common.Scoped_map.empty] }
-  [@@deriving make, fields, equal, yojson]
+  [@@deriving accessors, make, equal, yojson]
 end
 
 include M

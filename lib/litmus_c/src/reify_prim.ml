@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018--2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020, 2021 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -10,11 +10,7 @@
    project root for more information. *)
 
 open Base
-
-open struct
-  module Ac = Act_common
-  module Fir = Act_fir
-end
+open Import
 
 let bool_lit (b : bool) : Ast.Expr.t =
   Ast.Expr.Identifier
@@ -41,11 +37,11 @@ let basic_type_to_spec (b : Fir.Type.Basic.t) : [> Ast.Type_spec.t] =
   | Int, false ->
       `Int
   | Int, true ->
-      `Defined_type (Ac.C_id.of_string "atomic_int")
+      `Defined_type (Common.C_id.of_string "atomic_int")
   | Bool, false ->
-      `Defined_type (Ac.C_id.of_string "bool")
+      `Defined_type (Common.C_id.of_string "bool")
   | Bool, true ->
-      `Defined_type (Ac.C_id.of_string "atomic_bool")
+      `Defined_type (Common.C_id.of_string "atomic_bool")
 
 let type_to_specs (ty : Fir.Type.t) : [> Ast.Decl_spec.t] list =
   (* We translate the level of indirection separately, in [type_to_pointer]. *)
@@ -57,12 +53,16 @@ let type_to_pointer (ty : Fir.Type.t) : Ast_basic.Pointer.t option =
   (* We translate the actual underlying type separately, in [type_to_specs]. *)
   Option.some_if (Fir.Type.is_pointer ty) [[]]
 
-let id_declarator (ty : Fir.Type.t) (id : Ac.C_id.t) : Ast.Declarator.t =
+let id_declarator (ty : Fir.Type.t) (id : Common.C_id.t) : Ast.Declarator.t =
   {pointer= type_to_pointer ty; direct= Id id}
 
-let decl (init : Fir.Initialiser.t Ac.C_named.t) : Ast.Decl.t =
-  let id = Accessor.get Ac.C_named.name init in
-  let elt = Accessor.get Ac.C_named.value init in
+let func_parameter (ty : Fir.Type.t) (id : Act_common.C_id.t) :
+    Ast.Param_decl.t =
+  {qualifiers= type_to_specs ty; declarator= `Concrete (id_declarator ty id)}
+
+let decl (init : Fir.Initialiser.t Common.C_named.t) : Ast.Decl.t =
+  let id = Accessor.get Common.C_named.name init in
+  let elt = Accessor.get Common.C_named.value init in
   let ty = Accessor.get Fir.Initialiser.ty elt in
   let value = Accessor.get Fir.Initialiser.value elt in
   { qualifiers= type_to_specs ty

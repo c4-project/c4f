@@ -116,20 +116,19 @@ let make_function_stub (vars : Var_map.t) ~(old_id : Common.C_id.t)
     let thread = Fir.Function.make ~parameters ~body_decls ~body_stms () in
     Common.C_named.make thread ~name:old_id)
 
-let make (aux : Aux.t) : Fir.Litmus.Test.t Or_error.t =
-  let header = Aux.litmus_header aux in
-  let vars = Aux.var_map aux in
+let make ({litmus_header; var_map; function_map} : Aux.t) :
+    Fir.Litmus.Test.t Or_error.t =
   Or_error.Let_syntax.(
     let%bind threads =
-      aux |> Aux.function_map
+      function_map
       |> Map.to_alist ~key_order:`Increasing
       |> List.filter_map ~f:(fun (old_id, record) ->
              if Function_map.Record.is_thread_body record then
-               Some (make_function_stub vars ~old_id ~new_id:record.c_id)
+               Some (make_function_stub var_map ~old_id ~new_id:record.c_id)
              else None)
       |> Or_error.combine_errors
     in
-    Fir.Litmus.Test.make ~header ~threads)
+    Fir.Litmus.Test.make ~header:litmus_header ~threads)
 
 module Filter = struct
   let run (input : Plumbing.Input.t) (output : Plumbing.Output.t) :

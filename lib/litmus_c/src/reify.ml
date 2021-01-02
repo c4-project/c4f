@@ -22,14 +22,10 @@ let decls : Fir.Initialiser.t Named.Alist.t -> [> `Decl of Ast.Decl.t] list =
     (List.map ~f:(fun d -> `Decl (Reify_prim.decl d)))
     Named.list_of_alist
 
-let func_parameter (id : Act_common.C_id.t) (ty : Fir.Type.t) :
-    Ast.Param_decl.t =
-  { qualifiers= Reify_prim.type_to_specs ty
-  ; declarator= `Concrete (Reify_prim.id_declarator ty id) }
-
 let func_parameters (parameters : Fir.Type.t Named.Alist.t) :
     Ast.Param_type_list.t =
-  { params= List.map ~f:(fun (i, t) -> func_parameter i t) parameters
+  { params=
+      List.map ~f:(fun (i, t) -> Reify_prim.func_parameter t i) parameters
   ; style= `Normal }
 
 let func_signature (id : Act_common.C_id.t)

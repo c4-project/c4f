@@ -25,6 +25,10 @@ val id_declarator : Act_fir.Type.t -> Act_common.C_id.t -> Ast.Declarator.t
 (** [id_declarator ty id] constructs a declarator with a type [ty] and ID
     [id]. *)
 
+val func_parameter : Act_fir.Type.t -> Act_common.C_id.t -> Ast.Param_decl.t
+(** [func_parameter ty id] constructs a parameter declaration with a type
+    [ty] and ID [id]. *)
+
 (** {1 Expression sub-components} *)
 
 val lvalue : Act_fir.Lvalue.t -> Ast.Expr.t

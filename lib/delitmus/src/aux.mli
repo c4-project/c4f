@@ -1,6 +1,6 @@
 (* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019, 2020 Matt Windsor and contributors
+   Copyright (c) 2018, 2019, 2020, 2021 Matt Windsor and contributors
 
    ACT itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -18,7 +18,12 @@
 open Base
 open Import
 
-type t [@@deriving equal, yojson]
+(** Type of aux records. *)
+type t =
+  { litmus_header: Litmus_c.Header.t
+  ; function_map: Function_map.t
+  ; var_map: Var_map.t }
+[@@deriving accessors, equal, yojson]
 
 (** {1 Constructors} *)
 
@@ -35,18 +40,6 @@ val make :
 
 val empty : t
 (** [empty] is the empty aux record. *)
-
-(** {1 Accessors} *)
-
-val litmus_header : t -> Fir.Constant.t Litmus.Header.t
-(** [litmus_header aux] gets the header of the Litmus test from which this
-    auxiliary record was generated. *)
-
-val function_map : t -> Function_map.t
-(** [function_map aux] gets the mapping from Litmus functions to C functions
-    from [aux]. *)
-
-val var_map : t -> Var_map.t
 
 (** {1 Loading and storing delitmus aux records} *)
 
