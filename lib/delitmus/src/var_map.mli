@@ -64,6 +64,12 @@ val param_mapped_vars : t -> (Common.Litmus_id.t, Record.t) List.Assoc.t
     [vm] that are intended to be mapped to parameters. The list is sorted by
     parameter index, not by litmus ID. *)
 
+val params_for_thread :
+  t -> int -> (Common.Litmus_id.t, Record.t) List.Assoc.t
+(** [params_for_thread vm tid] extracts an associative list of variables from
+    [vm] that are intended to be mapped to the parameters of thread [tid].
+    The list is sorted by parameter index, not by litmus ID. *)
+
 val globally_mapped_vars : t -> (Common.Litmus_id.t, Record.t) List.Assoc.t
 (** [globally_mapped_vars vm] extracts an associative list of variables from
     [vm] that are intended to be mapped to global variables. The list is

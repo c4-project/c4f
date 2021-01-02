@@ -24,11 +24,6 @@ include M
 
 (* TODO(@MattWindsor91): validate litmus locations/etc against the variable
    map. *)
-
-let symbols (aux : t) : string list =
-  aux |> var_map |> Var_map.global_c_variables |> Set.to_list
-  |> List.map ~f:Common.C_id.to_string
-
 let empty : t = make ()
 
 module Load : Plumbing.Loadable_types.S with type t := t =

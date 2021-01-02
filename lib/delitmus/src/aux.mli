@@ -48,8 +48,6 @@ val function_map : t -> Function_map.t
 
 val var_map : t -> Var_map.t
 
-val symbols : t -> string list
-
 (** {1 Loading and storing delitmus aux records} *)
 
 include Plumbing.Loadable_types.S with type t := t

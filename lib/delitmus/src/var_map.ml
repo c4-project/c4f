@@ -78,6 +78,12 @@ let param_mapped_vars (vmap : t) :
   |> List.sort ~compare:(Comparable.lift Int.compare ~f:fst)
   |> List.map ~f:snd
 
+let params_for_thread (vmap : t) (tid : int) :
+    (Common.Litmus_id.t, Record.t) List.Assoc.t =
+  vmap |> param_mapped_vars
+  |> List.filter
+       ~f:(Fn.compose (Common.Litmus_id.is_in_local_scope ~from:tid) fst)
+
 let globally_mapped_vars : t -> (Common.Litmus_id.t, Record.t) List.Assoc.t =
   Tx.Fn.Compose_syntax.(
     Common.Scoped_map.filter ~f:Record.mapped_to_global

@@ -37,20 +37,43 @@ let%test_module "with example map" =
            ; ( Li.of_string "1:tmp"
              , { M.Record.c_id= Ci.of_string "t1tmp"
                ; c_type= Ct.int ()
-               ; mapped_to= Param 0
+               ; mapped_to= Param 1
                ; initial_value= Some (Act_fir.Constant.Int 0) } )
            ; ( Li.of_string "x"
              , { M.Record.c_id= Ci.of_string "x"
                ; c_type= Ct.int ~is_atomic:true ()
                ; mapped_to= Global
+               ; initial_value= Some (Act_fir.Constant.Int 0) } )
+           ; ( Li.of_string "y"
+             , { M.Record.c_id= Ci.of_string "y"
+               ; c_type= Ct.int ~is_atomic:true ()
+               ; mapped_to= Param 0
                ; initial_value= Some (Act_fir.Constant.Int 0) } ) ])
 
-    let%expect_test "global_c_variables" =
-      Set.iter
-        ~f:(fun x -> print_endline (Ci.to_string x))
-        (M.global_c_variables map) ;
+    let print_mappings : (Li.t, M.Record.t) List.Assoc.t -> unit =
+      List.iter ~f:(fun (x, v) ->
+          printf "%s -> %s\n" (Li.to_string x) (Ci.to_string v.M.Record.c_id))
+
+    let%expect_test "globally_mapped_vars" =
+      print_mappings (M.globally_mapped_vars map) ;
       [%expect {|
-      t0r0
-      t1r0
-      x |}]
+      x -> x
+      0:r0 -> t0r0
+      1:r0 -> t1r0 |}]
+
+    let%expect_test "param_mapped_vars" =
+      print_mappings (M.param_mapped_vars map) ;
+      [%expect {|
+      y -> y
+      1:tmp -> t1tmp |}]
+
+    let%expect_test "params_for_thread 0" =
+      print_mappings (M.params_for_thread map 0) ;
+      [%expect {| y -> y |}]
+
+    let%expect_test "params_for_thread 1" =
+      print_mappings (M.params_for_thread map 1) ;
+      [%expect {|
+      y -> y
+      1:tmp -> t1tmp |}]
   end )
