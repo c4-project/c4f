@@ -12,7 +12,7 @@
 open Base
 
 open struct
-  module Ac = Act_common
+  module Ac = C4f_common
 end
 
 let pp_location_stanza : Ac.C_id.t list Fmt.t =
@@ -20,7 +20,7 @@ let pp_location_stanza : Ac.C_id.t list Fmt.t =
     hbox (any "locations@ " ++ brackets (box (list ~sep:semi Ac.C_id.pp))))
 
 let pp_init (ppk : 'k Fmt.t) : (Ac.C_id.t, 'k) List.Assoc.t Fmt.t =
-  Act_utils.My_format.pp_c_braces
+  C4f_utils.My_format.pp_c_braces
     Fmt.(
       list ~sep:sp (fun f (l, c) -> pf f "@[%a = %a;@]" Ac.C_id.pp l ppk c))
 

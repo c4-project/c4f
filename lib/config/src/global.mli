@@ -9,28 +9,28 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Type of, and functions manipulating, the global ACT config set.
+(** Type of, and functions manipulating, the global config set.
 
-    This is the processed form of the configuration that ACT loads from
-    act.conf (or other such files). *)
+    This is the processed form of the configuration that c4f loads from
+    c4f.conf (or other such files). *)
 
-(** TODO(\@MattWindsor91): consider replacing this directly with
-    [Act_fuzz_run.Config.t]. *)
+(* TODO(@MattWindsor91): consider replacing this directly with
+   [C4f_fuzz_run.Config.t]. *)
 
 (** Opaque type of global configuration records. *)
 type t
 
 (** {2 Construction and loading} *)
 
-val make : ?fuzz:Act_fuzz_run.Config.t -> unit -> t
+val make : ?fuzz:C4f_fuzz_run.Config.t -> unit -> t
 (** [make ?fuzz ()] constructs a global configuration record from the given
     pieces of configuration. At time of writing, there is only fuzzer
     configuration. *)
 
-(** Module for loading the global configuration from an act.conf file. *)
+(** Module for loading the global configuration from an c4f.conf file. *)
 module Load : Plumbing.Loadable_types.S with type t = t
 
 (** {2 Projections} *)
 
-val fuzz : t -> Act_fuzz_run.Config.t
+val fuzz : t -> C4f_fuzz_run.Config.t
 (** [fuzz c] gets the fuzzer config, if any, to use for configuration [c]. *)

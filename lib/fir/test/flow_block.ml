@@ -10,7 +10,7 @@
    project root for more information. *)
 
 open Base
-module Src = Act_fir
+module Src = C4f_fir
 
 let%test_module "On_lvalues" =
   ( module struct
@@ -229,15 +229,15 @@ let%test_module "for loop simplification" =
   ( module struct
     let%test_module "try_simplify" =
       ( module struct
-        let test (l : Act_fir.Flow_block.For.t) : unit =
+        let test (l : C4f_fir.Flow_block.For.t) : unit =
           Stdio.print_s
             [%sexp
-              ( Act_fir.Flow_block.For.try_simplify l
-                : Act_fir.Flow_block.For.Simple.t Or_error.t )]
+              ( C4f_fir.Flow_block.For.try_simplify l
+                : C4f_fir.Flow_block.For.Simple.t Or_error.t )]
 
         let%expect_test "upwards loop" =
           test
-            Act_fir.(
+            C4f_fir.(
               Flow_block.For.make
                 ~init:
                   Assign.(
@@ -262,29 +262,29 @@ let%test_module "for loop simplification" =
     let%test_unit "simple first variant law" =
       Base_quickcheck.Test.run_exn
         ( module struct
-          type t = Act_fir.Flow_block.For.Simple.t [@@deriving sexp]
+          type t = C4f_fir.Flow_block.For.Simple.t [@@deriving sexp]
 
           let quickcheck_generator : t Base_quickcheck.Generator.t =
             Base_quickcheck.Generator.(
               return (fun lvalue init_value cmp_value direction ->
-                  { Act_fir.Flow_block.For.Simple.lvalue
+                  { C4f_fir.Flow_block.For.Simple.lvalue
                   ; init_value
                   ; cmp_value
                   ; direction })
-              <*> Act_fir.Lvalue.quickcheck_generator
-              <*> map ~f:Act_fir.Expression.int_lit
+              <*> C4f_fir.Lvalue.quickcheck_generator
+              <*> map ~f:C4f_fir.Expression.int_lit
                     small_positive_or_zero_int
-              <*> map ~f:Act_fir.Expression.int_lit
+              <*> map ~f:C4f_fir.Expression.int_lit
                     small_strictly_positive_int
-              <*> Act_fir.Flow_block.For.Simple.Direction
+              <*> C4f_fir.Flow_block.For.Simple.Direction
                   .quickcheck_generator)
 
           let quickcheck_shrinker : t Base_quickcheck.Shrinker.t =
             Base_quickcheck.Shrinker.atomic
         end )
         ~f:(fun t ->
-          [%test_result: Act_fir.Flow_block.For.Simple.t option]
+          [%test_result: C4f_fir.Flow_block.For.Simple.t option]
             ~here:[[%here]] ~expect:(Some t)
             Accessor.(
-              Act_fir.Flow_block.For.((construct simple t).@?(simple))))
+              C4f_fir.Flow_block.For.((construct simple t).@?(simple))))
   end )

@@ -10,7 +10,7 @@
    project root for more information. *)
 
 open Base
-module Ac = Act_common
+module Ac = C4f_common
 module Tx = Travesty_base_exts
 
 module Make (B : sig

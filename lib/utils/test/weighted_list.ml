@@ -10,7 +10,7 @@
    project root for more information. *)
 
 open Core_kernel
-open Act_utils.Weighted_list
+open C4f_utils.Weighted_list
 
 let%test_module "sampling and conversion tests" =
   ( module struct

@@ -14,41 +14,41 @@ open Stdio
 
 let%test_module "with example map" =
   ( module struct
-    module M = Act_delitmus.Var_map
-    module Li = Act_common.Litmus_id
-    module Ci = Act_common.C_id
-    module Ct = Act_fir.Type
+    module M = C4f_delitmus.Var_map
+    module Li = C4f_common.Litmus_id
+    module Ci = C4f_common.C_id
+    module Ct = C4f_fir.Type
     module Rc = M.Record
 
     let map : M.t =
-      Act_common.Scoped_map.of_litmus_id_map
+      C4f_common.Scoped_map.of_litmus_id_map
         (Map.of_alist_exn
            (module Li)
            [ ( Li.of_string "0:r0"
              , { M.Record.c_id= Ci.of_string "t0r0"
                ; c_type= Ct.int ()
                ; mapped_to= Global
-               ; initial_value= Some (Act_fir.Constant.Int 0) } )
+               ; initial_value= Some (C4f_fir.Constant.Int 0) } )
            ; ( Li.of_string "1:r0"
              , { M.Record.c_id= Ci.of_string "t1r0"
                ; c_type= Ct.bool ()
                ; mapped_to= Global
-               ; initial_value= Some Act_fir.Constant.falsehood } )
+               ; initial_value= Some C4f_fir.Constant.falsehood } )
            ; ( Li.of_string "1:tmp"
              , { M.Record.c_id= Ci.of_string "t1tmp"
                ; c_type= Ct.int ()
                ; mapped_to= Param 1
-               ; initial_value= Some (Act_fir.Constant.Int 0) } )
+               ; initial_value= Some (C4f_fir.Constant.Int 0) } )
            ; ( Li.of_string "x"
              , { M.Record.c_id= Ci.of_string "x"
                ; c_type= Ct.int ~is_atomic:true ()
                ; mapped_to= Global
-               ; initial_value= Some (Act_fir.Constant.Int 0) } )
+               ; initial_value= Some (C4f_fir.Constant.Int 0) } )
            ; ( Li.of_string "y"
              , { M.Record.c_id= Ci.of_string "y"
                ; c_type= Ct.int ~is_atomic:true ()
                ; mapped_to= Param 0
-               ; initial_value= Some (Act_fir.Constant.Int 0) } ) ])
+               ; initial_value= Some (C4f_fir.Constant.Int 0) } ) ])
 
     let print_mappings : (Li.t, M.Record.t) List.Assoc.t -> unit =
       List.iter ~f:(fun (x, v) ->

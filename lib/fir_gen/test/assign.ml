@@ -23,7 +23,7 @@ let print_sample =
           (using
              (Accessor.construct
                 (Fir.Statement.prim' @> Fir.Prim_statement.assign))
-             Act_litmus_c.Reify_stm.pp))
+             C4f_litmus_c.Reify_stm.pp))
 
 let%expect_test "Int: samples" =
   let env = Lazy.force Fir_test.Env.test_env in
@@ -398,7 +398,7 @@ let%expect_test "any is defined on test env" =
   [%expect {| true |}]
 
 let%expect_test "any is NOT defined on empty env" =
-  let env = Fir.Env.of_typing (Map.empty (module Act_common.C_id)) in
+  let env = Fir.Env.of_typing (Map.empty (module C4f_common.C_id)) in
   let asn = Src.Assign.any ~src:env ~dst:env in
   Stdio.printf "%b" (Option.is_some asn) ;
   [%expect {| false |}]

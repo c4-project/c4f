@@ -1,9 +1,9 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_common)
+ (name c4f_common)
  (public_name c4f.common)
- (synopsis "Automagic Compiler Tormentor: common infrastructure")
+ (synopsis "c4f: common infrastructure")
  (preprocess
   (pps ppx_deriving.std ppx_accessor ppx_jane))
  (libraries bin_prot bin_prot.shape sexplib sexplib0 stdio fmt

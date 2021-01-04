@@ -13,11 +13,11 @@ open Core
 
 let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o :
     unit Or_error.t =
-  Common_cmd.Args.With_files.run_filter Act_litmus_c.Header.Filters.run_dump
+  Common_cmd.Args.With_files.run_filter C4f_litmus_c.Header.Filters.run_dump
     args
 
 let readme () : string =
-  Act_utils.My_string.format_for_readme
+  C4f_utils.My_string.format_for_readme
     {|
 Dumps the header content of a C litmus test into a JSON file.
 

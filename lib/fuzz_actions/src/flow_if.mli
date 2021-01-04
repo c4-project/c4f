@@ -22,8 +22,8 @@
 module Surround : sig
   (** Each if statement generator has this type. *)
   module type S =
-    Act_fuzz.Action_types.S
-      with type Payload.t = Act_fuzz.Payload_impl.Cond_pathed.t
+    C4f_fuzz.Action_types.S
+      with type Payload.t = C4f_fuzz.Payload_impl.Cond_pathed.t
 
   (** Generates if statements where the expression is arbitrary and both
       blocks contain the original statement span. *)
@@ -38,7 +38,7 @@ end
 module Transform : sig
   (** Basic transform generators have this type. *)
   module type S =
-    Act_fuzz.Action_types.S with type Payload.t = Act_fuzz.Path.With_meta.t
+    C4f_fuzz.Action_types.S with type Payload.t = C4f_fuzz.Path.With_meta.t
 
   (** Inverts existing if statements. *)
   module Invert : S

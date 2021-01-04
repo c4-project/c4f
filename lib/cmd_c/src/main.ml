@@ -12,7 +12,7 @@
 open Core_kernel
 
 let readme () : string =
-  Act_utils.My_string.format_for_readme
+  C4f_utils.My_string.format_for_readme
     {|
 Commands for querying and manipulating
 single C files or litmus tests in a target-independent way.

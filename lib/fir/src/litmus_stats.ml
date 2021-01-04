@@ -27,7 +27,7 @@ module Statset = struct
   [@@deriving fields]
 
   let init_enum (type t cw)
-      (module M : Act_utils.Enum_types.Extension
+      (module M : C4f_utils.Enum_types.Extension
         with type t = t
          and type comparator_witness = cw) : (t, int, cw) Map.t =
     M.all_list ()
@@ -102,7 +102,7 @@ let probe_fn_decl (decl : Initialiser.t) : unit Monad.t =
   in
   up_counter Statset.Fields.literal_bools literal_bools
 
-let probe_fn_decls (decls : Initialiser.t Act_common.C_named.Alist.t) :
+let probe_fn_decls (decls : Initialiser.t C4f_common.C_named.Alist.t) :
     unit Monad.t =
   MList.iter_m decls ~f:(fun (_, d) -> probe_fn_decl d)
 
@@ -222,11 +222,11 @@ let probe_fn (fn : unit Function.t) : unit Monad.t =
     let%bind () = probe_fn_decls (Function.body_decls fn) in
     probe_fn_stms (Function.body_stms fn))
 
-let probe_named_fn (fn : unit Function.t Act_common.C_named.t) : unit Monad.t
+let probe_named_fn (fn : unit Function.t C4f_common.C_named.t) : unit Monad.t
     =
-  probe_fn (Accessor.get Act_common.C_named.value fn)
+  probe_fn (Accessor.get C4f_common.C_named.value fn)
 
-let probe_threads : unit Function.t Act_common.C_named.t list -> unit Monad.t
+let probe_threads : unit Function.t C4f_common.C_named.t list -> unit Monad.t
     =
   MList.iter_m ~f:probe_named_fn
 

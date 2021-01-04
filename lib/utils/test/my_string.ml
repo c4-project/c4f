@@ -12,7 +12,7 @@
 let%test_module "format_for_readme" =
   ( module struct
     let test (str : string) : unit =
-      Fmt.pr "@[%s@]@." (Act_utils.My_string.format_for_readme str)
+      Fmt.pr "@[%s@]@." (C4f_utils.My_string.format_for_readme str)
 
     let%expect_test "empty" = test "" ; [%expect {| |}]
 

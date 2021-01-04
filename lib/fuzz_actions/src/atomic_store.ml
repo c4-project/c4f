@@ -120,7 +120,7 @@ module Insert = struct
     (** A functor that produces a quickcheck instance for atomic stores given
         source and destination variable environments. *)
     module Quickcheck (Src : Fir.Env_types.S) (Dst : Fir.Env_types.S) :
-      Act_utils.My_quickcheck.S_with_sexp with type t := Fir.Atomic_store.t
+      C4f_utils.My_quickcheck.S_with_sexp with type t := Fir.Atomic_store.t
   end) : S = Storelike.Make (struct
     let name = prefix_name Common.Id.("insert" @: B.name_suffix)
 
@@ -238,7 +238,7 @@ module Insert = struct
        from the usual scheme, as it must make sure the source is the
        destination's known value. *)
     module Quickcheck (Src : Fir.Env_types.S) (Dst : Fir.Env_types.S) :
-      Act_utils.My_quickcheck.S_with_sexp with type t = Fir.Atomic_store.t =
+      C4f_utils.My_quickcheck.S_with_sexp with type t = Fir.Atomic_store.t =
     struct
       type t = Fir.Atomic_store.t [@@deriving sexp]
 

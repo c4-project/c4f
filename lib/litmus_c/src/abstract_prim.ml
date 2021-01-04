@@ -92,7 +92,7 @@ let qualifiers_to_type (quals : [> Ast.Decl_spec.t] list)
     Fir.Type.make basic ~is_pointer ~is_volatile)
 
 let declarator_to_id :
-    Ast.Declarator.t -> (Act_common.C_id.t * bool) Or_error.t = function
+    Ast.Declarator.t -> (C4f_common.C_id.t * bool) Or_error.t = function
   | {pointer= Some [[]]; direct= Id id} ->
       Ok (id, true)
   | {pointer= Some _; _} as decl ->
@@ -192,13 +192,13 @@ let rec expr_to_address : Ast.Expr.t -> Fir.Address.t Or_error.t = function
       Or_error.(
         expr |> expr_to_lvalue >>| Accessor.construct Fir.Address.lvalue)
 
-let lvalue_to_identifier (lv : Fir.Lvalue.t) : Act_common.C_id.t Or_error.t =
+let lvalue_to_identifier (lv : Fir.Lvalue.t) : C4f_common.C_id.t Or_error.t =
   if Fir.Lvalue.is_deref lv then
     Or_error.error_s
       [%message "Expected identifier" ~got:(lv : Fir.Lvalue.t)]
   else Ok lv.@(Fir.Lvalue.variable_of)
 
-let expr_to_identifier (expr : Ast.Expr.t) : Act_common.C_id.t Or_error.t =
+let expr_to_identifier (expr : Ast.Expr.t) : C4f_common.C_id.t Or_error.t =
   Or_error.(expr |> expr_to_lvalue >>= lvalue_to_identifier)
 
 let expr_to_memory_order (expr : Ast.Expr.t) : Fir.Mem_order.t Or_error.t =
@@ -209,7 +209,7 @@ let expr_to_memory_order (expr : Ast.Expr.t) : Fir.Mem_order.t Or_error.t =
          ~error:
            (Error.create_s
               [%message
-                "Unsupported memory order" ~got:(id : Act_common.C_id.t)]))
+                "Unsupported memory order" ~got:(id : C4f_common.C_id.t)]))
 
 let sift_decls (maybe_decl_list : ([> `Decl of 'd] as 'a) list) :
     ('d list * 'a list) Or_error.t =

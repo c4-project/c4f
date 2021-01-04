@@ -23,7 +23,7 @@ val has_bools : Fir.Env.t -> is_atomic:bool -> bool
 
 val with_record :
      'a Q.Generator.t
-  -> to_var:('a -> Act_common.C_id.t)
+  -> to_var:('a -> C4f_common.C_id.t)
   -> env:Fir.Env.t
   -> ('a * Fir.Env.Record.t) Q.Generator.t
 (** [with_record gen ~to_var ~env] attaches to values generated with [gen] a

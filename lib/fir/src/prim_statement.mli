@@ -33,10 +33,10 @@ val assign : ('a, Assign.t, t, [< Accessor.variant]) Accessor.Simple.t
 (** [assign] focuses on assignment statements. *)
 
 val label :
-  ('a, Act_common.C_id.t, t, [< Accessor.variant]) Accessor.Simple.t
+  ('a, C4f_common.C_id.t, t, [< Accessor.variant]) Accessor.Simple.t
 (** [label] focuses on label statements. *)
 
-val goto : ('a, Act_common.C_id.t, t, [< Accessor.variant]) Accessor.Simple.t
+val goto : ('a, C4f_common.C_id.t, t, [< Accessor.variant]) Accessor.Simple.t
 (** [goto] focuses on goto statements. *)
 
 val nop : ('a, unit, t, [< Accessor.variant]) Accessor.Simple.t
@@ -73,8 +73,8 @@ val value_map :
   -> assign:(Assign.t -> 'result)
   -> atomic:(Atomic_statement.t -> 'result)
   -> early_out:(Early_out.t -> 'result)
-  -> label:(Act_common.C_id.t -> 'result)
-  -> goto:(Act_common.C_id.t -> 'result)
+  -> label:(C4f_common.C_id.t -> 'result)
+  -> goto:(C4f_common.C_id.t -> 'result)
   -> nop:(unit -> 'result)
   -> procedure_call:(Call.t -> 'result)
   -> 'result
@@ -89,8 +89,8 @@ module Base_map (M : Applicative.S) : sig
     -> assign:(Assign.t -> Assign.t M.t)
     -> atomic:(Atomic_statement.t -> Atomic_statement.t M.t)
     -> early_out:(Early_out.t -> Early_out.t M.t)
-    -> label:(Act_common.C_id.t -> Act_common.C_id.t M.t)
-    -> goto:(Act_common.C_id.t -> Act_common.C_id.t M.t)
+    -> label:(C4f_common.C_id.t -> C4f_common.C_id.t M.t)
+    -> goto:(C4f_common.C_id.t -> C4f_common.C_id.t M.t)
     -> procedure_call:(Call.t -> Call.t M.t)
     -> t M.t
   (** [bmap x ~assign ~atomic ~early_out ~label ~goto ~procedure_call] maps

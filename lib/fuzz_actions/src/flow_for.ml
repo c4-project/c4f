@@ -121,7 +121,7 @@ module Payload = struct
           Down i
 
     let control (i : Fir.Flow_block.For.Simple.Inclusivity.t) (payload : t) :
-        Act_fir.Flow_block.For.Simple.t =
+        C4f_fir.Flow_block.For.Simple.t =
       { lvalue=
           Accessor.construct Fir.Lvalue.variable
             (Common.Litmus_id.variable_name payload.lc.var)
@@ -305,7 +305,7 @@ module Surround = struct
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Pd.Counter.declare_and_register payload.lc test
 
-    let control (payload : Payload.t) : Act_fir.Flow_block.For.Simple.t =
+    let control (payload : Payload.t) : C4f_fir.Flow_block.For.Simple.t =
       { Fir.Flow_block.For.Simple.lvalue=
           Accessor.construct Fir.Lvalue.variable
             (Common.Litmus_id.variable_name payload.lc.var)

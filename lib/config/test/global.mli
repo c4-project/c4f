@@ -12,6 +12,6 @@
 (** Tests and test data over the 'global' configuration struct. *)
 
 module Data : sig
-  val global : Act_config.Global.t Lazy.t
+  val global : C4f_config.Global.t Lazy.t
   (** [global] evaluates to a sample global configuration. *)
 end

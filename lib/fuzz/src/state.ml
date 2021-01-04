@@ -31,9 +31,9 @@ let register_label (s : t) ~(label : Common.Litmus_id.t) : t =
   {s with labels= Set.add s.labels label}
 
 let register_var (s : t) (var : Common.Litmus_id.t)
-    (init : Act_fir.Initialiser.t) : t =
-  let ty = Accessor.get Act_fir.Initialiser.ty init in
-  let initial_value = Accessor.get Act_fir.Initialiser.value init in
+    (init : C4f_fir.Initialiser.t) : t =
+  let ty = Accessor.get C4f_fir.Initialiser.ty init in
+  let initial_value = Accessor.get C4f_fir.Initialiser.value init in
   Accessor.map vars s ~f:(fun v ->
       Var.Map.register_var v ~initial_value var ty)
 
@@ -71,12 +71,12 @@ module Monad = struct
       Common.Litmus_id.t t =
     with_vars (Common.Scoped_map.resolve ~id ~scope)
 
-  let register_var (var : Common.Litmus_id.t) (init : Act_fir.Initialiser.t)
+  let register_var (var : Common.Litmus_id.t) (init : C4f_fir.Initialiser.t)
       : unit t =
     modify (fun s -> register_var s var init)
 
   let register_and_declare_var (var : Common.Litmus_id.t)
-      (init : Act_fir.Initialiser.t) (subject : Subject.Test.t) :
+      (init : C4f_fir.Initialiser.t) (subject : Subject.Test.t) :
       Subject.Test.t t =
     register_var var init
     >>= fun () -> Monadic.return (Subject.Test.declare_var subject var init)
@@ -97,21 +97,21 @@ module Monad = struct
       unit t =
     id |> resolve ~scope >>= add_dependency
 
-  let add_expression_dependencies (expr : Act_fir.Expression.t)
+  let add_expression_dependencies (expr : C4f_fir.Expression.t)
       ~(scope : Common.Scope.t) : unit t =
-    AccM.iter Act_fir.Expression_traverse.depended_upon_idents expr
+    AccM.iter C4f_fir.Expression_traverse.depended_upon_idents expr
       ~f:(add_scoped_dependency ~scope)
 
   let add_multiple_expression_dependencies
-      (exprs : Act_fir.Expression.t list) ~(scope : Common.Scope.t) : unit t
+      (exprs : C4f_fir.Expression.t list) ~(scope : Common.Scope.t) : unit t
       =
     AccM.iter
       Accessor_base.(
-        List.each @> Act_fir.Expression_traverse.depended_upon_idents)
+        List.each @> C4f_fir.Expression_traverse.depended_upon_idents)
       exprs
       ~f:(add_scoped_dependency ~scope)
 
-  let add_expression_dependencies_at_path (exprs : Act_fir.Expression.t list)
+  let add_expression_dependencies_at_path (exprs : C4f_fir.Expression.t list)
       ~(path : Path.With_meta.t) : unit t =
     let in_dead_code = path.@(Path.With_meta.flag In_dead_code) in
     let tid = Path.tid path.path in

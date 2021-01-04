@@ -12,9 +12,9 @@
 open Base
 
 open struct
-  module Fir = Act_fir
-  module Fir_gen = Act_fir_gen
-  module Src = Act_litmus_c
+  module Fir = C4f_fir
+  module Fir_gen = C4f_fir_gen
+  module Src = C4f_litmus_c
 end
 
 let%test_module "examples" =
@@ -91,7 +91,7 @@ let%test_module "examples" =
             (Atomic_load.make
                ~src:
                  (Accessor.construct Address.variable_ref
-                    (Act_common.C_id.of_string "x"))
+                    (C4f_common.C_id.of_string "x"))
                ~mo:Mem_order.Seq_cst)) ;
       [%expect {| atomic_load_explicit(&x, memory_order_seq_cst) |}]
   end )
@@ -99,7 +99,7 @@ let%test_module "examples" =
 let%test_module "round trips" =
   ( module struct
     let test_round_trip
-        (module Qc : Act_utils.My_quickcheck.S_with_sexp
+        (module Qc : C4f_utils.My_quickcheck.S_with_sexp
           with type t = Fir.Expression.t) : unit =
       Base_quickcheck.Test.run_exn
         (module Qc)
@@ -109,10 +109,10 @@ let%test_module "round trips" =
             (Src.Abstract_expr.model (Src.Reify_expr.reify exp)))
 
     module Make (F : functor (A : Fir.Env_types.S) ->
-      Act_utils.My_quickcheck.S_with_sexp with type t = Fir.Expression.t) =
+      C4f_utils.My_quickcheck.S_with_sexp with type t = Fir.Expression.t) =
     struct
       let run_round_trip () : unit =
-        let env = Lazy.force Act_fir_test.Env.test_env in
+        let env = Lazy.force C4f_fir_test.Env.test_env in
         let module Qc = F (struct
           let env = env
         end) in

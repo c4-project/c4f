@@ -21,7 +21,7 @@ end
 
 module Dummy_action :
   Src.Action_types.S with type Payload.t = Dummy_payload.t = struct
-  let name = Act_common.Id.of_string "dummy.action"
+  let name = C4f_common.Id.of_string "dummy.action"
 
   let recommendations (_ : Dummy_payload.t) = []
 
@@ -40,7 +40,7 @@ end
 
 module Another_dummy_action : Src.Action_types.S with type Payload.t = unit =
 struct
-  let name = Act_common.Id.of_string "another.dummy.action"
+  let name = C4f_common.Id.of_string "another.dummy.action"
 
   let recommendations () = []
 

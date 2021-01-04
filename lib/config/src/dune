@@ -1,8 +1,7 @@
 (library
- (name act_config)
+ (name c4f_config)
  (public_name c4f.config)
- (synopsis
-   "Automagic Compiler Tormentor: configuration and config file parsing")
+ (synopsis "c4f: configuration and config file parsing")
  (preprocess
   (pps ppx_deriving.std ppx_jane sedlex.ppx))
  (libraries sexplib0 fmt fpath menhirLib travesty travesty.base_exts sedlex

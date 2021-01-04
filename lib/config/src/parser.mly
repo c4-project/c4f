@@ -21,7 +21,7 @@
 
 %token <bool>   BOOL
 %token <int>    INTEGER
-%token <Act_common.Id.t>   IDENTIFIER
+%token <C4f_common.Id.t>   IDENTIFIER
 
 %start <Ast.t> main
 

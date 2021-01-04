@@ -154,16 +154,16 @@ module Translation_unit : sig
 end
 
 module Litmus_lang :
-  Act_litmus.Test_types.Basic
+  C4f_litmus.Test_types.Basic
     with type Statement.t = [`Stm of Stm.t | `Decl of Decl.t]
      and type Program.t = Function_def.t
      and type Constant.t = Constant.t
 
 module Litmus : sig
   include
-    Act_litmus.Test_types.S
+    C4f_litmus.Test_types.S
       with module Lang := Litmus_lang
-       and type raw = Act_litmus.Test.Raw.M(Litmus_lang).t
+       and type raw = C4f_litmus.Test.Raw.M(Litmus_lang).t
 
-  module Id : module type of Act_common.Litmus_id
+  module Id : module type of C4f_common.Litmus_id
 end

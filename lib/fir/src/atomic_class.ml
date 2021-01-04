@@ -26,7 +26,7 @@ module M = struct
 end
 
 include M
-include Act_utils.Enum.Extend_table (M)
+include C4f_utils.Enum.Extend_table (M)
 
 let classify_stm : Atomic_statement.t -> t option =
   Atomic_statement.value_map ~cmpxchg:(const_some Cmpxchg)

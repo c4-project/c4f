@@ -10,7 +10,7 @@
    project root for more information. *)
 
 open Base
-open Act_common
+open C4f_common
 
 module Pp_helpers = struct
   let pp_directive (pp_val : 'v Fmt.t) : (string * 'v) Fmt.t =
@@ -47,15 +47,15 @@ module Fuzz = struct
 
   module Setter = struct
     type t =
-      | Param of Act_common.Id.t * int
-      | Flag of Act_common.Id.t * Flag_value.t
+      | Param of C4f_common.Id.t * int
+      | Flag of C4f_common.Id.t * Flag_value.t
     [@@deriving sexp]
 
     let pp (f : Formatter.t) : t -> unit = function
       | Param (id, v) ->
-          Fmt.pf f "param@ %a@ to@ %d" Act_common.Id.pp id v
+          Fmt.pf f "param@ %a@ to@ %d" C4f_common.Id.pp id v
       | Flag (id, v) ->
-          Fmt.pf f "flag@ %a@ to@ %a" Act_common.Id.pp id Flag_value.pp v
+          Fmt.pf f "flag@ %a@ to@ %a" C4f_common.Id.pp id Flag_value.pp v
   end
 
   type t = Action of Id.t * int option | Set of Setter.t [@@deriving sexp]

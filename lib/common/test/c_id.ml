@@ -9,12 +9,12 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Act_utils
+open C4f_utils
 
 let%expect_test "generator sample" =
   My_quickcheck.print_sample
-    ~printer:(Fmt.pr "@[%a@]@." Act_common.C_id.pp)
-    (module Act_common.C_id) ;
+    ~printer:(Fmt.pr "@[%a@]@." C4f_common.C_id.pp)
+    (module C4f_common.C_id) ;
   [%expect
     {|
     B
@@ -40,8 +40,8 @@ let%expect_test "generator sample" =
 
 let%expect_test "human generator sample" =
   My_quickcheck.print_sample
-    ~printer:(Fmt.pr "@[%a@]@." Act_common.C_id.pp)
-    (module Act_common.C_id.Human) ;
+    ~printer:(Fmt.pr "@[%a@]@." C4f_common.C_id.pp)
+    (module C4f_common.C_id.Human) ;
   [%expect
     {|
     easel_14
@@ -67,15 +67,15 @@ let%expect_test "human generator sample" =
 
 let%test_unit "conversion to/from JSON is the identity" =
   Base_quickcheck.Test.run_exn
-    (module Act_common.C_id)
+    (module C4f_common.C_id)
     ~f:(fun id ->
-      [%test_result: Act_common.C_id.t] ~here:[[%here]]
-        Act_common.C_id.(t_of_yojson (yojson_of_t id))
-        ~expect:id ~equal:[%equal: Act_common.C_id.t])
+      [%test_result: C4f_common.C_id.t] ~here:[[%here]]
+        C4f_common.C_id.(t_of_yojson (yojson_of_t id))
+        ~expect:id ~equal:[%equal: C4f_common.C_id.t])
 
 let%test_module "is_string_safe (standard)" =
   ( module struct
-    open Act_common.C_id
+    open C4f_common.C_id
 
     let test (candidate : string) : unit =
       Io.print_bool (is_string_safe candidate)

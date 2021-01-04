@@ -10,10 +10,10 @@
    project root for more information. *)
 
 open Core
-open Act_common
+open C4f_common
 module Tx = Travesty_base_exts
 
-module Colour_table = Act_utils.String_table.Make (struct
+module Colour_table = C4f_utils.String_table.Make (struct
   let equal_style_renderer (x : Fmt.style_renderer) (y : Fmt.style_renderer)
       : bool =
     match (x, y) with
@@ -83,12 +83,12 @@ module Standard = struct
 
   let are_warnings_enabled t = not t.no_warnings
 
-  let default_config_file = "act.conf"
+  let default_config_file = "c4f.conf"
 
-  let load_config (x : t) : Act_config.Global.t Or_error.t =
+  let load_config (x : t) : C4f_config.Global.t Or_error.t =
     Or_error.(
       x.config_file |> Plumbing.Input.of_string
-      >>= Act_config.Global.Load.load)
+      >>= C4f_config.Global.Load.load)
 
   let get =
     Command.Let_syntax.(
@@ -99,32 +99,32 @@ module Standard = struct
         flag "no-warnings" no_arg ~doc:"if given, suppresses all warnings"
       and config_file =
         flag_optional_with_default_doc "config" string [%sexp_of: string]
-          ~default:default_config_file ~doc:"PATH the act.conf file to use"
+          ~default:default_config_file ~doc:"PATH the config file to use"
       and colour =
         flag_optional_with_default_doc "colour" colour_type colour_sexp
           ~default:None ~doc:"MODE force a particular colouring mode"
       in
       {verbose; no_warnings; config_file; colour})
 
-  let make_output (args : t) : Act_common.Output.t =
-    Act_common.Output.make ~verbose:(is_verbose args)
+  let make_output (args : t) : C4f_common.Output.t =
+    C4f_common.Output.make ~verbose:(is_verbose args)
       ~warnings:(are_warnings_enabled args)
 
   let setup_colour (args : t) : unit =
     let style_renderer = colour args in
     Fmt_tty.setup_std_outputs ?style_renderer ()
 
-  let lift_command (args : t) ~(f : Act_common.Output.t -> unit Or_error.t) :
+  let lift_command (args : t) ~(f : C4f_common.Output.t -> unit Or_error.t) :
       unit =
     setup_colour args ;
     let o = make_output args in
     let result = f o in
     if Or_error.is_error result then (
-      Act_common.Output.print_error o result ;
+      C4f_common.Output.print_error o result ;
       exit 1 )
 
   let lift_command_with_config (args : t)
-      ~(f : Act_common.Output.t -> Act_config.Global.t -> unit Or_error.t) :
+      ~(f : C4f_common.Output.t -> C4f_config.Global.t -> unit Or_error.t) :
       unit =
     lift_command args ~f:(fun o -> Or_error.(args |> load_config >>= f o))
 end

@@ -12,7 +12,7 @@
 open Base
 
 open struct
-  module Ac = Act_common
+  module Ac = C4f_common
   module Tx = Travesty_base_exts
   module Named = Ac.C_named
 end

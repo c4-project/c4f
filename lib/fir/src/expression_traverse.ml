@@ -362,7 +362,7 @@ end
 
 let depended_upon_idents :
     ( 'i
-    , Act_common.C_id.t
+    , C4f_common.C_id.t
     , Expression.t
     , [< Accessor.many_getter] )
     Accessor.Simple.t =

@@ -77,7 +77,7 @@ module On_lvalues :
 
 (** {2 Low-level quickchecking}
 
-    See {!Act_fir_gen}. *)
+    See {!C4f_fir_gen}. *)
 
 val quickcheck_observer : t Q.Observer.t
 (** [quickcheck_observer] is a generic quickcheck observer for assigns. *)

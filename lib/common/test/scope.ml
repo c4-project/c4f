@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-module Src = Act_common
+module Src = C4f_common
 
 let%test_module "reduce" =
   ( module struct

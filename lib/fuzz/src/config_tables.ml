@@ -148,9 +148,9 @@ let flag_map : Param_spec.Bool.t Map.M(Common.Id).t Lazy.t =
                   [ {|
             Checked every time the fuzzer considers taking an additional
             action (between |}
-                  ; Act_common.Id.to_string action_cap_lower_param
+                  ; C4f_common.Id.to_string action_cap_lower_param
                   ; " and "
-                  ; Act_common.Id.to_string action_cap_upper_param
+                  ; C4f_common.Id.to_string action_cap_upper_param
                   ; {|.
             If 'true', the fuzzer will take the action; if false, it will
             abandon doing so.

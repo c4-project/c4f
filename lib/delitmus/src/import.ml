@@ -13,9 +13,9 @@
 
 module Accessor = Accessor_base
 include Accessor.O
-module Common = Act_common
-module Utils = Act_utils
-module Fir = Act_fir
-module Litmus = Act_litmus
-module Litmus_c = Act_litmus_c
+module Common = C4f_common
+module Utils = C4f_utils
+module Fir = C4f_fir
+module Litmus = C4f_litmus
+module Litmus_c = C4f_litmus_c
 module Tx = Travesty_base_exts

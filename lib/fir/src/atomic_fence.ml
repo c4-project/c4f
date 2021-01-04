@@ -19,7 +19,7 @@ module Mode = struct
   end
 
   include M
-  include Act_utils.Enum.Extend_table (M)
+  include C4f_utils.Enum.Extend_table (M)
 end
 
 type t = {mode: Mode.t; mo: Mem_order.t}

@@ -25,7 +25,7 @@ let run_and_dump_labels
   Fmt.(
     pr "@[%a@]@."
       (result ~error:Error.pp
-         ~ok:(using Set.to_list (list ~sep:sp Act_common.Litmus_id.pp))))
+         ~ok:(using Set.to_list (list ~sep:sp C4f_common.Litmus_id.pp))))
     result
 
 let%test_module "program.label" =
@@ -33,11 +33,11 @@ let%test_module "program.label" =
     let path : Fuzz.Path.With_meta.t Lazy.t =
       Fuzz_test.Subject.Test_data.Path.insert_live
 
-    let random_state : Act_common.C_id.t Fuzz.Payload_impl.Pathed.t Lazy.t =
+    let random_state : C4f_common.C_id.t Fuzz.Payload_impl.Pathed.t Lazy.t =
       Lazy.Let_syntax.(
         let%map where = path in
         Fuzz.Payload_impl.Pathed.make
-          (Act_common.C_id.of_string "label_mclabelface")
+          (C4f_common.C_id.of_string "label_mclabelface")
           ~where)
 
     let test_action : Fuzz.Subject.Test.t Fuzz.State.Monad.t =

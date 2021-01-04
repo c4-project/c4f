@@ -23,17 +23,17 @@ let litmus_path_of (trace_path : Fpath.t) : Fpath.t =
 let run_on_file ~file:(_ : Fpath.t) ~(path : Fpath.t) : unit Or_error.t =
   let litmus_path = litmus_path_of path in
   Or_error.Let_syntax.(
-    let%bind trace = Act_fuzz.Trace.load (Plumbing.Input.of_fpath path) in
-    let aux = Act_fuzz_run.Filter.Aux.Replay.make trace in
+    let%bind trace = C4f_fuzz.Trace.load (Plumbing.Input.of_fpath path) in
+    let aux = C4f_fuzz_run.Filter.Aux.Replay.make trace in
     let%bind {state; _} =
-      Act_fuzz_run.Filter.run_replay ~aux
+      C4f_fuzz_run.Filter.run_replay ~aux
         (Plumbing.Input.of_fpath litmus_path)
         Plumbing.Output.stdout
     in
     Stdio.print_endline "" ;
     Stdio.print_endline "/*" ;
     let%map () =
-      Act_fuzz.State.Dump.store_to_oc state ~dest:Stdio.Out_channel.stdout
+      C4f_fuzz.State.Dump.store_to_oc state ~dest:Stdio.Out_channel.stdout
     in
     Stdio.print_endline "*/")
 

@@ -14,10 +14,10 @@
 open Base
 
 open struct
-  module Ac = Act_common
-  module Src = Act_litmus_c
-  module Fir = Act_fir
-  module Ast = Act_litmus_c.Ast
+  module Ac = C4f_common
+  module Src = C4f_litmus_c
+  module Fir = C4f_fir
+  module Ast = C4f_litmus_c.Ast
 end
 
 let%test_module "decls" =
@@ -26,7 +26,7 @@ let%test_module "decls" =
       ( module struct
         let test (x : Fir.Initialiser.t Ac.C_named.t) =
           let rx = Src.Reify_prim.decl x in
-          Fmt.pr "@[%a@]@." Act_litmus_c.Ast.Decl.pp rx
+          Fmt.pr "@[%a@]@." C4f_litmus_c.Ast.Decl.pp rx
 
         let%expect_test "atomic bool" =
           test

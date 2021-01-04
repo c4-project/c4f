@@ -16,7 +16,7 @@ open Core_kernel
     This should ideally match the header comment above it. *)
 let license : string Lazy.t =
   lazy
-    (Act_utils.My_string.format_for_readme
+    (C4f_utils.My_string.format_for_readme
        {| This file is part of c4f.
 
          Copyright (c) 2018-2021 C4 Project

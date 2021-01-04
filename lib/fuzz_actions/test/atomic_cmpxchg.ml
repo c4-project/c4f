@@ -13,13 +13,13 @@ open Base
 open Import
 
 module Test_data = struct
-  let cmpxchg : Act_fir.Expression.t Act_fir.Atomic_cmpxchg.t Lazy.t =
+  let cmpxchg : C4f_fir.Expression.t C4f_fir.Atomic_cmpxchg.t Lazy.t =
     lazy
       Fir.
         { Atomic_cmpxchg.obj= Address.of_variable_str_exn "gen1"
         ; expected=
             Accessor.construct Address.variable_ref
-              (Act_common.C_id.of_string "expected")
+              (C4f_common.C_id.of_string "expected")
         ; desired= Expression.int_lit 54321
         ; strength= Strong
         ; succ= Seq_cst
@@ -29,9 +29,9 @@ module Test_data = struct
     Lazy.map cmpxchg ~f:(fun cmpxchg ->
         Src.Atomic_cmpxchg.Insert.Inner_payload.
           { cmpxchg
-          ; exp_val= Act_fir.Constant.int 12345
-          ; exp_var= Act_common.C_id.of_string "expected"
-          ; out_var= Act_common.C_id.of_string "out" })
+          ; exp_val= C4f_fir.Constant.int 12345
+          ; exp_var= C4f_common.C_id.of_string "expected"
+          ; out_var= C4f_common.C_id.of_string "out" })
 end
 
 let%test_module "cmpxchg.make.int.succeed" =

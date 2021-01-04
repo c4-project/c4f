@@ -14,7 +14,7 @@ open Import
 
 module Make (B : Runner_types.Basic) = struct
   let make_litmus_header (input : Fir.Litmus.Test.t) :
-      Fir.Constant.t Act_litmus.Header.t =
+      Fir.Constant.t C4f_litmus.Header.t =
     let postcondition =
       Option.map
         (Fir.Litmus.Test.postcondition input)
@@ -25,7 +25,7 @@ module Make (B : Runner_types.Basic) = struct
     let name = Fir.Litmus.Test.name input in
     let init = Fir.Litmus.Test.init input in
     let locations = Fir.Litmus.Test.locations input in
-    Act_litmus.Header.make ~name ?postcondition ~init ?locations ()
+    C4f_litmus.Header.make ~name ?postcondition ~init ?locations ()
 
   let make_var_record (index : int) (id : Common.Litmus_id.t)
       (orig_type : Fir.Type.t) (initial_value : Fir.Constant.t option) :

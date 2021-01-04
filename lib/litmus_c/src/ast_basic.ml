@@ -38,7 +38,7 @@ module Type_qual = struct
   end
 
   include M
-  include Act_utils.Enum.Extend_table (M)
+  include C4f_utils.Enum.Extend_table (M)
 end
 
 module Prim_type = struct
@@ -68,7 +68,7 @@ module Prim_type = struct
   end
 
   include M
-  include Act_utils.Enum.Extend_table (M)
+  include C4f_utils.Enum.Extend_table (M)
 end
 
 module Storage_class_spec = struct
@@ -85,7 +85,7 @@ module Storage_class_spec = struct
   end
 
   include M
-  include Act_utils.Enum.Extend_table (M)
+  include C4f_utils.Enum.Extend_table (M)
 end
 
 module Array = struct
@@ -153,7 +153,7 @@ module Constant = struct
   [@@deriving sexp, variants, equal, compare, quickcheck]
 
   let pp_char =
-    Fmt.(quote ~mark:"'" (using Act_utils.Lex_utils.escape_string string))
+    Fmt.(quote ~mark:"'" (using C4f_utils.Lex_utils.escape_string string))
 
   let pp f = function
     | Char c ->
@@ -182,7 +182,7 @@ module Constant = struct
 end
 
 module Identifier = struct
-  include Act_common.C_id
+  include C4f_common.C_id
 
   let identifier = Fn.id
 end

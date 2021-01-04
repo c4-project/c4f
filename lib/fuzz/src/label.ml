@@ -13,27 +13,27 @@ open Base
 
 open struct
   module A = Accessor_base
-  module Ac = Act_common
+  module Ac = C4f_common
 end
 
-module Stm = Act_fir.Statement_traverse.With_meta (Unit)
+module Stm = C4f_fir.Statement_traverse.With_meta (Unit)
 
 let labels_of_thread (tid : int)
-    (thread : unit Act_fir.Function.t Ac.C_named.t) :
-    Act_common.Litmus_id.t list =
-  thread |> A.get Ac.C_named.value |> Act_fir.Function.body_stms
+    (thread : unit C4f_fir.Function.t Ac.C_named.t) :
+    C4f_common.Litmus_id.t list =
+  thread |> A.get Ac.C_named.value |> C4f_fir.Function.body_stms
   |> List.concat_map ~f:Stm.On_primitives.to_list
   (* TODO(@MattWindsor91): push this further *)
   |> List.filter_map ~f:(fun x ->
          Option.(
-           A.(x.@?(Act_fir.Prim_statement.label))
-           >>| Act_common.Litmus_id.local tid))
+           A.(x.@?(C4f_fir.Prim_statement.label))
+           >>| C4f_common.Litmus_id.local tid))
 
-let labels_of_test (test : Act_fir.Litmus.Test.t) :
-    Set.M(Act_common.Litmus_id).t =
-  test |> Act_fir.Litmus.Test.threads
+let labels_of_test (test : C4f_fir.Litmus.Test.t) :
+    Set.M(C4f_common.Litmus_id).t =
+  test |> C4f_fir.Litmus.Test.threads
   |> List.concat_mapi ~f:labels_of_thread
-  |> Set.of_list (module Act_common.Litmus_id)
+  |> Set.of_list (module C4f_common.Litmus_id)
 
 let gen_fresh (set : Set.M(Ac.Litmus_id).t) :
     Ac.C_id.t Base_quickcheck.Generator.t =

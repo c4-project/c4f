@@ -43,7 +43,7 @@ struct
   let readme =
     lazy
       ( readme_chunks () |> String.concat ~sep:"\n\n"
-      |> Act_utils.My_string.format_for_readme )
+      |> C4f_utils.My_string.format_for_readme )
 
   let src_env (vars : Fuzz.Var.Map.t) ~(tid : int) : Fir.Env.t =
     let predicates = Lazy.force basic_src_restrictions in

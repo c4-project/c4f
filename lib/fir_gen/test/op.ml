@@ -24,8 +24,8 @@ let%test_module "bop_with_output" =
           Src.Op.basic_lift_k
           (Two (x, y))
       in
-      Act_utils.My_quickcheck.print_sample
-        ~printer:(Fmt.pr "@[%a@]@." Act_litmus_c.Reify_expr.pp)
+      C4f_utils.My_quickcheck.print_sample
+        ~printer:(Fmt.pr "@[%a@]@." C4f_litmus_c.Reify_expr.pp)
         ( module struct
           type t = Fir.Expression.t [@@deriving compare, sexp]
 

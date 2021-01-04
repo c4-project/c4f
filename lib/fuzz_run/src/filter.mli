@@ -46,7 +46,7 @@ module Aux : sig
     (** Opaque type of auxiliary input to the replay runner filter. *)
     type t
 
-    val make : ?o:Common.Output.t -> Act_fuzz.Trace.t -> t
+    val make : ?o:Common.Output.t -> C4f_fuzz.Trace.t -> t
     (** [make ?o trace] makes an auxiliary input for the replay filter given
         optional outputter [o] and trace-to-replay [trace]. *)
   end

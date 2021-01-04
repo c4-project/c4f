@@ -1,9 +1,9 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_fir_gen)
+ (name c4f_fir_gen)
  (public_name c4f.fir_gen)
- (synopsis "Automagic Compiler Tormentor: special generators for Fuzzable IR")
+ (synopsis "c4f: special generators for Fuzzable IR")
  (preprocess
   (pps ppx_deriving.std ppx_accessor ppx_jane))
  (libraries splittable_random sexplib0 stdio base.caml accessor accessor_base

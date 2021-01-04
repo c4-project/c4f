@@ -23,8 +23,8 @@ type 'const t [@@deriving equal, sexp]
 (** {1 Constructors} *)
 
 val make :
-     ?locations:Act_common.C_id.t list
-  -> ?init:(Act_common.C_id.t, 'const) List.Assoc.t
+     ?locations:C4f_common.C_id.t list
+  -> ?init:(C4f_common.C_id.t, 'const) List.Assoc.t
   -> ?postcondition:'const Postcondition.t
   -> name:string
   -> unit
@@ -40,10 +40,10 @@ val empty : 'const t
 val name : _ t -> string
 (** [name header] gets the test name of [header], if any. *)
 
-val locations : _ t -> Act_common.C_id.t list option
+val locations : _ t -> C4f_common.C_id.t list option
 (** [locations header] gets the computed location stanza of [header], if any. *)
 
-val init : 'const t -> (Act_common.C_id.t, 'const) List.Assoc.t
+val init : 'const t -> (C4f_common.C_id.t, 'const) List.Assoc.t
 (** [init header] gets the computed init block of [header]. *)
 
 val postcondition : 'const t -> 'const Postcondition.t option
@@ -53,7 +53,7 @@ val postcondition : 'const t -> 'const Postcondition.t option
 
 val add_global :
      'const t
-  -> name:Act_common.C_id.t
+  -> name:C4f_common.C_id.t
   -> initial_value:'const
   -> 'const t Or_error.t
 (** [add_global aux ~name ~initial_value] adds a global variable with name
@@ -73,7 +73,7 @@ val map_tids : 'const t -> f:(int -> int) -> 'const t
 include
   Travesty.Bi_traversable_types.S1_right
     with type 'const t := 'const t
-     and type left = Act_common.C_id.t
+     and type left = C4f_common.C_id.t
 
 (** {1 Serialisation} *)
 

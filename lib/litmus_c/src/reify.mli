@@ -19,24 +19,24 @@
     - {!Reify_expr} for expressions;
     - {!Reify_stm} for statements. *)
 
-val func : _ Act_fir.Function.t Act_common.C_named.t -> Ast.External_decl.t
+val func : _ C4f_fir.Function.t C4f_common.C_named.t -> Ast.External_decl.t
 (** [func f] reifies the FIR function [f] into the C AST. *)
 
-val program : _ Act_fir.Program.t -> Ast.Translation_unit.t
+val program : _ C4f_fir.Program.t -> Ast.Translation_unit.t
 (** [program p] reifies the FIR program [p] into the C AST. *)
 
 (** {1 Pretty printers using reification} *)
 
-val pp_func : _ Act_fir.Function.t Act_common.C_named.t Fmt.t
+val pp_func : _ C4f_fir.Function.t C4f_common.C_named.t Fmt.t
 (** [pp_func] pretty-prints FIR functions via {!func}. *)
 
-val pp : _ Act_fir.Program.t Fmt.t
+val pp : _ C4f_fir.Program.t Fmt.t
 (** [pp] pretty-prints FIR programs via {!program}. *)
 
 (** {2 Litmus tests} *)
 
-val pp_litmus_raw : Act_litmus.Test.Raw.M(Act_fir.Litmus.Lang).t Fmt.t
+val pp_litmus_raw : C4f_litmus.Test.Raw.M(C4f_fir.Litmus.Lang).t Fmt.t
 (** [pp_litmus_raw] pretty-prints unverified FIR litmus tests. *)
 
-val pp_litmus : Act_fir.Litmus.Test.t Fmt.t
+val pp_litmus : C4f_fir.Litmus.Test.t Fmt.t
 (** [pp_litmus] pretty-prints verified FIR litmus tests. *)

@@ -81,7 +81,7 @@ module type Basic_surround = sig
     val gen : Path.With_meta.t -> t Payload_gen.t
     (** [gen path] should generate an inner payload using [path]. *)
 
-    val src_exprs : t -> Act_fir.Expression.t list
+    val src_exprs : t -> C4f_fir.Expression.t list
     (** [src_exprs pld] gets the list of source expressions, if any, from
         [pld]. These are flagged as having dependencies. *)
   end

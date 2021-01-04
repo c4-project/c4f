@@ -10,7 +10,7 @@
    project root for more information. *)
 
 open struct
-  module Af = Act_fuzz
+  module Af = C4f_fuzz
 end
 
 open Core_kernel
@@ -30,35 +30,35 @@ let run_with_trace (trace : Af.Trace.t) ~(cmd : string) ~(argv : string list)
       Stdio.eprint_s (Error.sexp_of_t e) ;
       false
 
-let bisector (o : Act_common.Output.t) (trace : Af.Trace.t) ~(cmd : string)
+let bisector (o : C4f_common.Output.t) (trace : Af.Trace.t) ~(cmd : string)
     ~(argv : string list) : [`Left | `Right] =
   if
-    run_with_trace trace ~cmd ~argv ~verbose:(Act_common.Output.is_verbose o)
+    run_with_trace trace ~cmd ~argv ~verbose:(C4f_common.Output.is_verbose o)
   then (
-    Act_common.Output.pv o "%d <-\n" (Af.Trace.length trace) ;
+    C4f_common.Output.pv o "%d <-\n" (Af.Trace.length trace) ;
     `Left )
   else (
-    Act_common.Output.pv o "%d ->\n" (Af.Trace.length trace) ;
+    C4f_common.Output.pv o "%d ->\n" (Af.Trace.length trace) ;
     `Right )
 
-let bisect (o : Act_common.Output.t) (trace : Af.Trace.t) ~(cmd : string)
+let bisect (o : C4f_common.Output.t) (trace : Af.Trace.t) ~(cmd : string)
     ~(argv : string list) ~(want : [`Last_on_left | `First_on_right]) :
     Af.Trace.t =
-  Act_fuzz.Trace.bisect trace ~f:(bisector o ~cmd ~argv) ~want
+  C4f_fuzz.Trace.bisect trace ~f:(bisector o ~cmd ~argv) ~want
 
 let run ~(cmd : string) ~(argv : string list)
     ?(want : [`Last_on_left | `First_on_right] = `First_on_right)
-    (args : _ Common_cmd.Args.With_files.t) (o : Act_common.Output.t) :
+    (args : _ Common_cmd.Args.With_files.t) (o : C4f_common.Output.t) :
     unit Or_error.t =
   Or_error.Let_syntax.(
     let%bind dest = Common_cmd.Args.With_files.outfile_sink args in
     let%bind trace_in = Common_cmd.Args.With_files.infile_source args in
-    let%bind trace = Act_fuzz.Trace.load trace_in in
+    let%bind trace = C4f_fuzz.Trace.load trace_in in
     let trace' = bisect o trace ~cmd ~argv ~want in
     Af.Trace.store trace' ~dest)
 
 let readme () : string =
-  Act_utils.My_string.format_for_readme
+  C4f_utils.My_string.format_for_readme
     {|
       Reads in the given trace file and bisects it, sending each partial trace
       to the given command and presuming that success means the trace

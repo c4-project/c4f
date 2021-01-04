@@ -18,8 +18,8 @@ type 'meta t [@@deriving sexp, equal]
 (** {2 Constructors} *)
 
 val make :
-     parameters:(Act_common.C_id.t, Type.t) List.Assoc.t
-  -> body_decls:(Act_common.C_id.t, Initialiser.t) List.Assoc.t
+     parameters:(C4f_common.C_id.t, Type.t) List.Assoc.t
+  -> body_decls:(C4f_common.C_id.t, Initialiser.t) List.Assoc.t
   -> ?body_stms:'meta Statement.t list
   -> unit
   -> 'meta t
@@ -31,7 +31,7 @@ val make :
 module Access : sig
   val parameters :
     ( _
-    , (Act_common.C_id.t, Type.t) List.Assoc.t
+    , (C4f_common.C_id.t, Type.t) List.Assoc.t
     , _ t
     , [< Accessor.field] )
     Accessor.Simple.t
@@ -39,7 +39,7 @@ module Access : sig
 
   val body_decls :
     ( _
-    , (Act_common.C_id.t, Initialiser.t) List.Assoc.t
+    , (C4f_common.C_id.t, Initialiser.t) List.Assoc.t
     , _ t
     , [< Accessor.field] )
     Accessor.Simple.t
@@ -55,10 +55,10 @@ end
 
 (** {2 Getters} *)
 
-val parameters : _ t -> (Act_common.C_id.t, Type.t) List.Assoc.t
+val parameters : _ t -> (C4f_common.C_id.t, Type.t) List.Assoc.t
 (** [parameters func] gets [func]'s parameter list. *)
 
-val body_decls : _ t -> (Act_common.C_id.t, Initialiser.t) List.Assoc.t
+val body_decls : _ t -> (C4f_common.C_id.t, Initialiser.t) List.Assoc.t
 (** [body_decls func] gets [func]'s in-body variable declarations. *)
 
 val body_stms : 'meta t -> 'meta Statement.t list
@@ -73,11 +73,11 @@ val with_body_stms : 'm1 t -> 'm2 Statement.t list -> 'm2 t
 val map :
      'm1 t
   -> parameters:
-       (   (Act_common.C_id.t, Type.t) List.Assoc.t
-        -> (Act_common.C_id.t, Type.t) List.Assoc.t)
+       (   (C4f_common.C_id.t, Type.t) List.Assoc.t
+        -> (C4f_common.C_id.t, Type.t) List.Assoc.t)
   -> body_decls:
-       (   (Act_common.C_id.t, Initialiser.t) List.Assoc.t
-        -> (Act_common.C_id.t, Initialiser.t) List.Assoc.t)
+       (   (C4f_common.C_id.t, Initialiser.t) List.Assoc.t
+        -> (C4f_common.C_id.t, Initialiser.t) List.Assoc.t)
   -> body_stms:('m1 Statement.t list -> 'm2 Statement.t list)
   -> 'm2 t
 (** [map func ~parameters ~body_decls ~body_stms] runs the given functions
@@ -89,11 +89,11 @@ module On (M : Applicative.S) : sig
   val map_m :
        'm1 t
     -> parameters:
-         (   (Act_common.C_id.t, Type.t) List.Assoc.t
-          -> (Act_common.C_id.t, Type.t) List.Assoc.t M.t)
+         (   (C4f_common.C_id.t, Type.t) List.Assoc.t
+          -> (C4f_common.C_id.t, Type.t) List.Assoc.t M.t)
     -> body_decls:
-         (   (Act_common.C_id.t, Initialiser.t) List.Assoc.t
-          -> (Act_common.C_id.t, Initialiser.t) List.Assoc.t M.t)
+         (   (C4f_common.C_id.t, Initialiser.t) List.Assoc.t
+          -> (C4f_common.C_id.t, Initialiser.t) List.Assoc.t M.t)
     -> body_stms:('m1 Statement.t list -> 'm2 Statement.t list M.t)
     -> 'm2 t M.t
 end
@@ -106,5 +106,5 @@ module With_meta (Meta : Equal.S) : sig
   module On_decls :
     Travesty.Traversable_types.S0
       with type t = t
-       and type Elt.t = Initialiser.t Act_common.C_named.t
+       and type Elt.t = Initialiser.t C4f_common.C_named.t
 end

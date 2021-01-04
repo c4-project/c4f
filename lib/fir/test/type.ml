@@ -12,14 +12,14 @@
 open Base
 open Stdio
 
-let dump : Act_fir.Type.t list -> unit =
+let dump : C4f_fir.Type.t list -> unit =
   List.iter ~f:(fun ty ->
-      Stdio.printf "str: %s; sexp: " (Act_fir.Type.to_string ty) ;
-      print_s [%sexp (ty : Act_fir.Type.t)])
+      Stdio.printf "str: %s; sexp: " (C4f_fir.Type.to_string ty) ;
+      print_s [%sexp (ty : C4f_fir.Type.t)])
 
 let%expect_test "bool: combinatoric" =
   dump
-    Act_fir.Type.
+    C4f_fir.Type.
       [ bool ~is_volatile:false ~is_atomic:false ~is_pointer:false ()
       ; bool ~is_volatile:false ~is_atomic:false ~is_pointer:true ()
       ; bool ~is_volatile:false ~is_atomic:true ~is_pointer:false ()
@@ -41,7 +41,7 @@ let%expect_test "bool: combinatoric" =
 
 let%expect_test "int: combinatoric" =
   dump
-    Act_fir.Type.
+    C4f_fir.Type.
       [ int ~is_volatile:false ~is_atomic:false ~is_pointer:false ()
       ; int ~is_volatile:false ~is_atomic:false ~is_pointer:true ()
       ; int ~is_volatile:false ~is_atomic:true ~is_pointer:false ()
@@ -63,19 +63,19 @@ let%expect_test "int: combinatoric" =
 
 let%test_unit "basic_type_is compatibility with basic_type" =
   Base_quickcheck.Test.run_exn
-    (module Act_fir.Type)
+    (module C4f_fir.Type)
     ~f:
-      Act_fir.Type.(
+      C4f_fir.Type.(
         [%test_pred: t] ~here:[[%here]] (fun t ->
             basic_type_is t ~basic:(basic_type t)))
 
 let%test_module "check_atomic_non" =
   ( module struct
-    let test (atomic : Act_fir.Type.t) (non : Act_fir.Type.t) : unit =
-      let result = Act_fir.Type.check_atomic_non ~atomic ~non in
-      Stdio.print_s [%sexp (result : Act_fir.Type.t Or_error.t)]
+    let test (atomic : C4f_fir.Type.t) (non : C4f_fir.Type.t) : unit =
+      let result = C4f_fir.Type.check_atomic_non ~atomic ~non in
+      Stdio.print_s [%sexp (result : C4f_fir.Type.t Or_error.t)]
 
     let%expect_test "valid: atomic_int to int" =
-      Act_fir.Type.(test (int ~is_atomic:true ()) (int ())) ;
+      C4f_fir.Type.(test (int ~is_atomic:true ()) (int ())) ;
       [%expect {| (Ok int) |}]
   end )

@@ -53,7 +53,7 @@ module type Basic = sig
   val gen :
        src:Fir.Env.t
     -> dst:Fir.Env.t
-    -> vars:Act_fuzz.Var.Map.t
+    -> vars:C4f_fuzz.Var.Map.t
     -> tid:int
     -> t Base_quickcheck.Generator.t
   (** [gen ~src ~dst ~vars ~tid] returns a quickcheck instance for atomic
@@ -66,12 +66,12 @@ module type Basic = sig
       for this storelike; the action will refuse to fire if adding this
       amount exceeds the variable cap. *)
 
-  val new_locals : t -> Fir.Initialiser.t Act_common.C_named.Alist.t
+  val new_locals : t -> Fir.Initialiser.t C4f_common.C_named.Alist.t
   (** [new_locals s] gets a list of any new local variables created for this
       storelike, which should be registered and added to both the thread's
       decls and the state. *)
 
-  val dst_ids : t -> Act_common.C_id.t list
+  val dst_ids : t -> C4f_common.C_id.t list
   (** [dst_exprs s] gets a list of any (unscoped) destination C identifiers
       used in this storelike. *)
 

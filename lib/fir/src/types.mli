@@ -21,7 +21,7 @@ open Import
 module type S_named = sig
   type elt
 
-  type t = Act_common.C_id.t * elt [@@deriving equal]
+  type t = C4f_common.C_id.t * elt [@@deriving equal]
 end
 
 (** Signature of abstract data types that wrap some C variable name. *)

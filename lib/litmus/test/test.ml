@@ -10,7 +10,7 @@
    project root for more information. *)
 
 open Base
-module Src = Act_litmus
+module Src = C4f_litmus
 module Test = Src.Test
 
 let dump_test (v : (int, string) Test.Raw.t Or_error.t) : unit =

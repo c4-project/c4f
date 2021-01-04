@@ -41,7 +41,7 @@ val un_deref : t -> t Or_error.t
 (** [un_deref lvalue] tries to remove one layer of dereferencing from
     [lvalue]. It fails if [lvalue] is already a variable type. *)
 
-val on_value_of_typed_id : Type.t Act_common.C_named.t -> t
+val on_value_of_typed_id : Type.t C4f_common.C_named.t -> t
 (** [on_value_of_typed_id tid] constructs an lvalue with underlying variable
     [name tid] and the right level of indirection to convert from a variable
     of type [value tid] to a primitive value.
@@ -52,7 +52,7 @@ val on_value_of_typed_id : Type.t Act_common.C_named.t -> t
 (** {1 Getters and accessors} *)
 
 val reduce :
-  t -> variable:(Act_common.C_id.t -> 'a) -> deref:('a -> 'a) -> 'a
+  t -> variable:(C4f_common.C_id.t -> 'a) -> deref:('a -> 'a) -> 'a
 (** [reduce lvalue ~variable ~deref] applies [variable] on the underlying
     variable of [lvalue], then recursively applies [deref] to the result for
     each layer of indirection in the lvalue. *)
@@ -65,7 +65,7 @@ val is_deref : t -> bool
 
     These getters return an error if the address isn't in the right shape. *)
 
-val as_variable : t -> Act_common.C_id.t Or_error.t
+val as_variable : t -> C4f_common.C_id.t Or_error.t
 (** [as_variable lv] returns [lv], then returns it as a variable ID if it is
     one, or an error otherwise. *)
 
@@ -84,7 +84,7 @@ include Types.S_type_checkable with type t := t
 
 (** Generates random lvalues, parametrised on a given identifier generator. *)
 module Quickcheck_generic
-    (Id : Act_utils.My_quickcheck.S_with_sexp
-            with type t := Act_common.C_id.t) : sig
+    (Id : C4f_utils.My_quickcheck.S_with_sexp
+            with type t := C4f_common.C_id.t) : sig
   type nonrec t = t [@@deriving sexp_of, quickcheck]
 end

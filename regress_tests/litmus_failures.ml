@@ -17,7 +17,7 @@ let fail_to_parse_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t
     =
   ignore file ;
   let result =
-    Act_litmus_c.Frontend.Litmus.load (Plumbing.Input.of_fpath path)
+    C4f_litmus_c.Frontend.Litmus.load (Plumbing.Input.of_fpath path)
   in
   Fmt.(pr "@[%a@]@." (result ~ok:(any "(success)") ~error:Error.pp)) result ;
   Ok ()

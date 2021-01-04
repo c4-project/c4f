@@ -17,40 +17,40 @@ open struct
   module Tx = Travesty_base_exts
 end
 
-let print_aux : Act_delitmus.Output.t -> unit =
+let print_aux : C4f_delitmus.Output.t -> unit =
   Fmt.(
     pr
       "@[<v>@ /* --Begin auxiliary output--@ @ %a@ @ --End auxiliary \
        output-- */@]@."
-      (using Act_delitmus.Output.aux Act_delitmus.Aux.pp))
+      (using C4f_delitmus.Output.aux C4f_delitmus.Aux.pp))
 
-let summarise_config (config : Act_delitmus.Config.t) : unit =
-  Act_delitmus.Config.(
+let summarise_config (config : C4f_delitmus.Config.t) : unit =
+  C4f_delitmus.Config.(
     printf "//\n// style: %s\n// qualify-locals: %b\n// suffix: %s\n//\n\n"
       (Style.to_string (style config))
       (qualify_locals config)
       (Option.value (impl_suffix config) ~default:"(none)"))
 
-let delitmus_file_with_config (config : Act_delitmus.Config.t)
+let delitmus_file_with_config (config : C4f_delitmus.Config.t)
     ~(path : Fpath.t) : unit Or_error.t =
   summarise_config config ;
   Or_error.Let_syntax.(
     let%map output =
-      Act_delitmus.Filter.run ~config
+      C4f_delitmus.Filter.run ~config
         (Plumbing.Input.of_fpath path)
         Plumbing.Output.stdout
     in
     print_aux output)
 
-let configs_to_try : Act_delitmus.Config.t list Lazy.t =
+let configs_to_try : C4f_delitmus.Config.t list Lazy.t =
   lazy
     (let pairs =
        List.cartesian_product
-         (List.cartesian_product Act_delitmus.Config.Style.all Bool.all)
+         (List.cartesian_product C4f_delitmus.Config.Style.all Bool.all)
          [None; Some "_body"]
      in
      List.map pairs ~f:(fun ((style, qualify_locals), impl_suffix) ->
-         Act_delitmus.Config.make ~style ~qualify_locals ?impl_suffix ()))
+         C4f_delitmus.Config.make ~style ~qualify_locals ?impl_suffix ()))
 
 let delitmus_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t =
   ignore file ;

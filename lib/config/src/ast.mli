@@ -30,14 +30,14 @@ module Fuzz : sig
   module Setter : sig
     (** Type of property setter AST nodes. *)
     type t =
-      | Param of Act_common.Id.t * int
-      | Flag of Act_common.Id.t * Flag_value.t
+      | Param of C4f_common.Id.t * int
+      | Flag of C4f_common.Id.t * Flag_value.t
     [@@deriving sexp]
 
     include Pretty_printer.S with type t := t
   end
 
-  type t = Action of Act_common.Id.t * int option | Set of Setter.t
+  type t = Action of C4f_common.Id.t * int option | Set of Setter.t
   [@@deriving sexp]
 
   include Pretty_printer.S with type t := t

@@ -12,8 +12,8 @@
 open Core_kernel (* for Fqueue *)
 
 open struct
-  module Ac = Act_common
-  module Fir = Act_fir
+  module Ac = C4f_common
+  module Fir = C4f_fir
   module Tx = Travesty_base_exts
   module Named = Ac.C_named
 end
@@ -57,7 +57,7 @@ let param_type_list :
 
 let func_signature :
        Ast.Declarator.t
-    -> (Act_common.C_id.t * Fir.Type.t Named.Alist.t) Or_error.t = function
+    -> (C4f_common.C_id.t * Fir.Type.t Named.Alist.t) Or_error.t = function
   | {pointer= Some _; _} ->
       Or_error.error_string "Pointers not supported yet"
   | {pointer= None; direct= Fun_decl (Id name, param_list)} ->
@@ -107,7 +107,7 @@ let translation_unit (prog : Ast.Translation_unit.t) :
     let functions = Named.alist_of_list function_list in
     Fir.Program.make ~globals ~functions)
 
-module Litmus_conv = Act_litmus.Convert.Make (struct
+module Litmus_conv = C4f_litmus.Convert.Make (struct
   module From = struct
     include Ast.Litmus
     module Lang = Ast.Litmus_lang
@@ -122,12 +122,12 @@ module Litmus_conv = Act_litmus.Convert.Make (struct
 end)
 
 let litmus_post :
-       Ast_basic.Constant.t Act_litmus.Postcondition.t
-    -> Fir.Constant.t Act_litmus.Postcondition.t Or_error.t =
+       Ast_basic.Constant.t C4f_litmus.Postcondition.t
+    -> Fir.Constant.t C4f_litmus.Postcondition.t Or_error.t =
   Litmus_conv.convert_post
 
 let litmus : Ast.Litmus.t -> Fir.Litmus.Test.t Or_error.t =
   Litmus_conv.convert
 
-let litmus_of_raw_ast (ast : Act_litmus.Ast.M(Ast.Litmus_lang).t) =
+let litmus_of_raw_ast (ast : C4f_litmus.Ast.M(Ast.Litmus_lang).t) =
   Or_error.(ast |> Ast.Litmus.of_ast >>= litmus)

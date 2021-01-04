@@ -1,11 +1,11 @@
 (executable
- (name act_c)
- (public_name act-c)
- (modules act_c)
+ (name c4f_c)
+ (public_name c4f-c)
+ (modules c4f_c)
  (libraries base core_kernel core common_cmd cmd_c))
 
 (executable
- (name act_fuzz)
- (public_name act-fuzz)
- (modules act_fuzz)
+ (name c4f)
+ (public_name c4f)
+ (modules c4f)
  (libraries base core_kernel core common_cmd cmd_fuzz))

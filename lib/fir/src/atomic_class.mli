@@ -22,7 +22,7 @@ type t =
   | Store  (** Atomic stores. *)
   | Xchg  (** Atomic exchanges. *)
 
-include Act_utils.Enum_types.Extension_table with type t := t
+include C4f_utils.Enum_types.Extension_table with type t := t
 
 val matches : t -> template:t -> bool
 (** [matches clazz ~template] checks whether [clazz] matches [template].

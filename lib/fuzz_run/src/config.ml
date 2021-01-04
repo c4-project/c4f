@@ -33,7 +33,7 @@ type weight_list =
   (Fuzz.Action.With_default_weight.t, int option) List.Assoc.t
 
 let make_weight_alist (config : t) : weight_list =
-  let actions = Lazy.force Act_fuzz_actions.Table.actions in
+  let actions = Lazy.force C4f_fuzz_actions.Table.actions in
   List.map ~f:(make_weight_pair config.weights) actions
 
 (* This papers over the possibility that the sampling scheme we use can

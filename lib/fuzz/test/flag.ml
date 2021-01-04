@@ -9,7 +9,7 @@ open Base
 
 open struct
   module Q = Base_quickcheck
-  module Src = Act_fuzz
+  module Src = C4f_fuzz
 end
 
 let%test_module "pp" =

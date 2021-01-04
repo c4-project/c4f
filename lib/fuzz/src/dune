@@ -1,9 +1,9 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_fuzz)
+ (name c4f_fuzz)
  (public_name c4f.fuzz)
- (synopsis "Automagic Compiler Tormentor: FIR fuzzer")
+ (synopsis "c4f: FIR fuzzer")
  (preprocess
   (pps ppx_deriving.std ppx_accessor ppx_jane))
  (modules_without_implementation action_types payload_types)

@@ -10,7 +10,7 @@
    project root for more information. *)
 
 open Base
-module Id = Act_common.Litmus_id
+module Id = C4f_common.Litmus_id
 
 (** {2 Signatures} *)
 
@@ -49,7 +49,7 @@ module type Basic = sig
     val listing : t -> Statement.t list
     (** [listing program] gets [program]'s statement listing. *)
 
-    val global_vars : t -> Type.t Map.M(Act_common.C_id).t option
+    val global_vars : t -> Type.t Map.M(C4f_common.C_id).t option
     (** [global_vars program] gets the set of global variables referenced by
         [program], if this makes sense for this particular litmus language. *)
   end
@@ -109,10 +109,10 @@ module type S = sig
   val name : t -> string
   (** [name test] gets the name of [test]. *)
 
-  val init : t -> (Act_common.C_id.t, Lang.Constant.t) List.Assoc.t
+  val init : t -> (C4f_common.C_id.t, Lang.Constant.t) List.Assoc.t
   (** [init test] gets the initialiser in [test]. *)
 
-  val locations : t -> Act_common.C_id.t list option
+  val locations : t -> C4f_common.C_id.t list option
   (** [locations test] gets the locations stanza for [test], if it exists. *)
 
   val postcondition : t -> Lang.Constant.t Postcondition.t option

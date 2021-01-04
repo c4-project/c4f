@@ -169,7 +169,7 @@ module Fetch = struct
     end
 
     include M
-    include Act_utils.Enum.Extend_table (M)
+    include C4f_utils.Enum.Extend_table (M)
   end
 
   include With_qc

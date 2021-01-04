@@ -107,8 +107,8 @@ include Types.S_type_checkable with type t := t
 
 (** Generates random addresses, parametrised on a given lvalue generator. *)
 module Quickcheck_generic
-    (Lv : Act_utils.My_quickcheck.S_with_sexp with type t := Lvalue.t) :
-  Act_utils.My_quickcheck.S_with_sexp with type t = t
+    (Lv : C4f_utils.My_quickcheck.S_with_sexp with type t := Lvalue.t) :
+  C4f_utils.My_quickcheck.S_with_sexp with type t = t
 
 val eval_on_env : t -> env:Env.t -> Constant.t Or_error.t
 (** [eval_on_env address ~env] tries to evaluate an address [lv] against the

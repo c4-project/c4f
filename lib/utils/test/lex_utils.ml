@@ -12,13 +12,13 @@
 open Base
 
 let read_string_from_string (s : string) : string =
-  Act_utils.Lex_utils.read_string Fn.id
+  C4f_utils.Lex_utils.read_string Fn.id
     (Sedlexing.Utf8.from_string (s ^ "\""))
 
 let%test_module "escape_string" =
   ( module struct
     let test (s : string) : unit =
-      Stdio.print_endline (Act_utils.Lex_utils.escape_string s)
+      Stdio.print_endline (C4f_utils.Lex_utils.escape_string s)
 
     let%expect_test "empty string" = test "" ; [%expect {||}]
 
@@ -71,4 +71,4 @@ let%test_unit "escape_string/read_string idempotent for ASCII" =
       (module Ascii_string)
       ~f:(fun s ->
         [%test_result: string] ~equal:String.equal ~here:[[%here]] ~expect:s
-          (read_string_from_string (Act_utils.Lex_utils.escape_string s))))
+          (read_string_from_string (C4f_utils.Lex_utils.escape_string s))))

@@ -10,12 +10,12 @@
    project root for more information. *)
 
 open Base
-open Act_common
+open C4f_common
 open Parser
 module Tx = Travesty_base_exts
 module S = Sedlexing
-module F = Act_utils.Frontend
-module Lu = Act_utils.Lex_utils
+module F = C4f_utils.Frontend
+module Lu = C4f_utils.Lex_utils
 module String_map = Map.M (String.Caseless)
 
 let keywords : token String_map.t Lazy.t =

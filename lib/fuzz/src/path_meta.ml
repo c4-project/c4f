@@ -31,7 +31,7 @@ module Flag = struct
   end
 
   include M_inner
-  include Act_utils.Enum.Extend_table (M_inner)
+  include C4f_utils.Enum.Extend_table (M_inner)
 
   (** Maps a subset of the flags to predicates that toggle whether a piece of
       metadata sets the flag or not. *)

@@ -75,7 +75,7 @@ let anonymise =
       ~construct:(function `A v -> Variable v | `B d -> Deref d)]
 
 module Quickcheck_generic
-    (Id : Act_utils.My_quickcheck.S_with_sexp with type t := Common.C_id.t) : sig
+    (Id : C4f_utils.My_quickcheck.S_with_sexp with type t := Common.C_id.t) : sig
   type nonrec t = t [@@deriving sexp_of, quickcheck]
 end = struct
   type nonrec t = t

@@ -20,7 +20,7 @@ type t =
 
 let find (m : 'a Map.M(Common.Id).t) ~(map_name : string) ~(id : Common.Id.t)
     : 'a Or_error.t =
-  Act_utils.My_map.find_or_error ~sexp_of_key:[%sexp_of: Common.Id.t]
+  C4f_utils.My_map.find_or_error ~sexp_of_key:[%sexp_of: Common.Id.t]
     ~map_name m id
 
 let get_param ({params; _} : t) ~(id : Common.Id.t) : int Or_error.t =

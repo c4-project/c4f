@@ -42,5 +42,5 @@ end
 module type Ast_node_with_identifier = sig
   include Ast_node
 
-  val identifier : t -> Act_common.C_id.t
+  val identifier : t -> C4f_common.C_id.t
 end

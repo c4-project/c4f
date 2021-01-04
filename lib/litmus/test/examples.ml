@@ -10,10 +10,10 @@
    project root for more information. *)
 
 open Base
-module Header = Act_litmus.Header
-module Post = Act_litmus.Postcondition
-module Pred = Act_litmus.Predicate
-module Ac = Act_common
+module Header = C4f_litmus.Header
+module Post = C4f_litmus.Postcondition
+module Pred = C4f_litmus.Predicate
+module Ac = C4f_common
 
 module Sbsc = struct
   let str_local (tid : int) (str : string) : Ac.Litmus_id.t =
@@ -39,8 +39,8 @@ module Sbsc = struct
   let threads : string list Lazy.t =
     lazy ["(this was thread 0)"; "(this was thread 1)"]
 
-  let test : (int, string) Act_litmus.Test.Raw.t Lazy.t =
+  let test : (int, string) C4f_litmus.Test.Raw.t Lazy.t =
     Lazy.Let_syntax.(
       let%map header = header and threads = threads in
-      Act_litmus.Test.Raw.make ~header ~threads)
+      C4f_litmus.Test.Raw.make ~header ~threads)
 end

@@ -10,8 +10,8 @@
    project root for more information. *)
 
 open Base
-module Src = Act_fir
-module Ac = Act_common
+module Src = C4f_fir
+module Ac = C4f_common
 module Tx = Travesty_base_exts
 
 let test_typing : Src.Type.t Map.M(Ac.C_id).t Lazy.t =

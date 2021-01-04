@@ -162,9 +162,9 @@ module Fetch : sig
   (** [to_bop op] gets the binary operator that represents the operation that
       [op] represents between the old value and the fetch argument. *)
 
-  include Act_utils.Enum_types.S_table with type t := t
+  include C4f_utils.Enum_types.S_table with type t := t
 
-  include Act_utils.Enum_types.Extension_table with type t := t
+  include C4f_utils.Enum_types.Extension_table with type t := t
 
   include Op_types.S_binary with type t := t
 
@@ -173,10 +173,10 @@ module Fetch : sig
   (** A restricted form of the fetch generator that generates only operators
       for which the fetch argument [0] doesn't change the fetch object. *)
   module Gen_idem_zero_rhs :
-    Act_utils.My_quickcheck.S_with_sexp with type t = t
+    C4f_utils.My_quickcheck.S_with_sexp with type t = t
 
   (** A restricted form of the fetch generator that generates only operators
       for which a fetch argument that evaluates to the same value as the
       fetch object doesn't change the fetch object. *)
-  module Gen_idem_refl : Act_utils.My_quickcheck.S_with_sexp with type t = t
+  module Gen_idem_refl : C4f_utils.My_quickcheck.S_with_sexp with type t = t
 end

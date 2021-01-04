@@ -14,6 +14,6 @@ open Base
 (** Test helpers for storelike action tests *)
 
 module Test_common : sig
-  val prepare_fuzzer_state : unit -> unit Act_fuzz.State.Monad.t
+  val prepare_fuzzer_state : unit -> unit C4f_fuzz.State.Monad.t
   (** [prepare_fuzzer_state] populates the fuzzer state with some test data. *)
 end

@@ -42,21 +42,21 @@ val xchg_name : string
 
 val cmpxchg_call_alist :
      (Ast.Expr.t list -> strength:Fir.Atomic_cmpxchg.Strength.t -> 'a)
-  -> (Act_common.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t
+  -> (C4f_common.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t
 (** [cmpxchg_call_alist f] builds an associative list mapping cmpxchg
     known-calls to modellers over their argument lists, using [f] to
     construct those modellers. *)
 
 val fence_call_alist :
      (Ast.Expr.t list -> mode:Fir.Atomic_fence.Mode.t -> 'a)
-  -> (Act_common.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t
+  -> (C4f_common.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t
 (** [fence_call_alist f] builds an associative list mapping fence known-calls
     to modellers over their argument lists, using [f] to construct those
     modellers. *)
 
 val fetch_call_alist :
      (Ast.Expr.t list -> op:Fir.Op.Fetch.t -> 'a)
-  -> (Act_common.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t
+  -> (C4f_common.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t
 (** [fetch_call_alist f] builds an associative list mapping fetch known-calls
     to modellers over their argument lists, using [f] to construct those
     modellers. *)

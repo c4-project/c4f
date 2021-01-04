@@ -11,7 +11,7 @@
 
 open Base
 open Stdio
-module Id = Act_common.Litmus_id
+module Id = C4f_common.Litmus_id
 
 module type S = sig
   module Test : Test_types.S

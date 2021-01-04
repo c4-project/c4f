@@ -1,7 +1,7 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_fuzz_run_test)
+ (name c4f_fuzz_run_test)
  (inline_tests)
  (preprocess
   (pps ppx_jane))

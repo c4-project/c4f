@@ -1,8 +1,8 @@
 # _c4f_: the C4 fuzzer
 
-![Main workflow](https://github.com/MattWindsor91/act/workflows/Main%20workflow/badge.svg)
+![Main workflow](https://github.com/c4-project/c4f/workflows/Main%20workflow/badge.svg)
 
-_c4f_ (previously known as `act`, bear with us as we slowly rename!)
+_c4f_ (previously known as `act`)
 is a 'fuzzer' over C litmus tests of a format broadly compatible with
 that produced by [memalloy](https://github.com/JohnWickerson/memalloy)
 and consumed by [herdtools7](https://github.com/herd/herdtools7).
@@ -22,7 +22,7 @@ Other parts of the C4 project include:
 
 ## Licence and Acknowledgements
 
-- The overall ACT project, and all original code, is licenced under
+- The overall _c4f_ project, and all original code, is licenced under
   the MIT licence: see `LICENSE`.
 
 - The C lexer and parser are based on those from
@@ -32,16 +32,16 @@ Other parts of the C4 project include:
   licence: see `LICENSE.herd`. _(This is not an
   official endorsement by the Herd team of this project.)_
 
-## Included tools
+## Included programs
 
-These will be renamed from `act-X` to `c4f-X` at some unspecified time in the future.
+_c4f_ consists of two programs:
 
-- `act-fuzz`, the fuzzer itself, with commands to run the fuzzer, replay fuzzer traces,
+- `c4f`, the fuzzer itself, with commands to run the fuzzer, replay fuzzer traces,
   and bisect fuzzer traces;
-- `act-c`, a toolset for interpreting C litmus tests and dumping them to executable C.
+- `c4f-c`, a toolset for interpreting C litmus tests and dumping them to executable C.
 
 Each command has various subcommands, including the `help` command: for example,
-`act-fuzz help` will tell you information about which subcommands the fuzzer has.
+`c4f help` will tell you information about which subcommands the fuzzer has.
 
 ## Building and running
 
@@ -75,7 +75,7 @@ You can also manually build _c4f_ using `dune build`, or
 ### Preparation
 
 _c4f_ currently expects a configuration file listing fuzzer parameters
-(by default, it looks in `./act.conf`).  If you're using _c4t_, it sets
+(by default, it looks in `./c4f.conf`).  If you're using _c4t_, it sets
 up the configuration itself; if not, the following is a good first start:
 
 ```
@@ -91,10 +91,10 @@ To test whether _c4f_ is installed and working, you can try:
 
 ```shell
 $ git clone https://github.com/c4-project/c4-corpora /path/to/corpora
-$ act-fuzz run /path/to/corpora/partialSC/small/test_8.litmus
+$ c4f run /path/to/corpora/partialSC/small/test_8.litmus
 ```
 
-(or `dune exec act-fuzz -- run`, per above)
+(or `dune exec c4f -- run`, per above)
 
 This should output some truly horrendous C to stdout.  (You can
 experiment with the other `test_X.litmus` files in that directory,

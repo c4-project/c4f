@@ -1,7 +1,7 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_delitmus)
+ (name c4f_delitmus)
  (public_name c4f.delitmus)
  (synopsis "C4: C de-litmusifier")
  (preprocess

@@ -12,9 +12,9 @@
 open Base
 
 open struct
-  module Ac = Act_common
-  module Fir = Act_fir
-  module Src = Act_litmus_c
+  module Ac = C4f_common
+  module Fir = C4f_fir
+  module Src = C4f_litmus_c
 end
 
 let%test_module "model" =
@@ -168,7 +168,7 @@ let%test_module "model" =
 
     let%expect_test "model atomic cmpxchg" =
       test
-        Act_litmus_c.Ast.(
+        C4f_litmus_c.Ast.(
           Stm.Expr
             (Some
                (Expr.Call

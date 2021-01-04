@@ -14,6 +14,6 @@ open Base
 let run (input : Plumbing.Input.t) (output : Plumbing.Output.t) :
     unit Or_error.t =
   Or_error.(
-    input |> Frontend.Fir.load >>| Act_fir.Litmus_stats.scrape
-    >>= Act_utils.My_format.odump output
-          (Fmt.vbox Act_fir.Litmus_stats.Statset.pp))
+    input |> Frontend.Fir.load >>| C4f_fir.Litmus_stats.scrape
+    >>= C4f_utils.My_format.odump output
+          (Fmt.vbox C4f_fir.Litmus_stats.Statset.pp))

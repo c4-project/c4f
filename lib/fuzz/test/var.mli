@@ -11,6 +11,6 @@
 
 (** Test data, used in this and other tests. *)
 module Test_data : sig
-  val test_map : Act_fuzz.Var.Map.t Lazy.t
+  val test_map : C4f_fuzz.Var.Map.t Lazy.t
   (** [test_map] evaluates to an example variable map. *)
 end

@@ -28,7 +28,7 @@ module Insert = struct
   module type S =
     Fuzz.Action_types.S
       with type Payload.t =
-            Act_fir.Expression.t Act_fir.Atomic_fetch.t
+            C4f_fir.Expression.t C4f_fir.Atomic_fetch.t
             Fuzz.Payload_impl.Pathed.t
 
   let readme_preamble : string =
@@ -63,7 +63,7 @@ module Insert = struct
     (** A functor that produces a quickcheck instance for atomic fetches
         given source and destination variable environments. *)
     module Quickcheck (Src : Fir.Env_types.S) (Dst : Fir.Env_types.S) :
-      Act_utils.My_quickcheck.S_with_sexp
+      C4f_utils.My_quickcheck.S_with_sexp
         with type t := Fir.Expression.t Fir.Atomic_fetch.t
   end) : S = Storelike.Make (struct
     let name = prefix_name Common.Id.("insert" @: B.name_suffix)
@@ -154,7 +154,7 @@ module Insert = struct
     let dst_type = Fir.Type.Basic.int ~is_atomic:true ()
 
     module Quickcheck (Src : Fir.Env_types.S) (Dst : Fir.Env_types.S) :
-      Act_utils.My_quickcheck.S_with_sexp
+      C4f_utils.My_quickcheck.S_with_sexp
         with type t = Fir.Expression.t Fir.Atomic_fetch.t =
       Fir_gen.Expr.Atomic_fetch_int_nops (Dst) (Src)
   end)

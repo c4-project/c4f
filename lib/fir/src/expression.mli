@@ -117,7 +117,7 @@ val sub : t -> t -> t
 val lvalue : Lvalue.t -> t
 (** [lvalue lv] lifts a lvalue [lv] to an expression. *)
 
-val variable : Act_common.C_id.t -> t
+val variable : C4f_common.C_id.t -> t
 (** [variable v] lifts a variable reference [v] to an expression. *)
 
 val of_variable_str_exn : string -> t

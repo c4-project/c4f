@@ -16,7 +16,7 @@ open Core
 let parse_config_failures ~(file : Fpath.t) ~(path : Fpath.t) :
     unit Or_error.t =
   ignore file ;
-  let r = Act_config.Frontend.load (Plumbing.Input.of_fpath path) in
+  let r = C4f_config.Frontend.load (Plumbing.Input.of_fpath path) in
   Fmt.(pr "@[%a@]@." (result ~ok:(always "No failures.") ~error:Error.pp)) r ;
   Ok ()
 

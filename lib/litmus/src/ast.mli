@@ -15,7 +15,7 @@ open Base
 
 (** Initialisation blocks. *)
 module Init : sig
-  type 'const elt = {id: Act_common.C_id.t; value: 'const} [@@deriving sexp]
+  type 'const elt = {id: C4f_common.C_id.t; value: 'const} [@@deriving sexp]
 
   type 'const t = 'const elt list [@@deriving sexp]
 end
@@ -26,7 +26,7 @@ module Decl : sig
     | Program of 'prog
     | Init of 'const Init.t
     | Post of 'const Postcondition.t
-    | Locations of Act_common.C_id.t list
+    | Locations of C4f_common.C_id.t list
   [@@deriving sexp]
 
   val as_program : (_, 'prog) t -> 'prog option
@@ -41,7 +41,7 @@ module Decl : sig
   (** [as_post decl] returns [Some c] if [decl] is a postcondition [c], and
       [None] otherwise. *)
 
-  val as_locations : (_, _) t -> Act_common.C_id.t list option
+  val as_locations : (_, _) t -> C4f_common.C_id.t list option
   (** [as_post decl] returns [Some ls] if [decl] is a location list [ls], and
       [None] otherwise. *)
 end
@@ -50,7 +50,7 @@ end
 
 (** The type of litmus ASTs. *)
 type ('const, 'prog) t =
-  { language: Act_common.C_id.t
+  { language: C4f_common.C_id.t
   ; name: string
   ; decls: ('const, 'prog) Decl.t list }
 [@@deriving sexp]
@@ -71,13 +71,13 @@ val get_programs : (_, 'prog) Decl.t list -> 'prog list
 
 val get_init :
      ('const, _) Decl.t list
-  -> (Act_common.C_id.t, 'const) List.Assoc.t Or_error.t
+  -> (C4f_common.C_id.t, 'const) List.Assoc.t Or_error.t
 
 val get_post :
   ('const, _) Decl.t list -> 'const Postcondition.t option Or_error.t
 
 val get_locations :
-  (_, _) Decl.t list -> Act_common.C_id.t list option Or_error.t
+  (_, _) Decl.t list -> C4f_common.C_id.t list option Or_error.t
 
 val get_header :
   string -> ('const, _) Decl.t list -> 'const Header.t Or_error.t

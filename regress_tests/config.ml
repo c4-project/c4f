@@ -15,11 +15,11 @@ open Core
 
 let parse_config ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t =
   ignore file ;
-  let r = path |> Plumbing.Input.of_fpath |> Act_config.Global.Load.load in
+  let r = path |> Plumbing.Input.of_fpath |> C4f_config.Global.Load.load in
   Fmt.(
     pr "@[%a@]@."
       (result
-         ~ok:(vbox Act_config.Reify.pp)
+         ~ok:(vbox C4f_config.Reify.pp)
          ~error:(any "UNEXPECTED ERROR:@ " ++ Error.pp)))
     r ;
   Ok ()

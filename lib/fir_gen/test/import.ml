@@ -13,8 +13,8 @@
 
 module Accessor = Accessor_base
 include Accessor.O
-module Src = Act_fir_gen
+module Src = C4f_fir_gen
 module Q = Base_quickcheck
-module Fir = Act_fir
-module Fir_test = Act_fir_test
-module Utils = Act_utils
+module Fir = C4f_fir
+module Fir_test = C4f_fir_test
+module Utils = C4f_utils

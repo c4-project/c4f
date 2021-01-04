@@ -13,7 +13,7 @@ open Base
 open Import
 
 let printer : Fir.Expression.t -> unit =
-  Fmt.(pr "@[%a@]@." Act_litmus_c.Reify_expr.pp)
+  Fmt.(pr "@[%a@]@." C4f_litmus_c.Reify_expr.pp)
 
 let print_sample (module G : Src.Expr.S) : unit =
   (* Expressions are quite big, so we tone down the generation parameters a

@@ -21,13 +21,13 @@ module Litmus :
     with type t =
           ( Ast.Litmus_lang.Constant.t
           , Ast.Litmus_lang.Program.t )
-          Act_litmus.Ast.t
+          C4f_litmus.Ast.t
 
 (** Frontend for postconditions; used specifically for parsing auxiliary JSON
     files. *)
 module Litmus_post :
   Plumbing.Loadable_types.S
-    with type t = Ast_basic.Constant.t Act_litmus.Postcondition.t
+    with type t = Ast_basic.Constant.t C4f_litmus.Postcondition.t
 
 (** Frontend for FIR, using {!Litmus} as an intermediary. *)
-module Fir : Plumbing.Loadable_types.S with type t = Act_fir.Litmus.Test.t
+module Fir : Plumbing.Loadable_types.S with type t = C4f_fir.Litmus.Test.t

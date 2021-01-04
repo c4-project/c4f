@@ -47,11 +47,11 @@ module On_mem_orders :
     The main quickcheck instance for atomic loads generates any such loads,
     without regard to type safety over a particular typing environment.
 
-    For more interesting quickcheck behaviour, see {!Act_fir_gen}. *)
+    For more interesting quickcheck behaviour, see {!C4f_fir_gen}. *)
 
 (** Generic building block for making custom quickcheck generators. *)
 module Quickcheck_generic
-    (A : Act_utils.My_quickcheck.S_with_sexp with type t := Address.t) : sig
+    (A : C4f_utils.My_quickcheck.S_with_sexp with type t := Address.t) : sig
   type nonrec t = t [@@deriving sexp_of, quickcheck]
 end
 

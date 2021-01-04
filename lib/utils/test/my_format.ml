@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Act_utils.My_format
+open C4f_utils.My_format
 
 let%test_module "pp_c_braces" =
   ( module struct

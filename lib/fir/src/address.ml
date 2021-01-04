@@ -100,7 +100,7 @@ let anonymise = function Lvalue v -> `A v | Ref d -> `B d
 let deanonymise = function `A v -> Lvalue v | `B d -> Ref d
 
 module Quickcheck_generic
-    (Lv : Act_utils.My_quickcheck.S_with_sexp with type t := Lvalue.t) : sig
+    (Lv : C4f_utils.My_quickcheck.S_with_sexp with type t := Lvalue.t) : sig
   type nonrec t = t [@@deriving sexp_of, quickcheck]
 end = struct
   open Base_quickcheck
@@ -147,7 +147,7 @@ let variable_of : ('i, Common.C_id.t, t, [< field]) Accessor.Simple.t =
   [%accessor lvalue_of @> Lvalue.variable_of]
 
 let check_address_var (addr : t) ~(env : Env.t) :
-    Act_common.C_id.t Or_error.t =
+    C4f_common.C_id.t Or_error.t =
   let module A_check = Type_check (struct
     let env = env
   end) in
@@ -164,7 +164,7 @@ let check_address_var (addr : t) ~(env : Env.t) :
     in
     id)
 
-let get_single_known_value (env : Env.t) (id : Act_common.C_id.t) :
+let get_single_known_value (env : Env.t) (id : C4f_common.C_id.t) :
     Constant.t Or_error.t =
   Or_error.(
     env |> Env.known_value ~id

@@ -1,9 +1,9 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_litmus)
+ (name c4f_litmus)
  (public_name c4f.litmus)
- (synopsis "Automagic Compiler Tormentor: Litmus language support")
+ (synopsis "c4f: Litmus language support")
  (modules_without_implementation test_types)
  (preprocess
   (pps ppx_yojson_conv ppx_deriving.std ppx_jane))

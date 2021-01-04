@@ -11,16 +11,16 @@
 
 let%test_module "litmus_id" =
   ( module struct
-    open Act_delitmus.Qualify
+    open C4f_delitmus.Qualify
 
     let%expect_test "example with qualifying" =
-      Fmt.pr "%a@." Act_common.C_id.pp
-        (litmus_id (Act_common.Litmus_id.of_string "0:r0")) ;
+      Fmt.pr "%a@." C4f_common.C_id.pp
+        (litmus_id (C4f_common.Litmus_id.of_string "0:r0")) ;
       [%expect {| t0r0 |}]
 
     let%expect_test "example without qualifying" =
-      Fmt.pr "%a@." Act_common.C_id.pp
+      Fmt.pr "%a@." C4f_common.C_id.pp
         (litmus_id ~qualify_locals:false
-           (Act_common.Litmus_id.of_string "0:r0")) ;
+           (C4f_common.Litmus_id.of_string "0:r0")) ;
       [%expect {| r0 |}]
   end )

@@ -12,7 +12,7 @@
 (** Fuzzer: subjects of fuzzing
 
     This module contains types for thread and litmus tests that are looser
-    and lighter than their {!Act_fir} versions, and more suited to mutation.
+    and lighter than their {!C4f_fir} versions, and more suited to mutation.
 
     Many of these types take a metadata type parameter, but this is mostly
     just to support creating path types over them; in practice, the only
@@ -23,7 +23,7 @@ open Import
 
 (** {1 Shorthand for FIR constructs with subject metadata}
 
-    Compared to the metadata-parametric forms in {!Act_fir}, these don't
+    Compared to the metadata-parametric forms in {!C4f_fir}, these don't
     contain any accessors/constructors/traversals, but do group useful
     functionality that depends on knowing the metadata type.
 
@@ -58,7 +58,7 @@ module Block : sig
 
   (** {3 Specialised constructors}
 
-      For normal constructors, see {!Act_fir.Block}. *)
+      For normal constructors, see {!C4f_fir.Block}. *)
 
   val make_existing : ?statements:Statement.t list -> unit -> t
   (** [make_existing ?statements ()] makes a block, optionally containing the
@@ -80,7 +80,7 @@ end
 module Thread : sig
   (** Transparent type of fuzzable programs. *)
   type t =
-    { decls: Fir.Initialiser.t Act_common.C_named.Alist.t
+    { decls: Fir.Initialiser.t C4f_common.C_named.Alist.t
     ; stms: Statement.t list }
   [@@deriving sexp]
 
@@ -90,7 +90,7 @@ module Thread : sig
   (** [empty] is the empty program. *)
 
   val make :
-       ?decls:Fir.Initialiser.t Act_common.C_named.Alist.t
+       ?decls:Fir.Initialiser.t C4f_common.C_named.Alist.t
     -> ?stms:Statement.t list
     -> unit
     -> t
@@ -106,13 +106,13 @@ module Thread : sig
   val map_decls :
        t
     -> f:
-         (   Fir.Initialiser.t Act_common.C_named.t
-          -> Fir.Initialiser.t Act_common.C_named.t)
+         (   Fir.Initialiser.t C4f_common.C_named.t
+          -> Fir.Initialiser.t C4f_common.C_named.t)
     -> t
   (** [map_decls thd ~f] maps [f] over each decl in [thd]. *)
 
   val to_function :
-    t -> vars:Var.Map.t -> id:int -> unit Fir.Function.t Act_common.C_named.t
+    t -> vars:Var.Map.t -> id:int -> unit Fir.Function.t C4f_common.C_named.t
   (** [to_function prog ~vars ~id] lifts a subject-program [prog] with ID
       [prog_id] back into a Litmus function, adding a parameter list
       generated from [vars] and erasing any metadata. *)
@@ -132,7 +132,7 @@ end
 (** Fuzzable representation of a litmus test. *)
 module Test : sig
   (** Transparent type of fuzzable litmus tests. *)
-  type t = (Fir.Constant.t, Thread.t) Act_litmus.Test.Raw.t [@@deriving sexp]
+  type t = (Fir.Constant.t, Thread.t) C4f_litmus.Test.Raw.t [@@deriving sexp]
 
   val add_new_thread : t -> t
   (** [add_new_thread test] appends a new, empty thread onto [test]'s threads
@@ -173,7 +173,7 @@ module Test : sig
   (** {3 Helpers for mutating tests} *)
 
   val declare_var :
-    t -> Act_common.Litmus_id.t -> Fir.Initialiser.t -> t Or_error.t
+    t -> C4f_common.Litmus_id.t -> Fir.Initialiser.t -> t Or_error.t
   (** [declare_var subject var init] adds [var] with initialiser [init] to
       [subject]'s init block or thread initialisers with the initial value
       [initial_value]. *)

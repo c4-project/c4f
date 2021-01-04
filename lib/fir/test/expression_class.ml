@@ -12,7 +12,7 @@
 open Base
 
 open struct
-  module Src = Act_fir
+  module Src = C4f_fir
 end
 
 let test_fragment : Src.Expression.t Lazy.t =
@@ -20,7 +20,7 @@ let test_fragment : Src.Expression.t Lazy.t =
     Src.(
       Expression.(
         eq
-          (add (int_lit 27) (variable (Act_common.C_id.of_string "foo")))
+          (add (int_lit 27) (variable (C4f_common.C_id.of_string "foo")))
           (sub (int_lit 53)
              (atomic_fetch
                 (Atomic_fetch.make

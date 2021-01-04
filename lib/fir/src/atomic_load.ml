@@ -72,7 +72,7 @@ module Type_check (E : Env_types.S) = struct
 end
 
 module Quickcheck_generic
-    (A : Act_utils.My_quickcheck.S_with_sexp with type t := Address.t) : sig
+    (A : C4f_utils.My_quickcheck.S_with_sexp with type t := Address.t) : sig
   type nonrec t = t [@@deriving sexp_of, quickcheck]
 end = struct
   type nonrec t = t

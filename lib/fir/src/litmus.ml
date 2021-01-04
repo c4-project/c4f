@@ -13,7 +13,7 @@ open Base
 open Import
 
 module Lang :
-  Act_litmus.Test_types.Basic
+  C4f_litmus.Test_types.Basic
     with type Statement.t =
           [`Stm of unit Statement.t | `Decl of Initialiser.t Common.C_named.t]
      and type Program.t = unit Function.t Common.C_named.t
@@ -53,7 +53,7 @@ module Lang :
   let name = "C"
 end
 
-module Test = Act_litmus.Test.Make (Lang)
+module Test = C4f_litmus.Test.Make (Lang)
 
 module Var = struct
   module Record = struct
@@ -108,7 +108,7 @@ module Var = struct
                  @> Function.Access.parameters))
       |> merge_and_expand_parameters init
       |> Or_error.tag ~tag:"couldn't deduce global parameters"
-      >>| Tx.Alist.map_left ~f:Act_common.Litmus_id.global)
+      >>| Tx.Alist.map_left ~f:C4f_common.Litmus_id.global)
 
   let make_local_alist (tid : int) (prog : Test.Lang.Program.t)
       ~(starts_at : int) : (Common.Litmus_id.t, Record.t) List.Assoc.t =
@@ -124,7 +124,7 @@ module Var = struct
         , {Record.ty; param_index; initial_value= Some value} ))
 
   let make_alist (vast : Test.t) :
-      (Act_common.Litmus_id.t, Record.t) List.Assoc.t Or_error.t =
+      (C4f_common.Litmus_id.t, Record.t) List.Assoc.t Or_error.t =
     let init = Test.init vast in
     let programs = Test.threads vast in
     Or_error.Let_syntax.(

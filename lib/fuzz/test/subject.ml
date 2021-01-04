@@ -13,18 +13,18 @@ open Base
 open Import
 
 module Test_data = struct
-  let init : Fir.Constant.t Act_common.C_named.Alist.t Lazy.t =
+  let init : Fir.Constant.t C4f_common.C_named.Alist.t Lazy.t =
     lazy
-      [ (Act_common.C_id.of_string "x", Fir.Constant.int 27)
-      ; (Act_common.C_id.of_string "y", Fir.Constant.int 53) ]
+      [ (C4f_common.C_id.of_string "x", Fir.Constant.int 27)
+      ; (C4f_common.C_id.of_string "y", Fir.Constant.int 53) ]
 
-  let body_decls : Fir.Initialiser.t Act_common.C_named.Alist.t Lazy.t =
+  let body_decls : Fir.Initialiser.t C4f_common.C_named.Alist.t Lazy.t =
     lazy
-      [ ( Act_common.C_id.of_string "r0"
+      [ ( C4f_common.C_id.of_string "r0"
         , Fir.
             { Initialiser.ty= Fir.Type.int ~is_atomic:true ()
             ; value= Fir.Constant.int 4004 } )
-      ; ( Act_common.C_id.of_string "r1"
+      ; ( C4f_common.C_id.of_string "r1"
         , Fir.
             { Initialiser.ty= Fir.Type.int ~is_atomic:false ()
             ; value= Fir.Constant.int 8008 } ) ]
@@ -57,7 +57,7 @@ module Test_data = struct
           ; Src.Subject.Statement.make_generated_prim
               Fir.(
                 Accessor.construct Prim_statement.label
-                  (Act_common.C_id.of_string "kappa_kappa")) ]
+                  (C4f_common.C_id.of_string "kappa_kappa")) ]
           [])
 
   let sample_known_false_if : Src.Subject.Statement.t Lazy.t =
@@ -181,11 +181,11 @@ module Test_data = struct
       Fir.
         [ Src.Subject.Statement.make_generated_prim
             (Accessor.construct Prim_statement.label
-               (Act_common.C_id.of_string "loop"))
+               (C4f_common.C_id.of_string "loop"))
         ; mk_always_true_if Fir.Expression.truth []
             [ Src.Subject.Statement.make_generated_prim
                 (Accessor.construct Prim_statement.goto
-                   (Act_common.C_id.of_string "loop")) ] ]
+                   (C4f_common.C_id.of_string "loop")) ] ]
 
   let thread1 : Src.Subject.Thread.t Lazy.t =
     Lazy.map ~f:(fun stms -> Src.Subject.Thread.make ~stms ()) thread1_stms
@@ -199,8 +199,8 @@ module Test_data = struct
     Lazy.Let_syntax.(
       let%bind init = init in
       let%map threads = threads in
-      let header = Act_litmus.Header.make ~name:"example" ~init () in
-      Act_litmus.Test.Raw.make ~header ~threads)
+      let header = C4f_litmus.Header.make ~name:"example" ~init () in
+      C4f_litmus.Test.Raw.make ~header ~threads)
 
   module Path = struct
     (* These will need manually synchronising with the statements above. *)
@@ -296,7 +296,7 @@ end
 let%test_module "has_statements checks" =
   ( module struct
     let test (matching : Fir.Statement_class.t list) : unit =
-      Act_utils.Io.print_bool
+      C4f_utils.Io.print_bool
         (Src.Subject.Test.has_statements ~matching
            (Lazy.force Test_data.test))
 
@@ -312,7 +312,7 @@ let%test_module "has_statements checks" =
 let%test_module "has_statements_not_matching" =
   ( module struct
     let test (one_of : Fir.Statement_class.t list) : unit =
-      Act_utils.Io.print_bool
+      C4f_utils.Io.print_bool
         (Src.Subject.Test.has_statements_not_matching ~one_of
            (Lazy.force Test_data.test))
 
@@ -334,21 +334,21 @@ let%test_module "list_to_litmus" =
   ( module struct
     type r = Fir.Litmus.Lang.Program.t list [@@deriving sexp_of]
 
-    let env = Lazy.force Act_fir_test.Env.test_env
+    let env = Lazy.force C4f_fir_test.Env.test_env
 
     let vars : Src.Var.Map.t =
       env
-      |> Act_utils.My_map.map_with_keys
-           (module Act_common.Litmus_id)
+      |> C4f_utils.My_map.map_with_keys
+           (module C4f_common.Litmus_id)
            ~f:(fun ~key ~data ->
-             let lit = Act_common.Litmus_id.global key in
+             let lit = C4f_common.Litmus_id.global key in
              let ty = Accessor.get Fir.Env.Record.type_of data in
              (lit, Src.Var.Record.make_existing Global ty))
-      |> Or_error.ok_exn |> Act_common.Scoped_map.of_litmus_id_map
+      |> Or_error.ok_exn |> C4f_common.Scoped_map.of_litmus_id_map
 
     let test programs =
       let res = Src.Subject.Thread.list_to_litmus programs ~vars in
-      Fmt.(pr "@[<v>%a@]@." (list ~sep:sp Act_litmus_c.Reify.pp_func) res)
+      Fmt.(pr "@[<v>%a@]@." (list ~sep:sp C4f_litmus_c.Reify.pp_func) res)
 
     let%expect_test "list_to_litmus: empty test" = test [] ; [%expect {| |}]
 

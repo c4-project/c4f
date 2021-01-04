@@ -21,9 +21,9 @@ let%test_module "make_alist" =
       [ (Common.C_id.of_string "x", Src.Constant.int 0)
       ; (Common.C_id.of_string "y", Src.Constant.int 0) ]
 
-    let postcondition : Src.Constant.t Act_litmus.Postcondition.t =
-      Act_litmus.Postcondition.exists
-        Act_litmus.Predicate.Infix.(
+    let postcondition : Src.Constant.t C4f_litmus.Postcondition.t =
+      C4f_litmus.Postcondition.exists
+        C4f_litmus.Predicate.Infix.(
           Common.Litmus_id.of_string "0:r0" ==? Src.Constant.int 1
           && Common.Litmus_id.of_string "0:r1" ==? Src.Constant.int 0
           && Common.Litmus_id.of_string "x" ==? Src.Constant.int 1
@@ -94,8 +94,8 @@ let%test_module "make_alist" =
       [ Common.C_named.make ~name:(Common.C_id.of_string "P0") p0
       ; Common.C_named.make ~name:(Common.C_id.of_string "P1") p1 ]
 
-    let header : Src.Constant.t Act_litmus.Header.t =
-      Act_litmus.Header.make ~init ~postcondition ~name:"test_10" ()
+    let header : Src.Constant.t C4f_litmus.Header.t =
+      C4f_litmus.Header.make ~init ~postcondition ~name:"test_10" ()
 
     let test : Src.Litmus.Test.t =
       Or_error.ok_exn (Src.Litmus.Test.make ~header ~threads)

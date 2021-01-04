@@ -11,9 +11,9 @@
 
 (** Common imports *)
 
-module Src = Act_fuzz_actions
-module Common = Act_common
-module Fir = Act_fir
-module Fuzz = Act_fuzz
-module Fuzz_test = Act_fuzz_test
-module Utils = Act_utils
+module Src = C4f_fuzz_actions
+module Common = C4f_common
+module Fir = C4f_fir
+module Fuzz = C4f_fuzz
+module Fuzz_test = C4f_fuzz_test
+module Utils = C4f_utils

@@ -71,9 +71,9 @@ module End_check = struct
   module M = struct
     type t =
       | Stm_class of
-          Act_fir.Class_constraint.t * Act_fir.Statement_class.t list
+          C4f_fir.Class_constraint.t * C4f_fir.Statement_class.t list
       | Stm_no_meta_restriction of Metadata.Restriction.t
-      | Has_no_expressions_of_class of Act_fir.Expression_class.t list
+      | Has_no_expressions_of_class of C4f_fir.Expression_class.t list
     [@@deriving compare, equal, sexp]
   end
 
@@ -81,7 +81,7 @@ module End_check = struct
   include Comparable.Make (M)
 
   let is_ok (check : t) ~(stm : Subject.Statement.t) : bool =
-    Act_fir.Statement_class.(
+    C4f_fir.Statement_class.(
       match check with
       | Stm_class (req, templates) ->
           satisfies stm ~req ~templates
@@ -92,7 +92,7 @@ module End_check = struct
       | Has_no_expressions_of_class templates ->
           not
             (Subject.Statement.On_expressions.exists stm
-               ~f:(Act_fir.Expression_class.rec_matches_any ~templates)))
+               ~f:(C4f_fir.Expression_class.rec_matches_any ~templates)))
 
   let check (check : t) ~(stm : Subject.Statement.t) : unit Or_error.t =
     Tx.Or_error.unless_m (is_ok check ~stm) ~f:(fun () ->
@@ -153,7 +153,7 @@ let transaction_safe : t =
   require_end_checks
     (Set.of_list
        (module End_check)
-       [ Stm_class (Has_not_any, [Act_fir.Statement_class.atomic ()])
+       [ Stm_class (Has_not_any, [C4f_fir.Statement_class.atomic ()])
        ; Has_no_expressions_of_class [Atomic None] ])
 
 let live_loop_surround : t =

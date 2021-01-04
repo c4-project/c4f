@@ -13,8 +13,8 @@ open Base
 
 open struct
   module A = Accessor_base
-  module Ac = Act_common
-  module Fir = Act_fir
+  module Ac = C4f_common
+  module Fir = C4f_fir
 end
 
 module Statement = struct
@@ -118,29 +118,29 @@ module Thread = struct
 end
 
 module Test = struct
-  type t = (Fir.Constant.t, Thread.t) Act_litmus.Test.Raw.t [@@deriving sexp]
+  type t = (Fir.Constant.t, Thread.t) C4f_litmus.Test.Raw.t [@@deriving sexp]
 
   let add_new_thread : t -> t =
-    Act_litmus.Test.Raw.add_thread_at_end ~thread:Thread.empty
+    C4f_litmus.Test.Raw.add_thread_at_end ~thread:Thread.empty
 
   let threads_of_litmus (test : Fir.Litmus.Test.t) : Thread.t list =
     test |> Fir.Litmus.Test.threads
     |> List.map ~f:(fun x -> Thread.of_function A.(x.@(Ac.C_named.value)))
 
   let of_litmus (test : Fir.Litmus.Test.t) : t =
-    Act_litmus.Test.Raw.make
+    C4f_litmus.Test.Raw.make
       ~header:(Fir.Litmus.Test.header test)
       ~threads:(threads_of_litmus test)
 
   let to_litmus (subject : t) ~(vars : Var.Map.t) :
       Fir.Litmus.Test.t Or_error.t =
-    let header = Act_litmus.Test.Raw.header subject in
-    let threads = Act_litmus.Test.Raw.threads subject in
+    let header = C4f_litmus.Test.Raw.header subject in
+    let threads = C4f_litmus.Test.Raw.threads subject in
     let threads' = Thread.list_to_litmus ~vars threads in
     Fir.Litmus.Test.make ~header ~threads:threads'
 
   let exists_thread (p : t) ~(f : Thread.t -> bool) : bool =
-    List.exists (Act_litmus.Test.Raw.threads p) ~f
+    List.exists (C4f_litmus.Test.Raw.threads p) ~f
 
   let exists_top_statement (p : t) ~(f : Statement.t -> bool) : bool =
     exists_thread p ~f:(Thread.exists_top_statement ~f)
@@ -160,12 +160,12 @@ module Test = struct
   let add_var_to_init (subject : t) (name : Ac.C_id.t)
       (init : Fir.Initialiser.t) : t Or_error.t =
     let initial_value = Accessor.get Fir.Initialiser.value init in
-    Act_litmus.Test.Raw.try_map_header subject
-      ~f:(Act_litmus.Header.add_global ~name ~initial_value)
+    C4f_litmus.Test.Raw.try_map_header subject
+      ~f:(C4f_litmus.Header.add_global ~name ~initial_value)
 
   let add_var_to_thread (subject : t) (index : int) (name : Ac.C_id.t)
       (init : Fir.Initialiser.t) : t Or_error.t =
-    Act_litmus.Test.Raw.try_map_thread subject ~index ~f:(fun thread ->
+    C4f_litmus.Test.Raw.try_map_thread subject ~index ~f:(fun thread ->
         Ok (Thread.add_decl thread ~name ~init))
 
   let declare_var (subject : t) (var : Ac.Litmus_id.t)

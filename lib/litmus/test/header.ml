@@ -11,8 +11,8 @@
 
 open Base
 open Stdio
-module A = Act_litmus.Header
-module Ac = Act_common
+module A = C4f_litmus.Header
+module Ac = C4f_common
 
 module J = A.Json (struct
   include Int
@@ -22,10 +22,10 @@ module J = A.Json (struct
   let t_of_yojson : Yojson.Safe.t -> int = Yojson.Safe.Util.to_int
 
   let parse_post_string (s : string) :
-      int Act_litmus.Postcondition.t Or_error.t =
+      int C4f_litmus.Postcondition.t Or_error.t =
     Or_error.try_with (fun () ->
         s |> Parsexp.Single.parse_string_exn
-        |> [%of_sexp: int Act_litmus.Postcondition.t])
+        |> [%of_sexp: int C4f_litmus.Postcondition.t])
 end)
 
 let%test_module "JSON deserialisation" =

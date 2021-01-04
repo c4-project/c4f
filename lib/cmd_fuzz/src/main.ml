@@ -12,7 +12,7 @@
 open Core_kernel
 
 let readme () : string =
-  Act_utils.My_string.format_for_readme
+  C4f_utils.My_string.format_for_readme
     {| The ACT fuzzer adds nonsense to C litmus tests, producing larger
 (but hopefully observationally-refining) C litmus tests that exercise more
 of a C compiler's control flows.

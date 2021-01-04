@@ -1,9 +1,9 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_fuzz_run)
+ (name c4f_fuzz_run)
  (public_name c4f.fuzz_run)
- (synopsis "Automagic Compiler Tormentor: FIR fuzzer runner")
+ (synopsis "c4f: FIR fuzzer runner")
  (preprocess
   (pps ppx_deriving.std ppx_accessor ppx_jane))
  (libraries sexplib0 base base.caml core_kernel stdio splittable_random

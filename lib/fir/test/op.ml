@@ -12,7 +12,7 @@
 open Base
 
 open struct
-  module Src = Act_fir
+  module Src = C4f_fir
   module Q = Base_quickcheck
 end
 

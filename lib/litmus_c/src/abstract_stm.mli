@@ -20,5 +20,5 @@ val ensure_statements :
 (** [ensure_statements xs] makes sure that each member of [xs] is a
     statement. *)
 
-val model : Ast.Stm.t -> unit Act_fir.Statement.t Or_error.t
+val model : Ast.Stm.t -> unit C4f_fir.Statement.t Or_error.t
 (** [model ast] tries to model a C statement AST as a FIR statement. *)

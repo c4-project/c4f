@@ -11,28 +11,28 @@
 
 open Base
 open Base_quickcheck
-module Src = Act_litmus_c
+module Src = C4f_litmus_c
 
 let%test_unit "Pretty-printing and parsing postconditions is idempotent" =
   Test.run_exn
     ( module struct
-      type t = Act_litmus_c.Ast_basic.Constant.t Act_litmus.Postcondition.t
+      type t = C4f_litmus_c.Ast_basic.Constant.t C4f_litmus.Postcondition.t
       [@@deriving sexp, quickcheck]
     end )
     ~f:(fun pcond ->
       let pcond_str : string =
         Fmt.str "@[%a@]"
-          (Act_litmus.Postcondition.pp
-             ~pp_const:Act_litmus_c.Ast_basic.Constant.pp)
+          (C4f_litmus.Postcondition.pp
+             ~pp_const:C4f_litmus_c.Ast_basic.Constant.pp)
           pcond
       in
       [%test_result:
-        Act_litmus_c.Ast.Litmus_lang.Constant.t Act_litmus.Postcondition.t
+        C4f_litmus_c.Ast.Litmus_lang.Constant.t C4f_litmus.Postcondition.t
         Or_error.t] ~here:[[%here]]
         ~equal:
           [%compare.equal:
-            Act_litmus_c.Ast.Litmus_lang.Constant.t
-            Act_litmus.Postcondition.t
+            C4f_litmus_c.Ast.Litmus_lang.Constant.t
+            C4f_litmus.Postcondition.t
             Or_error.t]
         ~expect:(Or_error.return pcond)
         ~message:

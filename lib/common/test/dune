@@ -1,7 +1,7 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_common_test)
+ (name c4f_common_test)
  (inline_tests)
  (preprocess
   (pps ppx_jane))

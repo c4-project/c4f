@@ -14,7 +14,7 @@ open Import
 open Base_quickcheck
 
 let print_sample (generator : Src.Path.With_meta.t Generator.t) : unit =
-  Act_utils.My_quickcheck.print_sample
+  C4f_utils.My_quickcheck.print_sample
     ~printer:(Fmt.pr "@[%a@]@." Src.Path.With_meta.pp)
     ( module struct
       type t = Src.Path.With_meta.t [@@deriving compare, sexp]

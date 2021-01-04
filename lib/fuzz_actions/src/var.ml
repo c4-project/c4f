@@ -79,7 +79,7 @@ struct
           let* is_global = flag Fuzz.Config_tables.make_global_flag in
           let* nthreads =
             lift
-              (Fn.compose Act_litmus.Test.Raw.num_threads
+              (Fn.compose C4f_litmus.Test.Raw.num_threads
                  (Accessor.get
                     (Context.actx @> Availability.Context.subject)))
           in
@@ -174,7 +174,7 @@ module Volatile :
     match Common.Litmus_id.as_local id with
     | Some (index, target) ->
         (* TODO(@MattWindsor91): surely this can be cleaned up *)
-        Act_litmus.Test.Raw.try_map_thread subject ~index ~f:(fun x ->
+        C4f_litmus.Test.Raw.try_map_thread subject ~index ~f:(fun x ->
             Ok
               (Fuzz.Subject.Thread.map_decls x
                  ~f:(update_thread_decl ~target)))

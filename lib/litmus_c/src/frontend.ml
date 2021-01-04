@@ -13,7 +13,7 @@ open Base
 
 (* TODO(@MattWindsor91): lexer hack *)
 
-module Normal = Act_utils.Frontend.Make (struct
+module Normal = C4f_utils.Frontend.Make (struct
   type ast = Ast.Translation_unit.t
 
   module I = Parser.MenhirInterpreter
@@ -29,9 +29,9 @@ end)
 let litmus_predefined_types =
   Set.of_list (module String) ["atomic_bool"; "atomic_int"; "bool"]
 
-module Litmus = Act_utils.Frontend.Make (struct
+module Litmus = C4f_utils.Frontend.Make (struct
   type ast =
-    (Ast.Litmus_lang.Constant.t, Ast.Litmus_lang.Program.t) Act_litmus.Ast.t
+    (Ast.Litmus_lang.Constant.t, Ast.Litmus_lang.Program.t) C4f_litmus.Ast.t
 
   module I = Parser.MenhirInterpreter
 
@@ -42,8 +42,8 @@ module Litmus = Act_utils.Frontend.Make (struct
   let message = C_messages.message
 end)
 
-module Litmus_post = Act_utils.Frontend.Make (struct
-  type ast = Ast_basic.Constant.t Act_litmus.Postcondition.t
+module Litmus_post = C4f_utils.Frontend.Make (struct
+  type ast = Ast_basic.Constant.t C4f_litmus.Postcondition.t
 
   module I = Parser.MenhirInterpreter
 
@@ -58,7 +58,7 @@ module Fir =
   Plumbing.Loadable.Make_chain
     (Litmus)
     (struct
-      type dst = Act_fir.Litmus.Test.t
+      type dst = C4f_fir.Litmus.Test.t
 
       let f = Abstract.litmus_of_raw_ast
     end)

@@ -12,7 +12,7 @@
 open Base
 
 open struct
-  module Au = Act_utils
+  module Au = C4f_utils
 end
 
 type t = {verbose: bool; vf: Formatter.t; wf: Formatter.t; ef: Formatter.t}

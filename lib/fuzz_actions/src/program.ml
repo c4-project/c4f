@@ -35,7 +35,7 @@ module Make_empty : Fuzz.Action_types.S with type Payload.t = unit = struct
         let* cap = param Fuzz.Config_tables.thread_cap_param in
         let+ threads =
           lift_acc
-            (Context.subject @> Accessor.getter Act_litmus.Test.Raw.threads)
+            (Context.subject @> Accessor.getter C4f_litmus.Test.Raw.threads)
         in
         List.length threads < cap))
 
@@ -77,7 +77,7 @@ module Label :
     let tid = Fuzz.Path.tid path.path in
     let lid = Common.Litmus_id.local tid name in
     let label_stm =
-      Act_fir.(
+      C4f_fir.(
         name
         |> Accessor.construct Prim_statement.label
         |> Fuzz.Subject.Statement.make_generated_prim)

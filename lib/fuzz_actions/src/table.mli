@@ -13,10 +13,10 @@
 
 open Base
 
-val actions : Act_fuzz.Action.With_default_weight.t list Lazy.t
+val actions : C4f_fuzz.Action.With_default_weight.t list Lazy.t
 (** [actions] is a listing of all actions with their default weights. *)
 
 val action_map :
-  Act_fuzz.Action.With_default_weight.t Map.M(Act_common.Id).t Lazy.t
+  C4f_fuzz.Action.With_default_weight.t Map.M(C4f_common.Id).t Lazy.t
 (** [action_map] lazily evaluates to a map from action IDs to their actions.
     It is, effectively, a rearrangement of the data available in [actions]. *)

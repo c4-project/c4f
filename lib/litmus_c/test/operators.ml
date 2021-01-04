@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-module Src = Act_litmus_c
+module Src = C4f_litmus_c
 
 let%test_module "Bin" =
   ( module struct
@@ -18,7 +18,7 @@ let%test_module "Bin" =
     let%test_module "binds_tighter" =
       ( module struct
         let test (this : Bin.t) (than : Bin.t) : unit =
-          Act_utils.Io.print_bool (Bin.binds_tighter this ~than)
+          C4f_utils.Io.print_bool (Bin.binds_tighter this ~than)
 
         let%expect_test "equality binds tighter than comma" =
           test `Eq `Comma ;

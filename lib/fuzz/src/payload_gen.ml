@@ -14,7 +14,7 @@ open Import
 
 module Context = struct
   type t =
-    { action_id: Act_common.Id.t
+    { action_id: C4f_common.Id.t
     ; actx: Availability.Context.t
     ; random: Splittable_random.State.t }
   [@@deriving accessors, make]
@@ -38,7 +38,7 @@ let lift_opt_gen (type a) (g : a Opt_gen.t) : a t =
           ~tag:
             [%message
               "Payload generator instantiation failed."
-                ~action_id:(action_id : Act_common.Id.t)]
+                ~action_id:(action_id : C4f_common.Id.t)]
       in
       (* TODO(@MattWindsor91): size? *)
       Or_error.(g' >>| Base_quickcheck.Generator.generate ~size:10 ~random))
@@ -52,7 +52,7 @@ let path_with_flags (kind : Path_kind.t) ~(filter : Path_filter.t) :
   >>| Path_producers.try_gen ~filter ~kind
   >>= lift_opt_gen
 
-let flag (id : Act_common.Id.t) : bool t =
+let flag (id : C4f_common.Id.t) : bool t =
   let* param_map = lift_acc Context.params in
   let* random = lift_acc Context.random in
   let+ f = Inner.return (Param_map.get_flag param_map ~id) in
@@ -65,18 +65,18 @@ let env_at_path ?(predicates : (Var.Record.t -> bool) list = [])
   vars
   >>| Var.Map.env_satisfying_all ~predicates ~scope:(Local (Path.tid path))
 
-let fresh_var ?(such_that : (Act_common.Litmus_id.t -> bool) option)
-    (scope : Act_common.Scope.t) : Act_common.Litmus_id.t t =
+let fresh_var ?(such_that : (C4f_common.Litmus_id.t -> bool) option)
+    (scope : C4f_common.Scope.t) : C4f_common.Litmus_id.t t =
   let* v = vars in
   let cgen = Var.Map.gen_fresh_var v in
   let gen' =
     Base_quickcheck.Generator.(
       match such_that with
       | None ->
-          map cgen ~f:(fun id -> Act_common.Litmus_id.make ~id ~scope)
+          map cgen ~f:(fun id -> C4f_common.Litmus_id.make ~id ~scope)
       | Some f ->
           filter_map cgen ~f:(fun id ->
-              let id' = Act_common.Litmus_id.make ~id ~scope in
+              let id' = C4f_common.Litmus_id.make ~id ~scope in
               Option.some_if (f id') id'))
   in
   lift_quickcheck gen'

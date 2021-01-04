@@ -29,7 +29,7 @@ module M = struct
 end
 
 include M
-include Act_utils.Enum.Extend_table (M)
+include C4f_utils.Enum.Extend_table (M)
 
 (* Make doubly sure that we don't degrade memory orders to invalid
    equivalents. *)

@@ -7,6 +7,7 @@ whole story.
 
 - Removed the `examples` directory and `c11_lahav.cat`; use the
   [c4-corpora](https://github.com/c4-project/c4-corpora) repository instead.
+- `act-fuzz` is now `c4f`; `act-c` is now `c4f-c`.
 
 ## 2021-Jan-02
 

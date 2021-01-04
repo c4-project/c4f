@@ -15,7 +15,7 @@ open Core
 
 let dump_header_of_file ~file:(_ : Fpath.t) ~(path : Fpath.t) :
     unit Or_error.t =
-  Act_litmus_c.Header.Filters.run_dump
+  C4f_litmus_c.Header.Filters.run_dump
     (Plumbing.Input.of_fpath path)
     Plumbing.Output.stdout
 

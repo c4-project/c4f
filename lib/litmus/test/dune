@@ -1,7 +1,7 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_litmus_test)
+ (name c4f_litmus_test)
  (inline_tests)
  (preprocess
   (pps ppx_jane))

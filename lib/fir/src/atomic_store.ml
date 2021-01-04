@@ -88,9 +88,9 @@ Travesty.Traversable.Make0 (struct
 end)
 
 module Quickcheck_generic
-    (Src : Act_utils.My_quickcheck.S_with_sexp with type t := Expression.t)
-    (Dst : Act_utils.My_quickcheck.S_with_sexp with type t := Address.t) :
-  Act_utils.My_quickcheck.S_with_sexp with type t = t = struct
+    (Src : C4f_utils.My_quickcheck.S_with_sexp with type t := Expression.t)
+    (Dst : C4f_utils.My_quickcheck.S_with_sexp with type t := Address.t) :
+  C4f_utils.My_quickcheck.S_with_sexp with type t = t = struct
   type nonrec t = t
 
   let sexp_of_t = sexp_of_t

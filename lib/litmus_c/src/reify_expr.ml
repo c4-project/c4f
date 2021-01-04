@@ -12,7 +12,7 @@
 open Base
 
 open struct
-  module Fir = Act_fir
+  module Fir = C4f_fir
 end
 
 let rel_bop : Fir.Op.Binary.Rel.t -> Operators.Bin.t = function

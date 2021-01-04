@@ -12,7 +12,7 @@
 open Base
 
 open struct
-  module Src = Act_fuzz
+  module Src = C4f_fuzz
 end
 
 module Test_common = struct
@@ -20,25 +20,25 @@ module Test_common = struct
     Src.State.Monad.(
       all_unit
         [ register_var
-            (Act_common.Litmus_id.of_string "gen1")
-            Act_fir.
+            (C4f_common.Litmus_id.of_string "gen1")
+            C4f_fir.
               { Initialiser.ty= Type.(int ~is_pointer:true ~is_atomic:true ())
-              ; value= Act_fir.Constant.int 1337 }
+              ; value= C4f_fir.Constant.int 1337 }
         ; register_var
-            (Act_common.Litmus_id.of_string "gen2")
-            Act_fir.
+            (C4f_common.Litmus_id.of_string "gen2")
+            C4f_fir.
               { Initialiser.ty= Type.(int ~is_pointer:true ~is_atomic:true ())
-              ; value= Act_fir.Constant.int (-55) }
+              ; value= C4f_fir.Constant.int (-55) }
         ; register_var
-            (Act_common.Litmus_id.of_string "gen3")
-            Act_fir.
+            (C4f_common.Litmus_id.of_string "gen3")
+            C4f_fir.
               { Initialiser.ty=
                   Type.(int ~is_pointer:true ~is_atomic:false ())
-              ; value= Act_fir.Constant.int 1998 }
+              ; value= C4f_fir.Constant.int 1998 }
         ; register_var
-            (Act_common.Litmus_id.of_string "gen4")
-            Act_fir.
+            (C4f_common.Litmus_id.of_string "gen4")
+            C4f_fir.
               { Initialiser.ty=
                   Type.(int ~is_pointer:true ~is_atomic:false ())
-              ; value= Act_fir.Constant.int (-4) } ])
+              ; value= C4f_fir.Constant.int (-4) } ])
 end

@@ -16,22 +16,22 @@ open Core
 
 (* TODO(@MattWindsor91): merge with `act-fuzz list_actions`? *)
 
-let weight_summary (c : Act_fuzz_run.Config.t) : unit Or_error.t =
+let weight_summary (c : C4f_fuzz_run.Config.t) : unit Or_error.t =
   Stdio.print_endline "# Weights" ;
-  let ws = Act_fuzz_run.Config.Weight_summary.summarise c in
-  Act_utils.My_format.fdump Stdio.stdout
-    Act_fuzz_run.Config.Weight_summary.pp ws ;
+  let ws = C4f_fuzz_run.Config.Weight_summary.summarise c in
+  C4f_utils.My_format.fdump Stdio.stdout
+    C4f_fuzz_run.Config.Weight_summary.pp ws ;
   Ok ()
 
-let param_summary (c : Act_fuzz_run.Config.t) : unit Or_error.t =
+let param_summary (c : C4f_fuzz_run.Config.t) : unit Or_error.t =
   Stdio.print_endline "# Params" ;
   Or_error.Let_syntax.(
-    let%map ps = Act_fuzz_run.Config.Param_summary.summarise c in
-    Act_utils.My_format.fdump Stdio.stdout
-      Act_fuzz_run.Config.Param_summary.pp ps)
+    let%map ps = C4f_fuzz_run.Config.Param_summary.summarise c in
+    C4f_utils.My_format.fdump Stdio.stdout
+      C4f_fuzz_run.Config.Param_summary.pp ps)
 
 let run (_test_dir : Fpath.t) : unit Or_error.t =
-  let c = Act_fuzz_run.Config.make () in
+  let c = C4f_fuzz_run.Config.make () in
   Or_error.all_unit [weight_summary c; param_summary c]
 
 let command : Command.t =

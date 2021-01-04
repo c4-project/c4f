@@ -11,7 +11,7 @@
 
 open Base
 module Tx = Travesty_base_exts
-module Ac = Act_common
+module Ac = C4f_common
 
 type 'const t =
   { locations: Ac.C_id.t list option
@@ -45,11 +45,11 @@ let map_tids (type k) (aux : k t) ~(f : int -> int) : k t =
 module BT :
   Travesty.Bi_traversable_types.S1_right
     with type 'const t := 'const t
-     and type left = Act_common.C_id.t =
+     and type left = C4f_common.C_id.t =
 Travesty.Bi_traversable.Make1_right (struct
   type nonrec 'const t = 'const t
 
-  type left = Act_common.C_id.t
+  type left = C4f_common.C_id.t
 
   module On (M : Applicative.S) = struct
     module MA = Travesty_base_exts.Alist.On (M)

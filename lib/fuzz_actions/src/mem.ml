@@ -104,18 +104,18 @@ module Strengthen :
   module On_atomics =
     Travesty.Traversable.Chain0
       (Fuzz.Subject.Statement.On_primitives)
-      (Act_fir.Prim_statement.On_atomics)
+      (C4f_fir.Prim_statement.On_atomics)
   module On_mos =
     Travesty.Traversable.Chain0
       (On_atomics)
       (Fir.Atomic_statement.On_mem_orders)
 
-  let change_mo (stm : Fuzz.Subject.Statement.t) ~(mo : Act_fir.Mem_order.t)
+  let change_mo (stm : Fuzz.Subject.Statement.t) ~(mo : C4f_fir.Mem_order.t)
       ~(can_weaken : bool) : Fuzz.Subject.Statement.t Or_error.t =
     let direction = if can_weaken then `Any else `Strengthen in
     Ok
       (On_mos.map stm
-         ~f:(Act_fir.Mem_order.try_change ~replacement:mo ~direction))
+         ~f:(C4f_fir.Mem_order.try_change ~replacement:mo ~direction))
 
   let run (subject : Fuzz.Subject.Test.t)
       ~payload:({path; mo; can_weaken} : Payload.t) :

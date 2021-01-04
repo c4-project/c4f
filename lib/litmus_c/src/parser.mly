@@ -111,10 +111,10 @@
 %start <Ast.Translation_unit.t> translation_unit
 
 (* Endpoint for Litmus tests. *)
-%start <(Ast.Litmus_lang.Constant.t, Ast.Litmus_lang.Program.t) Act_litmus.Ast.t> litmus
+%start <(Ast.Litmus_lang.Constant.t, Ast.Litmus_lang.Program.t) C4f_litmus.Ast.t> litmus
 
 (* Endpoint for standalone Litmus postconditions. *)
-%start <Ast_basic.Constant.t Act_litmus.Postcondition.t> litmus_postcondition
+%start <Ast_basic.Constant.t C4f_litmus.Postcondition.t> litmus_postcondition
 
 %%
 
@@ -140,50 +140,50 @@ let endsemi(x) == terminated(x, ";")
 
 let litmus :=
   | language = IDENTIFIER; name = IDENTIFIER; decls = litmus_declaration+; EOF;
-    { { Act_litmus.Ast.language = Act_common.C_id.of_string language
+    { { C4f_litmus.Ast.language = C4f_common.C_id.of_string language
       ; name
       ; decls
       }
     }
 
 let litmus_declaration :=
-  | ~ = litmus_initialiser;   < Act_litmus.Ast.Decl.Init >
-  | ~ = litmus_postcondition; < Act_litmus.Ast.Decl.Post >
-  | ~ = litmus_locations;     < Act_litmus.Ast.Decl.Locations >
-  | ~ = function_definition;  < Act_litmus.Ast.Decl.Program >
+  | ~ = litmus_initialiser;   < C4f_litmus.Ast.Decl.Init >
+  | ~ = litmus_postcondition; < C4f_litmus.Ast.Decl.Post >
+  | ~ = litmus_locations;     < C4f_litmus.Ast.Decl.Locations >
+  | ~ = function_definition;  < C4f_litmus.Ast.Decl.Program >
 
 let litmus_init_stm :=
-  | id = c_identifier; "="; value = constant; { { Act_litmus.Ast.Init.id; value } }
+  | id = c_identifier; "="; value = constant; { { C4f_litmus.Ast.Init.id; value } }
 
 let litmus_initialiser := braced(list(endsemi(litmus_init_stm)))
 
 let litmus_locations := LIT_LOCATIONS; bracketed(slist(c_identifier))
 
 let litmus_quantifier :=
-  | LIT_EXISTS; { Act_litmus.Postcondition.Quantifier.Exists }
-  | LIT_FORALL; { Act_litmus.Postcondition.Quantifier.For_all }
+  | LIT_EXISTS; { C4f_litmus.Postcondition.Quantifier.Exists }
+  | LIT_FORALL; { C4f_litmus.Postcondition.Quantifier.For_all }
 
 let litmus_postcondition :=
   | quantifier = litmus_quantifier; predicate = parened(litmus_disjunct);
-    { Act_litmus.Postcondition.make ~quantifier ~predicate }
+    { C4f_litmus.Postcondition.make ~quantifier ~predicate }
 
 let litmus_disjunct :=
   | litmus_conjunct
-  | l = litmus_disjunct; LIT_OR; r = litmus_conjunct; { Act_litmus.Predicate.Infix.(l || r) }
+  | l = litmus_disjunct; LIT_OR; r = litmus_conjunct; { C4f_litmus.Predicate.Infix.(l || r) }
 
 let litmus_conjunct :=
   | litmus_primitive
-  | l = litmus_conjunct; LIT_AND; r = litmus_primitive; { Act_litmus.Predicate.Infix.(l && r) }
+  | l = litmus_conjunct; LIT_AND; r = litmus_primitive; { C4f_litmus.Predicate.Infix.(l && r) }
 
 let litmus_primitive :=
   | ~ = parened(litmus_disjunct); <>
-  | LIT_TRUE; { Act_litmus.Predicate.bool true }
-  | LIT_FALSE; { Act_litmus.Predicate.bool false }
-  | l = litmus_identifier; "=="; r = constant; { Act_litmus.Predicate.Infix.(l ==? r) }
+  | LIT_TRUE; { C4f_litmus.Predicate.bool true }
+  | LIT_FALSE; { C4f_litmus.Predicate.bool false }
+  | l = litmus_identifier; "=="; r = constant; { C4f_litmus.Predicate.Infix.(l ==? r) }
 
 let litmus_identifier :=
-  | i = IDENTIFIER;                   { Litmus.Id.global (Act_common.C_id.of_string i) }
-  | t = INT_LIT; ":"; i = IDENTIFIER; { Litmus.Id.local t (Act_common.C_id.of_string i) }
+  | i = IDENTIFIER;                   { Litmus.Id.global (C4f_common.C_id.of_string i) }
+  | t = INT_LIT; ":"; i = IDENTIFIER; { Litmus.Id.local t (C4f_common.C_id.of_string i) }
 
 (*
  * C grammar
@@ -231,7 +231,7 @@ let type_specifier :=
   | ~ = struct_or_union_specifier; < `Struct_or_union >
   | ~ = enum_specifier           ; < `Enum >
   (* Statically known typedefs only. *)
-  | t = TYPEDEF_NAME             ; { `Defined_type (Act_common.C_id.of_string t) }
+  | t = TYPEDEF_NAME             ; { `Defined_type (C4f_common.C_id.of_string t) }
 
 let type_qualifier :=
   | CONST   ; { `Const }
@@ -510,7 +510,7 @@ let constant :=
 
 let c_identifier :=
   | restricted_c_identifier
-  | ~ = keyword_as_identifier; < Act_common.C_id.of_string >
+  | ~ = keyword_as_identifier; < C4f_common.C_id.of_string >
 
 let keyword_as_identifier :=
 (* Contextual keywords that aren't in keyword position, and are therefore just
@@ -523,4 +523,4 @@ let keyword_as_identifier :=
 
 let restricted_c_identifier :=
 (* The lexer should do C identifier validation for us by construction. *)
-  | ~ = IDENTIFIER; < Act_common.C_id.of_string >
+  | ~ = IDENTIFIER; < C4f_common.C_id.of_string >

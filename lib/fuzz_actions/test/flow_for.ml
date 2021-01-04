@@ -23,7 +23,7 @@ let%test_module "test runs" =
       Lazy.force Fuzz_test.Subject.Test_data.test
 
     let counter : Src.Flow_for.Payload.Counter.t =
-      {var= Act_common.Litmus_id.of_string "0:i"; ty= Fir.Type.int ()}
+      {var= C4f_common.Litmus_id.of_string "0:i"; ty= Fir.Type.int ()}
 
     let%test_module "Insert.kv_never" =
       ( module struct

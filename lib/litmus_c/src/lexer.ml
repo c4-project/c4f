@@ -119,10 +119,10 @@ let rec token (typedefs : Set.M(String).t) (lexbuf : S.lexbuf) : token =
   | eol ->
       token typedefs lexbuf
   | "/*" ->
-      Act_utils.Lex_utils.skip_c_comment lexbuf ;
+      C4f_utils.Lex_utils.skip_c_comment lexbuf ;
       token typedefs lexbuf
   | "//" ->
-      Act_utils.Lex_utils.skip_line lexbuf ;
+      C4f_utils.Lex_utils.skip_line lexbuf ;
       token typedefs lexbuf
   | ( Opt '-'
     , ( num, ('.', Opt num | Opt '.', num, 'e', Opt (Chars "+-"), num)
@@ -133,7 +133,7 @@ let rec token (typedefs : Set.M(String).t) (lexbuf : S.lexbuf) : token =
   | Opt '-', num ->
       INT_LIT (Int.of_string (S.Utf8.lexeme lexbuf))
   | '\'' ->
-      Act_utils.Lex_utils.read_char (fun x -> CHAR_LIT x) lexbuf
+      C4f_utils.Lex_utils.read_char (fun x -> CHAR_LIT x) lexbuf
   | ';' ->
       SEMI
   | ',' ->
@@ -227,9 +227,9 @@ let rec token (typedefs : Set.M(String).t) (lexbuf : S.lexbuf) : token =
   | '.' ->
       DOT
   | "typedef" ->
-      Act_utils.Frontend.lex_error "Typedefs aren't supported." lexbuf
+      C4f_utils.Frontend.lex_error "Typedefs aren't supported." lexbuf
   | '#' ->
-      Act_utils.Frontend.lex_error
+      C4f_utils.Frontend.lex_error
         "C preprocessor directives aren't supported." lexbuf
   (* Litmus extensions *)
   | "/\\" ->
@@ -241,6 +241,6 @@ let rec token (typedefs : Set.M(String).t) (lexbuf : S.lexbuf) : token =
   | eof ->
       EOF
   | _ ->
-      Act_utils.Frontend.lex_error
+      C4f_utils.Frontend.lex_error
         ("Unexpected char: " ^ S.Utf8.lexeme lexbuf)
         lexbuf

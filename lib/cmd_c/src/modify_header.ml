@@ -17,14 +17,14 @@ let run ?(name : [< `Keep | `Replace_with of string] option)
     unit Or_error.t =
   Or_error.Let_syntax.(
     let%bind changes =
-      Act_litmus_c.Header.Change_set.of_args ?name ?postcondition ()
+      C4f_litmus_c.Header.Change_set.of_args ?name ?postcondition ()
     in
     Common_cmd.Args.With_files.run_filter
-      (Act_litmus_c.Header.Filters.run_modify ~changes)
+      (C4f_litmus_c.Header.Filters.run_modify ~changes)
       args)
 
 let readme () : string =
-  Act_utils.My_string.format_for_readme
+  C4f_utils.My_string.format_for_readme
     {|
 Applies patches to the header content in a C litmus test.
 |}

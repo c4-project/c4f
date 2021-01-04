@@ -11,7 +11,7 @@
 
 open Base
 open Stdio
-open Act_common.Id
+open C4f_common.Id
 
 let%expect_test "equality is case-insensitive" =
   print_s

@@ -11,13 +11,13 @@
 
 open Base
 open Base_quickcheck
-module Src = Act_litmus
+module Src = C4f_litmus
 
 let print_pred (p : int Src.Postcondition.t) : unit =
   Fmt.pr "@[%a@]@." (Src.Postcondition.pp ~pp_const:Int.pp) p
 
 let%expect_test "quickcheck generator sample" =
-  Act_utils.My_quickcheck.print_sample ~printer:print_pred
+  C4f_utils.My_quickcheck.print_sample ~printer:print_pred
     ( module struct
       type t = int Src.Postcondition.t [@@deriving compare, sexp, quickcheck]
     end ) ;
@@ -101,7 +101,7 @@ let%expect_test "pretty-printing example" =
          ~predicate:
            Src.Predicate.(
              Infix.(
-               Act_common.Litmus_id.global_of_string_exn "foo" ==? 10
-               && Act_common.Litmus_id.global_of_string_exn "bar" ==? 30
-               || Act_common.Litmus_id.global_of_string_exn "baz" ==? 50)))) ;
+               C4f_common.Litmus_id.global_of_string_exn "foo" ==? 10
+               && C4f_common.Litmus_id.global_of_string_exn "bar" ==? 30
+               || C4f_common.Litmus_id.global_of_string_exn "baz" ==? 50)))) ;
   [%expect {| exists ((foo == 10 /\ bar == 30) \/ baz == 50) |}]

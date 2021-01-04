@@ -20,12 +20,12 @@ open Base
     The distinction between [Pred_elt] and {{!Pred} Pred} mainly exists to
     make conversion to and from other languages, like [Blang], easier. *)
 module Element : sig
-  type 'const t = Bool of bool | Eq of Act_common.Litmus_id.t * 'const
+  type 'const t = Bool of bool | Eq of C4f_common.Litmus_id.t * 'const
   [@@deriving sexp, compare, equal, quickcheck]
 
   (** {2 Constructors} *)
 
-  val ( ==? ) : Act_common.Litmus_id.t -> 'const -> 'const t
+  val ( ==? ) : C4f_common.Litmus_id.t -> 'const -> 'const t
 
   (** {2 Traversals} *)
 
@@ -34,14 +34,14 @@ module Element : sig
   include
     Travesty.Bi_traversable_types.S1_right
       with type 'c t := 'c t
-       and type left = Act_common.Litmus_id.t
+       and type left = C4f_common.Litmus_id.t
 
   (** Bi-traversing monadically over all C identifiers in a predicate on the
       left, and all constants on the right. *)
   module On_c_identifiers :
     Travesty.Bi_traversable_types.S1_right
       with type 'c t = 'c t
-       and type left = Act_common.C_id.t
+       and type left = C4f_common.C_id.t
 end
 
 (** {1 Predicate binary operators} *)
@@ -84,7 +84,7 @@ val optimising_and_seq : 'const t Sequence.t -> 'const t
 (** [optimising_and_seq xs] conjoins all of the elements in [xs] using
     [optimising_and]. *)
 
-val eq : Act_common.Litmus_id.t -> 'const -> 'const t
+val eq : C4f_common.Litmus_id.t -> 'const -> 'const t
 (** [eq k v] is a primitive equality test that key [k] maps to value [v]. *)
 
 val bool : bool -> 'const t
@@ -93,7 +93,7 @@ val bool : bool -> 'const t
 (** {3 Infix constructors} *)
 
 module Infix : sig
-  val ( ==? ) : Act_common.Litmus_id.t -> 'const -> 'const t
+  val ( ==? ) : C4f_common.Litmus_id.t -> 'const -> 'const t
   (** [k ==? v] is [eq k v]. *)
 
   val ( && ) : 'const t -> 'const t -> 'const t
@@ -128,14 +128,14 @@ val reduce :
 include
   Travesty.Bi_traversable_types.S1_right
     with type 'c t := 'c t
-     and type left = Act_common.Litmus_id.t
+     and type left = C4f_common.Litmus_id.t
 
 (** Bi-traversing monadically over all C identifiers in a predicate on the
     left, and all constants on the right. *)
 module On_c_identifiers :
   Travesty.Bi_traversable_types.S1_right
     with type 'c t = 'c t
-     and type left = Act_common.C_id.t
+     and type left = C4f_common.C_id.t
 
 (** {2 Pretty-printing} *)
 

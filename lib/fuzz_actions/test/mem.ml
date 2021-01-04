@@ -20,7 +20,7 @@ let%test_module "running payloads on test subject" =
         (Lazy.force Fuzz_test.Subject.Test_data.test)
         ~payload
 
-    let test (lpath : Fuzz.Path.t Lazy.t) (mo : Act_fir.Mem_order.t)
+    let test (lpath : Fuzz.Path.t Lazy.t) (mo : C4f_fir.Mem_order.t)
         (can_weaken : bool) : unit =
       let path = Fuzz.Path_meta.With_meta.make (Lazy.force lpath) in
       let pld = Src.Mem.Strengthen_payload.make ~path ~mo ~can_weaken in
@@ -42,7 +42,7 @@ let%test_module "running payloads on test subject" =
         @@ Stm.in_if @@ If.in_branch true @@ Stms.stm 0)
 
     let%expect_test "failed SC->RLX" =
-      test sc_action Act_fir.Mem_order.Relaxed false ;
+      test sc_action C4f_fir.Mem_order.Relaxed false ;
       [%expect
         {|
       void
@@ -98,7 +98,7 @@ let%test_module "running payloads on test subject" =
         3:r0: int*, =?, @P3, existing, [] |}]
 
     let%expect_test "forced SC->RLX" =
-      test sc_action Act_fir.Mem_order.Relaxed true ;
+      test sc_action C4f_fir.Mem_order.Relaxed true ;
       [%expect
         {|
       void
@@ -154,7 +154,7 @@ let%test_module "running payloads on test subject" =
         3:r0: int*, =?, @P3, existing, [] |}]
 
     let%expect_test "successful RLX->SC" =
-      test rlx_action Act_fir.Mem_order.Seq_cst false ;
+      test rlx_action C4f_fir.Mem_order.Seq_cst false ;
       [%expect
         {|
       void
@@ -210,7 +210,7 @@ let%test_module "running payloads on test subject" =
         3:r0: int*, =?, @P3, existing, [] |}]
 
     let%expect_test "ignored RLX->ACQ" =
-      test rlx_action Act_fir.Mem_order.Acquire true ;
+      test rlx_action C4f_fir.Mem_order.Acquire true ;
       [%expect
         {|
       void
@@ -266,7 +266,7 @@ let%test_module "running payloads on test subject" =
         3:r0: int*, =?, @P3, existing, [] |}]
 
     let%expect_test "part-ignored nested change (outer)" =
-      test nest_action Act_fir.Mem_order.Acquire true ;
+      test nest_action C4f_fir.Mem_order.Acquire true ;
       [%expect
         {|
       void
@@ -322,7 +322,7 @@ let%test_module "running payloads on test subject" =
         3:r0: int*, =?, @P3, existing, [] |}]
 
     let%expect_test "part-ignored nested change (inner)" =
-      test nest_action Act_fir.Mem_order.Release true ;
+      test nest_action C4f_fir.Mem_order.Release true ;
       [%expect
         {|
       void

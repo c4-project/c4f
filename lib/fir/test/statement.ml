@@ -13,7 +13,7 @@ open Base
 
 open struct
   module A = Accessor
-  module Src = Act_fir
+  module Src = C4f_fir
 end
 
 let cond : Src.Expression.t = Src.Expression.bool_lit true
@@ -60,7 +60,7 @@ let mkafetch ?(mo : Src.Mem_order.t = Seq_cst) (op : Src.Op.Fetch.t)
 let%test_module "has_if_statements" =
   ( module struct
     let test (s : unit Src.Statement.t) : unit =
-      Act_utils.Io.print_bool (Src.Statement.has_if_statements s)
+      C4f_utils.Io.print_bool (Src.Statement.has_if_statements s)
 
     let%expect_test "nop" = test nop ; [%expect {| false |}]
 

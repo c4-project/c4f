@@ -84,7 +84,7 @@ let typing : t -> Type.t Map.M(Common.C_id).t =
   Map.map ~f:(Accessor.get Record.type_of)
 
 let variables_with_known_values :
-    t -> (Type.t * Constant.t) Map.M(Act_common.C_id).t =
+    t -> (Type.t * Constant.t) Map.M(C4f_common.C_id).t =
   Map.filter_map ~f:(fun (data : Record.t) ->
       Option.Let_syntax.(
         let%map kv = data.@?(Record.known_value) in

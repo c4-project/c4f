@@ -36,7 +36,7 @@ let always : t = M.return true
 
 let has_threads : t =
   M.lift (fun {subject; _} ->
-      subject |> Act_litmus.Test.Raw.threads |> List.is_empty |> not)
+      subject |> C4f_litmus.Test.Raw.threads |> List.is_empty |> not)
 
 let is_filter_constructible (filter : Path_filter.t) ~(kind : Path_kind.t) :
     t =
@@ -49,7 +49,7 @@ let has_variables ~(predicates : (Var.Record.t -> bool) list) : t =
      path. *)
   let f = Travesty_base_exts.List.all ~predicates in
   M.lift (fun {state= {vars; _}; _} ->
-      Map.exists ~f (Act_common.Scoped_map.to_litmus_id_map vars))
+      Map.exists ~f (C4f_common.Scoped_map.to_litmus_id_map vars))
 
 let in_var_cap ~(after_adding : int) : t =
   if after_adding <= 0 then M.return true

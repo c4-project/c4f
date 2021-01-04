@@ -111,8 +111,8 @@ let%test_module "environment modules in a test map" =
       in
       let vals =
         env
-        |> Act_fir.Env.variables_of_basic_type ~basic
-        |> Act_fir.Env.typing |> Map.to_alist
+        |> C4f_fir.Env.variables_of_basic_type ~basic
+        |> C4f_fir.Env.typing |> Map.to_alist
       in
       print_s [%sexp (vals : (Common.C_id.t, Fir.Type.t) List.Assoc.t)]
 
@@ -133,7 +133,7 @@ let%test_module "environment modules in a test map" =
           ~scope:Common.Scope.Global ~predicates:[]
       in
       let vals =
-        env |> Act_fir.Env.variables_with_known_values |> Map.to_alist
+        env |> C4f_fir.Env.variables_with_known_values |> Map.to_alist
       in
       print_s
         [%sexp

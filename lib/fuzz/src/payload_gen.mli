@@ -38,7 +38,7 @@ end
     Think of the generator monad as a sort of reader monad over {!Context.t}. *)
 
 include
-  Act_utils.Reader_types.S
+  C4f_utils.Reader_types.S
     with type 'a Inner.t = 'a Or_error.t
      and type ctx = Context.t
 

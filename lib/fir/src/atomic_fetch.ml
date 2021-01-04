@@ -49,9 +49,9 @@ let to_tuple (x : 'e t) : Address.t * 'e * Mem_order.t * Op.Fetch.t =
   (x.obj, x.arg, x.mo, x.op)
 
 module Quickcheck_generic
-    (A : Act_utils.My_quickcheck.S_with_sexp with type t := Address.t)
-    (O : Act_utils.My_quickcheck.S_with_sexp with type t := Op.Fetch.t)
-    (E : Act_utils.My_quickcheck.S_with_sexp) : sig
+    (A : C4f_utils.My_quickcheck.S_with_sexp with type t := Address.t)
+    (O : C4f_utils.My_quickcheck.S_with_sexp with type t := Op.Fetch.t)
+    (E : C4f_utils.My_quickcheck.S_with_sexp) : sig
   type nonrec t = E.t t [@@deriving sexp_of, quickcheck]
 end = struct
   type nonrec t = E.t t

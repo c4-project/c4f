@@ -14,7 +14,7 @@ open Import
 
 let bool_lit (b : bool) : Ast.Expr.t =
   Ast.Expr.Identifier
-    (Act_common.C_id.of_string (if b then "true" else "false"))
+    (C4f_common.C_id.of_string (if b then "true" else "false"))
 
 let constant : Fir.Constant.t -> Ast.Expr.t =
   Fir.Constant.reduce
@@ -56,7 +56,7 @@ let type_to_pointer (ty : Fir.Type.t) : Ast_basic.Pointer.t option =
 let id_declarator (ty : Fir.Type.t) (id : Common.C_id.t) : Ast.Declarator.t =
   {pointer= type_to_pointer ty; direct= Id id}
 
-let func_parameter (ty : Fir.Type.t) (id : Act_common.C_id.t) :
+let func_parameter (ty : Fir.Type.t) (id : C4f_common.C_id.t) :
     Ast.Param_decl.t =
   {qualifiers= type_to_specs ty; declarator= `Concrete (id_declarator ty id)}
 

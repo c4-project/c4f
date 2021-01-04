@@ -15,7 +15,7 @@ open Import
 
 open struct
   module A = Accessor
-  module Fir = Act_fir
+  module Fir = C4f_fir
 end
 
 let%test_module "paths applied to example code" =
@@ -30,7 +30,7 @@ let%test_module "paths applied to example code" =
       let {Src.State.vars; _} = Lazy.force State.Test_data.state in
       Fmt.(
         pr "@[<v>%a@]@."
-          (Act_utils.My_format.pp_or_error
+          (C4f_utils.My_format.pp_or_error
              Action.Test_utils.(using (Fn.flip reify_test vars) pp_tu))
           (Src.Path_consumers.consume
              (Lazy.force Subject.Test_data.test)

@@ -1,8 +1,8 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_fir_test)
- (synopsis "Automagic Compiler Tormentor: FIR tests")
+ (name c4f_fir_test)
+ (synopsis "c4f: FIR tests")
  (inline_tests)
  (preprocess
   (pps ppx_jane))

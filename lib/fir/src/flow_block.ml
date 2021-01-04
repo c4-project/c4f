@@ -238,7 +238,7 @@ module While = struct
   end
 
   include M
-  include Act_utils.Enum.Extend_table (M)
+  include C4f_utils.Enum.Extend_table (M)
 end
 
 module Lock = struct

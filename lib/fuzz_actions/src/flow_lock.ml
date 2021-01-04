@@ -31,7 +31,7 @@ module Surround = struct
     (** [path_filter] is the path filter used on paths to statement spans
         being surrounded. *)
   end) : S = Fuzz.Action.Make_surround (struct
-    let name = Act_common.Id.("lock" @: "surround" @: Basic.subname @: empty)
+    let name = C4f_common.Id.("lock" @: "surround" @: Basic.subname @: empty)
 
     let surround_with : string = Basic.lock_type_name ^ " block"
 
@@ -50,7 +50,7 @@ module Surround = struct
 
       let src_exprs : t -> Fir.Expression.t list = Fn.const []
 
-      let gen (_ : Act_fuzz.Path.With_meta.t) : t Fuzz.Payload_gen.t =
+      let gen (_ : C4f_fuzz.Path.With_meta.t) : t Fuzz.Payload_gen.t =
         Fuzz.Payload_gen.return ()
     end
 

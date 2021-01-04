@@ -12,7 +12,7 @@
 open Core_kernel (* for Validated *)
 
 open struct
-  module Ac = Act_common
+  module Ac = C4f_common
   module Tx = Travesty_base_exts
 end
 
@@ -227,7 +227,7 @@ module Make (Lang : Test_types.Basic) :
           |> Option.all
           |> Tx.Option.With_errors.map_m
                ~f:
-                 (Act_utils.My_map.merge_with_overlap
+                 (C4f_utils.My_map.merge_with_overlap
                     ~compare:Lang.Type.compare)
           |> Or_error.tag ~tag:"Threads disagree on global variables sets."
 

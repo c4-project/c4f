@@ -10,7 +10,7 @@
 (license MIT)
 (maintainers "Matt Windsor <m.windsor@imperial.ac.uk>")
 (authors "Matt Windsor <m.windsor@imperial.ac.uk>")
-(source (github MattWindsor91/c4f))
+(source (github c4-project/c4f))
 (documentation "https://automagic-compiler-tormentor.readthedocs.io")
 
 (package

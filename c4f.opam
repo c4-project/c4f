@@ -6,9 +6,9 @@ description:
 maintainer: ["Matt Windsor <m.windsor@imperial.ac.uk>"]
 authors: ["Matt Windsor <m.windsor@imperial.ac.uk>"]
 license: "MIT"
-homepage: "https://github.com/MattWindsor91/c4f"
+homepage: "https://github.com/c4-project/c4f"
 doc: "https://automagic-compiler-tormentor.readthedocs.io"
-bug-reports: "https://github.com/MattWindsor91/c4f/issues"
+bug-reports: "https://github.com/c4-project/c4f/issues"
 depends: [
   "dune" {>= "2.0"}
   "ocaml" {>= "4.09" & < "4.11"}
@@ -43,4 +43,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "git+https://github.com/MattWindsor91/c4f.git"
+dev-repo: "git+https://github.com/c4-project/c4f.git"

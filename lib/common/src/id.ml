@@ -23,7 +23,7 @@ module T = struct
 
   let to_string : t -> string = String.concat ~sep:"."
 
-  let module_name : string = "act.Act_common.Id"
+  let module_name : string = "act.C4f_common.Id"
 end
 
 include T

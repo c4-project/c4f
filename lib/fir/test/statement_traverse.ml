@@ -13,7 +13,7 @@ open Base
 
 open struct
   module A = Accessor
-  module Src = Act_fir
+  module Src = C4f_fir
   module Stm = Statement
 end
 
@@ -39,7 +39,7 @@ let%test_module "On_lvalues and On_addresses" =
               [ A.(
                   construct
                     (Statement.prim' @> Prim_statement.goto)
-                    (Act_common.C_id.of_string "not_you")) ]
+                    (C4f_common.C_id.of_string "not_you")) ]
           ; Stm.mkif
               ~cond:
                 Expression.(
@@ -49,15 +49,15 @@ let%test_module "On_lvalues and On_addresses" =
               [ A.(
                   construct
                     (Statement.prim' @> Prim_statement.label)
-                    (Act_common.C_id.of_string "not_you")) ]
+                    (C4f_common.C_id.of_string "not_you")) ]
               [] ])
 
-    let print_exprs : Act_litmus_c.Ast.Expr.t list -> unit =
-      Fmt.(pr "@[<v>%a@]@." (list ~sep:sp Act_litmus_c.Ast.Expr.pp))
+    let print_exprs : C4f_litmus_c.Ast.Expr.t list -> unit =
+      Fmt.(pr "@[<v>%a@]@." (list ~sep:sp C4f_litmus_c.Ast.Expr.pp))
 
     let%expect_test "coalesce addresses to list" =
       stm |> M.On_addresses.to_list
-      |> List.map ~f:Act_litmus_c.Reify_prim.address
+      |> List.map ~f:C4f_litmus_c.Reify_prim.address
       |> print_exprs ;
       [%expect
         {|
@@ -104,7 +104,7 @@ let%test_module "On_expressions" =
       let stm' =
         M.On_expressions.map stm ~f:(fun _ -> Src.Expression.int_lit 2)
       in
-      Fmt.pr "@[%a@]@." Act_litmus_c.Reify_stm.pp stm' ;
+      Fmt.pr "@[%a@]@." C4f_litmus_c.Reify_stm.pp stm' ;
       [%expect
         {|
         while (2)
@@ -127,13 +127,13 @@ let%test_module "On_primitives" =
                 [ A.(
                     construct
                       (Statement.prim' @> Prim_statement.label)
-                      (Act_common.C_id.of_string "kappa")) ]
+                      (C4f_common.C_id.of_string "kappa")) ]
                 []
             ; Stm.mkif
                 [ A.(
                     construct
                       (Statement.prim' @> Prim_statement.label)
-                      (Act_common.C_id.of_string "keepo")) ]
+                      (C4f_common.C_id.of_string "keepo")) ]
                 [ A.(
                     construct
                       ( Statement.prim' @> Prim_statement.atomic
@@ -142,12 +142,12 @@ let%test_module "On_primitives" =
             ; A.(
                 construct
                   (Statement.prim' @> Prim_statement.goto)
-                  (Act_common.C_id.of_string "kappa")) ])
+                  (C4f_common.C_id.of_string "kappa")) ])
       in
       let stm' =
         M.On_primitives.map stm ~f:(fun _ -> Src.Prim_statement.return)
       in
-      Fmt.pr "@[%a@]@." Act_litmus_c.Reify_stm.pp stm' ;
+      Fmt.pr "@[%a@]@." C4f_litmus_c.Reify_stm.pp stm' ;
       [%expect
         {|
         while (true)

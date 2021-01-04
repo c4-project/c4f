@@ -10,7 +10,7 @@
    project root for more information. *)
 
 open Base
-module Id = Act_common.Litmus_id
+module Id = C4f_common.Litmus_id
 
 module Quantifier = struct
   module M = struct
@@ -21,7 +21,7 @@ module Quantifier = struct
   end
 
   include M
-  include Act_utils.Enum.Extend_table (M)
+  include C4f_utils.Enum.Extend_table (M)
 end
 
 type 'const t = {quantifier: Quantifier.t; predicate: 'const Predicate.t}
@@ -58,18 +58,18 @@ include BT
 module On_c_identifiers :
   Travesty.Bi_traversable_types.S1_right
     with type 'const t = 'const t
-     and type left = Act_common.C_id.t =
+     and type left = C4f_common.C_id.t =
 Travesty.Bi_traversable.Make1_right (struct
   type nonrec 'const t = 'const t
 
-  type left = Act_common.C_id.t
+  type left = C4f_common.C_id.t
 
   module On (M : Applicative.S) = struct
-    module Lid_cid = Act_common.Litmus_id.On_c_identifiers.On (M)
+    module Lid_cid = C4f_common.Litmus_id.On_c_identifiers.On (M)
     module B = On (M)
 
     let bi_map_m (t : 'a t)
-        ~(left : Act_common.C_id.t -> Act_common.C_id.t M.t)
+        ~(left : C4f_common.C_id.t -> C4f_common.C_id.t M.t)
         ~(right : 'a -> 'b M.t) : 'b t M.t =
       B.bi_map_m ~left:(Lid_cid.map_m ~f:left) ~right t
   end

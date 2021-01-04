@@ -12,19 +12,19 @@
 open Base
 
 open struct
-  module Fir = Act_fir
+  module Fir = C4f_fir
 end
 
 module J :
-  Plumbing.Jsonable_types.S with type t = Fir.Constant.t Act_litmus.Header.t =
-Act_litmus.Header.Json (struct
+  Plumbing.Jsonable_types.S with type t = Fir.Constant.t C4f_litmus.Header.t =
+C4f_litmus.Header.Json (struct
   include Fir.Constant
 
   let parse_post_string (s : string) :
-      Fir.Constant.t Act_litmus.Postcondition.t Or_error.t =
+      Fir.Constant.t C4f_litmus.Postcondition.t Or_error.t =
     Or_error.(
       s |> Frontend.Litmus_post.load_from_string
-      >>= Act_litmus.Postcondition.With_errors.map_right_m
+      >>= C4f_litmus.Postcondition.With_errors.map_right_m
             ~f:Abstract_prim.constant)
 end)
 
@@ -32,13 +32,13 @@ include J
 include Plumbing.Loadable.Of_jsonable (J)
 include Plumbing.Storable.Of_jsonable (J)
 
-let equal = Act_litmus.Header.equal Fir.Constant.equal
+let equal = C4f_litmus.Header.equal Fir.Constant.equal
 
 module Change_set = struct
-  type t = Fir.Constant.t Act_litmus.Header.Change_set.t
+  type t = Fir.Constant.t C4f_litmus.Header.Change_set.t
 
   let parse_pc (pc : string) :
-      Fir.Constant.t Act_litmus.Postcondition.t Or_error.t =
+      Fir.Constant.t C4f_litmus.Postcondition.t Or_error.t =
     Or_error.(
       pc |> Frontend.Litmus_post.load_from_string >>= Abstract.litmus_post)
 
@@ -60,7 +60,7 @@ module Change_set = struct
       let%map parsed_pc =
         try_map_keep_clear_replace ~f:parse_pc postcondition
       in
-      Act_litmus.Header.Change_set.make ~name ~postcondition:parsed_pc ())
+      C4f_litmus.Header.Change_set.make ~name ~postcondition:parsed_pc ())
 end
 
 module Filters = struct
@@ -70,7 +70,7 @@ module Filters = struct
     Or_error.(
       input |> Frontend.Fir.load
       >>= Fir.Litmus.Test.try_map_header ~f:(fun header -> Ok (f header))
-      >>= Act_utils.My_format.odump output (Fmt.vbox Reify.pp_litmus))
+      >>= C4f_utils.My_format.odump output (Fmt.vbox Reify.pp_litmus))
 
   let run_dump (input : Plumbing.Input.t) (output : Plumbing.Output.t) :
       unit Or_error.t =
@@ -81,7 +81,7 @@ module Filters = struct
   let run_modify (input : Plumbing.Input.t) (output : Plumbing.Output.t)
       ~(changes : Change_set.t) : unit Or_error.t =
     lift_on_header input output ~f:(fun header ->
-        Act_litmus.Header.Change_set.apply changes ~header)
+        C4f_litmus.Header.Change_set.apply changes ~header)
 
   let run_replace (input : Plumbing.Input.t) (output : Plumbing.Output.t)
       ~(replacement : t) : unit Or_error.t =

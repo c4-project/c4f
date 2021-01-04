@@ -13,8 +13,8 @@
 
 module Accessor = Accessor_base
 include Accessor.O
-module Src = Act_fir
-module Common = Act_common
-module Utils = Act_utils
+module Src = C4f_fir
+module Common = C4f_common
+module Utils = C4f_utils
 module Q = Base_quickcheck
 module Tx = Travesty_base_exts

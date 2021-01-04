@@ -25,7 +25,7 @@ module Quantifier : sig
   (** The variant type of quantifiers. *)
   type t = Exists | For_all [@@deriving quickcheck]
 
-  include Act_utils.Enum_types.Extension_table with type t := t
+  include C4f_utils.Enum_types.Extension_table with type t := t
 end
 
 (** {1 Postconditions proper} *)
@@ -62,14 +62,14 @@ val predicate : 'const t -> 'const Predicate.t
 include
   Travesty.Bi_traversable_types.S1_right
     with type 'c t := 'c t
-     and type left = Act_common.Litmus_id.t
+     and type left = C4f_common.Litmus_id.t
 
 (** Bi-traversing monadically over all C identifiers in a predicate on the
     left, and all constants on the right. *)
 module On_c_identifiers :
   Travesty.Bi_traversable_types.S1_right
     with type 'c t = 'c t
-     and type left = Act_common.C_id.t
+     and type left = C4f_common.C_id.t
 
 (** {2 Pretty-printing} *)
 

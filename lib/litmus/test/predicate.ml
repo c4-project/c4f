@@ -11,7 +11,7 @@
 
 open Base
 open Base_quickcheck
-module Src = Act_litmus
+module Src = C4f_litmus
 
 let pp_pred : int Src.Predicate.t Fmt.t = Src.Predicate.pp ~pp_const:Int.pp
 

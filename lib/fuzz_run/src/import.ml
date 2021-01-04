@@ -13,8 +13,8 @@
 
 module Accessor = Accessor_base
 include Accessor.O
-module Common = Act_common
-module Fir = Act_fir
-module Fuzz = Act_fuzz
-module Litmus_c = Act_litmus_c
-module Utils = Act_utils
+module Common = C4f_common
+module Fir = C4f_fir
+module Fuzz = C4f_fuzz
+module Litmus_c = C4f_litmus_c
+module Utils = C4f_utils

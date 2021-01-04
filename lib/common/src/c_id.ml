@@ -97,7 +97,7 @@ module Q : Quickcheck.S with type t := t = struct
        no-program-ids. *)
     Qc.Generator.filter_map
       ~f:(Fn.compose Result.ok create)
-      (Act_utils.My_quickcheck.gen_string_initial ~initial:gen_initial_char
+      (C4f_utils.My_quickcheck.gen_string_initial ~initial:gen_initial_char
          ~rest:gen_non_initial_char)
 
   let quickcheck_observer : t Quickcheck.Observer.t =

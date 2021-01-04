@@ -13,9 +13,9 @@
 
 (** Example data based on the 'SBSC' litmus test. *)
 module Sbsc : sig
-  val header : int Act_litmus.Header.t Lazy.t
+  val header : int C4f_litmus.Header.t Lazy.t
   (** An SBSC auxiliary record. *)
 
-  val test : (int, string) Act_litmus.Test.Raw.t Lazy.t
+  val test : (int, string) C4f_litmus.Test.Raw.t Lazy.t
   (** A (highly abstracted) SBSC test, using {{!aux} aux}. *)
 end

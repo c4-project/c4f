@@ -1,10 +1,10 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_utils_test)
+ (name c4f_utils_test)
  (inline_tests)
  (preprocess
   (pps ppx_jane))
  (libraries sedlex sexplib0 splittable_random expect_test_helpers_core
    ppx_expect.common ppx_expect.config_types ppx_inline_test.config stdio
-   base base.caml core_kernel fpath fmt act_utils))
+   base base.caml core_kernel fpath fmt c4f_utils))

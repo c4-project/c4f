@@ -12,7 +12,7 @@
 open Base
 open Base_quickcheck
 module Tx = Travesty_base_exts
-module Ac = Act_common
+module Ac = C4f_common
 
 module Init = struct
   type 'const elt = {id: Ac.C_id.t; value: 'const}

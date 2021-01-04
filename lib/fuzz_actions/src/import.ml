@@ -15,8 +15,8 @@ module Accessor = Accessor_base
 include Accessor.O
 module Tx = Travesty_base_exts
 module Q = Base_quickcheck
-module Common = Act_common
-module Fir = Act_fir
-module Fir_gen = Act_fir_gen
-module Fuzz = Act_fuzz
-module Utils = Act_utils
+module Common = C4f_common
+module Fir = C4f_fir
+module Fir_gen = C4f_fir_gen
+module Fuzz = C4f_fuzz
+module Utils = C4f_utils

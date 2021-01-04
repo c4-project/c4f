@@ -19,7 +19,7 @@ module Mode : sig
     | Thread  (** 'atomic_thread_fence' *)
     | Signal  (** 'atomic_signal_fence' *)
 
-  include Act_utils.Enum_types.Extension_table with type t := t
+  include C4f_utils.Enum_types.Extension_table with type t := t
 end
 
 (** {1 Fences themselves} *)

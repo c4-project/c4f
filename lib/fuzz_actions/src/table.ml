@@ -59,8 +59,8 @@ let actions : Fuzz.Action.With_default_weight.t list Lazy.t =
       ; (module Flow_lock.Surround.Sync) @-> 0 ]
 
 let action_map :
-    Fuzz.Action.With_default_weight.t Map.M(Act_common.Id).t Lazy.t =
+    Fuzz.Action.With_default_weight.t Map.M(C4f_common.Id).t Lazy.t =
   Lazy.(
     actions
     >>| List.map ~f:(fun a -> (Fuzz.Action.With_default_weight.name a, a))
-    >>| Map.of_alist_exn (module Act_common.Id))
+    >>| Map.of_alist_exn (module C4f_common.Id))

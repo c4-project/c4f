@@ -19,26 +19,26 @@ open Base
 
 val func :
      Ast.Function_def.t
-  -> unit Act_fir.Function.t Act_common.C_named.t Or_error.t
+  -> unit C4f_fir.Function.t C4f_common.C_named.t Or_error.t
 (** [func ast] tries to interpret a C function definition AST as a FIR
     function. *)
 
 val translation_unit :
-  Ast.Translation_unit.t -> unit Act_fir.Program.t Or_error.t
+  Ast.Translation_unit.t -> unit C4f_fir.Program.t Or_error.t
 (** [translation_unit ast] tries to interpret a C translation unit AST as a
     FIR program. *)
 
 val litmus_post :
-     Ast_basic.Constant.t Act_litmus.Postcondition.t
-  -> Act_fir.Constant.t Act_litmus.Postcondition.t Or_error.t
+     Ast_basic.Constant.t C4f_litmus.Postcondition.t
+  -> C4f_fir.Constant.t C4f_litmus.Postcondition.t Or_error.t
 (** [litmus_post pc] tries to interpret a Litmus postcondition [pc] over the
     full C AST as one over FIR. *)
 
-val litmus : Ast.Litmus.t -> Act_fir.Litmus.Test.t Or_error.t
+val litmus : Ast.Litmus.t -> C4f_fir.Litmus.Test.t Or_error.t
 (** [litmus test] tries to interpret a Litmus test over the full C AST as one
     over FIR. *)
 
 val litmus_of_raw_ast :
-  Act_litmus.Ast.M(Ast.Litmus_lang).t -> Act_fir.Litmus.Test.t Or_error.t
+  C4f_litmus.Ast.M(Ast.Litmus_lang).t -> C4f_fir.Litmus.Test.t Or_error.t
 (** [litmus_of_raw_ast test] applies [litmus] to the validated form, if
     available, of [test]. *)

@@ -24,9 +24,9 @@ let%test_module "Surround" =
     let test : Fuzz.Subject.Test.t =
       Lazy.force Fuzz_test.Subject.Test_data.test
 
-    let cond : Act_fir.Expression.t =
+    let cond : C4f_fir.Expression.t =
       (* should be true with respect to the test var-map *)
-      Act_fir.(
+      C4f_fir.(
         Expression.(
           l_and
             (eq (of_variable_str_exn "x") (int_lit 27))

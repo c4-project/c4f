@@ -24,7 +24,7 @@ let var_map (ctx : t) : Var_map.t = (aux ctx).var_map
 
 let lookup_initial_value_global (ctx : t) ~(id : Common.C_id.t) :
     Fir.Constant.t option =
-  let init = (aux ctx).litmus_header |> Act_litmus.Header.init in
+  let init = (aux ctx).litmus_header |> C4f_litmus.Header.init in
   List.Assoc.find ~equal:Common.C_id.equal init id
 
 let lookup_initial_value_local (ctx : t) ~(tid : int) ~(id : Common.C_id.t) :

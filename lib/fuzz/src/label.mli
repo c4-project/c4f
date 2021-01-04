@@ -13,11 +13,11 @@
 
 open Base
 
-val labels_of_test : Act_fir.Litmus.Test.t -> Set.M(Act_common.Litmus_id).t
+val labels_of_test : C4f_fir.Litmus.Test.t -> Set.M(C4f_common.Litmus_id).t
 (** [labels_of_test test] extracts the labels from [test]. *)
 
 val gen_fresh :
-     Set.M(Act_common.Litmus_id).t
-  -> Act_common.C_id.t Base_quickcheck.Generator.t
+     Set.M(C4f_common.Litmus_id).t
+  -> C4f_common.C_id.t Base_quickcheck.Generator.t
 (** [gen_fresh set] generates random labels that don't shadow existing labels
     (regardless of thread ID) in [set]. *)

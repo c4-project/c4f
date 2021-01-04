@@ -11,7 +11,7 @@
 
 open Base
 open Stdio
-module Src = Act_fir
+module Src = C4f_fir
 
 let%test_module "Eval" =
   ( module struct
@@ -84,7 +84,7 @@ let%test_module "Eval" =
 
     let var_addr (env : Src.Env.t) (x : string) : Src.Address.t =
       Or_error.ok_exn
-        (Src.Address.of_id_in_env env ~id:(Act_common.C_id.of_string x))
+        (Src.Address.of_id_in_env env ~id:(C4f_common.C_id.of_string x))
 
     let%expect_test "example atomic load" =
       let e = Lazy.force Env.test_env in
@@ -93,7 +93,7 @@ let%test_module "Eval" =
           Expression.(
             atomic_load
               (Atomic_load.make ~src:(var_addr e "y")
-                 ~mo:Act_fir.Mem_order.Seq_cst))) ;
+                 ~mo:C4f_fir.Mem_order.Seq_cst))) ;
       [%expect {| (Ok (Int 53)) |}]
 
     let%expect_test "example atomic load" =
@@ -103,7 +103,7 @@ let%test_module "Eval" =
           Expression.(
             atomic_load
               (Atomic_load.make ~src:(var_addr e "y")
-                 ~mo:Act_fir.Mem_order.Seq_cst))) ;
+                 ~mo:C4f_fir.Mem_order.Seq_cst))) ;
       [%expect {| (Ok (Int 53)) |}]
 
     let%expect_test "example atomic fetches" =
@@ -114,9 +114,9 @@ let%test_module "Eval" =
             sub
               (atomic_fetch
                  (Atomic_fetch.make ~obj:(var_addr e "y") ~arg:(int_lit 1)
-                    ~mo:Act_fir.Mem_order.Seq_cst ~op:Op.Fetch.Sub))
+                    ~mo:C4f_fir.Mem_order.Seq_cst ~op:Op.Fetch.Sub))
               (atomic_fetch
                  (Atomic_fetch.make ~obj:(var_addr e "y") ~arg:(int_lit 1)
-                    ~mo:Act_fir.Mem_order.Seq_cst ~op:Op.Fetch.Add)))) ;
+                    ~mo:C4f_fir.Mem_order.Seq_cst ~op:Op.Fetch.Add)))) ;
       [%expect {| (Ok (Int 1)) |}]
   end )

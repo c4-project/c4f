@@ -12,7 +12,7 @@
 open Base
 
 open struct
-  module Src = Act_common
+  module Src = C4f_common
 end
 
 let%test_module "try_parse" =
@@ -58,7 +58,7 @@ let%test_module "Id tests" =
 let%test_module "is_in_local_scope" =
   ( module struct
     let test (id : Src.Litmus_id.t) : unit =
-      Act_utils.Io.print_bool (Src.Litmus_id.is_in_local_scope id ~from:42)
+      C4f_utils.Io.print_bool (Src.Litmus_id.is_in_local_scope id ~from:42)
 
     let%expect_test "global" =
       test (Src.Litmus_id.global (Src.C_id.of_string "foo")) ;
@@ -77,7 +77,7 @@ let%test_unit "to_memalloy_id doesn't throw when creating local identifiers"
     =
   Base_quickcheck.Test.run_exn
     ( module struct
-      type t = Act_utils.My_quickcheck.Small_non_negative_int.t * Src.C_id.t
+      type t = C4f_utils.My_quickcheck.Small_non_negative_int.t * Src.C_id.t
       [@@deriving sexp, quickcheck]
     end )
     ~f:(fun (t, id) ->
@@ -101,7 +101,7 @@ let%test_module "is_in_scope" =
   ( module struct
     let test (id_str : string) (scope : Src.Scope.t) : unit =
       let id = Src.Litmus_id.of_string id_str in
-      Act_utils.Io.print_bool (Src.Litmus_id.is_in_scope id ~scope)
+      C4f_utils.Io.print_bool (Src.Litmus_id.is_in_scope id ~scope)
 
     let%expect_test "global in global scope" =
       test "foo" Src.Scope.Global ;

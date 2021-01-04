@@ -14,7 +14,7 @@ open Base_quickcheck
 open Import
 
 open struct
-  module Qx = Act_utils.My_quickcheck
+  module Qx = C4f_utils.My_quickcheck
 end
 
 let%test_module "Make" =
@@ -26,7 +26,7 @@ let%test_module "Make" =
             unit =
           Fmt.pr "@[%s@ %a@ =@ %a;@]@."
             (Fir.Type.Basic.to_string basic_type)
-            Common.Litmus_id.pp var Act_litmus_c.Reify_prim.pp_constant
+            Common.Litmus_id.pp var C4f_litmus_c.Reify_prim.pp_constant
             initial_value
 
         let make_gen (scope : Common.Scope.t) :
@@ -75,9 +75,9 @@ let%test_module "Make" =
         let test_type (scope : Common.Scope.t) : unit =
           Test.run_exn (make_gen' scope)
             ~f:(fun Src.Var.Make_payload.{basic_type; initial_value; _} ->
-              let (_ : Act_fir.Type.t) =
+              let (_ : C4f_fir.Type.t) =
                 Or_error.ok_exn
-                  Act_fir.(
+                  C4f_fir.(
                     Type.check_modulo_atomicity (Type.make basic_type)
                       (Constant.type_of initial_value))
               in
@@ -97,21 +97,21 @@ let%test_module "Make" =
             (Lazy.force Fuzz_test.Subject.Test_data.test)
             ~payload
 
-        let test (scope : Act_common.Scope.t) : unit =
+        let test (scope : C4f_common.Scope.t) : unit =
           let pld =
             Src.Var.Make_payload.
-              { basic_type= Act_fir.Type.Basic.int ()
-              ; initial_value= Act_fir.Constant.int 42
+              { basic_type= C4f_fir.Type.Basic.int ()
+              ; initial_value= C4f_fir.Constant.int 42
               ; var=
-                  Act_common.Litmus_id.make ~scope
-                    ~id:(Act_common.C_id.of_string "foo") }
+                  C4f_common.Litmus_id.make ~scope
+                    ~id:(C4f_common.C_id.of_string "foo") }
           in
           let action = test_action pld in
           Fuzz_test.Action.Test_utils.run_and_dump_test action
             ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state)
 
         let%expect_test "local" =
-          test Act_common.Scope.(Local 1) ;
+          test C4f_common.Scope.(Local 1) ;
           [%expect
             {|
           void
@@ -168,7 +168,7 @@ let%test_module "Make" =
             3:r0: int*, =?, @P3, existing, [] |}]
 
         let%expect_test "global" =
-          test Act_common.Scope.Global ;
+          test C4f_common.Scope.Global ;
           [%expect
             {|
       void
@@ -229,7 +229,7 @@ let%test_module "Volatile" =
   ( module struct
     let%test_module "Example runs" =
       ( module struct
-        let test_action (payload : Act_common.Litmus_id.t) :
+        let test_action (payload : C4f_common.Litmus_id.t) :
             Fuzz.Subject.Test.t Fuzz.State.Monad.t =
           Src.Var.Volatile.run
             (Lazy.force Fuzz_test.Subject.Test_data.test)
@@ -237,7 +237,7 @@ let%test_module "Volatile" =
 
         let test (tid : int) (name : string) : unit =
           let pld =
-            Act_common.Litmus_id.local tid (Act_common.C_id.of_string name)
+            C4f_common.Litmus_id.local tid (C4f_common.C_id.of_string name)
           in
           let action = test_action pld in
           Fuzz_test.Action.Test_utils.run_and_dump_test action

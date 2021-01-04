@@ -50,7 +50,7 @@ include Plumbing.Storable_types.S with type t := t
 val run :
      t
   -> Subject.Test.t
-  -> resolve:(Act_common.Id.t -> (module Action_types.S) Or_error.t)
+  -> resolve:(C4f_common.Id.t -> (module Action_types.S) Or_error.t)
   -> Subject.Test.t State.Monad.t
 (** [run t subject ~resolve] applies a trace [t] to test subject [subject],
     using [resolve] to resolve action IDs to their modules. *)

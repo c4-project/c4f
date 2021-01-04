@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-include Act_utils.Frontend.Make (struct
+include C4f_utils.Frontend.Make (struct
   type ast = Ast.t
 
   module I = Parser.MenhirInterpreter

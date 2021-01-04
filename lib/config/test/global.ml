@@ -13,12 +13,12 @@ open Base
 open Stdio
 
 open struct
-  module Src = Act_config
+  module Src = C4f_config
 end
 
 module Data = struct
-  let fuzz : Act_fuzz_run.Config.t Lazy.t =
-    Lazy.from_fun Act_fuzz_run.Config.make
+  let fuzz : C4f_fuzz_run.Config.t Lazy.t =
+    Lazy.from_fun C4f_fuzz_run.Config.make
 
   let global : Src.Global.t Lazy.t =
     Lazy.Let_syntax.(
@@ -31,6 +31,6 @@ let%test_module "accessors" =
     let global = Lazy.force Data.global
 
     let%expect_test "fuzz" =
-      print_s [%sexp (Src.Global.fuzz global : Act_fuzz_run.Config.t)] ;
+      print_s [%sexp (Src.Global.fuzz global : C4f_fuzz_run.Config.t)] ;
       [%expect {| ((weights ()) (params ()) (flags ())) |}]
   end )

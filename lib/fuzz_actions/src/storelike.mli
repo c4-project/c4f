@@ -19,8 +19,8 @@ open Import
 
 (** Make makes an action for generating inserting a storelike statement. *)
 module Make (B : Storelike_types.Basic) :
-  Act_fuzz.Action_types.S
-    with type Payload.t = B.t Act_fuzz.Payload_impl.Pathed.t
+  C4f_fuzz.Action_types.S
+    with type Payload.t = B.t C4f_fuzz.Payload_impl.Pathed.t
 
 (** {1 Helpers for writing storelikes} *)
 

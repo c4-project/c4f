@@ -47,29 +47,29 @@ end
 (** {1 Environment maps} *)
 
 (** Full environments are maps of {!Record.t}. *)
-type t = Record.t Map.M(Act_common.C_id).t [@@deriving sexp]
+type t = Record.t Map.M(C4f_common.C_id).t [@@deriving sexp]
 
 (** {2 Constructors} *)
 
-val of_typing : Type.t Map.M(Act_common.C_id).t -> t
+val of_typing : Type.t Map.M(C4f_common.C_id).t -> t
 (** [of_typing] lifts a typing map to an environment. *)
 
 val of_maps :
-  Type.t Map.M(Act_common.C_id).t -> Constant.t Map.M(Act_common.C_id).t -> t
+  Type.t Map.M(C4f_common.C_id).t -> Constant.t Map.M(C4f_common.C_id).t -> t
 (** [of_maps] combines a typing map and known-value map. *)
 
 (** {3 Lookup} *)
 
-val record_of : t -> id:Act_common.C_id.t -> Record.t Or_error.t
+val record_of : t -> id:C4f_common.C_id.t -> Record.t Or_error.t
 (** [record_of env ~id] gets the environment record in [env] for [id]. *)
 
-val type_of : t -> id:Act_common.C_id.t -> Type.t Or_error.t
+val type_of : t -> id:C4f_common.C_id.t -> Type.t Or_error.t
 (** [type_of env ~id] gets the type in [env] for [id]. *)
 
-val known_value : t -> id:Act_common.C_id.t -> Constant.t option Or_error.t
+val known_value : t -> id:C4f_common.C_id.t -> Constant.t option Or_error.t
 (** [known_value env ~id] gets the known value in [env] for [id], if any. *)
 
-val type_of_known_value : t -> id:Act_common.C_id.t -> Type.t Or_error.t
+val type_of_known_value : t -> id:C4f_common.C_id.t -> Type.t Or_error.t
 (** [type_of_known_value env ~id] behaves like [type_of], but returns the
     type associated with any known-value information stored for [id]. This is
     [type_of id] for non-pointer-typed variables, and the non-pointer
@@ -77,11 +77,11 @@ val type_of_known_value : t -> id:Act_common.C_id.t -> Type.t Or_error.t
 
 (** {2 Filtering and extracting} *)
 
-val typing : t -> Type.t Map.M(Act_common.C_id).t
+val typing : t -> Type.t Map.M(C4f_common.C_id).t
 (** [typing env] creates a map from variable IDs to their types. *)
 
 val variables_with_known_values :
-  t -> (Type.t * Constant.t) Map.M(Act_common.C_id).t
+  t -> (Type.t * Constant.t) Map.M(C4f_common.C_id).t
 (** [variables_with_known_values env] creates a map from variable IDs to
     their types and definitely-known values, discarding any variable IDs for
     which there is no known value. *)
@@ -108,17 +108,17 @@ val variables_of_basic_type : t -> basic:Type.Basic.t -> t
 
 (** {2 Quickcheck-compatible random variable selection} *)
 
-val gen_random_var : t -> Act_common.C_id.t Base_quickcheck.Generator.t
+val gen_random_var : t -> C4f_common.C_id.t Base_quickcheck.Generator.t
 (** [gen_random_var env] is a generator that selects a random variable name
     from [env]. *)
 
 val gen_random_var_with_type :
-  t -> Type.t Act_common.C_named.t Base_quickcheck.Generator.t
+  t -> Type.t C4f_common.C_named.t Base_quickcheck.Generator.t
 (** [gen_random_var_with_type env] is a generator that selects a random
     variable typing record from [env]. *)
 
 val gen_random_var_with_record :
-  t -> Record.t Act_common.C_named.t Base_quickcheck.Generator.t
+  t -> Record.t C4f_common.C_named.t Base_quickcheck.Generator.t
 (** [gen_random_var_with_record env] is a generator that selects a random
     variable record from [env]. *)
 
@@ -130,19 +130,19 @@ val gen_random_var_with_record :
 module Random_var (E : sig
   val env : t
 end) : sig
-  type t = Act_common.C_id.t [@@deriving sexp_of, quickcheck]
+  type t = C4f_common.C_id.t [@@deriving sexp_of, quickcheck]
 end
 
 (** Selection of random variables, and their types, from an environment. *)
 module Random_var_with_type (E : sig
   val env : t
 end) : sig
-  type t = Type.t Act_common.C_named.t [@@deriving sexp_of, quickcheck]
+  type t = Type.t C4f_common.C_named.t [@@deriving sexp_of, quickcheck]
 end
 
 (** Selection of random variables, and their records, from an environment. *)
 module Random_var_with_record (E : sig
   val env : t
 end) : sig
-  type t = Record.t Act_common.C_named.t [@@deriving sexp_of, quickcheck]
+  type t = Record.t C4f_common.C_named.t [@@deriving sexp_of, quickcheck]
 end

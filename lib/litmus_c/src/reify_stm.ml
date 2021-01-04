@@ -66,11 +66,11 @@ let early_out : Fir.Early_out.t -> Ast.Stm.t = function
   | Return ->
       Ast.Stm.Return None
 
-let label (l : Act_common.C_id.t) : Ast.Stm.t =
+let label (l : C4f_common.C_id.t) : Ast.Stm.t =
   (* This might need revisiting later. *)
   Label (Normal l, Expr None)
 
-let goto (l : Act_common.C_id.t) : Ast.Stm.t = Goto l
+let goto (l : C4f_common.C_id.t) : Ast.Stm.t = Goto l
 
 let procedure_call (c : Fir.Call.t) : Ast.Stm.t =
   Ast.Stm.Expr

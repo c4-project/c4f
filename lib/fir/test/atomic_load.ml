@@ -11,7 +11,7 @@
 
 open Base
 open Stdio
-module Src = Act_fir
+module Src = C4f_fir
 
 let%expect_test "type_of: atomic_int* -> int" =
   let env = Lazy.force Env.test_env in

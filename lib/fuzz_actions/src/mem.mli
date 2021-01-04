@@ -17,9 +17,9 @@
 
 (** [Fence] is an action that inserts random memory fences. *)
 module Fence :
-  Act_fuzz.Action_types.S
+  C4f_fuzz.Action_types.S
     with type Payload.t =
-          Act_fir.Atomic_fence.t Act_fuzz.Payload_impl.Pathed.t
+          C4f_fir.Atomic_fence.t C4f_fuzz.Payload_impl.Pathed.t
 
 (** {1 Memory order strengthening} *)
 
@@ -30,8 +30,8 @@ module Strengthen_payload : sig
   type t [@@deriving sexp]
 
   val make :
-       path:Act_fuzz.Path.With_meta.t
-    -> mo:Act_fir.Mem_order.t
+       path:C4f_fuzz.Path.With_meta.t
+    -> mo:C4f_fir.Mem_order.t
     -> can_weaken:bool
     -> t
   (** [make ~path ~mo ~can_weaken] constructs a strengthening payload with
@@ -43,4 +43,4 @@ end
 
 (** [Strengthen] is an action that tries to strengthen memory orders. *)
 module Strengthen :
-  Act_fuzz.Action_types.S with type Payload.t = Strengthen_payload.t
+  C4f_fuzz.Action_types.S with type Payload.t = Strengthen_payload.t

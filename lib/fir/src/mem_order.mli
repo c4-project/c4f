@@ -21,9 +21,9 @@ type t =
   | Acq_rel  (** [memory_order_acq_rel] *)
   | Seq_cst  (** [memory_order_seq_cst] *)
 
-include Act_utils.Enum_types.S_table with type t := t
+include C4f_utils.Enum_types.S_table with type t := t
 
-include Act_utils.Enum_types.Extension_table with type t := t
+include C4f_utils.Enum_types.Extension_table with type t := t
 
 (** {2 Predicates} *)
 

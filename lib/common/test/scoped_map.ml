@@ -10,7 +10,7 @@
    project root for more information. *)
 
 open Base
-module Src = Act_common
+module Src = C4f_common
 
 let%test_module "on sample map" =
   ( module struct
@@ -32,7 +32,7 @@ let%test_module "on sample map" =
       ( module struct
         let test (id_str : string) : unit =
           let id = Src.C_id.of_string id_str in
-          Act_utils.Io.print_bool (Src.Scoped_map.c_id_mem map ~id)
+          C4f_utils.Io.print_bool (Src.Scoped_map.c_id_mem map ~id)
 
         let%expect_test "valid non-shadowed global" =
           test "foo" ; [%expect {| true |}]

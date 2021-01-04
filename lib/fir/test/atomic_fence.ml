@@ -10,7 +10,7 @@
    project root for more information. *)
 
 open struct
-  module Src = Act_fir
+  module Src = C4f_fir
 end
 
 let%expect_test "On_mem_orders traverses properly" =

@@ -12,9 +12,9 @@
 open Base
 
 open struct
-  module Ac = Act_common
-  module Fir = Act_fir
-  module Src = Act_litmus_c
+  module Ac = C4f_common
+  module Fir = C4f_fir
+  module Src = C4f_litmus_c
 end
 
 let test (expr : Src.Ast.Expr.t) : unit =
@@ -23,7 +23,7 @@ let test (expr : Src.Ast.Expr.t) : unit =
 
 let%expect_test "model basic logical expression" =
   test
-    Act_litmus_c.Ast.(
+    C4f_litmus_c.Ast.(
       Expr.(
         Binary
           ( Identifier (Ac.C_id.of_string "true")
@@ -41,7 +41,7 @@ let%expect_test "model basic logical expression" =
 
 let%expect_test "model atomic_load_explicit" =
   test
-    Act_litmus_c.Ast.(
+    C4f_litmus_c.Ast.(
       Expr.Call
         { func= Identifier (Ac.C_id.of_string "atomic_load_explicit")
         ; arguments=

@@ -11,7 +11,7 @@
 
 open Base
 open Stdio
-module Src = Act_fir
+module Src = C4f_fir
 
 let%test_module "depended_upon_idents" =
   ( module struct
@@ -19,7 +19,7 @@ let%test_module "depended_upon_idents" =
       let xs =
         Accessor.to_list Src.Expression_traverse.depended_upon_idents e
       in
-      print_s [%sexp (xs : Act_common.C_id.t list)]
+      print_s [%sexp (xs : C4f_common.C_id.t list)]
 
     (* This test case will likely expand if we make dependency more
        sophisticated. *)
@@ -39,9 +39,9 @@ let%test_module "depended_upon_idents" =
         Src.(
           Expression.(
             add
-              (variable (Act_common.C_id.of_string "foo"))
+              (variable (C4f_common.C_id.of_string "foo"))
               (sub
-                 (variable (Act_common.C_id.of_string "bar"))
+                 (variable (C4f_common.C_id.of_string "bar"))
                  (lvalue
                     Lvalue.(
                       Accessor.construct deref (of_variable_str_exn "baz")))))) ;

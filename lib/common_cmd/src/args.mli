@@ -12,7 +12,7 @@
 (** Argument specifications common to all act sub-commands. *)
 
 open Core_kernel
-open Act_common
+open C4f_common
 
 (** {2 The standard arguments} *)
 
@@ -40,7 +40,7 @@ module Standard : sig
   val config_file : t -> string
   (** [config_file t] gets the configuration file according to [t]. *)
 
-  val load_config : t -> Act_config.Global.t Or_error.t
+  val load_config : t -> C4f_config.Global.t Or_error.t
   (** [load_config t] loads the config at [config_file t]. *)
 
   (** {2 Lifting commands over standard arguments} *)
@@ -55,7 +55,7 @@ module Standard : sig
       allow for commands that need to operate without configuration present.) *)
 
   val lift_command_with_config :
-    t -> f:(Output.t -> Act_config.Global.t -> unit Or_error.t) -> unit
+    t -> f:(Output.t -> C4f_config.Global.t -> unit Or_error.t) -> unit
   (** [lift_command_with_config standard_args ~f] acts like [lift_command],
       but also loads and tests the configuration. *)
 end
@@ -141,7 +141,7 @@ end
 
 (** {2 Miscellaneous argument helpers} *)
 
-val id_type : Act_common.Id.t Command.Arg_type.t
+val id_type : C4f_common.Id.t Command.Arg_type.t
 (** [id_type] is an argument type for ACT IDs. *)
 
 val fpath_type : Fpath.t Command.Arg_type.t

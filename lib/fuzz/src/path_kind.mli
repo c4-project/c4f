@@ -22,7 +22,7 @@ type t =
   | Transform_list
       (** Paths that transform a list of statements in a block. *)
 
-include Act_utils.Enum_types.Extension_table with type t := t
+include C4f_utils.Enum_types.Extension_table with type t := t
 
 (** {1 With actions}
 

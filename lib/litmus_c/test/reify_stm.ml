@@ -13,8 +13,8 @@ open Base
 
 open struct
   module A = Accessor
-  module Fir = Act_fir
-  module Src = Act_litmus_c
+  module Fir = C4f_fir
+  module Src = C4f_litmus_c
 end
 
 let%test_module "reify/pp" =

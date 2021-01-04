@@ -12,7 +12,7 @@
 open Base
 
 open struct
-  module Src = Act_litmus_c
+  module Src = C4f_litmus_c
 end
 
 let%test_module "sift_decls" =

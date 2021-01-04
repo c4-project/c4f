@@ -262,7 +262,7 @@ let consume' (test : Subject.Test.t) ~(path : Path.t) ~(ctx : ctx) :
     Subject.Test.t Or_error.t =
   match path with
   | In_thread (index, path) ->
-      Act_litmus.Test.Raw.try_map_thread test ~index
+      C4f_litmus.Test.Raw.try_map_thread test ~index
         ~f:(thread index ~path ~ctx)
 
 let consume ?(filter : Path_filter.t option) (test : Subject.Test.t)

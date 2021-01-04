@@ -10,7 +10,7 @@
    project root for more information. *)
 
 open Base
-module Au = Act_utils
+module Au = C4f_utils
 module Tx = Travesty_base_exts
 
 (* Comparable.Make_plain depends on Sexpable, and Sexpable.Of_stringable

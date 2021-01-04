@@ -12,23 +12,23 @@
 open Core_kernel
 
 let run ?(state_output : Plumbing.Output.t option)
-    (args : _ Common_cmd.Args.With_files.t) (o : Act_common.Output.t)
+    (args : _ Common_cmd.Args.With_files.t) (o : C4f_common.Output.t)
     ~(trace_input : Plumbing.Input.t) : unit Or_error.t =
   Or_error.Let_syntax.(
-    let%bind trace = Act_fuzz.Trace.load trace_input in
-    let aux = Act_fuzz_run.Filter.Aux.Replay.make ~o trace in
+    let%bind trace = C4f_fuzz.Trace.load trace_input in
+    let aux = C4f_fuzz_run.Filter.Aux.Replay.make ~o trace in
     (* There's no point exposing the trace here; it'll be the same as the
        input one. *)
     let%bind {state; _} =
       Common_cmd.Args.With_files.run_filter
-        (Act_fuzz_run.Filter.run_replay ~aux)
+        (C4f_fuzz_run.Filter.run_replay ~aux)
         args
     in
     Plumbing.Output.with_opt state_output ~f:(fun dest ->
-        Act_fuzz.State.Dump.store state ~dest))
+        C4f_fuzz.State.Dump.store state ~dest))
 
 let readme () : string =
-  Act_utils.My_string.format_for_readme
+  C4f_utils.My_string.format_for_readme
     {|
 This command takes a C litmus test and fuzzer trace as input, applies
 the mutations listed in the trace to the test, and outputs the resulting modified test.

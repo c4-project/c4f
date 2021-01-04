@@ -13,10 +13,10 @@
 
     For the big picture, see {!Reify}. *)
 
-val reify : Act_fir.Expression.t -> Ast.Expr.t
+val reify : C4f_fir.Expression.t -> Ast.Expr.t
 (** [reify e] reifies the mini-expression [e] into the C AST. *)
 
-val pp : Act_fir.Expression.t Fmt.t
+val pp : C4f_fir.Expression.t Fmt.t
 (** [pp] is a pretty-printer via {!reify}. *)
 
 (** {1 Helpers for reifying expressions}

@@ -1,9 +1,9 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_utils)
+ (name c4f_utils)
  (public_name c4f.utils)
- (synopsis "Automagic Compiler Tormentor: non-ACT-specific utility modules")
+ (synopsis "c4f: non-ACT-specific utility modules")
  (modules_without_implementation enum_types fs_types reader_types)
  (preprocess
   (pps ppx_deriving.std ppx_yojson_conv ppx_accessor ppx_jane sedlex.ppx))

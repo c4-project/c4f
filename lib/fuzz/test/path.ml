@@ -15,7 +15,7 @@ open Stdio
 let%test_module "s-expression serialisation" =
   ( module struct
     open struct
-      module P = Act_fuzz.Path
+      module P = C4f_fuzz.Path
     end
 
     let test (x : P.t) : unit = print_s [%sexp (x : P.t)]

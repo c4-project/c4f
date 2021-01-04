@@ -66,12 +66,12 @@ end
 module Atomic_fetch_int_zero_nops
     (Obj : Fir.Env_types.S)
     (Arg : Fir.Env_types.S) :
-  Act_utils.My_quickcheck.S_with_sexp
+  C4f_utils.My_quickcheck.S_with_sexp
     with type t = Fir.Expression.t Fir.Atomic_fetch.t =
   Atomic_fetch.Int (Obj) (Fir.Op.Fetch.Gen_idem_zero_rhs) (Int_zeroes (Arg))
 
 module Atomic_fetch_int_refl_nops (Obj : Fir.Env_types.S) :
-  Act_utils.My_quickcheck.S_with_sexp
+  C4f_utils.My_quickcheck.S_with_sexp
     with type t = Fir.Expression.t Fir.Atomic_fetch.t = struct
   type t = Fir.Expression.t Fir.Atomic_fetch.t [@@deriving sexp]
 
@@ -107,7 +107,7 @@ module Atomic_fetch_int_refl_nops (Obj : Fir.Env_types.S) :
 end
 
 module Atomic_fetch_int_nops (Obj : Fir.Env_types.S) (Arg : Fir.Env_types.S) :
-  Act_utils.My_quickcheck.S_with_sexp
+  C4f_utils.My_quickcheck.S_with_sexp
     with type t = Fir.Expression.t Fir.Atomic_fetch.t = struct
   type t = Fir.Expression.t Fir.Atomic_fetch.t [@@deriving sexp]
 
@@ -130,7 +130,7 @@ end
 module Atomic_fetch_int_values
     (Obj : Fir.Env_types.S)
     (Arg : Fir.Env_types.S) :
-  Act_utils.My_quickcheck.S_with_sexp
+  C4f_utils.My_quickcheck.S_with_sexp
     with type t = Fir.Expression.t Fir.Atomic_fetch.t =
   Atomic_fetch.Int (Obj) (Fir.Op.Fetch) (Int_values (Arg))
 
@@ -203,10 +203,10 @@ end = struct
           Op.basic_lift_k
           (Two (var_ref, Fir.Expression.bool_lit value)) ]
 
-  let make_var_ref (id : Act_common.C_id.t) (ty : Fir.Type.t) :
+  let make_var_ref (id : C4f_common.C_id.t) (ty : Fir.Type.t) :
       Fir.Expression.t =
     (* TODO(@MattWindsor91): can we do more than SC here? *)
-    let tid = Act_common.C_named.make ty ~name:id in
+    let tid = C4f_common.C_named.make ty ~name:id in
     let lv = Fir.Lvalue.on_value_of_typed_id tid in
     if Fir.Type.is_atomic ty then
       Fir.Expression.atomic_load

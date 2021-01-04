@@ -29,6 +29,6 @@ val aux : t -> Aux.t
 (** [aux output] gets the extracted (and potentially re-arranged) auxiliary
     Litmus information stored in [output]. *)
 
-(* val c_variables : t -> Act_common.C_variables.Map.t (** [c_variables
+(* val c_variables : t -> C4f_common.C_variables.Map.t (** [c_variables
    output] gets a map containing information about each global and local
    variable contained in the de-litmusified program. *) *)

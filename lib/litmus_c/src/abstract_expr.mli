@@ -15,5 +15,5 @@
 
 open Base
 
-val model : Ast.Expr.t -> Act_fir.Expression.t Or_error.t
+val model : Ast.Expr.t -> C4f_fir.Expression.t Or_error.t
 (** [model ast] tries to model a C expression AST as a FIR expression. *)

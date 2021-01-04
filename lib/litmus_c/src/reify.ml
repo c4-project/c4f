@@ -12,9 +12,9 @@
 open Base
 
 open struct
-  module Ac = Act_common
-  module Fir = Act_fir
-  module Named = Act_common.C_named
+  module Ac = C4f_common
+  module Fir = C4f_fir
+  module Named = C4f_common.C_named
 end
 
 let decls : Fir.Initialiser.t Named.Alist.t -> [> `Decl of Ast.Decl.t] list =
@@ -28,7 +28,7 @@ let func_parameters (parameters : Fir.Type.t Named.Alist.t) :
       List.map ~f:(fun (i, t) -> Reify_prim.func_parameter t i) parameters
   ; style= `Normal }
 
-let func_signature (id : Act_common.C_id.t)
+let func_signature (id : C4f_common.C_id.t)
     (parameters : Fir.Type.t Named.Alist.t) : Ast.Declarator.t =
   {pointer= None; direct= Fun_decl (Id id, func_parameters parameters)}
 
@@ -59,8 +59,8 @@ let program (prog : _ Fir.Program.t) : Ast.Translation_unit.t =
 let pp : type m. m Fir.Program.t Fmt.t =
  fun x -> Fmt.(using program Ast.Translation_unit.pp) x
 
-let pp_litmus_raw : Act_litmus.Test.Raw.M(Fir.Litmus.Lang).t Fmt.t =
-  Act_litmus.Pp.pp "C" Reify_prim.pp_constant pp_func
+let pp_litmus_raw : C4f_litmus.Test.Raw.M(Fir.Litmus.Lang).t Fmt.t =
+  C4f_litmus.Pp.pp "C" Reify_prim.pp_constant pp_func
 
 let pp_litmus : Fir.Litmus.Test.t Fmt.t =
   Fmt.using Fir.Litmus.Test.raw pp_litmus_raw

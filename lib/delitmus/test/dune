@@ -1,8 +1,8 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_c_delitmus_tests)
- (synopsis "Automagic Compiler Tormentor: C de-litmusifier tests")
+ (name c4f_c_delitmus_tests)
+ (synopsis "c4f: C de-litmusifier tests")
  (inline_tests)
  (preprocess
   (pps ppx_jane))

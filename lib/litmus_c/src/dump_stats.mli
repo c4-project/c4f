@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Frontend onto {!Act_fir.Litmus_stats} using the Litmus/C frontend. *)
+(** Frontend onto {!C4f_fir.Litmus_stats} using the Litmus/C frontend. *)
 
 val run : Plumbing.Input.t -> Plumbing.Output.t -> unit Base.Or_error.t
 (** [run input output] reads in a Litmus/C test from [input], scrapes its

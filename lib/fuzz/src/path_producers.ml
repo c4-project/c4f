@@ -258,7 +258,7 @@ let thread (tid : int) (s : Subject.Thread.t) ~(ctx : ctx) : Path.t t =
     |> map_path ~f:(Fn.compose (Path.in_thread tid) Path.Thread.in_stms))
 
 let produce (test : Subject.Test.t) ~(ctx : ctx) : Path.t t =
-  test |> Act_litmus.Test.Raw.threads
+  test |> C4f_litmus.Test.Raw.threads
   |> List.mapi ~f:(thread ~ctx)
   |> Sequence.round_robin
 

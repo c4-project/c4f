@@ -22,14 +22,14 @@ type t [@@deriving sexp, compare, equal]
 (** {1 Constructors} *)
 
 val make :
-  ?arguments:Expression.t list -> function_id:Act_common.C_id.t -> unit -> t
+  ?arguments:Expression.t list -> function_id:C4f_common.C_id.t -> unit -> t
 (** [make ?arguments ~metadata ~function_id ()] constructs a function call
     with the metadata [metadata], function ID [function_id], and arguments
     [arguments]. *)
 
 (** {1 Accessors} *)
 
-val function_id : t -> Act_common.C_id.t
+val function_id : t -> C4f_common.C_id.t
 (** [function_id call] gets the identifier of the function called by [call]. *)
 
 val arguments : t -> Expression.t list

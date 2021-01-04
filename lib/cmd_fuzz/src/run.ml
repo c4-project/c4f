@@ -13,27 +13,27 @@ open Core_kernel
 
 let write_aux ?(trace_output : Plumbing.Output.t option)
     ?(state_output : Plumbing.Output.t option)
-    ({state; trace} : Act_fuzz_run.Filter.Aux.Output.t) : unit Or_error.t =
+    ({state; trace} : C4f_fuzz_run.Filter.Aux.Output.t) : unit Or_error.t =
   Or_error.all_unit
     [ Plumbing.Output.with_opt state_output ~f:(fun dest ->
-          Act_fuzz.State.Dump.store state ~dest)
+          C4f_fuzz.State.Dump.store state ~dest)
     ; Plumbing.Output.with_opt trace_output ~f:(fun dest ->
-          Act_fuzz.Trace.store trace ~dest) ]
+          C4f_fuzz.Trace.store trace ~dest) ]
 
 let run ?(seed : int option) ?(state_output : Plumbing.Output.t option)
     ?(trace_output : Plumbing.Output.t option)
-    (args : _ Common_cmd.Args.With_files.t) (o : Act_common.Output.t)
-    (global_config : Act_config.Global.t) : unit Or_error.t =
-  let config = Act_config.Global.fuzz global_config in
-  let aux = Act_fuzz_run.Filter.Aux.Randomised.make ~o ?seed config in
+    (args : _ Common_cmd.Args.With_files.t) (o : C4f_common.Output.t)
+    (global_config : C4f_config.Global.t) : unit Or_error.t =
+  let config = C4f_config.Global.fuzz global_config in
+  let aux = C4f_fuzz_run.Filter.Aux.Randomised.make ~o ?seed config in
   Or_error.(
     Common_cmd.Args.With_files.run_filter
-      (Act_fuzz_run.Filter.run_randomised ~aux)
+      (C4f_fuzz_run.Filter.run_randomised ~aux)
       args
     >>= write_aux ?state_output ?trace_output)
 
 let readme () : string =
-  Act_utils.My_string.format_for_readme
+  C4f_utils.My_string.format_for_readme
     {|
 This command takes, as input, a C litmus test.  It then performs various
 mutations to the litmus test, and outputs the resulting modified test.

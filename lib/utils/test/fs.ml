@@ -11,7 +11,7 @@
 
 open Base
 open Stdio
-open Act_utils.Fs
+open C4f_utils.Fs
 
 let%test_module "filter_files" =
   ( module struct

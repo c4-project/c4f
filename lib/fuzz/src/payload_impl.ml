@@ -51,7 +51,7 @@ module Cond_pathed = struct
   let surround ?(filter : Path_filter.t option) ({payload; where} : t)
       ~(test : Subject.Test.t)
       ~(f :
-            Act_fir.Expression.t
+            C4f_fir.Expression.t
          -> Subject.Statement.t list
          -> Subject.Statement.t) : Subject.Test.t State.Monad.t =
     State.Monad.(
@@ -64,7 +64,7 @@ module Cond_pathed = struct
 
   let insert ?(filter : Path_filter.t option) ({payload; where} : t)
       ~(test : Subject.Test.t)
-      ~(f : Act_fir.Expression.t -> Subject.Statement.t) :
+      ~(f : C4f_fir.Expression.t -> Subject.Statement.t) :
       Subject.Test.t State.Monad.t =
     State.Monad.(
       Let_syntax.(
@@ -74,7 +74,7 @@ module Cond_pathed = struct
         in
         Pathed.insert ?filter {payload; where} ~test ~f))
 
-  let cond_env (vars : Var.Map.t) ~(tid : int) : Act_fir.Env.t =
+  let cond_env (vars : Var.Map.t) ~(tid : int) : C4f_fir.Env.t =
     Var.Map.env_satisfying_all ~scope:(Local tid) ~predicates:[] vars
 
   let lift_cond_gen
@@ -96,7 +96,7 @@ module Cond_pathed = struct
     val kind : Path_kind.t
 
     val cond_gen :
-      Act_fir.Env.t -> Act_fir.Expression.t Base_quickcheck.Generator.t
+      C4f_fir.Env.t -> C4f_fir.Expression.t Base_quickcheck.Generator.t
 
     val path_filter : State.t -> Path_filter.t
   end) : Payload_types.S with type t = t = struct

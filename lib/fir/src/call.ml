@@ -15,7 +15,7 @@ open struct
   module Tx = Travesty_base_exts
 end
 
-type t = {arguments: Expression.t list; function_id: Act_common.C_id.t}
+type t = {arguments: Expression.t list; function_id: C4f_common.C_id.t}
 [@@deriving make, fields, sexp, compare, equal]
 
 module On_expressions :

@@ -17,9 +17,9 @@ open Import
 module Insert : sig
   (** Shorthand type for store insertion actions. *)
   module type S =
-    Act_fuzz.Action_types.S
+    C4f_fuzz.Action_types.S
       with type Payload.t =
-            Act_fir.Atomic_store.t Act_fuzz.Payload_impl.Pathed.t
+            C4f_fir.Atomic_store.t C4f_fuzz.Payload_impl.Pathed.t
 
   (** [Int_normal] is a fuzzer action that generates a random atomic-int
       store instruction. *)
@@ -44,5 +44,5 @@ end
 module Transform : sig
   (** [Xchgify] converts store actions to exchange actions. *)
   module Xchgify :
-    Act_fuzz.Action_types.S with type Payload.t = Act_fuzz.Path.With_meta.t
+    C4f_fuzz.Action_types.S with type Payload.t = C4f_fuzz.Path.With_meta.t
 end
