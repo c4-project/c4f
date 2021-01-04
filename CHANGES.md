@@ -3,6 +3,11 @@
 Note that these changes are infrequently maintained and may not tell the
 whole story.
 
+## 2021-Jan-04
+
+- Removed the `examples` directory and `c11_lahav.cat`; use the
+  [c4-corpora](https://github.com/c4-project/c4-corpora) repository instead.
+
 ## 2021-Jan-02
 
 - Delitmus aux output function maps no longer carry a `is_thread_body` key;
