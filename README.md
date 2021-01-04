@@ -10,14 +10,15 @@ It takes initial litmus tests, and performs transformations to them
 that complicate their compilation while (hopefully!) preserving the
 soundness of the initial test's postcondition.
 
-Other tools in the C4 project include:
+Other parts of the C4 project include:
 
-- [c4t](https://github.com/MattWindsor91/act-tester) (or 'act-tester'),
+- [c4t](https://github.com/c4-project/c4t),
   for running automated compiler tests using _c4f_;
-- [c4-scripts](https://github.com/MattWindsor91/act-bash)
-  (or 'act-bash'),
+- [c4-scripts](https://github.com/c4-project/c4-scripts),
   for doing various tasks that _c4f_ and _c4t_ are too low-level to do
-  comfortably.
+  comfortably;
+- [c4-corpora](https://github.com/c4-project/c4-corpora),
+  a set of Memalloy-generated inputs that can be used with _c4f_.
 
 ## Licence and Acknowledgements
 
@@ -44,6 +45,16 @@ Each command has various subcommands, including the `help` command: for example,
 
 ## Building and running
 
+**TEMPORARY NOTE:** _c4f_ currently depends on a pre-release version of
+[travesty](https://github.com/MattWindsor91/travesty); you will need to pin this
+through OPAM by doing something similar to the following:
+
+```shell
+$ git clone https://github.com/MattWindsor91/travesty
+$ cd travesty
+$ opam install .
+```
+
 **NOTE:**
 _c4f_ uses Jane Street's `core` library, which only works properly on
 POSIX-style operating systems.  If you're using Windows, consider
@@ -60,12 +71,6 @@ There are two main ways to build and run _c4f_:
 
 You can also manually build _c4f_ using `dune build`, or
 `make` (which just calls the former).
-
-- To run test subjects as simulations using Herd, or on machines using Litmus7,
-  you'll need [herdtools7](https://github.com/herd/herdtools7) (which is
-  [available on OPAM](https://opam.ocaml.org/packages/herdtools7/)).
-- For running compiler tests, you'll need at least one C11 compiler.
-
 
 ### Preparation
 
@@ -84,7 +89,10 @@ fuzz {
 
 To test whether _c4f_ is installed and working, you can try:
 
-`$ act-fuzz run $PATH_TO_C4F/examples/c_litmus/memalloy/test_6.litmus`
+```shell
+$ git clone https://github.com/c4-project/c4-corpora /path/to/corpora
+$ act-fuzz run /path/to/corpora/partialSC/small/test_8.litmus
+```
 
 (or `dune exec act-fuzz -- run`, per above)
 
