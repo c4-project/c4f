@@ -1,11 +1,11 @@
-(* The Automagic Compiler Tormentor
+(* This file is part of c4f.
 
-   Copyright (c) 2018-2020 Matt Windsor and contributors
+   Copyright (c) 2018-2021 C4 Project
 
-   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
 
-   ACT is based in part on code from the Herdtools7 project
+   Parts of c4t are based on code from the Herdtools7 project
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
