@@ -194,9 +194,10 @@ module Insert = struct
 
          Arbitrary compare-exchanges are still unsafe if there are dependency
          cycles: we don't care about them switching from failure to success
-         or vice versa, but they can still clobber their dependencies. *)
-      let execute_multi_safe =
-        if Basic.can_fail && Basic.can_succeed then `If_no_cycles else `Never
+         or vice versa, but they can still clobber their dependencies. Since
+         we encode read-modify-writes in such a way that c4f always computes
+         dependency cycles over them, we have to set this to `Never. *)
+      let execute_multi_safe = `Never
     end
 
     let gen :
