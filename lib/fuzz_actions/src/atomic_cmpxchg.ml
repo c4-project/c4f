@@ -190,9 +190,13 @@ module Insert = struct
          always unsafe in non-dead loops, since they change the value of the
          destination; future iterations of the same compare-exchange will
          fail, and not only return false but also change the value of the
-         expected-variable. See issue 212. *)
+         expected-variable. See issue 212.
+
+         Arbitrary compare-exchanges are still unsafe if there are dependency
+         cycles: we don't care about them switching from failure to success
+         or vice versa, but they can still clobber their dependencies. *)
       let execute_multi_safe =
-        if Basic.can_fail && Basic.can_succeed then `Always else `Never
+        if Basic.can_fail && Basic.can_succeed then `If_no_cycles else `Never
     end
 
     let gen :
@@ -350,8 +354,7 @@ module Insert = struct
 
     let can_fail : bool = true
 
-    (* Succeeding cmpxchgs can't be weak, as weak cmpxchgs can spuriously
-       fail. *)
+    (* Arbitrary cmpxchgs can have any strength. *)
     let strength : Fir.Atomic_cmpxchg.Strength.t option = None
   end)
 end
