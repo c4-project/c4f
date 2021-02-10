@@ -16,15 +16,13 @@ type t =
   | Fence of Atomic_fence.t
   | Fetch of Expression.t Atomic_fetch.t
   | Store of Atomic_store.t
-  | Xchg of Expression.t Atomic_xchg.t
 [@@deriving accessors, sexp, compare, equal]
 
 let value_map (type result) (x : t)
     ~(cmpxchg : Expression.t Atomic_cmpxchg.t -> result)
     ~(fence : Atomic_fence.t -> result)
     ~(fetch : Expression.t Atomic_fetch.t -> result)
-    ~(store : Atomic_store.t -> result)
-    ~(xchg : Expression.t Atomic_xchg.t -> result) : result =
+    ~(store : Atomic_store.t -> result) : result =
   match x with
   | Cmpxchg c ->
       cmpxchg c
@@ -34,8 +32,6 @@ let value_map (type result) (x : t)
       fetch f
   | Store s ->
       store s
-  | Xchg x ->
-      xchg x
 
 module Base_map (Ap : Applicative.S) = struct
   let bmap (x : t)
@@ -44,16 +40,13 @@ module Base_map (Ap : Applicative.S) = struct
       ~(fence : Atomic_fence.t -> Atomic_fence.t Ap.t)
       ~(fetch :
          Expression.t Atomic_fetch.t -> Expression.t Atomic_fetch.t Ap.t)
-      ~(store : Atomic_store.t -> Atomic_store.t Ap.t)
-      ~(xchg : Expression.t Atomic_xchg.t -> Expression.t Atomic_xchg.t Ap.t)
-      : t Ap.t =
+      ~(store : Atomic_store.t -> Atomic_store.t Ap.t) : t Ap.t =
     Travesty_base_exts.Fn.Compose_syntax.(
       value_map x
         ~cmpxchg:(cmpxchg >> Ap.map ~f:(fun c -> Cmpxchg c))
         ~fence:(fence >> Ap.map ~f:(fun f -> Fence f))
         ~fetch:(fetch >> Ap.map ~f:(fun f -> Fetch f))
-        ~store:(store >> Ap.map ~f:(fun s -> Store s))
-        ~xchg:(xchg >> Ap.map ~f:(fun x -> Xchg x)))
+        ~store:(store >> Ap.map ~f:(fun s -> Store s)))
 end
 
 (** Does the legwork of implementing a particular type of traversal over
@@ -82,11 +75,6 @@ module Make_traversal (Basic : sig
     Travesty.Traversable_types.S0
       with type t := Atomic_store.t
        and module Elt = Elt
-
-  module X :
-    Travesty.Traversable_types.S0
-      with type t := Expression.t Atomic_xchg.t
-       and module Elt = Elt
 end) =
 Travesty.Traversable.Make0 (struct
   type nonrec t = t
@@ -99,11 +87,10 @@ Travesty.Traversable.Make0 (struct
     module F = Basic.F.On (M)
     module N = Basic.N.On (M)
     module S = Basic.S.On (M)
-    module X = Basic.X.On (M)
 
     let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
       SBase.bmap x ~cmpxchg:(C.map_m ~f) ~fence:(N.map_m ~f)
-        ~fetch:(F.map_m ~f) ~store:(S.map_m ~f) ~xchg:(X.map_m ~f)
+        ~fetch:(F.map_m ~f) ~store:(S.map_m ~f)
   end
 end)
 
@@ -115,7 +102,6 @@ Make_traversal (struct
   module F = Expression_traverse.Fetch.On_mem_orders
   module N = Atomic_fence.On_mem_orders
   module S = Atomic_store.On_mem_orders
-  module X = Expression_traverse.Xchg.On_mem_orders
 end)
 
 module On_addresses :
@@ -126,7 +112,6 @@ Make_traversal (struct
   module F = Expression_traverse.Fetch.On_addresses
   module N = Travesty.Traversable.Const (Atomic_fence) (Address)
   module S = Atomic_store.On_addresses
-  module X = Expression_traverse.Xchg.On_addresses
 end)
 
 module On_expressions :
@@ -139,6 +124,4 @@ Make_traversal (struct
     Travesty.Traversable.Fix_elt (Atomic_fetch.On_expressions) (Expression)
   module N = Travesty.Traversable.Const (Atomic_fence) (Expression)
   module S = Atomic_store.On_expressions
-  module X =
-    Travesty.Traversable.Fix_elt (Atomic_xchg.On_expressions) (Expression)
 end)

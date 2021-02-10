@@ -27,16 +27,14 @@ val fence_name : Fir.Atomic_fence.Mode.t -> string
     [mode]. *)
 
 val fetch_name : Fir.Op.Fetch.t -> string
-(** [fetch_name] is the name of the atomic fetch-add function. *)
+(** [fetch_name f] is the name of the atomic fetch-[f] function (or
+    atomic-exchange, if [f] is [`Xchg]). *)
 
 val load_name : string
 (** [load_name] is the name of the atomic load function. *)
 
 val store_name : string
 (** [store_name] is the name of the atomic store function. *)
-
-val xchg_name : string
-(** [xchg_name] is the name of the atomic exchange function. *)
 
 (** {1 Modeller helpers} *)
 
@@ -91,9 +89,9 @@ val model_fetch :
   -> op:Fir.Op.Fetch.t
   -> expr:(Ast.Expr.t -> Fir.Expression.t Or_error.t)
   -> Fir.Expression.t Fir.Atomic_fetch.t Or_error.t
-(** [model_fetch args ~op ~expr] tries to convert an atomic fetch function
-    call with arguments [args] and operation [op] into an atomic
-    compare-exchange, using [expr] to model inner expressions. *)
+(** [model_fetch args ~op ~expr] tries to convert an atomic fetch (or
+    exchange) function call with arguments [args] and operation [op] into an
+    atomic compare-exchange, using [expr] to model inner expressions. *)
 
 val model_store :
      Ast.Expr.t list
@@ -102,11 +100,3 @@ val model_store :
 (** [model_store args ~expr] tries to convert an atomic store function call
     with arguments [args] into an atomic store, using [expr] to model inner
     expressions. *)
-
-val model_xchg :
-     Ast.Expr.t list
-  -> expr:(Ast.Expr.t -> Fir.Expression.t Or_error.t)
-  -> Fir.Expression.t Fir.Atomic_xchg.t Or_error.t
-(** [model_xchg args ~expr] tries to convert an atomic exchange function call
-    with arguments [args] into an atomic exchange, using [expr] to model
-    inner expressions. *)

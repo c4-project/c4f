@@ -58,17 +58,10 @@ let store (st : Fir.Atomic_store.t) ~(expr : 'e -> Ast.Expr.t) : Ast.Expr.t =
       known_call Abstract_atomic.store_name
         [Prim.address st.dst; expr st.src; mem_order st.mo]))
 
-let xchg (xc : 'e Fir.Atomic_xchg.t) ~(expr : 'e -> Ast.Expr.t) : Ast.Expr.t
-    =
-  Fir.(
-    Atomic_xchg.(
-      known_call Abstract_atomic.xchg_name
-        [Prim.address (obj xc); expr (desired xc); mem_order (mo xc)]))
-
 let reify_expr (x : 'e Fir.Atomic_expression.t) ~(expr : 'e -> Ast.Expr.t) :
     Ast.Expr.t =
   Fir.Atomic_expression.reduce x ~cmpxchg:(cmpxchg ~expr)
-    ~fetch:(fetch ~expr) ~load ~xchg:(xchg ~expr)
+    ~fetch:(fetch ~expr) ~load
 
 let expr_stm (x : Ast.Expr.t) : Ast.Stm.t = Expr (Some x)
 
@@ -76,5 +69,5 @@ let reify_stm (x : Fir.Atomic_statement.t)
     ~(expr : Fir.Expression.t -> Ast.Expr.t) : Ast.Stm.t =
   x
   |> Fir.Atomic_statement.value_map ~cmpxchg:(cmpxchg ~expr)
-       ~fetch:(fetch ~expr) ~fence ~store:(store ~expr) ~xchg:(xchg ~expr)
+       ~fetch:(fetch ~expr) ~fence ~store:(store ~expr)
   |> expr_stm

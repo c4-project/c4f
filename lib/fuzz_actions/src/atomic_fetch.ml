@@ -288,8 +288,7 @@ module Cond_insert = struct
         in
         (* Trying to avoid an underflow/overflow by always moving away from
            the sign of the known value. *)
-        if kv >= 0 then (Fir.Op.Fetch.Sub, v, rel, v)
-        else (Add, v, rel, neg v))
+        if kv >= 0 then (`Sub, v, rel, v) else (`Add, v, rel, neg v))
   end)
 
   module Boundary : S = Make (struct
@@ -306,9 +305,9 @@ module Cond_insert = struct
       Q.Generator.of_list
         (List.filter_map
            ~f:(fun (cond, op, rel) -> Option.some_if cond (op, 1, rel, 0))
-           [ (not_max, Fir.Op.Fetch.Add, Fir.Op.Binary.Rel.Lt)
-           ; (not_max, Fir.Op.Fetch.Add, Fir.Op.Binary.Rel.Ge)
-           ; (not_min, Fir.Op.Fetch.Sub, Fir.Op.Binary.Rel.Gt)
-           ; (not_min, Fir.Op.Fetch.Sub, Fir.Op.Binary.Rel.Le) ])
+           [ (not_max, `Add, Fir.Op.Binary.Rel.Lt)
+           ; (not_max, `Add, Fir.Op.Binary.Rel.Ge)
+           ; (not_min, `Sub, Fir.Op.Binary.Rel.Gt)
+           ; (not_min, `Sub, Fir.Op.Binary.Rel.Le) ])
   end)
 end

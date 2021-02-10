@@ -146,21 +146,28 @@ end
 
 (** {2 Atomic fetch operators}
 
-    The c-mini representation of fetch-and-X instructions treats each a
-    variant of the same 'fetch' instruction, with the X disambiguated by an
-    extra [Fetch.t] parameter. *)
-module Fetch : sig
-  (** The enumeration of fetch postfix operations. *)
-  type t =
-    | Add  (** Fetch and add. *)
-    | Sub  (** Fetch and subtract. *)
-    | And  (** Fetch and (bitwise) AND. *)
-    | Or  (** Fetch and (bitwise) OR. *)
-    | Xor  (** Fetch and (bitwise) XOR. *)
+    The FIR representation of fetch-and-X instructions treats each a variant
+    of the same 'fetch' instruction, with the X disambiguated by an extra
+    [Fetch.t] parameter.
 
-  val to_bop : t -> Binary.t
+    Like LLVM, FIR considers `atomic_exchange` to be a fetch instruction with
+    an operator that *)
+module Fetch : sig
+  (** The enumeration of fetch postfix operations with binary operator
+      equivalents. *)
+  type bop =
+    [ `Add  (** Fetch and add. *)
+    | `Sub  (** Fetch and subtract. *)
+    | `And  (** Fetch and (bitwise) AND. *)
+    | `Or  (** Fetch and (bitwise) OR. *)
+    | `Xor  (** Fetch and (bitwise) XOR. *) ]
+
+  val to_bop : bop -> Binary.t
   (** [to_bop op] gets the binary operator that represents the operation that
       [op] represents between the old value and the fetch argument. *)
+
+  (** The enumeration of fetch postfix operations. *)
+  type t = [bop | `Xchg  (** Atomic exchange. *)]
 
   include C4f_utils.Enum_types.S_table with type t := t
 

@@ -39,7 +39,6 @@ let%test_module "expressions" =
         atomics.expression.fetch 0
         atomics.expression.load 1
         atomics.expression.store 0
-        atomics.expression.xchg 0
         mem-orders.expression.memory_order_relaxed 0
         mem-orders.expression.memory_order_consume 0
         mem-orders.expression.memory_order_acquire 0
@@ -51,7 +50,6 @@ let%test_module "expressions" =
         atomics.statement.fetch 0
         atomics.statement.load 0
         atomics.statement.store 0
-        atomics.statement.xchg 0
         mem-orders.statement.memory_order_relaxed 0
         mem-orders.statement.memory_order_consume 0
         mem-orders.statement.memory_order_acquire 0

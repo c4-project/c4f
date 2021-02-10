@@ -39,15 +39,10 @@ val fetch :
   , t
   , [< Accessor.variant] )
   Accessor.Simple.t
-(** [fetch] focuses on atomic fetch statements. *)
+(** [fetch] focuses on atomic fetch (or exchange) statements. *)
 
 val store : ('a, Atomic_store.t, t, [< Accessor.variant]) Accessor.Simple.t
 (** [store] focuses on atomic store statements. *)
-
-val xchg :
-  ('a, Expression.t Atomic_xchg.t, t, [< Accessor.variant]) Accessor.Simple.t
-(** [xchg] focuses on atomic exchanges that are in statement position
-    (discarding the output). *)
 
 (** {1 Traversals} *)
 
@@ -57,11 +52,9 @@ val value_map :
   -> fence:(Atomic_fence.t -> 'result)
   -> fetch:(Expression.t Atomic_fetch.t -> 'result)
   -> store:(Atomic_store.t -> 'result)
-  -> xchg:(Expression.t Atomic_xchg.t -> 'result)
   -> 'result
-(** [value_map x ~cmpxchg ~fence ~fetch ~store ~xchg] reduces an atomic
-    statement [x] to a particular result type by applying the appropriate
-    function. *)
+(** [value_map x ~cmpxchg ~fence ~fetch ~store] reduces an atomic statement
+    [x] to a particular result type by applying the appropriate function. *)
 
 (** [Base_map] is the base form of an applicative traversal. *)
 module Base_map (Ap : Applicative.S) : sig
@@ -74,10 +67,9 @@ module Base_map (Ap : Applicative.S) : sig
     -> fetch:
          (Expression.t Atomic_fetch.t -> Expression.t Atomic_fetch.t Ap.t)
     -> store:(Atomic_store.t -> Atomic_store.t Ap.t)
-    -> xchg:(Expression.t Atomic_xchg.t -> Expression.t Atomic_xchg.t Ap.t)
     -> t Ap.t
-  (** [bmap t ~cmpxchg ~fence ~fetch ~store ~xchg] traverses over [t]
-      applicatively with the appropriate traversal function. *)
+  (** [bmap t ~cmpxchg ~fence ~fetch ~store] traverses over [t] applicatively
+      with the appropriate traversal function. *)
 end
 
 (** Traverses over the addresses of an atomic statement. *)

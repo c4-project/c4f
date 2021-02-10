@@ -53,7 +53,6 @@ module Make_traversal_base (Basic : Basic) = struct
     module O = Basic.O.On (M)
     module AC = Atomic_cmpxchg.Base_map (M)
     module AF = Atomic_fetch.Base_map (M)
-    module AX = Atomic_xchg.Base_map (M)
 
     let map_m_cmpxchg (x : t Atomic_cmpxchg.t) ~(f : Elt.t -> Elt.t M.t)
         ~(mu : t -> t M.t) : t Atomic_cmpxchg.t M.t =
@@ -65,10 +64,6 @@ module Make_traversal_base (Basic : Basic) = struct
         ~(mu : t -> t M.t) : t Atomic_fetch.t M.t =
       AF.bmap x ~obj:(A.map_m ~f) ~arg:mu ~mo:(O.map_m ~f) ~op:M.return
 
-    let map_m_xchg (x : t Atomic_xchg.t) ~(f : Elt.t -> Elt.t M.t)
-        ~(mu : t -> t M.t) : t Atomic_xchg.t M.t =
-      AX.bmap x ~obj:(A.map_m ~f) ~desired:mu ~mo:(O.map_m ~f)
-
     let map_m_ae (ae : t Atomic_expression.t) ~(f : Elt.t -> Elt.t M.t)
         ~(mu : t -> t M.t) : t Atomic_expression.t M.t =
       Travesty_base_exts.Fn.Compose_syntax.(
@@ -76,8 +71,7 @@ module Make_traversal_base (Basic : Basic) = struct
           reduce ae
             ~cmpxchg:(map_m_cmpxchg ~f ~mu >> M.map ~f:cmpxchg)
             ~fetch:(map_m_fetch ~f ~mu >> M.map ~f:fetch)
-            ~load:(L.map_m ~f >> M.map ~f:load)
-            ~xchg:(map_m_xchg ~f ~mu >> M.map ~f:xchg)))
+            ~load:(L.map_m ~f >> M.map ~f:load)))
 
     module B = Expression.Base_map (M)
     module AccM = Accessor.Of_applicative (M)
@@ -208,62 +202,6 @@ struct
 
       let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
         TM.map_m_fetch x ~f ~mu:(TM.map_m ~f)
-    end
-  end)
-
-  module On_addresses :
-    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t =
-  Make_traversal (struct
-    module Elt = Address
-    module A =
-      Travesty.Traversable.Fix_elt (Travesty_containers.Singleton) (Address)
-    module C = Travesty.Traversable.Const (Constant) (Address)
-    module L = Atomic_load.On_addresses
-    module O = Travesty.Traversable.Const (Mem_order) (Address)
-  end)
-
-  module On_constants :
-    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Constant.t =
-  Make_traversal (struct
-    module Elt = Constant
-    module A = Travesty.Traversable.Const (Address) (Constant)
-    module C =
-      Travesty.Traversable.Fix_elt (Travesty_containers.Singleton) (Constant)
-    module L = Travesty.Traversable.Const (Atomic_load) (Constant)
-    module O = Travesty.Traversable.Const (Mem_order) (Constant)
-  end)
-
-  module On_mem_orders :
-    Travesty.Traversable_types.S0
-      with type t = t
-       and type Elt.t = Mem_order.t = Make_traversal (struct
-    module Elt = Mem_order
-    module A = Travesty.Traversable.Const (Address) (Mem_order)
-    module C = Travesty.Traversable.Const (Constant) (Mem_order)
-    module L = Atomic_load.On_mem_orders
-    module O =
-      Travesty.Traversable.Fix_elt
-        (Travesty_containers.Singleton)
-        (Mem_order)
-  end)
-end
-
-module Xchg :
-  Expression_types.S_traversable with type t = Expression.t Atomic_xchg.t =
-struct
-  type t = Expression.t Atomic_xchg.t
-
-  module Make_traversal (Basic : Basic) = Travesty.Traversable.Make0 (struct
-    type nonrec t = t
-
-    module Elt = Basic.Elt
-    module TB = Make_traversal_base (Basic)
-
-    module On (M : Applicative.S) = struct
-      module TM = TB.On (M)
-
-      let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
-        TM.map_m_xchg x ~f ~mu:(TM.map_m ~f)
     end
   end)
 

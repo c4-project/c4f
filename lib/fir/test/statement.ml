@@ -34,13 +34,6 @@ let mkwhile ?(cond : Src.Expression.t = cond)
 let nop : unit Src.Statement.t =
   A.(construct Src.(Statement.prim' @> Prim_statement.nop) ())
 
-let mkaxchg ?(mo : Src.Mem_order.t = Seq_cst) (obj : Src.Address.t)
-    (desired : Src.Expression.t) : unit Src.Statement.t =
-  A.(
-    construct
-      Src.(Statement.prim' @> Prim_statement.atomic @> Atomic_statement.xchg)
-      (Src.Atomic_xchg.make ~mo ~obj ~desired))
-
 let mkastore ?(mo : Src.Mem_order.t = Seq_cst) (dst : Src.Address.t)
     (src : Src.Expression.t) : unit Src.Statement.t =
   A.(
@@ -56,6 +49,10 @@ let mkafetch ?(mo : Src.Mem_order.t = Seq_cst) (op : Src.Op.Fetch.t)
       Src.(
         Statement.prim' @> Prim_statement.atomic @> Atomic_statement.fetch))
     (Src.Atomic_fetch.make ~mo ~obj ~arg ~op)
+
+let mkaxchg ?(mo : Src.Mem_order.t option) (obj : Src.Address.t)
+    (arg : Src.Expression.t) : unit Src.Statement.t =
+  mkafetch ?mo `Xchg obj arg
 
 let%test_module "has_if_statements" =
   ( module struct

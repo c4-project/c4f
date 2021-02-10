@@ -19,14 +19,14 @@ module Test_data = struct
         Atomic_fetch.make
           ~obj:(Address.of_variable_str_exn "gen1")
           ~arg:(Expression.int_lit 54321)
-          ~mo:Seq_cst ~op:Add)
+          ~mo:Seq_cst ~op:`Add)
 
   let fadd_redundant : Fir.Expression.t Fir.Atomic_fetch.t Lazy.t =
     lazy
       Fir.(
         Atomic_fetch.make
           ~obj:(Address.of_variable_str_exn "gen1")
-          ~arg:(Expression.int_lit 0) ~mo:Seq_cst ~op:Add)
+          ~arg:(Expression.int_lit 0) ~mo:Seq_cst ~op:`Add)
 end
 
 let%test_module "fetch.make.int.dead" =

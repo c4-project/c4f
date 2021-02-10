@@ -27,6 +27,13 @@ val gen_loadlike :
     no-op RMWs using [const]) over [env]. Each generated expression comes
     with the record of the loaded variable. *)
 
+val gen_atomic_fetch_idem :
+     Fir.Env.t
+  -> const:(Fir.Constant.t -> Fir.Expression.t Q.Generator.t)
+  -> (Fir.Expression.t * Fir.Env.Record.t) Q.Generator.t
+(** [gen_atomic_fetch_idem env ~const] generates idempotent atomic fetch
+    expressions over [env] and [const]. *)
+
 val gen :
      Fir.Env.t
   -> bool:(Fir.Env.t -> Fir.Expression.t Q.Generator.t)

@@ -63,52 +63,11 @@ module Int_values (E : Fir.Env_types.S) = struct
   let quickcheck_shrinker : t Q.Shrinker.t = Q.Shrinker.atomic
 end
 
-module Atomic_fetch_int_zero_nops
-    (Obj : Fir.Env_types.S)
-    (Arg : Fir.Env_types.S) :
-  C4f_utils.My_quickcheck.S_with_sexp
-    with type t = Fir.Expression.t Fir.Atomic_fetch.t =
-  Atomic_fetch.Int (Obj) (Fir.Op.Fetch.Gen_idem_zero_rhs) (Int_zeroes (Arg))
-
-module Atomic_fetch_int_refl_nops (Obj : Fir.Env_types.S) :
-  C4f_utils.My_quickcheck.S_with_sexp
-    with type t = Fir.Expression.t Fir.Atomic_fetch.t = struct
-  type t = Fir.Expression.t Fir.Atomic_fetch.t [@@deriving sexp]
-
-  (* TODO(@MattWindsor91): a LOT of this overlaps with the atomic fetch
-     generator... *)
-
-  module A = Address.Atomic_int_pointers (Obj)
-  module Z = Int_zeroes (Obj)
-
-  let quickcheck_observer =
-    [%quickcheck.observer: Fir.Expression.t Fir.Atomic_fetch.t]
-
-  (* TODO(@MattWindsor91): expression shrinker *)
-  let quickcheck_shrinker =
-    [%quickcheck.shrinker: [%custom Q.Shrinker.atomic] Fir.Atomic_fetch.t]
-
-  let gen_address : (Fir.Address.t * Fir.Env.Record.t) Q.Generator.t =
-    Expr_util.with_record A.quickcheck_generator
-      ~to_var:(Accessor.get Fir.Address.variable_of)
-      ~env:Obj.env
-
-  let gen_op (obj : Fir.Address.t) (arg : Fir.Expression.t) :
-      Fir.Expression.t Fir.Atomic_fetch.t Q.Generator.t =
-    Q.Generator.Let_syntax.(
-      let%bind op = Fir.Op.Fetch.Gen_idem_refl.quickcheck_generator in
-      (* 'all values are permitted':
-         https://en.cppreference.com/w/c/atomic/atomic_fetch_add etc. *)
-      let%map mo = Fir.Mem_order.quickcheck_generator in
-      Fir.Atomic_fetch.make ~obj ~arg ~mo ~op)
-
-  let quickcheck_generator =
-    Expr_util.gen_kv_refl ~gen_load:gen_address ~gen_op
-end
-
 module Atomic_fetch_int_nops (Obj : Fir.Env_types.S) (Arg : Fir.Env_types.S) :
   C4f_utils.My_quickcheck.S_with_sexp
     with type t = Fir.Expression.t Fir.Atomic_fetch.t = struct
+  (* We can't easily factor this into [expr_int], as we need the constant
+     generator. *)
   type t = Fir.Expression.t Fir.Atomic_fetch.t [@@deriving sexp]
 
   (* TODO(@MattWindsor91): don't repeat self!*)
@@ -120,11 +79,8 @@ module Atomic_fetch_int_nops (Obj : Fir.Env_types.S) (Arg : Fir.Env_types.S) :
   let quickcheck_shrinker =
     [%quickcheck.shrinker: [%custom Q.Shrinker.atomic] Fir.Atomic_fetch.t]
 
-  module Z = Atomic_fetch_int_zero_nops (Obj) (Arg)
-  module R = Atomic_fetch_int_refl_nops (Obj)
-
   let quickcheck_generator =
-    Q.Generator.union [Z.quickcheck_generator; R.quickcheck_generator]
+    Atomic_fetch.gen_int_idem Obj.env ~const:(fun k -> const k Arg.env)
 end
 
 module Atomic_fetch_int_values

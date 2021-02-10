@@ -162,31 +162,47 @@ end
 module Fetch = struct
   module With_qc = struct
     module M = struct
-      type t = Add | Sub | And | Or | Xor [@@deriving enum, enumerate]
+      type bop = [`Add | `Sub | `And | `Or | `Xor]
+      [@@deriving equal, enumerate]
+
+      type t = [bop | `Xchg] [@@deriving equal, enumerate]
 
       let table =
-        [(Add, "add"); (Sub, "sub"); (Or, "or"); (Xor, "xor"); (And, "and")]
+        [ (`Add, "add")
+        ; (`Sub, "sub")
+        ; (`Or, "or")
+        ; (`Xor, "xor")
+        ; (`And, "and")
+        ; (`Xchg, "xchg") ]
     end
 
     include M
-    include C4f_utils.Enum.Extend_table (M)
+
+    include C4f_utils.Enum.Extend_table (struct
+      include M
+      include C4f_utils.Enum.Make_from_enumerate (M)
+    end)
   end
 
   include With_qc
 
-  let to_bop : t -> Binary.t = function
-    | Add ->
+  let to_bop : bop -> Binary.t = function
+    | `Add ->
         Binary.add
-    | Sub ->
+    | `Sub ->
         Binary.sub
-    | Or ->
+    | `Or ->
         Binary.b_or
-    | Xor ->
+    | `Xor ->
         Binary.b_xor
-    | And ->
+    | `And ->
         Binary.b_and
 
-  let rules : t -> Op_rule.t list = Fn.compose Binary.rules to_bop
+  let rules : t -> Op_rule.t list = function
+    | `Xchg ->
+        Op_rule.[Refl @-> Idem (* atomic_exchange(x, x) = x *)]
+    | #bop as bop ->
+        bop |> to_bop |> Binary.rules
 
   module Gen_idem_zero_rhs = struct
     include With_qc
@@ -204,7 +220,7 @@ module Fetch = struct
   module Gen_idem_refl = struct
     include With_qc
 
-    (* AND and OR *)
+    (* AND, OR, and XCHG *)
 
     let quickcheck_generator : t Base_quickcheck.Generator.t =
       Base_quickcheck.Generator.filter quickcheck_generator

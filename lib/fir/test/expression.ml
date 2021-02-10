@@ -114,9 +114,9 @@ let%test_module "Eval" =
             sub
               (atomic_fetch
                  (Atomic_fetch.make ~obj:(var_addr e "y") ~arg:(int_lit 1)
-                    ~mo:C4f_fir.Mem_order.Seq_cst ~op:Op.Fetch.Sub))
+                    ~mo:C4f_fir.Mem_order.Seq_cst ~op:`Sub))
               (atomic_fetch
                  (Atomic_fetch.make ~obj:(var_addr e "y") ~arg:(int_lit 1)
-                    ~mo:C4f_fir.Mem_order.Seq_cst ~op:Op.Fetch.Add)))) ;
+                    ~mo:C4f_fir.Mem_order.Seq_cst ~op:`Add)))) ;
       [%expect {| (Ok (Int 1)) |}]
   end )

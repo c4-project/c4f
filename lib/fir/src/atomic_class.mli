@@ -17,10 +17,9 @@
 type t =
   | Cmpxchg  (** Atomic compare-exchanges. *)
   | Fence  (** Atomic fences. *)
-  | Fetch  (** Atomic fetches. *)
+  | Fetch  (** Atomic fetches, including exchanges. *)
   | Load  (** Atomic loads. *)
   | Store  (** Atomic stores. *)
-  | Xchg  (** Atomic exchanges. *)
 
 include C4f_utils.Enum_types.Extension_table with type t := t
 

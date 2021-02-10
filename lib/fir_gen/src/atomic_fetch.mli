@@ -16,10 +16,15 @@
 
 open Import
 
+type env := Fir.Env.t
+
+type t := Fir.Expression.t Fir.Atomic_fetch.t
+
+type const_f := Fir.Constant.t -> Fir.Expression.t Q.Generator.t
+
 (** Type of atomic load generators. *)
 module type S = sig
-  type t = Fir.Expression.t Fir.Atomic_fetch.t
-  [@@deriving sexp_of, quickcheck]
+  type nonrec t = t [@@deriving sexp_of, quickcheck]
 end
 
 (** Generates random, type-safe atomic fetches using over the given variable
@@ -30,3 +35,24 @@ module Int
     (O : Utils.My_quickcheck.S_with_sexp with type t := Fir.Op.Fetch.t)
     (Arg : Utils.My_quickcheck.S_with_sexp with type t := Fir.Expression.t) :
   S
+
+(** {2: Specific integer generators} *)
+
+val gen_zero_idem : env -> const:const_f -> t Q.Generator.t
+(** [gen_zero_idem env ~const] generates atomic fetches over the variables in
+    [env] such that the argument to the fetch is an expression generated with
+    [const] evaluating to zero, and the fetch is idempotent. *)
+
+val gen_neg1_idem : env -> const:const_f -> t Q.Generator.t
+(** [gen_neg1_idem env ~const] generates atomic fetches over the variables in
+    [env] such that the argument to the fetch is an expression generated with
+    [const] evaluating to negative 1, and the fetch is idempotent. *)
+
+val gen_int_refl_idem : env -> t Q.Generator.t
+(** [gen_int_refl_idem env] generates atomic fetches over the variables in
+    [env] that have known values, such that the argument to the fetch is the
+    known value of the variable and the fetch is idempotent. *)
+
+val gen_int_idem : env -> const:const_f -> t Q.Generator.t
+(** [gen_int_idem env ~const] generates idempotent integer atomic fetches
+    over the variables in [env], perhaps using [const] to generate constants. *)

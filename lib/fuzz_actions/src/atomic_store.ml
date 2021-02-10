@@ -59,15 +59,16 @@ module Transform = struct
     let a_store_action (s : Fir.Atomic_store.t) :
         Fir.Atomic_statement.t Or_error.t =
       Ok
-        (Accessor.construct Fir.Atomic_statement.xchg
+        (Accessor.construct Fir.Atomic_statement.fetch
            Fir.Atomic_store.(
-             Fir.Atomic_xchg.make ~obj:s.@(dst) ~desired:s.@(src) ~mo:s.@(mo)))
+             Fir.Atomic_fetch.make ~op:`Xchg ~obj:s.@(dst) ~arg:s.@(src)
+               ~mo:s.@(mo)))
 
     let xchgify_atomic :
         Fir.Atomic_statement.t -> Fir.Atomic_statement.t Or_error.t =
       Fir.Atomic_statement.value_map ~cmpxchg:not_a_store_action
         ~fence:not_a_store_action ~fetch:not_a_store_action
-        ~xchg:not_a_store_action ~store:a_store_action
+        ~store:a_store_action
 
     let xchgify :
            Fuzz.Metadata.t Fir.Statement.t

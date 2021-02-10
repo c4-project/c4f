@@ -166,45 +166,30 @@ let eval_atomic_cmpxchg (c : Expression.t Atomic_cmpxchg.t) ~(mu : mu) :
 
 let atomic_fetch_op ~(op : Op.Fetch.t) ~(obj_old : Constant.t)
     ~(arg : Expression.t) : Expression.t =
-  Expression.bop (Op.Fetch.to_bop op) (Expression.constant obj_old) arg
+  match op with
+  | `Xchg ->
+      arg
+  | #Op.Fetch.bop as op ->
+      Expression.bop (Op.Fetch.to_bop op) (Expression.constant obj_old) arg
 
-(** [eval_atomic_fetch_xchg_common obj_addr ~desired_f] handles the operation
-    of loading from [obj_addr], evaluating a new value by passing its value
-    to [desired_f], storing the new value back to [obj_addr], and then
-    returning the old value. This body is common to both atomic_fetch and
-    atomic_xchg. *)
-let eval_atomic_fetch_xchg_common (obj_addr : Address.t)
-    ~(desired_f : Constant.t -> Expression.t) ~(mu : mu) :
-    Constant.t Heap.Monad.t =
+let eval_atomic_fetch ({obj; arg; op; _} : Expression.t Atomic_fetch.t)
+    ~(mu : mu) : Constant.t Heap.Monad.t =
   Heap.Monad.Let_syntax.(
-    let obj = Address.deref obj_addr in
+    let obj = Address.deref obj in
     let%bind obj_old = Heap.Monad.load obj in
-    let obj_new_expr = desired_f obj_old in
+    let obj_new_expr = atomic_fetch_op ~op ~obj_old ~arg in
     let%bind obj_new = mu obj_new_expr in
     let%map () = Heap.Monad.store obj obj_new in
     obj_old)
-
-let eval_atomic_fetch (f : Expression.t Atomic_fetch.t) ~(mu : mu) :
-    Constant.t Heap.Monad.t =
-  eval_atomic_fetch_xchg_common f.obj ~mu ~desired_f:(fun obj_old ->
-      let arg = f.arg in
-      let op = f.op in
-      atomic_fetch_op ~op ~obj_old ~arg)
 
 let eval_atomic_load (atomic_load : Atomic_load.t) : Constant.t Heap.Monad.t
     =
   atomic_load.src |> Address.deref |> Heap.Monad.load
 
-let eval_atomic_xchg (x : Expression.t Atomic_xchg.t) ~(mu : mu) :
-    Constant.t Heap.Monad.t =
-  eval_atomic_fetch_xchg_common (Atomic_xchg.obj x) ~mu ~desired_f:(fun _ ->
-      Atomic_xchg.desired x)
-
 let eval_atomic (a : Expression.t Atomic_expression.t) ~(mu : mu) :
     Constant.t Heap.Monad.t =
   Atomic_expression.reduce a ~cmpxchg:(eval_atomic_cmpxchg ~mu)
     ~fetch:(eval_atomic_fetch ~mu) ~load:eval_atomic_load
-    ~xchg:(eval_atomic_xchg ~mu)
 
 let eval_ternary ({if_; then_; else_} : Expression.t Expr_ternary.t)
     ~(mu : mu) : Constant.t Heap.Monad.t =

@@ -22,7 +22,7 @@ let test_fragment : unit Src.Statement.t Lazy.t =
       mkif ~cond:Src.Expression.truth
         [ mkif ~cond:Src.Expression.truth
             Src.
-              [ mkafetch Add
+              [ mkafetch `Add
                   Address.(of_variable_str_exn "x")
                   Expression.(int_lit 42)
               ; A.(
