@@ -34,36 +34,24 @@ let eol = [%sedlex.regexp? '\n']
 
 let rec skip_c_comment (lexbuf : Sedlexing.lexbuf) : unit =
   match%sedlex lexbuf with
-  | "*/" ->
-      ()
-  | '*' ->
-      skip_c_comment lexbuf
-  | eof ->
-      Frontend.lex_error "eof in skip_c_comment" lexbuf
-  | Plus (Compl ('*' | eof)) ->
-      skip_c_comment lexbuf
-  | _ ->
-      Frontend.lex_error "failure in skip_c_comment" lexbuf
+  | "*/" -> ()
+  | '*' -> skip_c_comment lexbuf
+  | eof -> Frontend.lex_error "eof in skip_c_comment" lexbuf
+  | Plus (Compl ('*' | eof)) -> skip_c_comment lexbuf
+  | _ -> Frontend.lex_error "failure in skip_c_comment" lexbuf
 
 let rec skip_line (lexbuf : Sedlexing.lexbuf) : unit =
   match%sedlex lexbuf with
-  | eol | eof ->
-      ()
-  | Plus (Compl (eol | eof)) ->
-      skip_line lexbuf
-  | _ ->
-      Frontend.lex_error "failure in skip_line" lexbuf
+  | eol | eof -> ()
+  | Plus (Compl (eol | eof)) -> skip_line lexbuf
+  | _ -> Frontend.lex_error "failure in skip_line" lexbuf
 
 let rec skip_string (lexbuf : Sedlexing.lexbuf) : unit =
   match%sedlex lexbuf with
-  | '"' ->
-      ()
-  | eol ->
-      Frontend.lex_error "newline in skip_string" lexbuf
-  | eof ->
-      Frontend.lex_error "eof in skip_string" lexbuf
-  | _ ->
-      skip_string lexbuf
+  | '"' -> ()
+  | eol -> Frontend.lex_error "newline in skip_string" lexbuf
+  | eof -> Frontend.lex_error "eof in skip_string" lexbuf
+  | _ -> skip_string lexbuf
 
 type char_result = Single | Double | Char of char | String of string
 
@@ -79,44 +67,36 @@ let read_hex_escape (lexbuf : Sedlexing.lexbuf) ~(k : char_result -> 'a) : 'a
   | _ ->
       Frontend.lex_error
         (Printf.sprintf "Invalid hex escape sequence: '%s'"
-           (Sedlexing.Utf8.lexeme lexbuf))
+           (Sedlexing.Utf8.lexeme lexbuf) )
         lexbuf
 
 let read_escape (lexbuf : Sedlexing.lexbuf) ~(k : char_result -> 'a) : 'a =
   match%sedlex lexbuf with
-  | '\'' ->
-      k (Char '\'')
-  | '"' ->
-      k (Char '"')
+  | '\'' -> k (Char '\'')
+  | '"' -> k (Char '"')
   (* TODO(@MattWindsor91): octal escapes *)
-  | '0' ->
-      k (Char '\x00')
-  | '\\' ->
-      k (Char '\\')
-  | 'x' ->
-      read_hex_escape lexbuf ~k
+  | '0' -> k (Char '\x00')
+  | '\\' -> k (Char '\\')
+  | 'x' -> read_hex_escape lexbuf ~k
   | _ ->
       Frontend.lex_error
         (Printf.sprintf "Invalid escape sequence: '%s'"
-           (Sedlexing.Utf8.lexeme lexbuf))
+           (Sedlexing.Utf8.lexeme lexbuf) )
         lexbuf
 
 let read_string_or_char_inner (lexbuf : Sedlexing.lexbuf)
     ~(k : char_result -> 'a) : 'a =
   match%sedlex lexbuf with
-  | '\'' ->
-      k Single
-  | '"' ->
-      k Double
-  | '\\' ->
-      read_escape ~k lexbuf
+  | '\'' -> k Single
+  | '"' -> k Double
+  | '\\' -> read_escape ~k lexbuf
   (* TODO(@MattWindsor91): all other escapes *)
   | Plus (Compl ('\'' | '"' | '\\')) ->
       k (String (Sedlexing.Utf8.lexeme lexbuf))
   | _ ->
       Frontend.lex_error
         (Printf.sprintf "Invalid char/string-literal character: '%s'"
-           (Sedlexing.Utf8.lexeme lexbuf))
+           (Sedlexing.Utf8.lexeme lexbuf) )
         lexbuf
 
 (* per 'Real World OCaml' *)
@@ -126,14 +106,13 @@ let rec read_string_inner (tok : string -> 't) (buf : Buffer.t)
     | Single ->
         Buffer.add_char buf '\'' ;
         read_string_inner tok buf lexbuf
-    | Double ->
-        tok (Buffer.contents buf)
+    | Double -> tok (Buffer.contents buf)
     | Char c ->
         Buffer.add_char buf c ;
         read_string_inner tok buf lexbuf
     | String s ->
         Buffer.add_string buf s ;
-        read_string_inner tok buf lexbuf)
+        read_string_inner tok buf lexbuf )
 
 let read_string (tok : string -> 't) : Sedlexing.lexbuf -> 't =
   read_string_inner tok (Buffer.create 17)
@@ -141,21 +120,16 @@ let read_string (tok : string -> 't) : Sedlexing.lexbuf -> 't =
 let read_char_end (tok : string -> 't) (lexbuf : Sedlexing.lexbuf)
     (contents : string) : 't =
   match%sedlex lexbuf with
-  | '\'' ->
-      tok contents
+  | '\'' -> tok contents
   | _ ->
       Frontend.lex_error "Char literal can only contain one character" lexbuf
 
 let read_char (tok : string -> 't) (lexbuf : Sedlexing.lexbuf) : 't =
   read_string_or_char_inner lexbuf ~k:(function
-    | Single ->
-        Frontend.lex_error "No character in character literal" lexbuf
-    | Double ->
-        read_char_end tok lexbuf "\""
-    | Char c ->
-        read_char_end tok lexbuf (String.of_char c)
-    | String s ->
-        read_char_end tok lexbuf s)
+    | Single -> Frontend.lex_error "No character in character literal" lexbuf
+    | Double -> read_char_end tok lexbuf "\""
+    | Char c -> read_char_end tok lexbuf (String.of_char c)
+    | String s -> read_char_end tok lexbuf s )
 
 let escape_string_char (buf : Buffer.t) (lexeme : string) : unit =
   if String.length lexeme = 1 then
@@ -185,9 +159,7 @@ let escape_string (s : string) : string =
     | any ->
         escape_string_char buf (Sedlexing.Utf8.lexeme lexbuf) ;
         mu buf lexbuf
-    | eof ->
-        Buffer.contents buf
-    | _ ->
-        Frontend.lex_error "Unexpected char when escaping:" lexbuf
+    | eof -> Buffer.contents buf
+    | _ -> Frontend.lex_error "Unexpected char when escaping:" lexbuf
   in
   mu (Buffer.create (String.length s)) (Sedlexing.Utf8.from_string s)

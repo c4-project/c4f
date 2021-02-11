@@ -98,7 +98,7 @@ module Parametric = struct
           using
             (fun {qualifiers; declarator} -> (qualifiers, declarator))
             (hvbox
-               (pair ~sep:sp (box (list ~sep:sp B.Qual.pp)) (box B.Decl.pp))))
+               (pair ~sep:sp (box (list ~sep:sp B.Qual.pp)) (box B.Decl.pp)) ))
     end
   end
 
@@ -161,12 +161,9 @@ module Parametric = struct
       [@@deriving sexp, equal, compare]
 
       let rec pp f : t -> unit = function
-        | Id i ->
-            Ast_basic.Identifier.pp f i
-        | Bracket t ->
-            Fmt.parens B.Dec.pp f t
-        | Array a ->
-            Ast_basic.Array.pp pp (Fmt.option B.Expr.pp) f a
+        | Id i -> Ast_basic.Identifier.pp f i
+        | Bracket t -> Fmt.parens B.Dec.pp f t
+        | Array a -> Ast_basic.Array.pp pp (Fmt.option B.Expr.pp) f a
         | Fun_decl (t, ps) ->
             Fmt.(pair ~sep:nop pp (parens B.Par.pp) f (t, ps))
         | Fun_call (t, ps) ->
@@ -176,16 +173,11 @@ module Parametric = struct
                 f (t, ps))
 
       let rec identifier = function
-        | Id x ->
-            x
-        | Bracket d ->
-            B.Dec.identifier d
-        | Array {array; _} ->
-            identifier array
-        | Fun_decl (t, _) ->
-            identifier t
-        | Fun_call (t, _) ->
-            identifier t
+        | Id x -> x
+        | Bracket d -> B.Dec.identifier d
+        | Array {array; _} -> identifier array
+        | Fun_decl (t, _) -> identifier t
+        | Fun_call (t, _) -> identifier t
     end
   end
 
@@ -235,8 +227,7 @@ module Parametric = struct
       [@@deriving sexp, equal, compare]
 
       let rec pp f : t -> unit = function
-        | Bracket t ->
-            Fmt.parens B.Dec.pp f t
+        | Bracket t -> Fmt.parens B.Dec.pp f t
         | Array a ->
             Fmt.(Ast_basic.Array.pp (option pp) (option B.Expr.pp) f a)
         | Fun_decl (t, ps) ->
@@ -257,8 +248,7 @@ module Parametric = struct
       [@@deriving sexp, equal, compare]
 
       let pp f : t -> unit = function
-        | Pointer ptr ->
-            Ast_basic.Pointer.pp f ptr
+        | Pointer ptr -> Ast_basic.Pointer.pp f ptr
         | Direct (mptr, direct) ->
             Fmt.(pair ~sep:nop (option Ast_basic.Pointer.pp) D.pp)
               f (mptr, direct)
@@ -281,8 +271,7 @@ module Parametric = struct
       [@@deriving sexp, equal, compare]
 
       let pp f : t -> unit = function
-        | Regular decl ->
-            B.Dec.pp f decl
+        | Regular decl -> B.Dec.pp f decl
         | Bitfield (mdecl, bitsize) ->
             Fmt.(
               pair ~sep:nop
@@ -302,12 +291,9 @@ module Parametric = struct
       [@@deriving sexp, equal, compare]
 
       let pp_body (f : Base.Formatter.t) : t -> unit = function
-        | Normal id ->
-            Ast_basic.Identifier.pp f id
-        | Case expr ->
-            Fmt.pf f "case@ %a" E.pp expr
-        | Default ->
-            Fmt.string f "default"
+        | Normal id -> Ast_basic.Identifier.pp f id
+        | Case expr -> Fmt.pf f "case@ %a" E.pp expr
+        | Default -> Fmt.string f "default"
 
       let pp : t Fmt.t = Fmt.(pp_body ++ any ":")
     end
@@ -348,27 +334,21 @@ module Parametric = struct
             Fmt.pf f "%a@ %a@ %a" pp l Operators.Bin.pp bin pp r
         | Ternary {cond; t_expr; f_expr} ->
             Fmt.pf f "%a@ ?@ %a@ :@ %a" pp cond pp t_expr pp f_expr
-        | Cast (ty, t) ->
-            Fmt.(pf f "%a%a" (parens T.pp) ty pp t)
+        | Cast (ty, t) -> Fmt.(pf f "%a%a" (parens T.pp) ty pp t)
         | Call {func; arguments} ->
             Fmt.(pf f "%a%a" pp func (parens (list ~sep:comma pp)) arguments)
-        | Subscript a ->
-            Ast_basic.Array.pp pp pp f a
+        | Subscript a -> Ast_basic.Array.pp pp pp f a
         | Field {value; field; access= `Direct} ->
             Fmt.pf f "%a.%a" pp value Ast_basic.Identifier.pp field
         | Field {value; field; access= `Deref} ->
             Fmt.pf f "%a->%a" pp value Ast_basic.Identifier.pp field
-        | Sizeof_type ty ->
-            Fmt.(pf f "sizeof%a" (parens T.pp) ty)
-        | Identifier id ->
-            Ast_basic.Identifier.pp f id
+        | Sizeof_type ty -> Fmt.(pf f "sizeof%a" (parens T.pp) ty)
+        | Identifier id -> Ast_basic.Identifier.pp f id
         | String s ->
             (* TODO(@MattWindsor91): escape sequences *)
             Fmt.(quote ~mark:"\"" string) f s
-        | Constant k ->
-            Ast_basic.Constant.pp f k
-        | Brackets t ->
-            Fmt.parens pp f t
+        | Constant k -> Ast_basic.Constant.pp f k
+        | Brackets t -> Fmt.parens pp f t
     end
   end
 
@@ -381,10 +361,8 @@ module Parametric = struct
       [@@deriving sexp, equal, compare]
 
       let pp_style f = function
-        | `Normal ->
-            Fmt.nop f ()
-        | `Variadic ->
-            Fmt.unit "@ ,@ ..." f ()
+        | `Normal -> Fmt.nop f ()
+        | `Variadic -> Fmt.unit "@ ,@ ..." f ()
 
       let pp =
         Fmt.(
@@ -434,14 +412,10 @@ module Parametric = struct
       let rec pp (f : Base.Formatter.t) : t -> unit = function
         | Label (label, labelled) ->
             Fmt.(pair ~sep:sp B.Lbl.pp pp f (label, labelled))
-        | Expr e ->
-            Fmt.((option B.Expr.pp ++ any ";") f e)
-        | Compound com ->
-            B.Com.pp f com
-        | Atomic a ->
-            Fmt.(pf f "atomic@ %a" B.Com.pp a)
-        | Synchronized a ->
-            Fmt.(pf f "synchronized@ %a" B.Com.pp a)
+        | Expr e -> Fmt.((option B.Expr.pp ++ any ";") f e)
+        | Compound com -> B.Com.pp f com
+        | Atomic a -> Fmt.(pf f "atomic@ %a" B.Com.pp a)
+        | Synchronized a -> Fmt.(pf f "synchronized@ %a" B.Com.pp a)
         | If {cond; t_branch; f_branch} ->
             Fmt.(
               pf f "if@ (%a)@ %a%a" B.Expr.pp cond pp t_branch
@@ -449,10 +423,8 @@ module Parametric = struct
                 f_branch)
         | Switch (cond, rest) ->
             Fmt.(pf f "switch@ (%a)@ %a" B.Expr.pp cond pp rest)
-        | Continue ->
-            Fmt.unit "continue;" f ()
-        | Break ->
-            Fmt.unit "break;" f ()
+        | Continue -> Fmt.unit "continue;" f ()
+        | Break -> Fmt.unit "break;" f ()
         | While (cond, body) ->
             Fmt.(pf f "while@ (%a)@ %a" B.Expr.pp cond pp body)
         | Do_while (body, cond) ->
@@ -461,8 +433,7 @@ module Parametric = struct
             Fmt.(
               pf f "for@ (%a;@ %a;@ %a)@ %a" (option B.Expr.pp) init
                 (option B.Expr.pp) cond (option B.Expr.pp) update pp body)
-        | Goto label ->
-            Fmt.pf f "goto@ %a;" Ast_basic.Identifier.pp label
+        | Goto label -> Fmt.pf f "goto@ %a;" Ast_basic.Identifier.pp label
         | Return expr ->
             (* The space should be surpressed when there is no return value,
                hence the somewhat odd formulation. *)
@@ -486,10 +457,8 @@ module Parametric = struct
         [@@deriving sexp, equal, compare]
 
         let pp (f : Base.Formatter.t) : t -> unit = function
-          | `Stm s ->
-              B.Stm.pp f s
-          | `Decl d ->
-              B.Decl.pp f d
+          | `Stm s -> B.Stm.pp f s
+          | `Decl d -> B.Decl.pp f d
       end
 
       type t = Elt.t list [@@deriving sexp, equal, compare]
@@ -552,14 +521,10 @@ and Type_spec :
   [@@deriving sexp, equal, compare]
 
   let pp f : t -> unit = function
-    | #Ast_basic.Prim_type.t as prim ->
-        Ast_basic.Prim_type.pp f prim
-    | `Struct_or_union spec ->
-        Struct_or_union_spec.pp f spec
-    | `Enum spec ->
-        Enum_spec.pp f spec
-    | `Defined_type tdef ->
-        Ast_basic.Identifier.pp f tdef
+    | #Ast_basic.Prim_type.t as prim -> Ast_basic.Prim_type.pp f prim
+    | `Struct_or_union spec -> Struct_or_union_spec.pp f spec
+    | `Enum spec -> Enum_spec.pp f spec
+    | `Defined_type tdef -> Ast_basic.Identifier.pp f tdef
 end
 
 and Spec_or_qual :
@@ -573,10 +538,8 @@ and Spec_or_qual :
     with _ -> (Ast_basic.Type_qual.t_of_sexp s :> t)
 
   let pp f : t -> unit = function
-    | #Type_spec.t as spec ->
-        Type_spec.pp f spec
-    | #Ast_basic.Type_qual.t as qual ->
-        Ast_basic.Type_qual.pp f qual
+    | #Type_spec.t as spec -> Type_spec.pp f spec
+    | #Ast_basic.Type_qual.t as qual -> Ast_basic.Type_qual.pp f qual
 end
 
 and Decl_spec :
@@ -596,10 +559,8 @@ and Decl_spec :
   let pp f : t -> unit = function
     | #Ast_basic.Storage_class_spec.t as spec ->
         Ast_basic.Storage_class_spec.pp f spec
-    | #Type_spec.t as spec ->
-        Type_spec.pp f spec
-    | #Ast_basic.Type_qual.t as qual ->
-        Ast_basic.Type_qual.pp f qual
+    | #Type_spec.t as spec -> Type_spec.pp f spec
+    | #Ast_basic.Type_qual.t as qual -> Ast_basic.Type_qual.pp f qual
 end
 
 and Type_name :
@@ -619,10 +580,8 @@ and Struct_or_union_spec :
     type t = [`Struct | `Union] [@@deriving sexp, equal, compare]
 
     let to_string : t -> string = function
-      | `Struct ->
-          "struct"
-      | `Union ->
-          "union"
+      | `Struct -> "struct"
+      | `Union -> "union"
 
     let pp : t Fmt.t = Fmt.of_to_string to_string
   end
@@ -644,10 +603,8 @@ Parametric.G_decl.Make (struct
     [@@deriving sexp, equal, compare]
 
     let pp f : t -> unit = function
-      | `Concrete c ->
-          Declarator.pp f c
-      | `Abstract a ->
-          (Fmt.option Abs_declarator.pp) f a
+      | `Concrete c -> Declarator.pp f c
+      | `Abstract a -> (Fmt.option Abs_declarator.pp) f a
   end
 end)
 
@@ -696,10 +653,8 @@ module Initialiser = struct
   [@@deriving sexp, equal, compare]
 
   let rec pp f : t -> unit = function
-    | Assign exp ->
-        Expr.pp f exp
-    | List inits ->
-        Fmt.(braces (list ~sep:comma pp)) f inits
+    | Assign exp -> Expr.pp f exp
+    | List inits -> Fmt.(braces (list ~sep:comma pp)) f inits
 end
 
 module Init_declarator = struct
@@ -764,10 +719,8 @@ module External_decl = struct
   [@@deriving sexp, equal, compare]
 
   let pp (f : Base.Formatter.t) : t -> unit = function
-    | `Fun fn ->
-        Function_def.pp f fn
-    | `Decl d ->
-        Decl.pp f d
+    | `Fun fn -> Function_def.pp f fn
+    | `Decl d -> Decl.pp f d
 end
 
 module Translation_unit = struct

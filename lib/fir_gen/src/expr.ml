@@ -125,7 +125,7 @@ let gen_known_bop_logic (target : bool) : Op.bop_gen option =
     ~ops:
       (List.map
          ~f:(fun x -> Fir.Op.Binary.Logical x)
-         Fir.Op.Binary.Logical.all)
+         Fir.Op.Binary.Logical.all )
     (Const (Fir.Constant.bool target))
 
 module Known_value_comparisons (Basic : sig
@@ -168,7 +168,7 @@ end = struct
       Fir.Expression.atomic_load
         (Fir.Atomic_load.make
            ~src:(Fir.Address.ref_lvalue lv)
-           ~mo:Fir.Mem_order.Seq_cst)
+           ~mo:Fir.Mem_order.Seq_cst )
     else Fir.Expression.lvalue lv
 
   let quickcheck_generator : t Q.Generator.t =

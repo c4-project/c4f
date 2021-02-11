@@ -21,7 +21,7 @@ module Test_data = struct
             (Expression.atomic_load
                (Atomic_load.make
                   ~src:(Address.of_variable_str_exn "gen2")
-                  ~mo:Mem_order.Seq_cst))
+                  ~mo:Mem_order.Seq_cst ) )
           ~dst:(Address.of_variable_str_exn name)
           ~mo:Mem_order.Seq_cst)
 
@@ -32,7 +32,7 @@ module Test_data = struct
           atomic_fetch
             (Atomic_fetch.make
                ~obj:(Address.of_variable_str_exn "gen1")
-               ~arg:(Expression.int_lit 0) ~mo:Seq_cst ~op:`Add)))
+               ~arg:(Expression.int_lit 0) ~mo:Seq_cst ~op:`Add )))
 
   let store_fa : Fir.Atomic_store.t Lazy.t =
     lazy
@@ -45,7 +45,7 @@ module Test_data = struct
                   (Atomic_fetch.make
                      ~obj:(Address.of_variable_str_exn "gen1")
                      ~arg:(sub (Lazy.force fadd) (Lazy.force fadd))
-                     ~mo:Seq_cst ~op:`Sub)))
+                     ~mo:Seq_cst ~op:`Sub )))
           ~dst:(Address.of_variable_str_exn "gen1")
           ~mo:Seq_cst)
 end

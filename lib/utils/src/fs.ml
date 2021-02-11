@@ -40,18 +40,13 @@ module Unix : Fs_types.S = struct
 
   let get_ent_type (path : string) : ent_type =
     match Sys.file_exists path with
-    | `No ->
-        Nothing
-    | `Unknown ->
-        Unknown
+    | `No -> Nothing
+    | `Unknown -> Unknown
     | `Yes -> (
       match Sys.is_directory path with
-      | `No ->
-          File
-      | `Unknown ->
-          Unknown
-      | `Yes ->
-          Dir )
+      | `No -> File
+      | `Unknown -> Unknown
+      | `Yes -> Dir )
 
   let path_absent_error (path : Fpath.t) : unit Or_error.t =
     Or_error.error_s
@@ -66,28 +61,24 @@ module Unix : Fs_types.S = struct
       ~(on_file : Fpath.t -> unit Or_error.t) : unit Or_error.t =
     let path_s = Fpath.to_string path in
     match get_ent_type path_s with
-    | Dir ->
-        on_dir path
-    | File ->
-        on_file path
-    | Unknown ->
-        path_indeterminate_error path_s
-    | Nothing ->
-        on_absent path
+    | Dir -> on_dir path
+    | File -> on_file path
+    | Unknown -> path_indeterminate_error path_s
+    | Nothing -> on_absent path
 
   let check_is_dir ?(on_absent : (Fpath.t -> unit Or_error.t) option) :
       Fpath.t -> unit Or_error.t =
     check ?on_absent ~on_dir:(Fn.const (Ok ())) ~on_file:(fun path ->
         Or_error.error_s
           [%message
-            "path exists, but is a file" ~path:(Fpath.to_string path)])
+            "path exists, but is a file" ~path:(Fpath.to_string path)] )
 
   let check_is_file ?(on_absent : (Fpath.t -> unit Or_error.t) option) :
       Fpath.t -> unit Or_error.t =
     check ?on_absent ~on_file:(Fn.const (Ok ())) ~on_dir:(fun path ->
         Or_error.error_s
           [%message
-            "path exists, but is a directory" ~path:(Fpath.to_string path)])
+            "path exists, but is a directory" ~path:(Fpath.to_string path)] )
 
   let actually_mkdir (path : Fpath.t) : unit Or_error.t =
     let path_s = Fpath.to_string path in

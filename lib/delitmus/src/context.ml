@@ -36,8 +36,7 @@ let lookup_initial_value_local (ctx : t) ~(tid : int) ~(id : Common.C_id.t) :
 let lookup_initial_value (ctx : t) ~(id : Common.Litmus_id.t) :
     Fir.Constant.t option =
   match Common.Litmus_id.as_local id with
-  | Some (tid, id) ->
-      lookup_initial_value_local ctx ~tid ~id
+  | Some (tid, id) -> lookup_initial_value_local ctx ~tid ~id
   | None ->
       Option.bind (Common.Litmus_id.as_global id) ~f:(fun id ->
-          lookup_initial_value_global ctx ~id)
+          lookup_initial_value_global ctx ~id )

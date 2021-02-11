@@ -24,12 +24,9 @@ include P
 let reduce (ae : 'e t) ~(cmpxchg : 'e Atomic_cmpxchg.t -> 'a)
     ~(fetch : 'e Atomic_fetch.t -> 'a) ~(load : Atomic_load.t -> 'a) : 'a =
   match ae with
-  | Cmpxchg c ->
-      cmpxchg c
-  | Fetch f ->
-      fetch f
-  | Load l ->
-      load l
+  | Cmpxchg c -> cmpxchg c
+  | Fetch f -> fetch f
+  | Load l -> load l
 
 module Base_map (Ap : Applicative.S) = struct
   let bmap (x : 'a t)

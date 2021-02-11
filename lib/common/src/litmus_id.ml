@@ -30,20 +30,14 @@ module M_str = struct
 
   let compare (x : t) (y : t) =
     match (x, y) with
-    | Global _, Local _ ->
-        -1
-    | Local _, Global _ ->
-        1
-    | Global x, Global y ->
-        [%compare: C_id.t] x y
-    | Local (xi, x), Local (yi, y) ->
-        [%compare: int * C_id.t] (xi, x) (yi, y)
+    | Global _, Local _ -> -1
+    | Local _, Global _ -> 1
+    | Global x, Global y -> [%compare: C_id.t] x y
+    | Local (xi, x), Local (yi, y) -> [%compare: int * C_id.t] (xi, x) (yi, y)
 
   let to_string : t -> string = function
-    | Local (t, id) ->
-        Printf.sprintf "%d:%s" t (C_id.to_string id)
-    | Global id ->
-        C_id.to_string id
+    | Local (t, id) -> Printf.sprintf "%d:%s" t (C_id.to_string id)
+    | Global id -> C_id.to_string id
 
   let try_parse_local (s : string) : (int * string) option =
     let open Option.Let_syntax in
@@ -54,10 +48,8 @@ module M_str = struct
 
   let try_parse (s : string) : t Or_error.t =
     match try_parse_local s with
-    | Some (t, id) ->
-        Or_error.(id |> C_id.create >>| local t)
-    | None ->
-        Or_error.(s |> C_id.create >>| global)
+    | Some (t, id) -> Or_error.(id |> C_id.create >>| local t)
+    | None -> Or_error.(s |> C_id.create >>| global)
 
   let of_string (s : string) : t = Or_error.ok_exn (try_parse s)
 end
@@ -82,10 +74,8 @@ Travesty.Traversable.Make0 (struct
   module On (M : Applicative.S) = struct
     let map_m (lid : t) ~(f : C_id.t -> C_id.t M.t) : t M.t =
       match lid with
-      | Global g ->
-          M.map ~f:(fun g -> Global g) (f g)
-      | Local (tid, l) ->
-          M.map ~f:(fun l -> Local (tid, l)) (f l)
+      | Global g -> M.map ~f:(fun g -> Global g) (f g)
+      | Local (tid, l) -> M.map ~f:(fun l -> Local (tid, l)) (f l)
   end
 end)
 
@@ -99,10 +89,8 @@ let variable_name : t -> C_id.t = function Local (_, v) | Global v -> v
 let is_local : t -> bool = function Local _ -> true | Global _ -> false
 
 let as_local : t -> (int * C_id.t) option = function
-  | Local (i, v) ->
-      Some (i, v)
-  | Global _ ->
-      None
+  | Local (i, v) -> Some (i, v)
+  | Global _ -> None
 
 let tid : t -> int option = Fn.compose (Option.map ~f:fst) as_local
 
@@ -112,10 +100,8 @@ let map_tid (id : t) ~(f : int -> int) : t =
 let is_global : t -> bool = Fn.non is_local
 
 let as_global : t -> C_id.t option = function
-  | Global cid ->
-      Some cid
-  | Local _ ->
-      None
+  | Global cid -> Some cid
+  | Local _ -> None
 
 let scope (id : t) : Scope.t =
   match id with Global _ -> Global | Local (tid, _) -> Local tid
@@ -125,26 +111,20 @@ let is_in_local_scope (id : t) ~(from : int) : bool =
 
 let is_in_scope (id : t) ~(scope : Scope.t) : bool =
   match scope with
-  | Global ->
-      is_global id
-  | Local from ->
-      is_in_local_scope id ~from
+  | Global -> is_global id
+  | Local from -> is_in_local_scope id ~from
 
 let to_memalloy_id_inner (t : int) (id : C_id.t) : string =
   Printf.sprintf "t%d%s" t (C_id.to_string id)
 
 let to_memalloy_id : t -> C_id.t = function
-  | Local (t, id) ->
-      C_id.of_string (to_memalloy_id_inner t id)
-  | Global id ->
-      id
+  | Local (t, id) -> C_id.of_string (to_memalloy_id_inner t id)
+  | Global id -> id
 
 let pp : t Fmt.t =
  fun f -> function
-  | Local (tid, str) ->
-      Fmt.pf f "%d:%a" tid C_id.pp str
-  | Global str ->
-      C_id.pp f str
+  | Local (tid, str) -> Fmt.pf f "%d:%a" tid C_id.pp str
+  | Global str -> C_id.pp f str
 
 module Assoc = struct
   type 'a t = (M_sexp.t, 'a) List.Assoc.t

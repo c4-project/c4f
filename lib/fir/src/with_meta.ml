@@ -25,7 +25,7 @@ let no_meta :
     Accessor.t =
   [%accessor
     Accessor.isomorphism ~get:(Accessor.get value) ~construct:(fun value ->
-        {meta= (); value})]
+        {meta= (); value} )]
 
 module BT :
   Travesty.Bi_traversable_types.S2 with type ('m, 'v) t := ('m, 'v) t =

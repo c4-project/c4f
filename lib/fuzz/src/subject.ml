@@ -78,7 +78,7 @@ module Thread = struct
     |> List.map
          ~f:
            (Fir.Statement_traverse.On_meta.map ~f:(fun () ->
-                Metadata.Existing))
+                Metadata.Existing ) )
 
   let of_function (func : unit Fir.Function.t) : t =
     make
@@ -166,14 +166,12 @@ module Test = struct
   let add_var_to_thread (subject : t) (index : int) (name : Ac.C_id.t)
       (init : Fir.Initialiser.t) : t Or_error.t =
     C4f_litmus.Test.Raw.try_map_thread subject ~index ~f:(fun thread ->
-        Ok (Thread.add_decl thread ~name ~init))
+        Ok (Thread.add_decl thread ~name ~init) )
 
   let declare_var (subject : t) (var : Ac.Litmus_id.t)
       (init : Fir.Initialiser.t) : t Or_error.t =
     let name = Ac.Litmus_id.variable_name var in
     match Ac.Litmus_id.tid var with
-    | None ->
-        add_var_to_init subject name init
-    | Some i ->
-        add_var_to_thread subject i name init
+    | None -> add_var_to_init subject name init
+    | Some i -> add_var_to_thread subject i name init
 end

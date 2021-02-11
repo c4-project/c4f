@@ -23,7 +23,7 @@ let%test_module "normalise" =
           [%test_result: C4f_fir.Address.t] ~here:[[%here]]
             ~equal:[%equal: C4f_fir.Address.t]
             C4f_fir.Address.(normalise (normalise addr))
-            ~expect:(normalise addr))
+            ~expect:(normalise addr) )
   end )
 
 let%test_module "variable_of" =
@@ -34,7 +34,7 @@ let%test_module "variable_of" =
         ~f:(fun x ->
           [%test_eq: C4f_common.C_id.t] ~here:[[%here]]
             (Accessor.get variable_of x)
-            (Accessor.get variable_of (Ref x)))
+            (Accessor.get variable_of (Ref x)) )
 
     let%expect_test "variable_of: nested example" =
       let example =
@@ -43,7 +43,8 @@ let%test_module "variable_of" =
              (Lvalue
                 C4f_fir.(
                   Lvalue.(
-                    Accessor.construct deref (of_variable_str_exn "yorick")))))
+                    Accessor.construct deref (of_variable_str_exn "yorick")))
+             ) )
       in
       let var = Accessor.get variable_of example in
       Fmt.pr "%a@." C4f_common.C_id.pp var ;
@@ -79,7 +80,7 @@ let%test_module "deref" =
           [%test_result: C4f_fir.Address.t] ~here:[[%here]]
             ~equal:[%equal: C4f_fir.Address.t]
             C4f_fir.Address.(deref (Ref addr))
-            ~expect:(normalise addr))
+            ~expect:(normalise addr) )
   end )
 
 let%test_unit "on_address_of_typed_id: always takes pointer type" =
@@ -97,4 +98,4 @@ let%test_unit "on_address_of_typed_id: always takes pointer type" =
         (Tc.type_of (on_address_of_typed_id r))
         ~expect:
           (Or_error.return
-             C4f_fir.Type.(make ~is_pointer:true (basic_type ty))))
+             C4f_fir.Type.(make ~is_pointer:true (basic_type ty)) ) )

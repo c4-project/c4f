@@ -16,10 +16,8 @@ open Import
     be used as the RNG's seed, otherwise a low-entropy system-derived seed is
     used. *)
 let make_rng : int option -> Splittable_random.State.t = function
-  | Some seed ->
-      Splittable_random.State.of_int seed
-  | None ->
-      Splittable_random.State.create (Random.State.make_self_init ())
+  | Some seed -> Splittable_random.State.of_int seed
+  | None -> Splittable_random.State.create (Random.State.make_self_init ())
 
 (** Tracks parts of the fuzzer state and environment that we can't keep in
     the inner state monad for various reasons (circular dependencies, being
@@ -51,7 +49,7 @@ module Runner_state = struct
       >>= fun params ->
       Monadic.return
         (Fuzz.State.Monad.peek (fun state ->
-             {Fuzz.Availability.Context.state; subject; params})))
+             {Fuzz.Availability.Context.state; subject; params} ) ))
 
   let make_gen_context (action_id : Common.Id.t)
       (subject : Fuzz.Subject.Test.t) : Fuzz.Payload_gen.Context.t Monad.t =
@@ -106,8 +104,7 @@ let pick_step
       match%bind
         Monadic.make (Fn.compose Fuzz.State.Monad.Monadic.return pick)
       with
-      | None ->
-          return None
+      | None -> return None
       | Some action ->
           if%bind available action ~subject then return (Some action)
           else mu None))
@@ -117,10 +114,8 @@ let pick_loop (subject : Fuzz.Subject.Test.t) :
   Runner_state.Monad.(
     fix None ~f:(fun mu xo ->
         match xo with
-        | Some x ->
-            return (Some x)
-        | None ->
-            pick_step mu ~subject))
+        | Some x -> return (Some x)
+        | None -> pick_step mu ~subject ))
 
 let pick_action (subject : Fuzz.Subject.Test.t) :
     (module Fuzz.Action_types.S) Runner_state.Monad.t =
@@ -137,7 +132,7 @@ let add_recommendations (type p)
   Runner_state.Monad.modify (fun m ->
       let random = m.random in
       Accessor.map Runner_state.pool m
-        ~f:(Action_pool.recommend ~names ~random))
+        ~f:(Action_pool.recommend ~names ~random) )
 
 let log_action (type p)
     (action : (module Fuzz.Action_types.S with type Payload.t = p))
@@ -165,7 +160,7 @@ let mutate_subject_step (subject : Fuzz.Subject.Test.t) :
     Common.Output.pv o "fuzz: done; now running action...@." ;
     run_action action subject
     >>= Runner_state.Monad.tee ~f:(fun _ ->
-            Common.Output.pv o "fuzz: action done.@."))
+            Common.Output.pv o "fuzz: action done.@." ))
 
 let get_cap () : int Runner_state.Monad.t =
   Runner_state.(
@@ -185,7 +180,7 @@ let mutate_subject (subject : Fuzz.Subject.Test.t) :
           if Int.(remaining = 0) then return (remaining, subject')
           else
             let%bind subject'' = mutate_subject_step subject' in
-            mu (remaining - 1, subject''))
+            mu (remaining - 1, subject'') )
     in
     subject')
 

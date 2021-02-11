@@ -81,10 +81,8 @@ let from_alist_row ((item, raw_weight) : 'a * int) : 'a Row.t Or_error.t =
     {Row.item; weight})
 
 let from_alist : ('a, int) List.Assoc.t -> 'a t Or_error.t = function
-  | [] ->
-      Or_error.error_string "Weighted lists cannot be empty"
-  | alist ->
-      alist |> List.map ~f:from_alist_row |> Or_error.combine_errors
+  | [] -> Or_error.error_string "Weighted lists cannot be empty"
+  | alist -> alist |> List.map ~f:from_alist_row |> Or_error.combine_errors
 
 let adjust_weights (wl : 'a t) ~(f : 'a -> int -> int) : 'a t Or_error.t =
   wl |> List.map ~f:(Row.adjust_weight ~f) |> Or_error.combine_errors
@@ -98,8 +96,7 @@ module Cumulative = struct
   let from_table_step (total : int) (row : 'a Row.t) : int * 'a Row.t option
       =
     match Weight.raw row.Row.weight with
-    | 0 ->
-        (total, None)
+    | 0 -> (total, None)
     | this_weight ->
         let total' = total + this_weight in
         let row' =
@@ -110,15 +107,13 @@ module Cumulative = struct
   let of_weighted_list (wl : 'a w) : 'a t option =
     let max, opt_rows = List.fold_map wl ~init:0 ~f:from_table_step in
     match List.filter_opt opt_rows with
-    | [] ->
-        None
-    | rows ->
-        Some {max; rows}
+    | [] -> None
+    | rows -> Some {max; rows}
 
   let get (cl : 'a t) (position : int) : 'a =
     let possible =
       List.drop_while cl.rows ~f:(fun {weight; _} ->
-          Weight.raw weight < position)
+          Weight.raw weight < position )
     in
     (List.hd_exn possible).item
 

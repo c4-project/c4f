@@ -88,7 +88,7 @@ let has_blocks_with_metadata (m : 'meta t) ~(predicate : 'meta -> bool) :
     is_not_prim_and x
       ~flow:(fun {body; _} -> true_of_block body)
       ~if_stm:(fun {t_branch; f_branch; _} ->
-        true_of_block t_branch || true_of_block f_branch)
+        true_of_block t_branch || true_of_block f_branch )
   in
   mu m
 

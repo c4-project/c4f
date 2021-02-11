@@ -36,17 +36,17 @@ module Insert = struct
         let+ kind =
           lift_quickcheck
             (Q.Generator.filter Fir.Early_out.quickcheck_generator
-               ~f:kind_filter)
+               ~f:kind_filter )
         in
         {if_cond; kind})
 
     let gen (path_filter : Fuzz.State.t -> Fuzz.Path_filter.t)
         (kind_filter : Fuzz.Path.With_meta.t -> Fir.Early_out.t -> bool)
         (gen_cond :
-          Fuzz.Path.With_meta.t -> Fir.Expression.t option Fuzz.Payload_gen.t)
-        : t Fuzz.Payload_impl.Pathed.t Fuzz.Payload_gen.t =
+          Fuzz.Path.With_meta.t -> Fir.Expression.t option Fuzz.Payload_gen.t
+          ) : t Fuzz.Payload_impl.Pathed.t Fuzz.Payload_gen.t =
       Fuzz.Payload_impl.Pathed.gen Insert path_filter (fun path ->
-          gen' (kind_filter path) (gen_cond path))
+          gen' (kind_filter path) (gen_cond path) )
 
     let construct ({kind; if_cond} : t) : Fuzz.Subject.Statement.t =
       let eo =
@@ -54,8 +54,7 @@ module Insert = struct
           (Accessor.construct Fir.Prim_statement.early_out kind)
       in
       match if_cond with
-      | None ->
-          eo
+      | None -> eo
       | Some cond ->
           let t_branch =
             Fuzz.Subject.Block.make_generated ~statements:[eo] ()
@@ -93,7 +92,7 @@ module Insert = struct
 
       let gen : t Fuzz.Payload_gen.t =
         Early_out_payload.gen path_filter kind_pred (fun _ ->
-            Fuzz.Payload_gen.return None)
+            Fuzz.Payload_gen.return None )
     end
 
     let recommendations (_ : Payload.t) : Common.Id.t list = []
@@ -143,16 +142,14 @@ module Insert = struct
            TODO(@MattWindsor91): contemplate a top-level early-out that does
            what this action does, but inserts returns. *)
         function
-        | Continue ->
-            true
+        | Continue -> true
         | Break ->
             (* We should already be in a bottom anchor, so this is equivalent
                to checking for full, which, in turn, tells us that the loop
                is unpopulated. *)
             path.@(Fuzz.Path_meta.(With_meta.meta @> anchor @> Anchor.top))
             || not path.@(Fuzz.Path.With_meta.flag In_execute_multi)
-        | Return ->
-            false
+        | Return -> false
 
       let path_filter (_ : Fuzz.State.t) : Fuzz.Path_filter.t =
         base_path_filter
@@ -160,8 +157,7 @@ module Insert = struct
       let gen_cond' :
           Fuzz.Path.With_meta.t -> Fir.Expression.t Fuzz.Payload_gen.t =
         Staged.unstage
-          (Fuzz.Payload_impl.Cond_pathed.lift_cond_gen
-             Fir_gen.Expr.tautology)
+          (Fuzz.Payload_impl.Cond_pathed.lift_cond_gen Fir_gen.Expr.tautology)
 
       let gen_cond (p : Fuzz.Path.With_meta.t) :
           Fir.Expression.t option Fuzz.Payload_gen.t =
@@ -210,7 +206,7 @@ module Insert = struct
           (Fuzz.Path_consumers.consume test ~path:payload.where
              ~filter:
                (kind_filter payload.where.meta.anchor payload.payload.kind)
-             ~action:(Insert (make_contraption payload.payload))))
+             ~action:(Insert (make_contraption payload.payload)) ))
   end
 
   module Goto :
@@ -246,7 +242,7 @@ module Insert = struct
              ~f:(fun x ->
                Option.some_if
                  (Common.Litmus_id.is_in_local_scope x ~from)
-                 (Common.Litmus_id.variable_name x))
+                 (Common.Litmus_id.variable_name x) )
         |> Set.to_list
 
       let gen' (ins_path : Fuzz.Path.With_meta.t) :

@@ -22,8 +22,7 @@ let file_type : t -> string option = function
   | File fp ->
       Option.some_if (Fpath.exists_ext fp)
         (String.lstrip ~drop:(Char.equal '.') (Fpath.get_ext fp))
-  | Stdin sd ->
-      sd.file_type
+  | Stdin sd -> sd.file_type
 
 include Io_common.Make (struct
   type nonrec t = t
@@ -31,10 +30,8 @@ include Io_common.Make (struct
   let of_fpath : Fpath.t -> t = file
 
   let to_fpath_opt : t -> Fpath.t option = function
-    | File f ->
-        Some f
-    | Stdin _ ->
-        None
+    | File f -> Some f
+    | Stdin _ -> None
 
   let std () = stdin ()
 

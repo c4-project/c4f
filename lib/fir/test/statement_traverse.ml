@@ -28,14 +28,14 @@ let%test_module "On_lvalues and On_addresses" =
           [ Stm.mkif
               ~cond:
                 (Expression.lvalue
-                   Lvalue.(A.construct deref (of_variable_str_exn "i")))
+                   Lvalue.(A.construct deref (of_variable_str_exn "i")) )
               [ A.(
                   construct
                     ( Statement.prim' @> Prim_statement.atomic
                     @> Atomic_statement.store )
                     (Src.Atomic_store.make ~mo:Relaxed
                        ~src:(Expression.of_variable_str_exn "herd")
-                       ~dst:Address.(Ref (of_variable_str_exn "u")))) ]
+                       ~dst:Address.(Ref (of_variable_str_exn "u")) )) ]
               [ A.(
                   construct
                     (Statement.prim' @> Prim_statement.goto)
@@ -92,14 +92,14 @@ let%test_module "On_expressions" =
                       @> Atomic_statement.store )
                       (Atomic_store.make ~mo:Seq_cst
                          ~src:(Expression.int_lit 27)
-                         ~dst:(Address.of_variable_str_exn "x"))) ]
+                         ~dst:(Address.of_variable_str_exn "x") )) ]
                 [ A.(
                     construct
                       ( Statement.prim' @> Prim_statement.atomic
                       @> Atomic_statement.store )
                       (Atomic_store.make ~mo:Seq_cst
                          ~src:(Expression.int_lit 53)
-                         ~dst:(Address.of_variable_str_exn "x"))) ] ])
+                         ~dst:(Address.of_variable_str_exn "x") )) ] ])
       in
       let stm' =
         M.On_expressions.map stm ~f:(fun _ -> Src.Expression.int_lit 2)

@@ -107,6 +107,6 @@ let%test_module "reify/pp" =
               (Statement.prim' @> Prim_statement.assign)
               (Assign.make
                  ~dst:Lvalue.(construct deref (of_variable_str_exn "x"))
-                 ~src:Inc))) ;
+                 ~src:Inc ))) ;
       [%expect {| (*x)++; |}]
   end )

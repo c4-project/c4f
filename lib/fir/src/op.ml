@@ -139,14 +139,10 @@ module Binary = struct
   let b_xor : t = Bitwise Xor
 
   let rules : t -> Op_rule.t list = function
-    | Rel o ->
-        Rel.rules o
-    | Arith o ->
-        Arith.rules o
-    | Bitwise o ->
-        Bitwise.rules o
-    | Logical o ->
-        Logical.rules o
+    | Rel o -> Rel.rules o
+    | Arith o -> Arith.rules o
+    | Bitwise o -> Bitwise.rules o
+    | Logical o -> Logical.rules o
 
   let of_input_prim_type (ty : Type.Prim.t) : t list =
     let if_int x = match ty with Int -> x | Bool -> [] in
@@ -187,22 +183,15 @@ module Fetch = struct
   include With_qc
 
   let to_bop : bop -> Binary.t = function
-    | `Add ->
-        Binary.add
-    | `Sub ->
-        Binary.sub
-    | `Or ->
-        Binary.b_or
-    | `Xor ->
-        Binary.b_xor
-    | `And ->
-        Binary.b_and
+    | `Add -> Binary.add
+    | `Sub -> Binary.sub
+    | `Or -> Binary.b_or
+    | `Xor -> Binary.b_xor
+    | `And -> Binary.b_and
 
   let rules : t -> Op_rule.t list = function
-    | `Xchg ->
-        Op_rule.[Refl @-> Idem (* atomic_exchange(x, x) = x *)]
-    | #bop as bop ->
-        bop |> to_bop |> Binary.rules
+    | `Xchg -> Op_rule.[Refl @-> Idem (* atomic_exchange(x, x) = x *)]
+    | #bop as bop -> bop |> to_bop |> Binary.rules
 
   module Gen_idem_zero_rhs = struct
     include With_qc
@@ -214,7 +203,7 @@ module Fetch = struct
         ~f:
           (Fn.compose
              Op_rule.(has_in_out_matching (In.zero' Right) Idem)
-             rules)
+             rules )
   end
 
   module Gen_idem_refl = struct

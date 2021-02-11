@@ -23,10 +23,8 @@ end
 let to_non_atomic (acc : (_, bool, 't, [< Accessor.field]) Accessor.Simple.t)
     : 't -> 't Or_error.t =
   Accessor_base.Or_error.map acc ~f:(function
-    | true ->
-        Ok false
-    | false ->
-        Or_error.error_string "already non-atomic")
+    | true -> Ok false
+    | false -> Or_error.error_string "already non-atomic" )
 
 module Basic = struct
   module Access = struct
@@ -101,7 +99,7 @@ module Access = struct
       (List.filter_opt
          [ Option.some_if (Accessor.get is_volatile ty) volatile_frag
          ; Some (Basic.to_string (Accessor.get basic_type ty))
-         ; Option.some_if (Accessor.get is_pointer ty) pointer_frag ])
+         ; Option.some_if (Accessor.get is_pointer ty) pointer_frag ] )
 end
 
 module M = struct

@@ -23,7 +23,7 @@ let has_bools (env : Fir.Env.t) ~(is_atomic : bool) : bool =
 let with_record (g : 'a Q.Generator.t) ~(to_var : 'a -> C4f_common.C_id.t)
     ~(env : Fir.Env.t) : ('a * Fir.Env.Record.t) Q.Generator.t =
   Q.Generator.filter_map g ~f:(fun x ->
-      Option.(x |> to_var |> Map.find env >>| fun r -> (x, r)))
+      Option.(x |> to_var |> Map.find env >>| fun r -> (x, r)) )
 
 let lift_loadlike (g : 'a Q.Generator.t) ~(to_expr : 'a -> Fir.Expression.t)
     ~(to_var : 'a -> Common.C_id.t) ~(env : Fir.Env.t) :
@@ -40,7 +40,7 @@ let gen_kv_refl (type v a)
       Q.Generator.filter_map gen_load ~f:(fun (l, r) ->
           Option.Let_syntax.(
             let%map kv = Accessor.get_option Fir.Env.Record.known_value r in
-            (l, Fir.Expression.constant kv)))
+            (l, Fir.Expression.constant kv)) )
     in
     gen_op v kv)
 

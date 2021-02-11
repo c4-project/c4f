@@ -156,29 +156,24 @@ module Constant = struct
     Fmt.(quote ~mark:"'" (using C4f_utils.Lex_utils.escape_string string))
 
   let pp f = function
-    | Char c ->
-        pp_char f c
+    | Char c -> pp_char f c
     | Float d ->
         (* NOT Fmt.float; it emits, for instance, '-0' instead of '-0.'. This
            then breaks parser round-tripping. *)
         Fmt.(using Float.to_string string) f d
-    | Integer i ->
-        Fmt.int f i
+    | Integer i -> Fmt.int f i
 
   let gen_int32_as_int : int Quickcheck.Generator.t =
     Quickcheck.Generator.map [%quickcheck.generator: int32] ~f:(fun x ->
-        Option.value ~default:0 (Int.of_int32 x))
+        Option.value ~default:0 (Int.of_int32 x) )
 
   let gen_int32_constant : t Quickcheck.Generator.t =
     Quickcheck.Generator.map ~f:integer gen_int32_as_int
 
   let to_int : t -> int Or_error.t = function
-    | Integer k ->
-        Or_error.return k
-    | Char _ ->
-        Or_error.error_string "expected integer literal, got char"
-    | Float _ ->
-        Or_error.error_string "expected integer literal, got float"
+    | Integer k -> Or_error.return k
+    | Char _ -> Or_error.error_string "expected integer literal, got char"
+    | Float _ -> Or_error.error_string "expected integer literal, got float"
 end
 
 module Identifier = struct

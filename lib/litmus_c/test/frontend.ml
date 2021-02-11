@@ -23,7 +23,7 @@ let%test_unit "Pretty-printing and parsing postconditions is idempotent" =
       let pcond_str : string =
         Fmt.str "@[%a@]"
           (C4f_litmus.Postcondition.pp
-             ~pp_const:C4f_litmus_c.Ast_basic.Constant.pp)
+             ~pp_const:C4f_litmus_c.Ast_basic.Constant.pp )
           pcond
       in
       [%test_result:
@@ -38,5 +38,5 @@ let%test_unit "Pretty-printing and parsing postconditions is idempotent" =
         ~message:
           (Printf.sprintf
              "Pretty-printing/parsing round-trip through '%s' failed"
-             pcond_str)
-        (Src.Frontend.Litmus_post.load_from_string pcond_str))
+             pcond_str )
+        (Src.Frontend.Litmus_post.load_from_string pcond_str) )

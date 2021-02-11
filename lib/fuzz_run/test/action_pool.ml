@@ -62,7 +62,7 @@ let%test_module "recommendation queue" =
                (list ~sep:comma
                   (using
                      (fun (module A : Fuzz.Action_types.S) -> A.name)
-                     Common.Id.pp))))
+                     Common.Id.pp ) ) ))
 
     let test_choice ~(acc : Fuzz.Flag.t) ~(use : Fuzz.Flag.t) (max : int)
         (names : Common.Id.t list) : unit =

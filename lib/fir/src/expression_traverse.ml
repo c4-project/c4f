@@ -84,7 +84,7 @@ module Make_traversal_base (Basic : Basic) = struct
           ~atomic:(map_m_ae ~f ~mu)
           ~uop:(fun (u, x) -> M.map ~f:(fun x' -> (u, x')) (mu x))
           ~bop:(fun (u, l, r) ->
-            M.map2 ~f:(fun l' r' -> (u, l', r')) (mu l) (mu r))
+            M.map2 ~f:(fun l' r' -> (u, l', r')) (mu l) (mu r) )
           ~ternary:(AccM.map ~f:mu Expr_ternary.exprs)
       in
       mu x
@@ -311,4 +311,4 @@ let depended_upon_idents :
       many_getter
         Many_getter.(
           On_addresses.fold ~init:empty ~f:(fun mg ad ->
-              mg @ access ad.@(Address.variable_of))))]
+              mg @ access ad.@(Address.variable_of) )))]

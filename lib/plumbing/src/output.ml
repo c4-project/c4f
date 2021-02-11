@@ -26,10 +26,8 @@ include Io_common.Make (struct
   let of_fpath : Fpath.t -> t = file
 
   let to_fpath_opt : t -> Fpath.t option = function
-    | File f ->
-        Some f
-    | Stdout ->
-        None
+    | File f -> Some f
+    | Stdout -> None
 
   let std () = stdout
 
@@ -37,10 +35,8 @@ include Io_common.Make (struct
 end)
 
 let as_input : t -> Input.t Or_error.t = function
-  | File f ->
-      Ok (Input.file f)
-  | x ->
-      Or_error.errorf "Can't use %s as an input source" (to_string x)
+  | File f -> Ok (Input.file f)
+  | x -> Or_error.errorf "Can't use %s as an input source" (to_string x)
 
 let with_file_output (fpath : Fpath.t) (f : Out_channel.t -> 'a Or_error.t) :
     'a Or_error.t =
@@ -56,10 +52,8 @@ let with_stdout_output (f : Out_channel.t -> 'a Or_error.t) : 'a Or_error.t =
 let with_output (snk : t) ~(f : Out_channel.t -> 'a Or_error.t) :
     'a Or_error.t =
   ( match snk with
-  | File fpath ->
-      with_file_output fpath
-  | Stdout ->
-      with_stdout_output )
+  | File fpath -> with_file_output fpath
+  | Stdout -> with_stdout_output )
     f
 
 let with_opt (snk : t option) ~(f : t -> unit Or_error.t) : unit Or_error.t =

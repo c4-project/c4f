@@ -61,7 +61,7 @@ module Make_from_enumerate (E : Enum_types.S_enumerate) :
 
   let to_enum elt =
     List.find_mapi_exn E.all ~f:(fun i elt' ->
-        Option.some_if (E.equal elt elt') i)
+        Option.some_if (E.equal elt elt') i )
 
   let of_enum = List.nth E.all
 end

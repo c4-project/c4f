@@ -36,16 +36,14 @@ module Insert = struct
             dst
             |> Fir.Env.known_value ~id:obj.@(Fir.Address.variable_of)
             |> Result.ok
-            |> Option.bind ~f:(Option.map ~f:(fun v -> (obj, v)))))
+            |> Option.bind ~f:(Option.map ~f:(fun v -> (obj, v))) ))
 
     let gen_const :
         Fir.Type.Prim.t -> Fir.Constant.t Base_quickcheck.Generator.t =
       (* TODO(@MattWindsor91): can this be generalised? *)
       function
-      | Int ->
-          Fir.Constant.gen_int32
-      | Bool ->
-          Fir.Constant.gen_bool
+      | Int -> Fir.Constant.gen_int32
+      | Bool -> Fir.Constant.gen_bool
 
     let gen_obj_and_arb (ty : Fir.Type.Prim.t) (dst : Fir.Env.t) :
         (Fir.Address.t * Fir.Constant.t) Base_quickcheck.Generator.t =
@@ -79,7 +77,7 @@ module Insert = struct
         ~(vars : Fuzz.Var.Map.t) ~tid:(_ : int)
         ~(gen_obj_and_exp :
               Fir.Env.t
-           -> (Fir.Address.t * Fir.Constant.t) Base_quickcheck.Generator.t)
+           -> (Fir.Address.t * Fir.Constant.t) Base_quickcheck.Generator.t )
         ~(allow_ub : bool) : t Base_quickcheck.Generator.t =
       Base_quickcheck.Generator.(
         Let_syntax.(
@@ -165,7 +163,7 @@ module Insert = struct
           {| Inserts a %s atomic int compare-exchange, and a new local Boolean
           variable that receives its result. |}
           (Option.value_map ~default:"strong or weak"
-             ~f:Fir.Atomic_cmpxchg.Strength.to_string Basic.strength)
+             ~f:Fir.Atomic_cmpxchg.Strength.to_string Basic.strength )
       ; Basic.readme_tail ]
 
     type t = Inner_payload.t [@@deriving sexp]
@@ -311,19 +309,16 @@ module Insert = struct
       (* Trying to avoid overflow by heading towards 0. *)
       (* TODO(@MattWindsor91): can this be used elsewhere? *)
       function
-      | Int k when k <= 0 ->
-          Int (k + 1)
-      | Int k ->
-          Int (k - 1)
-      | Bool b ->
-          Bool (not b)
+      | Int k when k <= 0 -> Int (k + 1)
+      | Int k -> Int (k - 1)
+      | Bool b -> Bool (not b)
 
     let gen_obj_and_exp :
            Fir.Env.t
         -> (Fir.Address.t * Fir.Constant.t) Base_quickcheck.Generator.t =
       Fn.compose
         (Base_quickcheck.Generator.map ~f:(fun (o, e) ->
-             (o, perturb_constant e)))
+             (o, perturb_constant e) ) )
         Inner_payload.gen_obj_and_kv
 
     let needs_kv : bool = true

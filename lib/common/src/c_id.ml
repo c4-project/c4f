@@ -57,13 +57,12 @@ module M = Validated.Make_bin_io_compare_hash_sexp (struct
 
   let validate_chars (id : string) : Validate.t =
     match String.to_list id with
-    | [] ->
-        Validate.fail_s [%message "Identifiers can't be empty" ~id]
+    | [] -> Validate.fail_s [%message "Identifiers can't be empty" ~id]
     | c :: cs ->
         Validate.combine (validate_initial_char c)
           (Validate.list
              ~name:(Printf.sprintf "char '%c'")
-             validate_non_initial_char cs)
+             validate_non_initial_char cs )
 
   let is_badword (s : string) : bool =
     (* Not pointfree because of the need to force a lazy value. *)
@@ -98,7 +97,7 @@ module Q : Quickcheck.S with type t := t = struct
     Qc.Generator.filter_map
       ~f:(Fn.compose Result.ok create)
       (C4f_utils.My_quickcheck.gen_string_initial ~initial:gen_initial_char
-         ~rest:gen_non_initial_char)
+         ~rest:gen_non_initial_char )
 
   let quickcheck_observer : t Quickcheck.Observer.t =
     Quickcheck.Observer.unmap String.quickcheck_observer ~f:raw
@@ -109,7 +108,7 @@ module Q : Quickcheck.S with type t := t = struct
     Quickcheck.Shrinker.create (fun ident ->
         ident |> raw
         |> Quickcheck.Shrinker.shrink String.quickcheck_shrinker
-        |> Sequence.filter_map ~f:create_opt)
+        |> Sequence.filter_map ~f:create_opt )
 end
 
 module Json : Plumbing.Jsonable_types.S with type t := t = struct

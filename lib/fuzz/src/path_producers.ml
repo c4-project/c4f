@@ -25,10 +25,8 @@ module Helpers = struct
 
       This is used to convert errors into blockages in the sequence. *)
   let lift_err : type m. m Or_error.t -> m Sequence.t = function
-    | Ok o ->
-        Sequence.singleton o
-    | Error _ ->
-        Sequence.empty
+    | Ok o -> Sequence.singleton o
+    | Error _ -> Sequence.empty
 
   (** [with_flags flags ~f ~ctx] registers [flags] in [ctx], then, if the
       result satisfies the current path filter, proceeds according to [f]. *)
@@ -158,7 +156,7 @@ module Block = struct
 
   let produce (b : Subject.Block.t) ~(mu : mu) : ctx:ctx -> Path.Stms.t t =
     with_flags (Path_meta.flags_of_block b) ~f:(fun ctx ->
-        produce_stms b.@(Fir.Block.statements) ~mu ~ctx)
+        produce_stms b.@(Fir.Block.statements) ~mu ~ctx )
 end
 
 (** If blocks and flow blocks both share the same path structure, with some
@@ -194,7 +192,7 @@ struct
         let ctx = ctx.@(Path_context.block_kind) <- F.block_kind b i in
         i.@(F.sel_branch b)
         |> Block.produce ~mu ~ctx
-        |> map_path ~f:(F.lift_path b))
+        |> map_path ~f:(F.lift_path b) )
 
   let produce (i : F.t) ~(mu : mu) ~(ctx : ctx) : Path.Stm.t t =
     (* No metadata on flow statement headers. *)
@@ -244,7 +242,7 @@ module Stm = struct
   let produce (s : Subject.Statement.t) ~(ctx : ctx) : Path.Stm.t t =
     let rec mu s =
       with_flags (Path_meta.flags_of_stm s) ~f:(fun ctx ->
-          branch s [if_kind Transform ~f:self ~ctx; recursive ~mu ~ctx])
+          branch s [if_kind Transform ~f:self ~ctx; recursive ~mu ~ctx] )
     in
     mu s ~ctx
 end
@@ -274,7 +272,5 @@ let is_constructible ?(filter : Path_filter.t option) (test : Subject.Test.t)
 let try_gen ?(filter : Path_filter.t option) (test : Subject.Test.t)
     ~(kind : Path_kind.t) : Path.With_meta.t Opt_gen.t =
   match Sequence.to_list_rev (produce_seq test ~kind ?filter) with
-  | [] ->
-      Or_error.error_string "No valid paths generated"
-  | xs ->
-      Ok (Base_quickcheck.Generator.of_list xs)
+  | [] -> Or_error.error_string "No valid paths generated"
+  | xs -> Ok (Base_quickcheck.Generator.of_list xs)

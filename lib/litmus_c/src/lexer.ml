@@ -18,81 +18,45 @@ module S = Sedlexing
    advance. *)
 
 let tr_name (typedefs : Base.Set.M(String).t) : string -> token = function
-  | "volatile" ->
-      VOLATILE
-  | "auto" ->
-      AUTO
-  | "char" ->
-      CHAR
-  | "int" ->
-      INT
-  | "long" ->
-      LONG
-  | "float" ->
-      FLOAT
-  | "double" ->
-      DOUBLE
-  | "short" ->
-      SHORT
-  | "struct" ->
-      STRUCT
-  | "union" ->
-      UNION
-  | "enum" ->
-      ENUM
-  | "signed" ->
-      SIGNED
-  | "unsigned" ->
-      UNSIGNED
-  | "break" ->
-      BREAK
-  | "continue" ->
-      CONTINUE
-  | "return" ->
-      RETURN
-  | "sizeof" ->
-      SIZEOF
-  | "do" ->
-      DO
-  | "while" ->
-      WHILE
-  | "for" ->
-      FOR
-  | "goto" ->
-      GOTO
-  | "if" ->
-      IF
-  | "else" ->
-      ELSE
-  | "switch" ->
-      SWITCH
-  | "case" ->
-      CASE
-  | "default" ->
-      DEFAULT
-  | "void" ->
-      VOID
+  | "volatile" -> VOLATILE
+  | "auto" -> AUTO
+  | "char" -> CHAR
+  | "int" -> INT
+  | "long" -> LONG
+  | "float" -> FLOAT
+  | "double" -> DOUBLE
+  | "short" -> SHORT
+  | "struct" -> STRUCT
+  | "union" -> UNION
+  | "enum" -> ENUM
+  | "signed" -> SIGNED
+  | "unsigned" -> UNSIGNED
+  | "break" -> BREAK
+  | "continue" -> CONTINUE
+  | "return" -> RETURN
+  | "sizeof" -> SIZEOF
+  | "do" -> DO
+  | "while" -> WHILE
+  | "for" -> FOR
+  | "goto" -> GOTO
+  | "if" -> IF
+  | "else" -> ELSE
+  | "switch" -> SWITCH
+  | "case" -> CASE
+  | "default" -> DEFAULT
+  | "void" -> VOID
   (* Memalloy extensions *)
-  | "atomic" ->
-      ATOMIC
-  | "synchronized" ->
-      SYNCHRONIZED
+  | "atomic" -> ATOMIC
+  | "synchronized" -> SYNCHRONIZED
   (* Litmus extensions *)
-  | "true" ->
-      LIT_TRUE
-  | "false" ->
-      LIT_FALSE
-  | "exists" ->
-      LIT_EXISTS
-  | "forall" ->
-      LIT_FORALL
-  | "locations" ->
-      LIT_LOCATIONS
+  | "true" -> LIT_TRUE
+  | "false" -> LIT_FALSE
+  | "exists" -> LIT_EXISTS
+  | "forall" -> LIT_FORALL
+  | "locations" -> LIT_LOCATIONS
   (* Others *)
-  | x when Set.mem typedefs x ->
-      TYPEDEF_NAME x
-  | x ->
-      IDENTIFIER x
+  | x when Set.mem typedefs x -> TYPEDEF_NAME x
+  | x -> IDENTIFIER x
 
 let digit = [%sedlex.regexp? '0' .. '9']
 
@@ -114,10 +78,8 @@ let eol = [%sedlex.regexp? '\n']
 
 let rec token (typedefs : Set.M(String).t) (lexbuf : S.lexbuf) : token =
   match%sedlex lexbuf with
-  | Plus ws ->
-      token typedefs lexbuf
-  | eol ->
-      token typedefs lexbuf
+  | Plus ws -> token typedefs lexbuf
+  | eol -> token typedefs lexbuf
   | "/*" ->
       C4f_utils.Lex_utils.skip_c_comment lexbuf ;
       token typedefs lexbuf
@@ -130,116 +92,64 @@ let rec token (typedefs : Set.M(String).t) (lexbuf : S.lexbuf) : token =
       (* TODO(@MattWindsor91): this isn't quite right. See
          https://en.cppreference.com/w/c/language/floating_constant. *)
       FLOAT_LIT (Float.of_string (S.Utf8.lexeme lexbuf))
-  | Opt '-', num ->
-      INT_LIT (Int.of_string (S.Utf8.lexeme lexbuf))
-  | '\'' ->
-      C4f_utils.Lex_utils.read_char (fun x -> CHAR_LIT x) lexbuf
-  | ';' ->
-      SEMI
-  | ',' ->
-      COMMA
-  | ':' ->
-      COLON
-  | '=' ->
-      EQ
-  | "*=" ->
-      STAR_EQ
-  | "/=" ->
-      DIV_EQ
-  | "%=" ->
-      MOD_EQ
-  | "+=" ->
-      ADD_EQ
-  | "-=" ->
-      SUB_EQ
-  | "<<=" ->
-      SHL_EQ
-  | ">>=" ->
-      SHR_EQ
-  | "&=" ->
-      AND_EQ
-  | "^=" ->
-      XOR_EQ
-  | "|=" ->
-      PIPE_EQ
-  | "||" ->
-      LOR
-  | "&&" ->
-      LAND
-  | '^' ->
-      XOR
-  | '|' ->
-      PIPE
-  | '&' ->
-      AND
-  | "==" ->
-      EQ_OP
-  | "!=" ->
-      NEQ_OP
-  | "<" ->
-      LT
-  | ">" ->
-      GT
-  | "<=" ->
-      LE
-  | ">=" ->
-      GE
-  | "<<" ->
-      SHL
-  | ">>" ->
-      SHR
-  | '+' ->
-      ADD
-  | '-' ->
-      SUB
-  | '*' ->
-      STAR
-  | '/' ->
-      DIV
-  | '%' ->
-      MOD
-  | '~' ->
-      NOT
-  | '!' ->
-      LNOT
-  | '(' ->
-      LPAR
-  | ')' ->
-      RPAR
-  | '{' ->
-      LBRACE
-  | '}' ->
-      RBRACE
-  | '[' ->
-      LBRACK
-  | ']' ->
-      RBRACK
-  | '?' ->
-      QUESTION
-  | "..." ->
-      DOTS
-  | "->" ->
-      ARROW
-  | "++" ->
-      ADDADD
-  | "--" ->
-      SUBSUB
-  | '.' ->
-      DOT
+  | Opt '-', num -> INT_LIT (Int.of_string (S.Utf8.lexeme lexbuf))
+  | '\'' -> C4f_utils.Lex_utils.read_char (fun x -> CHAR_LIT x) lexbuf
+  | ';' -> SEMI
+  | ',' -> COMMA
+  | ':' -> COLON
+  | '=' -> EQ
+  | "*=" -> STAR_EQ
+  | "/=" -> DIV_EQ
+  | "%=" -> MOD_EQ
+  | "+=" -> ADD_EQ
+  | "-=" -> SUB_EQ
+  | "<<=" -> SHL_EQ
+  | ">>=" -> SHR_EQ
+  | "&=" -> AND_EQ
+  | "^=" -> XOR_EQ
+  | "|=" -> PIPE_EQ
+  | "||" -> LOR
+  | "&&" -> LAND
+  | '^' -> XOR
+  | '|' -> PIPE
+  | '&' -> AND
+  | "==" -> EQ_OP
+  | "!=" -> NEQ_OP
+  | "<" -> LT
+  | ">" -> GT
+  | "<=" -> LE
+  | ">=" -> GE
+  | "<<" -> SHL
+  | ">>" -> SHR
+  | '+' -> ADD
+  | '-' -> SUB
+  | '*' -> STAR
+  | '/' -> DIV
+  | '%' -> MOD
+  | '~' -> NOT
+  | '!' -> LNOT
+  | '(' -> LPAR
+  | ')' -> RPAR
+  | '{' -> LBRACE
+  | '}' -> RBRACE
+  | '[' -> LBRACK
+  | ']' -> RBRACK
+  | '?' -> QUESTION
+  | "..." -> DOTS
+  | "->" -> ARROW
+  | "++" -> ADDADD
+  | "--" -> SUBSUB
+  | '.' -> DOT
   | "typedef" ->
       C4f_utils.Frontend.lex_error "Typedefs aren't supported." lexbuf
   | '#' ->
       C4f_utils.Frontend.lex_error
         "C preprocessor directives aren't supported." lexbuf
   (* Litmus extensions *)
-  | "/\\" ->
-      LIT_AND
-  | "\\/" ->
-      LIT_OR
-  | c_id ->
-      tr_name typedefs (S.Utf8.lexeme lexbuf)
-  | eof ->
-      EOF
+  | "/\\" -> LIT_AND
+  | "\\/" -> LIT_OR
+  | c_id -> tr_name typedefs (S.Utf8.lexeme lexbuf)
+  | eof -> EOF
   | _ ->
       C4f_utils.Frontend.lex_error
         ("Unexpected char: " ^ S.Utf8.lexeme lexbuf)

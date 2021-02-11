@@ -31,7 +31,7 @@ module Test_data = struct
           { cmpxchg
           ; exp_val= C4f_fir.Constant.int 12345
           ; exp_var= C4f_common.C_id.of_string "expected"
-          ; out_var= C4f_common.C_id.of_string "out" })
+          ; out_var= C4f_common.C_id.of_string "out" } )
 end
 
 let%test_module "cmpxchg.make.int.succeed" =

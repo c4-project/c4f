@@ -42,8 +42,7 @@ let bop_of_rule (rule : Fir.Op_rule.In.t) (ops : Operand_set.t)
   let f = Fir.Expression.bop op in
   Q.Generator.(
     match rule with
-    | Refl ->
-        ops |> Operand_set.take_two >>| fun (l, r) -> f l r
+    | Refl -> ops |> Operand_set.take_two >>| fun (l, r) -> f l r
     | Const (dir, k) ->
         ops |> Operand_set.take_one >>= bop_of_const f ~dir ~k ~lift_k)
 
@@ -56,7 +55,7 @@ let rulesi :
     many_getteri (fun op ->
         op |> Fir.Op.Binary.rules
         |> Base.List.mapi ~f:(fun i r -> Many_getter.access ((op, i), r))
-        |> Many_getter.of_list))
+        |> Many_getter.of_list ))
 
 let in_rulesi (out : Fir.Op_rule.Out.t) :
     ( (Fir.Op.Binary.t * int) * 'a -> Fir.Op_rule.In.t -> Fir.Op_rule.In.t
@@ -85,9 +84,9 @@ let bop_with_output ?(ops : Fir.Op.Binary.t list = Fir.Op.Binary.all)
     (out : Fir.Op_rule.Out.t) : bop_gen option =
   (* TODO(@MattWindsor91): I suspect this is woefully inefficient. *)
   match Accessor.(to_listi (List.each @> in_rulesi out) ops) with
-  | [] ->
-      None
+  | [] -> None
   | ins ->
       Some
         (fun lift_k operands ->
-          Q.Generator.(of_list ins >>= bop_of_indexed_rule ~operands ~lift_k))
+          Q.Generator.(of_list ins >>= bop_of_indexed_rule ~operands ~lift_k)
+          )

@@ -15,7 +15,5 @@ type t = Break | Continue | Return
 [@@deriving sexp, compare, equal, quickcheck]
 
 let in_loop_only : t -> bool = function
-  | Break | Continue ->
-      true
-  | Return ->
-      false
+  | Break | Continue -> true
+  | Return -> false

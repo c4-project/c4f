@@ -74,10 +74,10 @@ val map :
      'm1 t
   -> parameters:
        (   (C4f_common.C_id.t, Type.t) List.Assoc.t
-        -> (C4f_common.C_id.t, Type.t) List.Assoc.t)
+        -> (C4f_common.C_id.t, Type.t) List.Assoc.t )
   -> body_decls:
        (   (C4f_common.C_id.t, Initialiser.t) List.Assoc.t
-        -> (C4f_common.C_id.t, Initialiser.t) List.Assoc.t)
+        -> (C4f_common.C_id.t, Initialiser.t) List.Assoc.t )
   -> body_stms:('m1 Statement.t list -> 'm2 Statement.t list)
   -> 'm2 t
 (** [map func ~parameters ~body_decls ~body_stms] runs the given functions
@@ -90,10 +90,10 @@ module On (M : Applicative.S) : sig
        'm1 t
     -> parameters:
          (   (C4f_common.C_id.t, Type.t) List.Assoc.t
-          -> (C4f_common.C_id.t, Type.t) List.Assoc.t M.t)
+          -> (C4f_common.C_id.t, Type.t) List.Assoc.t M.t )
     -> body_decls:
          (   (C4f_common.C_id.t, Initialiser.t) List.Assoc.t
-          -> (C4f_common.C_id.t, Initialiser.t) List.Assoc.t M.t)
+          -> (C4f_common.C_id.t, Initialiser.t) List.Assoc.t M.t )
     -> body_stms:('m1 Statement.t list -> 'm2 Statement.t list M.t)
     -> 'm2 t M.t
 end

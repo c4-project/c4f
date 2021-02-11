@@ -115,10 +115,8 @@ module Payload = struct
         ({kv_val; _} : t) : Fir.Flow_block.For.Simple.Direction.t =
       (* Try to avoid overflows by only going up if we're negative. *)
       match Fir.Constant.as_int kv_val with
-      | Ok x when x < 0 ->
-          Up i
-      | _ ->
-          Down i
+      | Ok x when x < 0 -> Up i
+      | _ -> Down i
 
     let control (i : Fir.Flow_block.For.Simple.Inclusivity.t) (payload : t) :
         C4f_fir.Flow_block.For.Simple.t =
@@ -154,7 +152,7 @@ module Payload = struct
           Fir.Expression.atomic_load
             (Fir.Atomic_load.make
                ~src:(Fir.Address.on_address_of_typed_id var)
-               ~mo)
+               ~mo )
         else
           return
             (Fir.Expression.lvalue (Fir.Lvalue.on_value_of_typed_id var)))

@@ -44,7 +44,7 @@ let%test_module "SBSC example" =
     let%expect_test "add_thread_at_end" =
       dump_test
         (Or_error.return
-           (Test.Raw.add_thread_at_end test ~thread:"<NEW THREAD>")) ;
+           (Test.Raw.add_thread_at_end test ~thread:"<NEW THREAD>") ) ;
       [%expect
         {|
       (Ok

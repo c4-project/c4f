@@ -30,7 +30,7 @@ module Transform = struct
         Fuzz.Path_filter.(
           require_end_check
             (Stm_class
-               (Is, [Fir.Statement_class.atomic ~specifically:Store ()])))
+               (Is, [Fir.Statement_class.atomic ~specifically:Store ()]) ))
 
     module Payload = struct
       type t = Fuzz.Path.With_meta.t [@@deriving sexp]
@@ -62,7 +62,7 @@ module Transform = struct
         (Accessor.construct Fir.Atomic_statement.fetch
            Fir.Atomic_store.(
              Fir.Atomic_fetch.make ~op:`Xchg ~obj:s.@(dst) ~arg:s.@(src)
-               ~mo:s.@(mo)))
+               ~mo:s.@(mo)) )
 
     let xchgify_atomic :
         Fir.Atomic_statement.t -> Fir.Atomic_statement.t Or_error.t =
@@ -75,12 +75,11 @@ module Transform = struct
         -> Fuzz.Metadata.t Fir.Statement.t Or_error.t =
       AtomsM.map_m ~f:xchgify_atomic
 
-    let run (subject : Fuzz.Subject.Test.t)
-        ~(payload : Fuzz.Path.With_meta.t) :
-        Fuzz.Subject.Test.t Fuzz.State.Monad.t =
+    let run (subject : Fuzz.Subject.Test.t) ~(payload : Fuzz.Path.With_meta.t)
+        : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Fuzz.State.Monad.Monadic.return
         (Fuzz.Path_consumers.consume subject ~filter:(Lazy.force path_filter)
-           ~path:payload ~action:(Transform xchgify))
+           ~path:payload ~action:(Transform xchgify) )
   end
 end
 
@@ -270,7 +269,7 @@ module Insert = struct
                values works here, because there's no way we can safely return
                an error if not. *)
             let src = Or_error.ok_exn (known_value_expr_of_dest dst) in
-            Fir.Atomic_store.make ~src ~dst ~mo)
+            Fir.Atomic_store.make ~src ~dst ~mo )
     end
   end)
 

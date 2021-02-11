@@ -22,10 +22,8 @@ let not_found_error (type k) ?(sexp_of_key : (k -> Sexp.t) option)
     ~(map_name : string) (key : k) : Error.t =
   let string = Printf.sprintf "Given key not found in %s" map_name in
   match sexp_of_key with
-  | None ->
-      Error.of_string string
-  | Some f ->
-      Error.create_s [%message string ~key:(f key : Sexp.t)]
+  | None -> Error.of_string string
+  | Some f -> Error.create_s [%message string ~key:(f key : Sexp.t)]
 
 let find_or_error (type k v w) ?(sexp_of_key : (k -> Sexp.t) option)
     ?(map_name : string = "map") (map : (k, v, w) Map.t) (key : k) :
@@ -36,8 +34,7 @@ let find_or_error (type k v w) ?(sexp_of_key : (k -> Sexp.t) option)
 let merge_with_overlap (type k v w) (maps : (k, v, w) Map.t list)
     ~(compare : v -> v -> int) : (k, v, w) Map.t Or_error.t =
   match maps with
-  | [] ->
-      Or_error.error_string "empty"
+  | [] -> Or_error.error_string "empty"
   | m :: _ ->
       let cmp1 = (Map.comparator m).compare in
       maps

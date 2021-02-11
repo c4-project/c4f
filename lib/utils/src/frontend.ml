@@ -41,10 +41,8 @@ end
 module Make (B : Basic) : Plumbing.Loadable_types.S with type t = B.ast =
 struct
   let env : B.ast B.I.checkpoint -> B.ast B.I.env = function
-    | B.I.HandlingError env ->
-        env
-    | _ ->
-        assert false
+    | B.I.HandlingError env -> env
+    | _ -> assert false
 
   let err (pos : Error_range.t) (ty : string) (details : string) :
       'a Or_error.t =

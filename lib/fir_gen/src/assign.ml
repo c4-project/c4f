@@ -41,7 +41,7 @@ let int ~(src : Fir.Env.t) ~(dst : Fir.Env.t) :
              let env = dst
            end)
        in
-      I.quickcheck_generator)
+      I.quickcheck_generator )
   else None
 
 let bool ~(src : Fir.Env.t) ~(dst : Fir.Env.t) :
@@ -58,7 +58,7 @@ let bool ~(src : Fir.Env.t) ~(dst : Fir.Env.t) :
              let env = dst
            end)
        in
-      B.quickcheck_generator)
+      B.quickcheck_generator )
   else None
 
 let any ~(src : Fir.Env.t) ~(dst : Fir.Env.t) :

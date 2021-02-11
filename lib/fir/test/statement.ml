@@ -23,13 +23,13 @@ let mkif ?(cond : Src.Expression.t = cond) (ts : unit Src.Statement.t list)
   A.construct Src.Statement.if_stm
     (Src.If.make ~cond
        ~t_branch:(Src.Block.of_statement_list ts)
-       ~f_branch:(Src.Block.of_statement_list fs))
+       ~f_branch:(Src.Block.of_statement_list fs) )
 
-let mkwhile ?(cond : Src.Expression.t = cond)
-    (xs : unit Src.Statement.t list) : unit Src.Statement.t =
+let mkwhile ?(cond : Src.Expression.t = cond) (xs : unit Src.Statement.t list)
+    : unit Src.Statement.t =
   A.construct Src.Statement.flow
     (Src.Flow_block.while_loop ~cond ~kind:While
-       ~body:(Src.Block.of_statement_list xs))
+       ~body:(Src.Block.of_statement_list xs) )
 
 let nop : unit Src.Statement.t =
   A.(construct Src.(Statement.prim' @> Prim_statement.nop) ())

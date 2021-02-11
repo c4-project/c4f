@@ -61,11 +61,9 @@ module Base_map (Ap : Applicative.S) : sig
   val bmap :
        t
     -> cmpxchg:
-         (   Expression.t Atomic_cmpxchg.t
-          -> Expression.t Atomic_cmpxchg.t Ap.t)
+         (Expression.t Atomic_cmpxchg.t -> Expression.t Atomic_cmpxchg.t Ap.t)
     -> fence:(Atomic_fence.t -> Atomic_fence.t Ap.t)
-    -> fetch:
-         (Expression.t Atomic_fetch.t -> Expression.t Atomic_fetch.t Ap.t)
+    -> fetch:(Expression.t Atomic_fetch.t -> Expression.t Atomic_fetch.t Ap.t)
     -> store:(Atomic_store.t -> Atomic_store.t Ap.t)
     -> t Ap.t
   (** [bmap t ~cmpxchg ~fence ~fetch ~store] traverses over [t] applicatively

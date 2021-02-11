@@ -87,5 +87,5 @@ module Label :
         let%bind () = register_label lid in
         Monadic.return
           (Fuzz.Path_consumers.consume test ~path
-             ~action:(Insert [label_stm]))))
+             ~action:(Insert [label_stm]) )))
 end

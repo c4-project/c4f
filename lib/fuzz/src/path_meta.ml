@@ -50,10 +50,8 @@ module Flag = struct
             (* Whether or not the loop executes multiple times is stored in
                its block metadata. *)
             Some In_loop
-        | Lock (Some Atomic) ->
-            Some In_atomic
-        | Lock _ | Explicit | Implicit ->
-            None)]
+        | Lock (Some Atomic) -> Some In_atomic
+        | Lock _ | Explicit | Implicit -> None )]
 end
 
 module Anchor = struct
@@ -62,21 +60,15 @@ module Anchor = struct
   [@@deriving sexp, compare, equal, quickcheck]
 
   let pp (f : Formatter.t) : t -> unit = function
-    | Top ->
-        Fmt.(styled (`Fg `Red) (any "T") f ())
-    | Full ->
-        Fmt.(styled (`Fg `Magenta) (any "F") f ())
-    | Bottom ->
-        Fmt.(styled (`Fg `Blue) (any "B") f ())
+    | Top -> Fmt.(styled (`Fg `Red) (any "T") f ())
+    | Full -> Fmt.(styled (`Fg `Magenta) (any "F") f ())
+    | Bottom -> Fmt.(styled (`Fg `Blue) (any "B") f ())
 
   let merge (l : t) (r : t) : t =
     match (l, r) with
-    | Top, Top ->
-        Top
-    | Bottom, Bottom ->
-        Bottom
-    | _ ->
-        Full
+    | Top, Top -> Top
+    | Bottom, Bottom -> Bottom
+    | _ -> Full
 
   let merge_opt : t option -> t option -> t option = Option.merge ~f:merge
 
@@ -85,20 +77,15 @@ module Anchor = struct
 
   let sub (x : t) ~(to_sub : t) : t option =
     match (x, to_sub) with
-    | _, Full ->
-        None
-    | Top, Top | Bottom, Bottom ->
-        None
-    | Full, Top ->
-        Some Bottom
-    | Full, Bottom ->
-        Some Top
-    | x, _ ->
-        Some x
+    | _, Full -> None
+    | Top, Top | Bottom, Bottom -> None
+    | Full, Top -> Some Bottom
+    | Full, Bottom -> Some Top
+    | x, _ -> Some x
 
   let sub_opt ?(to_sub : t option) (x : t option) : t option =
     Option.value_map to_sub ~default:x ~f:(fun to_sub ->
-        Option.bind ~f:(sub ~to_sub) x)
+        Option.bind ~f:(sub ~to_sub) x )
 
   let set (x : t option) ~(to_set : t) ~(to_ : bool) : t option =
     if to_ then merge_opt x (Some to_set) else sub_opt x ~to_sub:to_set
@@ -107,7 +94,7 @@ module Anchor = struct
      second law. Hence, we only expose x=Top and x=Bottom. *)
   let at (x : t) : ('i, bool, t option, [< field]) Accessor.Simple.t =
     Accessor.field ~get:(incl_opt ~includes:x) ~set:(fun o to_ ->
-        set ~to_set:x o ~to_)
+        set ~to_set:x o ~to_ )
 
   let top : ('i, bool, t option, [< field]) Accessor.Simple.t =
     [%accessor at Top]
@@ -128,7 +115,7 @@ let flag_contradictions : Set.M(Flag).t list Lazy.t =
   lazy
     (List.map
        ~f:(Set.of_list (module Flag))
-       [Flag.[In_execute_multi; Execute_multi_unsafe]])
+       [Flag.[In_execute_multi; Execute_multi_unsafe]] )
 
 let flag_contradictions_of_set (xs : Set.M(Flag).t) : Set.M(Flag).t list =
   List.filter (Lazy.force flag_contradictions) ~f:(Set.is_subset ~of_:xs)

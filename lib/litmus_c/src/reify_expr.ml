@@ -16,48 +16,31 @@ open struct
 end
 
 let rel_bop : Fir.Op.Binary.Rel.t -> Operators.Bin.t = function
-  | Eq ->
-      `Eq
-  | Ne ->
-      `Ne
-  | Gt ->
-      `Gt
-  | Ge ->
-      `Ge
-  | Le ->
-      `Le
-  | Lt ->
-      `Lt
+  | Eq -> `Eq
+  | Ne -> `Ne
+  | Gt -> `Gt
+  | Ge -> `Ge
+  | Le -> `Le
+  | Lt -> `Lt
 
 let arith_bop : Fir.Op.Binary.Arith.t -> Operators.Bin.t = function
-  | Add ->
-      `Add
-  | Sub ->
-      `Sub
+  | Add -> `Add
+  | Sub -> `Sub
 
 let bitwise_bop : Fir.Op.Binary.Bitwise.t -> Operators.Bin.t = function
-  | And ->
-      `And
-  | Or ->
-      `Or
-  | Xor ->
-      `Xor
+  | And -> `And
+  | Or -> `Or
+  | Xor -> `Xor
 
 let logical_bop : Fir.Op.Binary.Logical.t -> Operators.Bin.t = function
-  | And ->
-      `Land
-  | Or ->
-      `Lor
+  | And -> `Land
+  | Or -> `Lor
 
 let bop : Fir.Op.Binary.t -> Operators.Bin.t = function
-  | Rel r ->
-      rel_bop r
-  | Arith a ->
-      arith_bop a
-  | Bitwise b ->
-      bitwise_bop b
-  | Logical l ->
-      logical_bop l
+  | Rel r -> rel_bop r
+  | Arith a -> arith_bop a
+  | Bitwise b -> bitwise_bop b
+  | Logical l -> logical_bop l
 
 let uop_pre : Fir.Op.Unary.t -> Operators.Pre.t = function L_not -> `Lnot
 
@@ -130,20 +113,10 @@ module Needs_brackets = struct
   let ternary_if (x : Ast.Expr.t) : bool =
     (* The only thing that binds looser than a ternary is another ternary. *)
     match x with
-    | Ternary _ ->
-        true
-    | Brackets _
-    | Identifier _
-    | Constant _
-    | String _
-    | Call _
-    | Subscript _
-    | Field _
-    | Postfix _
-    | Binary _
-    | Prefix _
-    | Sizeof_type _
-    | Cast _ ->
+    | Ternary _ -> true
+    | Brackets _ | Identifier _ | Constant _ | String _ | Call _
+     |Subscript _ | Field _ | Postfix _ | Binary _ | Prefix _
+     |Sizeof_type _ | Cast _ ->
         false
 
   let maybe_bracket (expr : Ast.Expr.t) ~(f : Ast.Expr.t -> bool) :

@@ -49,7 +49,7 @@ let command : Command.t =
           flag_optional_with_default_doc "style"
             (Arg_type.of_alist_exn
                [ ("vars-as-globals", Vars_as_globals)
-               ; ("vars-as-parameters", Vars_as_parameters) ])
+               ; ("vars-as-parameters", Vars_as_parameters) ] )
             [%sexp_of: C4f_delitmus.Config.Style.t] ~default:Vars_as_globals
             ~doc:"STYLE_NAME the style of delitmus action to run")
       and impl_suffix =
@@ -64,4 +64,4 @@ let command : Command.t =
           (Common_cmd.Args.With_files.rest standard_args)
           ~f:
             (run standard_args ~style ~no_qualify_locals ?impl_suffix
-               ?aux_output))
+               ?aux_output ))

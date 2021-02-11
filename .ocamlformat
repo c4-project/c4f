@@ -1,5 +1,6 @@
-version = 0.15.0
+version = 0.16.0
 profile = ocamlformat
 margin = 77
+break-cases = fit
 parse-docstrings = true
 wrap-comments = true

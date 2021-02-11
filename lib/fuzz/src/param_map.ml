@@ -35,20 +35,17 @@ module Value = struct
   type t = Param of int | Flag of Flag.t [@@deriving equal]
 
   let pp (f : Formatter.t) : t -> unit = function
-    | Param k ->
-        Fmt.(styled (`Fg `Blue) int) f k
+    | Param k -> Fmt.(styled (`Fg `Blue) int) f k
     | Flag x ->
         ( match Flag.to_exact_opt x with
-        | Some true ->
-            Fmt.(styled (`Fg `Green) (any "on"))
-        | Some false ->
-            Fmt.(styled (`Fg `Red) (any "off"))
+        | Some true -> Fmt.(styled (`Fg `Green) (any "on"))
+        | Some false -> Fmt.(styled (`Fg `Red) (any "off"))
         | None ->
             Fmt.(
               styled
                 (`Fg `Yellow)
                 (concat ~sep:(any ":")
-                   [using Flag.wins int; using Flag.losses int])) )
+                   [using Flag.wins int; using Flag.losses int] )) )
           f x
 end
 
@@ -78,9 +75,6 @@ let get_action_cap (x : t) ~(random : Splittable_random.State.t) :
     else
       Ok
         ( match Flag.to_exact_opt flag with
-        | Some true ->
-            upper (* Always pick every extra action *)
-        | Some false ->
-            lower (* Never pick any extra action *)
-        | None ->
-            calc_action_cap lower upper flag ~random ))
+        | Some true -> upper (* Always pick every extra action *)
+        | Some false -> lower (* Never pick any extra action *)
+        | None -> calc_action_cap lower upper flag ~random ))

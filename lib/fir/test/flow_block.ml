@@ -250,7 +250,7 @@ let%test_module "for loop simplification" =
                 ~update:
                   (Assign.make
                      ~dst:(Lvalue.of_variable_str_exn "x")
-                     ~src:Inc)
+                     ~src:Inc )
                 ()) ;
           [%expect
             {|
@@ -270,7 +270,7 @@ let%test_module "for loop simplification" =
                   { C4f_fir.Flow_block.For.Simple.lvalue
                   ; init_value
                   ; cmp_value
-                  ; direction })
+                  ; direction } )
               <*> C4f_fir.Lvalue.quickcheck_generator
               <*> map ~f:C4f_fir.Expression.int_lit
                     small_positive_or_zero_int
@@ -286,5 +286,5 @@ let%test_module "for loop simplification" =
           [%test_result: C4f_fir.Flow_block.For.Simple.t option]
             ~here:[[%here]] ~expect:(Some t)
             Accessor.(
-              C4f_fir.Flow_block.For.((construct simple t).@?(simple))))
+              C4f_fir.Flow_block.For.((construct simple t).@?(simple))) )
   end )

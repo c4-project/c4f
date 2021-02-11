@@ -82,38 +82,38 @@ let%test_module "algebraic properties" =
         let%test_unit "zero_lhs idem" =
           Q.Test.run_exn
             (gen_bitwise
-               Src.Op_rule.(has_in_out_matching (In.zero' Left) Idem))
+               Src.Op_rule.(has_in_out_matching (In.zero' Left) Idem) )
             ~f:(fun (op, rhs) ->
               test_int_result
                 (eval_int_op (Bitwise op) 0 rhs)
-                ~expect:rhs ~here:[%here])
+                ~expect:rhs ~here:[%here] )
 
         let%test_unit "zero_rhs idem" =
           Q.Test.run_exn
             (gen_bitwise
-               Src.Op_rule.(has_in_out_matching (In.zero' Right) Idem))
+               Src.Op_rule.(has_in_out_matching (In.zero' Right) Idem) )
             ~f:(fun (op, lhs) ->
               test_int_result
                 (eval_int_op (Bitwise op) lhs 0)
-                ~expect:lhs ~here:[%here])
+                ~expect:lhs ~here:[%here] )
 
         let%test_unit "zero_lhs zero" =
           Q.Test.run_exn
             (gen_bitwise
-               Src.Op_rule.(has_in_out_matching (In.zero' Left) Out.zero))
+               Src.Op_rule.(has_in_out_matching (In.zero' Left) Out.zero) )
             ~f:(fun (op, rhs) ->
               test_int_result
                 (eval_int_op (Bitwise op) 0 rhs)
-                ~expect:0 ~here:[%here])
+                ~expect:0 ~here:[%here] )
 
         let%test_unit "zero_rhs zero" =
           Q.Test.run_exn
             (gen_bitwise
-               Src.Op_rule.(has_in_out_matching (In.zero' Right) Out.zero))
+               Src.Op_rule.(has_in_out_matching (In.zero' Right) Out.zero) )
             ~f:(fun (op, lhs) ->
               test_int_result
                 (eval_int_op (Bitwise op) lhs 0)
-                ~expect:0 ~here:[%here])
+                ~expect:0 ~here:[%here] )
 
         let%test_unit "refl_idem" =
           Q.Test.run_exn
@@ -121,7 +121,7 @@ let%test_module "algebraic properties" =
             ~f:(fun (op, r) ->
               test_int_result
                 (eval_int_op (Bitwise op) r r)
-                ~expect:r ~here:[%here])
+                ~expect:r ~here:[%here] )
 
         let%test_unit "refl_zero" =
           Q.Test.run_exn
@@ -129,6 +129,6 @@ let%test_module "algebraic properties" =
             ~f:(fun (op, r) ->
               test_int_result
                 (eval_int_op (Bitwise op) r r)
-                ~expect:0 ~here:[%here])
+                ~expect:0 ~here:[%here] )
       end )
   end )

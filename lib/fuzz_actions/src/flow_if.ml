@@ -65,7 +65,7 @@ module Transform = struct
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Fuzz.State.Monad.Monadic.return
         (Fuzz.Path_consumers.consume test ~filter:path_filter ~path:payload
-           ~action:(Transform invert_stm))
+           ~action:(Transform invert_stm) )
   end
 end
 
@@ -138,7 +138,7 @@ module Surround = struct
       Accessor.construct Fir.Statement.if_stm
         (Fir.If.make ~cond:payload
            ~t_branch:(Basic.t_branch_of_statements statements)
-           ~f_branch:(Basic.f_branch_of_statements statements))
+           ~f_branch:(Basic.f_branch_of_statements statements) )
   end)
 
   module Duplicate : S = Make (struct

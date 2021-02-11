@@ -53,20 +53,14 @@ module For = struct
       [@@deriving sexp, compare, equal, quickcheck]
 
       let src : t -> Assign.Source.t = function
-        | Up Exclusive | Up Inclusive ->
-            Inc
-        | Down Exclusive | Down Inclusive ->
-            Dec
+        | Up Exclusive | Up Inclusive -> Inc
+        | Down Exclusive | Down Inclusive -> Dec
 
       let rel : t -> Op.Binary.Rel.t = function
-        | Up Exclusive ->
-            Lt
-        | Up Inclusive ->
-            Le
-        | Down Exclusive ->
-            Gt
-        | Down Inclusive ->
-            Ge
+        | Up Exclusive -> Lt
+        | Up Inclusive -> Le
+        | Down Exclusive -> Gt
+        | Down Inclusive -> Ge
     end
 
     type t =
@@ -77,8 +71,8 @@ module For = struct
     [@@deriving accessors, sexp, compare, equal]
   end
 
-  let for_loop_lvalue_unify (ilv : Lvalue.t) (clv : Lvalue.t)
-      (ulv : Lvalue.t) : Lvalue.t Or_error.t =
+  let for_loop_lvalue_unify (ilv : Lvalue.t) (clv : Lvalue.t) (ulv : Lvalue.t)
+      : Lvalue.t Or_error.t =
     if not (Lvalue.equal ilv clv) then
       Or_error.error_s
         [%message
@@ -98,20 +92,16 @@ module For = struct
     (* We could map != to < and >, but this would violate the well-formedness
        property of variant accessors. *)
     match (op, asn) with
-    | Lt, Inc | Ne, Inc ->
-        Ok (Up Exclusive)
+    | Lt, Inc | Ne, Inc -> Ok (Up Exclusive)
     | Lt, _ ->
         Or_error.error_string "if comparison op is <, update must be ++"
-    | Le, Inc ->
-        Ok (Up Inclusive)
+    | Le, Inc -> Ok (Up Inclusive)
     | Le, _ ->
         Or_error.error_string "if comparison op is <=, update must be ++"
-    | Gt, Dec ->
-        Ok (Down Exclusive)
+    | Gt, Dec -> Ok (Down Exclusive)
     | Gt, _ ->
         Or_error.error_string "if comparison op is >, update must be --"
-    | Ge, Dec ->
-        Ok (Down Inclusive)
+    | Ge, Dec -> Ok (Down Inclusive)
     | Ge, _ ->
         Or_error.error_string "if comparison op is >=, update must be --"
     | _, _ ->
@@ -130,7 +120,7 @@ module For = struct
           ~error:
             (Error.create_s
                [%message
-                 "Unsupported comparison expression" ~cmp:(cmp : Expression.t)])
+                 "Unsupported comparison expression" ~cmp:(cmp : Expression.t)] )
       in
       let%bind lv =
         Result.of_option
@@ -139,11 +129,10 @@ module For = struct
             (Error.create_s
                [%message
                  "Unsupported LHS of comparison expression"
-                   ~l:(l : Expression.t)])
+                   ~l:(l : Expression.t)] )
       in
       match bop with
-      | Rel o ->
-          Ok (o, lv, r)
+      | Rel o -> Ok (o, lv, r)
       | _ ->
           Or_error.error_s
             [%message
@@ -156,7 +145,7 @@ module For = struct
         (Error.create_s
            [%message
              "Unsupported RHS of initialiser expression"
-               ~init:(init : Assign.t)])
+               ~init:(init : Assign.t)] )
 
   let try_simplify_inner (init : Assign.t) (cmp : Expression.t)
       (update : Assign.t) : Simple.t Or_error.t =
@@ -171,10 +160,8 @@ module For = struct
 
   let try_simplify ({init; cmp; update} : t) : Simple.t Or_error.t =
     match (init, cmp, update) with
-    | Some init, Some cmp, Some update ->
-        try_simplify_inner init cmp update
-    | None, _, _ ->
-        Or_error.error_string "missing init in for loop"
+    | Some init, Some cmp, Some update -> try_simplify_inner init cmp update
+    | None, _, _ -> Or_error.error_string "missing init in for loop"
     | Some _, None, _ ->
         Or_error.error_string "missing comparison in for loop"
     | Some _, Some _, None ->
@@ -190,7 +177,7 @@ module For = struct
           (Expression.bop
              (Rel (Simple.Direction.rel s.direction))
              (Expression.lvalue s.lvalue)
-             s.cmp_value)
+             s.cmp_value )
     ; update=
         Some
           (Assign.make ~dst:s.lvalue ~src:(Simple.Direction.src s.direction))
@@ -262,12 +249,9 @@ module Header = struct
   let exprs_many : t -> (t, Expression.t, Expression.t) Accessor.Many.t =
     Accessor.Many.(
       function
-      | For f ->
-          For.exprs_many f >>| fun f' -> For f'
-      | While (w, e) ->
-          access e >>| fun e' -> While (w, e')
-      | (Explicit | Implicit | Lock _) as x ->
-          return x)
+      | For f -> For.exprs_many f >>| fun f' -> For f'
+      | While (w, e) -> access e >>| fun e' -> While (w, e')
+      | (Explicit | Implicit | Lock _) as x -> return x)
 
   let exprs : type i. (i, Expression.t, t, [< many]) Accessor.Simple.t =
     [%accessor Accessor.many exprs_many]
@@ -306,12 +290,9 @@ module Header = struct
       let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
         M.(
           match x with
-          | For n ->
-              FL.map_m ~f n >>| fun f' -> For f'
-          | While (w, e) ->
-              EL.map_m ~f e >>| fun e' -> While (w, e')
-          | (Explicit | Implicit | Lock _) as x ->
-              return x)
+          | For n -> FL.map_m ~f n >>| fun f' -> For f'
+          | While (w, e) -> EL.map_m ~f e >>| fun e' -> While (w, e')
+          | (Explicit | Implicit | Lock _) as x -> return x)
     end
   end)
 end

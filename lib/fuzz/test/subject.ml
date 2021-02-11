@@ -33,7 +33,7 @@ module Test_data = struct
     Src.Subject.Statement.make_generated_prim
       (Accessor.construct
          Fir.(Prim_statement.atomic @> Atomic_statement.store)
-         a)
+         a )
 
   let mk_always_true_if (cond : Fir.Expression.t)
       (t : Src.Subject.Statement.t list) (f : Src.Subject.Statement.t list) :
@@ -42,7 +42,7 @@ module Test_data = struct
       Accessor.construct Statement.if_stm
         (If.make ~cond
            ~t_branch:(Src.Subject.Block.make_generated ~statements:t ())
-           ~f_branch:(Src.Subject.Block.make_dead_code ~statements:f ())))
+           ~f_branch:(Src.Subject.Block.make_dead_code ~statements:f ()) ))
 
   let sample_known_true_if : Src.Subject.Statement.t Lazy.t =
     lazy
@@ -53,7 +53,7 @@ module Test_data = struct
           [ mk_store
               (Atomic_store.make ~src:(Expression.int_lit 56)
                  ~dst:(Address.of_variable_str_exn "x")
-                 ~mo:Mem_order.Seq_cst)
+                 ~mo:Mem_order.Seq_cst )
           ; Src.Subject.Statement.make_generated_prim
               Fir.(
                 Accessor.construct Prim_statement.label
@@ -74,11 +74,11 @@ module Test_data = struct
                              (Expression.atomic_load
                                 (Atomic_load.make
                                    ~src:(Address.of_variable_str_exn "x")
-                                   ~mo:Mem_order.Seq_cst))
+                                   ~mo:Mem_order.Seq_cst ) )
                            ~dst:(Address.of_variable_str_exn "y")
-                           ~mo:Mem_order.Seq_cst) ]
-                  ())
-             ~f_branch:(Src.Subject.Block.make_generated ())))
+                           ~mo:Mem_order.Seq_cst ) ]
+                  () )
+             ~f_branch:(Src.Subject.Block.make_generated ()) ))
 
   let sample_once_do_while : Src.Subject.Statement.t Lazy.t =
     lazy
@@ -92,9 +92,9 @@ module Test_data = struct
                     [ mk_store
                         (Atomic_store.make ~src:(Expression.int_lit 44)
                            ~dst:(Address.of_variable_str_exn "x")
-                           ~mo:Mem_order.Seq_cst) ]
-                  ())
-             ~kind:Do_while))
+                           ~mo:Mem_order.Seq_cst ) ]
+                  () )
+             ~kind:Do_while ))
 
   let sample_dead_while : Src.Subject.Statement.t Lazy.t =
     lazy
@@ -108,9 +108,9 @@ module Test_data = struct
                     [ mk_store
                         (Atomic_store.make ~src:(Expression.int_lit 44)
                            ~dst:(Address.of_variable_str_exn "x")
-                           ~mo:Mem_order.Seq_cst) ]
-                  ())
-             ~kind:While))
+                           ~mo:Mem_order.Seq_cst ) ]
+                  () )
+             ~kind:While ))
 
   let sample_multi_for : Src.Subject.Statement.t Lazy.t =
     lazy
@@ -127,8 +127,8 @@ module Test_data = struct
                   [ mk_store
                       (Atomic_store.make ~src:(Expression.int_lit 99)
                          ~dst:(Address.of_variable_str_exn "x")
-                         ~mo:Mem_order.Seq_cst) ]
-                ())))
+                         ~mo:Mem_order.Seq_cst ) ]
+                () ) ))
 
   let body_stms : Src.Subject.Statement.t list Lazy.t =
     Lazy.Let_syntax.(
@@ -141,14 +141,14 @@ module Test_data = struct
         [ mk_store
             (Atomic_store.make ~src:(Expression.int_lit 42)
                ~dst:(Address.of_variable_str_exn "x")
-               ~mo:Mem_order.Seq_cst)
+               ~mo:Mem_order.Seq_cst )
         ; Src.Subject.Statement.make_generated_prim
             (Accessor.construct Prim_statement.nop ())
         ; mk_store
             (Atomic_store.make
                ~src:(Expression.of_variable_str_exn "foo")
                ~dst:(Address.of_variable_str_exn "y")
-               ~mo:Mem_order.Relaxed)
+               ~mo:Mem_order.Relaxed )
         ; sample_known_true_if
         ; sample_known_false_if
         ; sample_once_do_while
@@ -181,11 +181,11 @@ module Test_data = struct
       Fir.
         [ Src.Subject.Statement.make_generated_prim
             (Accessor.construct Prim_statement.label
-               (C4f_common.C_id.of_string "loop"))
+               (C4f_common.C_id.of_string "loop") )
         ; mk_always_true_if Fir.Expression.truth []
             [ Src.Subject.Statement.make_generated_prim
                 (Accessor.construct Prim_statement.goto
-                   (C4f_common.C_id.of_string "loop")) ] ]
+                   (C4f_common.C_id.of_string "loop") ) ] ]
 
   let thread1 : Src.Subject.Thread.t Lazy.t =
     Lazy.map ~f:(fun stms -> Src.Subject.Thread.make ~stms ()) thread1_stms
@@ -211,7 +211,7 @@ module Test_data = struct
           Src.Path_meta.(
             let anchor = None (* for now *) in
             let meta = {flags= Set.of_list (module Flag) fs; anchor} in
-            With_meta.make path ~meta))
+            With_meta.make path ~meta) )
 
     let thread_0_stms (path : Src.Path.Stms.t) : Src.Path.t Lazy.t =
       lazy Src.Path.(in_thread 0 @@ Thread.in_stms @@ path)
@@ -225,7 +225,7 @@ module Test_data = struct
     let insert_end : Src.Path.With_meta.t Lazy.t =
       flag []
         (Lazy.bind body_stms ~f:(fun stms ->
-             Src.Path.(thread_0_stms @@ Stms.insert (List.length stms))))
+             Src.Path.(thread_0_stms @@ Stms.insert (List.length stms)) ) )
 
     let known_true_if (path : Src.Path.If.t) : Src.Path.t Lazy.t =
       Src.Path.(
@@ -298,7 +298,7 @@ let%test_module "has_statements checks" =
     let test (matching : Fir.Statement_class.t list) : unit =
       C4f_utils.Io.print_bool
         (Src.Subject.Test.has_statements ~matching
-           (Lazy.force Test_data.test))
+           (Lazy.force Test_data.test) )
 
     let%expect_test "has atomic blocks" =
       test [Flow (Some (Lock (Some Atomic)))] ;
@@ -314,7 +314,7 @@ let%test_module "has_statements_not_matching" =
     let test (one_of : Fir.Statement_class.t list) : unit =
       C4f_utils.Io.print_bool
         (Src.Subject.Test.has_statements_not_matching ~one_of
-           (Lazy.force Test_data.test))
+           (Lazy.force Test_data.test) )
 
     let%expect_test "has things that are not atomic blocks" =
       test [Flow (Some (Lock (Some Atomic)))] ;
@@ -343,7 +343,7 @@ let%test_module "list_to_litmus" =
            ~f:(fun ~key ~data ->
              let lit = C4f_common.Litmus_id.global key in
              let ty = Accessor.get Fir.Env.Record.type_of data in
-             (lit, Src.Var.Record.make_existing Global ty))
+             (lit, Src.Var.Record.make_existing Global ty) )
       |> Or_error.ok_exn |> C4f_common.Scoped_map.of_litmus_id_map
 
     let test programs =

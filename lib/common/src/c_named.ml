@@ -75,7 +75,7 @@ module Alist = struct
 
       let map_m (x : t) ~(f : Elt.t -> Elt.t M.t) : t M.t =
         L.map_m x ~f:(fun (name, value) ->
-            M.map ~f:(fun m' -> (m'.name, m'.value)) (f (make ~name value)))
+            M.map ~f:(fun m' -> (m'.name, m'.value)) (f (make ~name value)) )
     end
   end)
 end

@@ -26,10 +26,8 @@ let expr_as_int (x : expr) ~(mu : mu) : int Heap.Monad.t =
     Heap.Monad.Monadic.return (Constant.convert_as_int const))
 
 let logical_op_sv : Op.Binary.Logical.t -> bool = function
-  | And ->
-      false
-  | Or ->
-      true
+  | And -> false
+  | Or -> true
 
 let eval_logical (op : Op.Binary.Logical.t) (l : expr) (r : expr) ~(mu : mu)
     : Constant.t Heap.Monad.t =
@@ -41,40 +39,26 @@ let eval_logical (op : Op.Binary.Logical.t) (l : expr) (r : expr) ~(mu : mu)
     else mu r)
 
 let bool_rel_op_sem : Op.Binary.Rel.t -> bool -> bool -> bool = function
-  | Eq ->
-      Bool.( = )
-  | Ne ->
-      Bool.( <> )
-  | Gt ->
-      Bool.( > )
-  | Ge ->
-      Bool.( >= )
-  | Le ->
-      Bool.( <= )
-  | Lt ->
-      Bool.( < )
+  | Eq -> Bool.( = )
+  | Ne -> Bool.( <> )
+  | Gt -> Bool.( > )
+  | Ge -> Bool.( >= )
+  | Le -> Bool.( <= )
+  | Lt -> Bool.( < )
 
 let int_rel_op_sem : Op.Binary.Rel.t -> int -> int -> bool = function
-  | Eq ->
-      Int.( = )
-  | Ne ->
-      Int.( <> )
-  | Gt ->
-      Int.( > )
-  | Ge ->
-      Int.( >= )
-  | Le ->
-      Int.( <= )
-  | Lt ->
-      Int.( < )
+  | Eq -> Int.( = )
+  | Ne -> Int.( <> )
+  | Gt -> Int.( > )
+  | Ge -> Int.( >= )
+  | Le -> Int.( <= )
+  | Lt -> Int.( < )
 
 let rel_op_sem (op : Op.Binary.Rel.t) (l : Constant.t) (r : Constant.t) :
     bool Or_error.t =
   match (l, r) with
-  | Bool lb, Bool rb ->
-      Ok (bool_rel_op_sem op lb rb)
-  | Int li, Int ri ->
-      Ok (int_rel_op_sem op li ri)
+  | Bool lb, Bool rb -> Ok (bool_rel_op_sem op lb rb)
+  | Int li, Int ri -> Ok (int_rel_op_sem op li ri)
   | _ ->
       Or_error.error_s
         [%message
@@ -104,18 +88,13 @@ let eval_int_op (op : 'a) (l : expr) (r : expr)
     Constant.int o_int)
 
 let arith_op_sem : Op.Binary.Arith.t -> int -> int -> int = function
-  | Add -> (
-      + )
-  | Sub -> (
-      - )
+  | Add -> ( + )
+  | Sub -> ( - )
 
 let bitwise_op_sem : Op.Binary.Bitwise.t -> int -> int -> int = function
-  | And ->
-      Int.bit_and
-  | Or ->
-      Int.bit_or
-  | Xor ->
-      Int.bit_xor
+  | And -> Int.bit_and
+  | Or -> Int.bit_or
+  | Xor -> Int.bit_xor
 
 let eval_arith :
     Op.Binary.Arith.t -> expr -> expr -> mu:mu -> Constant.t Heap.Monad.t =
@@ -127,22 +106,17 @@ let eval_bitwise :
 
 let eval_bop (mu : mu) :
     Op.Binary.t -> expr -> expr -> Constant.t Heap.Monad.t = function
-  | Rel op ->
-      eval_rel op ~mu
-  | Arith op ->
-      eval_arith op ~mu
-  | Bitwise op ->
-      eval_bitwise op ~mu
-  | Logical op ->
-      eval_logical op ~mu
+  | Rel op -> eval_rel op ~mu
+  | Arith op -> eval_arith op ~mu
+  | Bitwise op -> eval_bitwise op ~mu
+  | Logical op -> eval_logical op ~mu
 
 let eval_lnot (x : expr) ~(mu : mu) : Constant.t Heap.Monad.t =
   Heap.Monad.(x |> expr_as_bool ~mu >>| not >>| Constant.bool)
 
 let eval_uop (mu : mu) : Op.Unary.t -> expr -> Constant.t Heap.Monad.t =
   function
-  | L_not ->
-      eval_lnot ~mu
+  | L_not -> eval_lnot ~mu
 
 (* We don't specifically handle memory order here, since we assume that the
    known-values environment refers to things that are already fully
@@ -167,8 +141,7 @@ let eval_atomic_cmpxchg (c : Expression.t Atomic_cmpxchg.t) ~(mu : mu) :
 let atomic_fetch_op ~(op : Op.Fetch.t) ~(obj_old : Constant.t)
     ~(arg : Expression.t) : Expression.t =
   match op with
-  | `Xchg ->
-      arg
+  | `Xchg -> arg
   | #Op.Fetch.bop as op ->
       Expression.bop (Op.Fetch.to_bop op) (Expression.constant obj_old) arg
 

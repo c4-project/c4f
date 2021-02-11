@@ -24,22 +24,18 @@ let value_map (type result) (x : t)
     ~(fetch : Expression.t Atomic_fetch.t -> result)
     ~(store : Atomic_store.t -> result) : result =
   match x with
-  | Cmpxchg c ->
-      cmpxchg c
-  | Fence f ->
-      fence f
-  | Fetch f ->
-      fetch f
-  | Store s ->
-      store s
+  | Cmpxchg c -> cmpxchg c
+  | Fence f -> fence f
+  | Fetch f -> fetch f
+  | Store s -> store s
 
 module Base_map (Ap : Applicative.S) = struct
   let bmap (x : t)
       ~(cmpxchg :
-         Expression.t Atomic_cmpxchg.t -> Expression.t Atomic_cmpxchg.t Ap.t)
-      ~(fence : Atomic_fence.t -> Atomic_fence.t Ap.t)
+         Expression.t Atomic_cmpxchg.t -> Expression.t Atomic_cmpxchg.t Ap.t
+         ) ~(fence : Atomic_fence.t -> Atomic_fence.t Ap.t)
       ~(fetch :
-         Expression.t Atomic_fetch.t -> Expression.t Atomic_fetch.t Ap.t)
+         Expression.t Atomic_fetch.t -> Expression.t Atomic_fetch.t Ap.t )
       ~(store : Atomic_store.t -> Atomic_store.t Ap.t) : t Ap.t =
     Travesty_base_exts.Fn.Compose_syntax.(
       value_map x

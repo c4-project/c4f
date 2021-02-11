@@ -30,18 +30,14 @@ module Style = struct
   end)
 
   let to_rewriter : t -> (module Function_rewriter.S) = function
-    | Vars_as_globals ->
-        (module Function_rewriter.Vars_as_globals)
-    | Vars_as_parameters ->
-        (module Function_rewriter.Vars_as_parameters)
+    | Vars_as_globals -> (module Function_rewriter.Vars_as_globals)
+    | Vars_as_parameters -> (module Function_rewriter.Vars_as_parameters)
 
   (* So far, there is no distinction between global and local mapping. This
      might change. *)
   let to_mapping : t -> (int -> Var_map.Mapping.t) Staged.t = function
-    | Vars_as_globals ->
-        Staged.stage (Fn.const Var_map.Mapping.Global)
-    | Vars_as_parameters ->
-        Staged.stage (fun i -> Var_map.Mapping.Param i)
+    | Vars_as_globals -> Staged.stage (Fn.const Var_map.Mapping.Global)
+    | Vars_as_parameters -> Staged.stage (fun i -> Var_map.Mapping.Param i)
 end
 
 type t =

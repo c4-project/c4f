@@ -25,12 +25,9 @@ let atomic = Reify_atomic.reify_stm ~expr:Reify_expr.reify
 let assign_expr (asn : Fir.Assign.t) : Ast.Expr.t =
   let dst = Reify_prim.lvalue asn.@(Fir.Assign.dst) in
   match asn.@(Fir.Assign.src) with
-  | Inc ->
-      Reify_expr.postfix `Inc dst
-  | Dec ->
-      Reify_expr.postfix `Dec dst
-  | Expr e ->
-      Binary (dst, `Assign, Reify_expr.reify e)
+  | Inc -> Reify_expr.postfix `Inc dst
+  | Dec -> Reify_expr.postfix `Dec dst
+  | Expr e -> Binary (dst, `Assign, Reify_expr.reify e)
 
 let assign (asn : Fir.Assign.t) : Ast.Stm.t = Expr (Some (assign_expr asn))
 
@@ -59,12 +56,9 @@ let ne_block (type meta) (b : (meta, Ast.Stm.t list) Fir.Block.t) :
 let nop (_ : 'meta) : Ast.Stm.t = Ast.Stm.Expr None
 
 let early_out : Fir.Early_out.t -> Ast.Stm.t = function
-  | Break ->
-      Ast.Stm.Break
-  | Continue ->
-      Ast.Stm.Continue
-  | Return ->
-      Ast.Stm.Return None
+  | Break -> Ast.Stm.Break
+  | Continue -> Ast.Stm.Continue
+  | Return -> Ast.Stm.Return None
 
 let label (l : C4f_common.C_id.t) : Ast.Stm.t =
   (* This might need revisiting later. *)
@@ -77,7 +71,8 @@ let procedure_call (c : Fir.Call.t) : Ast.Stm.t =
     (Some
        (Ast.Expr.Call
           { func= Identifier (Fir.Call.function_id c)
-          ; arguments= List.map ~f:Reify_expr.reify (Fir.Call.arguments c) }))
+          ; arguments= List.map ~f:Reify_expr.reify (Fir.Call.arguments c) }
+       ) )
 
 let prim ({value; _} : (_, Fir.Prim_statement.t) Fir.With_meta.t) :
     Ast.Stm.t list =
@@ -104,10 +99,8 @@ let while_loop (kind : Fir.Flow_block.While.t) (cond : Fir.Expression.t)
   let cond' = Reify_expr.reify cond in
   let body' = Ast.Stm.Compound body in
   match kind with
-  | While ->
-      While (cond', body')
-  | Do_while ->
-      Do_while (body', cond')
+  | While -> While (cond', body')
+  | Do_while -> Do_while (body', cond')
 
 let lock (kind : Fir.Flow_block.Lock.t) (body : Ast.Compound_stm.t) :
     Ast.Stm.t =
@@ -117,16 +110,11 @@ let flow ({header; body} : (_, Ast.Stm.t list) Fir.Flow_block.t) :
     Ast.Stm.t list =
   let body' = block_compound body in
   match header with
-  | For f ->
-      [for_loop f body']
-  | Lock l ->
-      [lock l body']
-  | While (w, c) ->
-      [while_loop w c body']
-  | Explicit ->
-      [Compound body']
-  | Implicit ->
-      merge_stms body
+  | For f -> [for_loop f body']
+  | Lock l -> [lock l body']
+  | While (w, c) -> [while_loop w c body']
+  | Explicit -> [Compound body']
+  | Implicit -> merge_stms body
 
 let reify (type meta) (m : meta Fir.Statement.t) : Ast.Stm.t list =
   Fir.Statement.reduce m ~prim ~if_stm ~flow

@@ -19,13 +19,12 @@ let store_trace (trace : Af.Trace.t) : Fpath.t Or_error.t =
   let tmpfile = Plumbing.Output.temp_file ~prefix:"trace" ~ext:"txt" in
   Plumbing.Output.with_output (Plumbing.Output.file tmpfile) ~f:(fun f ->
       Sexp.output_mach f (Af.Trace.sexp_of_t trace) ;
-      Ok tmpfile)
+      Ok tmpfile )
 
 let run_with_trace (trace : Af.Trace.t) ~(cmd : string) ~(argv : string list)
     ~(verbose : bool) : bool =
   match store_trace trace with
-  | Ok name ->
-      Shell.test ~verbose cmd (Fpath.to_string name :: argv)
+  | Ok name -> Shell.test ~verbose cmd (Fpath.to_string name :: argv)
   | Error e ->
       Stdio.eprint_s (Error.sexp_of_t e) ;
       false

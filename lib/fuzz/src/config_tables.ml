@@ -93,7 +93,7 @@ let param_map : Param_spec.Int.t Map.M(Common.Id).t Lazy.t =
                (resource_cap_description "threads"
                   ~details:
                     "If targeting Litmus7, consider capping to the number \
-                     of logical cores in the target machine.") )
+                     of logical cores in the target machine." ) )
        ; ( var_cap_param
          , Param_spec.make ~default:20
              ~description:
@@ -102,7 +102,7 @@ let param_map : Param_spec.Int.t Map.M(Common.Id).t Lazy.t =
                   ~details:
                     "If targeting particular ISA simulators, consider \
                      capping to the number of parameters that can be passed \
-                     by register in that ISA.") ) ])
+                     by register in that ISA." ) ) ] )
 
 let flag_map : Param_spec.Bool.t Map.M(Common.Id).t Lazy.t =
   lazy
@@ -158,7 +158,7 @@ let flag_map : Param_spec.Bool.t Map.M(Common.Id).t Lazy.t =
             This should usually be an inexact flag, to induce a geometric
             distribution on the number of extra actions.
             |}
-                  ]) )
+                  ] ) )
        ; ( accept_recommendation_flag
          , Param_spec.make
              ~default:(Or_error.ok_exn (Flag.try_make ~wins:1 ~losses:1))
@@ -205,4 +205,4 @@ let flag_map : Param_spec.Bool.t Map.M(Common.Id).t Lazy.t =
                   fuzzer will randomly choose some subset of the available
                   actions.
               |}
-         ) ])
+         ) ] )

@@ -30,7 +30,7 @@ Travesty.Traversable.Make0 (struct
 
     let map_m (x : t) ~(f : Expression.t -> Expression.t M.t) : t M.t =
       M.map (Ls.map_m ~f x.arguments) ~f:(fun arguments ->
-          make ~function_id:x.function_id ~arguments ())
+          make ~function_id:x.function_id ~arguments () )
   end
 end)
 

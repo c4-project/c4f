@@ -51,7 +51,7 @@ let%test_module "make_alist" =
               @= Expression.atomic_load
                    (Atomic_load.make
                       ~src:(Address.of_variable_str_exn "y")
-                      ~mo:Acquire)))
+                      ~mo:Acquire )))
       ; Src.(
           Accessor.construct
             (Statement.prim' @> Prim_statement.assign)
@@ -60,7 +60,7 @@ let%test_module "make_alist" =
               @= Expression.atomic_load
                    (Atomic_load.make
                       ~src:(Address.of_variable_str_exn "x")
-                      ~mo:Relaxed))) ]
+                      ~mo:Relaxed ))) ]
 
     let p0 : unit Src.Function.t =
       Src.Function.make ~body_decls:p0_decls ~body_stms:p0_stms ~parameters
@@ -76,7 +76,7 @@ let%test_module "make_alist" =
           (Src.Atomic_store.make
              ~src:(Src.Expression.int_lit 1)
              ~dst:(Src.Address.of_variable_str_exn "x")
-             ~mo:Src.Mem_order.Relaxed)
+             ~mo:Src.Mem_order.Relaxed )
       ; Accessor.construct
           Src.(
             Statement.prim' @> Prim_statement.atomic
@@ -84,7 +84,7 @@ let%test_module "make_alist" =
           (Src.Atomic_store.make
              ~src:(Src.Expression.int_lit 1)
              ~dst:(Src.Address.of_variable_str_exn "y")
-             ~mo:Src.Mem_order.Release) ]
+             ~mo:Src.Mem_order.Release ) ]
 
     let p1 : unit Src.Function.t =
       Src.Function.make ~body_decls:p1_decls ~body_stms:p1_stms ~parameters

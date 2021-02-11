@@ -33,7 +33,7 @@ let%test_module "decls" =
             (Ac.C_named.make ~name:(Ac.C_id.of_string "bar")
                Fir.
                  { Initialiser.ty= Type.bool ~is_atomic:true ()
-                 ; value= Constant.truth }) ;
+                 ; value= Constant.truth } ) ;
           [%expect {| atomic_bool bar = true; |}]
 
         let%expect_test "volatile int" =
@@ -41,7 +41,7 @@ let%test_module "decls" =
             (Ac.C_named.make ~name:(Ac.C_id.of_string "foo")
                Fir.
                  { Initialiser.ty= Type.int ~is_volatile:true ()
-                 ; value= Constant.int 42 }) ;
+                 ; value= Constant.int 42 } ) ;
           [%expect {| int volatile foo = 42; |}]
       end )
 
@@ -54,5 +54,5 @@ let%test_module "decls" =
         ~f:(fun init ->
           [%test_result: Fir.Initialiser.t Ac.C_named.t Or_error.t]
             ~here:[[%here]] ~expect:(Ok init)
-            (Src.Abstract_prim.decl (Src.Reify_prim.decl init)))
+            (Src.Abstract_prim.decl (Src.Reify_prim.decl init)) )
   end )

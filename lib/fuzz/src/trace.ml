@@ -29,8 +29,8 @@ let do_not_add (name : Common.Id.t) : bool =
   Common.Id.equal name Action.Nop.name
 
 let add (type p) (trace : t)
-    ~(action : (module Action_types.S with type Payload.t = p))
-    ~(payload : p) : t =
+    ~(action : (module Action_types.S with type Payload.t = p)) ~(payload : p)
+    : t =
   let (module Action) = action in
   let name = Action.name in
   if do_not_add name then trace
@@ -54,14 +54,11 @@ let resolve_step ({name; payload= payload_sexp} : elt)
 let run_step (trace : t)
     ~(resolve : Common.Id.t -> (module Action_types.S) Or_error.t) : step =
   match Fqueue.dequeue trace with
-  | None ->
-      Stop
+  | None -> Stop
   | Some (elt, tail) -> (
     match resolve_step elt ~resolve with
-    | Ok f ->
-        Action {f; tail}
-    | Error e ->
-        Error e )
+    | Ok f -> Action {f; tail}
+    | Error e -> Error e )
 
 let run (trace : t) (test : Subject.Test.t)
     ~(resolve : Common.Id.t -> (module Action_types.S) Or_error.t) :
@@ -70,13 +67,11 @@ let run (trace : t) (test : Subject.Test.t)
     let%map _, test' =
       State.Monad.fix (trace, test) ~f:(fun mu (this_trace, this_test) ->
           match run_step this_trace ~resolve with
-          | Stop ->
-              State.Monad.return (this_trace, this_test)
-          | Error e ->
-              State.Monad.Monadic.return (Error e)
+          | Stop -> State.Monad.return (this_trace, this_test)
+          | Error e -> State.Monad.Monadic.return (Error e)
           | Action {f; tail= next_trace} ->
               let%bind next_test = f this_test in
-              mu (next_trace, next_test))
+              mu (next_trace, next_test) )
     in
     test')
 

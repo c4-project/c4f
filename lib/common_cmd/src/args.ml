@@ -17,10 +17,8 @@ module Colour_table = C4f_utils.String_table.Make (struct
   let equal_style_renderer (x : Fmt.style_renderer) (y : Fmt.style_renderer)
       : bool =
     match (x, y) with
-    | `Ansi_tty, `Ansi_tty | `None, `None ->
-        true
-    | `Ansi_tty, `None | `None, `Ansi_tty ->
-        false
+    | `Ansi_tty, `Ansi_tty | `None, `None -> true
+    | `Ansi_tty, `None | `None, `Ansi_tty -> false
 
   type t = Fmt.style_renderer option
 
@@ -175,8 +173,8 @@ module With_files = struct
     args |> outfile_raw |> Plumbing.Output.of_string_opt
 
   let run_filter (type o)
-      (f : Plumbing.Input.t -> Plumbing.Output.t -> o Or_error.t)
-      (args : _ t) : o Or_error.t =
+      (f : Plumbing.Input.t -> Plumbing.Output.t -> o Or_error.t) (args : _ t)
+      : o Or_error.t =
     Or_error.Let_syntax.(
       let%bind input = infile_source args in
       let%bind output = outfile_sink args in

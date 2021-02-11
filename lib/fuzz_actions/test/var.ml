@@ -81,7 +81,7 @@ let%test_module "Make" =
                     Type.check_modulo_atomicity (Type.make basic_type)
                       (Constant.type_of initial_value))
               in
-              ())
+              () )
 
         let%test_unit "global: constant is the right type" = test_type Global
 

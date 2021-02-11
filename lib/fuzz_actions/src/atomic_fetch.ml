@@ -224,7 +224,7 @@ module Cond_insert = struct
       [ Accessor.construct Fir.Statement.if_stm
           (Fir.If.make ~cond:(to_cond p)
              ~t_branch:(Fir.Block.make ~metadata:meta ())
-             ~f_branch:(Fir.Block.make ~metadata:meta ())) ]
+             ~f_branch:(Fir.Block.make ~metadata:meta ()) ) ]
 
     let path_filter : Fuzz.Path_filter.t = Fuzz.Path_filter.zero
 
@@ -308,6 +308,6 @@ module Cond_insert = struct
            [ (not_max, `Add, Fir.Op.Binary.Rel.Lt)
            ; (not_max, `Add, Fir.Op.Binary.Rel.Ge)
            ; (not_min, `Sub, Fir.Op.Binary.Rel.Gt)
-           ; (not_min, `Sub, Fir.Op.Binary.Rel.Le) ])
+           ; (not_min, `Sub, Fir.Op.Binary.Rel.Le) ] )
   end)
 end

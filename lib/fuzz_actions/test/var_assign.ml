@@ -21,7 +21,7 @@ module Test_data = struct
           @= Expression.atomic_load
                (Atomic_load.make
                   ~src:(Address.of_variable_str_exn "gen2")
-                  ~mo:Mem_order.Seq_cst)))
+                  ~mo:Mem_order.Seq_cst )))
 end
 
 let%test_module "assign.insert.int.normal" =

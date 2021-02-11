@@ -58,7 +58,7 @@ let%test_module "Random" =
         (module Int_list)
         ~f:
           ([%test_pred: int list] ~here:[[%here]]
-             (check_random ~f:(Random.index ~random) ~pred:in_bounds))
+             (check_random ~f:(Random.index ~random) ~pred:in_bounds) )
 
     let%test_unit "span is always in bounds" =
       let random = make_random () in
@@ -69,7 +69,7 @@ let%test_module "Random" =
              (check_random ~f:(Random.span ~random)
                 ~pred:(fun xs {Span.pos; len} ->
                   in_bounds xs pos
-                  && len <= List.length (List.drop xs (pos - 1)))))
+                  && len <= List.length (List.drop xs (pos - 1)) ) ) )
 
     let%test_module "item" =
       ( module struct
@@ -86,7 +86,7 @@ let%test_module "Random" =
             ~f:
               ([%test_pred: int list] ~here:[[%here]]
                  (check_random ~f:(Random.item ~random)
-                    ~pred:(List.mem ~equal:Int.equal)))
+                    ~pred:(List.mem ~equal:Int.equal) ) )
       end )
   end )
 
@@ -97,8 +97,8 @@ let fibs : int list = [1; 1; 2; 3; 5; 8; 13; 21]
 
 let%test_module "splice" =
   ( module struct
-    let test_fib ~(pos : int) ~(len : int)
-        ~(replace_f : int list -> int list) : unit =
+    let test_fib ~(pos : int) ~(len : int) ~(replace_f : int list -> int list)
+        : unit =
       test_splice_like (splice fibs ~span:{pos; len} ~replace_f)
 
     let%test_module "in-bounds" =
@@ -154,7 +154,8 @@ let%test_module "splice" =
               [%test_result: int list Or_error.t] ~here:[[%here]]
                 ~equal:[%compare.equal: int list Or_error.t]
                 ~expect:(Or_error.return (f xs))
-                (splice xs ~span:{pos= 0; len= List.length xs} ~replace_f:f))
+                (splice xs ~span:{pos= 0; len= List.length xs} ~replace_f:f)
+              )
       end )
   end )
 
@@ -206,7 +207,7 @@ let%test_module "map_sub" =
           [%test_result: int list Or_error.t] ~here:[[%here]]
             ~equal:[%compare.equal: int list Or_error.t]
             ~expect:(Or_error.return (List.map ~f xs))
-            (map_sub xs ~span:{pos= 0; len= List.length xs} ~f))
+            (map_sub xs ~span:{pos= 0; len= List.length xs} ~f) )
   end )
 
 let%test_module "try_map_sub" =
@@ -226,7 +227,7 @@ let%test_module "try_map_sub" =
 
         let%expect_test "in-bounds, partial" =
           test_in_bounds ~f:(fun x ->
-              if x % 2 = 0 then Ok x else Or_error.errorf "%d" x) ;
+              if x % 2 = 0 then Ok x else Or_error.errorf "%d" x ) ;
           [%expect {| (3 5) |}]
 
         let%expect_test "in-bounds, fail" =

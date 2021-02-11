@@ -73,12 +73,10 @@ let of_maps :
   Map.merge ~f:(fun ~key ->
       ignore key ;
       function
-      | `Left type_of ->
-          Some (Record.make ~type_of ())
+      | `Left type_of -> Some (Record.make ~type_of ())
       | `Both (type_of, known_value) ->
           Some (Record.make ~type_of ~known_value ())
-      | `Right _ ->
-          None)
+      | `Right _ -> None )
 
 let typing : t -> Type.t Map.M(Common.C_id).t =
   Map.map ~f:(Accessor.get Record.type_of)
@@ -89,11 +87,11 @@ let variables_with_known_values :
       Option.Let_syntax.(
         let%map kv = data.@?(Record.known_value) in
         let ty = data.type_of in
-        (ty, kv)))
+        (ty, kv)) )
 
 let filter_to_known_values : t -> t =
   Map.filter ~f:(fun (data : Record.t) ->
-      not (Accessor.is_empty Record.known_value data))
+      not (Accessor.is_empty Record.known_value data) )
 
 let type_of_known_value (env : t) ~(id : Common.C_id.t) : Type.t Or_error.t =
   Or_error.(type_of env ~id >>| Type.basic_type >>| Type.make)
@@ -109,13 +107,12 @@ let gen_random_var_with_record (env : t) :
           [%message
             "Tried to get a random variable from an empty environment"
               ~here:[%here]]
-    | xs ->
-        Q.Generator.of_list (Common.C_named.list_of_alist xs))
+    | xs -> Q.Generator.of_list (Common.C_named.list_of_alist xs))
 
 let gen_random_var_with_type : t -> Type.t Common.C_named.t Q.Generator.t =
   Fn.compose
     (Q.Generator.map
-       ~f:(Common.C_named.map_right ~f:(Accessor.get Record.type_of)))
+       ~f:(Common.C_named.map_right ~f:(Accessor.get Record.type_of)) )
     gen_random_var_with_record
 
 let gen_random_var : t -> Common.C_id.t Q.Generator.t =

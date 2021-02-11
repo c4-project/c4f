@@ -25,7 +25,7 @@ let run ?(state_output : Plumbing.Output.t option)
         args
     in
     Plumbing.Output.with_opt state_output ~f:(fun dest ->
-        C4f_fuzz.State.Dump.store state ~dest))
+        C4f_fuzz.State.Dump.store state ~dest ))
 
 let readme () : string =
   C4f_utils.My_string.format_for_readme

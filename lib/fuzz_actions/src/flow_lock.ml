@@ -68,7 +68,7 @@ module Surround = struct
       ignore (payload : Payload.t) ;
       Accessor.construct Fir.Statement.flow
         (Fir.Flow_block.lock_block ~kind:Basic.lock_type
-           (Fuzz.Subject.Block.make_generated ~statements ()))
+           (Fuzz.Subject.Block.make_generated ~statements ()) )
   end)
 
   module Atomic : S = Make (struct

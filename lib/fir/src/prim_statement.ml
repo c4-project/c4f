@@ -40,20 +40,13 @@ let value_map (type result) (x : t) ~(assign : Assign.t -> result)
     ~(goto : Common.C_id.t -> result) ~(nop : unit -> result)
     ~(procedure_call : Call.t -> result) : result =
   match x with
-  | Assign a ->
-      assign a
-  | Atomic a ->
-      atomic a
-  | Early_out e ->
-      early_out e
-  | Label l ->
-      label l
-  | Goto g ->
-      goto g
-  | Nop ->
-      nop ()
-  | Procedure_call p ->
-      procedure_call p
+  | Assign a -> assign a
+  | Atomic a -> atomic a
+  | Early_out e -> early_out e
+  | Label l -> label l
+  | Goto g -> goto g
+  | Nop -> nop ()
+  | Procedure_call p -> procedure_call p
 
 module Base_map (M : Applicative.S) = struct
   let bmap (x : t) ~(assign : Assign.t -> Assign.t M.t)

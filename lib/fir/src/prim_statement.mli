@@ -79,8 +79,9 @@ val value_map :
   -> procedure_call:(Call.t -> 'result)
   -> 'result
 (** [value_map x ~assign ~atomic ~early_out ~label ~goto ~nop
-    ~procedure_call] reduces a primitive statement [x] to a particular result
-    type by applying the appropriate function. *)
+    ~procedure_call]
+    reduces a primitive statement [x] to a particular result type by applying
+    the appropriate function. *)
 
 (** Creates a basic applicative map over [M]. *)
 module Base_map (M : Applicative.S) : sig

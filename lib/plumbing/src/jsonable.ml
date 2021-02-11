@@ -34,7 +34,7 @@ module Set = struct
   let set_of_yojson (type x c)
       (module C : Comparator.S
         with type t = x
-         and type comparator_witness = c) (x_of_yojson : Yojson.Safe.t -> x)
+         and type comparator_witness = c ) (x_of_yojson : Yojson.Safe.t -> x)
       (j : Yojson.Safe.t) : Set.M(C).t =
     j |> list_of_yojson x_of_yojson |> Set.of_list (module C)
 
@@ -57,8 +57,8 @@ module Alist = struct
       Yojson.Safe.t =
     `Assoc (Tx.Alist.bi_map ~left:string_of_k ~right:yojson_of_v l)
 
-  let protect_key_of_string (type k) (k : string)
-      ~(k_of_string : string -> k) : k Str_result.t =
+  let protect_key_of_string (type k) (k : string) ~(k_of_string : string -> k)
+      : k Str_result.t =
     protect ~f:(fun () -> k_of_string k)
 
   let require_assoc (j : Yojson.Safe.t) :

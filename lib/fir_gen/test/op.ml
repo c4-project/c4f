@@ -123,18 +123,15 @@ let%test_module "operator rules" =
           let kexp = Fir.Expression.constant k in
           let lexp, rexp =
             match in_ with
-            | Const (Left, kl) ->
-                (Fir.Expression.constant kl, kexp)
-            | Const (Right, kr) ->
-                (kexp, Fir.Expression.constant kr)
-            | Refl ->
-                (kexp, kexp)
+            | Const (Left, kl) -> (Fir.Expression.constant kl, kexp)
+            | Const (Right, kr) -> (kexp, Fir.Expression.constant kr)
+            | Refl -> (kexp, kexp)
           in
           let oconst = match out_ with Const ko -> ko | Idem -> k in
           let exp = Fir.Expression.bop (lift_o o) lexp rexp in
           [%test_eq: Fir.Constant.t Or_error.t] ~here:[[%here]; here]
             (Ok oconst)
-            (Fir.Expression_eval.as_constant exp ~env:(Fir.Heap.empty ())))
+            (Fir.Expression_eval.as_constant exp ~env:(Fir.Heap.empty ())) )
 
     let%test_unit "arithmetic operators" =
       test

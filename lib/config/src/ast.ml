@@ -22,7 +22,7 @@ module Pp_helpers = struct
       vbox ~indent:2
         (pair ~sep:sp
            (hbox (pp_header ++ any "@ {"))
-           (list ~sep:sp pp_directive))
+           (list ~sep:sp pp_directive) )
       ++ any "@ }")
 
   let pp_simple_stanza (pp_directive : 'd Fmt.t) : (string * 'd list) Fmt.t =
@@ -39,10 +39,8 @@ module Fuzz = struct
     type t = Ratio of int * int | Exact of bool [@@deriving sexp]
 
     let pp (f : Formatter.t) : t -> unit = function
-      | Ratio (d, n) ->
-          Fmt.pf f "%d:%d" d n
-      | Exact b ->
-          Pp_helpers.pp_bool f b
+      | Ratio (d, n) -> Fmt.pf f "%d:%d" d n
+      | Exact b -> Pp_helpers.pp_bool f b
   end
 
   module Setter = struct
@@ -52,8 +50,7 @@ module Fuzz = struct
     [@@deriving sexp]
 
     let pp (f : Formatter.t) : t -> unit = function
-      | Param (id, v) ->
-          Fmt.pf f "param@ %a@ to@ %d" C4f_common.Id.pp id v
+      | Param (id, v) -> Fmt.pf f "param@ %a@ to@ %d" C4f_common.Id.pp id v
       | Flag (id, v) ->
           Fmt.pf f "flag@ %a@ to@ %a" C4f_common.Id.pp id Flag_value.pp v
   end
@@ -65,10 +62,8 @@ module Fuzz = struct
       function
       | Action (id, Some c) ->
           pp_directive Fmt.(pair ~sep:sp Id.pp int) f ("action", (id, c))
-      | Action (id, None) ->
-          pp_id_directive f ("action", id)
-      | Set set ->
-          pp_directive Setter.pp f ("set", set))
+      | Action (id, None) -> pp_id_directive f ("action", id)
+      | Set set -> pp_directive Setter.pp f ("set", set))
 end
 
 module Top = struct

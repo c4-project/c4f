@@ -28,7 +28,7 @@ let%test_module "expressions" =
                 atomic_load
                   (Src.Atomic_load.make
                      ~src:(Src.Address.of_variable_str_exn "foo")
-                     ~mo:Seq_cst) }) ;
+                     ~mo:Seq_cst ) }) ;
       [%expect
         {|
         threads 0

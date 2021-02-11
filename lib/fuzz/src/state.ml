@@ -35,7 +35,7 @@ let register_var (s : t) (var : Common.Litmus_id.t)
   let ty = Accessor.get C4f_fir.Initialiser.ty init in
   let initial_value = Accessor.get C4f_fir.Initialiser.value init in
   Accessor.map vars s ~f:(fun v ->
-      Var.Map.register_var v ~initial_value var ty)
+      Var.Map.register_var v ~initial_value var ty )
 
 let add_dependency (s : t) ~(id : Common.Litmus_id.t) : t =
   Accessor.map vars s ~f:(Var.Map.add_dependency ~id)
@@ -116,7 +116,7 @@ module Monad = struct
     let in_dead_code = path.@(Path.With_meta.flag In_dead_code) in
     let tid = Path.tid path.path in
     unless_m in_dead_code ~f:(fun () ->
-        add_multiple_expression_dependencies exprs ~scope:(Local tid))
+        add_multiple_expression_dependencies exprs ~scope:(Local tid) )
 
   let add_write (id : Common.Litmus_id.t) : unit t = modify (add_write ~id)
 

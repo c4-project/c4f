@@ -18,7 +18,7 @@ struct
 
   let store (x : t) ~(dest : Output.t) : unit Or_error.t =
     Output.with_output dest ~f:(fun oc ->
-        store_to_oc x ?path:(Output.to_string_opt dest) ~dest:oc)
+        store_to_oc x ?path:(Output.to_string_opt dest) ~dest:oc )
 end
 
 module Make_chain
@@ -44,7 +44,7 @@ Make (struct
       unit Or_error.t =
     wrap path (fun () ->
         Sexp.output_hum dest (B.sexp_of_t x) ;
-        Stdio.Out_channel.newline dest)
+        Stdio.Out_channel.newline dest )
 end)
 
 module Of_jsonable (B : Jsonable_types.To) :
@@ -55,5 +55,5 @@ module Of_jsonable (B : Jsonable_types.To) :
       unit Or_error.t =
     wrap path (fun () ->
         Yojson.Safe.pretty_to_channel dest (B.yojson_of_t x) ;
-        Stdio.Out_channel.newline dest)
+        Stdio.Out_channel.newline dest )
 end)

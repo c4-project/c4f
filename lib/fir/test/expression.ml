@@ -93,7 +93,7 @@ let%test_module "Eval" =
           Expression.(
             atomic_load
               (Atomic_load.make ~src:(var_addr e "y")
-                 ~mo:C4f_fir.Mem_order.Seq_cst))) ;
+                 ~mo:C4f_fir.Mem_order.Seq_cst ))) ;
       [%expect {| (Ok (Int 53)) |}]
 
     let%expect_test "example atomic load" =
@@ -103,7 +103,7 @@ let%test_module "Eval" =
           Expression.(
             atomic_load
               (Atomic_load.make ~src:(var_addr e "y")
-                 ~mo:C4f_fir.Mem_order.Seq_cst))) ;
+                 ~mo:C4f_fir.Mem_order.Seq_cst ))) ;
       [%expect {| (Ok (Int 53)) |}]
 
     let%expect_test "example atomic fetches" =
@@ -114,9 +114,9 @@ let%test_module "Eval" =
             sub
               (atomic_fetch
                  (Atomic_fetch.make ~obj:(var_addr e "y") ~arg:(int_lit 1)
-                    ~mo:C4f_fir.Mem_order.Seq_cst ~op:`Sub))
+                    ~mo:C4f_fir.Mem_order.Seq_cst ~op:`Sub ) )
               (atomic_fetch
                  (Atomic_fetch.make ~obj:(var_addr e "y") ~arg:(int_lit 1)
-                    ~mo:C4f_fir.Mem_order.Seq_cst ~op:`Add)))) ;
+                    ~mo:C4f_fir.Mem_order.Seq_cst ~op:`Add ) ))) ;
       [%expect {| (Ok (Int 1)) |}]
   end )

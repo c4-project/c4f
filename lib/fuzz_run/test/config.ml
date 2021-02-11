@@ -41,7 +41,7 @@ let%test_module "Pool making" =
               (list ~sep:comma
                  (using
                     (fun (module A : Fuzz.Action_types.S) -> A.name)
-                    Common.Id.pp)))
+                    Common.Id.pp ) ))
         result
 
     let%expect_test "always pick" =

@@ -43,7 +43,7 @@ module Type_check (E : Env_types.S) :
               error_s
                 [%message
                   "Condition of ternary statement must be boolean value"
-                    ~actual_type:(if_ : Type.t)])
+                    ~actual_type:(if_ : Type.t)] )
         in
         Type.check then_ else_))
 end

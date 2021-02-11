@@ -22,13 +22,13 @@ module Deck = struct
 
   let of_weighted_actions
       (weighted_actions :
-        (Fuzz.Action.With_default_weight.t, int option) List.Assoc.t) :
+        (Fuzz.Action.With_default_weight.t, int option) List.Assoc.t ) :
       Fuzz.Action.With_default_weight.t Utils.Weighted_list.t Or_error.t =
     (* TODO(@MattWindsor91): ideally we shouldn't lose whether the weight was
        overridden or not, even if the final weight equals the default one. *)
     weighted_actions
     |> List.map ~f:(fun (act, override) ->
-           (act, apply_override act override))
+           (act, apply_override act override) )
     |> Utils.Weighted_list.from_alist
 
   let remove (deck : t) ~(name : Common.Id.t) : t Or_error.t =
@@ -36,7 +36,7 @@ module Deck = struct
     Utils.Weighted_list.adjust_weights deck ~f:(fun a' w ->
         if Common.Id.equal name (Fuzz.Action.With_default_weight.name a')
         then 0
-        else w)
+        else w )
 end
 
 module Rec_queue = struct
@@ -44,10 +44,8 @@ module Rec_queue = struct
 
   let pick (rq : t) : Fuzz.Action.t option * t =
     match Core_kernel.Fqueue.dequeue rq with
-    | Some (a, rq') ->
-        (Some a, rq')
-    | None ->
-        (None, rq)
+    | Some (a, rq') -> (Some a, rq')
+    | None -> (None, rq)
 
   let maybe_enqueue (q : t) (action : Fuzz.Action.t) ~(flag : Fuzz.Flag.t)
       ~(random : Splittable_random.State.t) : t =
@@ -75,7 +73,7 @@ let find_in_originals ({original_deck; _} : t) ~(name : Common.Id.t) :
      subsampled, and the recommendation action might have been removed. *)
   original_deck
   |> Utils.Weighted_list.find ~f:(fun x ->
-         Common.Id.equal name (Fuzz.Action.With_default_weight.name x))
+         Common.Id.equal name (Fuzz.Action.With_default_weight.name x) )
   |> Option.map ~f:Fuzz.Action.With_default_weight.action
 
 let find_many_in_originals (pool : t) ~(names : Common.Id.t list) :
@@ -90,7 +88,7 @@ let recommend (x : t) ~(names : Common.Id.t list)
 
 let of_weighted_actions
     (weighted_actions :
-      (Fuzz.Action.With_default_weight.t, int option) List.Assoc.t)
+      (Fuzz.Action.With_default_weight.t, int option) List.Assoc.t )
     ~(accept_rec_flag : Fuzz.Flag.t) ~(use_rec_flag : Fuzz.Flag.t) :
     t Or_error.t =
   Or_error.(
@@ -118,8 +116,7 @@ let pick_without_remove (table : t) ~(random : Splittable_random.State.t) :
 
 let maybe_remove (table : t) : Fuzz.Action.t option -> t Or_error.t =
   function
-  | None ->
-      Ok table
+  | None -> Ok table
   | Some (module A) ->
       Utils.Accessor.On_error.map deck table ~f:(Deck.remove ~name:A.name)
 
@@ -142,6 +139,6 @@ let pick_many (pool : t) ~(max : int) ~(random : Splittable_random.State.t) :
         ~init:pool
         ~f:(fun pool () ->
           let%map ao, pool' = pick pool ~random in
-          (pool', ao))
+          (pool', ao) )
     in
     (List.filter_opt xs, pool))

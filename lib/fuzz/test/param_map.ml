@@ -20,12 +20,12 @@ let%test_module "get_action_cap" =
           ~flags:
             (Map.of_alist_exn
                (module Common.Id)
-               [(Src.Config_tables.extra_action_flag, f)])
+               [(Src.Config_tables.extra_action_flag, f)] )
           ~params:
             (Map.of_alist_exn
                (module Common.Id)
                [ (Src.Config_tables.action_cap_lower_param, lo)
-               ; (Src.Config_tables.action_cap_upper_param, hi) ])
+               ; (Src.Config_tables.action_cap_upper_param, hi) ] )
           ()
       in
       let random = Splittable_random.State.of_int 0 in

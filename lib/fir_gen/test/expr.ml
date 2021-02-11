@@ -34,7 +34,7 @@ let test_in_env (env : Fir.Env.t) (e : Fir.Expression.t)
     ~(here : Lexing.position) : unit =
   [%test_pred: Fir.Expression.t]
     (Fir.Expression_traverse.On_addresses.for_all
-       ~f:(Accessor.for_all Fir.Address.variable_of ~f:(Map.mem env)))
+       ~f:(Accessor.for_all Fir.Address.variable_of ~f:(Map.mem env)) )
     ~here:[here; [%here]] e
 
 let test_evaluates_to (heap : Fir.Heap.t) (e : Fir.Expression.t)
@@ -60,7 +60,7 @@ let test_all_expressions ?(evaluate_to : Fir.Constant.t option)
     ~f:(fun e ->
       test_has_type ~here Ty.type_of e have_type ;
       test_in_env ~here env e ;
-      Option.iter evaluate_to ~f:(test_evaluates_to ~here heap e))
+      Option.iter evaluate_to ~f:(test_evaluates_to ~here heap e) )
 
 let%test_module "Int_values" =
   ( module struct
@@ -137,7 +137,7 @@ let%test_module "Int_values" =
         (fun e ->
           ( module Src.Expr.Int_values (struct
             let env = e
-          end) ))
+          end) ) )
         ~have_type:Fir.Type.(int ())
         ~here:[%here]
   end )
@@ -168,7 +168,7 @@ let%test_module "Int zeroes" =
         (fun e ->
           ( module Src.Expr.Int_zeroes (struct
             let env = e
-          end) ))
+          end) ) )
         ~have_type:Fir.Type.(int ())
         ~evaluate_to:(Int 0) ~here:[%here]
   end )
@@ -245,7 +245,7 @@ let%test_module "Atomic int nops" =
                 Af.quickcheck_generator
 
             let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
-          end ))
+          end ) )
         ~have_type:Fir.Type.(int ())
         ~here:[%here]
 
@@ -330,7 +330,7 @@ let%test_module "Bool_values" =
         (fun e ->
           ( module Src.Expr.Bool_values (struct
             let env = e
-          end) ))
+          end) ) )
         ~have_type:Fir.Type.(bool ())
         ~here:[%here]
   end )
@@ -364,7 +364,7 @@ let%test_module "Bool falsehoods" =
           let module B = Src.Expr.Bool_known (struct
             let env = e
           end) in
-          (module B.Falsehoods))
+          (module B.Falsehoods) )
         ~have_type:Fir.Type.(bool ())
         ~evaluate_to:(Bool false) ~here:[%here]
   end )
@@ -398,7 +398,7 @@ let%test_module "Bool tautologies" =
           let module B = Src.Expr.Bool_known (struct
             let env = e
           end) in
-          (module B.Tautologies))
+          (module B.Tautologies) )
         ~have_type:Fir.Type.(bool ())
         ~evaluate_to:(Bool true) ~here:[%here]
   end )

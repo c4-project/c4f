@@ -17,10 +17,8 @@ module Result = struct
 end
 
 let eval_bop : Predicate.Bop.t -> bool -> bool -> bool = function
-  | Or -> (
-      || )
-  | And -> (
-      && )
+  | Or -> ( || )
+  | And -> ( && )
 
 let eval_pred (pred : 'const Predicate.t)
     ~(elt : 'const Predicate.Element.t -> bool) : bool =
@@ -31,10 +29,8 @@ let eval_quantifier (quant : Postcondition.Quantifier.t) ~(f : 'a -> bool)
   let witnesses, counter_examples = List.partition_tf subjects ~f in
   let truth =
     match quant with
-    | Exists ->
-        not (List.is_empty witnesses)
-    | For_all ->
-        List.is_empty counter_examples
+    | Exists -> not (List.is_empty witnesses)
+    | For_all -> List.is_empty counter_examples
   in
   Result.Fields.create ~truth ~witnesses ~counter_examples
 
@@ -44,4 +40,4 @@ let eval (pc : 'const Postcondition.t)
   let predicate = Postcondition.predicate pc in
   let quantifier = Postcondition.quantifier pc in
   eval_quantifier quantifier ~subjects ~f:(fun a ->
-      eval_pred predicate ~elt:(elt a))
+      eval_pred predicate ~elt:(elt a) )

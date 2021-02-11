@@ -39,7 +39,7 @@ struct
          ; Basic.surround_with
          ; {| containing those statements. |}
          ; "\n\n"
-         ; Basic.readme_suffix ])
+         ; Basic.readme_suffix ] )
 
   module Payload = struct
     type t = Basic.Payload.t Payload_impl.Pathed.t [@@deriving sexp]

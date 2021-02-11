@@ -45,10 +45,8 @@ let make_weight_alist (config : t) : weight_list =
 
    TODO(@MattWindsor91): just allow an empty weight table? *)
 let nopify : weight_list -> weight_list = function
-  | [] ->
-      [(Fuzz.Action.(With_default_weight.((module Nop) @-> 1)), None)]
-  | wlist ->
-      wlist
+  | [] -> [(Fuzz.Action.(With_default_weight.((module Nop) @-> 1)), None)]
+  | wlist -> wlist
 
 let make_sampled_weight_alist (config : t) ~(pick_flag : Fuzz.Flag.t)
     ~(random : Splittable_random.State.t) :
@@ -85,7 +83,7 @@ let make_merged_param_map (type v)
      TODO(@MattWindsor91): error on these? *)
   Map.merge defaults user_provided ~f:(fun ~key ->
       ignore key ;
-      function `Left v | `Both (_, v) -> Some v | `Right _ -> None)
+      function `Left v | `Both (_, v) -> Some v | `Right _ -> None )
 
 let make_param_map (config : t) : Fuzz.Param_map.t =
   let params =
@@ -115,20 +113,17 @@ module Weight_summary = struct
     List.fold
       (make_weight_alist config)
       ~init:(Map.empty (module Common.Id))
-      ~f:
-        (fun map
-             ((action, user_weight) :
-               Fuzz.Action.With_default_weight.t * int option) ->
+      ~f:(fun map
+              ((action, user_weight) :
+                Fuzz.Action.With_default_weight.t * int option ) ->
         Map.set map
           ~key:(Fuzz.Action.With_default_weight.name action)
-          ~data:(summarise_action action ?user_weight))
+          ~data:(summarise_action action ?user_weight) )
 
   let pp_weight (f : Formatter.t) (k : int) : unit =
     ( match k with
-    | 0 ->
-        Fmt.(styled (`Fg `Red) (any "disabled"))
-    | _ ->
-        Fmt.(styled (`Fg `Green) (int ++ any "x")) )
+    | 0 -> Fmt.(styled (`Fg `Red) (any "disabled"))
+    | _ -> Fmt.(styled (`Fg `Green) (int ++ any "x")) )
       f k
 
   let pp : t Fmt.t = Summary.pp_map pp_weight "Weight"
@@ -157,8 +152,8 @@ module Param_summary = struct
       else Adjusted {original; actual})
 
   let summarise_elt (lift : 'a -> Fuzz.Param_map.Value.t)
-      (pm : Fuzz.Param_map.t) (id : Common.Id.t)
-      (spec : 'a Fuzz.Param_spec.t) : s Or_error.t =
+      (pm : Fuzz.Param_map.t) (id : Common.Id.t) (spec : 'a Fuzz.Param_spec.t)
+      : s Or_error.t =
     let default = lift (Fuzz.Param_spec.default spec) in
     let readme = Fuzz.Param_spec.description spec in
     Or_error.Let_syntax.(
@@ -171,7 +166,7 @@ module Param_summary = struct
       (Common.Id.t, s) List.Assoc.t Or_error.t =
     table |> Lazy.force |> Map.to_alist
     |> List.map ~f:(fun (k, v) ->
-           Or_error.(summarise_elt lift pm k v >>| fun v' -> (k, v')))
+           Or_error.(summarise_elt lift pm k v >>| fun v' -> (k, v')) )
     |> Or_error.combine_errors
 
   let summarise (cfg : elt) : t Or_error.t =

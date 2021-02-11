@@ -107,7 +107,7 @@ module Thread : sig
        t
     -> f:
          (   Fir.Initialiser.t C4f_common.C_named.t
-          -> Fir.Initialiser.t C4f_common.C_named.t)
+          -> Fir.Initialiser.t C4f_common.C_named.t )
     -> t
   (** [map_decls thd ~f] maps [f] over each decl in [thd]. *)
 

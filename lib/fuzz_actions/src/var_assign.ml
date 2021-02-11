@@ -200,7 +200,7 @@ module Insert = struct
               Fir.Assign.Source.Expr
                 (Or_error.ok_exn (known_value_expr_of_dest dst))
             in
-            Fir.Assign.make ~src ~dst)
+            Fir.Assign.make ~src ~dst )
     end
   end)
 

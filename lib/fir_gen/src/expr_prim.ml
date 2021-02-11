@@ -57,7 +57,7 @@ module Int = struct
          [ ( Expr_util.has_ints env ~is_atomic:true
            , fun () -> gen_atomic_load env )
          ; (Expr_util.has_ints env ~is_atomic:false, fun () -> gen_lvalue env)
-         ])
+         ] )
 
   let gen_plain_load (env : env) : t Q.Generator.t =
     Q.Generator.map ~f:fst (gen_load env)
@@ -67,7 +67,7 @@ module Int = struct
       (Utils.My_list.eval_guards
          [ (true, fun () -> (1.0, gen_int32))
          ; ( Fir.Env.has_vars_of_prim_type env ~prim:Int
-           , fun () -> (6.0, gen_plain_load env) ) ])
+           , fun () -> (6.0, gen_plain_load env) ) ] )
 end
 
 module Bool = struct
@@ -93,7 +93,7 @@ module Bool = struct
          [ ( Expr_util.has_bools env ~is_atomic:true
            , fun () -> gen_atomic_load env )
          ; ( Expr_util.has_bools env ~is_atomic:false
-           , fun () -> gen_lvalue env ) ])
+           , fun () -> gen_lvalue env ) ] )
 
   let gen_plain_load (env : env) : t Q.Generator.t =
     Q.Generator.map ~f:fst (gen_load env)
@@ -103,5 +103,5 @@ module Bool = struct
       (Utils.My_list.eval_guards
          [ (true, fun () -> (4.0, gen_const))
          ; ( Fir.Env.has_vars_of_prim_type env ~prim:Bool
-           , fun () -> (6.0, gen_plain_load env) ) ])
+           , fun () -> (6.0, gen_plain_load env) ) ] )
 end

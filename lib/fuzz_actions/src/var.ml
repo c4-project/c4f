@@ -81,7 +81,7 @@ struct
             lift
               (Fn.compose C4f_litmus.Test.Raw.num_threads
                  (Accessor.get
-                    (Context.actx @> Availability.Context.subject)))
+                    (Context.actx @> Availability.Context.subject) ) )
           in
           let* vars = lift_acc (Context.state @> State.vars) in
           let gen_scope = gen_scope nthreads is_global in
@@ -90,8 +90,7 @@ struct
 
   let recommendations ({basic_type; _} : Payload.t) : Common.Id.t list =
     match Fir.Type.Basic.prim basic_type with
-    | Bool ->
-        [] (* for now *)
+    | Bool -> [] (* for now *)
     | Int ->
         Lazy.force
           ( if Fir.Type.Basic.is_atomic basic_type then
@@ -159,7 +158,7 @@ module Volatile :
                   (Accessor.set
                      ( Fuzz.Var.Record.Access.type_of
                      @> Fir.Type.Access.is_volatile )
-                     ~to_:true))))
+                     ~to_:true ) ) ))
 
   let update_thread_decl (d : Fir.Initialiser.t Common.C_named.t)
       ~(target : Common.C_id.t) : Fir.Initialiser.t Common.C_named.t =
@@ -177,7 +176,7 @@ module Volatile :
         C4f_litmus.Test.Raw.try_map_thread subject ~index ~f:(fun x ->
             Ok
               (Fuzz.Subject.Thread.map_decls x
-                 ~f:(update_thread_decl ~target)))
+                 ~f:(update_thread_decl ~target) ) )
     | None ->
         Or_error.error_s
           [%message

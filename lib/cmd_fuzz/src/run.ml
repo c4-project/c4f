@@ -16,9 +16,9 @@ let write_aux ?(trace_output : Plumbing.Output.t option)
     ({state; trace} : C4f_fuzz_run.Filter.Aux.Output.t) : unit Or_error.t =
   Or_error.all_unit
     [ Plumbing.Output.with_opt state_output ~f:(fun dest ->
-          C4f_fuzz.State.Dump.store state ~dest)
+          C4f_fuzz.State.Dump.store state ~dest )
     ; Plumbing.Output.with_opt trace_output ~f:(fun dest ->
-          C4f_fuzz.Trace.store trace ~dest) ]
+          C4f_fuzz.Trace.store trace ~dest ) ]
 
 let run ?(seed : int option) ?(state_output : Plumbing.Output.t option)
     ?(trace_output : Plumbing.Output.t option)

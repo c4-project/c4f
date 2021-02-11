@@ -20,7 +20,7 @@ let parse_config ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t =
     pr "@[%a@]@."
       (result
          ~ok:(vbox C4f_config.Reify.pp)
-         ~error:(any "UNEXPECTED ERROR:@ " ++ Error.pp)))
+         ~error:(any "UNEXPECTED ERROR:@ " ++ Error.pp) ))
     r ;
   Ok ()
 

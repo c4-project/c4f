@@ -45,7 +45,7 @@ struct
         payload
         |> Accessor.construct
              Fir.(Prim_statement.atomic @> Atomic_statement.fence)
-        |> Fuzz.Subject.Statement.make_generated_prim)
+        |> Fuzz.Subject.Statement.make_generated_prim )
 end
 
 module Strengthen_payload = struct
@@ -115,12 +115,12 @@ module Strengthen :
     let direction = if can_weaken then `Any else `Strengthen in
     Ok
       (On_mos.map stm
-         ~f:(C4f_fir.Mem_order.try_change ~replacement:mo ~direction))
+         ~f:(C4f_fir.Mem_order.try_change ~replacement:mo ~direction) )
 
   let run (subject : Fuzz.Subject.Test.t)
       ~payload:({path; mo; can_weaken} : Payload.t) :
       Fuzz.Subject.Test.t Fuzz.State.Monad.t =
     Fuzz.State.Monad.Monadic.return
       (Fuzz.Path_consumers.consume subject ~path ~filter
-         ~action:(Transform (change_mo ~mo ~can_weaken)))
+         ~action:(Transform (change_mo ~mo ~can_weaken)) )
 end

@@ -21,10 +21,8 @@ let try_parse_program_id (id : Common.C_id.t) : int Or_error.t =
 let to_param_opt (lit_id : Common.Litmus_id.t) (rc : Var_map.Record.t) :
     (int * (Common.Litmus_id.t * Fir.Type.t)) option =
   match rc.mapped_to with
-  | Param k ->
-      Some (k, (lit_id, rc.c_type))
-  | Global ->
-      None
+  | Param k -> Some (k, (lit_id, rc.c_type))
+  | Global -> None
 
 let to_sorted_params_opt
     (alist : (Common.Litmus_id.t, Var_map.Record.t) List.Assoc.t) :
@@ -64,7 +62,7 @@ let thread_params :
        (Common.Litmus_id.t, Fir.Type.t) List.Assoc.t
     -> (Common.C_id.t, Fir.Type.t) List.Assoc.t =
   List.filter_map ~f:(fun (id, ty) ->
-      Option.map ~f:(fun id' -> (id', ty)) (Common.Litmus_id.as_global id))
+      Option.map ~f:(fun id' -> (id', ty)) (Common.Litmus_id.as_global id) )
 
 let local_decls (tid : int) :
        (Common.Litmus_id.t, Fir.Type.t) List.Assoc.t
@@ -77,7 +75,7 @@ let local_decls (tid : int) :
               { Initialiser.ty
               ; (* TODO(@MattWindsor91): fix this properly. *)
                 value= Fir.Constant.int 0 } )
-      else None)
+      else None )
 
 let inner_call_argument (lid : Common.Litmus_id.t) (ty : Fir.Type.t) :
     Fir.Expression.t =
@@ -90,7 +88,7 @@ let inner_call_arguments (tid : int) :
   List.filter_map ~f:(fun (lid, ty) ->
       if Common.Litmus_id.is_in_local_scope ~from:tid lid then
         Some (inner_call_argument lid ty)
-      else None)
+      else None )
 
 let inner_call_stm (tid : int) (function_id : Common.C_id.t)
     (all_params : (Common.Litmus_id.t, Fir.Type.t) List.Assoc.t) :
@@ -125,7 +123,7 @@ let make ({litmus_header; var_map; function_map} : Aux.t) :
       |> List.filter_map ~f:(fun (old_id, record) ->
              if Function_map.Record.is_thread_body record then
                Some (make_function_stub var_map ~old_id ~new_id:record.c_id)
-             else None)
+             else None )
       |> Or_error.combine_errors
     in
     Fir.Litmus.Test.make ~header:litmus_header ~threads)

@@ -36,32 +36,23 @@ include C4f_utils.Enum.Extend_table (M)
 let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
 
 let is_load_compatible : t -> bool = function
-  | Seq_cst | Acquire | Consume | Relaxed ->
-      true
-  | Release | Acq_rel ->
-      false
+  | Seq_cst | Acquire | Consume | Relaxed -> true
+  | Release | Acq_rel -> false
 
 let is_store_compatible : t -> bool = function
-  | Seq_cst | Release | Relaxed ->
-      true
-  | Acquire | Consume | Acq_rel ->
-      false
+  | Seq_cst | Release | Relaxed -> true
+  | Acquire | Consume | Acq_rel -> false
 
 let is_cmpxchg_fail_compatible : t -> bool = function
-  | Seq_cst | Acquire | Consume | Relaxed ->
-      true
-  | Acq_rel | Release ->
-      false
+  | Seq_cst | Acquire | Consume | Relaxed -> true
+  | Acq_rel | Release -> false
 
 let can_change (current : t) ~(replacement : t)
     ~(direction : [< `Strengthen | `Weaken | `Any]) : bool =
   match direction with
-  | `Strengthen ->
-      current <= replacement
-  | `Weaken ->
-      replacement <= current
-  | `Any ->
-      true
+  | `Strengthen -> current <= replacement
+  | `Weaken -> replacement <= current
+  | `Any -> true
 
 let try_change (current : t) ~(replacement : t)
     ~(direction : [< `Strengthen | `Weaken | `Any]) : t =

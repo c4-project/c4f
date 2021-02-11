@@ -30,12 +30,11 @@ module Block = struct
 
   let merge (x : chk) (y : chk) : chk =
     match (x, y) with
-    | Valid x, Valid y when equal x y ->
-        Valid x
+    | Valid x, Valid y when equal x y -> Valid x
     | Valid _, Valid _
-    | Valid _, Inconsistent
-    | Inconsistent, Valid _
-    | Inconsistent, Inconsistent ->
+     |Valid _, Inconsistent
+     |Inconsistent, Valid _
+     |Inconsistent, Inconsistent ->
         Inconsistent
 
   let match_fail (block : t) ~(template : t) : unit Or_error.t =
@@ -47,23 +46,19 @@ module Block = struct
 
   let match_req (block : t) ~(template : t) : unit Or_error.t =
     match (template, block) with
-    | Top, Top | If None, If _ | Flow None, Flow _ ->
-        Ok ()
-    | If (Some x), If (Some y) when Bool.equal x y ->
-        Ok ()
+    | Top, Top | If None, If _ | Flow None, Flow _ -> Ok ()
+    | If (Some x), If (Some y) when Bool.equal x y -> Ok ()
     | Flow (Some template), Flow (Some x)
       when Fir.Statement_class.Flow.class_matches x ~template ->
         Ok ()
-    | _, _ ->
-        match_fail block ~template
+    | _, _ -> match_fail block ~template
 
   let check (chk : chk) ~(block : t) : unit Or_error.t =
     match chk with
     | Inconsistent ->
         Or_error.error_string
           "path filter has inconsistent block requirements"
-    | Valid template ->
-        match_req block ~template
+    | Valid template -> match_req block ~template
 end
 
 (** Checks that can only be carried out at the end of a statement path. *)
@@ -83,21 +78,20 @@ module End_check = struct
   let is_ok (check : t) ~(stm : Subject.Statement.t) : bool =
     C4f_fir.Statement_class.(
       match check with
-      | Stm_class (req, templates) ->
-          satisfies stm ~req ~templates
+      | Stm_class (req, templates) -> satisfies stm ~req ~templates
       | Stm_no_meta_restriction r ->
           not
             (Fir.Statement_traverse.On_meta.exists stm
-               ~f:(Metadata.has_restriction r))
+               ~f:(Metadata.has_restriction r) )
       | Has_no_expressions_of_class templates ->
           not
             (Subject.Statement.On_expressions.exists stm
-               ~f:(C4f_fir.Expression_class.rec_matches_any ~templates)))
+               ~f:(C4f_fir.Expression_class.rec_matches_any ~templates) ))
 
   let check (check : t) ~(stm : Subject.Statement.t) : unit Or_error.t =
     Tx.Or_error.unless_m (is_ok check ~stm) ~f:(fun () ->
         Or_error.error_s
-          [%message "Statement failed check" ~check:(check : t)])
+          [%message "Statement failed check" ~check:(check : t)] )
 end
 
 type t =
@@ -154,7 +148,7 @@ let transaction_safe : t =
     (Set.of_list
        (module End_check)
        [ Stm_class (Has_not_any, [C4f_fir.Statement_class.atomic ()])
-       ; Has_no_expressions_of_class [Atomic None] ])
+       ; Has_no_expressions_of_class [Atomic None] ] )
 
 let live_loop_surround : t =
   (* Don't surround breaks and continues in live code; doing so causes them
@@ -168,7 +162,7 @@ let live_loop_surround : t =
        ( Has_not_any
        , Fir.Statement_class.
            [ Prim (Some (Early_out (Some Break)))
-           ; Prim (Some (Early_out (Some Continue))) ] ))
+           ; Prim (Some (Early_out (Some Continue))) ] ) )
 
 let in_threads_only (threads : Set.M(Int).t) : t =
   {zero with threads= Some threads}
@@ -176,10 +170,8 @@ let in_threads_only (threads : Set.M(Int).t) : t =
 let in_thread_with_variables (vars : Var.Map.t)
     ~(predicates : (Var.Record.t -> bool) list) : t =
   match Var.Map.threads_with_vars vars ~predicates with
-  | `All ->
-      zero
-  | `These tids ->
-      in_threads_only tids
+  | `All -> zero
+  | `These tids -> in_threads_only tids
 
 let error_of_flag (flag : Path_meta.Flag.t) ~(polarity : string) :
     unit Or_error.t =
@@ -222,7 +214,7 @@ let check_anchor ?(anchor : Path_meta.Anchor.t option) (filter : t) :
         [%message
           "Path doesn't anchor to block as required by filter"
             ~got:(anchor : Path_meta.Anchor.t option)
-            ~want:(includes : Path_meta.Anchor.t option)])
+            ~want:(includes : Path_meta.Anchor.t option)] )
 
 let check_block (filter : t) ~(block : Block.t) : unit Or_error.t =
   Tx.Option.With_errors.iter_m filter.block ~f:(Block.check ~block)

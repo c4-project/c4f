@@ -26,7 +26,7 @@ let license : string Lazy.t =
 
          Parts of c4t are based on code from the Herdtools7 project
          (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
-         project root for more information. |})
+         project root for more information. |} )
 
 let command : Command.t =
   Command.basic ~summary:"Prints license information"

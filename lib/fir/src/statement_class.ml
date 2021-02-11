@@ -35,10 +35,8 @@ module Prim = struct
         true
     | Atomic (Some template), Atomic (Some clazz) ->
         Atomic_class.matches clazz ~template
-    | Early_out (Some e), Early_out (Some e') ->
-        Early_out.equal e e'
-    | _, _ ->
-        false
+    | Early_out (Some e), Early_out (Some e') -> Early_out.equal e e'
+    | _, _ -> false
 end
 
 module Flow = struct
@@ -48,12 +46,9 @@ module Flow = struct
 
     let class_matches (clazz : t) ~(template : t) : bool =
       match (template, clazz) with
-      | For, For ->
-          true
-      | While (Some k1), While (Some k2) ->
-          Flow_block.While.equal k1 k2
-      | _, _ ->
-          false
+      | For, For -> true
+      | While (Some k1), While (Some k2) -> Flow_block.While.equal k1 k2
+      | _, _ -> false
   end
 
   type t =
@@ -65,16 +60,11 @@ module Flow = struct
 
   let classify' ({header; _} : ('a, 'b) Flow_block.t) : t option =
     match header with
-    | For _ ->
-        Some (Loop (Some For))
-    | Lock lk ->
-        Some (Lock (Some lk))
-    | While (wk, _) ->
-        Some (Loop (Some (While (Some wk))))
-    | Explicit ->
-        Some Explicit
-    | Implicit ->
-        Some Implicit
+    | For _ -> Some (Loop (Some For))
+    | Lock lk -> Some (Lock (Some lk))
+    | While (wk, _) -> Some (Loop (Some (While (Some wk))))
+    | Explicit -> Some Explicit
+    | Implicit -> Some Implicit
 
   let classify (f : ('meta, 'meta Statement.t) Flow_block.t) : t option =
     classify' f
@@ -84,14 +74,11 @@ module Flow = struct
 
   let class_matches (clazz : t) ~(template : t) : bool =
     match (template, clazz) with
-    | Lock None, Lock _ | Loop None, Loop _ ->
-        true
-    | Lock (Some k1), Lock (Some k2) ->
-        Flow_block.Lock.equal k1 k2
+    | Lock None, Lock _ | Loop None, Loop _ -> true
+    | Lock (Some k1), Lock (Some k2) -> Flow_block.Lock.equal k1 k2
     | Loop (Some template), Loop (Some clazz) ->
         Loop.class_matches clazz ~template
-    | _, _ ->
-        false
+    | _, _ -> false
 end
 
 type t = Prim of Prim.t option | If | Flow of Flow.t option
@@ -114,24 +101,22 @@ include Class.Make_ext (struct
   let classify_rec (type e) (stm : e Statement.t) : t list =
     Statement.reduce stm
       ~prim:(fun {value; _} ->
-        List.map ~f:(fun t -> Prim (Some t)) (Prim.classify_rec value))
+        List.map ~f:(fun t -> Prim (Some t)) (Prim.classify_rec value) )
       ~if_stm:(fun {t_branch; f_branch; _} ->
-        If :: (unfold_block t_branch @ unfold_block f_branch))
+        If :: (unfold_block t_branch @ unfold_block f_branch) )
       ~flow:(fun f ->
         Option.to_list
           (Option.map ~f:(fun t -> Flow (Some t)) (Flow.classify' f))
-        @ unfold_block f.body)
+        @ unfold_block f.body )
 
   let class_matches (clazz : t) ~(template : t) : bool =
     match (template, clazz) with
-    | Prim None, Prim _ | If, If | Flow None, Flow _ ->
-        true
+    | Prim None, Prim _ | If, If | Flow None, Flow _ -> true
     | Flow (Some template), Flow (Some clazz) ->
         Flow.class_matches clazz ~template
     | Prim (Some template), Prim (Some clazz) ->
         Prim.class_matches clazz ~template
-    | _, _ ->
-        false
+    | _, _ -> false
 end)
 
 let atomic ?(specifically : Atomic_class.t option) () : t =

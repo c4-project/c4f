@@ -51,4 +51,4 @@ let pp (langname : string) (ppk : 'k Fmt.t) (ppt : 't Fmt.t) :
          [ using Test.Raw.header (pp_header_top langname ppk)
          ; spsp
          ; pp_threads ppt
-         ; using Test.Raw.header (pp_header_bot ppk) ]))
+         ; using Test.Raw.header (pp_header_bot ppk) ] ))

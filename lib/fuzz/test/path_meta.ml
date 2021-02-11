@@ -24,7 +24,7 @@ let%test_module "anchor" =
         end )
         ~f:(fun (at, a) ->
           let l = Src.Path_meta.Anchor.top in
-          [%test_eq: bool] ~here:[[%here]] a (at.@(l) <- a).@(l))
+          [%test_eq: bool] ~here:[[%here]] a (at.@(l) <- a).@(l) )
 
     let%test_unit "top: field law 2" =
       Base_quickcheck.Test.run_exn
@@ -37,7 +37,7 @@ let%test_module "anchor" =
         ~f:(fun at ->
           let l = Src.Path_meta.Anchor.top in
           [%test_eq: Src.Path_meta.Anchor.t option] ~here:[[%here]] at
-            (at.@(l) <- at.@(l)))
+            (at.@(l) <- at.@(l)) )
 
     let%test_unit "top: field law 3" =
       Base_quickcheck.Test.run_exn
@@ -51,7 +51,7 @@ let%test_module "anchor" =
           let l = Src.Path_meta.Anchor.top in
           [%test_eq: Src.Path_meta.Anchor.t option] ~here:[[%here]]
             ((at.@(l) <- a).@(l) <- b)
-            (at.@(l) <- b))
+            (at.@(l) <- b) )
 
     let%test_unit "bottom: field law 1" =
       Base_quickcheck.Test.run_exn
@@ -63,7 +63,7 @@ let%test_module "anchor" =
         end )
         ~f:(fun (at, a) ->
           let l = Src.Path_meta.Anchor.bottom in
-          [%test_eq: bool] ~here:[[%here]] a (at.@(l) <- a).@(l))
+          [%test_eq: bool] ~here:[[%here]] a (at.@(l) <- a).@(l) )
 
     let%test_unit "bottom: field law 2" =
       Base_quickcheck.Test.run_exn
@@ -76,7 +76,7 @@ let%test_module "anchor" =
         ~f:(fun at ->
           let l = Src.Path_meta.Anchor.bottom in
           [%test_eq: Src.Path_meta.Anchor.t option] ~here:[[%here]] at
-            (at.@(l) <- at.@(l)))
+            (at.@(l) <- at.@(l)) )
 
     let%test_unit "bottom: field law 3" =
       Base_quickcheck.Test.run_exn
@@ -90,7 +90,7 @@ let%test_module "anchor" =
           let l = Src.Path_meta.Anchor.bottom in
           [%test_eq: Src.Path_meta.Anchor.t option] ~here:[[%here]]
             ((at.@(l) <- a).@(l) <- b)
-            (at.@(l) <- b))
+            (at.@(l) <- b) )
   end )
 
 let print_flags : Set.M(Src.Path_meta.Flag).t -> unit =
@@ -98,7 +98,7 @@ let print_flags : Set.M(Src.Path_meta.Flag).t -> unit =
     pr "@[%a@]@."
       (using
          (fun flags -> {Src.Path_meta.flags; anchor= None})
-         Src.Path_meta.pp))
+         Src.Path_meta.pp ))
 
 let%test_module "check_contradiction_free" =
   ( module struct
@@ -146,7 +146,7 @@ let%test_module "flags_of_metadata" =
           Generated
             (Gen.make
                ~restrictions:(Set.singleton (module Restriction) Once_only)
-               ())) ;
+               () )) ;
       [%expect {| {execute-multi-unsafe} |}]
 
     let%expect_test "once generation" =
@@ -164,7 +164,7 @@ let%test_module "flags_of_flow" =
         (Fir.Flow_block.while_loop
            ~cond:(Fir.Expression.of_variable_str_exn "foo")
            ~kind:While
-           ~body:(Src.Subject.Block.make_generated ())) ;
+           ~body:(Src.Subject.Block.make_generated ()) ) ;
       [%expect {| {in-execute-multi, in-loop} |}]
 
     let%expect_test "existing loop" =
@@ -172,7 +172,7 @@ let%test_module "flags_of_flow" =
         (Fir.Flow_block.while_loop
            ~cond:(Fir.Expression.of_variable_str_exn "foo")
            ~kind:While
-           ~body:(Src.Subject.Block.make_existing ())) ;
+           ~body:(Src.Subject.Block.make_existing ()) ) ;
       [%expect {| {in-execute-multi, in-loop} |}]
 
     let%expect_test "dead loop" =
@@ -180,7 +180,7 @@ let%test_module "flags_of_flow" =
         (Fir.Flow_block.while_loop
            ~cond:(Fir.Expression.of_variable_str_exn "foo")
            ~kind:While
-           ~body:(Src.Subject.Block.make_dead_code ())) ;
+           ~body:(Src.Subject.Block.make_dead_code ()) ) ;
       [%expect {| {in-loop} |}]
 
     let%expect_test "dead implicit" =

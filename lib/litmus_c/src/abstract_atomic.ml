@@ -20,10 +20,8 @@ let fence_name (mode : Fir.Atomic_fence.Mode.t) : string =
   Printf.sprintf "atomic_%s_fence" (Fir.Atomic_fence.Mode.to_string mode)
 
 let fetch_name : Fir.Op.Fetch.t -> string = function
-  | `Xchg ->
-      "atomic_exchange_explicit"
-  | f ->
-      Printf.sprintf "atomic_fetch_%s_explicit" (Fir.Op.Fetch.to_string f)
+  | `Xchg -> "atomic_exchange_explicit"
+  | f -> Printf.sprintf "atomic_fetch_%s_explicit" (Fir.Op.Fetch.to_string f)
 
 let load_name : string = "atomic_load_explicit"
 
@@ -31,24 +29,24 @@ let store_name : string = "atomic_store_explicit"
 
 let cmpxchg_call_alist
     (modeller :
-      Ast.Expr.t list -> strength:Fir.Atomic_cmpxchg.Strength.t -> 'a) :
+      Ast.Expr.t list -> strength:Fir.Atomic_cmpxchg.Strength.t -> 'a ) :
     (Common.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t =
   List.map (Fir.Atomic_cmpxchg.Strength.all_list ()) ~f:(fun strength ->
       let name = Common.C_id.of_string (cmpxchg_name strength) in
-      (name, modeller ~strength))
+      (name, modeller ~strength) )
 
 let fence_call_alist
     (modeller : Ast.Expr.t list -> mode:Fir.Atomic_fence.Mode.t -> 'a) :
     (Common.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t =
   List.map (Fir.Atomic_fence.Mode.all_list ()) ~f:(fun mode ->
       let name = Common.C_id.of_string (fence_name mode) in
-      (name, modeller ~mode))
+      (name, modeller ~mode) )
 
 let fetch_call_alist (modeller : Ast.Expr.t list -> op:Fir.Op.Fetch.t -> 'a)
     : (Common.C_id.t, Ast.Expr.t list -> 'a) List.Assoc.t =
   List.map (Fir.Op.Fetch.all_list ()) ~f:(fun op ->
       let name = Common.C_id.of_string (fetch_name op) in
-      (name, modeller ~op))
+      (name, modeller ~op) )
 
 let model_cmpxchg_with_args ~(strength : Fir.Atomic_cmpxchg.Strength.t)
     ~(raw_obj : Ast.Expr.t) ~(raw_expected : Ast.Expr.t)
@@ -111,8 +109,7 @@ let model_fence_with_args ~(mode : Fir.Atomic_fence.Mode.t)
 let model_fence (args : Ast.Expr.t list) ~(mode : Fir.Atomic_fence.Mode.t) :
     Fir.Atomic_fence.t Or_error.t =
   match args with
-  | [raw_mo] ->
-      model_fence_with_args ~mode ~raw_mo
+  | [raw_mo] -> model_fence_with_args ~mode ~raw_mo
   | args ->
       Or_error.error_s
         [%message
@@ -126,8 +123,7 @@ let model_load_with_args ~(raw_src : Ast.Expr.t) ~(raw_mo : Ast.Expr.t) :
     Fir.Atomic_load.make ~src ~mo)
 
 let model_load : Ast.Expr.t list -> Fir.Atomic_load.t Or_error.t = function
-  | [raw_src; raw_mo] ->
-      model_load_with_args ~raw_src ~raw_mo
+  | [raw_src; raw_mo] -> model_load_with_args ~raw_src ~raw_mo
   | args ->
       Or_error.error_s
         [%message
@@ -135,9 +131,8 @@ let model_load : Ast.Expr.t list -> Fir.Atomic_load.t Or_error.t = function
             ~got:(args : Ast.Expr.t list)]
 
 let model_store_with_args ~(raw_dst : Ast.Expr.t) ~(raw_src : Ast.Expr.t)
-    ~(raw_mo : Ast.Expr.t)
-    ~(expr : Ast.Expr.t -> Fir.Expression.t Or_error.t) :
-    Fir.Atomic_store.t Or_error.t =
+    ~(raw_mo : Ast.Expr.t) ~(expr : Ast.Expr.t -> Fir.Expression.t Or_error.t)
+    : Fir.Atomic_store.t Or_error.t =
   Or_error.Let_syntax.(
     let%map dst = Abstract_prim.expr_to_address raw_dst
     and src = expr raw_src

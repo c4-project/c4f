@@ -27,7 +27,7 @@ let labels_of_thread (tid : int)
   |> List.filter_map ~f:(fun x ->
          Option.(
            A.(x.@?(C4f_fir.Prim_statement.label))
-           >>| C4f_common.Litmus_id.local tid))
+           >>| C4f_common.Litmus_id.local tid) )
 
 let labels_of_test (test : C4f_fir.Litmus.Test.t) :
     Set.M(C4f_common.Litmus_id).t =

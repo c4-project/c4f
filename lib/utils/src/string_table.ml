@@ -30,7 +30,7 @@ end) : S with type t = T.t = struct
       (* TODO(@MattWindsor91): throwing exceptions here is scary. *)
       (Map.of_alist_exn
          (module String.Caseless)
-         (List.Assoc.inverse T.table))
+         (List.Assoc.inverse T.table) )
 
   let of_string str = Map.find (Lazy.force rev_table) str
 

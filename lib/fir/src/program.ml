@@ -30,10 +30,10 @@ module Base_map (M : Applicative.S) = struct
   let bmap (type m1 m2) (program : m1 t)
       ~(globals :
             (Ac.C_id.t, Initialiser.t) List.Assoc.t
-         -> (Ac.C_id.t, Initialiser.t) List.Assoc.t M.t)
+         -> (Ac.C_id.t, Initialiser.t) List.Assoc.t M.t )
       ~(functions :
             (Ac.C_id.t, m1 Function.t) List.Assoc.t
-         -> (Ac.C_id.t, m2 Function.t) List.Assoc.t M.t) : m2 t M.t =
+         -> (Ac.C_id.t, m2 Function.t) List.Assoc.t M.t ) : m2 t M.t =
     M.map2
       ~f:(fun globals functions -> {globals; functions})
       (globals program.globals)

@@ -18,7 +18,7 @@ module Base_map (A : Applicative.S) = struct
   let bmap (type m1 m2) (x : m1 t)
       ~(prim :
             (m1, Prim_statement.t) With_meta.t
-         -> (m2, Prim_statement.t) With_meta.t A.t)
+         -> (m2, Prim_statement.t) With_meta.t A.t )
       ~(if_stm : (m1, m1 t) If.t -> (m2, m2 t) If.t A.t)
       ~(flow : (m1, m1 t) Flow_block.t -> (m2, m2 t) Flow_block.t A.t) :
       m2 t A.t =
@@ -37,7 +37,7 @@ module Base_map (A : Applicative.S) = struct
   let bmap_flat (type m1 m2) (x : m1 t)
       ~(prim :
             (m1, Prim_statement.t) With_meta.t
-         -> (m2, Prim_statement.t) With_meta.t A.t)
+         -> (m2, Prim_statement.t) With_meta.t A.t )
       ~(flow_header : Flow_block.Header.t -> Flow_block.Header.t A.t)
       ~(if_cond : Expression.t -> Expression.t A.t)
       ~(block_meta : m1 -> m2 A.t) : m2 t A.t =

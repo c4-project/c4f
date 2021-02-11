@@ -28,20 +28,17 @@ include Class.Make_ext (struct
   let class_matches (clazz : t) ~(template : t) : bool =
     match (clazz, template) with
     | Constant, Constant
-    | Address, Address
-    | Ternary, Ternary
-    | Atomic _, Atomic None
-    | Bop _, Bop None
-    | Uop _, Uop None ->
+     |Address, Address
+     |Ternary, Ternary
+     |Atomic _, Atomic None
+     |Bop _, Bop None
+     |Uop _, Uop None ->
         true
     | Atomic (Some clazz), Atomic (Some template) ->
         Atomic_class.matches clazz ~template
-    | Bop (Some op), Bop (Some op') ->
-        Op.Binary.equal op op'
-    | Uop (Some op), Uop (Some op') ->
-        Op.Unary.equal op op'
-    | _ ->
-        false
+    | Bop (Some op), Bop (Some op') -> Op.Binary.equal op op'
+    | Uop (Some op), Uop (Some op') -> Op.Unary.equal op op'
+    | _ -> false
 
   let classify : Expression.t -> t option =
     Expression.reduce_step
@@ -57,7 +54,7 @@ include Class.Make_ext (struct
       ~address:(Fn.const [Address])
       ~atomic:(fun x ->
         let inner = Atomic_expression.On_expressions.to_list x in
-        List.concat ([Atomic (Atomic_class.classify_expr x)] :: inner))
+        List.concat ([Atomic (Atomic_class.classify_expr x)] :: inner) )
       ~bop:(fun o l r -> Bop (Some o) :: (l @ r))
       ~uop:(fun o x -> Uop (Some o) :: x)
       ~ternary:(fun {if_; then_; else_} -> Ternary :: (if_ @ then_ @ else_))

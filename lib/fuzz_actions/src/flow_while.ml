@@ -136,7 +136,7 @@ module Surround = struct
       let cond = payload in
       Accessor.construct Fir.Statement.flow
         (Fir.Flow_block.while_loop ~kind:Basic.kind ~cond
-           ~body:(Fuzz.Subject.Block.make_generated ~statements ()))
+           ~body:(Fuzz.Subject.Block.make_generated ~statements ()) )
   end)
 
   module Do_false : S = Make (struct

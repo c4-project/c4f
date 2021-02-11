@@ -35,14 +35,14 @@ module Pathed = struct
       Subject.Test.t State.Monad.t =
     State.Monad.Monadic.return
       (Path_consumers.consume test ?filter ~path:where
-         ~action:(Transform_list (fun test -> Ok [f payload test])))
+         ~action:(Transform_list (fun test -> Ok [f payload test])) )
 
   let insert ?(filter : Path_filter.t option) ({payload; where} : 'a t)
       ~(test : Subject.Test.t) ~(f : 'a -> Subject.Statement.t) :
       Subject.Test.t State.Monad.t =
     State.Monad.Monadic.return
       (Path_consumers.consume test ?filter ~path:where
-         ~action:(Insert [f payload]))
+         ~action:(Insert [f payload]) )
 end
 
 module Cond_pathed = struct
@@ -53,7 +53,7 @@ module Cond_pathed = struct
       ~(f :
             C4f_fir.Expression.t
          -> Subject.Statement.t list
-         -> Subject.Statement.t) : Subject.Test.t State.Monad.t =
+         -> Subject.Statement.t ) : Subject.Test.t State.Monad.t =
     State.Monad.(
       Let_syntax.(
         let%bind () =
@@ -85,7 +85,7 @@ module Cond_pathed = struct
         Payload_gen.(
           let* vars = lift_acc (Context.state @> State.vars) in
           let env = cond_env vars ~tid in
-          lift_quickcheck (cond_gen env)))
+          lift_quickcheck (cond_gen env)) )
 
   let gen (kind : Path_kind.t) (path_filter : State.t -> Path_filter.t)
       (cond_gen : Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t)

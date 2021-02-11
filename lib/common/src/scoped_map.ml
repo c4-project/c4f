@@ -38,17 +38,17 @@ let length (type a) : a t -> int = Map.length
 let build_set (type a e w)
     (module Carrier : Comparable.S
       with type t = e
-       and type comparator_witness = w) (m : a t)
+       and type comparator_witness = w ) (m : a t)
     ~(f : Litmus_id.t -> a -> e option) : Set.M(Carrier).t =
   Map.fold m
     ~init:(Set.empty (module Carrier))
     ~f:(fun ~key ~data set ->
-      Option.value_map (f key data) ~default:set ~f:(Set.add set))
+      Option.value_map (f key data) ~default:set ~f:(Set.add set) )
 
 let c_id_mem (m : _ t) ~(id : C_id.t) : bool =
   Map.existsi m ~f:(fun ~key ~data ->
       ignore data ;
-      [%equal: C_id.t] id (Litmus_id.variable_name key))
+      [%equal: C_id.t] id (Litmus_id.variable_name key) )
 
 let find_by_litmus_id (type a) (m : a t) ~(id : Litmus_id.t) : a Or_error.t =
   id |> Map.find m
@@ -60,13 +60,12 @@ let find_by_litmus_id (type a) (m : a t) ~(id : Litmus_id.t) : a Or_error.t =
                (create_s
                   [%message
                     "Litmus identifier doesn't match any in the map"
-                      ~id:(id : Litmus_id.t)]) ))
+                      ~id:(id : Litmus_id.t)] ) ))
 
 let resolve (vars : _ t) ~(id : C_id.t) ~(scope : Scope.t) : Litmus_id.t =
   let global_id = Litmus_id.global id in
   match scope with
-  | Global ->
-      global_id
+  | Global -> global_id
   | Local tid ->
       let local_id = Litmus_id.local tid id in
       if Map.mem vars local_id then local_id else global_id
@@ -97,4 +96,4 @@ let pp (type a) (pp_val : a Fmt.t) : a t Fmt.t =
     using Map.to_alist
       (list ~sep:cut
          (box ~indent:1
-            (pair ~sep:(any ":@ ") (styled `Yellow Litmus_id.pp) pp_val))))
+            (pair ~sep:(any ":@ ") (styled `Yellow Litmus_id.pp) pp_val) ) ))

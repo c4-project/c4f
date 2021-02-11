@@ -41,7 +41,7 @@ let lift_opt_gen (type a) (g : a Opt_gen.t) : a t =
                 ~action_id:(action_id : C4f_common.Id.t)]
       in
       (* TODO(@MattWindsor91): size? *)
-      Or_error.(g' >>| Base_quickcheck.Generator.generate ~size:10 ~random))
+      Or_error.(g' >>| Base_quickcheck.Generator.generate ~size:10 ~random) )
 
 let lift_quickcheck (type a) (g : a Base_quickcheck.Generator.t) : a t =
   lift_opt_gen (Ok g)
@@ -72,11 +72,10 @@ let fresh_var ?(such_that : (C4f_common.Litmus_id.t -> bool) option)
   let gen' =
     Base_quickcheck.Generator.(
       match such_that with
-      | None ->
-          map cgen ~f:(fun id -> C4f_common.Litmus_id.make ~id ~scope)
+      | None -> map cgen ~f:(fun id -> C4f_common.Litmus_id.make ~id ~scope)
       | Some f ->
           filter_map cgen ~f:(fun id ->
               let id' = C4f_common.Litmus_id.make ~id ~scope in
-              Option.some_if (f id') id'))
+              Option.some_if (f id') id' ))
   in
   lift_quickcheck gen'

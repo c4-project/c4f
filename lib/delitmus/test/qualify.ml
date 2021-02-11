@@ -21,6 +21,6 @@ let%test_module "litmus_id" =
     let%expect_test "example without qualifying" =
       Fmt.pr "%a@." C4f_common.C_id.pp
         (litmus_id ~qualify_locals:false
-           (C4f_common.Litmus_id.of_string "0:r0")) ;
+           (C4f_common.Litmus_id.of_string "0:r0") ) ;
       [%expect {| r0 |}]
   end )

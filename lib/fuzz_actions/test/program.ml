@@ -25,7 +25,7 @@ let run_and_dump_labels
   Fmt.(
     pr "@[%a@]@."
       (result ~error:Error.pp
-         ~ok:(using Set.to_list (list ~sep:sp C4f_common.Litmus_id.pp))))
+         ~ok:(using Set.to_list (list ~sep:sp C4f_common.Litmus_id.pp)) ))
     result
 
 let%test_module "program.label" =

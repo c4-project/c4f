@@ -84,10 +84,7 @@ module Cond_pathed : sig
        ?filter:Path_filter.t
     -> t
     -> test:Subject.Test.t
-    -> f:
-         (   Fir.Expression.t
-          -> Subject.Statement.t list
-          -> Subject.Statement.t)
+    -> f:(Fir.Expression.t -> Subject.Statement.t list -> Subject.Statement.t)
     -> Subject.Test.t State.Monad.t
   (** [surround ?filter payload ~test ~f] behaves like {!Pathed.surround},
       but also automatically adds dependency edges for the condition

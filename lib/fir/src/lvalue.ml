@@ -21,28 +21,22 @@ let of_variable_str_exn (s : string) : t =
 let rec reduce (lv : t) ~(variable : Common.C_id.t -> 'a) ~(deref : 'a -> 'a)
     : 'a =
   match lv with
-  | Variable v ->
-      variable v
-  | Deref rest ->
-      deref (reduce rest ~variable ~deref)
+  | Variable v -> variable v
+  | Deref rest -> deref (reduce rest ~variable ~deref)
 
 let is_deref : t -> bool = function Deref _ -> true | Variable _ -> false
 
 let un_deref : t -> t Or_error.t = function
-  | Variable _ ->
-      Or_error.error_string "can't & a variable lvalue"
-  | Deref x ->
-      Ok x
+  | Variable _ -> Or_error.error_string "can't & a variable lvalue"
+  | Deref x -> Ok x
 
 let rec get_variable_of (x : t) : Common.C_id.t =
   match x with Variable c -> c | Deref d -> get_variable_of d
 
 let rec set_variable_of (x : t) (v : Common.C_id.t) : t =
   match x with
-  | Variable _ ->
-      Variable v
-  | Deref d ->
-      Deref (set_variable_of d v)
+  | Variable _ -> Variable v
+  | Deref d -> Deref (set_variable_of d v)
 
 let variable_of : ('i, Common.C_id.t, t, [< field]) Accessor.Simple.t =
   [%accessor Accessor.field ~get:get_variable_of ~set:set_variable_of]
@@ -52,15 +46,14 @@ let as_variable (lv : t) : Common.C_id.t Or_error.t =
     ~error:
       (Error.create_s
          [%message
-           "Can't safely convert this lvalue to a variable" ~lvalue:(lv : t)])
+           "Can't safely convert this lvalue to a variable" ~lvalue:(lv : t)] )
 
 module Type_check (E : sig
   val env : Env.t
 end) =
 struct
   let rec type_of : t -> Type.t Or_error.t = function
-    | Variable id ->
-        Env.type_of E.env ~id
+    | Variable id -> Env.type_of E.env ~id
     | Deref l ->
         Or_error.tag_arg
           Or_error.(l |> type_of >>= Type.deref)
@@ -92,7 +85,7 @@ end = struct
     Q.Observer.(
       fixed_point (fun mu ->
           unmap ~f:(Accessor.get anonymise)
-            [%quickcheck.observer: [`A of Id.t | `B of [%custom mu]]]))
+            [%quickcheck.observer: [`A of Id.t | `B of [%custom mu]]] ))
 
   let quickcheck_shrinker : t Q.Shrinker.t =
     Q.Shrinker.(
@@ -100,7 +93,7 @@ end = struct
           map
             ~f:(Accessor.construct anonymise)
             ~f_inverse:(Accessor.get anonymise)
-            [%quickcheck.shrinker: [`A of Id.t | `B of [%custom mu]]]))
+            [%quickcheck.shrinker: [`A of Id.t | `B of [%custom mu]]] ))
 end
 
 module Quickcheck_id = Quickcheck_generic (Common.C_id)

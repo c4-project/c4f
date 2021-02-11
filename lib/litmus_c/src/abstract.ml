@@ -23,16 +23,14 @@ end
 let ensure_functions :
     Ast.External_decl.t list -> Ast.Function_def.t list Or_error.t =
   Tx.Or_error.combine_map ~f:(function
-    | `Fun f ->
-        Ok f
+    | `Fun f -> Ok f
     | d ->
         Or_error.error_s
-          [%message "Expected a function" ~got:(d : Ast.External_decl.t)])
+          [%message "Expected a function" ~got:(d : Ast.External_decl.t)] )
 
 let validate_func_void_type (f : Ast.Function_def.t) : Validate.t =
   match f.decl_specs with
-  | [`Void] ->
-      Validate.pass
+  | [`Void] -> Validate.pass
   | xs ->
       Validate.fail_s
         [%message "Expected 'void'" ~got:(xs : Ast.Decl_spec.t list)]
@@ -64,8 +62,7 @@ let func_signature :
       Or_error.(param_list |> param_type_list >>| Tuple2.create name)
   | {pointer= None; direct= Fun_call (Id name, param_list)} as x -> (
     match param_list with
-    | [] ->
-        Ok (name, [])
+    | [] -> Ok (name, [])
     | _ ->
         Or_error.error_s
           [%message

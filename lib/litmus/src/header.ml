@@ -67,7 +67,7 @@ Travesty.Bi_traversable.Make1_right (struct
         (MA.bi_map_m (init aux) ~left ~right)
         (MP.bi_map_m (postcondition aux) ~left ~right)
         ~f:(fun init postcondition ->
-          make ~name ~init ?locations ?postcondition ())
+          make ~name ~init ?locations ?postcondition () )
   end
 end)
 
@@ -147,20 +147,16 @@ module Change_set = struct
       (change : [< `Keep | `Replace_with of a]) (header : const hdr) :
       const hdr =
     match change with
-    | `Keep ->
-        header
-    | `Replace_with x ->
-        Field.fset field header x
+    | `Keep -> header
+    | `Replace_with x -> Field.fset field header x
 
   let apply_keep_clear_replace (type a const)
       (field : ([> `Set_and_create], const hdr, a option) Field.t_with_perm)
       (change : [`Keep | `Clear | `Replace_with of a]) (header : const hdr) :
       const hdr =
     match change with
-    | `Clear ->
-        apply_keep_replace field (`Replace_with None) header
-    | `Keep ->
-        header
+    | `Clear -> apply_keep_replace field (`Replace_with None) header
+    | `Keep -> header
     | `Replace_with x ->
         apply_keep_replace field (`Replace_with (Some x)) header
 

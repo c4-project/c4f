@@ -42,18 +42,12 @@ let reduce_step (expr : t) ~(constant : Constant.t -> 'a)
     ~(bop : Op.Binary.t -> t -> t -> 'a) ~(uop : Op.Unary.t -> t -> 'a)
     ~(ternary : t Expr_ternary.t -> 'a) : 'a =
   match expr with
-  | Constant k ->
-      constant k
-  | Address l ->
-      address l
-  | Atomic ld ->
-      atomic ld
-  | Bop (b, x, y) ->
-      bop b x y
-  | Uop (u, x) ->
-      uop u x
-  | Ternary t ->
-      ternary t
+  | Constant k -> constant k
+  | Address l -> address l
+  | Atomic ld -> atomic ld
+  | Bop (b, x, y) -> bop b x y
+  | Uop (u, x) -> uop u x
+  | Ternary t -> ternary t
 
 let anonymise =
   reduce_step
@@ -74,7 +68,7 @@ let quickcheck_observer : t Base_quickcheck.Observer.t =
             | `C of [%custom Atomic_expression.quickcheck_observer mu]
             | `D of Op.Binary.t * [%custom mu] * [%custom mu]
             | `E of Op.Unary.t * [%custom mu]
-            | `F of [%custom Expr_ternary.quickcheck_observer mu] ]]))
+            | `F of [%custom Expr_ternary.quickcheck_observer mu] ]] ))
 
 let lvalue (l : Lvalue.t) : t = Address (Lvalue l)
 
@@ -163,7 +157,7 @@ module Base_map (Ap : Applicative.S) = struct
         ~address:(address >> Ap.map ~f:(Accessor.construct Acc.address))
         ~atomic:(atomic >> Ap.map ~f:(Accessor.construct Acc.atomic))
         ~bop:(fun o l r ->
-          Ap.map ~f:(Accessor.construct Acc.bop) (bop (o, l, r)))
+          Ap.map ~f:(Accessor.construct Acc.bop) (bop (o, l, r)) )
         ~uop:(fun o x -> Ap.map ~f:(Accessor.construct Acc.uop) (uop (o, x)))
         ~ternary:(ternary >> Ap.map ~f:(Accessor.construct Acc.ternary)))
 end
@@ -204,8 +198,7 @@ module Type_check (E : Env_types.S) = struct
                 ~right:(r_type : Type.t)]
       in
       match b with
-      | Rel _ ->
-          return Type.(bool ())
+      | Rel _ -> return Type.(bool ())
       | Arith _ | Bitwise _ ->
           require_unified_bop_type b ~want:Type.(int ()) ~got:u_type
       | Logical _ ->
@@ -242,7 +235,7 @@ module Type_check (E : Env_types.S) = struct
       ~bop:(fun b l r ->
         Or_error.Let_syntax.(
           let%bind l = l and r = r in
-          type_of_resolved_bop b l r))
+          type_of_resolved_bop b l r) )
       ~uop:(fun b -> Or_error.bind ~f:(type_of_resolved_uop b))
       ~atomic:type_of_atomic ~ternary:type_of_ternary
 end

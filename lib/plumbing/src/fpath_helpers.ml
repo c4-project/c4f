@@ -13,15 +13,13 @@ open Base
 
 let of_string (s : string) : Fpath.t Or_error.t =
   Result.map_error (Fpath.of_string s) ~f:(function `Msg s ->
-      Error.of_string s)
+      Error.of_string s )
 
 let lift_str (s : string option) ~(f : Fpath.t -> 'a) ~(default : 'a) :
     'a Or_error.t =
   match s with
-  | None ->
-      Or_error.return default
-  | Some s ->
-      Or_error.(s |> of_string >>| f)
+  | None -> Or_error.return default
+  | Some s -> Or_error.(s |> of_string >>| f)
 
 let of_string_option : string option -> Fpath.t option Or_error.t =
   lift_str ~f:Option.some ~default:None

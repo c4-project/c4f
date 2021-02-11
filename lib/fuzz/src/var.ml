@@ -28,10 +28,8 @@ module Record = struct
 
     let pp_source (f : Formatter.t) (x : t) : unit =
       ( match x.source with
-      | `Existing ->
-          Fmt.(styled `Red (any "existing"))
-      | `Generated ->
-          Fmt.(styled `Green (any "generated")) )
+      | `Existing -> Fmt.(styled `Red (any "existing"))
+      | `Generated -> Fmt.(styled `Green (any "generated")) )
         f ()
 
     let pp_ty : t Fmt.t =
@@ -53,7 +51,7 @@ module Record = struct
       String.concat ~sep:";"
         (List.filter_opt
            [ Option.some_if x.has_dependencies "Dep"
-           ; Option.some_if x.has_writes "Write" ])
+           ; Option.some_if x.has_writes "Write" ] )
 
     let pp : t Fmt.t =
       Fmt.concat ~sep:Fmt.comma
@@ -81,10 +79,8 @@ module Record = struct
   let is_global (r : t) : bool = Common.Scope.is_global (scope r)
 
   let was_generated : t -> bool = function
-    | {source= `Generated; _} ->
-        true
-    | {source= `Existing; _} ->
-        false
+    | {source= `Generated; _} -> true
+    | {source= `Existing; _} -> false
 
   let can_safely_modify : t -> bool =
     (* We don't know whether variables that existed before fuzzing have any
@@ -130,7 +126,7 @@ module Map = struct
     Or_error.(
       test |> Fir.Litmus.Var.make_alist
       >>| List.map ~f:(fun (id, {Fir.Litmus.Var.Record.ty; _}) ->
-              (id, make_existing_record id ty))
+              (id, make_existing_record id ty) )
       >>= C4f_common.Scoped_map.of_litmus_id_alist)
 
   let register_var ?(initial_value : Fir.Constant.t option) (map : t)
@@ -150,10 +146,8 @@ module Map = struct
 
   let has_dependencies (map : t) ~(id : Common.Litmus_id.t) : bool =
     match Common.Scoped_map.find_by_litmus_id map ~id with
-    | Ok r ->
-        Record.has_dependencies r
-    | _ ->
-        false
+    | Ok r -> Record.has_dependencies r
+    | _ -> false
 
   let dependency_error (var : Common.Litmus_id.t) : unit Or_error.t =
     Or_error.error_s
@@ -165,7 +159,7 @@ module Map = struct
     Or_error.Let_syntax.(
       let%map () =
         Tx.Or_error.when_m (has_dependencies map ~id) ~f:(fun () ->
-            dependency_error id)
+            dependency_error id )
       in
       erase_value_inner map ~id)
 
@@ -230,6 +224,6 @@ module Map = struct
       Sequence.fold_m (Sequence.init n ~f:Fn.id)
         ~init:(existing, []) ~bind ~return ~f:(fun (existing, vs) _ ->
           gen_fresh_var' (Set.mem existing)
-          >>| fun v -> (Set.add existing v, v :: vs))
+          >>| fun v -> (Set.add existing v, v :: vs) )
       >>| snd)
 end

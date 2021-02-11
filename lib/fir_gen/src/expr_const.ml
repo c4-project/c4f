@@ -29,9 +29,7 @@ type gctx =
     have operands of value type [in_type], but result in [k]. *)
 let kbop (k : Fir.Constant.t) ~(in_type : Fir.Type.Prim.t) :
     Op.bop_gen option =
-  Op.bop_with_output
-    ~ops:(Fir.Op.Binary.of_input_prim_type in_type)
-    (Const k)
+  Op.bop_with_output ~ops:(Fir.Op.Binary.of_input_prim_type in_type) (Const k)
 
 (** [idem_bop t] tries to make a generator for binary operations that take
     inputs of type [t] and are idempotent. *)
@@ -59,7 +57,7 @@ let var_kv_bop ~(gen_load : (t * Fir.Env.Record.t) Q.Generator.t)
     ~(k_mu : Fir.Constant.t -> t Q.Generator.t) ~(bop : Op.bop_gen) :
     t Q.Generator.t =
   Expr_util.gen_kv_refl ~gen_load ~gen_op:(fun l r ->
-      bop (Fn.compose Expr_util.half k_mu) (Two (l, r)))
+      bop (Fn.compose Expr_util.half k_mu) (Two (l, r)) )
 
 (** [diff_will_underflow x y] checks whether [x - y] will underflow, without
     explicitly calculating it. *)
@@ -87,7 +85,7 @@ let make_int_kv_equation (var : t) ~(target : int32) ~(kv : int32) : t option
           Fir.Expression.(
             if diff32 = min_value || diff32 > 0l then
               Infix.(var + int_lit diff)
-            else Infix.(var - int_lit (Int.abs diff)))))
+            else Infix.(var - int_lit (Int.abs diff))) ))
 
 let make_kv_equation (k : Fir.Constant.t) (var : t) (rc : Fir.Env.Record.t) :
     t =
@@ -138,7 +136,7 @@ let kbop_generators ({kbop; arb; load; _} : gctx)
   List.filter_opt
     [ Option.map kbop ~f:(fun bop -> (3.0, arb_bop ~k_mu ~gen_arb:arb ~bop))
     ; Option.map2 kbop load ~f:(fun bop gen_load ->
-          (5.0, var_kv_bop ~k_mu ~gen_load ~bop)) ]
+          (5.0, var_kv_bop ~k_mu ~gen_load ~bop) ) ]
 
 (** [ternaries ~mu ~k_mu ~arb] generates ternary expressions where the
     condition is a constant-value Boolean expression from [k_mu], the
@@ -179,7 +177,7 @@ let recursive_generators (k : Fir.Constant.t) (mu : t Q.Generator.t)
             ( 3.0
             , Q.Generator.Let_syntax.(
                 let%bind x = Expr_util.half mu and y = Expr_util.half mu in
-                bop (Fn.compose Expr_util.half k_mu) (Two (x, y))) )) ]
+                bop (Fn.compose Expr_util.half k_mu) (Two (x, y))) ) ) ]
 
 let rec_on_other_constant (k : Fir.Constant.t) ~(this_k : Fir.Constant.t)
     ~(mu : Fir.Constant.t -> t Q.Generator.t) : t Q.Generator.t option =
@@ -235,10 +233,8 @@ let gen (k : Fir.Constant.t) (env : env) ~(int : env -> t Q.Generator.t)
     in
     let k_gctx =
       match Fir.Constant.prim_type_of k with
-      | Int ->
-          int_gctx
-      | Bool ->
-          bool_gctx
+      | Int -> int_gctx
+      | Bool -> bool_gctx
     in
     let k_mu = rec_on_other_constant ~this_k:k ~mu:k_mu in
     Q.Generator.weighted_recursive_union

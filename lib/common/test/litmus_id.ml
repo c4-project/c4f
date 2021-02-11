@@ -45,14 +45,14 @@ let%test_module "Id tests" =
         (module Src.Litmus_id)
         ~f:(fun ident ->
           [%test_eq: Src.Litmus_id.t] ~here:[[%here]] ident
-            Src.Litmus_id.(of_string (to_string ident)))
+            Src.Litmus_id.(of_string (to_string ident)) )
 
     let%test_unit "to_memalloy_id is identity on globals" =
       Base_quickcheck.Test.run_exn
         (module Src.C_id)
         ~f:(fun ident ->
           [%test_eq: Src.C_id.t] ~here:[[%here]] ident
-            Src.Litmus_id.(to_memalloy_id (global ident)))
+            Src.Litmus_id.(to_memalloy_id (global ident)) )
   end )
 
 let%test_module "is_in_local_scope" =
@@ -82,7 +82,7 @@ let%test_unit "to_memalloy_id doesn't throw when creating local identifiers"
     end )
     ~f:(fun (t, id) ->
       let mid = Src.Litmus_id.(to_memalloy_id (local t id)) in
-      ignore (mid : Src.C_id.t))
+      ignore (mid : Src.C_id.t) )
 
 let%test_module "Assoc" =
   ( module struct
@@ -90,7 +90,7 @@ let%test_module "Assoc" =
       let input = ["foo = barbaz"; "foobar"; "foo=bar=baz"] in
       let output =
         Src.Litmus_id.Assoc.try_parse input ~value_parser:(fun xo ->
-            Ok (Option.value xo ~default:"[empty]"))
+            Ok (Option.value xo ~default:"[empty]") )
       in
       Stdio.print_s
         [%sexp (output : (Src.Litmus_id.t, string) List.Assoc.t Or_error.t)] ;

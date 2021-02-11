@@ -23,7 +23,7 @@ module Base_map (M : Base.Applicative.S) : sig
        'm1 Statement.t
     -> prim:
          (   ('m1, Prim_statement.t) With_meta.t
-          -> ('m2, Prim_statement.t) With_meta.t M.t)
+          -> ('m2, Prim_statement.t) With_meta.t M.t )
     -> if_stm:('m1 Statement.If.t -> 'm2 Statement.If.t M.t)
     -> flow:('m1 Statement.Flow_block.t -> 'm2 Statement.Flow_block.t M.t)
     -> 'm2 Statement.t M.t

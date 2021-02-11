@@ -47,10 +47,8 @@ let truth : t = Bool true
 let falsehood : t = Bool false
 
 let prim_type_of : t -> Type.Prim.t = function
-  | Bool _ ->
-      Bool
-  | Int _ ->
-      Int
+  | Bool _ -> Bool
+  | Int _ -> Int
 
 let type_of (x : t) : Type.t = Type.make (Type.Basic.make (prim_type_of x))
 
@@ -83,23 +81,18 @@ let pp (f : Formatter.t) : t -> unit =
   reduce ~int:(Fmt.int f) ~bool:(Fmt.bool f)
 
 let yojson_of_t : t -> Yojson.Safe.t = function
-  | Bool d ->
-      `Bool d
-  | Int i ->
-      `Int i
+  | Bool d -> `Bool d
+  | Int i -> `Int i
 
 let t_of_yojson' (json : Yojson.Safe.t) : (t, string) Result.t =
   let js = [json] in
   Yojson.Safe.Util.(
     match filter_int js with
-    | [i] ->
-        Result.return (int i)
+    | [i] -> Result.return (int i)
     | _ -> (
       match filter_bool js with
-      | [b] ->
-          Result.return (bool b)
-      | _ ->
-          Result.fail "malformed JSON encoding of C literal" ))
+      | [b] -> Result.return (bool b)
+      | _ -> Result.fail "malformed JSON encoding of C literal" ))
 
 let t_of_yojson (json : Yojson.Safe.t) : t =
   Result.ok_or_failwith (t_of_yojson' json)
@@ -155,26 +148,18 @@ let convert_as_bool : t -> bool Or_error.t =
   (* Draft C11, 6.3.1.2 - sort of. We represent _Bool 0 as false, and _Bool 1
      as true. *)
   function
-  | Bool b ->
-      Ok b
-  | Int 0 ->
-      Ok false
-  | Int _ ->
-      Ok true
+  | Bool b -> Ok b
+  | Int 0 -> Ok false
+  | Int _ -> Ok true
 
 let convert_as_int : t -> int Or_error.t = function
-  | Int k ->
-      Ok k
-  | Bool false ->
-      Ok 0
-  | Bool true ->
-      Ok 1
+  | Int k -> Ok k
+  | Bool false -> Ok 0
+  | Bool true -> Ok 1
 
 let convert (x : t) ~(to_ : Type.Prim.t) : t Or_error.t =
   (* The Or_error wrapper is future-proofing for if we have unconvertable
      constants later on. *)
   match to_ with
-  | Bool ->
-      Or_error.(x |> convert_as_bool >>| fun x -> Bool x)
-  | Int ->
-      Or_error.(x |> convert_as_int >>| fun x -> Int x)
+  | Bool -> Or_error.(x |> convert_as_bool >>| fun x -> Bool x)
+  | Int -> Or_error.(x |> convert_as_int >>| fun x -> Int x)

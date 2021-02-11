@@ -46,12 +46,9 @@ module Change_set = struct
       (x : [`Keep | `Clear | `Replace_with of a]) ~(f : a -> b Or_error.t) :
       [`Keep | `Clear | `Replace_with of b] Or_error.t =
     match x with
-    | `Keep ->
-        Or_error.return `Keep
-    | `Clear ->
-        Or_error.return `Clear
-    | `Replace_with y ->
-        Or_error.map ~f:(fun y' -> `Replace_with y') (f y)
+    | `Keep -> Or_error.return `Keep
+    | `Clear -> Or_error.return `Clear
+    | `Replace_with y -> Or_error.map ~f:(fun y' -> `Replace_with y') (f y)
 
   let of_args ?(name : [`Keep | `Replace_with of string] = `Keep)
       ?(postcondition : [`Keep | `Clear | `Replace_with of string] = `Keep)
@@ -81,7 +78,7 @@ module Filters = struct
   let run_modify (input : Plumbing.Input.t) (output : Plumbing.Output.t)
       ~(changes : Change_set.t) : unit Or_error.t =
     lift_on_header input output ~f:(fun header ->
-        C4f_litmus.Header.Change_set.apply changes ~header)
+        C4f_litmus.Header.Change_set.apply changes ~header )
 
   let run_replace (input : Plumbing.Input.t) (output : Plumbing.Output.t)
       ~(replacement : t) : unit Or_error.t =

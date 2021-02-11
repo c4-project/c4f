@@ -27,7 +27,7 @@ let test_typing : Src.Type.t Map.M(Ac.C_id).t Lazy.t =
          ; (Ac.C_id.of_string "x", int ~is_atomic:true ())
          ; (Ac.C_id.of_string "y", int ~is_atomic:true ())
          ; (Ac.C_id.of_string "z", bool ~is_atomic:true ())
-         ; (Ac.C_id.of_string "blep", int ~is_pointer:true ()) ])
+         ; (Ac.C_id.of_string "blep", int ~is_pointer:true ()) ] )
 
 let det_known_values : Src.Constant.t Map.M(Ac.C_id).t Lazy.t =
   lazy
@@ -41,7 +41,7 @@ let det_known_values : Src.Constant.t Map.M(Ac.C_id).t Lazy.t =
          ; (Ac.C_id.of_string "x", int 27)
          ; (Ac.C_id.of_string "y", int 53)
          ; (Ac.C_id.of_string "z", bool false)
-         ; (Ac.C_id.of_string "blep", int 99) ])
+         ; (Ac.C_id.of_string "blep", int 99) ] )
 
 let lift_to_full (e : Src.Type.t Map.M(Ac.C_id).t Lazy.t) : Src.Env.t Lazy.t
     =

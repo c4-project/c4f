@@ -41,7 +41,7 @@ module Lang :
 
     let listing ({value; _} : t) : Statement.t list =
       List.map (Function.body_decls value) ~f:(fun (name, value) ->
-          `Decl (Common.C_named.make value ~name))
+          `Decl (Common.C_named.make value ~name) )
       @ List.map (Function.body_stms value) ~f:(fun x -> `Stm x)
 
     let global_vars (np : t) =
@@ -78,7 +78,7 @@ module Var = struct
         |> List.reduce
              ~f:
                (Utils.My_list.merge_preserving_order
-                  [%equal: Common.C_id.t * Type.t])
+                  [%equal: Common.C_id.t * Type.t] )
         |> Result.of_option
              ~error:(Error.of_string "need at least one function")
       in
@@ -88,7 +88,7 @@ module Var = struct
              ~compare:(Comparable.lift ~f:fst Common.C_id.compare)
         |> List.map ~f:(fun (d, _) ->
                Or_error.errorf "parameter definition inconsistency: %s"
-                 (Common.C_id.to_string d))
+                 (Common.C_id.to_string d) )
         |> Or_error.combine_errors_unit
       in
       ps)
@@ -121,7 +121,7 @@ module Var = struct
     List.map decs ~f:(fun ([name; ix], {Initialiser.ty; value}) ->
         let param_index = ix + starts_at in
         ( Common.Litmus_id.local tid name
-        , {Record.ty; param_index; initial_value= Some value} ))
+        , {Record.ty; param_index; initial_value= Some value} ) )
 
   let make_alist (vast : Test.t) :
       (C4f_common.Litmus_id.t, Record.t) List.Assoc.t Or_error.t =

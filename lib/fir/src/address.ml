@@ -31,24 +31,20 @@ let of_variable_str_exn (vs : string) : t =
 
 let ref_lvalue (l : Lvalue.t) : t =
   match Lvalue.un_deref l with
-  | Ok l' ->
-      Lvalue l'
-  | Error _ ->
-      Ref (Lvalue l)
+  | Ok l' -> Lvalue l'
+  | Error _ -> Ref (Lvalue l)
 
 let ref_normal : t -> t = function Lvalue k -> ref_lvalue k | x -> Ref x
 
 let rec reduce (addr : t) ~(lvalue : Lvalue.t -> 'a) ~(ref : 'a -> 'a) : 'a =
   match addr with
-  | Lvalue lv ->
-      lvalue lv
-  | Ref rest ->
-      ref (reduce rest ~lvalue ~ref)
+  | Lvalue lv -> lvalue lv
+  | Ref rest -> ref (reduce rest ~lvalue ~ref)
 
 let lvalue_of : ('i, Lvalue.t, t, [< field]) Accessor.Simple.t =
   [%accessor
     Accessor.field ~get:(reduce ~lvalue:Fn.id ~ref:Fn.id) ~set:(fun x v ->
-        reduce x ~lvalue:(fun _ -> Lvalue v) ~ref:(fun x -> Ref x))]
+        reduce x ~lvalue:(fun _ -> Lvalue v) ~ref:(fun x -> Ref x) )]
 
 module On_lvalues :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
@@ -71,15 +67,12 @@ let normalise (addr : t) : t =
 
 let deref (addr : t) : t =
   match normalise addr with
-  | Ref x ->
-      x
-  | Lvalue l ->
-      Lvalue (Accessor.construct Lvalue.deref l)
+  | Ref x -> x
+  | Lvalue l -> Lvalue (Accessor.construct Lvalue.deref l)
 
 let as_lvalue (addr : t) : Lvalue.t Or_error.t =
   match normalise addr with
-  | Lvalue x ->
-      Ok x
+  | Lvalue x -> Ok x
   | Ref _ ->
       Or_error.error_s
         [%message
@@ -119,13 +112,13 @@ end = struct
     Observer.(
       fixed_point (fun mu ->
           unmap ~f:anonymise
-            [%quickcheck.observer: [`A of Lv.t | `B of [%custom mu]]]))
+            [%quickcheck.observer: [`A of Lv.t | `B of [%custom mu]]] ))
 
   let quickcheck_shrinker : t Shrinker.t =
     Shrinker.(
       fixed_point (fun mu ->
           map ~f:deanonymise ~f_inverse:anonymise
-            [%quickcheck.shrinker: [`A of Lv.t | `B of [%custom mu]]]))
+            [%quickcheck.shrinker: [`A of Lv.t | `B of [%custom mu]]] ))
 end
 
 module Quickcheck_main = Quickcheck_generic (Lvalue)

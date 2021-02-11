@@ -34,7 +34,7 @@ let%test_module "model" =
                       (Expr.Binary
                          ( Expr.Identifier (Ac.C_id.of_string "x")
                          , `Assign
-                         , Expr.Identifier (Ac.C_id.of_string "y") )))) ]) ;
+                         , Expr.Identifier (Ac.C_id.of_string "y") ) ) ) ) ]) ;
       [%expect
         {|
           (Ok
@@ -58,13 +58,13 @@ let%test_module "model" =
                   (Binary
                      ( Identifier (Ac.C_id.of_string "x")
                      , `Assign
-                     , Constant (Integer 0) ))
+                     , Constant (Integer 0) ) )
             ; cond=
                 Some
                   (Binary
                      ( Identifier (Ac.C_id.of_string "x")
                      , `Lt
-                     , Constant (Integer 42) ))
+                     , Constant (Integer 42) ) )
             ; update=
                 Some (Postfix (Identifier (Ac.C_id.of_string "x"), `Inc))
             ; body= Stm.Expr None }) ;
@@ -89,13 +89,13 @@ let%test_module "model" =
                   (Binary
                      ( Identifier (Ac.C_id.of_string "x")
                      , `Assign
-                     , Constant (Integer 53) ))
+                     , Constant (Integer 53) ) )
             ; cond=
                 Some
                   (Binary
                      ( Identifier (Ac.C_id.of_string "x")
                      , `Ne
-                     , Constant (Integer 27) ))
+                     , Constant (Integer 27) ) )
             ; update=
                 Some (Postfix (Identifier (Ac.C_id.of_string "x"), `Dec))
             ; body= Stm.Expr None }) ;
@@ -120,13 +120,13 @@ let%test_module "model" =
                   (Binary
                      ( Identifier (Ac.C_id.of_string "x")
                      , `Assign
-                     , Constant (Integer 42) ))
+                     , Constant (Integer 42) ) )
             ; cond=
                 Some
                   (Binary
                      ( Identifier (Ac.C_id.of_string "x")
                      , `Ge
-                     , Constant (Integer 0) ))
+                     , Constant (Integer 0) ) )
             ; update=
                 Some (Postfix (Identifier (Ac.C_id.of_string "x"), `Dec))
             ; body= Stm.Expr None }) ;
@@ -154,7 +154,7 @@ let%test_module "model" =
                       [ Prefix (`Ref, Identifier (Ac.C_id.of_string "x"))
                       ; Constant (Integer 42)
                       ; Identifier (Ac.C_id.of_string "memory_order_relaxed")
-                      ] }))) ;
+                      ] } ) )) ;
       [%expect
         {|
       (Ok
@@ -175,14 +175,14 @@ let%test_module "model" =
                   { func=
                       Identifier
                         (Ac.C_id.of_string
-                           "atomic_compare_exchange_strong_explicit")
+                           "atomic_compare_exchange_strong_explicit" )
                   ; arguments=
                       [ Prefix (`Ref, Identifier (Ac.C_id.of_string "x"))
                       ; Prefix (`Ref, Identifier (Ac.C_id.of_string "y"))
                       ; Constant (Integer 42)
                       ; Identifier (Ac.C_id.of_string "memory_order_relaxed")
                       ; Identifier (Ac.C_id.of_string "memory_order_relaxed")
-                      ] }))) ;
+                      ] } ) )) ;
       [%expect
         {|
       (Ok

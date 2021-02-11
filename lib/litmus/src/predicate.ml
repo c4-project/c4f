@@ -21,12 +21,9 @@ module Element = struct
 
   let pp (f : Formatter.t) (e : 'const t) ~(pp_const : 'const Fmt.t) : unit =
     match e with
-    | Bool true ->
-        Fmt.pf f "true"
-    | Bool false ->
-        Fmt.pf f "false"
-    | Eq (i, c) ->
-        Fmt.pf f "%a@ ==@ %a" Id.pp i pp_const c
+    | Bool true -> Fmt.pf f "true"
+    | Bool false -> Fmt.pf f "false"
+    | Eq (i, c) -> Fmt.pf f "%a@ ==@ %a" Id.pp i pp_const c
 
   module BT :
     Travesty.Bi_traversable_types.S1_right
@@ -40,8 +37,7 @@ module Element = struct
       let bi_map_m (t : 'a t) ~(left : Id.t -> Id.t M.t)
           ~(right : 'a -> 'b M.t) : 'b t M.t =
         match t with
-        | Bool k ->
-            M.return (Bool k)
+        | Bool k -> M.return (Bool k)
         | Eq (id, c) ->
             M.map2 ~f:(fun id' c' -> Eq (id', c')) (left id) (right c)
     end
@@ -97,37 +93,27 @@ let eq (k : C4f_common.Litmus_id.t) (v : 'const) : 'const t =
 let reduce (x : 'const t) ~(elt : 'const Element.t -> 'a)
     ~(bop : Bop.t -> 'a -> 'a -> 'a) : 'a =
   let rec mu = function
-    | Bop (o, l, r) ->
-        bop o (mu l) (mu r)
-    | Elt e ->
-        elt e
+    | Bop (o, l, r) -> bop o (mu l) (mu r)
+    | Elt e -> elt e
   in
   mu x
 
 let optimising_or (l : 'const t) (r : 'const t) : 'const t =
   match (l, r) with
-  | Elt (Bool true), _ | _, Elt (Bool true) ->
-      bool true
-  | Elt (Bool false), x | x, Elt (Bool false) ->
-      x
-  | Bop (Or, x, y), z ->
-      or_ x (or_ y z)
-  | _ ->
-      or_ l r
+  | Elt (Bool true), _ | _, Elt (Bool true) -> bool true
+  | Elt (Bool false), x | x, Elt (Bool false) -> x
+  | Bop (Or, x, y), z -> or_ x (or_ y z)
+  | _ -> or_ l r
 
 let optimising_or_seq (xs : 'const t Sequence.t) : 'const t =
   Sequence.fold xs ~init:(bool false) ~f:optimising_or
 
 let optimising_and (l : 'const t) (r : 'const t) : 'const t =
   match (l, r) with
-  | Elt (Bool false), _ | _, Elt (Bool false) ->
-      bool false
-  | Elt (Bool true), x | x, Elt (Bool true) ->
-      x
-  | Bop (And, x, y), z ->
-      and_ x (and_ y z)
-  | _ ->
-      and_ l r
+  | Elt (Bool false), _ | _, Elt (Bool false) -> bool false
+  | Elt (Bool true), x | x, Elt (Bool true) -> x
+  | Bop (And, x, y), z -> and_ x (and_ y z)
+  | _ -> and_ l r
 
 let optimising_and_seq (xs : 'const t Sequence.t) : 'const t =
   Sequence.fold xs ~init:(bool true) ~f:optimising_and
@@ -163,8 +149,7 @@ module BT :
           M.map2
             ~f:(fun l' r' -> Bop (op, l', r'))
             (bi_map_m ~left ~right l) (bi_map_m ~left ~right r)
-      | Elt x ->
-          M.map (Pe.bi_map_m ~left ~right x) ~f:(fun x' -> Elt x')
+      | Elt x -> M.map (Pe.bi_map_m ~left ~right x) ~f:(fun x' -> Elt x')
   end
 end)
 
@@ -207,36 +192,32 @@ module Q : Quickcheck.S1 with type 'const t := 'const t = struct
       ~f:(fun mu ->
         [ G.map
             ~f:(fun (o, l, r) -> Bop (o, l, r))
-            [%quickcheck.generator: Bop.t * [%custom mu] * [%custom mu]] ])
+            [%quickcheck.generator: Bop.t * [%custom mu] * [%custom mu]] ] )
 
   let quickcheck_observer (elt : 'const O.t) : 'const t O.t =
     O.fixed_point (fun mu ->
         O.unmap ~f:anonymise
           [%quickcheck.observer:
             [ `A of Bop.t * [%custom mu] * [%custom mu]
-            | `B of [%custom elt] Element.t ]])
+            | `B of [%custom elt] Element.t ]] )
 
   let quickcheck_shrinker (elt : 'const S.t) : 'const t S.t =
     S.fixed_point (fun mu ->
         S.map ~f:deanonymise ~f_inverse:anonymise
           [%quickcheck.shrinker:
             [ `A of Bop.t * [%custom mu] * [%custom mu]
-            | `B of [%custom elt] Element.t ]])
+            | `B of [%custom elt] Element.t ]] )
 end
 
 include Q
 
 let left_needs_brackets (o : Bop.t) : 'const t -> bool = function
-  | Bop (o', _, _) ->
-      not (Bop.equal o o')
-  | Elt _ ->
-      false
+  | Bop (o', _, _) -> not (Bop.equal o o')
+  | Elt _ -> false
 
 let right_needs_brackets (_o : Bop.t) : 'const t -> bool = function
-  | Bop (_o', _, _) ->
-      true
-  | Elt _ ->
-      false
+  | Bop (_o', _, _) -> true
+  | Elt _ -> false
 
 let rec pp (f : Formatter.t) (pred : 'const t) ~(pp_const : 'const Fmt.t) :
     unit =
@@ -247,5 +228,4 @@ let rec pp (f : Formatter.t) (pred : 'const t) ~(pp_const : 'const Fmt.t) :
       let pp_l = if left_needs_brackets o l then Fmt.parens mu else mu in
       let pp_r = if right_needs_brackets o r then Fmt.parens mu else mu in
       Fmt.(pf f "%a@ %a@ %a" pp_l l Bop.pp o pp_r r)
-  | Elt e ->
-      elt f e
+  | Elt e -> elt f e

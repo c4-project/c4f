@@ -70,7 +70,7 @@ struct
       C_stm_meta.On_lvalues.With_errors.map_m
         ~f:
           (Utils.Accessor.On_error.map Fir.Lvalue.variable_of
-             ~f:rewrite_id_if_local)
+             ~f:rewrite_id_if_local )
 
     (* When rewriting global lvalues (as part of a var-as-global run), we do
        it _after_ address rewriting, as the address rewriting will
@@ -109,7 +109,7 @@ struct
            (Common.Litmus_id.t, Var_map.Record.t) List.Assoc.t
         -> (Common.Litmus_id.t, Var_map.Record.t) List.Assoc.t =
       List.filter ~f:(fun (k, _) ->
-          Common.Litmus_id.is_in_local_scope k ~from:Ctx.thread.tid)
+          Common.Litmus_id.is_in_local_scope k ~from:Ctx.thread.tid )
 
     let expand_parameter ({c_id; c_type; _} : Var_map.Record.t) :
         (Common.C_id.t * Fir.Type.t) Or_error.t =
@@ -159,7 +159,7 @@ struct
         (Error.create_s
            [%message
              "Could not find function in function map."
-               ~name:(name : Common.C_id.t)])
+               ~name:(name : Common.C_id.t)] )
 
   let rewrite_function_name (name : Common.C_id.t) ~(context : Context.t) :
       Common.C_id.t Or_error.t =
@@ -193,7 +193,7 @@ module Vars_as_globals = Make (struct
         Ref
           (Accessor.map Fir.Address.lvalue_of
              ~f:(Accessor.construct Fir.Lvalue.deref)
-             addr)
+             addr )
     in
     Ok addr'
 

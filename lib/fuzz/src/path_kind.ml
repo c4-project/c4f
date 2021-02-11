@@ -32,10 +32,7 @@ module With_action = struct
     | Transform_list of Subject.Statement.t list transformer
 
   let to_kind : t -> M.t = function
-    | Insert _ ->
-        Insert
-    | Transform _ ->
-        Transform
-    | Transform_list _ ->
-        Transform_list
+    | Insert _ -> Insert
+    | Transform _ -> Transform
+    | Transform_list _ -> Transform_list
 end

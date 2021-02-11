@@ -66,7 +66,7 @@ let gen_loadlike (env : env)
     (Utils.My_list.eval_guards
        [ (true, fun () -> (3.0, Expr_prim.Int.gen_load env))
        ; ( Expr_util.has_ints env ~is_atomic:true
-         , fun () -> (1.0, gen_atomic_fetch_idem env ~const) ) ])
+         , fun () -> (1.0, gen_atomic_fetch_idem env ~const) ) ] )
 
 let gen (env : env) ~(bool : env -> t Q.Generator.t)
     ~(const : Fir.Constant.t -> env -> t Q.Generator.t) : t Q.Generator.t =

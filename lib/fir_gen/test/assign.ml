@@ -22,8 +22,8 @@ let print_sample =
         pr "@[%a@]@."
           (using
              (Accessor.construct
-                (Fir.Statement.prim' @> Fir.Prim_statement.assign))
-             C4f_litmus_c.Reify_stm.pp))
+                (Fir.Statement.prim' @> Fir.Prim_statement.assign) )
+             C4f_litmus_c.Reify_stm.pp ))
 
 let%expect_test "Int: samples" =
   let env = Lazy.force Fir_test.Env.test_env in
@@ -31,13 +31,14 @@ let%expect_test "Int: samples" =
     ( module struct
       include Fir.Assign
 
-      include Src.Assign.Int
-                (struct
-                  let env = env
-                end)
-                (struct
-                  let env = env
-                end)
+      include
+        Src.Assign.Int
+          (struct
+            let env = env
+          end)
+          (struct
+            let env = env
+          end)
     end ) ;
   [%expect
     {|
@@ -112,13 +113,14 @@ let%expect_test "Bool: samples" =
     ( module struct
       include Fir.Assign
 
-      include Src.Assign.Bool
-                (struct
-                  let env = env
-                end)
-                (struct
-                  let env = env
-                end)
+      include
+        Src.Assign.Bool
+          (struct
+            let env = env
+          end)
+          (struct
+            let env = env
+          end)
     end ) ;
   [%expect
     {|

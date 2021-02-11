@@ -16,10 +16,8 @@ module Src = C4f_litmus
 let pp_pred : int Src.Predicate.t Fmt.t = Src.Predicate.pp ~pp_const:Int.pp
 
 let eval_int : int Src.Predicate.Element.t -> bool = function
-  | Eq (_, y) ->
-      Int.is_non_negative y
-  | Bool x ->
-      x
+  | Eq (_, y) -> Int.is_non_negative y
+  | Bool x -> x
 
 let eval_pred : int Src.Predicate.t -> bool =
   Src.Postcondition_eval.eval_pred ~elt:eval_int
@@ -49,7 +47,7 @@ let%test_module "optimising_and" =
         ~f:(fun (l, r) ->
           test_eval ~here:[[%here]]
             ~expect:Src.Predicate.Infix.(l && r)
-            Src.Predicate.Infix.(l &&+ r))
+            Src.Predicate.Infix.(l &&+ r) )
 
     let%test_unit "optimising_and_seq on singleton is the identity" =
       Test.run_exn
@@ -58,7 +56,7 @@ let%test_module "optimising_and" =
         end )
         ~f:(fun x ->
           [%test_result: int Src.Predicate.t] ~here:[[%here]] ~expect:x
-            (Src.Predicate.optimising_and_seq (Sequence.singleton x)))
+            (Src.Predicate.optimising_and_seq (Sequence.singleton x)) )
 
     let%test_unit "optimising_and_seq on list append behaves like and of \
                    optimising_and_seqs" =
@@ -70,7 +68,7 @@ let%test_module "optimising_and" =
         ~f:(fun (l, r) ->
           test_eval ~here:[[%here]]
             ~expect:Src.Predicate.(Infix.(opt_and_list l && opt_and_list r))
-            (opt_and_list (l @ r)))
+            (opt_and_list (l @ r)) )
   end )
 
 let%test_module "optimising_or" =
@@ -87,7 +85,7 @@ let%test_module "optimising_or" =
         ~f:(fun (l, r) ->
           test_eval ~here:[[%here]]
             ~expect:Src.Predicate.Infix.(l || r)
-            Src.Predicate.Infix.(l ||+ r))
+            Src.Predicate.Infix.(l ||+ r) )
 
     let%test_unit "optimising_or_seq on singleton is the identity" =
       Test.run_exn
@@ -96,7 +94,7 @@ let%test_module "optimising_or" =
         end )
         ~f:(fun x ->
           [%test_result: int Src.Predicate.t] ~here:[[%here]] ~expect:x
-            (Src.Predicate.optimising_or_seq (Sequence.singleton x)))
+            (Src.Predicate.optimising_or_seq (Sequence.singleton x)) )
 
     let%test_unit "optimising_or_seq on list append behaves like or of \
                    optimising_or_seqs" =
@@ -108,5 +106,5 @@ let%test_module "optimising_or" =
         ~f:(fun (l, r) ->
           test_eval ~here:[[%here]]
             ~expect:Src.Predicate.(Infix.(opt_or_list l || opt_or_list r))
-            (opt_or_list (l @ r)))
+            (opt_or_list (l @ r)) )
   end )

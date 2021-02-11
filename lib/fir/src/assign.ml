@@ -19,12 +19,9 @@ module Source = struct
   let exprs' =
     Accessor.Many.(
       function
-      | Dec ->
-          return Dec
-      | Inc ->
-          return Inc
-      | Expr e ->
-          access e >>| fun e' -> Expr e')
+      | Dec -> return Dec
+      | Inc -> return Inc
+      | Expr e -> access e >>| fun e' -> Expr e')
 
   let exprs : ('i, Expression.t, t, [< many]) Accessor.Simple.t =
     (* This could literally just be [expr], but I'm planning to add more (x
@@ -78,10 +75,8 @@ module Source = struct
 
     let quickcheck_generator =
       Q.Generator.filter quickcheck_generator ~f:(function
-        | Inc | Dec ->
-            false
-        | Expr _ ->
-            true (* assuming Expr generates Boolean expressions! *))
+        | Inc | Dec -> false
+        | Expr _ -> true (* assuming Expr generates Boolean expressions! *) )
   end
 end
 
@@ -108,7 +103,7 @@ module Base_map (M : Applicative.S) = struct
   let bmap (assign : t) ~(dst : Lvalue.t -> Lvalue.t M.t)
       ~(src : Source.t -> Source.t M.t) : t M.t =
     M.map2 (dst assign.dst) (src assign.src) ~f:(fun dst src ->
-        make ~dst ~src)
+        make ~dst ~src )
 end
 
 module On_lvalues :

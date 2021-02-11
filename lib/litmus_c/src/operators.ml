@@ -45,28 +45,17 @@ module Assign = struct
   [@@deriving sexp, equal, compare]
 
   let to_string : t -> string = function
-    | `Assign ->
-        "="
-    | `Assign_mul ->
-        "*="
-    | `Assign_div ->
-        "/="
-    | `Assign_mod ->
-        "%="
-    | `Assign_add ->
-        "+="
-    | `Assign_sub ->
-        "-="
-    | `Assign_shl ->
-        "<<="
-    | `Assign_shr ->
-        ">>="
-    | `Assign_and ->
-        "&="
-    | `Assign_xor ->
-        "^="
-    | `Assign_or ->
-        "|="
+    | `Assign -> "="
+    | `Assign_mul -> "*="
+    | `Assign_div -> "/="
+    | `Assign_mod -> "%="
+    | `Assign_add -> "+="
+    | `Assign_sub -> "-="
+    | `Assign_shl -> "<<="
+    | `Assign_shr -> ">>="
+    | `Assign_and -> "&="
+    | `Assign_xor -> "^="
+    | `Assign_or -> "|="
 
   let pp : t Fmt.t = Fmt.of_to_string to_string
 end
@@ -98,30 +87,18 @@ module Bin = struct
   (* See https://en.cppreference.com/w/c/language/operator_precedence *)
 
   let precedence : t -> int = function
-    | `Mul | `Div | `Mod ->
-        3
-    | `Add | `Sub ->
-        4
-    | `Shl | `Shr ->
-        5
-    | `Lt | `Le | `Gt | `Ge ->
-        6
-    | `Eq | `Ne ->
-        7
-    | `And ->
-        8
-    | `Xor ->
-        9
-    | `Or ->
-        10
-    | `Land ->
-        11
-    | `Lor ->
-        12
-    | #Assign.t ->
-        14
-    | `Comma ->
-        15
+    | `Mul | `Div | `Mod -> 3
+    | `Add | `Sub -> 4
+    | `Shl | `Shr -> 5
+    | `Lt | `Le | `Gt | `Ge -> 6
+    | `Eq | `Ne -> 7
+    | `And -> 8
+    | `Xor -> 9
+    | `Or -> 10
+    | `Land -> 11
+    | `Lor -> 12
+    | #Assign.t -> 14
+    | `Comma -> 15
 
   let binds_same : t -> t -> bool = Comparable.lift Int.equal ~f:precedence
 
@@ -129,46 +106,26 @@ module Bin = struct
     Comparable.lift Int.( < ) ~f:precedence this than
 
   let to_string : t -> string = function
-    | #Assign.t as a ->
-        Assign.to_string a
-    | `Comma ->
-        ","
-    | `Mul ->
-        "*"
-    | `Div ->
-        "/"
-    | `Mod ->
-        "%"
-    | `Add ->
-        "+"
-    | `Sub ->
-        "-"
-    | `Shl ->
-        "<<"
-    | `Shr ->
-        ">>"
-    | `And ->
-        "&"
-    | `Xor ->
-        "^"
-    | `Or ->
-        "|"
-    | `Land ->
-        "&&"
-    | `Lor ->
-        "||"
-    | `Lt ->
-        "<"
-    | `Le ->
-        "<="
-    | `Eq ->
-        "=="
-    | `Ge ->
-        ">="
-    | `Gt ->
-        ">"
-    | `Ne ->
-        "!="
+    | #Assign.t as a -> Assign.to_string a
+    | `Comma -> ","
+    | `Mul -> "*"
+    | `Div -> "/"
+    | `Mod -> "%"
+    | `Add -> "+"
+    | `Sub -> "-"
+    | `Shl -> "<<"
+    | `Shr -> ">>"
+    | `And -> "&"
+    | `Xor -> "^"
+    | `Or -> "|"
+    | `Land -> "&&"
+    | `Lor -> "||"
+    | `Lt -> "<"
+    | `Le -> "<="
+    | `Eq -> "=="
+    | `Ge -> ">="
+    | `Gt -> ">"
+    | `Ne -> "!="
 
   let pp : t Fmt.t = Fmt.of_to_string to_string
 end
@@ -187,24 +144,15 @@ module Pre = struct
   [@@deriving sexp, equal, compare]
 
   let to_string : t -> string = function
-    | `Inc ->
-        "++"
-    | `Dec ->
-        "--"
-    | `Sizeof_val ->
-        "sizeof"
-    | `Ref ->
-        "&"
-    | `Deref ->
-        "*"
-    | `Add ->
-        "+"
-    | `Sub ->
-        "-"
-    | `Not ->
-        "~"
-    | `Lnot ->
-        "!"
+    | `Inc -> "++"
+    | `Dec -> "--"
+    | `Sizeof_val -> "sizeof"
+    | `Ref -> "&"
+    | `Deref -> "*"
+    | `Add -> "+"
+    | `Sub -> "-"
+    | `Not -> "~"
+    | `Lnot -> "!"
 
   let pp : t Fmt.t = Fmt.of_to_string to_string
 end

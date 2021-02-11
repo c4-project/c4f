@@ -85,7 +85,7 @@ let%test_module "exact-flag recognition" =
         ~f:(fun f ->
           [%test_result: bool option] ~here:[[%here]]
             ~equal:[%equal: bool option] ~expect:(Some true)
-            (Src.Flag.to_exact_opt f))
+            (Src.Flag.to_exact_opt f) )
 
     let%test_unit "flags with positive losses and 0 wins are always \
                    exact-false" =
@@ -94,7 +94,7 @@ let%test_module "exact-flag recognition" =
         ~f:(fun f ->
           [%test_result: bool option] ~here:[[%here]]
             ~equal:[%equal: bool option] ~expect:(Some false)
-            (Src.Flag.to_exact_opt f))
+            (Src.Flag.to_exact_opt f) )
   end )
 
 module To_bool_generator (G : sig
@@ -117,7 +117,7 @@ let%test_module "use as quickcheck_generators" =
         end) )
         ~f:
           ([%test_result: bool] ~here:[[%here]] ~equal:[%equal: bool]
-             ~expect:true)
+             ~expect:true )
 
     let%test_unit "always-false flags always generate false" =
       Q.Test.run_exn
@@ -126,5 +126,5 @@ let%test_module "use as quickcheck_generators" =
         end) )
         ~f:
           ([%test_result: bool] ~here:[[%here]] ~equal:[%equal: bool]
-             ~expect:false)
+             ~expect:false )
   end )

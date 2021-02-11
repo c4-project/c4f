@@ -46,7 +46,7 @@ let expr_call_table :
        ( Abstract_atomic.cmpxchg_call_alist model_atomic_cmpxchg_expr
        @ Abstract_atomic.fetch_call_alist model_atomic_fetch_expr
        @ [ ( Common.C_id.of_string Abstract_atomic.load_name
-           , model_atomic_load_expr ) ] ))
+           , model_atomic_load_expr ) ] ) )
 
 let expr_call_handler (func_name : Common.C_id.t) :
     (Ast.Expr.t list -> expr:mu -> Fir.Expression.t Or_error.t) Or_error.t =
@@ -57,7 +57,7 @@ let expr_call_handler (func_name : Common.C_id.t) :
          (Error.create_s
             [%message
               "Unsupported function in expression position"
-                ~got:(func_name : Common.C_id.t)])
+                ~got:(func_name : Common.C_id.t)] )
 
 let function_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list)
     ~(expr : mu) : Fir.Expression.t Or_error.t =
@@ -68,41 +68,26 @@ let function_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list)
 
 let identifier_to_expr (id : Common.C_id.t) : Fir.Expression.t =
   match Abstract_prim.identifier_to_constant id with
-  | Some k ->
-      Fir.Expression.constant k
-  | None ->
-      Fir.Expression.variable id
+  | Some k -> Fir.Expression.constant k
+  | None -> Fir.Expression.variable id
 
 let bop : Operators.Bin.t -> Fir.Op.Binary.t Or_error.t =
   Or_error.(
     Fir.Op.Binary.(
       function
-      | `Add ->
-          return add
-      | `Eq ->
-          return eq
-      | `Ne ->
-          return ne
-      | `Gt ->
-          return gt
-      | `Ge ->
-          return ge
-      | `Le ->
-          return le
-      | `Lt ->
-          return lt
-      | `Land ->
-          return l_and
-      | `Lor ->
-          return l_or
-      | `Sub ->
-          return sub
-      | `And ->
-          return b_and
-      | `Or ->
-          return b_or
-      | `Xor ->
-          return b_xor
+      | `Add -> return add
+      | `Eq -> return eq
+      | `Ne -> return ne
+      | `Gt -> return gt
+      | `Ge -> return ge
+      | `Le -> return le
+      | `Lt -> return lt
+      | `Land -> return l_and
+      | `Lor -> return l_or
+      | `Sub -> return sub
+      | `And -> return b_and
+      | `Or -> return b_or
+      | `Xor -> return b_xor
       | op ->
           error_s
             [%message
@@ -111,8 +96,7 @@ let bop : Operators.Bin.t -> Fir.Op.Binary.t Or_error.t =
 let prefix_op : Operators.Pre.t -> Fir.Op.Unary.t Or_error.t =
   Or_error.(
     function
-    | `Lnot ->
-        return Fir.Op.Unary.l_not
+    | `Lnot -> return Fir.Op.Unary.l_not
     | op ->
         error_s
           [%message
@@ -130,28 +114,22 @@ let ternary (if_ast : Ast.Expr.t) (then_ast : Ast.Expr.t)
     (else_ast : Ast.Expr.t) ~(expr : mu) : Fir.Expression.t Or_error.t =
   Or_error.map3 (expr if_ast) (expr then_ast) (expr else_ast)
     ~f:(fun if_ then_ else_ ->
-      Accessor.construct Fir.Expression.Acc.ternary {if_; then_; else_})
+      Accessor.construct Fir.Expression.Acc.ternary {if_; then_; else_} )
 
 let rec model : Ast.Expr.t -> Fir.Expression.t Or_error.t = function
-  | Brackets e ->
-      model e
-  | Binary (l, op, r) ->
-      model_binary op l r ~expr:model
+  | Brackets e -> model e
+  | Binary (l, op, r) -> model_binary op l r ~expr:model
   | Constant k ->
       Or_error.(k |> Abstract_prim.constant >>| Fir.Expression.constant)
-  | Identifier id ->
-      Ok (identifier_to_expr id)
+  | Identifier id -> Ok (identifier_to_expr id)
   | Prefix (`Deref, x) ->
       Or_error.(
         x |> Abstract_prim.expr_to_lvalue
         >>| Accessor.construct Fir.Lvalue.deref
         >>| Fir.Expression.lvalue)
-  | Prefix (op, x) ->
-      model_prefix op x ~expr:model
-  | Call {func; arguments} ->
-      function_call func arguments ~expr:model
-  | Ternary {cond; t_expr; f_expr} ->
-      ternary cond t_expr f_expr ~expr:model
+  | Prefix (op, x) -> model_prefix op x ~expr:model
+  | Call {func; arguments} -> function_call func arguments ~expr:model
+  | Ternary {cond; t_expr; f_expr} -> ternary cond t_expr f_expr ~expr:model
   | (Postfix _ | Cast _ | Subscript _ | Field _ | Sizeof_type _ | String _)
     as e ->
       Or_error.error_s

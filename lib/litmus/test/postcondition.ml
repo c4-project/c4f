@@ -103,5 +103,5 @@ let%expect_test "pretty-printing example" =
              Infix.(
                C4f_common.Litmus_id.global_of_string_exn "foo" ==? 10
                && C4f_common.Litmus_id.global_of_string_exn "bar" ==? 30
-               || C4f_common.Litmus_id.global_of_string_exn "baz" ==? 50)))) ;
+               || C4f_common.Litmus_id.global_of_string_exn "baz" ==? 50)) )) ;
   [%expect {| exists ((foo == 10 /\ bar == 30) \/ baz == 50) |}]

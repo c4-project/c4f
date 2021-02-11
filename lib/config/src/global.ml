@@ -27,32 +27,25 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
   module File = struct
     let to_weight_opt : Ast.Fuzz.t -> (C4f_common.Id.t * int) option =
       function
-      | Ast.Fuzz.Action (a, w) ->
-          Some (a, Option.value w ~default:1)
-      | Set _ ->
-          None
+      | Ast.Fuzz.Action (a, w) -> Some (a, Option.value w ~default:1)
+      | Set _ -> None
 
     let to_param_opt : Ast.Fuzz.t -> (C4f_common.Id.t * int) option =
       function
-      | Ast.Fuzz.Set (Param (k, v)) ->
-          Some (k, v)
-      | Set _ | Action _ ->
-          None
+      | Ast.Fuzz.Set (Param (k, v)) -> Some (k, v)
+      | Set _ | Action _ -> None
 
     let interpret_flag : Ast.Fuzz.Flag_value.t -> C4f_fuzz.Flag.t Or_error.t
         = function
-      | Exact b ->
-          Or_error.return (C4f_fuzz.Flag.exact b)
-      | Ratio (wins, losses) ->
-          C4f_fuzz.Flag.try_make ~wins ~losses
+      | Exact b -> Or_error.return (C4f_fuzz.Flag.exact b)
+      | Ratio (wins, losses) -> C4f_fuzz.Flag.try_make ~wins ~losses
 
     let to_flag_opt :
         Ast.Fuzz.t -> (C4f_common.Id.t * C4f_fuzz.Flag.t) Or_error.t option =
       function
       | Ast.Fuzz.Set (Flag (k, f)) ->
           Some (Or_error.map ~f:(fun v -> (k, v)) (interpret_flag f))
-      | Set _ | Action _ ->
-          None
+      | Set _ | Action _ -> None
 
     let fuzz_of_ast (ast : Ast.Fuzz.t list) :
         C4f_fuzz_run.Config.t Or_error.t =

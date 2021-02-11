@@ -44,8 +44,8 @@ module BT :
   module On (M : Applicative.S) = struct
     module Pr = Predicate.On (M)
 
-    let bi_map_m (t : 'a t) ~(left : Id.t -> Id.t M.t)
-        ~(right : 'a -> 'b M.t) : 'b t M.t =
+    let bi_map_m (t : 'a t) ~(left : Id.t -> Id.t M.t) ~(right : 'a -> 'b M.t)
+        : 'b t M.t =
       let quantifier = quantifier t in
       M.map
         (Pr.bi_map_m ~left ~right (predicate t))

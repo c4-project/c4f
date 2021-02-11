@@ -22,12 +22,9 @@ let find_at_most_one (type a b) ?(item_name : string = "item")
     b Or_error.t =
   Or_error.(
     match List.filter_map items ~f with
-    | [] ->
-        on_empty
-    | [x] ->
-        return x
-    | _ ->
-        errorf "Duplicate %s" item_name)
+    | [] -> on_empty
+    | [x] -> return x
+    | _ -> errorf "Duplicate %s" item_name)
 
 let find_one_opt (type a b) ?(item_name : string = "item") (items : a list)
     ~(f : a -> b option) : b option Or_error.t =
@@ -121,7 +118,6 @@ let merge_preserving_order (equal : 'a -> 'a -> bool) (l : 'a list)
               , x
                 :: List.rev_append (List.sub r ~pos ~len:(xpos - pos)) merged
               )
-          | None ->
-              (pos, x :: merged))
+          | None -> (pos, x :: merged) )
   in
   List.rev_append merged (List.drop r pos)

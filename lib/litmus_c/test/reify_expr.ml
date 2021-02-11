@@ -91,8 +91,8 @@ let%test_module "examples" =
             (Atomic_load.make
                ~src:
                  (Accessor.construct Address.variable_ref
-                    (C4f_common.C_id.of_string "x"))
-               ~mo:Mem_order.Seq_cst)) ;
+                    (C4f_common.C_id.of_string "x") )
+               ~mo:Mem_order.Seq_cst )) ;
       [%expect {| atomic_load_explicit(&x, memory_order_seq_cst) |}]
   end )
 
@@ -100,13 +100,13 @@ let%test_module "round trips" =
   ( module struct
     let test_round_trip
         (module Qc : C4f_utils.My_quickcheck.S_with_sexp
-          with type t = Fir.Expression.t) : unit =
+          with type t = Fir.Expression.t ) : unit =
       Base_quickcheck.Test.run_exn
         (module Qc)
         ~f:(fun exp ->
           [%test_result: Fir.Expression.t Or_error.t] ~here:[[%here]]
             ~expect:(Ok exp)
-            (Src.Abstract_expr.model (Src.Reify_expr.reify exp)))
+            (Src.Abstract_expr.model (Src.Reify_expr.reify exp)) )
 
     module Make (F : functor (A : Fir.Env_types.S) ->
       C4f_utils.My_quickcheck.S_with_sexp with type t = Fir.Expression.t) =

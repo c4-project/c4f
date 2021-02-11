@@ -44,7 +44,7 @@ let%test_module "depended_upon_idents" =
                  (variable (C4f_common.C_id.of_string "bar"))
                  (lvalue
                     Lvalue.(
-                      Accessor.construct deref (of_variable_str_exn "baz")))))) ;
+                      Accessor.construct deref (of_variable_str_exn "baz")) ) ))) ;
       [%expect {| (foo bar baz) |}]
   end )
 

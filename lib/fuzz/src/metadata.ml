@@ -48,7 +48,6 @@ let liveness (m : t) : Liveness.t =
   Option.value m.@?(generated @> Gen.liveness) ~default:Live
 
 let has_restriction (r : Restriction.t) : t -> bool = function
-  | Existing ->
-      true
+  | Existing -> true
   | Generated g ->
       not Accessor.(is_empty (Gen.restrictions @> Set.found r) g)

@@ -48,11 +48,11 @@ let%test_module "with example map" =
              , { M.Record.c_id= Ci.of_string "y"
                ; c_type= Ct.int ~is_atomic:true ()
                ; mapped_to= Param 0
-               ; initial_value= Some (C4f_fir.Constant.Int 0) } ) ])
+               ; initial_value= Some (C4f_fir.Constant.Int 0) } ) ] )
 
     let print_mappings : (Li.t, M.Record.t) List.Assoc.t -> unit =
       List.iter ~f:(fun (x, v) ->
-          printf "%s -> %s\n" (Li.to_string x) (Ci.to_string v.M.Record.c_id))
+          printf "%s -> %s\n" (Li.to_string x) (Ci.to_string v.M.Record.c_id) )
 
     let%expect_test "globally_mapped_vars" =
       print_mappings (M.globally_mapped_vars map) ;

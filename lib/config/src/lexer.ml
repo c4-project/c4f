@@ -35,7 +35,7 @@ let keywords : token String_map.t Lazy.t =
        ; ("to", TO)
        ; ("true", BOOL true)
        ; ("weight", WEIGHT)
-       ; ("yes", BOOL true) ])
+       ; ("yes", BOOL true) ] )
 
 let digit = [%sedlex.regexp? '0' .. '9']
 
@@ -62,23 +62,13 @@ let lex_possible_keyword (lexeme : string) : token =
 
 let rec token (lexbuf : Sedlexing.lexbuf) : token =
   match%sedlex lexbuf with
-  | space ->
-      token lexbuf
-  | eof ->
-      EOF
-  | eol ->
-      EOL
-  | '#' ->
-      Lu.skip_line lexbuf ; EOL
-  | '{' ->
-      LBRACE
-  | '}' ->
-      RBRACE
-  | ':' ->
-      COLON
-  | Opt '-', num ->
-      INTEGER (Int.of_string (S.Utf8.lexeme lexbuf))
-  | id ->
-      lex_possible_keyword (S.Utf8.lexeme lexbuf)
-  | _ ->
-      F.lex_error ("Unexpected char: " ^ S.Utf8.lexeme lexbuf) lexbuf
+  | space -> token lexbuf
+  | eof -> EOF
+  | eol -> EOL
+  | '#' -> Lu.skip_line lexbuf ; EOL
+  | '{' -> LBRACE
+  | '}' -> RBRACE
+  | ':' -> COLON
+  | Opt '-', num -> INTEGER (Int.of_string (S.Utf8.lexeme lexbuf))
+  | id -> lex_possible_keyword (S.Utf8.lexeme lexbuf)
+  | _ -> F.lex_error ("Unexpected char: " ^ S.Utf8.lexeme lexbuf) lexbuf

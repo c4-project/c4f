@@ -15,7 +15,7 @@ open Import
 let lift_prims (ps : Fir.Prim_statement.t list) ~(meta : Fuzz.Metadata.t) :
     Fuzz.Subject.Statement.t list =
   List.map ps ~f:(fun value ->
-      Accessor.construct Fir.Statement.prim {meta; value})
+      Accessor.construct Fir.Statement.prim {meta; value} )
 
 (** Lists the restrictions we put on source variables. *)
 let basic_src_restrictions : (Fuzz.Var.Record.t -> bool) list Lazy.t =
@@ -77,7 +77,7 @@ struct
         ~predicates:
           (List.append
              (Lazy.force dst_restrictions)
-             (Lazy.force basic_src_restrictions))
+             (Lazy.force basic_src_restrictions) )
       + execute_multi_path_filter B.path_filter)
 
   let has_dependency_cycle (to_insert : B.t) : bool =
@@ -90,7 +90,7 @@ struct
       Accessor.(
         exists (List.each @> Expression_traverse.depended_upon_idents))
         ~f:(fun id ->
-          Option.is_some (List.find dsts ~f:(Common.C_id.equal id))))
+          Option.is_some (List.find dsts ~f:(Common.C_id.equal id)) ))
       srcs
 
   (** [apply_once_only to_insert ~path_flags] decides whether [to_insert],
@@ -102,12 +102,9 @@ struct
     if Set.mem path_flags In_dead_code then false
     else
       match B.Flags.execute_multi_safe with
-      | `Always ->
-          false
-      | `If_no_cycles ->
-          has_dependency_cycle to_insert
-      | `Never ->
-          true
+      | `Always -> false
+      | `If_no_cycles -> has_dependency_cycle to_insert
+      | `Never -> true
 
   module Payload = struct
     type t = B.t Fuzz.Payload_impl.Pathed.t [@@deriving sexp]
@@ -120,7 +117,7 @@ struct
           Or_error.error_s
             [%message
               "Internal error: Environment was empty." ~here:[%here]
-                ~env_name])
+                ~env_name] )
 
     let check_envs (src : Fir.Env.t) (dst : Fir.Env.t) : unit Or_error.t =
       Or_error.combine_errors_unit
@@ -170,7 +167,7 @@ struct
         let%bind dst_var = resolve x ~scope:(Local tid) in
         let%bind () = add_write dst_var in
         when_m B.Flags.erase_known_values ~f:(fun () ->
-            erase_var_value dst_var)))
+            erase_var_value dst_var )))
 
   let bookkeep_dsts (xs : Common.C_id.t list) ~(tid : int) :
       unit Fuzz.State.Monad.t =
@@ -185,7 +182,7 @@ struct
   let bookkeep_new_locals (nls : Fir.Initialiser.t Common.C_named.Alist.t)
       ~(tid : int) : unit Fuzz.State.Monad.t =
     AState.iter Accessor.List.each nls ~f:(fun (name, init) ->
-        Fuzz.State.Monad.register_var (Common.Litmus_id.local tid name) init)
+        Fuzz.State.Monad.register_var (Common.Litmus_id.local tid name) init )
 
   let do_bookkeeping (item : B.t) ~(path : Fuzz.Path.With_meta.t) :
       unit Fuzz.State.Monad.t =
@@ -204,7 +201,7 @@ struct
         (* Variable registration happens as part of the bookkeeping pass. *)
         Fuzz.Subject.Test.declare_var subject
           (Common.Litmus_id.local tid id)
-          init)
+          init )
 
   let stm_metadata (to_insert : B.t)
       (path_flags : Set.M(Fuzz.Path_meta.Flag).t) : Fuzz.Metadata.t =

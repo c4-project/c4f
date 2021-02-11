@@ -31,10 +31,10 @@ let%test_module "paths applied to example code" =
       Fmt.(
         pr "@[<v>%a@]@."
           (C4f_utils.My_format.pp_or_error
-             Action.Test_utils.(using (Fn.flip reify_test vars) pp_tu))
+             Action.Test_utils.(using (Fn.flip reify_test vars) pp_tu) )
           (Src.Path_consumers.consume
              (Lazy.force Subject.Test_data.test)
-             ~path:(Lazy.force path) ~action))
+             ~path:(Lazy.force path) ~action ))
 
     let example_stm : Src.Subject.Statement.t =
       Src.Subject.Statement.make_generated_prim
@@ -42,7 +42,7 @@ let%test_module "paths applied to example code" =
           A.(construct (Prim_statement.atomic @> Atomic_statement.store))
             (Atomic_store.make ~mo:Mem_order.Seq_cst
                ~src:(Expression.int_lit 9001)
-               ~dst:(Address.of_variable_str_exn "y")))
+               ~dst:(Address.of_variable_str_exn "y") ))
 
     let%test_module "insert_stm" =
       ( module struct
@@ -229,7 +229,7 @@ let%test_module "paths applied to example code" =
                    ~cond:(Fir.Expression.bool_lit true)
                    ~t_branch:
                      (Src.Subject.Block.make_generated ~statements ())
-                   ~f_branch:(Src.Subject.Block.make_generated ())) ]
+                   ~f_branch:(Src.Subject.Block.make_generated ()) ) ]
 
         let test_transform_list : Src.Path.With_meta.t Lazy.t -> unit =
           test ~action:(Transform_list iffify)
@@ -296,7 +296,7 @@ let%test_module "produce-consume validity" =
           let quickcheck_generator =
             Or_error.ok_exn
               (Src.Path_producers.try_gen ?filter ~kind
-                 (Lazy.force Subject.Test_data.test))
+                 (Lazy.force Subject.Test_data.test) )
 
           let quickcheck_shrinker =
             (* for now *)
@@ -306,7 +306,7 @@ let%test_module "produce-consume validity" =
           [%test_result: unit Or_error.t] ~here:[[%here]] ~expect:(Ok ())
             (Or_error.map ~f:(Fn.const ())
                (Src.Path_consumers.consume ~path ?filter ~action
-                  (Lazy.force Subject.Test_data.test))))
+                  (Lazy.force Subject.Test_data.test) ) ) )
 
     let%test_module "transform-list" =
       ( module struct
@@ -328,7 +328,7 @@ let%test_module "produce-consume validity" =
           test
             ~filter:
               (Src.Path_filter.require_end_check
-                 (Stm_class (Has_not_any, [Prim (Some Label)])))
+                 (Stm_class (Has_not_any, [Prim (Some Label)])) )
             ()
       end )
 
@@ -352,7 +352,7 @@ let%test_module "produce-consume validity" =
           test
             ~filter:
               (Src.Path_filter.require_end_check
-                 (Stm_class (Has_not_any, [Prim (Some Label)])))
+                 (Stm_class (Has_not_any, [Prim (Some Label)])) )
             ()
       end )
 
@@ -362,7 +362,7 @@ let%test_module "produce-consume validity" =
           test_produce_consume ?filter
             (Insert
                [ Src.Subject.Statement.make_generated_prim
-                   (Accessor.construct Fir.Prim_statement.nop ()) ])
+                   (Accessor.construct Fir.Prim_statement.nop ()) ] )
 
         let%test_unit "unfiltered" = test ()
 
@@ -379,7 +379,7 @@ let%test_module "produce-consume validity" =
           test
             ~filter:
               (Src.Path_filter.require_end_check
-                 (Stm_class (Has_not_any, [Prim (Some Label)])))
+                 (Stm_class (Has_not_any, [Prim (Some Label)])) )
             ()
       end )
   end )

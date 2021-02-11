@@ -39,7 +39,7 @@ module Int
 
 let gen_k_idem
     (module Op_gen : Utils.My_quickcheck.S_with_sexp
-      with type t = Fir.Op.Fetch.t) (k : Fir.Constant.t) (env : env)
+      with type t = Fir.Op.Fetch.t ) (k : Fir.Constant.t) (env : env)
     ~(const : const_f) : t Q.Generator.t =
   (* TODO(@MattWindsor91): perhaps generate these from the rule tables? *)
   let module F =

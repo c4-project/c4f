@@ -34,14 +34,10 @@ let to_initialiser (value : Fir.Constant.t) : Ast.Initialiser.t =
 
 let basic_type_to_spec (b : Fir.Type.Basic.t) : [> Ast.Type_spec.t] =
   match Fir.Type.Basic.(prim b, is_atomic b) with
-  | Int, false ->
-      `Int
-  | Int, true ->
-      `Defined_type (Common.C_id.of_string "atomic_int")
-  | Bool, false ->
-      `Defined_type (Common.C_id.of_string "bool")
-  | Bool, true ->
-      `Defined_type (Common.C_id.of_string "atomic_bool")
+  | Int, false -> `Int
+  | Int, true -> `Defined_type (Common.C_id.of_string "atomic_int")
+  | Bool, false -> `Defined_type (Common.C_id.of_string "bool")
+  | Bool, true -> `Defined_type (Common.C_id.of_string "atomic_bool")
 
 let type_to_specs (ty : Fir.Type.t) : [> Ast.Decl_spec.t] list =
   (* We translate the level of indirection separately, in [type_to_pointer]. *)

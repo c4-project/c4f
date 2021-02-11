@@ -29,7 +29,7 @@ module Statset = struct
   let init_enum (type t cw)
       (module M : C4f_utils.Enum_types.Extension
         with type t = t
-         and type comparator_witness = cw) : (t, int, cw) Map.t =
+         and type comparator_witness = cw ) : (t, int, cw) Map.t =
     M.all_list ()
     |> List.map ~f:(fun x -> (x, 0))
     |> Map.of_alist_exn (module M)
@@ -124,12 +124,12 @@ let probe_atomic_stm (atom : Atomic_statement.t) : unit Monad.t =
       let%bind () =
         modify
           (Field.map Statset.Fields.stm_atomics
-             ~f:(classify_atomic_stm atom))
+             ~f:(classify_atomic_stm atom) )
       in
       MSMO.iter_m atom ~f:(fun mo ->
           modify
             (Field.map Statset.Fields.stm_mos ~f:(fun map ->
-                 up_mapping map mo)))))
+                 up_mapping map mo ) ) )))
 
 let classify_atomic_expr (atom : _ Atomic_expression.t)
     (m : int Map.M(Atomic_class).t) : int Map.M(Atomic_class).t =
@@ -143,21 +143,21 @@ let probe_atomic_expr (atom : _ Atomic_expression.t) : unit Monad.t =
          expressions is kind-of awful. *)
       let%bind atom =
         MEME.map_m atom ~f:(fun expr ->
-            Monad.(expr >>| fun () -> Expression.falsehood))
+            Monad.(expr >>| fun () -> Expression.falsehood) )
       in
       let%bind () =
         modify
           (Field.map Statset.Fields.expr_atomics
-             ~f:(classify_atomic_expr atom))
+             ~f:(classify_atomic_expr atom) )
       in
       MEMO.iter_m atom ~f:(fun mo ->
           modify
             (Field.map Statset.Fields.expr_mos ~f:(fun map ->
-                 up_mapping map mo)))))
+                 up_mapping map mo ) ) )))
 
 let probe_constant (k : Constant.t) : unit Monad.t =
   Monad.when_m (Constant.is_bool k) ~f:(fun () ->
-      up_counter Statset.Fields.literal_bools 1)
+      up_counter Statset.Fields.literal_bools 1 )
 
 module AccM = Accessor.Of_monad (struct
   include Monad
@@ -171,15 +171,13 @@ let probe_expr : Expression.t -> unit Monad.t =
     ~bop:(fun _ l r ->
       Monad.Let_syntax.(
         let%bind () = l in
-        r))
+        r) )
     ~uop:(fun _ u -> u)
     ~ternary:(AccM.iter Expr_ternary.exprs ~f:Fn.id)
 
 let probe_early_out : Early_out.t -> unit Monad.t = function
-  | Return ->
-      up_counter Statset.Fields.returns 1
-  | Break | Continue ->
-      Monad.return ()
+  | Return -> up_counter Statset.Fields.returns 1
+  | Break | Continue -> Monad.return ()
 
 let probe_prim (s : Prim_statement.t) : unit Monad.t =
   Monad.Let_syntax.(

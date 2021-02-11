@@ -23,10 +23,8 @@ let branch :
        bool
     -> (i, (meta, stm) Block.t, (meta, stm) t, [< field]) Accessor.Simple.t =
   function
-  | true ->
-      t_branch
-  | false ->
-      f_branch
+  | true -> t_branch
+  | false -> f_branch
 
 module Base_map (A : Applicative.S) = struct
   let bmap (type m1 s1 m2 s2) (if_stm : (m1, s1) t)

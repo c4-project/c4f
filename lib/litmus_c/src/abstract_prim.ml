@@ -14,10 +14,8 @@ open Core_kernel (* for Fqueue *)
 open Import
 
 let constant : Ast_basic.Constant.t -> Fir.Constant.t Or_error.t = function
-  | Integer k ->
-      Ok (Fir.Constant.int k)
-  | Char _ | Float _ ->
-      Or_error.error_string "Unsupported constant type"
+  | Integer k -> Ok (Fir.Constant.int k)
+  | Char _ | Float _ -> Or_error.error_string "Unsupported constant type"
 
 let defined_types : (Common.C_id.t, Fir.Type.Basic.t) List.Assoc.t Lazy.t =
   lazy
@@ -32,28 +30,23 @@ let defined_type_to_basic (t : Common.C_id.t) : Fir.Type.Basic.t Or_error.t =
   |> Result.of_option
        ~error:
          (Error.create_s
-            [%message "Unknown defined type" ~got:(t : Common.C_id.t)])
+            [%message "Unknown defined type" ~got:(t : Common.C_id.t)] )
 
 let partition_qualifiers :
        [> Ast.Decl_spec.t] list
     -> [> Ast.Type_spec.t] list
        * [> Ast_basic.Storage_class_spec.t | Ast_basic.Type_qual.t] list =
   List.partition_map ~f:(function
-    | #Ast.Type_spec.t as ts ->
-        First ts
-    | #Ast_basic.Storage_class_spec.t as ss ->
-        Second ss
-    | #Ast_basic.Type_qual.t as qs ->
-        Second qs)
+    | #Ast.Type_spec.t as ts -> First ts
+    | #Ast_basic.Storage_class_spec.t as ss -> Second ss
+    | #Ast_basic.Type_qual.t as qs -> Second qs )
 
 let type_specs_to_basic (specs : [> Ast.Type_spec.t] list) :
     Fir.Type.Basic.t Or_error.t =
   Or_error.Let_syntax.(
     match%bind Tx.List.one specs with
-    | `Int ->
-        return (Fir.Type.Basic.int ())
-    | `Defined_type t ->
-        defined_type_to_basic t
+    | `Int -> return (Fir.Type.Basic.int ())
+    | `Defined_type t -> defined_type_to_basic t
     | #Ast.Type_spec.t as spec ->
         Or_error.error_s
           [%message
@@ -62,8 +55,7 @@ let type_specs_to_basic (specs : [> Ast.Type_spec.t] list) :
 let qualifier_to_flags :
        [> Ast_basic.Storage_class_spec.t | Ast_basic.Type_qual.t]
     -> bool Or_error.t = function
-  | `Volatile ->
-      Ok true
+  | `Volatile -> Ok true
   | #Ast_basic.Type_qual.t as qual ->
       Or_error.error_s
         [%message
@@ -83,8 +75,8 @@ let qualifiers_to_flags
     let%map vs = Tx.Or_error.combine_map quals ~f:qualifier_to_flags in
     List.exists vs ~f:Fn.id)
 
-let qualifiers_to_type (quals : [> Ast.Decl_spec.t] list)
-    ~(is_pointer : bool) : Fir.Type.t Or_error.t =
+let qualifiers_to_type (quals : [> Ast.Decl_spec.t] list) ~(is_pointer : bool)
+    : Fir.Type.t Or_error.t =
   let tspecs, rquals = partition_qualifiers quals in
   Or_error.Let_syntax.(
     let%map basic = type_specs_to_basic tspecs
@@ -93,15 +85,13 @@ let qualifiers_to_type (quals : [> Ast.Decl_spec.t] list)
 
 let declarator_to_id :
     Ast.Declarator.t -> (C4f_common.C_id.t * bool) Or_error.t = function
-  | {pointer= Some [[]]; direct= Id id} ->
-      Ok (id, true)
+  | {pointer= Some [[]]; direct= Id id} -> Ok (id, true)
   | {pointer= Some _; _} as decl ->
       Or_error.error_s
         [%message
           "Complex pointers not supported yet"
             ~declarator:(decl : Ast.Declarator.t)]
-  | {pointer= None; direct= Id id} ->
-      Ok (id, false)
+  | {pointer= None; direct= Id id} -> Ok (id, false)
   | x ->
       Or_error.error_s
         [%message
@@ -110,12 +100,9 @@ let declarator_to_id :
 
 let identifier_to_constant (id : Common.C_id.t) : Fir.Constant.t option =
   match Common.C_id.to_string id with
-  | "true" ->
-      Some Fir.Constant.truth
-  | "false" ->
-      Some Fir.Constant.falsehood
-  | _ ->
-      None
+  | "true" -> Some Fir.Constant.truth
+  | "false" -> Some Fir.Constant.falsehood
+  | _ -> None
 
 let not_constant (x : Ast.Expr.t) : Fir.Constant.t Or_error.t =
   Or_error.error_s
@@ -129,14 +116,10 @@ let value_of_initialiser : Ast.Initialiser.t -> Fir.Constant.t Or_error.t =
       constant v
   | Assign (Identifier k) -> (
     match identifier_to_constant k with
-    | Some k ->
-        Ok k
-    | None ->
-        not_constant (Identifier k) )
-  | Assign x ->
-      not_constant x
-  | List _ ->
-      Or_error.error_string "List initialisers not supported"
+    | Some k -> Ok k
+    | None -> not_constant (Identifier k) )
+  | Assign x -> not_constant x
+  | List _ -> Or_error.error_string "List initialisers not supported"
 
 let decl (d : Ast.Decl.t) : Fir.Initialiser.t Common.C_named.t Or_error.t =
   Or_error.Let_syntax.(
@@ -163,24 +146,13 @@ let param_decl : Ast.Param_decl.t -> Fir.Type.t Common.C_named.t Or_error.t =
         Common.C_named.make ty ~name)
 
 let rec expr_to_lvalue : Ast.Expr.t -> Fir.Lvalue.t Or_error.t = function
-  | Identifier id ->
-      Ok (Accessor.construct Fir.Lvalue.variable id)
-  | Brackets expr ->
-      expr_to_lvalue expr
+  | Identifier id -> Ok (Accessor.construct Fir.Lvalue.variable id)
+  | Brackets expr -> expr_to_lvalue expr
   | Prefix (`Deref, expr) ->
       Or_error.(
         expr |> expr_to_lvalue >>| Accessor.construct Fir.Lvalue.deref)
-  | ( Prefix _
-    | Postfix _
-    | Binary _
-    | Ternary _
-    | Cast _
-    | Call _
-    | Subscript _
-    | Field _
-    | Sizeof_type _
-    | String _
-    | Constant _ ) as e ->
+  | ( Prefix _ | Postfix _ | Binary _ | Ternary _ | Cast _ | Call _
+    | Subscript _ | Field _ | Sizeof_type _ | String _ | Constant _ ) as e ->
       Or_error.error_s
         [%message "Expected an lvalue here" ~got:(e : Ast.Expr.t)]
 
@@ -209,7 +181,7 @@ let expr_to_memory_order (expr : Ast.Expr.t) : Fir.Mem_order.t Or_error.t =
          ~error:
            (Error.create_s
               [%message
-                "Unsupported memory order" ~got:(id : C4f_common.C_id.t)]))
+                "Unsupported memory order" ~got:(id : C4f_common.C_id.t)] ))
 
 let sift_decls (maybe_decl_list : ([> `Decl of 'd] as 'a) list) :
     ('d list * 'a list) Or_error.t =
@@ -219,6 +191,5 @@ let sift_decls (maybe_decl_list : ([> `Decl of 'd] as 'a) list) :
       | `Decl d ->
           if Fqueue.is_empty rest then return (Fqueue.enqueue decls d, rest)
           else error_string "Declarations must go before code."
-      | item ->
-          return (decls, Fqueue.enqueue rest item))
+      | item -> return (decls, Fqueue.enqueue rest item) )
     >>| fun (decls, rest) -> (Fqueue.to_list decls, Fqueue.to_list rest))

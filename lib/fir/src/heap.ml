@@ -28,7 +28,7 @@ type t = {cache: Cache.t; source: Address.t -> Constant.t Or_error.t}
 let empty_source : Address.t -> Constant.t Or_error.t =
   Fn.const
     (Or_error.error_string
-       "tried to access an address in an empty environment")
+       "tried to access an address in an empty environment" )
 
 let make (source : Address.t -> Constant.t Or_error.t) : t =
   {cache= Cache.empty (); source}
@@ -37,10 +37,8 @@ let empty () : t = make empty_source
 
 let load (heap : t) ~(address : Address.t) : Constant.t Or_error.t =
   match Cache.load heap.cache ~address with
-  | Some k ->
-      Ok k
-  | None ->
-      heap.source address
+  | Some k -> Ok k
+  | None -> heap.source address
 
 let store (heap : t) ~(address : Address.t) ~(data : Constant.t) : t =
   {heap with cache= Cache.store heap.cache ~address ~data}

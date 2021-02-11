@@ -32,23 +32,23 @@ let body_decls x = Accessor.get Access.body_decls x
 
 let body_stms x = Accessor.get Access.body_stms x
 
-let with_body_stms (type m1 m2) (func : m1 t)
-    (new_stms : m2 Statement.t list) : m2 t =
+let with_body_stms (type m1 m2) (func : m1 t) (new_stms : m2 Statement.t list)
+    : m2 t =
   {func with body_stms= new_stms}
 
 module On (M : Applicative.S) = struct
   let map_m (type m1 m2) (func : m1 t)
       ~(parameters :
             (Ac.C_id.t, Type.t) List.Assoc.t
-         -> (Ac.C_id.t, Type.t) List.Assoc.t M.t)
+         -> (Ac.C_id.t, Type.t) List.Assoc.t M.t )
       ~(body_decls :
             (Ac.C_id.t, Initialiser.t) List.Assoc.t
-         -> (Ac.C_id.t, Initialiser.t) List.Assoc.t M.t)
+         -> (Ac.C_id.t, Initialiser.t) List.Assoc.t M.t )
       ~(body_stms : m1 Statement.t list -> m2 Statement.t list M.t) :
       m2 t M.t =
     M.map3 (parameters func.parameters) (body_decls func.body_decls)
       (body_stms func.body_stms) ~f:(fun parameters body_decls body_stms ->
-        {parameters; body_decls; body_stms})
+        {parameters; body_decls; body_stms} )
 end
 
 module Mid = On (Travesty.Monad_exts.App (Monad.Ident))

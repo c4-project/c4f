@@ -37,7 +37,7 @@ module Raw = struct
   let bump_tids (type const) (header : const Header.t) ~(from : int)
       ~(delta : int) : const Header.t =
     Header.map_tids header ~f:(fun tid ->
-        if from <= tid then tid + delta else tid)
+        if from <= tid then tid + delta else tid )
 
   let has_threads (type const prog) (test : (const, prog) t) : bool =
     not (List.is_empty (threads test))
@@ -88,7 +88,7 @@ module Raw = struct
     Or_error.Let_syntax.(
       let%map threads' =
         Tx.List.With_errors.replace_m threads index ~f:(fun x ->
-            x |> f >>| Option.some)
+            x |> f >>| Option.some )
       in
       {test with threads= threads'})
 
@@ -114,7 +114,7 @@ let check_init_against_globals (type k t)
           [%message
             "Program global variables aren't compatible with init."
               ~in_program:(globals_keys : Set.M(Ac.C_id).t)
-              ~in_init:(init_keys : Set.M(Ac.C_id).t)]))
+              ~in_init:(init_keys : Set.M(Ac.C_id).t)] ))
 
 module Make (Lang : Test_types.Basic) :
   Test_types.S with module Lang = Lang and type raw = Raw.M(Lang).t = struct
@@ -172,7 +172,7 @@ module Make (Lang : Test_types.Basic) :
       Validate.booltest
         (fun t ->
           Option.is_some (Header.locations t)
-          || Option.is_some (Header.postcondition t))
+          || Option.is_some (Header.postcondition t) )
         ~if_false:"Test must have a postcondition or location stanza."
 
     let variables_in_init (header : _ Header.t) : Set.M(Ac.C_id).t =
@@ -212,13 +212,12 @@ module Make (Lang : Test_types.Basic) :
       let w check = Validate.field_folder t check in
       Validate.of_list
         (Raw.Fields.fold ~init:[] ~header:(w validate_header)
-           ~threads:(w validate_threads))
+           ~threads:(w validate_threads) )
 
     let uniform_globals :
         Lang.Program.t list -> Lang.Type.t Map.M(Ac.C_id).t option Or_error.t
         = function
-      | [] ->
-          Or_error.error_string "empty threads"
+      | [] -> Or_error.error_string "empty threads"
       | xs ->
           (* Working on the assumption that global_vars either maps variables
              for all threads, or for none. *)
@@ -228,7 +227,7 @@ module Make (Lang : Test_types.Basic) :
           |> Tx.Option.With_errors.map_m
                ~f:
                  (C4f_utils.My_map.merge_with_overlap
-                    ~compare:Lang.Type.compare)
+                    ~compare:Lang.Type.compare )
           |> Or_error.tag ~tag:"Threads disagree on global variables sets."
 
     (** [validate_globals] checks an incoming Litmus test to ensure that, if
@@ -241,7 +240,7 @@ module Make (Lang : Test_types.Basic) :
           Or_error.(
             threads |> uniform_globals
             >>= Tx.Option.With_errors.iter_m
-                  ~f:(check_init_against_globals (Header.init header))))
+                  ~f:(check_init_against_globals (Header.init header))) )
 
     let validate : t Validate.check =
       Validate.all [validate_fields; validate_globals]

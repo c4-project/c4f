@@ -25,16 +25,12 @@ module Record = struct
   [@@deriving accessors, yojson, equal]
 
   let mapped_to_global : t -> bool = function
-    | {mapped_to= Global; _} ->
-        true
-    | _ ->
-        false
+    | {mapped_to= Global; _} -> true
+    | _ -> false
 
   let mapped_to_param : t -> bool = function
-    | {mapped_to= Param _; _} ->
-        true
-    | _ ->
-        false
+    | {mapped_to= Param _; _} -> true
+    | _ -> false
 end
 
 type t = Record.t Common.Scoped_map.t [@@deriving equal]
@@ -65,10 +61,8 @@ let lookup_and_require_param (map : t) ~(id : Common.Litmus_id.t) :
 let to_param_opt (lit_id : Common.Litmus_id.t) (rc : Record.t) :
     (int * (Common.Litmus_id.t * Record.t)) option =
   match rc.mapped_to with
-  | Param k ->
-      Some (k, (lit_id, rc))
-  | Global ->
-      None
+  | Param k -> Some (k, (lit_id, rc))
+  | Global -> None
 
 let param_mapped_vars (vmap : t) :
     (Common.Litmus_id.t, Record.t) List.Assoc.t =

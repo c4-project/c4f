@@ -15,11 +15,10 @@ open Import
 let ensure_statements :
     Ast.Compound_stm.Elt.t list -> Ast.Stm.t list Or_error.t =
   Tx.Or_error.combine_map ~f:(function
-    | `Stm f ->
-        Ok f
+    | `Stm f -> Ok f
     | d ->
         Or_error.error_s
-          [%message "Expected a statement" ~got:(d : Ast.Compound_stm.Elt.t)])
+          [%message "Expected a statement" ~got:(d : Ast.Compound_stm.Elt.t)] )
 
 let expr = Abstract_expr.model
 
@@ -90,10 +89,8 @@ let procedure_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list) :
   Or_error.Let_syntax.(
     let%bind function_id = Abstract_prim.expr_to_identifier func in
     match Map.find (Lazy.force expr_stm_call_table) function_id with
-    | Some call_handler ->
-        call_handler arguments
-    | None ->
-        arbitrary_procedure_call function_id arguments)
+    | Some call_handler -> call_handler arguments
+    | None -> arbitrary_procedure_call function_id arguments)
 
 let lift_assign : Fir.Assign.t -> unit Fir.Statement.t =
   Accessor.construct Fir.(Statement.prim' @> Prim_statement.assign)
@@ -113,24 +110,13 @@ let expr_stm : Ast.Expr.t -> unit Fir.Statement.t Or_error.t = function
         let%map lvalue = Abstract_prim.expr_to_lvalue l
         and rvalue = expr r in
         lift_assign Fir.Assign.(lvalue @= rvalue))
-  | Call {func; arguments} ->
-      procedure_call func arguments
+  | Call {func; arguments} -> procedure_call func arguments
   (* ++x and x++ SHOULD be semantically equivalent in statement position. *)
-  | Postfix (l, `Inc) | Prefix (`Inc, l) ->
-      crement `Inc l
-  | Postfix (l, `Dec) | Prefix (`Dec, l) ->
-      crement `Dec l
-  | ( Brackets _ (* should've been debracketed already *)
-    | Constant _
-    | Prefix _
-    | Binary _
-    | Ternary _
-    | Cast _
-    | Subscript _
-    | Field _
-    | Sizeof_type _
-    | String _
-    | Identifier _ ) as e ->
+  | Postfix (l, `Inc) | Prefix (`Inc, l) -> crement `Inc l
+  | Postfix (l, `Dec) | Prefix (`Dec, l) -> crement `Dec l
+  | ( Brackets _ (* should've been debracketed already *) | Constant _
+    | Prefix _ | Binary _ | Ternary _ | Cast _ | Subscript _ | Field _
+    | Sizeof_type _ | String _ | Identifier _ ) as e ->
       Or_error.error_s
         [%message "Unsupported expression statement" ~got:(e : Ast.Expr.t)]
 
@@ -139,8 +125,7 @@ let possible_compound_to_list : Ast.Stm.t -> Ast.Stm.t list Or_error.t =
   | Ast.Stm.Compound elems ->
       (* We don't support inner declarations at the moment. *)
       ensure_statements elems
-  | stm ->
-      Ok [stm]
+  | stm -> Ok [stm]
 
 (** Type of recursive statement converters. *)
 type mu_stm = Ast.Stm.t -> unit Fir.Statement.t Or_error.t
@@ -180,7 +165,7 @@ let require_assign (e : Ast.Expr.t) : Fir.Assign.t Or_error.t =
     Result.of_option ao
       ~error:
         (Error.create_s
-           [%message "Expected assignment here" ~e:(e : Ast.Expr.t)]))
+           [%message "Expected assignment here" ~e:(e : Ast.Expr.t)] ))
 
 let opt_map (x : 'a option) ~(f : 'a -> 'b Or_error.t) : 'b option Or_error.t
     =
@@ -225,12 +210,9 @@ let explicit (model_stm : mu_stm) (old_body : Ast.Compound_stm.t) :
 let rec model : Ast.Stm.t -> unit Fir.Statement.t Or_error.t = function
   | Expr None ->
       Ok Accessor.(construct Fir.(Statement.prim' @> Prim_statement.nop) ())
-  | Expr (Some e) ->
-      expr_stm (debracket e)
-  | If {cond; t_branch; f_branch} ->
-      model_if model cond t_branch f_branch
-  | Compound xs ->
-      explicit model xs
+  | Expr (Some e) -> expr_stm (debracket e)
+  | If {cond; t_branch; f_branch} -> model_if model cond t_branch f_branch
+  | Compound xs -> explicit model xs
   | Continue ->
       Ok
         Accessor.(
@@ -248,16 +230,11 @@ let rec model : Ast.Stm.t -> unit Fir.Statement.t Or_error.t = function
   | Return (Some _) as s ->
       Or_error.error_s
         [%message "Value returns not supported in FIR" ~got:(s : Ast.Stm.t)]
-  | Atomic b ->
-      lock model b Atomic
-  | Synchronized b ->
-      lock model b Synchronized
-  | For {init; cond; update; body} ->
-      for_loop model init cond update body
-  | While (c, b) ->
-      while_loop model c b While
-  | Do_while (b, c) ->
-      while_loop model c b Do_while
+  | Atomic b -> lock model b Atomic
+  | Synchronized b -> lock model b Synchronized
+  | For {init; cond; update; body} -> for_loop model init cond update body
+  | While (c, b) -> while_loop model c b While
+  | Do_while (b, c) -> while_loop model c b Do_while
   | Label (Normal l, Expr None) ->
       (* This is a particularly weird subset of the labels, but I'm not sure
          how best to expand it. *)
