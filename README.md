@@ -45,16 +45,6 @@ Each command has various subcommands, including the `help` command: for example,
 
 ## Building and running
 
-**TEMPORARY NOTE:** _c4f_ currently depends on a pre-release version of
-[travesty](https://github.com/MattWindsor91/travesty); you will need to pin this
-through OPAM by doing something similar to the following:
-
-```shell
-$ git clone https://github.com/MattWindsor91/travesty
-$ cd travesty
-$ opam install .
-```
-
 **NOTE:**
 _c4f_ uses Jane Street's `core` library, which only works properly on
 POSIX-style operating systems.  If you're using Windows, consider
