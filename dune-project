@@ -18,7 +18,7 @@
   (synopsis "Metamorphic fuzzer for C litmus tests")
   (description "'c4f' (the 'C Compiler Concurrency Checker' fuzzer) is a toolkit for randomly expanding C litmus tests in a semantics-refining way.")
   (depends
-    (ocaml (and (>= 4.09) (< 4.11)))
+    (ocaml (and (>= 4.10) (< 4.13)))
     (accessor (and (>= v0.14) (< v0.15)))
     (accessor_base (and (>= v0.14) (< v0.15)))
     (ppx_accessor (and (>= v0.14) (< v0.15)))
