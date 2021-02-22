@@ -21,8 +21,7 @@
 ```
 ("While reading from file:" input/config/failures/unknown_block.conf
   "File \"input/config/failures/unknown_block.conf\", line 1, characters 0-4:\
- \nparse error: Expected a valid top-level item; for example:\
- \n- `fuzz { ... }`\
+ \nparse error: Expected a valid top-level item; for example: `fuzz { ... }`\
  \n")
 ```
 
