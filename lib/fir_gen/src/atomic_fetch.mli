@@ -36,7 +36,7 @@ module Int
     (Arg : Utils.My_quickcheck.S_with_sexp with type t := Fir.Expression.t) :
   S
 
-(** {2: Specific integer generators} *)
+(** {2 Specific integer generators} *)
 
 val gen_zero_idem : env -> const:const_f -> t Q.Generator.t
 (** [gen_zero_idem env ~const] generates atomic fetches over the variables in

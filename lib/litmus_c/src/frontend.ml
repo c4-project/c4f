@@ -23,7 +23,7 @@ module Normal = C4f_utils.Frontend.Make (struct
 
   let parse = Parser.Incremental.translation_unit
 
-  let message = C_messages.message
+  let message = Messages.message
 end)
 
 let litmus_predefined_types =
@@ -39,7 +39,7 @@ module Litmus = C4f_utils.Frontend.Make (struct
 
   let parse = Parser.Incremental.litmus
 
-  let message = C_messages.message
+  let message = Messages.message
 end)
 
 module Litmus_post = C4f_utils.Frontend.Make (struct
@@ -51,7 +51,7 @@ module Litmus_post = C4f_utils.Frontend.Make (struct
 
   let parse = Parser.Incremental.litmus_postcondition
 
-  let message = C_messages.message
+  let message = Messages.message
 end)
 
 module Fir =

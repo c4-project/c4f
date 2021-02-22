@@ -219,5 +219,17 @@ main: FUZZ LBRACE RBRACE EOL TO
 ## option(top_stanza) EOL
 ##
 
-Expected a valid top-level item; for example:
-- `fuzz { ... }`
+Expected a valid top-level item; for example: `fuzz { ... }`
+
+main: FUZZ LBRACE RBRACE COLON
+##
+## Ends in an error in state: 35.
+##
+## separated_nonempty_list(EOL,option(top_stanza)) -> option(top_stanza) . [ EOF ]
+## separated_nonempty_list(EOL,option(top_stanza)) -> option(top_stanza) . EOL separated_nonempty_list(EOL,option(top_stanza)) [ EOF ]
+##
+## The known suffix of the stack is as follows:
+## option(top_stanza)
+##
+
+Expected a linebreak followed by a valid top-level item; for example: `fuzz { ... }`

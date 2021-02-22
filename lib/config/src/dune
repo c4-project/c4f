@@ -15,9 +15,20 @@
  (modules parser))
 
 (rule
- (targets messages.ml)
+ (deps messages.check)
  (action
   (with-stdout-to
-   "%{targets}"
-   (run "%{bin:menhir}" "--compile-errors" "%{dep:config.messages}"
-     "parser.mly"))))
+   messages.ml
+   (run menhir --table %{dep:parser.mly} --compile-errors
+     %{dep:config.messages}))))
+
+(rule
+ (with-stdout-to
+  config.auto.messages
+  (run menhir --table %{dep:parser.mly} --list-errors)))
+
+(rule
+ (with-stdout-to
+  messages.check
+  (run menhir --table %{dep:parser.mly} --compare-errors
+    %{dep:config.auto.messages} --compare-errors %{dep:config.messages})))
