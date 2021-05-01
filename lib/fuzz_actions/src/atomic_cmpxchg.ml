@@ -73,7 +73,7 @@ module Insert = struct
       match ty with Int -> Fir_gen.Expr.int | Bool -> Fir_gen.Expr.bool
 
     let gen ?(strength : Fir.Atomic_cmpxchg.Strength.t option)
-        ~(prim_type : Fir.Type.Prim.t) ~(src : Fir.Env.t) ~(dst : Fir.Env.t)
+        (prim_type : Fir.Type.Prim.t) ~(src : Fir.Env.t) ~(dst : Fir.Env.t)
         ~(vars : Fuzz.Var.Map.t) ~tid:(_ : int)
         ~(gen_obj_and_exp :
               Fir.Env.t
@@ -206,7 +206,7 @@ module Insert = struct
         -> Inner_payload.t Base_quickcheck.Generator.t =
       Inner_payload.gen ?strength:Basic.strength
         ~allow_ub:false (* for now *) ~gen_obj_and_exp:Basic.gen_obj_and_exp
-        ~prim_type:Basic.prim_type
+        Basic.prim_type
 
     let dst_type = Fir.Type.Basic.make ~is_atomic:true Basic.prim_type
 

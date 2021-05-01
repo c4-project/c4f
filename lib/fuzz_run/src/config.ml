@@ -105,7 +105,7 @@ module Weight_summary = struct
       (w : Fuzz.Action.With_default_weight.t) : int Summary.t =
     let (module M) = Fuzz.Action.With_default_weight.action w in
     let default = Fuzz.Action.With_default_weight.default_weight w in
-    let value = Summary.Adjusted.make ~default ?user:user_weight in
+    let value = Summary.Adjusted.make ~default user_weight in
     let readme = Utils.My_string.format_for_readme (Lazy.force M.readme) in
     {value; readme}
 

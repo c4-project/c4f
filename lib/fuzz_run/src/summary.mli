@@ -23,8 +23,8 @@ module Adjusted : sig
     | Adjusted of {original: 'v; actual: 'v}
         (** The value has changed from [original] to [actual]. *)
 
-  val make : ?user:'v -> default:'v -> 'v t
-  (** [make ?user ~default] makes an adjusted value using the default value
+  val make : 'v option -> default:'v -> 'v t
+  (** [make user ~default] makes an adjusted value using the default value
       [default] and optional user adjustment [user]. *)
 
   (** Adjusted weights may be pretty-printed. *)

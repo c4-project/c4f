@@ -15,7 +15,7 @@ open Import
 module Adjusted = struct
   type 'v t = Not_adjusted of 'v | Adjusted of {original: 'v; actual: 'v}
 
-  let make ?(user : 'v option) ~(default : 'v) : 'v t =
+  let make (user : 'v option) ~(default : 'v) : 'v t =
     Option.value_map user
       ~f:(fun actual -> Adjusted {original= default; actual})
       ~default:(Not_adjusted default)
