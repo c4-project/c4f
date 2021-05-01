@@ -64,16 +64,10 @@ You can also manually build _c4f_ using `dune build`, or
 
 ### Preparation
 
-_c4f_ currently expects a configuration file listing fuzzer parameters
-(by default, it looks in `./c4f.conf`).  If you're using _c4t_, it sets
-up the configuration itself; if not, the following is a good first start:
-
-```
-fuzz {
-  # replace N with the number of cores on the target machine
-  set param cap.threads to N
-}
-```
+_c4f_ optionally accepts a configuration file listing fuzzer parameters.  If
+you're using _c4t_, it sets up the configuration itself; if not, check
+`c4f.conf.example` for an idea of what goes in such a file, and use `-config
+PATH` to supply one.
 
 ### Basic usage
 
