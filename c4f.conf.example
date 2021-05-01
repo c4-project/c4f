@@ -1,0 +1,48 @@
+# Example configuration for c4f.
+#
+# By default, standalone invocations of c4f look for configuration in
+# `./c4f.conf` (eg, the current directory).  When c4t is running c4f, it
+# automatically supplies its own config.
+#
+# To specify a different config file, use the `-config` argument.
+fuzz {
+	# There are three types of fuzzer configuration:
+	# action weights, params, and flags.
+
+	# This syntax sets an action weight:
+	# specifically, this means that the action that generates random fences
+	# is 20 times as likely to be chosen as a (hypothetical) action of weight 1.
+	action mem.fence weight 20
+	# To remove an action, set its weight to 0:
+	action program.label weight 0
+
+	# To see all actions and their current weights:
+	#   $ c4t list-actions
+	# To see descriptions, add the `-v` argument. 
+
+
+	# This syntax sets an integer parameter:
+	# specifically, a cap on the number of threads the fuzzer can generate.
+	#
+	# If you're not using c4f with c4t, it's usually a good idea to set this to
+	# the lowest number of virtual cores among the systems on which you'll be
+	# running c4f's output.
+	set param cap.threads to 8
+
+	# Boolean flags are interesting in c4f, as they can be assigned
+	# a probability: this governs how often the flag will evaluate to
+	# true whenever it is looked up by the fuzzer.
+	#
+	# This syntax sets the probability, per action, of each action being
+	# enabled.  Each probability is given as an odds ratio W:L, where W is the
+	# the number of wins per each L losses.  Here, we give each action a 75%
+	# chance of selection.
+	set flag action.enable ratio 3:1
+	# We can also just turn flags fully on or off:
+	set flag action.recommendation.accept on
+	set flag mem.unsafe-weaken-orders off
+
+	# To see all parameters and flags and their current values:
+	#   $ c4t list-params
+	# To see descriptions, add the `-v` argument. 
+}
