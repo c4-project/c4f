@@ -74,19 +74,17 @@ module Standard = struct
     { verbose: bool
     ; no_warnings: bool
     ; colour: Fmt.style_renderer option
-    ; config_file: string }
+    ; config_file: Fpath.t option }
   [@@deriving fields]
 
   let is_verbose t = t.verbose
 
   let are_warnings_enabled t = not t.no_warnings
 
-  let default_config_file = "c4f.conf"
-
   let load_config (x : t) : C4f_config.Global.t Or_error.t =
-    Or_error.(
-      x.config_file |> Plumbing.Input.of_string
-      >>= C4f_config.Global.Load.load)
+    match x.config_file with
+    | Some f -> f |> Plumbing.Input.of_fpath |> C4f_config.Global.Load.load
+    | None -> Ok (C4f_config.Global.make ())
 
   let get =
     Command.Let_syntax.(
@@ -96,8 +94,14 @@ module Standard = struct
       and no_warnings =
         flag "no-warnings" no_arg ~doc:"if given, suppresses all warnings"
       and config_file =
-        flag_optional_with_default_doc "config" string [%sexp_of: string]
-          ~default:default_config_file ~doc:"PATH the config file to use"
+        flag "config"
+          (optional
+             (Arg_type.map
+                ~f:
+                  (Fn.compose Or_error.ok_exn
+                     Plumbing.Fpath_helpers.of_string )
+                Filename.arg_type ) )
+          ~doc:"PATH a fuzzing config file to use"
       and colour =
         flag_optional_with_default_doc "colour" colour_type colour_sexp
           ~default:None ~doc:"MODE force a particular colouring mode"

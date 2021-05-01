@@ -37,7 +37,7 @@ module Standard : sig
   val colour : t -> Fmt.style_renderer option
   (** [colour t] gets the TTY colouring mode, if any, according to [t]. *)
 
-  val config_file : t -> string
+  val config_file : t -> Fpath.t option
   (** [config_file t] gets the configuration file according to [t]. *)
 
   val load_config : t -> C4f_config.Global.t Or_error.t

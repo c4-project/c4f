@@ -1,10 +1,7 @@
-# Example configuration for c4f.
+# Example config for c4f.
 #
-# By default, standalone invocations of c4f look for configuration in
-# `./c4f.conf` (eg, the current directory).  When c4t is running c4f, it
-# automatically supplies its own config.
-#
-# To specify a different config file, use the `-config` argument.
+# Config files are optional.  To supply one, use the `-config` argument.
+# When c4t is running c4f, it automatically supplies its own config.
 fuzz {
 	# There are three types of fuzzer configuration:
 	# action weights, params, and flags.
