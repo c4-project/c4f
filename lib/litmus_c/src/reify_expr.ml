@@ -68,7 +68,8 @@ module Needs_brackets = struct
            need brackets. *)
         is_postfix
     | Binary _ | Ternary _ ->
-        (* These bind looser than prefixes and postfixes, so need brackets. *)
+        (* These bind looser than prefixes and postfixes, so need
+           brackets. *)
         true
 
   let uop_pre : Ast.Expr.t -> bool = uop ~is_postfix:false

@@ -42,7 +42,8 @@ let%test_module "Make" =
 
         let make_gen' (scope : Common.Scope.t) :
             (module Test.S with type t = Src.Var.Make_payload.t) =
-          (* TODO(@MattWindsor91): SURELY there's a better way of doing this *)
+          (* TODO(@MattWindsor91): SURELY there's a better way of doing
+             this *)
           ( module struct
             include (val make_gen scope)
           end )

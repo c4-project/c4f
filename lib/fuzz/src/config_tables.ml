@@ -130,7 +130,8 @@ let flag_map : Param_spec.Bool.t Map.M(Common.Id).t Lazy.t =
          )
        ; ( wrap_early_out_flag
          , Param_spec.make
-           (* Wrapping is probably more fun for compilers than not wrapping. *)
+           (* Wrapping is probably more fun for compilers than not
+              wrapping. *)
              ~default:(Or_error.ok_exn (Flag.try_make ~wins:3 ~losses:1))
              ~description:
                {|

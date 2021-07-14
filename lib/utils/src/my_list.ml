@@ -80,7 +80,8 @@ let split_or_error (xs : 'a list) (n : int) : ('a list * 'a list) Or_error.t
   else Or_error.return (List.split_n xs n)
 
 (* TODO(@MattWindsor91): if [try_]splice isn't woefully inefficient,
-   [try_]map_sub is. Any more efficient implementations gratefully accepted. *)
+   [try_]map_sub is. Any more efficient implementations gratefully
+   accepted. *)
 
 let try_splice (xs : 'a list) ~span:({pos; len} : Span.t)
     ~(replace_f : 'a list -> 'a list Or_error.t) : 'a list Or_error.t =

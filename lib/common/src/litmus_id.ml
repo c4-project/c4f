@@ -15,7 +15,8 @@ module Tx = Travesty_base_exts
 
 (* Comparable.Make_plain depends on Sexpable, and Sexpable.Of_stringable
    depends on Stringable. As a result, we have to implement Id by snowballing
-   together increasingly elaborate modules, adding Base extensions as we go. *)
+   together increasingly elaborate modules, adding Base extensions as we
+   go. *)
 
 module M_str = struct
   (* TODO(@MattWindsor91): rebase in terms of Scope.t? *)

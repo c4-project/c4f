@@ -63,7 +63,8 @@ struct
         (* There is no point in generating paths that insert into
            multi-execution contexts, as their construction will never be
            sound unless we insert into dead-code. Presently we don't have any
-           way of overriding one flag with the other, so we over-approximate. *)
+           way of overriding one flag with the other, so we
+           over-approximate. *)
         Fuzz.Path_filter.(forbid_flag In_execute_multi + f)
     | `Always | `If_no_cycles ->
         (* We assume that if a storelike reports itself as constructible in

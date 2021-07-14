@@ -67,7 +67,8 @@ module Raw = struct
       ~(f : c1 Header.t -> c2 Header.t Or_error.t) : (c2, prog) t Or_error.t
       =
     let header = header test in
-    (* We don't need to do any thread ID manipulation if we're just mapping. *)
+    (* We don't need to do any thread ID manipulation if we're just
+       mapping. *)
     Or_error.Let_syntax.(
       let%map header' = f header in
       {test with header= header'})
@@ -75,7 +76,8 @@ module Raw = struct
   let try_map_threads (type const p1 p2) (test : (const, p1) t)
       ~(f : p1 -> p2 Or_error.t) : (const, p2) t Or_error.t =
     let threads = threads test in
-    (* We don't need to do any thread ID manipulation if we're just mapping. *)
+    (* We don't need to do any thread ID manipulation if we're just
+       mapping. *)
     Or_error.Let_syntax.(
       let%map threads' = Tx.Or_error.combine_map threads ~f in
       {test with threads= threads'})
@@ -84,7 +86,8 @@ module Raw = struct
       ~(index : int) ~(f : prog -> prog Or_error.t) :
       (const, prog) t Or_error.t =
     let threads = threads test in
-    (* We don't need to do any thread ID manipulation if we're just mapping. *)
+    (* We don't need to do any thread ID manipulation if we're just
+       mapping. *)
     Or_error.Let_syntax.(
       let%map threads' =
         Tx.List.With_errors.replace_m threads index ~f:(fun x ->

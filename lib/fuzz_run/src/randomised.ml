@@ -100,7 +100,8 @@ let pick_step
     Fuzz.Action.t option Runner_state.Monad.t =
   Runner_state.Monad.(
     Let_syntax.(
-      (* Keep going until we find an available action, or run out of actions. *)
+      (* Keep going until we find an available action, or run out of
+         actions. *)
       match%bind
         Monadic.make (Fn.compose Fuzz.State.Monad.Monadic.return pick)
       with

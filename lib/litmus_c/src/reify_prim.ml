@@ -40,13 +40,15 @@ let basic_type_to_spec (b : Fir.Type.Basic.t) : [> Ast.Type_spec.t] =
   | Bool, true -> `Defined_type (Common.C_id.of_string "atomic_bool")
 
 let type_to_specs (ty : Fir.Type.t) : [> Ast.Decl_spec.t] list =
-  (* We translate the level of indirection separately, in [type_to_pointer]. *)
+  (* We translate the level of indirection separately, in
+     [type_to_pointer]. *)
   List.filter_opt
     [ Some (basic_type_to_spec (Fir.Type.basic_type ty))
     ; Option.some_if (Fir.Type.is_volatile ty) `Volatile ]
 
 let type_to_pointer (ty : Fir.Type.t) : Ast_basic.Pointer.t option =
-  (* We translate the actual underlying type separately, in [type_to_specs]. *)
+  (* We translate the actual underlying type separately, in
+     [type_to_specs]. *)
   Option.some_if (Fir.Type.is_pointer ty) [[]]
 
 let id_declarator (ty : Fir.Type.t) (id : Common.C_id.t) : Ast.Declarator.t =

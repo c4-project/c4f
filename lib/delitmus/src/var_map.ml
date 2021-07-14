@@ -66,7 +66,8 @@ let to_param_opt (lit_id : Common.Litmus_id.t) (rc : Record.t) :
 
 let param_mapped_vars (vmap : t) :
     (Common.Litmus_id.t, Record.t) List.Assoc.t =
-  (* Much of the complexity here is because of sorting by parameter position. *)
+  (* Much of the complexity here is because of sorting by parameter
+     position. *)
   vmap |> Common.Scoped_map.to_litmus_id_map |> Map.to_alist
   |> List.filter_map ~f:(fun (l, r) -> to_param_opt l r)
   |> List.sort ~compare:(Comparable.lift Int.compare ~f:fst)

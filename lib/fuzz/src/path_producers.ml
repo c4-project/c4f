@@ -76,7 +76,8 @@ module Block = struct
       Sequence.(
         lift_err (Path_context.check_filter_req ctx)
         >>= fun () ->
-        (* Both ends are inclusive to let us insert at the end of the list. *)
+        (* Both ends are inclusive to let us insert at the end of the
+           list. *)
         Sequence.range 0 ~start:`inclusive (List.length stms)
           ~stop:`inclusive
         |> Sequence.bind ~f:(produce_at_pos ~ctx))
