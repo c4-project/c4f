@@ -205,8 +205,8 @@ module Insert = struct
         -> tid:int
         -> Inner_payload.t Base_quickcheck.Generator.t =
       Inner_payload.gen ?strength:Basic.strength
-        ~allow_ub:false (* for now *) ~gen_obj_and_exp:Basic.gen_obj_and_exp
-        Basic.prim_type
+        ~allow_ub:false (* for now *)
+        ~gen_obj_and_exp:Basic.gen_obj_and_exp Basic.prim_type
 
     let dst_type = Fir.Type.Basic.make ~is_atomic:true Basic.prim_type
 

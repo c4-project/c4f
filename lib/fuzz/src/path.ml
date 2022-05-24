@@ -51,8 +51,7 @@ module Fragment = struct
     | Insert idx -> pp_idx `Green "Insert" f idx
     | Range (idx, stride) ->
         Fmt.(
-          styled
-            (`Fg `Green)
+          styled (`Fg `Green)
             (any "Range" ++ brackets (pair ~sep:comma int int)))
           f (idx, stride)
     | Stm idx -> pp_idx `Cyan "Stm" f idx
@@ -76,9 +75,7 @@ module Fragment = struct
     else
       Or_error.error_s
         [%message
-          "Too many path fragments in list"
-            ~overflow:(overflow : t list)
-            ~sort]
+          "Too many path fragments in list" ~(overflow : t list) ~sort]
 
   let lift_not_enough (sort : string) (xs : t list)
       (f : t -> t list -> 'a Or_error.t) : 'a Or_error.t =
@@ -294,7 +291,6 @@ module With_meta = struct
       ++ sp
       ++ using (Accessor.get Path_meta.With_meta.meta) Path_meta.pp)
 
-  let flag (f : Path_meta.Flag.t) :
-      ('i, bool, t, [< field]) Accessor.t =
+  let flag (f : Path_meta.Flag.t) : ('i, bool, t, [< field]) Accessor.t =
     Path_meta.(With_meta.meta @> flags @> Accessor.Set.mem f)
 end

@@ -35,9 +35,13 @@ module For = struct
   let exprs_many (x : t) : (t, Expression.t, Expression.t) Accessor.Many.t =
     Accessor.Many.(
       return (fun init cmp update -> make ?init ?cmp ?update ())
-      <*> AMany.map (Accessor_base.Option.some @> Assign.exprs) ~f:access x.init
+      <*> AMany.map
+            (Accessor_base.Option.some @> Assign.exprs)
+            ~f:access x.init
       <*> AMany.map Accessor_base.Option.some ~f:access x.cmp
-      <*> AMany.map (Accessor_base.Option.some @> Assign.exprs) ~f:access x.update)
+      <*> AMany.map
+            (Accessor_base.Option.some @> Assign.exprs)
+            ~f:access x.update)
 
   let exprs : type i. (i, Expression.t, t, [< many]) Accessor.t =
     [%accessor Accessor.many exprs_many]
@@ -120,7 +124,7 @@ module For = struct
           ~error:
             (Error.create_s
                [%message
-                 "Unsupported comparison expression" ~cmp:(cmp : Expression.t)] )
+                 "Unsupported comparison expression" ~(cmp : Expression.t)] )
       in
       let%bind lv =
         Result.of_option
@@ -129,7 +133,7 @@ module For = struct
             (Error.create_s
                [%message
                  "Unsupported LHS of comparison expression"
-                   ~l:(l : Expression.t)] )
+                   ~(l : Expression.t)] )
       in
       match bop with
       | Rel o -> Ok (o, lv, r)
@@ -144,8 +148,7 @@ module For = struct
       ~error:
         (Error.create_s
            [%message
-             "Unsupported RHS of initialiser expression"
-               ~init:(init : Assign.t)] )
+             "Unsupported RHS of initialiser expression" ~(init : Assign.t)] )
 
   let try_simplify_inner (init : Assign.t) (cmp : Expression.t)
       (update : Assign.t) : Simple.t Or_error.t =

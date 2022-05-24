@@ -20,8 +20,7 @@ type ('meta, 'stm) t =
 
 let branch :
     type i meta stm.
-       bool
-    -> (i, (meta, stm) Block.t, (meta, stm) t, [< field]) Accessor.t =
+    bool -> (i, (meta, stm) Block.t, (meta, stm) t, [< field]) Accessor.t =
   function
   | true -> t_branch
   | false -> f_branch

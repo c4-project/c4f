@@ -21,8 +21,7 @@ let of_statement_list (type stm) (statements : stm list) : (unit, stm) t =
 let is_empty (type meta stm) (block : (meta, stm) t) : bool =
   List.is_empty block.statements
 
-let each_statement : ('i, 'stm, ('meta, 'stm) t, [< many]) Accessor.t
-    =
+let each_statement : ('i, 'stm, ('meta, 'stm) t, [< many]) Accessor.t =
   [%accessor statements @> Accessor.List.each]
 
 module BT :

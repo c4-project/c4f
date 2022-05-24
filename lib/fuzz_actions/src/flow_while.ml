@@ -40,7 +40,7 @@ module Insert = struct
           Fir.Expression.t Fuzz.Payload_gen.t =
         let tid = Fuzz.Path.tid path in
         Fuzz.Payload_gen.(
-          let* vars = vars in
+          let* vars in
           let env =
             Fuzz.Var.Map.env_satisfying_all vars ~scope:(Local tid)
               ~predicates:[]

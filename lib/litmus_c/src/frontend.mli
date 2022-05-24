@@ -19,9 +19,9 @@ module Normal :
 module Litmus :
   Plumbing.Loadable_types.S
     with type t =
-          ( Ast.Litmus_lang.Constant.t
-          , Ast.Litmus_lang.Program.t )
-          C4f_litmus.Ast.t
+      ( Ast.Litmus_lang.Constant.t
+      , Ast.Litmus_lang.Program.t )
+      C4f_litmus.Ast.t
 
 (** Frontend for postconditions; used specifically for parsing auxiliary JSON
     files. *)

@@ -11,9 +11,9 @@
 
 open Base
 
-let map_with_keys (type ak av aw bk bv bw) (cmp : (bk, bw) Comparator.Module.t)
-    (map : (ak, av, aw) Map.t) ~(f : key:ak -> data:av -> bk * bv) :
-    (bk, bv, bw) Map.t Or_error.t =
+let map_with_keys (type ak av aw bk bv bw)
+    (cmp : (bk, bw) Comparator.Module.t) (map : (ak, av, aw) Map.t)
+    ~(f : key:ak -> data:av -> bk * bv) : (bk, bv, bw) Map.t Or_error.t =
   map |> Map.to_sequence
   |> Sequence.map ~f:(fun (key, data) -> f ~key ~data)
   |> Map.of_sequence_or_error cmp

@@ -32,7 +32,7 @@ let validate_path_and_file : (Fpath.t * Fpath.t) Validate.check =
 
 let to_full_path ~(dir : Fpath.t) ~(file : Fpath.t) : Fpath.t Or_error.t =
   Or_error.(
-    Validate.valid_or_error validate_path_and_file (dir, file) 
+    Validate.valid_or_error validate_path_and_file (dir, file)
     >>| Tuple2.uncurry Fpath.append)
 
 let regress_on_file ~(dir : Fpath.t) (file : Fpath.t)

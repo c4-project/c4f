@@ -14,8 +14,8 @@
     Despite the name, this module isn't just for use in C ASTs: it also sees
     use in Litmus identifiers, etc. *)
 
-(* The actual implementation depends on Core, for now, but we only
-   expose the part of it that adheres to the Base interfaces. *)
+(* The actual implementation depends on Core, for now, but we only expose the
+   part of it that adheres to the Base interfaces. *)
 open Base
 
 (** {1 Regular C identifiers} *)

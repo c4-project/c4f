@@ -303,7 +303,9 @@ let%test_module "produce-consume validity" =
             Shrinker.atomic
         end )
         ~f:(fun path ->
-          [%test_result: unit Or_error.t] ~here:[[%here]] ~expect:(Ok ())
+          [%test_result: unit Or_error.t]
+            ~here:[[%here]]
+            ~expect:(Ok ())
             (Or_error.map ~f:(Fn.const ())
                (Src.Path_consumers.consume ~path ?filter ~action
                   (Lazy.force Subject.Test_data.test) ) ) )

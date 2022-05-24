@@ -4,9 +4,23 @@
  (synopsis "c4f: configuration and config file parsing")
  (preprocess
   (pps ppx_deriving.std ppx_jane sedlex.ppx))
- (libraries sexplib0 fmt fpath menhirLib travesty travesty.base_exts sedlex
-   base base.caml core plumbing c4f.common c4f.litmus c4f.utils c4f.fuzz
-   c4f.fuzz_run))
+ (libraries
+  sexplib0
+  fmt
+  fpath
+  menhirLib
+  travesty
+  travesty.base_exts
+  sedlex
+  base
+  base.caml
+  core
+  plumbing
+  c4f.common
+  c4f.litmus
+  c4f.utils
+  c4f.fuzz
+  c4f.fuzz_run))
 
 ;; Config file parser
 
@@ -19,8 +33,12 @@
  (action
   (with-stdout-to
    messages.ml
-   (run menhir --table %{dep:parser.mly} --compile-errors
-     %{dep:config.messages}))))
+   (run
+    menhir
+    --table
+    %{dep:parser.mly}
+    --compile-errors
+    %{dep:config.messages}))))
 
 (rule
  (with-stdout-to
@@ -30,5 +48,11 @@
 (rule
  (with-stdout-to
   messages.check
-  (run menhir --table %{dep:parser.mly} --compare-errors
-    %{dep:config.auto.messages} --compare-errors %{dep:config.messages})))
+  (run
+   menhir
+   --table
+   %{dep:parser.mly}
+   --compare-errors
+   %{dep:config.auto.messages}
+   --compare-errors
+   %{dep:config.messages})))

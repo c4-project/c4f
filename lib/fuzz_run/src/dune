@@ -6,6 +6,22 @@
  (synopsis "c4f: FIR fuzzer runner")
  (preprocess
   (pps ppx_deriving.std ppx_accessor ppx_jane))
- (libraries sexplib0 base base.caml core stdio splittable_random
-   accessor accessor_base fmt travesty travesty.base_exts plumbing c4f.utils
-   c4f.common c4f.fir c4f.litmus_c c4f.fuzz c4f.fuzz_actions))
+ (libraries
+  sexplib0
+  base
+  base.caml
+  core
+  stdio
+  splittable_random
+  accessor
+  accessor_base
+  fmt
+  travesty
+  travesty.base_exts
+  plumbing
+  c4f.utils
+  c4f.common
+  c4f.fir
+  c4f.litmus_c
+  c4f.fuzz
+  c4f.fuzz_actions))

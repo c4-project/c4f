@@ -32,8 +32,8 @@ module Helpers = struct
     Or_error.error_s
       [%message
         "Unexpected kind of action associated with this path"
-          ~got:(got : Path_kind.t)
-          ~want:(want : Path_kind.t)]
+          ~(got : Path_kind.t)
+          ~(want : Path_kind.t)]
 
   let bad_stm (got_stm : Subject.Statement.t) ~(want : Fir.Statement_class.t)
       : 'a Or_error.t =
@@ -41,8 +41,8 @@ module Helpers = struct
     Or_error.error_s
       [%message
         "Unexpected statement class for this path"
-          ~got:(got : Fir.Statement_class.t option)
-          ~want:(want : Fir.Statement_class.t)]
+          ~(got : Fir.Statement_class.t option)
+          ~(want : Fir.Statement_class.t)]
 end
 
 let checked_transform (stm : Subject.Statement.t) ~(ctx : ctx)
@@ -145,8 +145,7 @@ module Make_flow (F : sig
   (** [thru_flags x] gets any flags that should activate on passing through
       [x]. *)
 
-  val sel_block :
-    rest -> (unit, Subject.Block.t, t, [< field]) Accessor.t
+  val sel_block : rest -> (unit, Subject.Block.t, t, [< field]) Accessor.t
   (** [sel_block rest] focuses down on the block pointed to by [rest]. *)
 end) =
 struct

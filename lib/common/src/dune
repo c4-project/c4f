@@ -6,6 +6,22 @@
  (synopsis "c4f: common infrastructure")
  (preprocess
   (pps ppx_deriving.std ppx_accessor ppx_jane))
- (libraries bin_prot bin_prot.shape sexplib sexplib0 stdio fmt
-   shell.string_extended core core.validate base base.caml accessor accessor_base
-   travesty travesty.base_exts c4f.utils plumbing yojson))
+ (libraries
+  bin_prot
+  bin_prot.shape
+  sexplib
+  sexplib0
+  stdio
+  fmt
+  shell.string_extended
+  core
+  core.validate
+  base
+  base.caml
+  accessor
+  accessor_base
+  travesty
+  travesty.base_exts
+  c4f.utils
+  plumbing
+  yojson))

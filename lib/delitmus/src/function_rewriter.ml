@@ -159,7 +159,7 @@ struct
         (Error.create_s
            [%message
              "Could not find function in function map."
-               ~name:(name : Common.C_id.t)] )
+               ~(name : Common.C_id.t)] )
 
   let rewrite_function_name (name : Common.C_id.t) ~(context : Context.t) :
       Common.C_id.t Or_error.t =

@@ -45,7 +45,8 @@ let%test_module "optimising_and" =
           [@@deriving sexp, quickcheck]
         end )
         ~f:(fun (l, r) ->
-          test_eval ~here:[[%here]]
+          test_eval
+            ~here:[[%here]]
             ~expect:Src.Predicate.Infix.(l && r)
             Src.Predicate.Infix.(l &&+ r) )
 
@@ -55,7 +56,9 @@ let%test_module "optimising_and" =
           type t = int Src.Predicate.t [@@deriving sexp, quickcheck]
         end )
         ~f:(fun x ->
-          [%test_result: int Src.Predicate.t] ~here:[[%here]] ~expect:x
+          [%test_result: int Src.Predicate.t]
+            ~here:[[%here]]
+            ~expect:x
             (Src.Predicate.optimising_and_seq (Sequence.singleton x)) )
 
     let%test_unit "optimising_and_seq on list append behaves like and of \
@@ -66,7 +69,8 @@ let%test_module "optimising_and" =
           [@@deriving sexp, quickcheck]
         end )
         ~f:(fun (l, r) ->
-          test_eval ~here:[[%here]]
+          test_eval
+            ~here:[[%here]]
             ~expect:Src.Predicate.(Infix.(opt_and_list l && opt_and_list r))
             (opt_and_list (l @ r)) )
   end )
@@ -83,7 +87,8 @@ let%test_module "optimising_or" =
           [@@deriving sexp, quickcheck]
         end )
         ~f:(fun (l, r) ->
-          test_eval ~here:[[%here]]
+          test_eval
+            ~here:[[%here]]
             ~expect:Src.Predicate.Infix.(l || r)
             Src.Predicate.Infix.(l ||+ r) )
 
@@ -93,7 +98,9 @@ let%test_module "optimising_or" =
           type t = int Src.Predicate.t [@@deriving sexp, quickcheck]
         end )
         ~f:(fun x ->
-          [%test_result: int Src.Predicate.t] ~here:[[%here]] ~expect:x
+          [%test_result: int Src.Predicate.t]
+            ~here:[[%here]]
+            ~expect:x
             (Src.Predicate.optimising_or_seq (Sequence.singleton x)) )
 
     let%test_unit "optimising_or_seq on list append behaves like or of \
@@ -104,7 +111,8 @@ let%test_module "optimising_or" =
           [@@deriving sexp, quickcheck]
         end )
         ~f:(fun (l, r) ->
-          test_eval ~here:[[%here]]
+          test_eval
+            ~here:[[%here]]
             ~expect:Src.Predicate.(Infix.(opt_or_list l || opt_or_list r))
             (opt_or_list (l @ r)) )
   end )

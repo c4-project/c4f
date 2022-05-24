@@ -19,7 +19,7 @@ module Insert : sig
   module type S =
     C4f_fuzz.Action_types.S
       with type Payload.t =
-            C4f_fir.Atomic_store.t C4f_fuzz.Payload_impl.Pathed.t
+        C4f_fir.Atomic_store.t C4f_fuzz.Payload_impl.Pathed.t
 
   (** [Int_normal] is a fuzzer action that generates a random atomic-int
       store instruction. *)

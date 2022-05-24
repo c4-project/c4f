@@ -53,6 +53,7 @@ let%test_module "decls" =
         end )
         ~f:(fun init ->
           [%test_result: Fir.Initialiser.t Ac.C_named.t Or_error.t]
-            ~here:[[%here]] ~expect:(Ok init)
+            ~here:[[%here]]
+            ~expect:(Ok init)
             (Src.Abstract_prim.decl (Src.Reify_prim.decl init)) )
   end )

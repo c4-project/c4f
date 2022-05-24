@@ -153,7 +153,7 @@ module Map = struct
     Or_error.error_s
       [%message
         "Tried to erase the known value of a depended-upon variable"
-          ~var:(var : Common.Litmus_id.t)]
+          ~(var : Common.Litmus_id.t)]
 
   let erase_value (map : t) ~(id : Common.Litmus_id.t) : t Or_error.t =
     Or_error.Let_syntax.(

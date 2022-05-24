@@ -198,9 +198,9 @@ module Make (Lang : Test_types.Basic) :
         Validate.fail_s
           [%message
             "One or more locations aren't in the init."
-              ~in_locations:(in_locations : Set.M(Ac.C_id).t)
-              ~in_init:(in_init : Set.M(Ac.C_id).t)
-              ~excess:(excess : Set.M(Ac.C_id).t)]
+              ~(in_locations : Set.M(Ac.C_id).t)
+              ~(in_init : Set.M(Ac.C_id).t)
+              ~(excess : Set.M(Ac.C_id).t)]
 
     let validate_header (t : Lang.Constant.t Header.t) : Validate.t =
       Validate.of_list
@@ -275,7 +275,7 @@ module Make (Lang : Test_types.Basic) :
       ~if_false:"incorrect language"
 
   let check_language : Ac.C_id.t -> Ac.C_id.t Or_error.t =
-    Validate.valid_or_error validate_language 
+    Validate.valid_or_error validate_language
 
   let of_ast
       ({Ast.language; name; decls} : (Lang.Constant.t, Lang.Program.t) Ast.t)

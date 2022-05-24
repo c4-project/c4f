@@ -115,6 +115,7 @@ let%test_unit "on_value_of_typed_id: always takes basic type" =
     end) )
     ~f:(fun r ->
       let ty = Accessor.(r.@(C4f_common.C_named.value)) in
-      [%test_result: C4f_fir.Type.t Or_error.t] ~here:[[%here]]
+      [%test_result: C4f_fir.Type.t Or_error.t]
+        ~here:[[%here]]
         (Tc.type_of (on_value_of_typed_id r))
         ~expect:(Or_error.return C4f_fir.Type.(make (basic_type ty))) )

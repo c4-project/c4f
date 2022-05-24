@@ -20,8 +20,8 @@ module Prim = struct
     x |> Accessor.get acc |> equal to_
 end
 
-let to_non_atomic (acc : (_, bool, 't, [< Accessor.field]) Accessor.t)
-    : 't -> 't Or_error.t =
+let to_non_atomic (acc : (_, bool, 't, [< Accessor.field]) Accessor.t) :
+    't -> 't Or_error.t =
   Accessor_base.Or_error.map acc ~f:(function
     | true -> Ok false
     | false -> Or_error.error_string "already non-atomic" )
@@ -159,7 +159,7 @@ include Json
 
 let check (t1 : t) (t2 : t) : t Or_error.t =
   if equal t1 t2 then Ok t1
-  else Or_error.error_s [%message "Type mismatch" ~t1:(t1 : t) ~t2:(t2 : t)]
+  else Or_error.error_s [%message "Type mismatch" ~(t1 : t) ~(t2 : t)]
 
 let check_modulo_atomicity (t1 : t) (t2 : t) : t Or_error.t =
   check (strip_atomic t1) (strip_atomic t2)

@@ -5,8 +5,24 @@
  (inline_tests)
  (preprocess
   (pps ppx_jane))
- (libraries sexplib0 expect_test_helpers_core ppx_expect.common
-   ppx_expect.config ppx_expect.config_types ppx_inline_test.config base
-   base.caml accessor accessor_base fmt travesty.base_exts c4f.litmus_c
-   c4f.common c4f.utils c4f.fir c4f.fuzz c4f.fuzz_actions c4f_fuzz_test
-   c4f_fir_test))
+ (libraries
+  sexplib0
+  expect_test_helpers_core
+  ppx_expect.common
+  ppx_expect.config
+  ppx_expect.config_types
+  ppx_inline_test.config
+  base
+  base.caml
+  accessor
+  accessor_base
+  fmt
+  travesty.base_exts
+  c4f.litmus_c
+  c4f.common
+  c4f.utils
+  c4f.fir
+  c4f.fuzz
+  c4f.fuzz_actions
+  c4f_fuzz_test
+  c4f_fir_test))

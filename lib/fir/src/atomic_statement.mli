@@ -22,11 +22,7 @@ type t [@@deriving sexp, compare, equal]
 (** {1 Accessors} *)
 
 val cmpxchg :
-  ( 'a
-  , Expression.t Atomic_cmpxchg.t
-  , t
-  , [< Accessor.variant] )
-  Accessor.t
+  ('a, Expression.t Atomic_cmpxchg.t, t, [< Accessor.variant]) Accessor.t
 (** [cmpxchg] focuses on atomic compare-exchanges that are in statement
     position (discarding the boolean output). *)
 
@@ -34,11 +30,7 @@ val fence : ('a, Atomic_fence.t, t, [< Accessor.variant]) Accessor.t
 (** [fence] focuses on atomic fence statements. *)
 
 val fetch :
-  ( 'a
-  , Expression.t Atomic_fetch.t
-  , t
-  , [< Accessor.variant] )
-  Accessor.t
+  ('a, Expression.t Atomic_fetch.t, t, [< Accessor.variant]) Accessor.t
 (** [fetch] focuses on atomic fetch (or exchange) statements. *)
 
 val store : ('a, Atomic_store.t, t, [< Accessor.variant]) Accessor.t

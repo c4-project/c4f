@@ -45,7 +45,7 @@ let lookup_and_require_global (map : t) ~(id : Common.Litmus_id.t) :
         [%message
           "Litmus identifier was mapped to something other than a global \
            variable"
-            ~id:(id : Common.Litmus_id.t)])
+            ~(id : Common.Litmus_id.t)])
 
 let lookup_and_require_param (map : t) ~(id : Common.Litmus_id.t) :
     Common.C_id.t Or_error.t =
@@ -56,7 +56,7 @@ let lookup_and_require_param (map : t) ~(id : Common.Litmus_id.t) :
       Or_error.error_s
         [%message
           "Litmus identifier was mapped to something other than a param"
-            ~id:(id : Common.Litmus_id.t)])
+            ~(id : Common.Litmus_id.t)])
 
 let to_param_opt (lit_id : Common.Litmus_id.t) (rc : Record.t) :
     (int * (Common.Litmus_id.t * Record.t)) option =

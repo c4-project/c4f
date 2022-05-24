@@ -21,15 +21,12 @@ let%test_module "Bin" =
           C4f_utils.Io.print_bool (Bin.binds_tighter this ~than)
 
         let%expect_test "equality binds tighter than comma" =
-          test `Eq `Comma ;
-          [%expect {| true |}]
+          test `Eq `Comma ; [%expect {| true |}]
 
         let%expect_test "bitwise OR binds tighter than logical OR" =
-          test `Or `Lor ;
-          [%expect {| true |}]
+          test `Or `Lor ; [%expect {| true |}]
 
         let%expect_test "logical AND does not bind tighter than itself" =
-          test `Land `Land ;
-          [%expect {| false |}]
+          test `Land `Land ; [%expect {| false |}]
       end )
   end )

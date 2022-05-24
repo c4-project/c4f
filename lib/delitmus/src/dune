@@ -7,6 +7,22 @@
  (preprocess
   (pps ppx_deriving.std ppx_yojson_conv ppx_accessor ppx_jane))
  (modules_without_implementation runner_types)
- (libraries sexplib0 result base base.caml core accessor accessor_base
-   stdio fmt yojson travesty travesty.base_exts plumbing c4f.litmus_c c4f.fir
-   c4f.common c4f.litmus c4f.utils))
+ (libraries
+  sexplib0
+  result
+  base
+  base.caml
+  core
+  accessor
+  accessor_base
+  stdio
+  fmt
+  yojson
+  travesty
+  travesty.base_exts
+  plumbing
+  c4f.litmus_c
+  c4f.fir
+  c4f.common
+  c4f.litmus
+  c4f.utils))

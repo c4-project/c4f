@@ -27,7 +27,8 @@ let print_sample (module G : Src.Expr.S) : unit =
 let test_has_type (type_of : Fir.Expression.t -> Fir.Type.t Or_error.t)
     (e : Fir.Expression.t) (ty : Fir.Type.t) ~(here : Lexing.position) : unit
     =
-  [%test_result: Fir.Type.t Or_error.t] (type_of e) ~here:[here; [%here]]
+  [%test_result: Fir.Type.t Or_error.t] (type_of e)
+    ~here:[here; [%here]]
     ~equal:[%compare.equal: Fir.Type.t Or_error.t] ~expect:(Ok ty)
 
 let test_in_env (env : Fir.Env.t) (e : Fir.Expression.t)
@@ -35,13 +36,15 @@ let test_in_env (env : Fir.Env.t) (e : Fir.Expression.t)
   [%test_pred: Fir.Expression.t]
     (Fir.Expression_traverse.On_addresses.for_all
        ~f:(Accessor.for_all Fir.Address.variable_of ~f:(Map.mem env)) )
-    ~here:[here; [%here]] e
+    ~here:[here; [%here]]
+    e
 
 let test_evaluates_to (heap : Fir.Heap.t) (e : Fir.Expression.t)
     (k : Fir.Constant.t) ~(here : Lexing.position) : unit =
   [%test_result: Fir.Constant.t Or_error.t]
     (Fir.Expression_eval.as_constant ~env:heap e)
-    ~expect:(Ok k) ~here:[here; [%here]]
+    ~expect:(Ok k)
+    ~here:[here; [%here]]
 
 (** [test_all_expressions ?evaluate_to f ~have_type ~here] does a salvo of
     unit tests on a random expression generator; we do these all together

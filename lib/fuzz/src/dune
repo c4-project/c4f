@@ -7,6 +7,23 @@
  (preprocess
   (pps ppx_deriving.std ppx_accessor ppx_jane))
  (modules_without_implementation action_types payload_types)
- (libraries splittable_random bin_prot.shape sexplib0 stdio accessor
-   accessor_base base base.caml core core.validate fmt travesty travesty.base_exts
-   plumbing c4f.common c4f.litmus c4f.utils c4f.litmus_c c4f.fir))
+ (libraries
+  splittable_random
+  bin_prot.shape
+  sexplib0
+  stdio
+  accessor
+  accessor_base
+  base
+  base.caml
+  core
+  core.validate
+  fmt
+  travesty
+  travesty.base_exts
+  plumbing
+  c4f.common
+  c4f.litmus
+  c4f.utils
+  c4f.litmus_c
+  c4f.fir))

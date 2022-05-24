@@ -69,7 +69,8 @@ let%test_unit "conversion to/from JSON is the identity" =
   Base_quickcheck.Test.run_exn
     (module C4f_common.C_id)
     ~f:(fun id ->
-      [%test_result: C4f_common.C_id.t] ~here:[[%here]]
+      [%test_result: C4f_common.C_id.t]
+        ~here:[[%here]]
         C4f_common.C_id.(t_of_yojson (yojson_of_t id))
         ~expect:id ~equal:[%equal: C4f_common.C_id.t] )
 

@@ -114,9 +114,9 @@ let expr_stm : Ast.Expr.t -> unit Fir.Statement.t Or_error.t = function
   (* ++x and x++ SHOULD be semantically equivalent in statement position. *)
   | Postfix (l, `Inc) | Prefix (`Inc, l) -> crement `Inc l
   | Postfix (l, `Dec) | Prefix (`Dec, l) -> crement `Dec l
-  | ( Brackets _ (* should've been debracketed already *)
-    | Constant _ | Prefix _ | Binary _ | Ternary _ | Cast _ | Subscript _
-    | Field _ | Sizeof_type _ | String _ | Identifier _ ) as e ->
+  | ( Brackets _ (* should've been debracketed already *) | Constant _
+    | Prefix _ | Binary _ | Ternary _ | Cast _ | Subscript _ | Field _
+    | Sizeof_type _ | String _ | Identifier _ ) as e ->
       Or_error.error_s
         [%message "Unsupported expression statement" ~got:(e : Ast.Expr.t)]
 
@@ -165,7 +165,7 @@ let require_assign (e : Ast.Expr.t) : Fir.Assign.t Or_error.t =
     Result.of_option ao
       ~error:
         (Error.create_s
-           [%message "Expected assignment here" ~e:(e : Ast.Expr.t)] ))
+           [%message "Expected assignment here" ~(e : Ast.Expr.t)] ))
 
 let opt_map (x : 'a option) ~(f : 'a -> 'b Or_error.t) : 'b option Or_error.t
     =

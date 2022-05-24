@@ -57,8 +57,8 @@ module Make_traversal_base (Basic : Basic) = struct
     let map_m_cmpxchg (x : t Atomic_cmpxchg.t) ~(f : Elt.t -> Elt.t M.t)
         ~(mu : t -> t M.t) : t Atomic_cmpxchg.t M.t =
       AC.bmap x ~obj:(A.map_m ~f) ~expected:(A.map_m ~f) ~desired:mu
-        ~strength:M.return (* for now *) ~succ:(O.map_m ~f)
-        ~fail:(O.map_m ~f)
+        ~strength:M.return (* for now *)
+        ~succ:(O.map_m ~f) ~fail:(O.map_m ~f)
 
     let map_m_fetch (x : t Atomic_fetch.t) ~(f : Elt.t -> Elt.t M.t)
         ~(mu : t -> t M.t) : t Atomic_fetch.t M.t =

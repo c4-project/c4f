@@ -15,7 +15,7 @@ open Import
 let not_found (id : Common.C_id.t) : Error.t =
   Error.create_s
     [%message
-      "Variable not found in typing environment." ~id:(id : Common.C_id.t)]
+      "Variable not found in typing environment." ~(id : Common.C_id.t)]
 
 module Record = struct
   open Q
@@ -51,8 +51,8 @@ let variables_of_basic_type (env : t) ~(basic : Type.Basic.t) : t =
 let or_not_found (id : Common.C_id.t) : 'a option -> 'a Or_error.t =
   Result.of_option ~error:(not_found id)
 
-let get_or_not_found (type a) (acc : ('i, a, t, _) Accessor.t)
-    (env : t) ~(id : Common.C_id.t) : a Or_error.t =
+let get_or_not_found (type a) (acc : ('i, a, t, _) Accessor.t) (env : t)
+    ~(id : Common.C_id.t) : a Or_error.t =
   env.@?(acc) |> or_not_found id
 
 let record_of (env : t) ~(id : Common.C_id.t) : Record.t Or_error.t =

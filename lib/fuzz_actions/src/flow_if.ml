@@ -43,7 +43,8 @@ module Transform = struct
         : Fuzz.Subject.Statement.If.t =
       Fir.If.make
         ~cond:(Fir.Expression.l_not cond)
-        ~t_branch:f_branch (* intentional inversion *) ~f_branch:t_branch
+        ~t_branch:f_branch (* intentional inversion *)
+        ~f_branch:t_branch
 
     (* as above *)
 
@@ -52,7 +53,7 @@ module Transform = struct
       Or_error.error_s
         [%message
           "Tried to if-invert an invalid statement"
-            ~stm:(stm : Fuzz.Subject.Statement.t)]
+            ~(stm : Fuzz.Subject.Statement.t)]
 
     module Bm = Fir.Statement_traverse.Base_map (Or_error)
 

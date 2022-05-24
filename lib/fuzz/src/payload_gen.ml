@@ -38,7 +38,7 @@ let lift_opt_gen (type a) (g : a Opt_gen.t) : a t =
           ~tag:
             [%message
               "Payload generator instantiation failed."
-                ~action_id:(action_id : C4f_common.Id.t)]
+                ~(action_id : C4f_common.Id.t)]
       in
       (* TODO(@MattWindsor91): size? *)
       Or_error.(g' >>| Base_quickcheck.Generator.generate ~size:10 ~random) )

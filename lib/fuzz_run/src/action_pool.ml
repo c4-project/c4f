@@ -49,8 +49,7 @@ module Rec_queue = struct
 
   let maybe_enqueue (q : t) (action : Fuzz.Action.t) ~(flag : Fuzz.Flag.t)
       ~(random : Splittable_random.State.t) : t =
-    if Fuzz.Flag.eval flag ~random then Core.Fqueue.enqueue q action
-    else q
+    if Fuzz.Flag.eval flag ~random then Core.Fqueue.enqueue q action else q
 
   let recommend (rq : t) ~(actions : Fuzz.Action.t list)
       ~(flag : Fuzz.Flag.t) ~(random : Splittable_random.State.t) : t =

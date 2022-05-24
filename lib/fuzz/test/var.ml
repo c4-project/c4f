@@ -96,7 +96,8 @@ let%test_module "gen_fresh_vars" =
           let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
         end )
         ~f:
-          ([%test_pred: Common.C_id.t list] ~here:[[%here]]
+          ([%test_pred: Common.C_id.t list]
+             ~here:[[%here]]
              (Fn.non (List.contains_dup ~compare:[%compare: Common.C_id.t])) )
   end )
 

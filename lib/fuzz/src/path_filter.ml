@@ -41,8 +41,8 @@ module Block = struct
     Or_error.error_s
       [%message
         "Final block of path doesn't match filter"
-          ~block:(block : t)
-          ~template:(template : t)]
+          ~(block : t)
+          ~(template : t)]
 
   let match_req (block : t) ~(template : t) : unit Or_error.t =
     match (template, block) with
@@ -90,8 +90,7 @@ module End_check = struct
 
   let check (check : t) ~(stm : Subject.Statement.t) : unit Or_error.t =
     Tx.Or_error.unless_m (is_ok check ~stm) ~f:(fun () ->
-        Or_error.error_s
-          [%message "Statement failed check" ~check:(check : t)] )
+        Or_error.error_s [%message "Statement failed check" ~(check : t)] )
 end
 
 type t =
@@ -189,7 +188,7 @@ let check_thread_ok ({threads; _} : t) ~(thread : int) : unit Or_error.t =
     Or_error.error_s
       [%message
         "Thread not allowed by filter"
-          ~thread:(thread : int)
+          ~(thread : int)
           ~allowed:(threads : Set.M(Int).t option)]
 
 let check_req (filter : t) ~(meta : Path_meta.t) : unit Or_error.t =

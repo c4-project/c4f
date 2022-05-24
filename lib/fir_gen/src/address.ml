@@ -20,7 +20,6 @@ module On_env (E : Fir.Env_types.S) : S =
 
 module Pointers_on_env (E : Fir.Env_types.S) : S = struct
   include On_env (E) (* to override as needed *)
-
   module Gen = Fir.Env.Random_var_with_type (E)
 
   let quickcheck_generator : t Q.Generator.t =

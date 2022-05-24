@@ -49,8 +49,7 @@ include Class.Make_ext (struct
       ~uop:(fun o _ -> Some (Uop (Some o)))
 
   let classify_rec : Expression.t -> t list =
-    Expression.reduce
-      ~constant:(Fn.const [Constant])
+    Expression.reduce ~constant:(Fn.const [Constant])
       ~address:(Fn.const [Address])
       ~atomic:(fun x ->
         let inner = Atomic_expression.On_expressions.to_list x in

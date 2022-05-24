@@ -22,7 +22,6 @@ module Values_on_env (E : Fir.Env_types.S) : sig
   type t = Fir.Lvalue.t [@@deriving sexp_of, quickcheck]
 end = struct
   include On_env (E) (* to override as needed *)
-
   module Gen = Fir.Env.Random_var_with_type (E)
 
   let quickcheck_generator : t Q.Generator.t =

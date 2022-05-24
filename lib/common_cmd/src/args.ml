@@ -143,7 +143,8 @@ module With_files = struct
 
   let get (type a) (rest : a Command.Param.t) : a t Command.Param.t =
     Command.Let_syntax.(
-      let%map_open infile_raw = anon (maybe ("FILE" %: Filename_unix.arg_type))
+      let%map_open infile_raw =
+        anon (maybe ("FILE" %: Filename_unix.arg_type))
       and outfile_raw = out
       and rest = rest in
       {rest; infiles_raw= Option.to_list infile_raw; outfile_raw})

@@ -1,4 +1,4 @@
-version = c3503178
+version = 0.21.0
 profile = ocamlformat
 margin = 77
 break-cases = fit

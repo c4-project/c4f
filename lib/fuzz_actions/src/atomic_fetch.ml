@@ -28,8 +28,8 @@ module Insert = struct
   module type S =
     Fuzz.Action_types.S
       with type Payload.t =
-            C4f_fir.Expression.t C4f_fir.Atomic_fetch.t
-            Fuzz.Payload_impl.Pathed.t
+        C4f_fir.Expression.t C4f_fir.Atomic_fetch.t
+        Fuzz.Payload_impl.Pathed.t
 
   let readme_preamble : string =
     {|

@@ -22,10 +22,7 @@ module Prim : sig
   type t = Bool | Int  (** Type of primitive types. *)
 
   val eq :
-       (unit, t, 'x, [> Accessor.getter]) Accessor.t
-    -> 'x
-    -> to_:t
-    -> bool
+    (unit, t, 'x, [> Accessor.getter]) Accessor.t -> 'x -> to_:t -> bool
   (** [eq acc x ~to_] checks that the primitive type of [x], found via [acc],
       is equal to [to_]. *)
 end
@@ -61,10 +58,7 @@ module Basic : sig
   end
 
   val eq :
-       (unit, t, 'x, [> Accessor.getter]) Accessor.t
-    -> 'x
-    -> to_:t
-    -> bool
+    (unit, t, 'x, [> Accessor.getter]) Accessor.t -> 'x -> to_:t -> bool
   (** [eq acc x ~to_] checks that the primitive type of [x], found via [acc],
       is equal to [to_]. *)
 

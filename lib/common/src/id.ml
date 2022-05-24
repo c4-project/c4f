@@ -57,7 +57,7 @@ let error_with_suggestions (assoc : (t, _) List.Assoc.t) (id : t)
   let sgs = suggestions assoc id in
   Or_error.error_s
     [%message
-      "unknown ID" ~of_type:id_type ~id:(id : t) ~suggestions:(sgs : t list)]
+      "unknown ID" ~of_type:id_type ~(id : t) ~suggestions:(sgs : t list)]
 
 let try_find_assoc_with_suggestions (assoc : (t, 'a) List.Assoc.t) (id : t)
     ~(id_type : string) : 'a Or_error.t =
@@ -89,8 +89,8 @@ let drop_prefix (id : t) ~(prefix : t) : t Or_error.t =
     Or_error.error_s
       [%message
         "The given prefix ID is not a prefix of the other ID."
-          ~id:(id : t)
-          ~prefix:(prefix : t)]
+          ~(id : t)
+          ~(prefix : t)]
 
 let has_tag id element = List.mem id element ~equal:String.Caseless.equal
 

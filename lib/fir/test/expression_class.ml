@@ -40,8 +40,7 @@ let%test_module "matches_any" =
     let%expect_test "no classes" = test [] ; [%expect {| false |}]
 
     let%expect_test "bop of any form" =
-      test [Bop None] ;
-      [%expect {| true |}]
+      test [Bop None] ; [%expect {| true |}]
 
     let%expect_test "bop subtract" =
       test [Bop (Some Src.Op.Binary.sub)] ;
@@ -55,17 +54,11 @@ let%test_module "matches_any" =
       test [Bop (Some Src.Op.Binary.eq); Bop (Some Src.Op.Binary.sub)] ;
       [%expect {| true |}]
 
-    let%expect_test "uop" =
-      test [Uop None] ;
-      [%expect {| false |}]
+    let%expect_test "uop" = test [Uop None] ; [%expect {| false |}]
 
-    let%expect_test "constant" =
-      test [Constant] ;
-      [%expect {| false |}]
+    let%expect_test "constant" = test [Constant] ; [%expect {| false |}]
 
-    let%expect_test "address" =
-      test [Address] ;
-      [%expect {| false |}]
+    let%expect_test "address" = test [Address] ; [%expect {| false |}]
   end )
 
 let%test_module "unmatches_any" =
@@ -81,8 +74,7 @@ let%test_module "unmatches_any" =
     let%expect_test "no classes" = test [] ; [%expect {| false |}]
 
     let%expect_test "bop of any form" =
-      test [Bop None] ;
-      [%expect {| false |}]
+      test [Bop None] ; [%expect {| false |}]
 
     let%expect_test "bop subtract" =
       test [Bop (Some Src.Op.Binary.sub)] ;
@@ -96,17 +88,11 @@ let%test_module "unmatches_any" =
       test [Bop (Some Src.Op.Binary.eq); Bop (Some Src.Op.Binary.sub)] ;
       [%expect {| true |}]
 
-    let%expect_test "uop" =
-      test [Uop None] ;
-      [%expect {| true |}]
+    let%expect_test "uop" = test [Uop None] ; [%expect {| true |}]
 
-    let%expect_test "constant" =
-      test [Constant] ;
-      [%expect {| true |}]
+    let%expect_test "constant" = test [Constant] ; [%expect {| true |}]
 
-    let%expect_test "address" =
-      test [Address] ;
-      [%expect {| true |}]
+    let%expect_test "address" = test [Address] ; [%expect {| true |}]
   end )
 
 let%test_module "rec_matches_any" =
@@ -122,8 +108,7 @@ let%test_module "rec_matches_any" =
     let%expect_test "no classes" = test [] ; [%expect {| false |}]
 
     let%expect_test "bop of any form" =
-      test [Bop None] ;
-      [%expect {| true |}]
+      test [Bop None] ; [%expect {| true |}]
 
     let%expect_test "bop subtract" =
       test [Bop (Some Src.Op.Binary.sub)] ;
@@ -137,17 +122,11 @@ let%test_module "rec_matches_any" =
       test [Bop (Some Src.Op.Binary.eq); Bop (Some Src.Op.Binary.sub)] ;
       [%expect {| true |}]
 
-    let%expect_test "uop" =
-      test [Uop None] ;
-      [%expect {| false |}]
+    let%expect_test "uop" = test [Uop None] ; [%expect {| false |}]
 
-    let%expect_test "constant" =
-      test [Constant] ;
-      [%expect {| true |}]
+    let%expect_test "constant" = test [Constant] ; [%expect {| true |}]
 
-    let%expect_test "address" =
-      test [Address] ;
-      [%expect {| true |}]
+    let%expect_test "address" = test [Address] ; [%expect {| true |}]
   end )
 
 let%test_module "rec_unmatches_any" =
@@ -163,8 +142,7 @@ let%test_module "rec_unmatches_any" =
     let%expect_test "no classes" = test [] ; [%expect {| false |}]
 
     let%expect_test "bop of any form" =
-      test [Bop None] ;
-      [%expect {| true |}]
+      test [Bop None] ; [%expect {| true |}]
 
     let%expect_test "bop subtract" =
       test [Bop (Some Src.Op.Binary.sub)] ;
@@ -178,17 +156,11 @@ let%test_module "rec_unmatches_any" =
       test [Bop (Some Src.Op.Binary.eq); Bop (Some Src.Op.Binary.sub)] ;
       [%expect {| true |}]
 
-    let%expect_test "uop" =
-      test [Uop None] ;
-      [%expect {| true |}]
+    let%expect_test "uop" = test [Uop None] ; [%expect {| true |}]
 
-    let%expect_test "constant" =
-      test [Constant] ;
-      [%expect {| true |}]
+    let%expect_test "constant" = test [Constant] ; [%expect {| true |}]
 
-    let%expect_test "address" =
-      test [Address] ;
-      [%expect {| true |}]
+    let%expect_test "address" = test [Address] ; [%expect {| true |}]
   end )
 
 let%test_module "count_matches" =
@@ -203,9 +175,7 @@ let%test_module "count_matches" =
 
     let%expect_test "no classes" = test [] ; [%expect {| 0 |}]
 
-    let%expect_test "bop of any form" =
-      test [Bop None] ;
-      [%expect {| 3 |}]
+    let%expect_test "bop of any form" = test [Bop None] ; [%expect {| 3 |}]
 
     let%expect_test "bop subtract" =
       test [Bop (Some Src.Op.Binary.sub)] ;
@@ -219,15 +189,9 @@ let%test_module "count_matches" =
       test [Bop (Some Src.Op.Binary.eq); Bop (Some Src.Op.Binary.sub)] ;
       [%expect {| 2 |}]
 
-    let%expect_test "uop" =
-      test [Uop None] ;
-      [%expect {| 0 |}]
+    let%expect_test "uop" = test [Uop None] ; [%expect {| 0 |}]
 
-    let%expect_test "constant" =
-      test [Constant] ;
-      [%expect {| 3 |}]
+    let%expect_test "constant" = test [Constant] ; [%expect {| 3 |}]
 
-    let%expect_test "address" =
-      test [Address] ;
-      [%expect {| 1 |}]
+    let%expect_test "address" = test [Address] ; [%expect {| 1 |}]
   end )

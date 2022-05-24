@@ -36,7 +36,9 @@ let%test_module "anchor" =
         end )
         ~f:(fun at ->
           let l = Src.Path_meta.Anchor.top in
-          [%test_eq: Src.Path_meta.Anchor.t option] ~here:[[%here]] at
+          [%test_eq: Src.Path_meta.Anchor.t option]
+            ~here:[[%here]]
+            at
             (at.@(l) <- at.@(l)) )
 
     let%test_unit "top: field law 3" =
@@ -49,7 +51,8 @@ let%test_module "anchor" =
         end )
         ~f:(fun (at, a, b) ->
           let l = Src.Path_meta.Anchor.top in
-          [%test_eq: Src.Path_meta.Anchor.t option] ~here:[[%here]]
+          [%test_eq: Src.Path_meta.Anchor.t option]
+            ~here:[[%here]]
             ((at.@(l) <- a).@(l) <- b)
             (at.@(l) <- b) )
 
@@ -75,7 +78,9 @@ let%test_module "anchor" =
         end )
         ~f:(fun at ->
           let l = Src.Path_meta.Anchor.bottom in
-          [%test_eq: Src.Path_meta.Anchor.t option] ~here:[[%here]] at
+          [%test_eq: Src.Path_meta.Anchor.t option]
+            ~here:[[%here]]
+            at
             (at.@(l) <- at.@(l)) )
 
     let%test_unit "bottom: field law 3" =
@@ -88,7 +93,8 @@ let%test_module "anchor" =
         end )
         ~f:(fun (at, a, b) ->
           let l = Src.Path_meta.Anchor.bottom in
-          [%test_eq: Src.Path_meta.Anchor.t option] ~here:[[%here]]
+          [%test_eq: Src.Path_meta.Anchor.t option]
+            ~here:[[%here]]
             ((at.@(l) <- a).@(l) <- b)
             (at.@(l) <- b) )
   end )

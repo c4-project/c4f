@@ -31,8 +31,7 @@ module Record : sig
 
   (** {2 Accessors} *)
 
-  val known_value :
-    ('a, Constant.t, t, [< Accessor.optional]) Accessor.t
+  val known_value : ('a, Constant.t, t, [< Accessor.optional]) Accessor.t
   (** [known_value] accesses a record's known value. *)
 
   val known_value_opt :

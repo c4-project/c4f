@@ -10,7 +10,6 @@
    project root for more information. *)
 
 open Core (* for Fqueue *)
-
 open Import
 
 let constant : Ast_basic.Constant.t -> Fir.Constant.t Or_error.t = function

@@ -39,11 +39,7 @@ module Atomic :
     These mainly abstract over the traversals above, for now. *)
 
 val depended_upon_idents :
-  ( 'i
-  , C4f_common.C_id.t
-  , Expression.t
-  , [< Accessor.many_getter] )
-  Accessor.t
+  ('i, C4f_common.C_id.t, Expression.t, [< Accessor.many_getter]) Accessor.t
 (** [depended_upon_idents] recursively gets every identifier in an expression
     that said expression is considered to depend upon. Over time, the notion
     of dependence may weaken, and this getter may pull in a subset of the

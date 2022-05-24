@@ -57,7 +57,8 @@ let%test_module "Random" =
       Test.run_exn
         (module Int_list)
         ~f:
-          ([%test_pred: int list] ~here:[[%here]]
+          ([%test_pred: int list]
+             ~here:[[%here]]
              (check_random ~f:(Random.index ~random) ~pred:in_bounds) )
 
     let%test_unit "span is always in bounds" =
@@ -65,7 +66,8 @@ let%test_module "Random" =
       Test.run_exn
         (module Int_list)
         ~f:
-          ([%test_pred: int list] ~here:[[%here]]
+          ([%test_pred: int list]
+             ~here:[[%here]]
              (check_random ~f:(Random.span ~random)
                 ~pred:(fun xs {Span.pos; len} ->
                   in_bounds xs pos
@@ -84,7 +86,8 @@ let%test_module "Random" =
           Test.run_exn
             (module Int_list)
             ~f:
-              ([%test_pred: int list] ~here:[[%here]]
+              ([%test_pred: int list]
+                 ~here:[[%here]]
                  (check_random ~f:(Random.item ~random)
                     ~pred:(List.mem ~equal:Int.equal) ) )
       end )
@@ -151,7 +154,8 @@ let%test_module "splice" =
               [@@deriving sexp, quickcheck]
             end )
             ~f:(fun (xs, f) ->
-              [%test_result: int list Or_error.t] ~here:[[%here]]
+              [%test_result: int list Or_error.t]
+                ~here:[[%here]]
                 ~equal:[%compare.equal: int list Or_error.t]
                 ~expect:(Or_error.return (f xs))
                 (splice xs ~span:{pos= 0; len= List.length xs} ~replace_f:f)
@@ -204,7 +208,8 @@ let%test_module "map_sub" =
           type t = int list * (int -> int) [@@deriving sexp, quickcheck]
         end )
         ~f:(fun (xs, f) ->
-          [%test_result: int list Or_error.t] ~here:[[%here]]
+          [%test_result: int list Or_error.t]
+            ~here:[[%here]]
             ~equal:[%compare.equal: int list Or_error.t]
             ~expect:(Or_error.return (List.map ~f xs))
             (map_sub xs ~span:{pos= 0; len= List.length xs} ~f) )

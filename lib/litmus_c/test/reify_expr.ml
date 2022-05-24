@@ -104,7 +104,8 @@ let%test_module "round trips" =
       Base_quickcheck.Test.run_exn
         (module Qc)
         ~f:(fun exp ->
-          [%test_result: Fir.Expression.t Or_error.t] ~here:[[%here]]
+          [%test_result: Fir.Expression.t Or_error.t]
+            ~here:[[%here]]
             ~expect:(Ok exp)
             (Src.Abstract_expr.model (Src.Reify_expr.reify exp)) )
 

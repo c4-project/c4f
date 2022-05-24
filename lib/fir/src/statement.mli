@@ -74,8 +74,7 @@ end
 val if_stm : ('i, 'm If.t, 'm t, [< Accessor.variant]) Accessor.t
 (** [if_stm] focuses on if statements. *)
 
-val flow :
-  ('i, 'm Flow_block.t, 'm t, [< Accessor.variant]) Accessor.t
+val flow : ('i, 'm Flow_block.t, 'm t, [< Accessor.variant]) Accessor.t
 (** [flow] focuses on flow blocks. *)
 
 val prim :
@@ -86,8 +85,7 @@ val prim :
   Accessor.t
 (** [prim] focuses on primitive statements. *)
 
-val prim' :
-  ('a, Prim_statement.t, unit t, [< Accessor.variant]) Accessor.t
+val prim' : ('a, Prim_statement.t, unit t, [< Accessor.variant]) Accessor.t
 (** [prim'] is a variant of [prim] that presumes there is no metadata. *)
 
 (** {1 Predicates over statements} *)

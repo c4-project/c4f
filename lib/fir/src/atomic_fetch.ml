@@ -15,8 +15,7 @@ open Import
 type 'e t = {obj: Address.t; arg: 'e; mo: Mem_order.t; op: Op.Fetch.t}
 [@@deriving sexp, accessors, make, compare, equal, quickcheck]
 
-let variable_of :
-    type e i. (i, Common.C_id.t, e t, [< field]) Accessor.t =
+let variable_of : type e i. (i, Common.C_id.t, e t, [< field]) Accessor.t =
   [%accessor obj @> Address.variable_of]
 
 module Base_map (Ap : Applicative.S) = struct
@@ -88,8 +87,8 @@ struct
         ~tag:
           [%message
             "'obj' type must be atomic version of 'expected' type"
-              ~arg:(arg : Type.t)
-              ~obj:(obj : Type.t)])
+              ~(arg : Type.t)
+              ~(obj : Type.t)])
 
   let type_of (c : t) : Type.t Or_error.t =
     Or_error.Let_syntax.(

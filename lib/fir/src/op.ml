@@ -42,12 +42,10 @@ module Binary = struct
         function
         | Add ->
             [ In.zero Left @-> Idem (* 0 + x -> x *)
-            ; In.zero Right @-> Idem
-              (* x + 0 -> x *) ]
+            ; In.zero Right @-> Idem (* x + 0 -> x *) ]
         | Sub ->
             [ In.zero Right @-> Idem (* x - 0 -> x *)
-            ; Refl @-> Out.zero
-              (* x - x -> 0 *) ])
+            ; Refl @-> Out.zero (* x - x -> 0 *) ])
   end
 
   module Bitwise = struct
@@ -58,8 +56,7 @@ module Binary = struct
     let twos_complement_rules : Op_rule.t list =
       Op_rule.
         [ In.minus_one Left @-> Idem (* x&-1 -> x*)
-        ; In.minus_one Right @-> Idem
-          (* -1&x -> x*) ]
+        ; In.minus_one Right @-> Idem (* -1&x -> x*) ]
 
     let rules : t -> Op_rule.t list =
       Op_rule.(
@@ -67,19 +64,16 @@ module Binary = struct
         | And ->
             [ In.zero Left @-> Out.zero (* 0&x -> 0 *)
             ; In.zero Right @-> Out.zero (* x&0 -> 0 *)
-            ; Refl @-> Idem
-              (* x&x -> x *) ]
+            ; Refl @-> Idem (* x&x -> x *) ]
             @ twos_complement_rules
         | Or ->
             [ In.zero Left @-> Idem (* 0|x -> x *)
             ; In.zero Right @-> Idem (* x|0 -> x *)
-            ; Refl @-> Idem
-              (* x|x -> x *) ]
+            ; Refl @-> Idem (* x|x -> x *) ]
         | Xor ->
             [ In.zero Left @-> Idem (* 0^x -> x *)
             ; In.zero Right @-> Idem (* x^0 -> x *)
-            ; Refl @-> Out.zero
-              (* x^x -> 0 *) ])
+            ; Refl @-> Out.zero (* x^x -> 0 *) ])
   end
 
   module Logical = struct
@@ -94,15 +88,13 @@ module Binary = struct
             ; In.false_ Right @-> Out.false_ (* x&&false -> false *)
             ; In.true_ Left @-> Idem (* true&&x -> x *)
             ; In.true_ Right @-> Idem (* x&&true -> x *)
-            ; Refl @-> Idem
-              (* x&&x -> x *) ]
+            ; Refl @-> Idem (* x&&x -> x *) ]
         | Or ->
             [ In.false_ Left @-> Idem (* false||x -> x *)
             ; In.false_ Right @-> Idem (* x||false -> x *)
             ; In.true_ Left @-> Out.true_ (* true||x -> true *)
             ; In.true_ Right @-> Out.true_ (* x||true -> true *)
-            ; Refl @-> Idem
-              (* x&&x -> x *) ])
+            ; Refl @-> Idem (* x&&x -> x *) ])
   end
 
   type t =

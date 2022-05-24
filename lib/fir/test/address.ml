@@ -20,7 +20,8 @@ let%test_module "normalise" =
       Base_quickcheck.Test.run_exn
         (module C4f_fir.Address)
         ~f:(fun addr ->
-          [%test_result: C4f_fir.Address.t] ~here:[[%here]]
+          [%test_result: C4f_fir.Address.t]
+            ~here:[[%here]]
             ~equal:[%equal: C4f_fir.Address.t]
             C4f_fir.Address.(normalise (normalise addr))
             ~expect:(normalise addr) )
@@ -32,7 +33,8 @@ let%test_module "variable_of" =
       Q.Test.run_exn
         (module C4f_fir.Address)
         ~f:(fun x ->
-          [%test_eq: C4f_common.C_id.t] ~here:[[%here]]
+          [%test_eq: C4f_common.C_id.t]
+            ~here:[[%here]]
             (Accessor.get variable_of x)
             (Accessor.get variable_of (Ref x)) )
 
@@ -77,7 +79,8 @@ let%test_module "deref" =
       Base_quickcheck.Test.run_exn
         (module C4f_fir.Address)
         ~f:(fun addr ->
-          [%test_result: C4f_fir.Address.t] ~here:[[%here]]
+          [%test_result: C4f_fir.Address.t]
+            ~here:[[%here]]
             ~equal:[%equal: C4f_fir.Address.t]
             C4f_fir.Address.(deref (Ref addr))
             ~expect:(normalise addr) )
@@ -94,7 +97,8 @@ let%test_unit "on_address_of_typed_id: always takes pointer type" =
     end) )
     ~f:(fun r ->
       let ty = Accessor.(r.@(C4f_common.C_named.value)) in
-      [%test_result: C4f_fir.Type.t Or_error.t] ~here:[[%here]]
+      [%test_result: C4f_fir.Type.t Or_error.t]
+        ~here:[[%here]]
         (Tc.type_of (on_address_of_typed_id r))
         ~expect:
           (Or_error.return

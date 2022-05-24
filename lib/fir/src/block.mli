@@ -34,8 +34,7 @@ val of_statement_list : 'stm list -> (unit, 'stm) t
 val metadata : ('i, 'meta, ('meta, 'stm) t, [< field]) Accessor.t
 (** [metadata] accesses block metadata. *)
 
-val statements :
-  ('i, 'stm list, ('meta, 'stm) t, [< field]) Accessor.t
+val statements : ('i, 'stm list, ('meta, 'stm) t, [< field]) Accessor.t
 (** [statements] accesses block statement lists. *)
 
 val each_statement : ('i, 'stm, ('meta, 'stm) t, [< many]) Accessor.t

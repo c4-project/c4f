@@ -15,8 +15,7 @@ open Import
 type t = {src: Address.t; mo: Mem_order.t}
 [@@deriving sexp, accessors, make, compare, equal]
 
-let tuple :
-    ('i, Address.t * Mem_order.t, t, [< isomorphism]) Accessor.t =
+let tuple : ('i, Address.t * Mem_order.t, t, [< isomorphism]) Accessor.t =
   [%accessor
     Accessor.isomorphism
       ~get:(fun {src; mo} -> (src, mo))
@@ -99,6 +98,5 @@ module Quickcheck_main = Quickcheck_generic (Address)
 
 include (Quickcheck_main : module type of Quickcheck_main with type t := t)
 
-let variable_of : type i. (i, Common.C_id.t, t, [< field]) Accessor.t
-    =
+let variable_of : type i. (i, Common.C_id.t, t, [< field]) Accessor.t =
   [%accessor src @> Address.variable_of]

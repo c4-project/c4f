@@ -37,7 +37,8 @@ module M : sig
        and type ctx = Context.t
 
   val lift_acc :
-    (unit -> 'a -> 'b, unit -> ctx -> 'c, [> getter]) Accessor.General.t -> 'a t
+       (unit -> 'a -> 'b, unit -> ctx -> 'c, [> getter]) Accessor.General.t
+    -> 'a t
   (** [lift_acc acc] is shorthand for [lift (Accessor.get acc)]. *)
 
   val lift_state : (State.t -> 'a) -> 'a t

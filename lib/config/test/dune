@@ -5,6 +5,18 @@
  (inline_tests)
  (preprocess
   (pps ppx_jane))
- (libraries ppx_inline_test.config ppx_expect.common ppx_expect.config
-   ppx_expect.config_types sexplib0 base base.caml stdio fmt c4f.common
-   c4f.config c4f.utils c4f.fuzz c4f.fuzz_run))
+ (libraries
+  ppx_inline_test.config
+  ppx_expect.common
+  ppx_expect.config
+  ppx_expect.config_types
+  sexplib0
+  base
+  base.caml
+  stdio
+  fmt
+  c4f.common
+  c4f.config
+  c4f.utils
+  c4f.fuzz
+  c4f.fuzz_run))

@@ -174,8 +174,7 @@ module Make_flow (F : sig
   (** [block_kind branch x] gets the path-filter block kind for [x], used to
       check if paths terminating inside this block match block filters. *)
 
-  val sel_branch :
-    branch -> (unit, Subject.Block.t, t, [< field]) Accessor.t
+  val sel_branch : branch -> (unit, Subject.Block.t, t, [< field]) Accessor.t
   (** [sel_branch branch] focuses down on the branch [branch] in [x]. *)
 
   val lift_path : branch -> Path.Stms.t -> Path.Stm.t

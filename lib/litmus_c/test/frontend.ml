@@ -28,7 +28,8 @@ let%test_unit "Pretty-printing and parsing postconditions is idempotent" =
       in
       [%test_result:
         C4f_litmus_c.Ast.Litmus_lang.Constant.t C4f_litmus.Postcondition.t
-        Or_error.t] ~here:[[%here]]
+        Or_error.t]
+        ~here:[[%here]]
         ~equal:
           [%compare.equal:
             C4f_litmus_c.Ast.Litmus_lang.Constant.t

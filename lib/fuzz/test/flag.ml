@@ -83,7 +83,8 @@ let%test_module "exact-flag recognition" =
       Q.Test.run_exn
         (module Gen_true_flag)
         ~f:(fun f ->
-          [%test_result: bool option] ~here:[[%here]]
+          [%test_result: bool option]
+            ~here:[[%here]]
             ~equal:[%equal: bool option] ~expect:(Some true)
             (Src.Flag.to_exact_opt f) )
 
@@ -92,7 +93,8 @@ let%test_module "exact-flag recognition" =
       Q.Test.run_exn
         (module Gen_false_flag)
         ~f:(fun f ->
-          [%test_result: bool option] ~here:[[%here]]
+          [%test_result: bool option]
+            ~here:[[%here]]
             ~equal:[%equal: bool option] ~expect:(Some false)
             (Src.Flag.to_exact_opt f) )
   end )
@@ -116,8 +118,9 @@ let%test_module "use as quickcheck_generators" =
           let flag = Src.Flag.exact true
         end) )
         ~f:
-          ([%test_result: bool] ~here:[[%here]] ~equal:[%equal: bool]
-             ~expect:true )
+          ([%test_result: bool]
+             ~here:[[%here]]
+             ~equal:[%equal: bool] ~expect:true )
 
     let%test_unit "always-false flags always generate false" =
       Q.Test.run_exn
@@ -125,6 +128,7 @@ let%test_module "use as quickcheck_generators" =
           let flag = Src.Flag.exact false
         end) )
         ~f:
-          ([%test_result: bool] ~here:[[%here]] ~equal:[%equal: bool]
-             ~expect:false )
+          ([%test_result: bool]
+             ~here:[[%here]]
+             ~equal:[%equal: bool] ~expect:false )
   end )

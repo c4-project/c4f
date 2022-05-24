@@ -17,7 +17,8 @@ open Import
 type 'e t = {if_: 'e; then_: 'e; else_: 'e}
 [@@deriving sexp, accessors, compare, equal, quickcheck]
 
-val exprs : ('i -> 'e1 -> 'e2, 'i -> 'e1 t -> 'e2 t, [< many]) Accessor.General.t
+val exprs :
+  ('i -> 'e1 -> 'e2, 'i -> 'e1 t -> 'e2 t, [< many]) Accessor.General.t
 (** [exprs] focuses on the expressions inside a ternary expression. *)
 
 val quickcheck_generator_ite :

@@ -71,7 +71,7 @@ and Param_decl :
   (Ast_types.S_g_decl
     with type qual := Decl_spec.t
      and type decl :=
-          [`Concrete of Declarator.t | `Abstract of Abs_declarator.t option])
+      [`Concrete of Declarator.t | `Abstract of Abs_declarator.t option])
 
 and Param_type_list : sig
   type t = {params: Param_decl.t list; style: [`Normal | `Variadic]}

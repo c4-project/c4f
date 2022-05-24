@@ -44,14 +44,18 @@ let%test_module "Id tests" =
       Base_quickcheck.Test.run_exn
         (module Src.Litmus_id)
         ~f:(fun ident ->
-          [%test_eq: Src.Litmus_id.t] ~here:[[%here]] ident
+          [%test_eq: Src.Litmus_id.t]
+            ~here:[[%here]]
+            ident
             Src.Litmus_id.(of_string (to_string ident)) )
 
     let%test_unit "to_memalloy_id is identity on globals" =
       Base_quickcheck.Test.run_exn
         (module Src.C_id)
         ~f:(fun ident ->
-          [%test_eq: Src.C_id.t] ~here:[[%here]] ident
+          [%test_eq: Src.C_id.t]
+            ~here:[[%here]]
+            ident
             Src.Litmus_id.(to_memalloy_id (global ident)) )
   end )
 

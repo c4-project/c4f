@@ -25,12 +25,7 @@ type ('meta, 'stm) t =
 [@@deriving sexp, make, accessors, compare, equal]
 
 val branch :
-     bool
-  -> ( 'i
-     , ('meta, 'stm) Block.t
-     , ('meta, 'stm) t
-     , [< field] )
-     Accessor.t
+  bool -> ('i, ('meta, 'stm) Block.t, ('meta, 'stm) t, [< field]) Accessor.t
 (** [branch b] is the accessor [t_branch] when [b] is true, and [f_branch]
     otherwise. *)
 

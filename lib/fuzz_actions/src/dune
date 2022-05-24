@@ -7,6 +7,19 @@
  (preprocess
   (pps ppx_deriving.std ppx_jane))
  (modules_without_implementation storelike_types)
- (libraries sexplib0 base base.caml stdio splittable_random accessor
-   accessor_base travesty travesty.base_exts c4f.common c4f.litmus c4f.utils
-   c4f.fuzz c4f.fir c4f.fir_gen))
+ (libraries
+  sexplib0
+  base
+  base.caml
+  stdio
+  splittable_random
+  accessor
+  accessor_base
+  travesty
+  travesty.base_exts
+  c4f.common
+  c4f.litmus
+  c4f.utils
+  c4f.fuzz
+  c4f.fir
+  c4f.fir_gen))

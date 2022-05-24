@@ -53,7 +53,7 @@ let pp (f : Formatter.t) (flag : t) : unit =
   | None -> Fmt.pf f "%d:%d@ odds on" (wins flag) (losses flag)
 
 let try_make ~(wins : int) ~(losses : int) : t Or_error.t =
-  Validate.valid_or_error validate {wins; losses} 
+  Validate.valid_or_error validate {wins; losses}
 
 let exact : bool -> t = function
   | true -> {wins= 1; losses= 0}

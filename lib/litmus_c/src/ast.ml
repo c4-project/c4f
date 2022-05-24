@@ -545,9 +545,8 @@ end
 and Decl_spec :
   (Ast_basic_types.Ast_node
     with type t =
-          [ Ast_basic.Storage_class_spec.t
-          | Type_spec.t
-          | Ast_basic.Type_qual.t ]) = struct
+      [Ast_basic.Storage_class_spec.t | Type_spec.t | Ast_basic.Type_qual.t]) =
+struct
   type t =
     [Ast_basic.Storage_class_spec.t | Type_spec.t | Ast_basic.Type_qual.t]
   [@@deriving sexp_of, equal, compare]
@@ -593,7 +592,7 @@ and Param_decl :
   (Ast_types.S_g_decl
     with type qual := Decl_spec.t
      and type decl :=
-          [`Concrete of Declarator.t | `Abstract of Abs_declarator.t option]) =
+      [`Concrete of Declarator.t | `Abstract of Abs_declarator.t option]) =
 Parametric.G_decl.Make (struct
   module Qual = Decl_spec
 

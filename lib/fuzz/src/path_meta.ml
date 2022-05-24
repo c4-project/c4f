@@ -96,8 +96,7 @@ module Anchor = struct
     Accessor.field ~get:(incl_opt ~includes:x) ~set:(fun o to_ ->
         set ~to_set:x o ~to_ )
 
-  let top : ('i, bool, t option, [< field]) Accessor.t =
-    [%accessor at Top]
+  let top : ('i, bool, t option, [< field]) Accessor.t = [%accessor at Top]
 
   let bottom : ('i, bool, t option, [< field]) Accessor.t =
     [%accessor at Bottom]

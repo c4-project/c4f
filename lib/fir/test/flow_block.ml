@@ -284,7 +284,8 @@ let%test_module "for loop simplification" =
         end )
         ~f:(fun t ->
           [%test_result: C4f_fir.Flow_block.For.Simple.t option]
-            ~here:[[%here]] ~expect:(Some t)
+            ~here:[[%here]]
+            ~expect:(Some t)
             Accessor.(
               C4f_fir.Flow_block.For.((construct simple t).@?(simple))) )
   end )

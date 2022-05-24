@@ -10,7 +10,6 @@
    project root for more information. *)
 
 open Core (* for Fqueue *)
-
 open Import
 
 type elt = {name: Common.Id.t; payload: Sexp.t} [@@deriving sexp]

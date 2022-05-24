@@ -19,7 +19,7 @@
 module Fence :
   C4f_fuzz.Action_types.S
     with type Payload.t =
-          C4f_fir.Atomic_fence.t C4f_fuzz.Payload_impl.Pathed.t
+      C4f_fir.Atomic_fence.t C4f_fuzz.Payload_impl.Pathed.t
 
 (** {1 Memory order strengthening} *)
 

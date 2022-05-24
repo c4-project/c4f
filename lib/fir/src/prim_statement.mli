@@ -32,8 +32,7 @@ type t [@@deriving sexp, compare, equal]
 val assign : ('a, Assign.t, t, [< Accessor.variant]) Accessor.t
 (** [assign] focuses on assignment statements. *)
 
-val label :
-  ('a, C4f_common.C_id.t, t, [< Accessor.variant]) Accessor.t
+val label : ('a, C4f_common.C_id.t, t, [< Accessor.variant]) Accessor.t
 (** [label] focuses on label statements. *)
 
 val goto : ('a, C4f_common.C_id.t, t, [< Accessor.variant]) Accessor.t
@@ -46,8 +45,7 @@ val procedure_call : ('a, Call.t, t, [< Accessor.variant]) Accessor.t
 (** [procedure_call] focuses on procedure (non-value-returning function) call
     statements. *)
 
-val atomic :
-  ('a, Atomic_statement.t, t, [< Accessor.variant]) Accessor.t
+val atomic : ('a, Atomic_statement.t, t, [< Accessor.variant]) Accessor.t
 (** [atomic] focuses on atomic statements. *)
 
 (** {2 Shorthand for early-out statements}

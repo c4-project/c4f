@@ -42,8 +42,7 @@ module Value = struct
         | Some false -> Fmt.(styled (`Fg `Red) (any "off"))
         | None ->
             Fmt.(
-              styled
-                (`Fg `Yellow)
+              styled (`Fg `Yellow)
                 (concat ~sep:(any ":")
                    [using Flag.wins int; using Flag.losses int] )) )
           f x
@@ -70,8 +69,8 @@ let get_action_cap (x : t) ~(random : Splittable_random.State.t) :
       Or_error.error_s
         [%message
           "Upper action cap is below lower action cap"
-            ~upper:(upper : int)
-            ~lower:(lower : int)]
+            ~(upper : int)
+            ~(lower : int)]
     else
       Ok
         ( match Flag.to_exact_opt flag with

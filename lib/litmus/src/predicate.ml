@@ -10,7 +10,6 @@
    project root for more information. *)
 
 open Core (* not Base; for extended quickcheck *)
-
 module Id = C4f_common.Litmus_id
 
 module Element = struct

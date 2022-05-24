@@ -46,13 +46,10 @@ let%test_module "matches_any" =
 
     let%expect_test "no classes" = test [] ; [%expect {| false |}]
 
-    let%expect_test "if statements" =
-      test [If] ;
-      [%expect {| true |}]
+    let%expect_test "if statements" = test [If] ; [%expect {| true |}]
 
     let%expect_test "labels" =
-      test [Prim (Some Label)] ;
-      [%expect {| false |}]
+      test [Prim (Some Label)] ; [%expect {| false |}]
 
     let%expect_test "while loops" =
       test [Src.Statement_class.while_loop ()] ;
@@ -79,13 +76,10 @@ let%test_module "unmatches_any" =
 
     let%expect_test "no classes" = test [] ; [%expect {| false |}]
 
-    let%expect_test "if statements" =
-      test [If] ;
-      [%expect {| false |}]
+    let%expect_test "if statements" = test [If] ; [%expect {| false |}]
 
     let%expect_test "labels" =
-      test [Prim (Some Label)] ;
-      [%expect {| true |}]
+      test [Prim (Some Label)] ; [%expect {| true |}]
 
     let%expect_test "while loops" =
       test [Src.Statement_class.while_loop ()] ;
@@ -112,9 +106,7 @@ let%test_module "rec_matches_any" =
 
     let%expect_test "no classes" = test [] ; [%expect {| false |}]
 
-    let%expect_test "if statements" =
-      test [If] ;
-      [%expect {| true |}]
+    let%expect_test "if statements" = test [If] ; [%expect {| true |}]
 
     let%expect_test "while loops" =
       test [Src.Statement_class.while_loop ()] ;
@@ -141,9 +133,7 @@ let%test_module "rec_unmatches_any" =
 
     let%expect_test "no classes" = test [] ; [%expect {| false |}]
 
-    let%expect_test "if statements" =
-      test [If] ;
-      [%expect {| true |}]
+    let%expect_test "if statements" = test [If] ; [%expect {| true |}]
 
     let%expect_test "while loops" =
       test [Src.Statement_class.while_loop ()] ;
@@ -168,9 +158,7 @@ let%test_module "count_matches" =
       in
       Stdio.printf "%d" k
 
-    let%expect_test "if statements" =
-      test [If] ;
-      [%expect {| 2 |}]
+    let%expect_test "if statements" = test [If] ; [%expect {| 2 |}]
 
     let%expect_test "atomics of any form" =
       test [Src.Statement_class.atomic ()] ;

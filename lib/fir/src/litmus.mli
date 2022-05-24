@@ -23,7 +23,7 @@ open Import
 module Lang :
   C4f_litmus.Test_types.Basic
     with type Statement.t =
-          [`Stm of unit Statement.t | `Decl of Initialiser.t Common.C_named.t]
+      [`Stm of unit Statement.t | `Decl of Initialiser.t Common.C_named.t]
      and type Program.t = unit Function.t Common.C_named.t
      and type Constant.t = Constant.t
 

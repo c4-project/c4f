@@ -24,8 +24,9 @@ let%test_module "sampling and conversion tests" =
                    that item" =
       Quickcheck.test (sample_gen_exn wl_one) ~sexp_of:[%sexp_of: string]
         ~f:
-          ([%test_result: string] ~here:[[%here]] ~equal:[%equal: string]
-             ~expect:"kappa" )
+          ([%test_result: string]
+             ~here:[[%here]]
+             ~equal:[%equal: string] ~expect:"kappa" )
 
     let%test_unit "sample: sampling can return the last item" =
       Quickcheck.test_can_generate (sample_gen_exn wl)

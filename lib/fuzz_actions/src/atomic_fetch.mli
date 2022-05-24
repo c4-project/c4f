@@ -20,7 +20,7 @@ module Insert : sig
   module type S =
     Fuzz.Action_types.S
       with type Payload.t =
-            Fir.Expression.t Fir.Atomic_fetch.t Fuzz.Payload_impl.Pathed.t
+        Fir.Expression.t Fir.Atomic_fetch.t Fuzz.Payload_impl.Pathed.t
 
   (* TODO(@MattWindsor91): add Int. *)
 

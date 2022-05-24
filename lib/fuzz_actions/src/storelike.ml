@@ -145,7 +145,7 @@ struct
 
     let gen' (where : Fuzz.Path.With_meta.t) : B.t Fuzz.Payload_gen.t =
       Fuzz.Payload_gen.(
-        let* vars = vars in
+        let* vars in
         lift_opt_gen (gen_opt vars ~where))
 
     let gen = Fuzz.Payload_impl.Pathed.gen Insert path_filter gen'

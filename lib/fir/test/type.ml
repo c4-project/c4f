@@ -66,8 +66,9 @@ let%test_unit "basic_type_is compatibility with basic_type" =
     (module C4f_fir.Type)
     ~f:
       C4f_fir.Type.(
-        [%test_pred: t] ~here:[[%here]] (fun t ->
-            basic_type_is t ~basic:(basic_type t) ))
+        [%test_pred: t]
+          ~here:[[%here]]
+          (fun t -> basic_type_is t ~basic:(basic_type t)))
 
 let%test_module "check_atomic_non" =
   ( module struct

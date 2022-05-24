@@ -64,15 +64,14 @@ let single_in_matching (type i) (out_ : Out.t) :
         some_if (Out.equal r.out_ out_) ()
         >>= fun (_ : 'a) -> A.get_option in_ r) )
 
-let in_matching (out_ : Out.t) :
-    ('i, In.t, t list, [< A.many_getter]) A.t =
+let in_matching (out_ : Out.t) : ('i, In.t, t list, [< A.many_getter]) A.t =
   A.(List.each @> single_in_matching out_)
 
 let in_out_matching
-    (in_acc : (unit, 'a, In.t, ([< A.many_getter] as 'b)) A.t)
-    (out_ : Out.t) : (unit, 'a, t list, 'b) A.t =
+    (in_acc : (unit, 'a, In.t, ([< A.many_getter] as 'b)) A.t) (out_ : Out.t)
+    : (unit, 'a, t list, 'b) A.t =
   [%accessor A.(in_matching out_ @> in_acc)]
 
-let has_in_out_matching (in_acc : (unit, 'a, In.t, 'd) A.t)
-    (out_ : Out.t) (xs : t list) : bool =
+let has_in_out_matching (in_acc : (unit, 'a, In.t, 'd) A.t) (out_ : Out.t)
+    (xs : t list) : bool =
   not (A.is_empty (in_out_matching in_acc out_) xs)
