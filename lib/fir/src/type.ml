@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -15,12 +15,12 @@ open Import
 module Prim = struct
   type t = Bool | Int [@@deriving variants, equal, enumerate]
 
-  let eq (type x) (acc : (unit, t, x, [> Accessor.getter]) Accessor.Simple.t)
+  let eq (type x) (acc : (unit, t, x, [> Accessor.getter]) Accessor.t)
       (x : x) ~(to_ : t) : bool =
     x |> Accessor.get acc |> equal to_
 end
 
-let to_non_atomic (acc : (_, bool, 't, [< Accessor.field]) Accessor.Simple.t)
+let to_non_atomic (acc : (_, bool, 't, [< Accessor.field]) Accessor.t)
     : 't -> 't Or_error.t =
   Accessor_base.Or_error.map acc ~f:(function
     | true -> Ok false
@@ -50,7 +50,7 @@ module Basic = struct
   include Access
   include Utils.Enum.Extend_table (M_enum)
 
-  let eq (type x) (acc : (unit, t, x, [> Accessor.getter]) Accessor.Simple.t)
+  let eq (type x) (acc : (unit, t, x, [> Accessor.getter]) Accessor.t)
       (x : x) ~(to_ : t) : bool =
     x |> Accessor.get acc |> equal to_
 

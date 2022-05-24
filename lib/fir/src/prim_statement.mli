@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -29,32 +29,32 @@ type t [@@deriving sexp, compare, equal]
 
 (** {1 Accessors} *)
 
-val assign : ('a, Assign.t, t, [< Accessor.variant]) Accessor.Simple.t
+val assign : ('a, Assign.t, t, [< Accessor.variant]) Accessor.t
 (** [assign] focuses on assignment statements. *)
 
 val label :
-  ('a, C4f_common.C_id.t, t, [< Accessor.variant]) Accessor.Simple.t
+  ('a, C4f_common.C_id.t, t, [< Accessor.variant]) Accessor.t
 (** [label] focuses on label statements. *)
 
-val goto : ('a, C4f_common.C_id.t, t, [< Accessor.variant]) Accessor.Simple.t
+val goto : ('a, C4f_common.C_id.t, t, [< Accessor.variant]) Accessor.t
 (** [goto] focuses on goto statements. *)
 
-val nop : ('a, unit, t, [< Accessor.variant]) Accessor.Simple.t
+val nop : ('a, unit, t, [< Accessor.variant]) Accessor.t
 (** [nop] focuses on no-op (semicolon) statements. *)
 
-val procedure_call : ('a, Call.t, t, [< Accessor.variant]) Accessor.Simple.t
+val procedure_call : ('a, Call.t, t, [< Accessor.variant]) Accessor.t
 (** [procedure_call] focuses on procedure (non-value-returning function) call
     statements. *)
 
 val atomic :
-  ('a, Atomic_statement.t, t, [< Accessor.variant]) Accessor.Simple.t
+  ('a, Atomic_statement.t, t, [< Accessor.variant]) Accessor.t
 (** [atomic] focuses on atomic statements. *)
 
 (** {2 Shorthand for early-out statements}
 
     See {!Early_out}. *)
 
-val early_out : ('a, Early_out.t, t, [< Accessor.variant]) Accessor.Simple.t
+val early_out : ('a, Early_out.t, t, [< Accessor.variant]) Accessor.t
 (** [early_out] focuses on early-out statements. *)
 
 val break : t

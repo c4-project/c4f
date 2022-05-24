@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -22,7 +22,7 @@ module Prim : sig
   type t = Bool | Int  (** Type of primitive types. *)
 
   val eq :
-       (unit, t, 'x, [> Accessor.getter]) Accessor.Simple.t
+       (unit, t, 'x, [> Accessor.getter]) Accessor.t
     -> 'x
     -> to_:t
     -> bool
@@ -53,15 +53,15 @@ module Basic : sig
   (** {2 Accessors} *)
 
   module Access : sig
-    val prim : (_, Prim.t, t, [< Accessor.field]) Accessor.Simple.t
+    val prim : (_, Prim.t, t, [< Accessor.field]) Accessor.t
     (** [prim] accesses the primitive type of a basic type. *)
 
-    val is_atomic : (_, bool, t, [< Accessor.field]) Accessor.Simple.t
+    val is_atomic : (_, bool, t, [< Accessor.field]) Accessor.t
     (** [is_atomic] accesses the atomicity of a basic type. *)
   end
 
   val eq :
-       (unit, t, 'x, [> Accessor.getter]) Accessor.Simple.t
+       (unit, t, 'x, [> Accessor.getter]) Accessor.t
     -> 'x
     -> to_:t
     -> bool
@@ -121,13 +121,13 @@ val int :
 (** {2 Accessors} *)
 
 module Access : sig
-  val basic_type : (_, Basic.t, t, [< Accessor.field]) Accessor.Simple.t
+  val basic_type : (_, Basic.t, t, [< Accessor.field]) Accessor.t
   (** [basic_type] accesses the basic type of a type. *)
 
-  val is_pointer : (_, bool, t, [< Accessor.field]) Accessor.Simple.t
+  val is_pointer : (_, bool, t, [< Accessor.field]) Accessor.t
   (** [is_pointer] accesses the pointerness of a type. *)
 
-  val is_volatile : (_, bool, t, [< Accessor.field]) Accessor.Simple.t
+  val is_volatile : (_, bool, t, [< Accessor.field]) Accessor.t
   (** [is_volatile] accesses the volatility of a type. *)
 end
 

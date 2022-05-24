@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -11,4 +11,4 @@
 
 (** Main entry point for the miscellaneous ACT C language services. *)
 
-let () = Core.Command.run Cmd_c.Main.command
+let () = Command_unix.run Cmd_c.Main.command

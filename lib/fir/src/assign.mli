@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -23,7 +23,7 @@ module Source : sig
   type t = Dec | Inc | Expr of Expression.t
   [@@deriving accessors, sexp, compare, equal]
 
-  val exprs : ('i, Expression.t, t, [< Accessor.many]) Accessor.Simple.t
+  val exprs : ('i, Expression.t, t, [< Accessor.many]) Accessor.t
   (** [exprs] focuses on any top-level expressions inside a source. *)
 
   (** Lifts an integer expression generator to a source generator. *)
@@ -52,13 +52,13 @@ val ( @= ) : Lvalue.t -> Expression.t -> t
 
 (** {2 Accessors} *)
 
-val dst : ('i, Lvalue.t, t, [< Accessor.field]) Accessor.Simple.t
+val dst : ('i, Lvalue.t, t, [< Accessor.field]) Accessor.t
 (** [dst] focuses on destination lvalues. *)
 
-val src : ('i, Source.t, t, [< Accessor.field]) Accessor.Simple.t
+val src : ('i, Source.t, t, [< Accessor.field]) Accessor.t
 (** [src] focuses on sources. *)
 
-val exprs : ('i, Expression.t, t, [< Accessor.many]) Accessor.Simple.t
+val exprs : ('i, Expression.t, t, [< Accessor.many]) Accessor.t
 (** [exprs] focuses on any top-level expressions inside an assignment. *)
 
 (** {2 Traversals} *)

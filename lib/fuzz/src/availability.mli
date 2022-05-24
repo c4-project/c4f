@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -37,7 +37,7 @@ module M : sig
        and type ctx = Context.t
 
   val lift_acc :
-    (unit -> 'a -> 'b, unit -> ctx -> 'c, [> getter]) Accessor.t -> 'a t
+    (unit -> 'a -> 'b, unit -> ctx -> 'c, [> getter]) Accessor.General.t -> 'a t
   (** [lift_acc acc] is shorthand for [lift (Accessor.get acc)]. *)
 
   val lift_state : (State.t -> 'a) -> 'a t

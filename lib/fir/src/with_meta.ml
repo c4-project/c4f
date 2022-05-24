@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -22,7 +22,7 @@ let no_meta :
     ( i -> v1 -> v2
     , i -> (unit, v1) t -> (unit, v2) t
     , [< isomorphism] )
-    Accessor.t =
+    Accessor.General.t =
   [%accessor
     Accessor.isomorphism ~get:(Accessor.get value) ~construct:(fun value ->
         {meta= (); value} )]

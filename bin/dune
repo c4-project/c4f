@@ -2,10 +2,10 @@
  (name c4f_c)
  (public_name c4f-c)
  (modules c4f_c)
- (libraries base core_kernel core common_cmd cmd_c))
+ (libraries base core core_unix.command_unix common_cmd cmd_c))
 
 (executable
  (name c4f)
  (public_name c4f)
  (modules c4f)
- (libraries base core_kernel core common_cmd cmd_fuzz))
+ (libraries base core core_unix.command_unix common_cmd cmd_fuzz))

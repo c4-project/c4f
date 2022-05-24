@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -40,16 +40,16 @@ module Deck = struct
 end
 
 module Rec_queue = struct
-  type t = Fuzz.Action.t Core_kernel.Fqueue.t
+  type t = Fuzz.Action.t Core.Fqueue.t
 
   let pick (rq : t) : Fuzz.Action.t option * t =
-    match Core_kernel.Fqueue.dequeue rq with
+    match Core.Fqueue.dequeue rq with
     | Some (a, rq') -> (Some a, rq')
     | None -> (None, rq)
 
   let maybe_enqueue (q : t) (action : Fuzz.Action.t) ~(flag : Fuzz.Flag.t)
       ~(random : Splittable_random.State.t) : t =
-    if Fuzz.Flag.eval flag ~random then Core_kernel.Fqueue.enqueue q action
+    if Fuzz.Flag.eval flag ~random then Core.Fqueue.enqueue q action
     else q
 
   let recommend (rq : t) ~(actions : Fuzz.Action.t list)
@@ -98,11 +98,11 @@ let of_weighted_actions
     ; original_deck= deck
     ; accept_rec_flag
     ; use_rec_flag
-    ; rec_queue= Core_kernel.Fqueue.empty })
+    ; rec_queue= Core.Fqueue.empty })
 
 let use_queue ({rec_queue; use_rec_flag; _} : t)
     ~(random : Splittable_random.State.t) : bool =
-  (not (Core_kernel.Fqueue.is_empty rec_queue))
+  (not (Core.Fqueue.is_empty rec_queue))
   && Fuzz.Flag.eval use_rec_flag ~random
 
 let pick_without_remove (table : t) ~(random : Splittable_random.State.t) :

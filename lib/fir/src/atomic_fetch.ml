@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -16,7 +16,7 @@ type 'e t = {obj: Address.t; arg: 'e; mo: Mem_order.t; op: Op.Fetch.t}
 [@@deriving sexp, accessors, make, compare, equal, quickcheck]
 
 let variable_of :
-    type e i. (i, Common.C_id.t, e t, [< field]) Accessor.Simple.t =
+    type e i. (i, Common.C_id.t, e t, [< field]) Accessor.t =
   [%accessor obj @> Address.variable_of]
 
 module Base_map (Ap : Applicative.S) = struct

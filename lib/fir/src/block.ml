@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -21,7 +21,7 @@ let of_statement_list (type stm) (statements : stm list) : (unit, stm) t =
 let is_empty (type meta stm) (block : (meta, stm) t) : bool =
   List.is_empty block.statements
 
-let each_statement : ('i, 'stm, ('meta, 'stm) t, [< many]) Accessor.Simple.t
+let each_statement : ('i, 'stm, ('meta, 'stm) t, [< many]) Accessor.t
     =
   [%accessor statements @> Accessor.List.each]
 

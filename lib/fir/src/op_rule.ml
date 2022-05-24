@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -22,7 +22,7 @@ module In = struct
 
   type t = Const of Dir.t * Constant.t | Refl [@@deriving sexp, accessors]
 
-  let const_at (d : Dir.t) : ('a, Constant.t, t, [< A.variant]) A.Simple.t =
+  let const_at (d : Dir.t) : ('a, Constant.t, t, [< A.variant]) A.t =
     [%accessor
       A.(
         const
@@ -31,7 +31,7 @@ module In = struct
                if Dir.equal d d2 then First k else Second (d2, k) )
              ~construct:(fun k -> (d, k)))]
 
-  let zero' (d : Dir.t) : ('a, unit, t, [< A.variant]) A.Simple.t =
+  let zero' (d : Dir.t) : ('a, unit, t, [< A.variant]) A.t =
     [%accessor A.(const_at d @> Constant.Acc.zero)]
 
   let zero (d : Dir.t) : t = Const (d, Constant.int 0)
@@ -58,21 +58,21 @@ type t = {in_: In.t; out_: Out.t} [@@deriving sexp, accessors]
 let ( @-> ) (in_ : In.t) (out_ : Out.t) : t = {in_; out_}
 
 let single_in_matching (type i) (out_ : Out.t) :
-    (i, In.t, t, [< A.optional_getter]) A.Simple.t =
+    (i, In.t, t, [< A.optional_getter]) A.t =
   A.optional_getter (fun r ->
       Base.Option.(
         some_if (Out.equal r.out_ out_) ()
         >>= fun (_ : 'a) -> A.get_option in_ r) )
 
 let in_matching (out_ : Out.t) :
-    ('i, In.t, t list, [< A.many_getter]) A.Simple.t =
+    ('i, In.t, t list, [< A.many_getter]) A.t =
   A.(List.each @> single_in_matching out_)
 
 let in_out_matching
-    (in_acc : (unit, 'a, In.t, ([< A.many_getter] as 'b)) A.Simple.t)
-    (out_ : Out.t) : (unit, 'a, t list, 'b) A.Simple.t =
+    (in_acc : (unit, 'a, In.t, ([< A.many_getter] as 'b)) A.t)
+    (out_ : Out.t) : (unit, 'a, t list, 'b) A.t =
   [%accessor A.(in_matching out_ @> in_acc)]
 
-let has_in_out_matching (in_acc : (unit, 'a, In.t, 'd) A.Simple.t)
+let has_in_out_matching (in_acc : (unit, 'a, In.t, 'd) A.t)
     (out_ : Out.t) (xs : t list) : bool =
   not (A.is_empty (in_out_matching in_acc out_) xs)

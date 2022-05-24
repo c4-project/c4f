@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -38,11 +38,11 @@ module Record : sig
   (** {3 Accessors} *)
 
   module Access : sig
-    val type_of : (_, Fir.Type.t, t, [< Accessor.field]) Accessor.Simple.t
+    val type_of : (_, Fir.Type.t, t, [< Accessor.field]) Accessor.t
     (** [type_of] allows field access to the record's type. *)
 
     val known_value :
-      (_, Fir.Constant.t, t, [< Accessor.optional]) Accessor.Simple.t
+      (_, Fir.Constant.t, t, [< Accessor.optional]) Accessor.t
     (** [known_value] allows access to the record's known value, if any. *)
   end
 

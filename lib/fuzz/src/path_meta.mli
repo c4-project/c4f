@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -90,11 +90,11 @@ module Anchor : sig
   (** [of_dimensions ~span ~block_len] determines the anchor, if any, from
       the given dimensions. *)
 
-  val top : ('i, bool, t option, [< field]) Accessor.Simple.t
+  val top : ('i, bool, t option, [< field]) Accessor.t
   (** [top] is a field accessor that allows testing, setting, and clearing
       the top anchor on optional anchors. *)
 
-  val bottom : ('i, bool, t option, [< field]) Accessor.Simple.t
+  val bottom : ('i, bool, t option, [< field]) Accessor.t
   (** [bottom] is a field accessor that allows testing, setting, and clearing
       the top anchor on optional anchors. *)
 end

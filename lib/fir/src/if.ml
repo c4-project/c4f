@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -21,7 +21,7 @@ type ('meta, 'stm) t =
 let branch :
     type i meta stm.
        bool
-    -> (i, (meta, stm) Block.t, (meta, stm) t, [< field]) Accessor.Simple.t =
+    -> (i, (meta, stm) Block.t, (meta, stm) t, [< field]) Accessor.t =
   function
   | true -> t_branch
   | false -> f_branch

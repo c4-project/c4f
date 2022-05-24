@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -146,7 +146,7 @@ module Make_flow (F : sig
       [x]. *)
 
   val sel_block :
-    rest -> (unit, Subject.Block.t, t, [< field]) Accessor.Simple.t
+    rest -> (unit, Subject.Block.t, t, [< field]) Accessor.t
   (** [sel_block rest] focuses down on the block pointed to by [rest]. *)
 end) =
 struct

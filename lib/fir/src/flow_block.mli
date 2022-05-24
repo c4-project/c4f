@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -78,19 +78,19 @@ module For : sig
 
       See also the derived accessors [init], [cmp], and [update]. *)
 
-  val init_opt : ('i, Assign.t, t, [< optional]) Accessor.Simple.t
+  val init_opt : ('i, Assign.t, t, [< optional]) Accessor.t
   (** [init_opt] is [init], but as an optional accessor. *)
 
-  val cmp_opt : ('i, Expression.t, t, [< optional]) Accessor.Simple.t
+  val cmp_opt : ('i, Expression.t, t, [< optional]) Accessor.t
   (** [cmp_opt] is [cmp], but as an optional accessor. *)
 
-  val update_opt : ('i, Assign.t, t, [< optional]) Accessor.Simple.t
+  val update_opt : ('i, Assign.t, t, [< optional]) Accessor.t
   (** [update_opt] is [update], but as an optional accessor. *)
 
-  val exprs : ('i, Expression.t, t, [< many]) Accessor.Simple.t
+  val exprs : ('i, Expression.t, t, [< many]) Accessor.t
   (** [exprs] focuses on all expressions inside a for header. *)
 
-  val simple : ('i, Simple.t, t, [< variant]) Accessor.Simple.t
+  val simple : ('i, Simple.t, t, [< variant]) Accessor.t
   (** [simple] maps a C-style for header to, and from, a simplified header.
       Note that mapping to a simplified header is partial; to receive error
       feedback about why a particular C-style header isn't simplifiable, use
@@ -134,7 +134,7 @@ module Header : sig
 
   (** {3 Accessors and traversals} *)
 
-  val exprs : ('i, Expression.t, t, [< many]) Accessor.Simple.t
+  val exprs : ('i, Expression.t, t, [< many]) Accessor.t
   (** [exprs] focuses on all expressions inside a flow block header. *)
 
   (** Traversal over the expressions inside a header. *)

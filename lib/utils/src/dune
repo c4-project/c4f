@@ -8,6 +8,6 @@
  (preprocess
   (pps ppx_deriving.std ppx_yojson_conv ppx_accessor ppx_jane sedlex.ppx))
  (libraries splittable_random sedlex plumbing travesty travesty.base_exts
-   accessor accessor_base core core_kernel shell base base.caml stdio sexplib
+   accessor accessor_base core core.validate core_unix core_unix.sys_unix shell base base.caml stdio sexplib
    sexplib0 shell.string_extended fpath menhirLib fmt
    textutils_kernel.text_block yojson))

@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -92,14 +92,14 @@ module Anchor = struct
 
   (* This is not a well-formed field accessor in general; x=Full breaks the
      second law. Hence, we only expose x=Top and x=Bottom. *)
-  let at (x : t) : ('i, bool, t option, [< field]) Accessor.Simple.t =
+  let at (x : t) : ('i, bool, t option, [< field]) Accessor.t =
     Accessor.field ~get:(incl_opt ~includes:x) ~set:(fun o to_ ->
         set ~to_set:x o ~to_ )
 
-  let top : ('i, bool, t option, [< field]) Accessor.Simple.t =
+  let top : ('i, bool, t option, [< field]) Accessor.t =
     [%accessor at Top]
 
-  let bottom : ('i, bool, t option, [< field]) Accessor.Simple.t =
+  let bottom : ('i, bool, t option, [< field]) Accessor.t =
     [%accessor at Bottom]
 
   let of_dimensions ~(span : Utils.My_list.Span.t) ~(block_len : int) :

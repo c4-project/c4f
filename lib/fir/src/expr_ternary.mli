@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -11,14 +11,13 @@
 
 (** Ternary expressions. *)
 
-open Base
 open Import
 
 (** Type of ternary expressions, parametric over inner expressions. *)
 type 'e t = {if_: 'e; then_: 'e; else_: 'e}
 [@@deriving sexp, accessors, compare, equal, quickcheck]
 
-val exprs : ('i -> 'e1 -> 'e2, 'i -> 'e1 t -> 'e2 t, [< many]) Accessor.t
+val exprs : ('i -> 'e1 -> 'e2, 'i -> 'e1 t -> 'e2 t, [< many]) Accessor.General.t
 (** [exprs] focuses on the expressions inside a ternary expression. *)
 
 val quickcheck_generator_ite :

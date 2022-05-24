@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -29,7 +29,7 @@ module Context : sig
 
   (** {2 Shorthands for things in the availability context} *)
 
-  val state : ('i, State.t, t, [< field]) Accessor.Simple.t
+  val state : ('i, State.t, t, [< field]) Accessor.t
   (** [state] focuses on the state nested inside the availability context. *)
 end
 
@@ -43,7 +43,7 @@ include
      and type ctx = Context.t
 
 val lift_acc :
-  (unit -> 'a -> 'b, unit -> ctx -> 'c, [> getter]) Accessor.t -> 'a t
+  (unit -> 'a -> 'b, unit -> ctx -> 'c, [> getter]) Accessor.General.t -> 'a t
 (** [lift_acc acc] is shorthand for [lift (Accessor.get acc)]. *)
 
 (** {2 Let syntax}

@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -62,7 +62,7 @@ val reduce : t -> lvalue:(Lvalue.t -> 'a) -> ref:('a -> 'a) -> 'a
     of [addr], then recursively applies [ref] to the result for each layer of
     address-taking in the address. *)
 
-val lvalue_of : ('i, Lvalue.t, t, [< field]) Accessor.Simple.t
+val lvalue_of : ('i, Lvalue.t, t, [< field]) Accessor.t
 (** [lvalue_of] focuses on an address's underlying lvalue. *)
 
 (** This is just [lvalue_of] as a traversable. *)
@@ -74,10 +74,10 @@ include Types.S_has_underlying_variable with type t := t
 
 (** {2 Variable accessors} *)
 
-val variable : ('i, Common.C_id.t, t, [< variant]) Accessor.Simple.t
+val variable : ('i, Common.C_id.t, t, [< variant]) Accessor.t
 (** [variable] focuses on addresses that are just variable lvalues. *)
 
-val variable_ref : ('i, Common.C_id.t, t, [< variant]) Accessor.Simple.t
+val variable_ref : ('i, Common.C_id.t, t, [< variant]) Accessor.t
 (** [variable_ref] focuses on addresses that are references to variable
     lvalues. *)
 

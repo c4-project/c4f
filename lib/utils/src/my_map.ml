@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -11,12 +11,12 @@
 
 open Base
 
-let map_with_keys (type ak av aw bk bv bw) (cmp : (bk, bw) Map.comparator)
+let map_with_keys (type ak av aw bk bv bw) (cmp : (bk, bw) Comparator.Module.t)
     (map : (ak, av, aw) Map.t) ~(f : key:ak -> data:av -> bk * bv) :
     (bk, bv, bw) Map.t Or_error.t =
-  map |> Map.to_alist
-  |> List.map ~f:(fun (key, data) -> f ~key ~data)
-  |> Map.of_alist_or_error cmp
+  map |> Map.to_sequence
+  |> Sequence.map ~f:(fun (key, data) -> f ~key ~data)
+  |> Map.of_sequence_or_error cmp
 
 let not_found_error (type k) ?(sexp_of_key : (k -> Sexp.t) option)
     ~(map_name : string) (key : k) : Error.t =
@@ -40,5 +40,5 @@ let merge_with_overlap (type k v w) (maps : (k, v, w) Map.t list)
       maps
       |> List.concat_map ~f:Map.to_alist
       |> List.dedup_and_sort
-           ~compare:(Core_kernel.Tuple2.compare ~cmp1 ~cmp2:compare)
+           ~compare:(Core.Tuple2.compare ~cmp1 ~cmp2:compare)
       |> Map.of_alist_or_error (Map.comparator_s m)

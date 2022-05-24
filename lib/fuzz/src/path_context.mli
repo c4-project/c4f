@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -31,10 +31,10 @@ val init : ?filter:Path_filter.t -> 'k -> 'k t
 val add_flags : 'k t -> Set.M(Path_meta.Flag).t -> 'k t Or_error.t
 (** [add_flags ctx flags] registers [flags] in [ctx]. *)
 
-val block_kind : ('i, Path_filter.Block.t, 'k t, [< field]) Accessor.Simple.t
+val block_kind : ('i, Path_filter.Block.t, 'k t, [< field]) Accessor.t
 (** [block_kind] is an accessor for the inmost block kind in [ctx]. *)
 
-val block_len : ('i, int, 'k t, [< field]) Accessor.Simple.t
+val block_len : ('i, int, 'k t, [< field]) Accessor.t
 (** [block_len] is an accessor for the inmost block length in [ctx]. *)
 
 val update_anchor : 'k t -> span:Utils.My_list.Span.t -> 'k t

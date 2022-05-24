@@ -8,5 +8,5 @@
    loadable_types storable_types)
  (preprocess
   (pps ppx_yojson_conv ppx_deriving.std ppx_jane))
- (libraries result sexplib sexplib0 core core_kernel base base.caml shell
+ (libraries result sexplib sexplib0 core core_unix.filename_unix base base.caml shell
    shell.low_level_process stdio fpath fmt yojson travesty travesty.base_exts))

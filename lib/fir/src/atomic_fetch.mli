@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -35,7 +35,7 @@ val make : obj:Address.t -> arg:'e -> mo:Mem_order.t -> op:Op.Fetch.t -> 'e t
 
 (** {1 Traversal primitives} *)
 
-val variable_of : ('i, Common.C_id.t, 'e t, [< field]) Accessor.Simple.t
+val variable_of : ('i, Common.C_id.t, 'e t, [< field]) Accessor.t
 (** [variable_of] accesses the underlying object variable of the fetch. It
     does not access any other variables. *)
 

@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -71,11 +71,11 @@ end
 
 (** {1 Accessors} *)
 
-val if_stm : ('i, 'm If.t, 'm t, [< Accessor.variant]) Accessor.Simple.t
+val if_stm : ('i, 'm If.t, 'm t, [< Accessor.variant]) Accessor.t
 (** [if_stm] focuses on if statements. *)
 
 val flow :
-  ('i, 'm Flow_block.t, 'm t, [< Accessor.variant]) Accessor.Simple.t
+  ('i, 'm Flow_block.t, 'm t, [< Accessor.variant]) Accessor.t
 (** [flow] focuses on flow blocks. *)
 
 val prim :
@@ -83,11 +83,11 @@ val prim :
   , ('m, Prim_statement.t) With_meta.t
   , 'm t
   , [< Accessor.variant] )
-  Accessor.Simple.t
+  Accessor.t
 (** [prim] focuses on primitive statements. *)
 
 val prim' :
-  ('a, Prim_statement.t, unit t, [< Accessor.variant]) Accessor.Simple.t
+  ('a, Prim_statement.t, unit t, [< Accessor.variant]) Accessor.t
 (** [prim'] is a variant of [prim] that presumes there is no metadata. *)
 
 (** {1 Predicates over statements} *)

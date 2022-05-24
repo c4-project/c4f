@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -32,15 +32,15 @@ module Record : sig
   (** {2 Accessors} *)
 
   val known_value :
-    ('a, Constant.t, t, [< Accessor.optional]) Accessor.Simple.t
+    ('a, Constant.t, t, [< Accessor.optional]) Accessor.t
   (** [known_value] accesses a record's known value. *)
 
   val known_value_opt :
-    ('a, Constant.t option, t, [< Accessor.field]) Accessor.Simple.t
+    ('a, Constant.t option, t, [< Accessor.field]) Accessor.t
   (** [known_value_opt] accesses a record's known value, but makes the
       optionality explicit. *)
 
-  val type_of : ('a, Type.t, t, [< Accessor.field]) Accessor.Simple.t
+  val type_of : ('a, Type.t, t, [< Accessor.field]) Accessor.t
   (** [type_of] accesses a record's type. *)
 end
 

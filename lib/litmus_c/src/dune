@@ -7,7 +7,7 @@
  (modules_without_implementation ast_basic_types ast_types)
  (preprocess
   (pps ppx_deriving.std ppx_jane ppx_yojson_conv ppx_accessor sedlex.ppx))
- (libraries sexplib0 stdio base base.caml core_kernel accessor accessor_base
+ (libraries sexplib0 stdio base base.caml core.validate core accessor accessor_base
    fmt menhirLib plumbing c4f.common yojson c4f.fir c4f.litmus c4f.utils
    sedlex travesty.base_exts))
 

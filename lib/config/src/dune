@@ -5,7 +5,7 @@
  (preprocess
   (pps ppx_deriving.std ppx_jane sedlex.ppx))
  (libraries sexplib0 fmt fpath menhirLib travesty travesty.base_exts sedlex
-   base.caml core_kernel plumbing c4f.common c4f.litmus c4f.utils c4f.fuzz
+   base base.caml core plumbing c4f.common c4f.litmus c4f.utils c4f.fuzz
    c4f.fuzz_run))
 
 ;; Config file parser

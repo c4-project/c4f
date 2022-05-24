@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -38,7 +38,7 @@ let rec set_variable_of (x : t) (v : Common.C_id.t) : t =
   | Variable _ -> Variable v
   | Deref d -> Deref (set_variable_of d v)
 
-let variable_of : ('i, Common.C_id.t, t, [< field]) Accessor.Simple.t =
+let variable_of : ('i, Common.C_id.t, t, [< field]) Accessor.t =
   [%accessor Accessor.field ~get:get_variable_of ~set:set_variable_of]
 
 let as_variable (lv : t) : Common.C_id.t Or_error.t =

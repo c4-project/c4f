@@ -8,6 +8,6 @@
    op_types statement_types)
  (preprocess
   (pps ppx_deriving.std ppx_accessor ppx_jane))
- (libraries splittable_random sexplib0 stdio base.caml accessor accessor_base
+ (libraries splittable_random sexplib0 stdio base base.caml accessor accessor_base
    fmt travesty travesty.base_exts travesty.containers plumbing c4f.common
    c4f.litmus c4f.utils yojson))

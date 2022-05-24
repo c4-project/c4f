@@ -7,6 +7,6 @@
  (modules_without_implementation test_types)
  (preprocess
   (pps ppx_yojson_conv ppx_deriving.std ppx_jane))
- (libraries sexplib0 stdio base base.caml core_kernel yojson result fmt
+ (libraries sexplib0 stdio base base.caml core core.validate yojson result fmt
    accessor accessor_base travesty travesty.base_exts c4f.common c4f.utils
    plumbing))

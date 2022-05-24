@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -22,22 +22,22 @@ type t [@@deriving sexp, compare, equal]
     These will eventually replace constructors. *)
 
 module Acc : sig
-  val address : ('i, Address.t, t, [< variant]) Accessor.Simple.t
+  val address : ('i, Address.t, t, [< variant]) Accessor.t
   (** [address] focuses on address expressions. *)
 
-  val atomic : ('i, t Atomic_expression.t, t, [< variant]) Accessor.Simple.t
+  val atomic : ('i, t Atomic_expression.t, t, [< variant]) Accessor.t
   (** [atomic] focuses on atomic expressions. *)
 
-  val constant : ('i, Constant.t, t, [< variant]) Accessor.Simple.t
+  val constant : ('i, Constant.t, t, [< variant]) Accessor.t
   (** [constant] focuses on constant expressions. *)
 
-  val bop : ('i, Op.Binary.t * t * t, t, [< variant]) Accessor.Simple.t
+  val bop : ('i, Op.Binary.t * t * t, t, [< variant]) Accessor.t
   (** [bop] focuses on binary operation expressions. *)
 
-  val uop : ('i, Op.Unary.t * t, t, [< variant]) Accessor.Simple.t
+  val uop : ('i, Op.Unary.t * t, t, [< variant]) Accessor.t
   (** [uop] focuses on unary operation expressions. *)
 
-  val ternary : ('i, t Expr_ternary.t, t, [< variant]) Accessor.Simple.t
+  val ternary : ('i, t Expr_ternary.t, t, [< variant]) Accessor.t
   (** [ternary] focuses on ternary expressions. *)
 end
 

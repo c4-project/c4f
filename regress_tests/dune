@@ -3,8 +3,9 @@
  (modules common)
  (preprocess
   (pps ppx_jane))
- (libraries result yojson ppx_yojson_conv_lib sexplib0 base.caml core_kernel
-   core stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
+ (libraries result yojson ppx_yojson_conv_lib sexplib0 base base.caml core
+  core.validate
+   stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
    c4f.fir c4f.common c4f.config c4f.delitmus c4f.fuzz c4f.litmus c4f.utils))
 
 (executables
@@ -14,8 +15,9 @@
    fuzz_action_list)
  (preprocess
   (pps ppx_jane))
- (libraries result yojson ppx_yojson_conv_lib sexplib0 base.caml core_kernel
-   core stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
+ (libraries result yojson ppx_yojson_conv_lib sexplib0 base base.caml core
+    core_unix.command_unix
+   stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
    c4f.fir c4f.common c4f.config c4f.delitmus c4f.litmus_c c4f.fuzz
    c4f.fuzz_run c4f.litmus c4f.utils common))
 
@@ -101,8 +103,8 @@
  (modules dump_stats)
  (preprocess
   (pps ppx_jane))
- (libraries result yojson ppx_yojson_conv_lib sexplib0 base.caml core_kernel
-   core stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
+ (libraries result yojson ppx_yojson_conv_lib sexplib0 base base.caml 
+   core core_unix.command_unix stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
    c4f.fir c4f.common c4f.config c4f.litmus c4f.utils c4f.litmus_c common)
  (action
   (run %{test} input))
@@ -114,8 +116,8 @@
  (modules litmus_failures)
  (preprocess
   (pps ppx_jane))
- (libraries result yojson ppx_yojson_conv_lib sexplib0 base.caml core_kernel
-   core stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
+ (libraries result yojson ppx_yojson_conv_lib sexplib0 base base.caml 
+   core core_unix.command_unix stdio fmt common_cmd fpath travesty travesty.base_exts plumbing
    c4f.fir c4f.common c4f.config c4f.litmus c4f.litmus_c c4f.utils common)
  (action
   (run %{test} input))

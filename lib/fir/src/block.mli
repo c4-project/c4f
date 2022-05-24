@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -31,14 +31,14 @@ val of_statement_list : 'stm list -> (unit, 'stm) t
 
 (** {2 Accessors} *)
 
-val metadata : ('i, 'meta, ('meta, 'stm) t, [< field]) Accessor.Simple.t
+val metadata : ('i, 'meta, ('meta, 'stm) t, [< field]) Accessor.t
 (** [metadata] accesses block metadata. *)
 
 val statements :
-  ('i, 'stm list, ('meta, 'stm) t, [< field]) Accessor.Simple.t
+  ('i, 'stm list, ('meta, 'stm) t, [< field]) Accessor.t
 (** [statements] accesses block statement lists. *)
 
-val each_statement : ('i, 'stm, ('meta, 'stm) t, [< many]) Accessor.Simple.t
+val each_statement : ('i, 'stm, ('meta, 'stm) t, [< many]) Accessor.t
 (** [each_statement] accesses each statement in a block individually. *)
 
 val is_empty : (_, _) t -> bool

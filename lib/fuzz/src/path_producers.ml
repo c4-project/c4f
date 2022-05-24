@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -175,7 +175,7 @@ module Make_flow (F : sig
       check if paths terminating inside this block match block filters. *)
 
   val sel_branch :
-    branch -> (unit, Subject.Block.t, t, [< field]) Accessor.Simple.t
+    branch -> (unit, Subject.Block.t, t, [< field]) Accessor.t
   (** [sel_branch branch] focuses down on the branch [branch] in [x]. *)
 
   val lift_path : branch -> Path.Stms.t -> Path.Stm.t

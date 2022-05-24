@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -18,7 +18,7 @@ type 'e t = {if_: 'e; then_: 'e; else_: 'e}
 (* Not exported because its signature is confusing. *)
 let make (if_ : 'e) (then_ : 'e) (else_ : 'e) : 'e t = {if_; then_; else_}
 
-let exprs : ('i -> 'e1 -> 'e2, 'i -> 'e1 t -> 'e2 t, [< many]) Accessor.t =
+let exprs : ('i -> 'e1 -> 'e2, 'i -> 'e1 t -> 'e2 t, [< many]) Accessor.General.t =
   [%accessor
     Accessor.(
       many

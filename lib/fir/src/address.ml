@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -20,10 +20,10 @@ end
 include M
 include Comparable.Make (M)
 
-let variable : ('i, Common.C_id.t, t, [< variant]) Accessor.Simple.t =
+let variable : ('i, Common.C_id.t, t, [< variant]) Accessor.t =
   [%accessor lvalue @> Lvalue.variable]
 
-let variable_ref : ('i, Common.C_id.t, t, [< variant]) Accessor.Simple.t =
+let variable_ref : ('i, Common.C_id.t, t, [< variant]) Accessor.t =
   [%accessor ref @> variable]
 
 let of_variable_str_exn (vs : string) : t =
@@ -41,7 +41,7 @@ let rec reduce (addr : t) ~(lvalue : Lvalue.t -> 'a) ~(ref : 'a -> 'a) : 'a =
   | Lvalue lv -> lvalue lv
   | Ref rest -> ref (reduce rest ~lvalue ~ref)
 
-let lvalue_of : ('i, Lvalue.t, t, [< field]) Accessor.Simple.t =
+let lvalue_of : ('i, Lvalue.t, t, [< field]) Accessor.t =
   [%accessor
     Accessor.field ~get:(reduce ~lvalue:Fn.id ~ref:Fn.id) ~set:(fun x v ->
         reduce x ~lvalue:(fun _ -> Lvalue v) ~ref:(fun x -> Ref x) )]
@@ -106,7 +106,7 @@ end = struct
     Generator.(
       recursive_union
         [map [%quickcheck.generator: Lv.t] ~f:(Accessor.construct lvalue)]
-        ~f:(fun mu -> [map mu ~f:(Accessor.construct ref)]))
+        ~f:(fun mu -> [map mu ~f:(Accessor.construct M.ref)]))
 
   let quickcheck_observer : t Observer.t =
     Observer.(
@@ -136,7 +136,7 @@ let of_id_in_env (env : Env.t) ~(id : Common.C_id.t) : t Or_error.t =
     let%map ty = Env.type_of env ~id in
     on_address_of_typed_id (Common.C_named.make ~name:id ty))
 
-let variable_of : ('i, Common.C_id.t, t, [< field]) Accessor.Simple.t =
+let variable_of : ('i, Common.C_id.t, t, [< field]) Accessor.t =
   [%accessor lvalue_of @> Lvalue.variable_of]
 
 let check_address_var (addr : t) ~(env : Env.t) :

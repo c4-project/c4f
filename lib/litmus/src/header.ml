@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -92,7 +92,7 @@ end) : Plumbing.Jsonable_types.S with type t = Const.t t = struct
     Option.value_map foo ~f ~default:`Null
 
   let postcondition_to_json (pc : Const.t Postcondition.t) : Yojson.Safe.t =
-    `String (Fmt.strf "@[<h>%a@]" (Postcondition.pp ~pp_const:Const.pp) pc)
+    `String (Fmt.str "@[<h>%a@]" (Postcondition.pp ~pp_const:Const.pp) pc)
 
   let yojson_of_t (aux : t) : Yojson.Safe.t =
     `Assoc

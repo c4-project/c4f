@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Core_kernel (* for Validated *)
+open Core (* for Validated *)
 
 open struct
   module Ac = C4f_common
@@ -212,7 +212,7 @@ module Make (Lang : Test_types.Basic) :
         ; validate_location_variables t ]
 
     let validate_fields (t : t) : Validate.t =
-      let w check = Validate.field_folder t check in
+      let w check = Validate.field_folder check t in
       Validate.of_list
         (Raw.Fields.fold ~init:[] ~header:(w validate_header)
            ~threads:(w validate_threads) )
@@ -274,8 +274,8 @@ module Make (Lang : Test_types.Basic) :
       (fun l -> String.Caseless.equal (Ac.C_id.to_string l) Lang.name)
       ~if_false:"incorrect language"
 
-  let check_language (language : Ac.C_id.t) =
-    Validate.valid_or_error language validate_language
+  let check_language : Ac.C_id.t -> Ac.C_id.t Or_error.t =
+    Validate.valid_or_error validate_language 
 
   let of_ast
       ({Ast.language; name; decls} : (Lang.Constant.t, Lang.Program.t) Ast.t)

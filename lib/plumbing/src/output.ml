@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -15,7 +15,7 @@ open Stdio
 type t = File of Fpath.t | Stdout [@@deriving variants]
 
 let temp_file ~(prefix : string) ~(ext : string) : Fpath.t =
-  Fpath.v (Filename.temp_file prefix ("." ^ ext))
+  Fpath.v (Filename_unix.temp_file prefix ("." ^ ext))
 
 let temp ~(prefix : string) ~(ext : string) : t =
   file (temp_file ~prefix ~ext)

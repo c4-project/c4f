@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -192,7 +192,7 @@ end
 module Stms = struct
   type t = stm_list [@@deriving compare, equal]
 
-  let index : type i. (i, index, t, [< field]) Accessor.Simple.t =
+  let index : type i. (i, index, t, [< field]) Accessor.t =
     [%accessor
       Accessor.field
         ~get:(function
@@ -295,6 +295,6 @@ module With_meta = struct
       ++ using (Accessor.get Path_meta.With_meta.meta) Path_meta.pp)
 
   let flag (f : Path_meta.Flag.t) :
-      ('i, bool, t, [< field]) Accessor.Simple.t =
-    Path_meta.(With_meta.meta @> flags @> Accessor.Set.at f)
+      ('i, bool, t, [< field]) Accessor.t =
+    Path_meta.(With_meta.meta @> flags @> Accessor.Set.mem f)
 end

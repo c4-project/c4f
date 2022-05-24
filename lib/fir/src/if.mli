@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -30,7 +30,7 @@ val branch :
      , ('meta, 'stm) Block.t
      , ('meta, 'stm) t
      , [< field] )
-     Accessor.Simple.t
+     Accessor.t
 (** [branch b] is the accessor [t_branch] when [b] is true, and [f_branch]
     otherwise. *)
 

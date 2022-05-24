@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -50,7 +50,7 @@ let rulesi :
     ( (Fir.Op.Binary.t * int) * 'a -> Fir.Op_rule.t -> Fir.Op_rule.t
     , 'a -> Fir.Op.Binary.t -> Fir.Op.Binary.t
     , [< many_getter] )
-    Accessor.t =
+    Accessor.General.t =
   Accessor.(
     many_getteri (fun op ->
         op |> Fir.Op.Binary.rules
@@ -61,7 +61,7 @@ let in_rulesi (out : Fir.Op_rule.Out.t) :
     ( (Fir.Op.Binary.t * int) * 'a -> Fir.Op_rule.In.t -> Fir.Op_rule.In.t
     , 'a -> Fir.Op.Binary.t -> Fir.Op.Binary.t
     , [< many_getter] )
-    Accessor.t =
+    Accessor.General.t =
   rulesi @> Fir.Op_rule.single_in_matching out
 
 let bop_of_indexed_rule

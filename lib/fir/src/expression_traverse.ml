@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -303,7 +303,7 @@ let depended_upon_idents :
     , C4f_common.C_id.t
     , Expression.t
     , [< Accessor.many_getter] )
-    Accessor.Simple.t =
+    Accessor.t =
   (* TODO(@MattWindsor91): if we ever get a more useful notion of dependency,
      replace this definition. *)
   [%accessor

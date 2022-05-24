@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -119,7 +119,7 @@ module Stms : sig
 
   (** {3 Accessors and getters} *)
 
-  val index : ('i, index, t, [< field]) Accessor.Simple.t
+  val index : ('i, index, t, [< field]) Accessor.t
   (** [index] focuses on the index of a statement-list path fragment. *)
 
   val span : t -> Utils.My_list.Span.t
@@ -200,6 +200,6 @@ module With_meta : sig
 
   include Pretty_printer.S with type t := t
 
-  val flag : Path_meta.Flag.t -> ('i, bool, t, [< field]) Accessor.Simple.t
+  val flag : Path_meta.Flag.t -> ('i, bool, t, [< field]) Accessor.t
   (** [flag f] accesses whether [f] is set in this path's metadata. *)
 end

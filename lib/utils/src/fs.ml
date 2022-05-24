@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -39,11 +39,11 @@ module Unix : Fs_types.S = struct
   type ent_type = File | Dir | Nothing | Unknown
 
   let get_ent_type (path : string) : ent_type =
-    match Sys.file_exists path with
+    match Sys_unix.file_exists path with
     | `No -> Nothing
     | `Unknown -> Unknown
     | `Yes -> (
-      match Sys.is_directory path with
+      match Sys_unix.is_directory path with
       | `No -> File
       | `Unknown -> Unknown
       | `Yes -> Dir )
@@ -82,7 +82,7 @@ module Unix : Fs_types.S = struct
 
   let actually_mkdir (path : Fpath.t) : unit Or_error.t =
     let path_s = Fpath.to_string path in
-    Or_error.try_with (fun () -> Unix.mkdir path_s)
+    Or_error.try_with (fun () -> Core_unix.mkdir path_s)
 
   let mkdir : Fpath.t -> unit Or_error.t =
     check_is_dir ~on_absent:actually_mkdir
@@ -93,7 +93,7 @@ module Unix : Fs_types.S = struct
   let ls_raw (path : string) : string list Or_error.t =
     Or_error.(
       tag_arg
-        (try_with (fun () -> Sys.ls_dir path))
+        (try_with (fun () -> Sys_unix.ls_dir path))
         "Couldn't read directory" path [%sexp_of: string])
 
   let ls (path : Fpath.t) : Fpath.t list Or_error.t =

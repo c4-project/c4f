@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -17,7 +17,7 @@ let parse_config_failures ~(file : Fpath.t) ~(path : Fpath.t) :
     unit Or_error.t =
   ignore file ;
   let r = C4f_config.Frontend.load (Plumbing.Input.of_fpath path) in
-  Fmt.(pr "@[%a@]@." (result ~ok:(always "No failures.") ~error:Error.pp)) r ;
+  Fmt.(pr "@[%a@]@." (result ~ok:(any "No failures.") ~error:Error.pp)) r ;
   Ok ()
 
 let run (test_dir : Fpath.t) : unit Or_error.t =
@@ -29,4 +29,4 @@ let command =
   Common.make_regress_command
     ~summary:"runs config parser failure regressions" run
 
-let () = Command.run command
+let () = Command_unix.run command

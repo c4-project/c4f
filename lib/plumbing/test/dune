@@ -7,4 +7,4 @@
   (pps ppx_jane))
  (libraries sexplib0 splittable_random ppx_expect.common ppx_expect.config
    ppx_expect.config_types ppx_inline_test.config stdio base base.caml
-   core_kernel fpath fmt plumbing))
+   core fpath fmt plumbing))

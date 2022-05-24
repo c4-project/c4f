@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -32,21 +32,21 @@ include Pretty_printer.S with type t := t
 
     These will likely slowly replace the non-accessor functions below. *)
 module Acc : sig
-  val bool : ('a, bool, t, [< Accessor.variant]) Accessor.Simple.t
+  val bool : ('a, bool, t, [< Accessor.variant]) Accessor.t
   (** [bool] permits construction and selection of boolean constants. *)
 
-  val int : ('a, int, t, [< Accessor.variant]) Accessor.Simple.t
+  val int : ('a, int, t, [< Accessor.variant]) Accessor.t
   (** [int] permits construction and selection of boolean constants. *)
 
   (** {3 Accessors for specific values} *)
 
-  val true_ : ('a, unit, t, [< Accessor.variant]) Accessor.Simple.t
+  val true_ : ('a, unit, t, [< Accessor.variant]) Accessor.t
   (** [true_] permits construction and selection of true constants. *)
 
-  val false_ : ('a, unit, t, [< Accessor.variant]) Accessor.Simple.t
+  val false_ : ('a, unit, t, [< Accessor.variant]) Accessor.t
   (** [false_] permits construction and selection of false constants. *)
 
-  val zero : ('a, unit, t, [< Accessor.variant]) Accessor.Simple.t
+  val zero : ('a, unit, t, [< Accessor.variant]) Accessor.t
   (** [zero] permits construction and selection of zero constants. *)
 end
 

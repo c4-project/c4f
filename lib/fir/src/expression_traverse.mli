@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -43,7 +43,7 @@ val depended_upon_idents :
   , C4f_common.C_id.t
   , Expression.t
   , [< Accessor.many_getter] )
-  Accessor.Simple.t
+  Accessor.t
 (** [depended_upon_idents] recursively gets every identifier in an expression
     that said expression is considered to depend upon. Over time, the notion
     of dependence may weaken, and this getter may pull in a subset of the

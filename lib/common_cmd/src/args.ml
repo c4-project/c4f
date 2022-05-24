@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -47,21 +47,21 @@ module Other = struct
   let id_type = Arg_type.create Id.of_string
 
   let fpath_type : Fpath.t Arg_type.t =
-    Arg_type.map ~f:Fpath.v Filename.arg_type
+    Arg_type.map ~f:Fpath.v Filename_unix.arg_type
 
   let input_type : Plumbing.Input.t Arg_type.t =
     Arg_type.map
       ~f:(Fn.compose Or_error.ok_exn Plumbing.Input.of_string)
-      Filename.arg_type
+      Filename_unix.arg_type
 
   let output_type : Plumbing.Output.t Arg_type.t =
     Arg_type.map
       ~f:(Fn.compose Or_error.ok_exn Plumbing.Output.of_string)
-      Filename.arg_type
+      Filename_unix.arg_type
 
   let aux_file : string option Command.Param.t =
     flag "aux-file"
-      (optional Filename.arg_type)
+      (optional Filename_unix.arg_type)
       ~doc:
         "FILE path to a JSON file containing auxiliary litmus information \
          for this file"
@@ -100,7 +100,7 @@ module Standard = struct
                 ~f:
                   (Fn.compose Or_error.ok_exn
                      Plumbing.Fpath_helpers.of_string )
-                Filename.arg_type ) )
+                Filename_unix.arg_type ) )
           ~doc:"PATH a fuzzing config file to use"
       and colour =
         flag_optional_with_default_doc "colour" colour_type colour_sexp
@@ -138,12 +138,12 @@ module With_files = struct
   let out : string option Command.Param.t =
     Command.Param.(
       flag "output"
-        (optional Filename.arg_type)
+        (optional Filename_unix.arg_type)
         ~doc:"FILE the output file (default: stdout)")
 
   let get (type a) (rest : a Command.Param.t) : a t Command.Param.t =
     Command.Let_syntax.(
-      let%map_open infile_raw = anon (maybe ("FILE" %: Filename.arg_type))
+      let%map_open infile_raw = anon (maybe ("FILE" %: Filename_unix.arg_type))
       and outfile_raw = out
       and rest = rest in
       {rest; infiles_raw= Option.to_list infile_raw; outfile_raw})
@@ -152,7 +152,7 @@ module With_files = struct
       a t Command.Param.t =
     Command.Let_syntax.(
       let%map_open infiles_raw =
-        anon (sequence ("FILE" %: Filename.arg_type))
+        anon (sequence ("FILE" %: Filename_unix.arg_type))
       and outfile_raw = out
       and rest = rest in
       {rest; infiles_raw; outfile_raw})

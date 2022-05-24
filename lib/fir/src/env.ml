@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -26,7 +26,7 @@ module Record = struct
   let known_value_opt = known_value
 
   let known_value :
-      type a. (a, Constant.t, t, [< Accessor.optional]) Accessor.Simple.t =
+      type a. (a, Constant.t, t, [< Accessor.optional]) Accessor.t =
     [%accessor Accessor.(known_value_opt @> Option.some)]
 end
 
@@ -51,7 +51,7 @@ let variables_of_basic_type (env : t) ~(basic : Type.Basic.t) : t =
 let or_not_found (id : Common.C_id.t) : 'a option -> 'a Or_error.t =
   Result.of_option ~error:(not_found id)
 
-let get_or_not_found (type a) (acc : ('i, a, t, _) Accessor.Simple.t)
+let get_or_not_found (type a) (acc : ('i, a, t, _) Accessor.t)
     (env : t) ~(id : Common.C_id.t) : a Or_error.t =
   env.@?(acc) |> or_not_found id
 

@@ -6,6 +6,6 @@
  ; act binaries that it's not particularly useful on its own.
  (preprocess
   (pps ppx_jane))
- (libraries sexplib0 stdio base base.caml core_kernel core fmt fpath yojson
+ (libraries sexplib0 stdio base base.caml core core_unix.filename_unix fmt fpath yojson
    plumbing common_cmd c4f.litmus_c c4f.fir c4f.common c4f.config
    c4f.delitmus c4f.litmus c4f.utils))

@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -14,14 +14,14 @@ open Base
 type t = {wins: int; losses: int} [@@deriving equal, fields, sexp]
 
 let validate_fields (t : t) : Validate.t =
-  let w check = Validate.field_folder t check in
+  let w check = Validate.field_folder check t in
   Validate.of_list
     (Fields.fold ~init:[]
-       ~wins:(w Int.validate_non_negative)
-       ~losses:(w Int.validate_non_negative) )
+       ~wins:(w Core.Int.validate_non_negative)
+       ~losses:(w Core.Int.validate_non_negative) )
 
 let validate_total_positive (t : t) : Validate.t =
-  Validate.name "total" (Int.validate_positive (wins t + losses t))
+  Validate.name "total" (Core.Int.validate_positive (wins t + losses t))
 
 let validate : t Validate.check =
   Validate.all [validate_fields; validate_total_positive]
@@ -53,7 +53,7 @@ let pp (f : Formatter.t) (flag : t) : unit =
   | None -> Fmt.pf f "%d:%d@ odds on" (wins flag) (losses flag)
 
 let try_make ~(wins : int) ~(losses : int) : t Or_error.t =
-  Validate.valid_or_error {wins; losses} validate
+  Validate.valid_or_error validate {wins; losses} 
 
 let exact : bool -> t = function
   | true -> {wins= 1; losses= 0}

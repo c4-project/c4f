@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -23,7 +23,7 @@ end
 
 include Inner
 
-let prim' : ('a, Prim_statement.t, unit t, [< variant]) Accessor.Simple.t =
+let prim' : ('a, Prim_statement.t, unit t, [< variant]) Accessor.t =
   [%accessor Accessor.(prim @> With_meta.no_meta)]
 
 let reduce_step (type meta result) (x : meta t)

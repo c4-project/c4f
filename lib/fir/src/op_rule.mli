@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -32,7 +32,7 @@ module In : sig
   val minus_one : Dir.t -> t
   (** [minus_one d] is short for [Const (d, int (-1))]. *)
 
-  val zero' : Dir.t -> ('a, unit, t, [< Accessor.variant]) Accessor.Simple.t
+  val zero' : Dir.t -> ('a, unit, t, [< Accessor.variant]) Accessor.t
   (** [zero' d] can be used to match on, or construct, a zero input. *)
 
   val true_ : Dir.t -> t
@@ -72,17 +72,17 @@ val ( @-> ) : In.t -> Out.t -> t
 (** {2 Searching for rules} *)
 
 val single_in_matching :
-  Out.t -> ('i, In.t, t, [< Accessor.optional_getter]) Accessor.Simple.t
+  Out.t -> ('i, In.t, t, [< Accessor.optional_getter]) Accessor.t
 (** [in_matching out_] accesses the input criteria for a rule, provided that
     its output criteria is [out_]. *)
 
 val in_matching :
-  Out.t -> ('i, In.t, t list, [< Accessor.many_getter]) Accessor.Simple.t
+  Out.t -> ('i, In.t, t list, [< Accessor.many_getter]) Accessor.t
 (** [in_matching out_] accesses the input criteria for all rules in a rule
     list whose output criteria is [out_]. *)
 
 val has_in_out_matching :
-     (unit, 'a, In.t, Accessor.many_getter) Accessor.Simple.t
+     (unit, 'a, In.t, Accessor.many_getter) Accessor.t
   -> Out.t
   -> t list
   -> bool

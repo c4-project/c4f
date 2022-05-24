@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -23,23 +23,23 @@ module For = struct
     type nonrec ('a, 'b) t = ('a, Expression.t, 'b) t
   end)
 
-  let init_opt : ('i, Assign.t, t, [< optional]) Accessor.Simple.t =
+  let init_opt : ('i, Assign.t, t, [< optional]) Accessor.t =
     [%accessor init @> Accessor.Option.some]
 
-  let cmp_opt : ('i, Expression.t, t, [< optional]) Accessor.Simple.t =
+  let cmp_opt : ('i, Expression.t, t, [< optional]) Accessor.t =
     [%accessor cmp @> Accessor.Option.some]
 
-  let update_opt : ('i, Assign.t, t, [< optional]) Accessor.Simple.t =
+  let update_opt : ('i, Assign.t, t, [< optional]) Accessor.t =
     [%accessor update @> Accessor.Option.some]
 
   let exprs_many (x : t) : (t, Expression.t, Expression.t) Accessor.Many.t =
     Accessor.Many.(
       return (fun init cmp update -> make ?init ?cmp ?update ())
-      <*> AMany.map (Accessor.Option.some @> Assign.exprs) ~f:access x.init
-      <*> AMany.map Accessor.Option.some ~f:access x.cmp
-      <*> AMany.map (Accessor.Option.some @> Assign.exprs) ~f:access x.update)
+      <*> AMany.map (Accessor_base.Option.some @> Assign.exprs) ~f:access x.init
+      <*> AMany.map Accessor_base.Option.some ~f:access x.cmp
+      <*> AMany.map (Accessor_base.Option.some @> Assign.exprs) ~f:access x.update)
 
-  let exprs : type i. (i, Expression.t, t, [< many]) Accessor.Simple.t =
+  let exprs : type i. (i, Expression.t, t, [< many]) Accessor.t =
     [%accessor Accessor.many exprs_many]
 
   module Simple = struct
@@ -183,7 +183,7 @@ module For = struct
           (Assign.make ~dst:s.lvalue ~src:(Simple.Direction.src s.direction))
     }
 
-  let simple : type i. (i, Simple.t, t, [< variant]) Accessor.Simple.t =
+  let simple : type i. (i, Simple.t, t, [< variant]) Accessor.t =
     [%accessor
       Accessor.variant ~match_:match_simple ~construct:construct_simple]
 
@@ -253,7 +253,7 @@ module Header = struct
       | While (w, e) -> access e >>| fun e' -> While (w, e')
       | (Explicit | Implicit | Lock _) as x -> return x)
 
-  let exprs : type i. (i, Expression.t, t, [< many]) Accessor.Simple.t =
+  let exprs : type i. (i, Expression.t, t, [< many]) Accessor.t =
     [%accessor Accessor.many exprs_many]
 
   (** Traversal over the expressions inside a header. *)

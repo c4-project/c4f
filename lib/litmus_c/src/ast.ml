@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -362,7 +362,7 @@ module Parametric = struct
 
       let pp_style f = function
         | `Normal -> Fmt.nop f ()
-        | `Variadic -> Fmt.unit "@ ,@ ..." f ()
+        | `Variadic -> Fmt.any "@ ,@ ..." f ()
 
       let pp =
         Fmt.(
@@ -423,8 +423,8 @@ module Parametric = struct
                 f_branch)
         | Switch (cond, rest) ->
             Fmt.(pf f "switch@ (%a)@ %a" B.Expr.pp cond pp rest)
-        | Continue -> Fmt.unit "continue;" f ()
-        | Break -> Fmt.unit "break;" f ()
+        | Continue -> Fmt.any "continue;" f ()
+        | Break -> Fmt.any "break;" f ()
         | While (cond, body) ->
             Fmt.(pf f "while@ (%a)@ %a" B.Expr.pp cond pp body)
         | Do_while (body, cond) ->
@@ -437,7 +437,7 @@ module Parametric = struct
         | Return expr ->
             (* The space should be surpressed when there is no return value,
                hence the somewhat odd formulation. *)
-            Fmt.(pf f "return%a;" (option (prefix sp B.Expr.pp)) expr)
+            Fmt.(pf f "return%a;" (option (sp ++ B.Expr.pp)) expr)
     end
   end
 

@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -23,7 +23,7 @@ module Source = struct
       | Inc -> return Inc
       | Expr e -> access e >>| fun e' -> Expr e')
 
-  let exprs : ('i, Expression.t, t, [< many]) Accessor.Simple.t =
+  let exprs : ('i, Expression.t, t, [< many]) Accessor.t =
     (* This could literally just be [expr], but I'm planning to add more (x
        += e) and so on, which'll complicate things. *)
     [%accessor Accessor.(many exprs')]
@@ -86,7 +86,7 @@ type t = {dst: Lvalue.t; src: Source.t}
 let ( @= ) (dst : Lvalue.t) (src : Expression.t) : t =
   make ~dst ~src:(Expr src)
 
-let exprs : ('i, Expression.t, t, [< many]) Accessor.Simple.t =
+let exprs : ('i, Expression.t, t, [< many]) Accessor.t =
   [%accessor
     Accessor.(
       many

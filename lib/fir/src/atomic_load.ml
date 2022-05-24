@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -16,7 +16,7 @@ type t = {src: Address.t; mo: Mem_order.t}
 [@@deriving sexp, accessors, make, compare, equal]
 
 let tuple :
-    ('i, Address.t * Mem_order.t, t, [< isomorphism]) Accessor.Simple.t =
+    ('i, Address.t * Mem_order.t, t, [< isomorphism]) Accessor.t =
   [%accessor
     Accessor.isomorphism
       ~get:(fun {src; mo} -> (src, mo))
@@ -99,6 +99,6 @@ module Quickcheck_main = Quickcheck_generic (Address)
 
 include (Quickcheck_main : module type of Quickcheck_main with type t := t)
 
-let variable_of : type i. (i, Common.C_id.t, t, [< field]) Accessor.Simple.t
+let variable_of : type i. (i, Common.C_id.t, t, [< field]) Accessor.t
     =
   [%accessor src @> Address.variable_of]

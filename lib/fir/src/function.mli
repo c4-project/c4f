@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -34,7 +34,7 @@ module Access : sig
     , (C4f_common.C_id.t, Type.t) List.Assoc.t
     , _ t
     , [< Accessor.field] )
-    Accessor.Simple.t
+    Accessor.t
   (** [parameters] accesses a function's parameter list. *)
 
   val body_decls :
@@ -42,14 +42,14 @@ module Access : sig
     , (C4f_common.C_id.t, Initialiser.t) List.Assoc.t
     , _ t
     , [< Accessor.field] )
-    Accessor.Simple.t
+    Accessor.t
   (** [body_decls] accesses a function's in-body variable declarations. *)
 
   val body_stms :
     ( 'i -> 'm1 Statement.t list -> 'm2 Statement.t list
     , 'i -> 'm1 t -> 'm2 t
     , [< Accessor.field] )
-    Accessor.t
+    Accessor.General.t
   (** [body_stms] accesses a function's statements. *)
 end
 

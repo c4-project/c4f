@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -22,7 +22,7 @@ include M
 
 let make (value : 'a) ~(name : C_id.t) : 'a t = {name; value}
 
-let tuple : ('i, C_id.t * 'a, 'a t, [< isomorphism]) Accessor.Simple.t =
+let tuple : ('i, C_id.t * 'a, 'a t, [< isomorphism]) Accessor.t =
   [%accessor
     Accessor.isomorphism
       ~construct:(fun (name, value) -> {name; value})

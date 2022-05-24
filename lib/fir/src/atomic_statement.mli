@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -26,11 +26,11 @@ val cmpxchg :
   , Expression.t Atomic_cmpxchg.t
   , t
   , [< Accessor.variant] )
-  Accessor.Simple.t
+  Accessor.t
 (** [cmpxchg] focuses on atomic compare-exchanges that are in statement
     position (discarding the boolean output). *)
 
-val fence : ('a, Atomic_fence.t, t, [< Accessor.variant]) Accessor.Simple.t
+val fence : ('a, Atomic_fence.t, t, [< Accessor.variant]) Accessor.t
 (** [fence] focuses on atomic fence statements. *)
 
 val fetch :
@@ -38,10 +38,10 @@ val fetch :
   , Expression.t Atomic_fetch.t
   , t
   , [< Accessor.variant] )
-  Accessor.Simple.t
+  Accessor.t
 (** [fetch] focuses on atomic fetch (or exchange) statements. *)
 
-val store : ('a, Atomic_store.t, t, [< Accessor.variant]) Accessor.Simple.t
+val store : ('a, Atomic_store.t, t, [< Accessor.variant]) Accessor.t
 (** [store] focuses on atomic store statements. *)
 
 (** {1 Traversals} *)

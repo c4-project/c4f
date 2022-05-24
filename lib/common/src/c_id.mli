@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -14,7 +14,7 @@
     Despite the name, this module isn't just for use in C ASTs: it also sees
     use in Litmus identifiers, etc. *)
 
-(* The actual implementation depends on Core_kernel, for now, but we only
+(* The actual implementation depends on Core, for now, but we only
    expose the part of it that adheres to the Base interfaces. *)
 open Base
 

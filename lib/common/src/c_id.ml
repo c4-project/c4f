@@ -1,6 +1,6 @@
 (* This file is part of c4f.
 
-   Copyright (c) 2018-2021 C4 Project
+   Copyright (c) 2018-2022 C4 Project
 
    c4t itself is licensed under the MIT License. See the LICENSE file in the
    project root for more information.
@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Core_kernel
+open Core
 
 open struct
   module Tx = Travesty_base_exts
@@ -117,7 +117,7 @@ module Json : Plumbing.Jsonable_types.S with type t := t = struct
   let t_of_yojson (json : Yojson.Safe.t) : t =
     Result.(
       json |> Yojson.Safe.Util.to_string_option
-      |> of_option ~error:(Error.of_string "Not a JSON string.")
+      |> of_option ~error:(Base.Error.of_string "Not a JSON string.")
       >>= create |> Or_error.ok_exn)
 end
 
