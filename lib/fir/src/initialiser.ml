@@ -9,11 +9,14 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+(* Needed because Base shadows it: *)
+module Ty = Type
+
 open Base
 
-type t = {ty: Type.t; value: Constant.t}
+type t = {ty: Ty.t; value: Constant.t}
 [@@deriving sexp, compare, equal, accessors, quickcheck]
 
 let of_int ?(is_atomic : bool = false) ?(is_volatile : bool = false)
     (value : int) =
-  {ty= Type.int ~is_atomic ~is_volatile (); value= Constant.int value}
+  {ty= Ty.int ~is_atomic ~is_volatile (); value= Constant.int value}

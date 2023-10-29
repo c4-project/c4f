@@ -74,7 +74,8 @@ P2()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -147,7 +148,8 @@ P2_body()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -220,7 +222,8 @@ P2()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -293,7 +296,8 @@ P2_body()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -362,7 +366,8 @@ P2(atomic_int *x, atomic_int *y, int *r1)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -431,7 +436,8 @@ P2_body(atomic_int *x, atomic_int *y, int *r1)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -500,7 +506,8 @@ P2(atomic_int *x, atomic_int *y, int *t2r1)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -569,7 +576,8 @@ P2_body(atomic_int *x, atomic_int *y, int *t2r1)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 ```
 ## fuzz_local_bools.c.litmus
@@ -658,8 +666,7 @@ P2()
       "y": 0,
       "x": 0
     },
-    "postcondition":
-      "forall\n((x == 1 /\\ (y == 1 /\\ 0:r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ 0:r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ 0:r0 == 0))))"
+    "postcondition": "forall\n((x == 1 /\\ (y == 1 /\\ 0:r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ 0:r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ 0:r0 == 0))))"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0" },
@@ -722,7 +729,8 @@ P2()
       "initial_value": 17107
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -807,8 +815,7 @@ P2_body()
       "y": 0,
       "x": 0
     },
-    "postcondition":
-      "forall\n((x == 1 /\\ (y == 1 /\\ 0:r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ 0:r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ 0:r0 == 0))))"
+    "postcondition": "forall\n((x == 1 /\\ (y == 1 /\\ 0:r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ 0:r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ 0:r0 == 0))))"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0_body" },
@@ -871,7 +878,8 @@ P2_body()
       "initial_value": 17107
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -956,8 +964,7 @@ P2()
       "y": 0,
       "x": 0
     },
-    "postcondition":
-      "forall\n((x == 1 /\\ (y == 1 /\\ t0r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ t0r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ t0r0 == 0))))"
+    "postcondition": "forall\n((x == 1 /\\ (y == 1 /\\ t0r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ t0r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ t0r0 == 0))))"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0" },
@@ -1020,7 +1027,8 @@ P2()
       "initial_value": 17107
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -1105,8 +1113,7 @@ P2_body()
       "y": 0,
       "x": 0
     },
-    "postcondition":
-      "forall\n((x == 1 /\\ (y == 1 /\\ t0r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ t0r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ t0r0 == 0))))"
+    "postcondition": "forall\n((x == 1 /\\ (y == 1 /\\ t0r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ t0r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ t0r0 == 0))))"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0_body" },
@@ -1169,7 +1176,8 @@ P2_body()
       "initial_value": 17107
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -1248,8 +1256,7 @@ P2(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
       "y": 0,
       "x": 0
     },
-    "postcondition":
-      "forall\n((x == 1 /\\ (y == 1 /\\ 0:r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ 0:r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ 0:r0 == 0))))"
+    "postcondition": "forall\n((x == 1 /\\ (y == 1 /\\ 0:r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ 0:r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ 0:r0 == 0))))"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0" },
@@ -1312,7 +1319,8 @@ P2(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
       "initial_value": 17107
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -1393,8 +1401,7 @@ P2_body(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
       "y": 0,
       "x": 0
     },
-    "postcondition":
-      "forall\n((x == 1 /\\ (y == 1 /\\ 0:r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ 0:r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ 0:r0 == 0))))"
+    "postcondition": "forall\n((x == 1 /\\ (y == 1 /\\ 0:r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ 0:r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ 0:r0 == 0))))"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0_body" },
@@ -1457,7 +1464,8 @@ P2_body(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
       "initial_value": 17107
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -1537,8 +1545,7 @@ P2(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
       "y": 0,
       "x": 0
     },
-    "postcondition":
-      "forall\n((x == 1 /\\ (y == 1 /\\ t0r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ t0r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ t0r0 == 0))))"
+    "postcondition": "forall\n((x == 1 /\\ (y == 1 /\\ t0r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ t0r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ t0r0 == 0))))"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0" },
@@ -1601,7 +1608,8 @@ P2(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
       "initial_value": 17107
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -1682,8 +1690,7 @@ P2_body(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
       "y": 0,
       "x": 0
     },
-    "postcondition":
-      "forall\n((x == 1 /\\ (y == 1 /\\ t0r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ t0r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ t0r0 == 0))))"
+    "postcondition": "forall\n((x == 1 /\\ (y == 1 /\\ t0r0 == 0)) \\/\n ((x == 1 /\\ (y == 1 /\\ t0r0 == 1)) \\/ (x == 1 /\\ (y == 2 /\\ t0r0 == 0))))"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0_body" },
@@ -1746,7 +1753,8 @@ P2_body(int *clumsy_unicorn_10, int *game_11, atomic_int *gentle_corridor,
       "initial_value": 17107
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 ```
 ## iriw.c.litmus
@@ -1793,8 +1801,7 @@ P3()
     "name": "iriw",
     "locations": null,
     "init": { "x": 0, "y": 0 },
-    "postcondition":
-      "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
+    "postcondition": "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0" },
@@ -1840,7 +1847,8 @@ P3()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -1883,8 +1891,7 @@ P3_body()
     "name": "iriw",
     "locations": null,
     "init": { "x": 0, "y": 0 },
-    "postcondition":
-      "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
+    "postcondition": "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0_body" },
@@ -1930,7 +1937,8 @@ P3_body()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -1973,8 +1981,7 @@ P3()
     "name": "iriw",
     "locations": null,
     "init": { "x": 0, "y": 0 },
-    "postcondition":
-      "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
+    "postcondition": "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0" },
@@ -2020,7 +2027,8 @@ P3()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -2063,8 +2071,7 @@ P3_body()
     "name": "iriw",
     "locations": null,
     "init": { "x": 0, "y": 0 },
-    "postcondition":
-      "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
+    "postcondition": "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0_body" },
@@ -2110,7 +2117,8 @@ P3_body()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -2147,8 +2155,7 @@ P3(atomic_int *x, atomic_int *y, int *r0, int *r1)
     "name": "iriw",
     "locations": null,
     "init": { "x": 0, "y": 0 },
-    "postcondition":
-      "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
+    "postcondition": "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0" },
@@ -2194,7 +2201,8 @@ P3(atomic_int *x, atomic_int *y, int *r0, int *r1)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -2231,8 +2239,7 @@ P3_body(atomic_int *x, atomic_int *y, int *r0, int *r1)
     "name": "iriw",
     "locations": null,
     "init": { "x": 0, "y": 0 },
-    "postcondition":
-      "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
+    "postcondition": "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0_body" },
@@ -2278,7 +2285,8 @@ P3_body(atomic_int *x, atomic_int *y, int *r0, int *r1)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -2315,8 +2323,7 @@ P3(atomic_int *x, atomic_int *y, int *t3r0, int *t3r1)
     "name": "iriw",
     "locations": null,
     "init": { "x": 0, "y": 0 },
-    "postcondition":
-      "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
+    "postcondition": "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0" },
@@ -2362,7 +2369,8 @@ P3(atomic_int *x, atomic_int *y, int *t3r0, int *t3r1)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -2399,8 +2407,7 @@ P3_body(atomic_int *x, atomic_int *y, int *t3r0, int *t3r1)
     "name": "iriw",
     "locations": null,
     "init": { "x": 0, "y": 0 },
-    "postcondition":
-      "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
+    "postcondition": "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0_body" },
@@ -2446,7 +2453,8 @@ P3_body(atomic_int *x, atomic_int *y, int *t3r0, int *t3r1)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 ```
 ## iriw_fuzz_redundant.c.litmus
@@ -2516,8 +2524,7 @@ P4()
       "x": 0,
       "y": 0
     },
-    "postcondition":
-      "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
+    "postcondition": "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0" },
@@ -2594,7 +2601,8 @@ P4()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -2660,8 +2668,7 @@ P4_body()
       "x": 0,
       "y": 0
     },
-    "postcondition":
-      "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
+    "postcondition": "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0_body" },
@@ -2738,7 +2745,8 @@ P4_body()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -2804,8 +2812,7 @@ P4()
       "x": 0,
       "y": 0
     },
-    "postcondition":
-      "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
+    "postcondition": "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0" },
@@ -2882,7 +2889,8 @@ P4()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -2948,8 +2956,7 @@ P4_body()
       "x": 0,
       "y": 0
     },
-    "postcondition":
-      "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
+    "postcondition": "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0_body" },
@@ -3026,7 +3033,8 @@ P4_body()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -3086,8 +3094,7 @@ P4(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
       "x": 0,
       "y": 0
     },
-    "postcondition":
-      "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
+    "postcondition": "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0" },
@@ -3164,7 +3171,8 @@ P4(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -3226,8 +3234,7 @@ P4_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
       "x": 0,
       "y": 0
     },
-    "postcondition":
-      "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
+    "postcondition": "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0_body" },
@@ -3304,7 +3311,8 @@ P4_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -3366,8 +3374,7 @@ P4(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
       "x": 0,
       "y": 0
     },
-    "postcondition":
-      "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
+    "postcondition": "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0" },
@@ -3444,7 +3451,8 @@ P4(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -3506,8 +3514,7 @@ P4_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
       "x": 0,
       "y": 0
     },
-    "postcondition":
-      "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
+    "postcondition": "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0_body" },
@@ -3584,7 +3591,8 @@ P4_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 ```
 ## memalloy_cmpxchg.c.litmus
@@ -3639,7 +3647,8 @@ P1()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -3690,7 +3699,8 @@ P1_body()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -3742,7 +3752,8 @@ P1()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -3794,7 +3805,8 @@ P1_body()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -3843,7 +3855,8 @@ P1(atomic_int *x)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -3892,7 +3905,8 @@ P1_body(atomic_int *x)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -3941,7 +3955,8 @@ P1(atomic_int *x)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -3990,7 +4005,8 @@ P1_body(atomic_int *x)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 ```
 ## memalloy_na_int.c.litmus
@@ -4035,7 +4051,8 @@ P0()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -4076,7 +4093,8 @@ P0_body()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -4117,7 +4135,8 @@ P0()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -4158,7 +4177,8 @@ P0_body()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -4197,7 +4217,8 @@ P0(int *x, int *r0)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -4236,7 +4257,8 @@ P0_body(int *x, int *r0)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -4275,7 +4297,8 @@ P0(int *x, int *t0r0)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -4314,7 +4337,8 @@ P0_body(int *x, int *t0r0)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 ```
 ## nonzero_local.c.litmus
@@ -4352,8 +4376,7 @@ P1()
     "name": "test_8",
     "locations": null,
     "init": { "x": 0 },
-    "postcondition":
-      "forall\n((0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 1) \\/ (0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 2))"
+    "postcondition": "forall\n((0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 1) \\/ (0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 2))"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0" },
@@ -4379,7 +4402,8 @@ P1()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -4413,8 +4437,7 @@ P1_body()
     "name": "test_8",
     "locations": null,
     "init": { "x": 0 },
-    "postcondition":
-      "forall\n((0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 1) \\/ (0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 2))"
+    "postcondition": "forall\n((0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 1) \\/ (0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 2))"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0_body" },
@@ -4440,7 +4463,8 @@ P1_body()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -4476,8 +4500,7 @@ P1()
     "name": "test_8",
     "locations": null,
     "init": { "x": 0 },
-    "postcondition":
-      "forall\n((t0r0 == 0 /\\ t1r0 == 0 /\\ x == 1) \\/ (t0r0 == 0 /\\ t1r0 == 0 /\\ x == 2))"
+    "postcondition": "forall\n((t0r0 == 0 /\\ t1r0 == 0 /\\ x == 1) \\/ (t0r0 == 0 /\\ t1r0 == 0 /\\ x == 2))"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0" },
@@ -4503,7 +4526,8 @@ P1()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -4539,8 +4563,7 @@ P1_body()
     "name": "test_8",
     "locations": null,
     "init": { "x": 0 },
-    "postcondition":
-      "forall\n((t0r0 == 0 /\\ t1r0 == 0 /\\ x == 1) \\/ (t0r0 == 0 /\\ t1r0 == 0 /\\ x == 2))"
+    "postcondition": "forall\n((t0r0 == 0 /\\ t1r0 == 0 /\\ x == 1) \\/ (t0r0 == 0 /\\ t1r0 == 0 /\\ x == 2))"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0_body" },
@@ -4566,7 +4589,8 @@ P1_body()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -4597,8 +4621,7 @@ P1(atomic_int *x, int *r0)
     "name": "test_8",
     "locations": null,
     "init": { "x": 0 },
-    "postcondition":
-      "forall\n((0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 1) \\/ (0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 2))"
+    "postcondition": "forall\n((0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 1) \\/ (0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 2))"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0" },
@@ -4624,7 +4647,8 @@ P1(atomic_int *x, int *r0)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -4655,8 +4679,7 @@ P1_body(atomic_int *x, int *r0)
     "name": "test_8",
     "locations": null,
     "init": { "x": 0 },
-    "postcondition":
-      "forall\n((0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 1) \\/ (0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 2))"
+    "postcondition": "forall\n((0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 1) \\/ (0:r0 == 0 /\\ 1:r0 == 0 /\\ x == 2))"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0_body" },
@@ -4682,7 +4705,8 @@ P1_body(atomic_int *x, int *r0)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -4713,8 +4737,7 @@ P1(atomic_int *x, int *t1r0)
     "name": "test_8",
     "locations": null,
     "init": { "x": 0 },
-    "postcondition":
-      "forall\n((t0r0 == 0 /\\ t1r0 == 0 /\\ x == 1) \\/ (t0r0 == 0 /\\ t1r0 == 0 /\\ x == 2))"
+    "postcondition": "forall\n((t0r0 == 0 /\\ t1r0 == 0 /\\ x == 1) \\/ (t0r0 == 0 /\\ t1r0 == 0 /\\ x == 2))"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0" },
@@ -4740,7 +4763,8 @@ P1(atomic_int *x, int *t1r0)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -4771,8 +4795,7 @@ P1_body(atomic_int *x, int *t1r0)
     "name": "test_8",
     "locations": null,
     "init": { "x": 0 },
-    "postcondition":
-      "forall\n((t0r0 == 0 /\\ t1r0 == 0 /\\ x == 1) \\/ (t0r0 == 0 /\\ t1r0 == 0 /\\ x == 2))"
+    "postcondition": "forall\n((t0r0 == 0 /\\ t1r0 == 0 /\\ x == 1) \\/ (t0r0 == 0 /\\ t1r0 == 0 /\\ x == 2))"
   },
   "function_map": {
     "P0": { "tid": 0, "c_id": "P0_body" },
@@ -4798,7 +4821,8 @@ P1_body(atomic_int *x, int *t1r0)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 ```
 ## rwc.c.litmus
@@ -4880,7 +4904,8 @@ P2()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -4958,7 +4983,8 @@ P2_body()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -5036,7 +5062,8 @@ P2()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-globals
@@ -5114,7 +5141,8 @@ P2_body()
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -5187,7 +5215,8 @@ P2(atomic_int *x, atomic_int *y, int *r0)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -5260,7 +5289,8 @@ P2_body(atomic_int *x, atomic_int *y, int *r0)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -5333,7 +5363,8 @@ P2(atomic_int *x, atomic_int *y, int *t2r0)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 //
 // style: vars-as-parameters
@@ -5406,7 +5437,8 @@ P2_body(atomic_int *x, atomic_int *y, int *t2r0)
       "initial_value": 0
     }
   }
-} 
+}
+
 --End auxiliary output-- */
 ```
 

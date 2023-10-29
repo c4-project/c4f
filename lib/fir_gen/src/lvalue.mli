@@ -20,12 +20,12 @@ end
 
 (** Generates random lvalues, constrained over the variables in the given
     environment. *)
-module On_env (E : Fir.Env_types.S) : S
+module On_env (_ : Fir.Env_types.S) : S
 
 (** Generates random lvalues, constrained over the variables in the given
     environment; each lvalue has a non-atomic-integer value type. *)
-module Int_values (E : Fir.Env_types.S) : S
+module Int_values (_ : Fir.Env_types.S) : S
 
 (** Generates random lvalues, constrained over the variables in the given
     environment; each lvalue has a non-atomic-Boolean value type. *)
-module Bool_values (E : Fir.Env_types.S) : S
+module Bool_values (_ : Fir.Env_types.S) : S

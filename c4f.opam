@@ -3,32 +3,34 @@ opam-version: "2.0"
 synopsis: "Metamorphic fuzzer for C litmus tests"
 description:
   "'c4f' (the 'C Compiler Concurrency Checker' fuzzer) is a toolkit for randomly expanding C litmus tests in a semantics-refining way."
-maintainer: ["Matt Windsor <m.windsor@imperial.ac.uk>"]
-authors: ["Matt Windsor <m.windsor@imperial.ac.uk>"]
+maintainer: ["Matt Windsor <mattwindsor91@gmail.com>"]
+authors: ["Matt Windsor <mattwindsor91@gmail.com>"]
 license: "MIT"
 homepage: "https://github.com/c4-project/c4f"
 doc: "https://automagic-compiler-tormentor.readthedocs.io"
 bug-reports: "https://github.com/c4-project/c4f/issues"
 depends: [
-  "dune" {>= "3.2"}
-  "ocaml" {>= "4.14" & < "4.15"}
-  "accessor" {>= "v0.15" & < "v0.16"}
-  "accessor_base" {>= "v0.15" & < "v0.16"}
-  "ppx_accessor" {>= "v0.15" & < "v0.16"}
-  "expect_test_helpers_core" {>= "v0.15" & < "v0.16"}
+  "dune" {>= "3.6"}
+  "ocaml" {>= "5.1" & < "5.2"}
+  "accessor" {>= "v0.16" & < "v0.17"}
+  "accessor_base" {>= "v0.16" & < "v0.17"}
+  "ppx_accessor" {>= "v0.16" & < "v0.17"}
+  "expect_test_helpers_core" {>= "v0.16" & < "v0.17"}
   "ppx_deriving"
   "ppx_jane"
-  "ppx_yojson_conv" {>= "v0.15" & < "v0.16"}
-  "core" {>= "v0.15" & < "v0.16"}
-  "core_unix" {>= "v0.15" & < "v0.16"}
+  "ppx_yojson_conv" {>= "v0.16" & < "v0.17"}
+  "ppx_yojson_conv_lib" {>= "v0.16" & < "v0.17"}
+  "base" {>= "v0.16" & < "v0.17"}
+  "core" {>= "v0.16" & < "v0.17"}
+  "core_unix" {>= "v0.16" & < "v0.17"}
   "fmt" {>= "0.9" & < "0.10"}
   "fpath" {>= "0.7.3" & < "0.8"}
-  "menhir" {>= "20220210"}
+  "menhir" {>= "20230608"}
   "sedlex" {>= "3" & < "4"}
-  "shell" {>= "v0.15" & < "v0.16"}
-  "textutils_kernel" {>= "v0.15" & < "v0.16"}
-  "travesty" {>= "0.7.2" & < "0.8"}
-  "yojson" {>= "1.7" & < "2"}
+  "shell" {>= "v0.16" & < "v0.17"}
+  "textutils_kernel" {>= "v0.16" & < "v0.17"}
+  "travesty" {>= "0.7.2" & < "0.9"}
+  "yojson" {>= "2.1" & < "3"}
   "odoc" {with-doc}
 ]
 build: [

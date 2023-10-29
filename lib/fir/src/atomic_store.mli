@@ -50,6 +50,6 @@ val quickcheck_observer : t Base_quickcheck.Observer.t
     It uses [Mem_order]'s store-compatible generator to pick random memory
     orders. *)
 module Quickcheck_generic
-    (Src : C4f_utils.My_quickcheck.S_with_sexp with type t := Expression.t)
-    (Dst : C4f_utils.My_quickcheck.S_with_sexp with type t := Address.t) :
+    (_ : C4f_utils.My_quickcheck.S_with_sexp with type t := Expression.t)
+    (_ : C4f_utils.My_quickcheck.S_with_sexp with type t := Address.t) :
   C4f_utils.My_quickcheck.S_with_sexp with type t = t

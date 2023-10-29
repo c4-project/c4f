@@ -20,8 +20,8 @@ end
 
 (** Generates type-safe, but arbitrary, integer atomic stores over the given
     environments. *)
-module Int (Src : Fir.Env_types.S) (Dst : Fir.Env_types.S) : S
+module Int (_ : Fir.Env_types.S) (_ : Fir.Env_types.S) : S
 
 (** Generates type-safe, but arbitrary, Boolean atomic stores over the given
     environments. *)
-module Bool (Src : Fir.Env_types.S) (Dst : Fir.Env_types.S) : S
+module Bool (_ : Fir.Env_types.S) (_ : Fir.Env_types.S) : S

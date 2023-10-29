@@ -18,4 +18,4 @@
 (** Makes a delitmus driver given a function rewriter, information about how
     global and local variables are mapped, and various other configuration
     tidbits. *)
-module Make (Basic : Runner_types.Basic) : Runner_types.S
+module Make (_ : Runner_types.Basic) : Runner_types.S

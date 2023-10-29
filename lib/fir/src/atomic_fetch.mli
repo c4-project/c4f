@@ -55,8 +55,8 @@ end
 
 (** Primitive building block for atomic-fetch quickchecks. *)
 module Quickcheck_generic
-    (A : C4f_utils.My_quickcheck.S_with_sexp with type t := Address.t)
-    (O : C4f_utils.My_quickcheck.S_with_sexp with type t := Op.Fetch.t)
+    (_ : C4f_utils.My_quickcheck.S_with_sexp with type t := Address.t)
+    (_ : C4f_utils.My_quickcheck.S_with_sexp with type t := Op.Fetch.t)
     (E : C4f_utils.My_quickcheck.S_with_sexp) : sig
   type nonrec t = E.t t [@@deriving sexp_of, quickcheck]
 end

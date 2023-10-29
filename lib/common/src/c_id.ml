@@ -66,7 +66,7 @@ module M = Validated.Make_bin_io_compare_hash_sexp (struct
 
   let is_badword (s : string) : bool =
     (* Not pointfree because of the need to force a lazy value. *)
-    Set.mem (Lazy.force badwords) s
+    Base.Set.mem (Lazy.force badwords) s
 
   let validate_badwords : string Validate.check =
     Validate.booltest (Fn.non is_badword)

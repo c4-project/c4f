@@ -14,6 +14,8 @@
     In ACT's FIR, constants are either integers or Booleans. The latter
     corresponds to the pseudo-constants 'true' and 'false' in C99. *)
 
+(* Needed because Base shadows it: *)
+module Ty = Type
 open Base
 
 (** {1 Constants} *)
@@ -58,10 +60,10 @@ val bool : bool -> t
 val int : int -> t
 (** [int b] lifts the integer value [i] to a constant. *)
 
-val zero_of_type : Type.t -> t
+val zero_of_type : Ty.t -> t
 (** [zero_of_type ty] gets the appropriate zero value for the type [ty]. *)
 
-val convert : t -> to_:Type.Prim.t -> t Or_error.t
+val convert : t -> to_:Ty.Prim.t -> t Or_error.t
 (** [convert k ~to_] tries to convert [k] to the primitive type [to_]. It
     fails if the conversion is impossible. *)
 
@@ -108,10 +110,10 @@ val convert_as_int : t -> int Or_error.t
     Since constant checking never fails and doesn't require an environment,
     we {i don't} implement {{!Types.S_type_checkable} S_type_checkable}. *)
 
-val prim_type_of : t -> Type.Prim.t
+val prim_type_of : t -> Ty.Prim.t
 (** [prim_type_of k] gets the primitive type of constant [k]. *)
 
-val type_of : t -> Type.t
+val type_of : t -> Ty.t
 (** [type_of k] gets the type of constant [k]. *)
 
 (** {2 Specific Quickcheck generators} *)

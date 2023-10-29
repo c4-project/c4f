@@ -21,23 +21,23 @@ module type S =
 
 (** Generates random, type-safe expressions over the given variable
     environment, with type 'int'. *)
-module Int_values (E : Fir.Env_types.S) : S
+module Int_values (_ : Fir.Env_types.S) : S
 
 (** Generates random integer expressions that always evaluate to 0. *)
-module Int_zeroes (E : Fir.Env_types.S) : S
+module Int_zeroes (_ : Fir.Env_types.S) : S
 
 (** {2 Atomic fetches}
 
     These depend recursively on the integer generators, and so can't be
     defined earlier than this. *)
 
-module Atomic_fetch_int_nops (Obj : Fir.Env_types.S) (Arg : Fir.Env_types.S) :
+module Atomic_fetch_int_nops (_ : Fir.Env_types.S) (_ : Fir.Env_types.S) :
   Utils.My_quickcheck.S_with_sexp
     with type t = Fir.Expression.t Fir.Atomic_fetch.t
 
 module Atomic_fetch_int_values
-    (Obj : Fir.Env_types.S)
-    (Arg : Fir.Env_types.S) :
+    (_ : Fir.Env_types.S)
+    (_ : Fir.Env_types.S) :
   Utils.My_quickcheck.S_with_sexp
     with type t = Fir.Expression.t Fir.Atomic_fetch.t
 
@@ -45,13 +45,13 @@ module Atomic_fetch_int_values
 
 (** Generates random, type-safe expressions over the given variable
     environment, with type 'bool'. *)
-module Bool_values (E : Fir.Env_types.S) : S
+module Bool_values (_ : Fir.Env_types.S) : S
 
 (** {2 Booleans with known truth values}
 
     [Bool_known] constructs two generators over a given environment with
     known value data: a tautology generator and a falsehood generator. *)
-module Bool_known (E : Fir.Env_types.S) : sig
+module Bool_known (_ : Fir.Env_types.S) : sig
   (** Generates random, type-safe expressions over the given variable
       environment, with type 'bool' and guaranteed 'true' value. *)
   module Tautologies : S

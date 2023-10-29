@@ -10,6 +10,7 @@
    project root for more information. *)
 
 open Base
+open Ppx_yojson_conv_lib.Yojson_conv.Primitives
 open Import
 
 module Record = struct

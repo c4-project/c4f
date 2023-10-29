@@ -31,5 +31,5 @@ val quickcheck_generator_ite :
     expression generators. *)
 
 (** Type checking for ternary expressions. *)
-module Type_check (E : Env_types.S) :
+module Type_check (_ : Env_types.S) :
   Types.S_type_checker with type t := Type.t t

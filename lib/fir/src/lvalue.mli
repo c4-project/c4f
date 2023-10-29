@@ -19,6 +19,9 @@
     either be lvalues or address-of modifications of other addresses, and are
     used where things expect pointers. *)
 
+(* Needed because Base shadows it: *)
+module Ty = Type
+
 open Base
 open Import
 
@@ -41,7 +44,7 @@ val un_deref : t -> t Or_error.t
 (** [un_deref lvalue] tries to remove one layer of dereferencing from
     [lvalue]. It fails if [lvalue] is already a variable type. *)
 
-val on_value_of_typed_id : Type.t C4f_common.C_named.t -> t
+val on_value_of_typed_id : Ty.t C4f_common.C_named.t -> t
 (** [on_value_of_typed_id tid] constructs an lvalue with underlying variable
     [name tid] and the right level of indirection to convert from a variable
     of type [value tid] to a primitive value.
@@ -84,7 +87,7 @@ include Types.S_type_checkable with type t := t
 
 (** Generates random lvalues, parametrised on a given identifier generator. *)
 module Quickcheck_generic
-    (Id : C4f_utils.My_quickcheck.S_with_sexp
+    (_ : C4f_utils.My_quickcheck.S_with_sexp
             with type t := C4f_common.C_id.t) : sig
   type nonrec t = t [@@deriving sexp_of, quickcheck]
 end

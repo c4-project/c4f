@@ -16,7 +16,7 @@ let try_parse_program_id (id : Common.C_id.t) : int Or_error.t =
   let strid = Common.C_id.to_string id in
   Or_error.(
     tag ~tag:"Thread function does not have a well-formed name"
-      (try_with (fun () -> Caml.Scanf.sscanf strid "P%d" Fn.id)))
+      (try_with (fun () -> Stdlib.Scanf.sscanf strid "P%d" Fn.id)))
 
 let to_param_opt (lit_id : Common.Litmus_id.t) (rc : Var_map.Record.t) :
     (int * (Common.Litmus_id.t * Fir.Type.t)) option =

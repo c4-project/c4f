@@ -16,6 +16,9 @@
     program transformers; the actual litmus language exposed outside of these
     programs is in the {!C4f_litmus_c} library. *)
 
+(* Needed because Base shadows it: *)
+module Ty = Type
+
 open Base
 open Import
 
@@ -43,7 +46,7 @@ module Var : sig
         These include the type of the variable, its intended index in any
         parameter list, and any initial value (from the Litmus init block,
         for globals, and from the thread's declarations, for locals). *)
-    type t = {ty: Type.t; param_index: int; initial_value: Constant.t option}
+    type t = {ty: Ty.t; param_index: int; initial_value: Constant.t option}
     [@@deriving compare, sexp]
   end
 

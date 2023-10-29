@@ -9,6 +9,9 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+(* Needed because Base shadows it: *)
+module Ty = Type
+
 open Base
 open Import
 
@@ -76,23 +79,23 @@ Travesty.Traversable.Make1 (struct
 end)
 
 module Type_check (Env : Env_types.S) = struct
-  type nonrec t = Type.t t
+  type nonrec t = Ty.t t
 
   module Ad = Address.Type_check (Env)
 
-  let check_expected_desired ~(expected : Type.t) ~(desired : Type.t) :
-      Type.t Or_error.t =
+  let check_expected_desired ~(expected : Ty.t) ~(desired : Ty.t) :
+      Ty.t Or_error.t =
     Or_error.tag
-      (Type.check_pointer_non ~pointer:expected ~non:desired)
+      (Ty.check_pointer_non ~pointer:expected ~non:desired)
       ~tag:"'expected' type must be same as pointer to 'desired' type"
 
-  let check_expected_obj ~(expected : Type.t) ~(obj : Type.t) :
-      Type.t Or_error.t =
+  let check_expected_obj ~(expected : Ty.t) ~(obj : Ty.t) :
+      Ty.t Or_error.t =
     Or_error.tag
-      (Type.check_atomic_non ~atomic:expected ~non:obj)
+      (Ty.check_atomic_non ~atomic:expected ~non:obj)
       ~tag:"'obj' type must be atomic version of 'expected' type"
 
-  let type_of (c : t) : Type.t Or_error.t =
+  let type_of (c : t) : Ty.t Or_error.t =
     Or_error.Let_syntax.(
       (* A* *)
       let%bind obj = Ad.type_of c.obj in
@@ -104,5 +107,5 @@ module Type_check (Env : Env_types.S) = struct
       let%map _ = check_expected_obj ~expected ~obj in
       (* Compare-exchanges return a boolean: whether or not they were
          successful. *)
-      Type.bool ())
+      Ty.bool ())
 end

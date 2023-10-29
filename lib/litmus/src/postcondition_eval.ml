@@ -10,6 +10,7 @@
    project root for more information. *)
 
 open Base
+open Ppx_yojson_conv_lib.Yojson_conv.Primitives
 
 module Result = struct
   type 'a t = {truth: bool; witnesses: 'a list; counter_examples: 'a list}

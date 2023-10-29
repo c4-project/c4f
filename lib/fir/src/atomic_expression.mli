@@ -9,6 +9,9 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+(* Needed because Base shadows it: *)
+module Ty = Type
+
 open Base
 
 (** Opaque type of atomic expressions. *)
@@ -57,4 +60,4 @@ module On_expressions : Travesty.Traversable_types.S1 with type 'e t = 'e t
 
 (** We can type check atomic expressions, so long as we already type-checked
     any recursive expressions inside them. *)
-include Types.S_type_checkable with type t := Type.t t
+include Types.S_type_checkable with type t := Ty.t t

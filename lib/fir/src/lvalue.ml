@@ -9,6 +9,9 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+(* Needed because Base shadows it: *)
+module Ty = Type
+
 open Base
 open Import
 
@@ -52,11 +55,11 @@ module Type_check (E : sig
   val env : Env.t
 end) =
 struct
-  let rec type_of : t -> Type.t Or_error.t = function
+  let rec type_of : t -> Ty.t Or_error.t = function
     | Variable id -> Env.type_of E.env ~id
     | Deref l ->
         Or_error.tag_arg
-          Or_error.(l |> type_of >>= Type.deref)
+          Or_error.(l |> type_of >>= Ty.deref)
           "While checking underlying type of lvalue dereferencing:" l
           sexp_of_t
 end
@@ -100,7 +103,7 @@ module Quickcheck_id = Quickcheck_generic (Common.C_id)
 
 include (Quickcheck_id : module type of Quickcheck_id with type t := t)
 
-let on_value_of_typed_id (tid : Type.t Common.C_named.t) : t =
+let on_value_of_typed_id (tid : Ty.t Common.C_named.t) : t =
   let id = Accessor.get Common.C_named.name tid in
   let ty = Accessor.get Common.C_named.value tid in
-  if Type.is_pointer ty then Deref (Variable id) else Variable id
+  if Ty.is_pointer ty then Deref (Variable id) else Variable id

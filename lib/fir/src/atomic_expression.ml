@@ -9,6 +9,9 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+(* Needed because Base shadows it: *)
+module Ty = Type
+
 open Base
 
 module P = struct
@@ -55,11 +58,11 @@ Travesty.Traversable.Make1 (struct
 end)
 
 module Type_check (E : Env_types.S) :
-  Types.S_type_checker with type t := Type.t t = struct
+  Types.S_type_checker with type t := Ty.t t = struct
   module Ac = Atomic_cmpxchg.Type_check (E)
   module Af = Atomic_fetch.Type_check (E)
   module Al = Atomic_load.Type_check (E)
 
-  let type_of : Type.t t -> Type.t Or_error.t =
+  let type_of : Ty.t t -> Ty.t Or_error.t =
     reduce ~cmpxchg:Ac.type_of ~fetch:Af.type_of ~load:Al.type_of
 end

@@ -11,6 +11,9 @@
 
 (** FIR: module signatures and basic types *)
 
+(* Needed because Base shadows it: *)
+module Ty = Type
+
 open Base
 open Import
 
@@ -37,7 +40,7 @@ module type S_type_checker = sig
   (** The type being checked. *)
   type t
 
-  val type_of : t -> Type.t Or_error.t
+  val type_of : t -> Ty.t Or_error.t
   (** [type_of x] tries to get the type of [x]. It fails if the type is
       inconsistent. *)
 end
@@ -48,5 +51,5 @@ module type S_type_checkable = sig
   type t
 
   (** Type checking for [t]. *)
-  module Type_check (E : Env_types.S) : S_type_checker with type t := t
+  module Type_check (_ : Env_types.S) : S_type_checker with type t := t
 end

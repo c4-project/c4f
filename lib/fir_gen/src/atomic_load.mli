@@ -20,8 +20,8 @@ end
 
 (** Generates random, type-safe atomic loads over the given variable typing
     environment, restricted to atomic bools. *)
-module Bool (E : Fir.Env_types.S) : S
+module Bool (_ : Fir.Env_types.S) : S
 
 (** Generates random, type-safe atomic loads over the given variable typing
     environment, restricted to atomic ints. *)
-module Int (E : Fir.Env_types.S) : S
+module Int (_ : Fir.Env_types.S) : S

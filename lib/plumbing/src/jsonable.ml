@@ -10,6 +10,7 @@
    project root for more information. *)
 
 open Base
+open Ppx_yojson_conv_lib.Yojson_conv.Primitives
 module Tx = Travesty_base_exts
 
 module Str_result : Monad.S with type 'a t = ('a, string) Result.t = struct

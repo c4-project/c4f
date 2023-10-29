@@ -9,6 +9,9 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+(* Needed because Base shadows it: *)
+module Ty = Type
+
 open Base
 open Import
 
@@ -63,11 +66,11 @@ end)
 module Type_check (E : Env_types.S) = struct
   module A = Address.Type_check (E)
 
-  let type_of (ld : t) : Type.t Or_error.t =
+  let type_of (ld : t) : Ty.t Or_error.t =
     Or_error.Let_syntax.(
       let%bind a_ptr = A.type_of ld.src in
-      let%bind a = Type.deref a_ptr in
-      Type.to_non_atomic a)
+      let%bind a = Ty.deref a_ptr in
+      Ty.to_non_atomic a)
 end
 
 module Quickcheck_generic

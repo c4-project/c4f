@@ -16,7 +16,7 @@ open Import
 
 (** Given the basic shape of a delitmus runner, this functor constructs a
     one-function module that produces auxiliary records. *)
-module Make (B : Runner_types.Basic) : sig
+module Make (_ : Runner_types.Basic) : sig
   val make_aux : Fir.Litmus.Test.t -> Aux.t Or_error.t
   (** [make_aux test] tries to extract an auxiliary record for [test]. This
       record details the various function and variable mappings that should

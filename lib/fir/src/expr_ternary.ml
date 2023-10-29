@@ -9,6 +9,9 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+(* Needed because Base shadows it: *)
+module Ty = Type
+
 open Base
 open Import
 
@@ -33,18 +36,18 @@ let quickcheck_generator_ite ~(gen_if : 'e Q.Generator.t)
   Q.Generator.map3 gen_if gen_then gen_else ~f:make
 
 module Type_check (E : Env_types.S) :
-  Types.S_type_checker with type t := Type.t t = struct
-  let type_of ({if_; then_; else_} : Type.t t) : Type.t Or_error.t =
+  Types.S_type_checker with type t := Ty.t t = struct
+  let type_of ({if_; then_; else_} : Ty.t t) : Ty.t Or_error.t =
     Or_error.(
       Let_syntax.(
         let%bind () =
           Tx.Or_error.unless_m
-            (Type.basic_type_is if_ ~basic:(Type.Basic.bool ()))
+            (Ty.basic_type_is if_ ~basic:(Ty.Basic.bool ()))
             ~f:(fun () ->
               error_s
                 [%message
                   "Condition of ternary statement must be boolean value"
-                    ~actual_type:(if_ : Type.t)] )
+                    ~actual_type:(if_ : Ty.t)] )
         in
-        Type.check then_ else_))
+        Ty.check then_ else_))
 end

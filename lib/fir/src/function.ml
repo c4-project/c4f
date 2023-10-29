@@ -9,6 +9,9 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+(* Needed because Base shadows it: *)
+module Ty = Type
+
 open Base
 
 open struct
@@ -18,7 +21,7 @@ end
 
 module Access = struct
   type 'meta t =
-    { parameters: Type.t Named.Alist.t
+    { parameters: Ty.t Named.Alist.t
     ; body_decls: Initialiser.t Named.Alist.t
     ; body_stms: 'meta Statement.t list }
   [@@deriving sexp, accessors, make, equal]
@@ -39,8 +42,8 @@ let with_body_stms (type m1 m2) (func : m1 t) (new_stms : m2 Statement.t list)
 module On (M : Applicative.S) = struct
   let map_m (type m1 m2) (func : m1 t)
       ~(parameters :
-            (Ac.C_id.t, Type.t) List.Assoc.t
-         -> (Ac.C_id.t, Type.t) List.Assoc.t M.t )
+            (Ac.C_id.t, Ty.t) List.Assoc.t
+         -> (Ac.C_id.t, Ty.t) List.Assoc.t M.t )
       ~(body_decls :
             (Ac.C_id.t, Initialiser.t) List.Assoc.t
          -> (Ac.C_id.t, Initialiser.t) List.Assoc.t M.t )

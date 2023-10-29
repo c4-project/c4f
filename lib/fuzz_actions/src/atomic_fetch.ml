@@ -62,7 +62,7 @@ module Insert = struct
 
     (** A functor that produces a quickcheck instance for atomic fetches
         given source and destination variable environments. *)
-    module Quickcheck (Src : Fir.Env_types.S) (Dst : Fir.Env_types.S) :
+    module Quickcheck (_ : Fir.Env_types.S) (_ : Fir.Env_types.S) :
       C4f_utils.My_quickcheck.S_with_sexp
         with type t := Fir.Expression.t Fir.Atomic_fetch.t
   end) : S = Storelike.Make (struct

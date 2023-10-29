@@ -9,6 +9,9 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+(* Needed because Base shadows it: *)
+module Ty = Type
+
 open Base
 open Import
 
@@ -20,7 +23,7 @@ let not_found (id : Common.C_id.t) : Error.t =
 module Record = struct
   open Q
 
-  type t = {known_value: Constant.t option; type_of: Type.t}
+  type t = {known_value: Constant.t option; type_of: Ty.t}
   [@@deriving equal, sexp, accessors, make, quickcheck]
 
   let known_value_opt = known_value
@@ -32,21 +35,21 @@ end
 
 type t = Record.t Map.M(Common.C_id).t [@@deriving sexp]
 
-let basic_type = [%accessor Record.type_of @> Type.Access.basic_type]
+let basic_type = [%accessor Record.type_of @> Ty.Access.basic_type]
 
-let prim_type = [%accessor basic_type @> Type.Basic.Access.prim]
+let prim_type = [%accessor basic_type @> Ty.Basic.Access.prim]
 
-let has_vars_of_prim_type (env : t) ~(prim : Type.Prim.t) : bool =
-  Map.exists env ~f:(Type.Prim.eq prim_type ~to_:prim)
+let has_vars_of_prim_type (env : t) ~(prim : Ty.Prim.t) : bool =
+  Map.exists env ~f:(Ty.Prim.eq prim_type ~to_:prim)
 
-let variables_of_prim_type (env : t) ~(prim : Type.Prim.t) : t =
-  Map.filter env ~f:(Type.Prim.eq prim_type ~to_:prim)
+let variables_of_prim_type (env : t) ~(prim : Ty.Prim.t) : t =
+  Map.filter env ~f:(Ty.Prim.eq prim_type ~to_:prim)
 
-let has_vars_of_basic_type (env : t) ~(basic : Type.Basic.t) : bool =
-  Map.exists env ~f:(Type.Basic.eq basic_type ~to_:basic)
+let has_vars_of_basic_type (env : t) ~(basic : Ty.Basic.t) : bool =
+  Map.exists env ~f:(Ty.Basic.eq basic_type ~to_:basic)
 
-let variables_of_basic_type (env : t) ~(basic : Type.Basic.t) : t =
-  Map.filter env ~f:(Type.Basic.eq basic_type ~to_:basic)
+let variables_of_basic_type (env : t) ~(basic : Ty.Basic.t) : t =
+  Map.filter env ~f:(Ty.Basic.eq basic_type ~to_:basic)
 
 let or_not_found (id : Common.C_id.t) : 'a option -> 'a Or_error.t =
   Result.of_option ~error:(not_found id)
@@ -58,18 +61,18 @@ let get_or_not_found (type a) (acc : ('i, a, t, _) Accessor.t) (env : t)
 let record_of (env : t) ~(id : Common.C_id.t) : Record.t Or_error.t =
   get_or_not_found (Accessor.Map.found id) env ~id
 
-let type_of (env : t) ~(id : Common.C_id.t) : Type.t Or_error.t =
+let type_of (env : t) ~(id : Common.C_id.t) : Ty.t Or_error.t =
   get_or_not_found (Accessor.Map.found id @> Record.type_of) env ~id
 
 let known_value (env : t) ~(id : Common.C_id.t) :
     Constant.t option Or_error.t =
   get_or_not_found (Accessor.Map.found id @> Record.known_value_opt) env ~id
 
-let of_typing : Type.t Map.M(Common.C_id).t -> t =
+let of_typing : Ty.t Map.M(Common.C_id).t -> t =
   Map.map ~f:(fun type_of -> Record.make ~type_of ())
 
 let of_maps :
-    Type.t Map.M(Common.C_id).t -> Constant.t Map.M(Common.C_id).t -> t =
+    Ty.t Map.M(Common.C_id).t -> Constant.t Map.M(Common.C_id).t -> t =
   Map.merge ~f:(fun ~key ->
       ignore key ;
       function
@@ -78,11 +81,11 @@ let of_maps :
           Some (Record.make ~type_of ~known_value ())
       | `Right _ -> None )
 
-let typing : t -> Type.t Map.M(Common.C_id).t =
+let typing : t -> Ty.t Map.M(Common.C_id).t =
   Map.map ~f:(Accessor.get Record.type_of)
 
 let variables_with_known_values :
-    t -> (Type.t * Constant.t) Map.M(C4f_common.C_id).t =
+    t -> (Ty.t * Constant.t) Map.M(C4f_common.C_id).t =
   Map.filter_map ~f:(fun (data : Record.t) ->
       Option.Let_syntax.(
         let%map kv = data.@?(Record.known_value) in
@@ -93,8 +96,8 @@ let filter_to_known_values : t -> t =
   Map.filter ~f:(fun (data : Record.t) ->
       not (Accessor.is_empty Record.known_value data) )
 
-let type_of_known_value (env : t) ~(id : Common.C_id.t) : Type.t Or_error.t =
-  Or_error.(type_of env ~id >>| Type.basic_type >>| Type.make)
+let type_of_known_value (env : t) ~(id : Common.C_id.t) : Ty.t Or_error.t =
+  Or_error.(type_of env ~id >>| Ty.basic_type >>| Ty.make)
 
 let gen_random_var_with_record (env : t) :
     Record.t Common.C_named.t Q.Generator.t =
@@ -109,7 +112,7 @@ let gen_random_var_with_record (env : t) :
               ~here:[%here]]
     | xs -> Q.Generator.of_list (Common.C_named.list_of_alist xs))
 
-let gen_random_var_with_type : t -> Type.t Common.C_named.t Q.Generator.t =
+let gen_random_var_with_type : t -> Ty.t Common.C_named.t Q.Generator.t =
   Fn.compose
     (Q.Generator.map
        ~f:(Common.C_named.map_right ~f:(Accessor.get Record.type_of)) )
@@ -140,14 +143,14 @@ end
 module Random_var_with_type (E : sig
   val env : t
 end) : sig
-  type t = Type.t Common.C_named.t [@@deriving sexp_of, quickcheck]
+  type t = Ty.t Common.C_named.t [@@deriving sexp_of, quickcheck]
 end = struct
-  type t = Type.t Common.C_named.t [@@deriving sexp_of, quickcheck]
+  type t = Ty.t Common.C_named.t [@@deriving sexp_of, quickcheck]
 
   let quickcheck_generator = gen_random_var_with_type E.env
 
   let quickcheck_observer =
-    Common.C_named.quickcheck_observer Type.quickcheck_observer
+    Common.C_named.quickcheck_observer Ty.quickcheck_observer
 
   let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
 end

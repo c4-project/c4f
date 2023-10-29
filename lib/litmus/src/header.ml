@@ -10,6 +10,7 @@
    project root for more information. *)
 
 open Base
+open Ppx_yojson_conv_lib.Yojson_conv.Primitives
 module Tx = Travesty_base_exts
 module Ac = C4f_common
 

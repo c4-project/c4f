@@ -9,6 +9,9 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+(* Needed because Base shadows it: *)
+module Ty = Type
+
 open Base
 open Base_quickcheck
 
@@ -46,15 +49,15 @@ let truth : t = Bool true
 
 let falsehood : t = Bool false
 
-let prim_type_of : t -> Type.Prim.t = function
+let prim_type_of : t -> Ty.Prim.t = function
   | Bool _ -> Bool
   | Int _ -> Int
 
-let type_of (x : t) : Type.t = Type.make (Type.Basic.make (prim_type_of x))
+let type_of (x : t) : Ty.t = Ty.make (Ty.Basic.make (prim_type_of x))
 
-let zero_of_type (t : Type.t) : t =
+let zero_of_type (t : Ty.t) : t =
   if
-    Type.(
+    Ty.(
       is_pointer t
       || Prim.eq Accessor.(Access.basic_type @> Basic.Access.prim) t ~to_:Int)
   then Int 0
@@ -157,7 +160,7 @@ let convert_as_int : t -> int Or_error.t = function
   | Bool false -> Ok 0
   | Bool true -> Ok 1
 
-let convert (x : t) ~(to_ : Type.Prim.t) : t Or_error.t =
+let convert (x : t) ~(to_ : Ty.Prim.t) : t Or_error.t =
   (* The Or_error wrapper is future-proofing for if we have unconvertable
      constants later on. *)
   match to_ with

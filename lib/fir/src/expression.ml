@@ -9,6 +9,9 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+(* Needed because Base shadows it: *)
+module Ty = Type
+
 open Base
 open Import
 
@@ -175,60 +178,60 @@ module Type_check (E : Env_types.S) = struct
   module At = Atomic_expression.Type_check (E)
   module Te = Expr_ternary.Type_check (E)
 
-  let require_unified_bop_type (b : Op.Binary.t) ~(want : Type.t)
-      ~(got : Type.t) : Type.t Or_error.t =
-    Or_error.tag_s (Type.check want got)
+  let require_unified_bop_type (b : Op.Binary.t) ~(want : Ty.t)
+      ~(got : Ty.t) : Ty.t Or_error.t =
+    Or_error.tag_s (Ty.check want got)
       ~tag:
         [%message
           "Checking unified type of binary operation"
             ~operator:(b : Op.Binary.t)
-            ~should_be:(want : Type.t)]
+            ~should_be:(want : Ty.t)]
 
-  let type_of_resolved_bop (b : Op.Binary.t) (l_type : Type.t)
-      (r_type : Type.t) : Type.t Or_error.t =
+  let type_of_resolved_bop (b : Op.Binary.t) (l_type : Ty.t)
+      (r_type : Ty.t) : Ty.t Or_error.t =
     Or_error.Let_syntax.(
       let%bind u_type =
-        if Type.equal l_type r_type then Or_error.return l_type
+        if Ty.equal l_type r_type then Or_error.return l_type
         else
           Or_error.error_s
             [%message
               "Operand types are not equal"
                 ~operator:(b : Op.Binary.t)
-                ~left:(l_type : Type.t)
-                ~right:(r_type : Type.t)]
+                ~left:(l_type : Ty.t)
+                ~right:(r_type : Ty.t)]
       in
       match b with
-      | Rel _ -> return Type.(bool ())
+      | Rel _ -> return Ty.(bool ())
       | Arith _ | Bitwise _ ->
-          require_unified_bop_type b ~want:Type.(int ()) ~got:u_type
+          require_unified_bop_type b ~want:Ty.(int ()) ~got:u_type
       | Logical _ ->
-          require_unified_bop_type b ~want:Type.(bool ()) ~got:u_type)
+          require_unified_bop_type b ~want:Ty.(bool ()) ~got:u_type)
 
-  let type_of_resolved_uop (u : Op.Unary.t) (x_type : Type.t) :
-      Type.t Or_error.t =
+  let type_of_resolved_uop (u : Op.Unary.t) (x_type : Ty.t) :
+      Ty.t Or_error.t =
     match u with
     | L_not ->
-        if Type.equal Type.(bool ()) x_type then Or_error.return x_type
+        if Ty.equal Ty.(bool ()) x_type then Or_error.return x_type
         else
           Or_error.error_s
             [%message
               "Operand type must be 'bool'"
                 ~operator:(u : Op.Unary.t)
-                ~operand:(x_type : Type.t)]
+                ~operand:(x_type : Ty.t)]
 
-  let type_of_atomic (a : Type.t Or_error.t Atomic_expression.t) :
-      Type.t Or_error.t =
+  let type_of_atomic (a : Ty.t Or_error.t Atomic_expression.t) :
+      Ty.t Or_error.t =
     Or_error.(
       a |> Atomic_expression.On_expressions.With_errors.sequence_m
       >>= At.type_of)
 
-  let type_of_ternary (t : Type.t Or_error.t Expr_ternary.t) :
-      Type.t Or_error.t =
+  let type_of_ternary (t : Ty.t Or_error.t Expr_ternary.t) :
+      Ty.t Or_error.t =
     Or_error.(
       Utils.Accessor.On_error.map ~f:Fn.id Expr_ternary.exprs t
       >>= Te.type_of)
 
-  let type_of : t -> Type.t Or_error.t =
+  let type_of : t -> Ty.t Or_error.t =
     reduce
       ~constant:(Fn.compose Or_error.return Constant.type_of)
       ~address:Ad.type_of

@@ -20,12 +20,12 @@ end
 
 (** Generates random addresses, constrained over the variables in the given
     environment. *)
-module On_env (E : Fir.Env_types.S) : S
+module On_env (_ : Fir.Env_types.S) : S
 
 (** Generates addresses over the given typing environment that have the type
     'atomic_int*'. *)
-module Atomic_int_pointers (E : Fir.Env_types.S) : S
+module Atomic_int_pointers (_ : Fir.Env_types.S) : S
 
 (** Generates addresses over the given typing environment that have the type
     'atomic_bool*'. *)
-module Atomic_bool_pointers (E : Fir.Env_types.S) : S
+module Atomic_bool_pointers (_ : Fir.Env_types.S) : S

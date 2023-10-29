@@ -51,7 +51,7 @@ end
 (** {1 Helpers for building actions} *)
 
 (** Makes a basic logging function for an action. *)
-module Make_log (B : sig
+module Make_log (_ : sig
   val name : Common.Id.t
 end) : sig
   val log : Common.Output.t -> ('a, Formatter.t, unit) format -> 'a

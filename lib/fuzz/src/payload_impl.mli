@@ -109,7 +109,7 @@ module Cond_pathed : sig
   (** [Make_surround] builds a fully-functional payload module with the
       conditional-surround payload and a generator that uses the given
       conditional generator. *)
-  module Make (Basic : sig
+  module Make (_ : sig
     val kind : Path_kind.t
     (** [kind] is the intended kind of path. *)
 

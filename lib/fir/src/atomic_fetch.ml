@@ -9,6 +9,9 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+(* Needed because Base shadows it: *)
+module Ty = Type
+
 open Base
 open Import
 
@@ -75,22 +78,22 @@ module Type_check (Env : sig
   val env : Env.t
 end) =
 struct
-  type nonrec t = Type.t t
+  type nonrec t = Ty.t t
 
   module Ad = Address.Type_check (Env)
 
-  let check_arg_obj ~(arg : Type.t) ~(obj : Type.t) : Type.t Or_error.t =
+  let check_arg_obj ~(arg : Ty.t) ~(obj : Ty.t) : Ty.t Or_error.t =
     Or_error.(
       tag_s
-        (bind (Type.ref arg) ~f:(fun argp ->
-             Type.check_atomic_non ~atomic:obj ~non:argp ) )
+        (bind (Ty.ref arg) ~f:(fun argp ->
+             Ty.check_atomic_non ~atomic:obj ~non:argp ) )
         ~tag:
           [%message
             "'obj' type must be atomic version of 'expected' type"
-              ~(arg : Type.t)
-              ~(obj : Type.t)])
+              ~(arg : Ty.t)
+              ~(obj : Ty.t)])
 
-  let type_of (c : t) : Type.t Or_error.t =
+  let type_of (c : t) : Ty.t Or_error.t =
     Or_error.Let_syntax.(
       (* A* *)
       let%bind obj = Ad.type_of c.obj in

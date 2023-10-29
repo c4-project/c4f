@@ -11,6 +11,9 @@
 
 (** FIR: addresses (a lvalue, or reference thereto). *)
 
+(* Needed because Base shadows it: *)
+module Ty = Type
+
 open Base
 open Import
 
@@ -45,7 +48,7 @@ val deref : t -> t
     normalised form of [addr] is an lvalue, it returns the result of directly
     dereferencing from that lvalue instead. *)
 
-val on_address_of_typed_id : Type.t Common.C_named.t -> t
+val on_address_of_typed_id : Ty.t Common.C_named.t -> t
 
 val of_id_in_env : Env.t -> id:Common.C_id.t -> t Or_error.t
 
@@ -107,7 +110,7 @@ include Types.S_type_checkable with type t := t
 
 (** Generates random addresses, parametrised on a given lvalue generator. *)
 module Quickcheck_generic
-    (Lv : C4f_utils.My_quickcheck.S_with_sexp with type t := Lvalue.t) :
+    (_ : C4f_utils.My_quickcheck.S_with_sexp with type t := Lvalue.t) :
   C4f_utils.My_quickcheck.S_with_sexp with type t = t
 
 val eval_on_env : t -> env:Env.t -> Constant.t Or_error.t

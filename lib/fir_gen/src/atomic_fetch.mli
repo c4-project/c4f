@@ -31,9 +31,9 @@ end
     typing environment to source objects, and the given operator and argument
     generators. *)
 module Int
-    (Obj : Fir.Env_types.S)
-    (O : Utils.My_quickcheck.S_with_sexp with type t := Fir.Op.Fetch.t)
-    (Arg : Utils.My_quickcheck.S_with_sexp with type t := Fir.Expression.t) :
+    (_ : Fir.Env_types.S)
+    (_ : Utils.My_quickcheck.S_with_sexp with type t := Fir.Op.Fetch.t)
+    (_ : Utils.My_quickcheck.S_with_sexp with type t := Fir.Expression.t) :
   S
 
 (** {2 Specific integer generators} *)

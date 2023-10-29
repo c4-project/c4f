@@ -28,12 +28,12 @@ module Source : sig
 
   (** Lifts an integer expression generator to a source generator. *)
   module Quickcheck_int
-      (Expr : Utils.My_quickcheck.S_with_sexp with type t := Expression.t) :
+      (_ : Utils.My_quickcheck.S_with_sexp with type t := Expression.t) :
     Utils.My_quickcheck.S_with_sexp with type t = t
 
   (** Lifts a Boolean expression generator to a source generator. *)
   module Quickcheck_bool
-      (Expr : Utils.My_quickcheck.S_with_sexp with type t := Expression.t) :
+      (_ : Utils.My_quickcheck.S_with_sexp with type t := Expression.t) :
     Utils.My_quickcheck.S_with_sexp with type t = t
 end
 
@@ -84,6 +84,6 @@ val quickcheck_observer : t Q.Observer.t
 
 (** Low-level building block for quickcheck generators on assigns. *)
 module Quickcheck_generic
-    (Src : Utils.My_quickcheck.S_with_sexp with type t := Source.t)
-    (Dst : Utils.My_quickcheck.S_with_sexp with type t := Lvalue.t) :
+    (_ : Utils.My_quickcheck.S_with_sexp with type t := Source.t)
+    (_ : Utils.My_quickcheck.S_with_sexp with type t := Lvalue.t) :
   Utils.My_quickcheck.S_with_sexp with type t = t

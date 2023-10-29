@@ -9,6 +9,9 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+(* Needed because Base shadows it: *)
+module Ty = Type
+
 open Base
 open Import
 
@@ -31,7 +34,7 @@ module Lang :
     let make_uniform = Tx.List.right_pad ~padding:(empty ())
   end
 
-  module Type = Type
+  module Type = Ty
 
   module Program = struct
     type t = unit Function.t Common.C_named.t [@@deriving sexp]
@@ -60,25 +63,25 @@ module Var = struct
     (* TODO(MattWindsor91): merge this with one of the 9000 other variable
        record modules? *)
 
-    type t = {ty: Type.t; param_index: int; initial_value: Constant.t option}
+    type t = {ty: Ty.t; param_index: int; initial_value: Constant.t option}
     [@@deriving compare, sexp]
   end
 
   let expand_parameter (param_index : int)
       ~(init : Constant.t Common.C_named.Alist.t)
-      ((id, ty) : Common.C_id.t * Type.t) : Common.C_id.t * Record.t =
+      ((id, ty) : Common.C_id.t * Ty.t) : Common.C_id.t * Record.t =
     let initial_value = List.Assoc.find init ~equal:Common.C_id.equal id in
     (id, {ty; param_index; initial_value})
 
-  let merge_parameters (pss : Type.t Common.C_named.Alist.t list) :
-      Type.t Common.C_named.Alist.t Or_error.t =
+  let merge_parameters (pss : Ty.t Common.C_named.Alist.t list) :
+      Ty.t Common.C_named.Alist.t Or_error.t =
     Or_error.Let_syntax.(
       let%bind ps =
         pss
         |> List.reduce
              ~f:
                (Utils.My_list.merge_preserving_order
-                  [%equal: Common.C_id.t * Type.t] )
+                  [%equal: Common.C_id.t * Ty.t] )
         |> Result.of_option
              ~error:(Error.of_string "need at least one function")
       in
@@ -94,7 +97,7 @@ module Var = struct
       ps)
 
   let merge_and_expand_parameters (init : Constant.t Common.C_named.Alist.t)
-      (pss : Type.t Common.C_named.Alist.t list) :
+      (pss : Ty.t Common.C_named.Alist.t list) :
       Record.t Common.C_named.Alist.t Or_error.t =
     Or_error.(
       pss |> merge_parameters >>| List.mapi ~f:(expand_parameter ~init))

@@ -43,7 +43,7 @@ module M_str = struct
   let try_parse_local (s : string) : (int * string) option =
     let open Option.Let_syntax in
     let%bind thread, rest = String.lsplit2 ~on:':' s in
-    let%bind tnum = Caml.int_of_string_opt thread in
+    let%bind tnum = Stdlib.int_of_string_opt thread in
     let%map tnum = Option.some_if (Int.is_non_negative tnum) tnum in
     (tnum, rest)
 

@@ -9,6 +9,9 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+(* Needed because Base shadows it: *)
+module Ty = Type
+
 open Base
 open Import
 
@@ -84,8 +87,8 @@ let as_variable (addr : t) : Common.C_id.t Or_error.t =
 module Type_check (E : Env_types.S) = struct
   module L = Lvalue.Type_check (E)
 
-  let type_of : t -> Type.t Or_error.t =
-    reduce ~lvalue:L.type_of ~ref:(Or_error.bind ~f:Type.ref)
+  let type_of : t -> Ty.t Or_error.t =
+    reduce ~lvalue:L.type_of ~ref:(Or_error.bind ~f:Ty.ref)
 end
 
 let anonymise = function Lvalue v -> `A v | Ref d -> `B d
@@ -125,11 +128,11 @@ module Quickcheck_main = Quickcheck_generic (Lvalue)
 
 include (Quickcheck_main : module type of Quickcheck_main with type t := t)
 
-let on_address_of_typed_id (tid : Type.t Common.C_named.t) : t =
+let on_address_of_typed_id (tid : Ty.t Common.C_named.t) : t =
   let id = tid.@(Common.C_named.name) in
   let ty = tid.@(Common.C_named.value) in
   let lv = Accessor.construct variable id in
-  if Type.is_pointer ty then lv else Ref lv
+  if Ty.is_pointer ty then lv else Ref lv
 
 let of_id_in_env (env : Env.t) ~(id : Common.C_id.t) : t Or_error.t =
   Or_error.Let_syntax.(
@@ -150,9 +153,9 @@ let check_address_var (addr : t) ~(env : Env.t) :
     let id = addr.@(variable_of) in
     let%bind v_type = Env.type_of_known_value env ~id in
     let%bind a_type = A_check.type_of addr in
-    let%map (_ : Type.t) =
+    let%map (_ : Ty.t) =
       Or_error.tag_arg
-        (Type.check v_type a_type)
+        (Ty.check v_type a_type)
         "Checking address var type" addr sexp_of_t
     in
     id)

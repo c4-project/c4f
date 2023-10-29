@@ -20,11 +20,11 @@ end
 
 (** Generates type-safe, but arbitrary, integer assigns over the given
     environments. *)
-module Int (Src : Fir.Env_types.S) (Dst : Fir.Env_types.S) : S
+module Int (_ : Fir.Env_types.S) (_ : Fir.Env_types.S) : S
 
 (** Generates type-safe, but arbitrary, Boolean assigns over the given
     environments. *)
-module Bool (Src : Fir.Env_types.S) (Dst : Fir.Env_types.S) : S
+module Bool (_ : Fir.Env_types.S) (_ : Fir.Env_types.S) : S
 
 val int : src:Fir.Env.t -> dst:Fir.Env.t -> Fir.Assign.t Q.Generator.t option
 (** [int ~src ~dst] tries to build an integer assign generator safely; it

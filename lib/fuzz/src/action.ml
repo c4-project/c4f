@@ -75,7 +75,7 @@ end = struct
       'a =
     Fmt.(
       Common.Output.pv o
-        Caml.("@[<h>%a:@ @[" ^^ format ^^ "@]@]@.")
+        Stdlib.("@[<h>%a:@ @[" ^^ format ^^ "@]@]@.")
         (styled (`Fg `Green) Common.Id.pp)
         B.name)
 end

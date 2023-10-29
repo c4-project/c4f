@@ -11,6 +11,9 @@
 
 (** FIR: functions (less their names). *)
 
+(* Needed because Base shadows it: *)
+module Ty = Type
+
 open Base
 
 type 'meta t [@@deriving sexp, equal]
@@ -18,7 +21,7 @@ type 'meta t [@@deriving sexp, equal]
 (** {2 Constructors} *)
 
 val make :
-     parameters:(C4f_common.C_id.t, Type.t) List.Assoc.t
+     parameters:(C4f_common.C_id.t, Ty.t) List.Assoc.t
   -> body_decls:(C4f_common.C_id.t, Initialiser.t) List.Assoc.t
   -> ?body_stms:'meta Statement.t list
   -> unit
@@ -31,7 +34,7 @@ val make :
 module Access : sig
   val parameters :
     ( _
-    , (C4f_common.C_id.t, Type.t) List.Assoc.t
+    , (C4f_common.C_id.t, Ty.t) List.Assoc.t
     , _ t
     , [< Accessor.field] )
     Accessor.t
@@ -55,7 +58,7 @@ end
 
 (** {2 Getters} *)
 
-val parameters : _ t -> (C4f_common.C_id.t, Type.t) List.Assoc.t
+val parameters : _ t -> (C4f_common.C_id.t, Ty.t) List.Assoc.t
 (** [parameters func] gets [func]'s parameter list. *)
 
 val body_decls : _ t -> (C4f_common.C_id.t, Initialiser.t) List.Assoc.t
@@ -73,8 +76,8 @@ val with_body_stms : 'm1 t -> 'm2 Statement.t list -> 'm2 t
 val map :
      'm1 t
   -> parameters:
-       (   (C4f_common.C_id.t, Type.t) List.Assoc.t
-        -> (C4f_common.C_id.t, Type.t) List.Assoc.t )
+       (   (C4f_common.C_id.t, Ty.t) List.Assoc.t
+        -> (C4f_common.C_id.t, Ty.t) List.Assoc.t )
   -> body_decls:
        (   (C4f_common.C_id.t, Initialiser.t) List.Assoc.t
         -> (C4f_common.C_id.t, Initialiser.t) List.Assoc.t )
@@ -89,8 +92,8 @@ module On (M : Applicative.S) : sig
   val map_m :
        'm1 t
     -> parameters:
-         (   (C4f_common.C_id.t, Type.t) List.Assoc.t
-          -> (C4f_common.C_id.t, Type.t) List.Assoc.t M.t )
+         (   (C4f_common.C_id.t, Ty.t) List.Assoc.t
+          -> (C4f_common.C_id.t, Ty.t) List.Assoc.t M.t )
     -> body_decls:
          (   (C4f_common.C_id.t, Initialiser.t) List.Assoc.t
           -> (C4f_common.C_id.t, Initialiser.t) List.Assoc.t M.t )

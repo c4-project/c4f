@@ -9,6 +9,9 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+(* Needed because Base shadows it: *)
+module Ty = Type
+
 open Base
 
 module Unary = struct
@@ -136,7 +139,7 @@ module Binary = struct
     | Bitwise o -> Bitwise.rules o
     | Logical o -> Logical.rules o
 
-  let of_input_prim_type (ty : Type.Prim.t) : t list =
+  let of_input_prim_type (ty : Ty.Prim.t) : t list =
     let if_int x = match ty with Int -> x | Bool -> [] in
     let if_bool x = match ty with Bool -> x | Int -> [] in
     (* not concat_no_order; this would make generators permute spuriously. *)

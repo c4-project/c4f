@@ -51,7 +51,7 @@ module On_mem_orders :
 
 (** Generic building block for making custom quickcheck generators. *)
 module Quickcheck_generic
-    (A : C4f_utils.My_quickcheck.S_with_sexp with type t := Address.t) : sig
+    (_ : C4f_utils.My_quickcheck.S_with_sexp with type t := Address.t) : sig
   type nonrec t = t [@@deriving sexp_of, quickcheck]
 end
 
