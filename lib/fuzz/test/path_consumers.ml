@@ -34,7 +34,7 @@ let%test_module "paths applied to example code" =
              Action.Test_utils.(using (Fn.flip reify_test vars) pp_tu) )
           (Src.Path_consumers.consume
              (Lazy.force Subject.Test_data.test)
-             ~path:(Lazy.force path) ~action ))
+             ~path:(Lazy.force path) ~action ) )
 
     let example_stm : Src.Subject.Statement.t =
       Src.Subject.Statement.make_generated_prim
@@ -42,7 +42,7 @@ let%test_module "paths applied to example code" =
           A.(construct (Prim_statement.atomic @> Atomic_statement.store))
             (Atomic_store.make ~mo:Mem_order.Seq_cst
                ~src:(Expression.int_lit 9001)
-               ~dst:(Address.of_variable_str_exn "y") ))
+               ~dst:(Address.of_variable_str_exn "y") ) )
 
     let%test_module "insert_stm" =
       ( module struct

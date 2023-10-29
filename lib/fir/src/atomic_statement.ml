@@ -42,7 +42,7 @@ module Base_map (Ap : Applicative.S) = struct
         ~cmpxchg:(cmpxchg >> Ap.map ~f:(fun c -> Cmpxchg c))
         ~fence:(fence >> Ap.map ~f:(fun f -> Fence f))
         ~fetch:(fetch >> Ap.map ~f:(fun f -> Fetch f))
-        ~store:(store >> Ap.map ~f:(fun s -> Store s)))
+        ~store:(store >> Ap.map ~f:(fun s -> Store s)) )
 end
 
 (** Does the legwork of implementing a particular type of traversal over

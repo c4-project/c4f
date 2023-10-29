@@ -35,22 +35,22 @@ let%test_module "On_lvalues and On_addresses" =
                     @> Atomic_statement.store )
                     (Src.Atomic_store.make ~mo:Relaxed
                        ~src:(Expression.of_variable_str_exn "herd")
-                       ~dst:Address.(Ref (of_variable_str_exn "u")) )) ]
+                       ~dst:Address.(Ref (of_variable_str_exn "u")) ) ) ]
               [ A.(
                   construct
                     (Statement.prim' @> Prim_statement.goto)
-                    (C4f_common.C_id.of_string "not_you")) ]
+                    (C4f_common.C_id.of_string "not_you") ) ]
           ; Stm.mkif
               ~cond:
                 Expression.(
                   Infix.(
                     of_variable_str_exn "liek"
-                    && of_variable_str_exn "mudkipz"))
+                    && of_variable_str_exn "mudkipz" ) )
               [ A.(
                   construct
                     (Statement.prim' @> Prim_statement.label)
-                    (C4f_common.C_id.of_string "not_you")) ]
-              [] ])
+                    (C4f_common.C_id.of_string "not_you") ) ]
+              [] ] )
 
     let print_exprs : C4f_litmus_c.Ast.Expr.t list -> unit =
       Fmt.(pr "@[<v>%a@]@." (list ~sep:sp C4f_litmus_c.Ast.Expr.pp))
@@ -83,7 +83,7 @@ let%test_module "On_expressions" =
                       (Statement.prim' @> Prim_statement.assign)
                       Assign.(
                         Lvalue.of_variable_str_exn "r0"
-                        @= Expression.int_lit 1)) ]
+                        @= Expression.int_lit 1 ) ) ]
                 []
             ; Stm.mkif
                 [ A.(
@@ -92,14 +92,14 @@ let%test_module "On_expressions" =
                       @> Atomic_statement.store )
                       (Atomic_store.make ~mo:Seq_cst
                          ~src:(Expression.int_lit 27)
-                         ~dst:(Address.of_variable_str_exn "x") )) ]
+                         ~dst:(Address.of_variable_str_exn "x") ) ) ]
                 [ A.(
                     construct
                       ( Statement.prim' @> Prim_statement.atomic
                       @> Atomic_statement.store )
                       (Atomic_store.make ~mo:Seq_cst
                          ~src:(Expression.int_lit 53)
-                         ~dst:(Address.of_variable_str_exn "x") )) ] ])
+                         ~dst:(Address.of_variable_str_exn "x") ) ) ] ] )
       in
       let stm' =
         M.On_expressions.map stm ~f:(fun _ -> Src.Expression.int_lit 2)
@@ -127,22 +127,22 @@ let%test_module "On_primitives" =
                 [ A.(
                     construct
                       (Statement.prim' @> Prim_statement.label)
-                      (C4f_common.C_id.of_string "kappa")) ]
+                      (C4f_common.C_id.of_string "kappa") ) ]
                 []
             ; Stm.mkif
                 [ A.(
                     construct
                       (Statement.prim' @> Prim_statement.label)
-                      (C4f_common.C_id.of_string "keepo")) ]
+                      (C4f_common.C_id.of_string "keepo") ) ]
                 [ A.(
                     construct
                       ( Statement.prim' @> Prim_statement.atomic
-                      @> Atomic_statement.fence ))
+                      @> Atomic_statement.fence ) )
                     (Src.Atomic_fence.make ~mode:Thread ~mo:Seq_cst) ]
             ; A.(
                 construct
                   (Statement.prim' @> Prim_statement.goto)
-                  (C4f_common.C_id.of_string "kappa")) ])
+                  (C4f_common.C_id.of_string "kappa") ) ] )
       in
       let stm' =
         M.On_primitives.map stm ~f:(fun _ -> Src.Prim_statement.return)

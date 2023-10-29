@@ -19,14 +19,14 @@ module Test_data = struct
         Atomic_fetch.make
           ~obj:(Address.of_variable_str_exn "gen1")
           ~arg:(Expression.int_lit 54321)
-          ~mo:Seq_cst ~op:`Add)
+          ~mo:Seq_cst ~op:`Add )
 
   let fadd_redundant : Fir.Expression.t Fir.Atomic_fetch.t Lazy.t =
     lazy
       Fir.(
         Atomic_fetch.make
           ~obj:(Address.of_variable_str_exn "gen1")
-          ~arg:(Expression.int_lit 0) ~mo:Seq_cst ~op:`Add)
+          ~arg:(Expression.int_lit 0) ~mo:Seq_cst ~op:`Add )
 end
 
 let%test_module "fetch.make.int.dead" =
@@ -38,7 +38,7 @@ let%test_module "fetch.make.int.dead" =
       Lazy.Let_syntax.(
         let%bind to_insert = Test_data.fadd in
         let%map where = path in
-        Fuzz.Payload_impl.Pathed.make to_insert ~where)
+        Fuzz.Payload_impl.Pathed.make to_insert ~where )
 
     let test_action : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Fuzz.State.Monad.(
@@ -46,7 +46,7 @@ let%test_module "fetch.make.int.dead" =
         >>= fun () ->
         Src.Atomic_fetch.Insert.Int_dead.run
           (Lazy.force Fuzz_test.Subject.Test_data.test)
-          ~payload:(Lazy.force random_state))
+          ~payload:(Lazy.force random_state) )
 
     let%expect_test "test int fetch: programs" =
       Fuzz_test.Action.Test_utils.run_and_dump_test test_action
@@ -121,7 +121,7 @@ let%test_module "fetch.make.int.redundant" =
       Lazy.Let_syntax.(
         let%bind to_insert = Test_data.fadd_redundant in
         let%map where = path in
-        Fuzz.Payload_impl.Pathed.make to_insert ~where)
+        Fuzz.Payload_impl.Pathed.make to_insert ~where )
 
     let test_action : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Fuzz.State.Monad.(
@@ -129,7 +129,7 @@ let%test_module "fetch.make.int.redundant" =
         >>= fun () ->
         Src.Atomic_fetch.Insert.Int_redundant.run
           (Lazy.force Fuzz_test.Subject.Test_data.test)
-          ~payload:(Lazy.force random_state))
+          ~payload:(Lazy.force random_state) )
 
     let%expect_test "test int fetch: programs" =
       Fuzz_test.Action.Test_utils.run_and_dump_test test_action

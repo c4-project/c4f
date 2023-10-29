@@ -44,7 +44,7 @@ module Make_payload = struct
       let%bind basic_type = gen_type_from_constant initial_value in
       let%map id = Fuzz.Var.Map.gen_fresh_var vars in
       let var = Common.Litmus_id.make ~scope ~id in
-      {basic_type; initial_value; var})
+      {basic_type; initial_value; var} )
 end
 
 module Make : Fuzz.Action_types.S with type Payload.t = Make_payload.t =
@@ -71,7 +71,7 @@ struct
         else
           map
             ~f:(fun x -> Common.Scope.Local x)
-            (int_inclusive 0 (nthreads - 1)))
+            (int_inclusive 0 (nthreads - 1)) )
 
     let gen : t Fuzz.Payload_gen.t =
       Fuzz.(
@@ -85,7 +85,7 @@ struct
           in
           let* vars = lift_acc (Context.state @> State.vars) in
           let gen_scope = gen_scope nthreads is_global in
-          lift_quickcheck (generator vars ~gen_scope)))
+          lift_quickcheck (generator vars ~gen_scope) ) )
   end
 
   let recommendations ({basic_type; _} : Payload.t) : Common.Id.t list =
@@ -158,7 +158,7 @@ module Volatile :
                   (Accessor.set
                      ( Fuzz.Var.Record.Access.type_of
                      @> Fir.Type.Access.is_volatile )
-                     ~to_:true ) ) ))
+                     ~to_:true ) ) ) )
 
   let update_thread_decl (d : Fir.Initialiser.t Common.C_named.t)
       ~(target : Common.C_id.t) : Fir.Initialiser.t Common.C_named.t =
@@ -166,7 +166,7 @@ module Volatile :
       if C_id.(target = d.@(C_named.name)) then
         d.@(C_named.value @> Fir.Initialiser.ty
             @> Fir.Type.Access.is_volatile) <- true
-      else d)
+      else d )
 
   let update_decls (id : Common.Litmus_id.t) (subject : Fuzz.Subject.Test.t)
       : Fuzz.Subject.Test.t Or_error.t =
@@ -188,5 +188,5 @@ module Volatile :
     Fuzz.State.Monad.(
       Let_syntax.(
         let%bind () = update_state payload in
-        Monadic.return (update_decls payload subject)))
+        Monadic.return (update_decls payload subject) ) )
 end

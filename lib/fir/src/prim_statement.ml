@@ -64,7 +64,7 @@ module Base_map (M : Applicative.S) = struct
         ~goto:(goto >> M.map ~f:(fun g -> Goto g))
         ~nop:(fun () -> M.return Nop)
         ~procedure_call:
-          (procedure_call >> M.map ~f:(fun p -> Procedure_call p)))
+          (procedure_call >> M.map ~f:(fun p -> Procedure_call p)) )
 end
 
 (** Does the legwork of implementing a particular type of traversal over

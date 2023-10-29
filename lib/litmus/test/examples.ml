@@ -24,8 +24,7 @@ module Sbsc = struct
   let postcondition : int Post.t Lazy.t =
     lazy
       Post.(
-        make ~quantifier:Exists
-          ~predicate:Pred.Infix.(a 0 ==? 0 && a 1 ==? 1))
+        make ~quantifier:Exists ~predicate:Pred.Infix.(a 0 ==? 0 && a 1 ==? 1) )
 
   let header : int Header.t Lazy.t =
     let x = Ac.C_id.of_string "x" in
@@ -34,7 +33,7 @@ module Sbsc = struct
     let locations : Ac.C_id.t list = [x; y] in
     Lazy.Let_syntax.(
       let%map postcondition = postcondition in
-      Header.make ~name:"SBSC" ~init ~postcondition ~locations ())
+      Header.make ~name:"SBSC" ~init ~postcondition ~locations () )
 
   let threads : string list Lazy.t =
     lazy ["(this was thread 0)"; "(this was thread 1)"]
@@ -42,5 +41,5 @@ module Sbsc = struct
   let test : (int, string) C4f_litmus.Test.Raw.t Lazy.t =
     Lazy.Let_syntax.(
       let%map header = header and threads = threads in
-      C4f_litmus.Test.Raw.make ~header ~threads)
+      C4f_litmus.Test.Raw.make ~header ~threads )
 end

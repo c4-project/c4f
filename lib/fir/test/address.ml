@@ -45,7 +45,7 @@ let%test_module "variable_of" =
              (Lvalue
                 C4f_fir.(
                   Lvalue.(
-                    Accessor.construct deref (of_variable_str_exn "yorick")))
+                    Accessor.construct deref (of_variable_str_exn "yorick") ) )
              ) )
       in
       let var = Accessor.get variable_of example in

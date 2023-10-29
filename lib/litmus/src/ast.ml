@@ -82,7 +82,7 @@ let get_init (decls : ('const, _) Decl.t list) :
     decls
     |> List.filter_map ~f:Decl.as_init
     |> Tx.List.one
-    >>| List.map ~f:(fun {Init.id; value} -> (id, value)))
+    >>| List.map ~f:(fun {Init.id; value} -> (id, value)) )
 
 let get_post (decls : ('const, _) Decl.t list) :
     'const Postcondition.t option Or_error.t =
@@ -98,4 +98,4 @@ let get_header (name : string) (decls : ('const, _) Decl.t list) :
     let%bind init = get_init decls in
     let%bind postcondition = get_post decls in
     let%map locations = get_locations decls in
-    Header.make ~name ~init ?postcondition ?locations ())
+    Header.make ~name ~init ?postcondition ?locations () )

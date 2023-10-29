@@ -38,16 +38,14 @@ let mkastore ?(mo : Src.Mem_order.t = Seq_cst) (dst : Src.Address.t)
     (src : Src.Expression.t) : unit Src.Statement.t =
   A.(
     construct
-      Src.(
-        Statement.prim' @> Prim_statement.atomic @> Atomic_statement.store))
+      Src.(Statement.prim' @> Prim_statement.atomic @> Atomic_statement.store) )
     (Src.Atomic_store.make ~mo ~dst ~src)
 
 let mkafetch ?(mo : Src.Mem_order.t = Seq_cst) (op : Src.Op.Fetch.t)
     (obj : Src.Address.t) (arg : Src.Expression.t) : unit Src.Statement.t =
   A.(
     construct
-      Src.(
-        Statement.prim' @> Prim_statement.atomic @> Atomic_statement.fetch))
+      Src.(Statement.prim' @> Prim_statement.atomic @> Atomic_statement.fetch) )
     (Src.Atomic_fetch.make ~mo ~obj ~arg ~op)
 
 let mkaxchg ?(mo : Src.Mem_order.t option) (obj : Src.Address.t)

@@ -31,7 +31,7 @@ let lookup_initial_value_local (ctx : t) ~(tid : int) ~(id : Common.C_id.t) :
     Fir.Constant.t option =
   Option.(
     List.Assoc.find ~equal:Int.equal (local_inits ctx) tid
-    >>= fun init -> List.Assoc.find ~equal:Common.C_id.equal init id)
+    >>= fun init -> List.Assoc.find ~equal:Common.C_id.equal init id )
 
 let lookup_initial_value (ctx : t) ~(id : Common.Litmus_id.t) :
     Fir.Constant.t option =

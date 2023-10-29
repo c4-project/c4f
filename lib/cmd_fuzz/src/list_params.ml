@@ -36,7 +36,7 @@ let print (o : Ac.Output.t) (map : C4f_fuzz_run.Config.Param_summary.t) :
     unit =
   let pp =
     C4f_fuzz_run.Config.Param_summary.(
-      if Ac.Output.is_verbose o then pp else pp_terse)
+      if Ac.Output.is_verbose o then pp else pp_terse )
   in
   Fmt.pr "@[<v>%a@]@." pp map
 
@@ -49,4 +49,4 @@ let command : Command.t =
       let%map standard_args = Common_cmd.Args.Standard.get in
       fun () ->
         Common_cmd.Args.Standard.lift_command_with_config standard_args
-          ~f:run)
+          ~f:run )

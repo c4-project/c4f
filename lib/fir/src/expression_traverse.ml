@@ -71,7 +71,7 @@ module Make_traversal_base (Basic : Basic) = struct
           reduce ae
             ~cmpxchg:(map_m_cmpxchg ~f ~mu >> M.map ~f:cmpxchg)
             ~fetch:(map_m_fetch ~f ~mu >> M.map ~f:fetch)
-            ~load:(L.map_m ~f >> M.map ~f:load)))
+            ~load:(L.map_m ~f >> M.map ~f:load) ) )
 
     module B = Expression.Base_map (M)
     module AccM = Accessor.Of_applicative (M)
@@ -311,4 +311,4 @@ let depended_upon_idents :
       many_getter
         Many_getter.(
           On_addresses.fold ~init:empty ~f:(fun mg ad ->
-              mg @ access ad.@(Address.variable_of) )))]
+              mg @ access ad.@(Address.variable_of) ) ) )]

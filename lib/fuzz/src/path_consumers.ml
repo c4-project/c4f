@@ -32,8 +32,8 @@ module Helpers = struct
     Or_error.error_s
       [%message
         "Unexpected kind of action associated with this path"
-          ~(got : Path_kind.t)
-          ~(want : Path_kind.t)]
+          ~got:(got : Path_kind.t)
+          ~want:(want : Path_kind.t)]
 
   let bad_stm (got_stm : Subject.Statement.t) ~(want : Fir.Statement_class.t)
       : 'a Or_error.t =
@@ -41,8 +41,8 @@ module Helpers = struct
     Or_error.error_s
       [%message
         "Unexpected statement class for this path"
-          ~(got : Fir.Statement_class.t option)
-          ~(want : Fir.Statement_class.t)]
+          ~got:(got : Fir.Statement_class.t option)
+          ~want:(want : Fir.Statement_class.t)]
 end
 
 let checked_transform (stm : Subject.Statement.t) ~(ctx : ctx)
@@ -52,7 +52,7 @@ let checked_transform (stm : Subject.Statement.t) ~(ctx : ctx)
     Or_error.(
       Let_syntax.(
         let%bind () = Path_context.check_end ctx ~stms:[stm] in
-        f stm))
+        f stm ) )
 
 open Helpers
 
@@ -74,7 +74,7 @@ module Block = struct
             ~tag:"checking anchor on insertion"
           >>= fun () ->
           Utils.My_list.splice b ~span:{pos; len= 0}
-            ~replace_f:(Fn.const stms))
+            ~replace_f:(Fn.const stms) )
     | x -> bad_kind x ~want:Insert
 
   let checked_transform_list_on_range (stms : Subject.Statement.t list)
@@ -85,7 +85,7 @@ module Block = struct
       tag ~tag:"in on-range transform-list"
         Let_syntax.(
           let%bind () = Path_context.check_end ctx ~stms in
-          f stms))
+          f stms ) )
 
   let on_range (b : Subject.Statement.t list) ~(span : Utils.My_list.Span.t)
       ~(ctx : ctx) : Subject.Statement.t list Or_error.t =
@@ -120,7 +120,7 @@ module Block = struct
           let%map statements =
             consume_stms b.@(Fir.Block.statements) ~path ~mu ~ctx
           in
-          Fir.Block.make ~statements ~metadata ()) )
+          Fir.Block.make ~statements ~metadata () ) )
 end
 
 (** If blocks and flow blocks both share the same path structure, with some
@@ -244,7 +244,7 @@ let thread (tid : int) (s : Subject.Thread.t) ~(path : Path.Thread.t)
     | In_stms path ->
         s.stms
         |> Block.consume_stms ~path ~ctx ~mu:Stm.consume
-        >>| fun stms' -> {s with stms= stms'})
+        >>| fun stms' -> {s with stms= stms'} )
 
 let consume' (test : Subject.Test.t) ~(path : Path.t) ~(ctx : ctx) :
     Subject.Test.t Or_error.t =

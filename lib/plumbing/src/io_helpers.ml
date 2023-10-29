@@ -22,7 +22,7 @@ let lift_to_raw_strings ~(f : 'i -> Input.t -> Output.t -> 'o Or_error.t)
   Or_error.Let_syntax.(
     let%bind i = Input.of_string_opt infile
     and o = Output.of_string_opt outfile in
-    f aux_in i o)
+    f aux_in i o )
 
 let lift_to_fpaths ~(f : 'i -> Input.t -> Output.t -> 'o Or_error.t)
     (aux_in : 'i) ~(infile : Fpath.t option) ~(outfile : Fpath.t option) :

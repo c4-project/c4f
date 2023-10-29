@@ -21,7 +21,7 @@ module Source = struct
       function
       | Dec -> return Dec
       | Inc -> return Inc
-      | Expr e -> access e >>| fun e' -> Expr e')
+      | Expr e -> access e >>| fun e' -> Expr e' )
 
   let exprs : ('i, Expression.t, t, [< many]) Accessor.t =
     (* This could literally just be [expr], but I'm planning to add more (x
@@ -94,7 +94,7 @@ let exprs : ('i, Expression.t, t, [< many]) Accessor.t =
           Let_syntax.(
             fun {dst; src} ->
               let%map src' = Source.exprs' src in
-              {dst; src= src'})))]
+              {dst; src= src'} ) ) )]
 
 (* We can't easily do lvalues yet, because we'd need an accessor for all the
    lvalues in an expression. *)
@@ -155,7 +155,7 @@ let anon =
 
 let quickcheck_observer : t Base_quickcheck.Observer.t =
   Base_quickcheck.Observer.(
-    unmap [%quickcheck.observer: Lvalue.t * Source.t] ~f:(Accessor.get anon))
+    unmap [%quickcheck.observer: Lvalue.t * Source.t] ~f:(Accessor.get anon) )
 
 module Quickcheck_generic
     (Src : Utils.My_quickcheck.S_with_sexp with type t := Source.t)
@@ -167,14 +167,14 @@ module Quickcheck_generic
 
   let quickcheck_generator : t Base_quickcheck.Generator.t =
     Base_quickcheck.Generator.(
-      map [%quickcheck.generator: Dst.t * Src.t] ~f:(Accessor.construct anon))
+      map [%quickcheck.generator: Dst.t * Src.t] ~f:(Accessor.construct anon) )
 
   let quickcheck_observer : t Base_quickcheck.Observer.t =
     Base_quickcheck.Observer.(
-      unmap [%quickcheck.observer: Dst.t * Src.t] ~f:(Accessor.get anon))
+      unmap [%quickcheck.observer: Dst.t * Src.t] ~f:(Accessor.get anon) )
 
   let quickcheck_shrinker : t Base_quickcheck.Shrinker.t =
     Base_quickcheck.Shrinker.(
       map [%quickcheck.shrinker: Dst.t * Src.t] ~f:(Accessor.construct anon)
-        ~f_inverse:(Accessor.get anon))
+        ~f_inverse:(Accessor.get anon) )
 end

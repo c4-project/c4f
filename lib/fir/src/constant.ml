@@ -11,7 +11,6 @@
 
 (* Needed because Base shadows it: *)
 module Ty = Type
-
 open Base
 open Base_quickcheck
 
@@ -49,9 +48,7 @@ let truth : t = Bool true
 
 let falsehood : t = Bool false
 
-let prim_type_of : t -> Ty.Prim.t = function
-  | Bool _ -> Bool
-  | Int _ -> Int
+let prim_type_of : t -> Ty.Prim.t = function Bool _ -> Bool | Int _ -> Int
 
 let type_of (x : t) : Ty.t = Ty.make (Ty.Basic.make (prim_type_of x))
 
@@ -59,7 +56,7 @@ let zero_of_type (t : Ty.t) : t =
   if
     Ty.(
       is_pointer t
-      || Prim.eq Accessor.(Access.basic_type @> Basic.Access.prim) t ~to_:Int)
+      || Prim.eq Accessor.(Access.basic_type @> Basic.Access.prim) t ~to_:Int )
   then Int 0
   else Bool false
 
@@ -95,7 +92,7 @@ let t_of_yojson' (json : Yojson.Safe.t) : (t, string) Result.t =
     | _ -> (
       match filter_bool js with
       | [b] -> Result.return (bool b)
-      | _ -> Result.fail "malformed JSON encoding of C literal" ))
+      | _ -> Result.fail "malformed JSON encoding of C literal" ) )
 
 let t_of_yojson (json : Yojson.Safe.t) : t =
   Result.ok_or_failwith (t_of_yojson' json)
@@ -142,7 +139,7 @@ let gen_int32 : t Generator.t =
         ; (1.0, gen_int32_positive_pow2)
         ; (1.0, gen_int32_positive_pow2min1)
         ; (1.0, gen_int32_negative_pow2)
-        ; (1.0, gen_int32_negative_pow2plus1) ])
+        ; (1.0, gen_int32_negative_pow2plus1) ] )
 
 let quickcheck_generator : t Generator.t =
   Base_quickcheck.Generator.union [gen_int32; gen_bool]

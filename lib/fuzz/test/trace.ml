@@ -68,7 +68,7 @@ let example_trace : Src.Trace.t Lazy.t =
       |> add ~action:(module Src.Action.Nop) ~payload:()
       |> add
            ~action:(module Dummy_action)
-           ~payload:{foo= 53; bar= false; baz= "world"})
+           ~payload:{foo= 53; bar= false; baz= "world"} )
 
 let%test_module "S-expression representation" =
   ( module struct
@@ -94,7 +94,7 @@ let%test_module "trace playback" =
       let computation =
         Src.Trace.(
           run empty test ~resolve:(fun _ ->
-              Or_error.unimplemented "shouldn't run this" ))
+              Or_error.unimplemented "shouldn't run this" ) )
       in
       Action.Test_utils.run_and_dump_test computation ~initial_state ;
       [%expect

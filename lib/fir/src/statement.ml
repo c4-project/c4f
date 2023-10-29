@@ -45,7 +45,7 @@ let reduce (type meta result) (x : meta t)
         ~if_stm:
           ( If.map ~cond:Fn.id ~t_branch:block_map ~f_branch:block_map
           >> if_stm )
-        ~flow:(Flow_block.map ~body:block_map ~header:Fn.id >> flow))
+        ~flow:(Flow_block.map ~body:block_map ~header:Fn.id >> flow) )
   in
   mu x
 

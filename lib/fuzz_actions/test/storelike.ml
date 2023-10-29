@@ -40,5 +40,5 @@ module Test_common = struct
             C4f_fir.
               { Initialiser.ty=
                   Type.(int ~is_pointer:true ~is_atomic:false ())
-              ; value= C4f_fir.Constant.int (-4) } ])
+              ; value= C4f_fir.Constant.int (-4) } ] )
 end

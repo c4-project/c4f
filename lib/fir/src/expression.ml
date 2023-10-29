@@ -11,7 +11,6 @@
 
 (* Needed because Base shadows it: *)
 module Ty = Type
-
 open Base
 open Import
 
@@ -71,7 +70,7 @@ let quickcheck_observer : t Base_quickcheck.Observer.t =
             | `C of [%custom Atomic_expression.quickcheck_observer mu]
             | `D of Op.Binary.t * [%custom mu] * [%custom mu]
             | `E of Op.Unary.t * [%custom mu]
-            | `F of [%custom Expr_ternary.quickcheck_observer mu] ]] ))
+            | `F of [%custom Expr_ternary.quickcheck_observer mu] ]] ) )
 
 let lvalue (l : Lvalue.t) : t = Address (Lvalue l)
 
@@ -162,7 +161,7 @@ module Base_map (Ap : Applicative.S) = struct
         ~bop:(fun o l r ->
           Ap.map ~f:(Accessor.construct Acc.bop) (bop (o, l, r)) )
         ~uop:(fun o x -> Ap.map ~f:(Accessor.construct Acc.uop) (uop (o, x)))
-        ~ternary:(ternary >> Ap.map ~f:(Accessor.construct Acc.ternary)))
+        ~ternary:(ternary >> Ap.map ~f:(Accessor.construct Acc.ternary)) )
 end
 
 let atomic_cmpxchg (f : t Atomic_cmpxchg.t) : t =
@@ -178,8 +177,8 @@ module Type_check (E : Env_types.S) = struct
   module At = Atomic_expression.Type_check (E)
   module Te = Expr_ternary.Type_check (E)
 
-  let require_unified_bop_type (b : Op.Binary.t) ~(want : Ty.t)
-      ~(got : Ty.t) : Ty.t Or_error.t =
+  let require_unified_bop_type (b : Op.Binary.t) ~(want : Ty.t) ~(got : Ty.t)
+      : Ty.t Or_error.t =
     Or_error.tag_s (Ty.check want got)
       ~tag:
         [%message
@@ -187,8 +186,8 @@ module Type_check (E : Env_types.S) = struct
             ~operator:(b : Op.Binary.t)
             ~should_be:(want : Ty.t)]
 
-  let type_of_resolved_bop (b : Op.Binary.t) (l_type : Ty.t)
-      (r_type : Ty.t) : Ty.t Or_error.t =
+  let type_of_resolved_bop (b : Op.Binary.t) (l_type : Ty.t) (r_type : Ty.t)
+      : Ty.t Or_error.t =
     Or_error.Let_syntax.(
       let%bind u_type =
         if Ty.equal l_type r_type then Or_error.return l_type
@@ -205,10 +204,10 @@ module Type_check (E : Env_types.S) = struct
       | Arith _ | Bitwise _ ->
           require_unified_bop_type b ~want:Ty.(int ()) ~got:u_type
       | Logical _ ->
-          require_unified_bop_type b ~want:Ty.(bool ()) ~got:u_type)
+          require_unified_bop_type b ~want:Ty.(bool ()) ~got:u_type )
 
-  let type_of_resolved_uop (u : Op.Unary.t) (x_type : Ty.t) :
-      Ty.t Or_error.t =
+  let type_of_resolved_uop (u : Op.Unary.t) (x_type : Ty.t) : Ty.t Or_error.t
+      =
     match u with
     | L_not ->
         if Ty.equal Ty.(bool ()) x_type then Or_error.return x_type
@@ -223,13 +222,13 @@ module Type_check (E : Env_types.S) = struct
       Ty.t Or_error.t =
     Or_error.(
       a |> Atomic_expression.On_expressions.With_errors.sequence_m
-      >>= At.type_of)
+      >>= At.type_of )
 
-  let type_of_ternary (t : Ty.t Or_error.t Expr_ternary.t) :
-      Ty.t Or_error.t =
+  let type_of_ternary (t : Ty.t Or_error.t Expr_ternary.t) : Ty.t Or_error.t
+      =
     Or_error.(
       Utils.Accessor.On_error.map ~f:Fn.id Expr_ternary.exprs t
-      >>= Te.type_of)
+      >>= Te.type_of )
 
   let type_of : t -> Ty.t Or_error.t =
     reduce
@@ -238,7 +237,7 @@ module Type_check (E : Env_types.S) = struct
       ~bop:(fun b l r ->
         Or_error.Let_syntax.(
           let%bind l = l and r = r in
-          type_of_resolved_bop b l r) )
+          type_of_resolved_bop b l r ) )
       ~uop:(fun b -> Or_error.bind ~f:(type_of_resolved_uop b))
       ~atomic:type_of_atomic ~ternary:type_of_ternary
 end

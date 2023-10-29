@@ -25,7 +25,7 @@ let test_fragment : Src.Expression.t Lazy.t =
              (atomic_fetch
                 (Atomic_fetch.make
                    ~obj:(Address.of_variable_str_exn "bar")
-                   ~arg:(int_lit 9) ~mo:Seq_cst ~op:`Add ) ) )))
+                   ~arg:(int_lit 9) ~mo:Seq_cst ~op:`Add ) ) ) ) )
 
 let%test_module "matches_any" =
   ( module struct

@@ -31,7 +31,7 @@ let%test_module "depended_upon_idents" =
             ternary
               { if_= of_variable_str_exn "tom"
               ; then_= of_variable_str_exn "dick"
-              ; else_= of_variable_str_exn "harry" })) ;
+              ; else_= of_variable_str_exn "harry" } ) ) ;
       [%expect {| (tom dick harry) |}]
 
     let%expect_test "multiple nested depended-upon idents" =
@@ -44,7 +44,7 @@ let%test_module "depended_upon_idents" =
                  (variable (C4f_common.C_id.of_string "bar"))
                  (lvalue
                     Lvalue.(
-                      Accessor.construct deref (of_variable_str_exn "baz")) ) ))) ;
+                      Accessor.construct deref (of_variable_str_exn "baz") ) ) ) ) ) ;
       [%expect {| (foo bar baz) |}]
   end )
 
@@ -65,7 +65,7 @@ let%test_module "known regressions" =
             ternary
               { if_= of_variable_str_exn "tom"
               ; then_= of_variable_str_exn "dick"
-              ; else_= of_variable_str_exn "harry" })) ;
+              ; else_= of_variable_str_exn "harry" } ) ) ;
       [%expect
         {| ((Lvalue (Variable tom)) (Lvalue (Variable dick)) (Lvalue (Variable harry))) |}]
 
@@ -73,6 +73,6 @@ let%test_module "known regressions" =
       test_constants
         Src.(
           Expression.(
-            ternary {if_= truth; then_= int_lit 27; else_= int_lit 53})) ;
+            ternary {if_= truth; then_= int_lit 27; else_= int_lit 53} ) ) ;
       [%expect {| ((Bool true) (Int 27) (Int 53)) |}]
   end )

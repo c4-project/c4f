@@ -32,4 +32,4 @@ let command : Command.t =
   Command.basic ~summary:"Prints license information"
     Command.Let_syntax.(
       let%map_open _ = Args.Standard.get in
-      fun () -> Printf.printf "%s" (Lazy.force license))
+      fun () -> Printf.printf "%s" (Lazy.force license) )

@@ -181,7 +181,7 @@ end = struct
       in
       let var_ref : Fir.Expression.t = make_var_ref id ty in
       Fir.Constant.reduce value ~int:(generate_int var_ref)
-        ~bool:(generate_bool var_ref))
+        ~bool:(generate_bool var_ref) )
 
   let quickcheck_observer : t Q.Observer.t =
     [%quickcheck.observer: Fir.Expression.t]

@@ -97,7 +97,7 @@ let of_weighted_actions
     ; original_deck= deck
     ; accept_rec_flag
     ; use_rec_flag
-    ; rec_queue= Core.Fqueue.empty })
+    ; rec_queue= Core.Fqueue.empty } )
 
 let use_queue ({rec_queue; use_rec_flag; _} : t)
     ~(random : Splittable_random.State.t) : bool =
@@ -127,7 +127,7 @@ let pick (table : t) ~(random : Splittable_random.State.t) :
        a recommendation. This is to make sure that, if a recommendation fails
        for whatever reason, we don't immediately try picking it again. *)
     let%map table = maybe_remove table ao in
-    (ao, table))
+    (ao, table) )
 
 let pick_many (pool : t) ~(max : int) ~(random : Splittable_random.State.t) :
     (Fuzz.Action.t list * t) Or_error.t =
@@ -140,4 +140,4 @@ let pick_many (pool : t) ~(max : int) ~(random : Splittable_random.State.t) :
           let%map ao, pool' = pick pool ~random in
           (pool', ao) )
     in
-    (List.filter_opt xs, pool))
+    (List.filter_opt xs, pool) )

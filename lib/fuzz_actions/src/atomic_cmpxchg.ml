@@ -36,7 +36,7 @@ module Insert = struct
             dst
             |> Fir.Env.known_value ~id:obj.@(Fir.Address.variable_of)
             |> Result.ok
-            |> Option.bind ~f:(Option.map ~f:(fun v -> (obj, v))) ))
+            |> Option.bind ~f:(Option.map ~f:(fun v -> (obj, v))) ) )
 
     let gen_const :
         Fir.Type.Prim.t -> Fir.Constant.t Base_quickcheck.Generator.t =
@@ -53,7 +53,7 @@ module Insert = struct
       Base_quickcheck.Generator.(
         map2
           ~f:(fun obj exp -> (obj, exp))
-          Obj.quickcheck_generator (gen_const ty))
+          Obj.quickcheck_generator (gen_const ty) )
 
     let gen_mos (allow_ub : bool) :
         (Fir.Mem_order.t * Fir.Mem_order.t) Base_quickcheck.Generator.t =
@@ -65,7 +65,7 @@ module Insert = struct
             if allow_ub then gfail
             else filter gfail ~f:(fun fail -> Fir.Mem_order.(fail <= succ))
           in
-          (succ, fail)))
+          (succ, fail) ) )
 
     let gen_expr (ty : Fir.Type.Prim.t) :
         Fir.Env.t -> Fir.Expression.t Base_quickcheck.Generator.t =
@@ -105,7 +105,7 @@ module Insert = struct
               ; desired
               ; strength
               ; succ
-              ; fail } }))
+              ; fail } } ) )
   end
 
   let int_name (rest : Common.Id.t) : Common.Id.t =
@@ -260,7 +260,7 @@ module Insert = struct
       in
       let cmpxchg_assign =
         Fir.Assign.(
-          Accessor.construct Fir.Lvalue.variable x.out_var @= cmpxchg_expr)
+          Accessor.construct Fir.Lvalue.variable x.out_var @= cmpxchg_expr )
       in
       Storelike.lift_prims
         [Accessor.construct Fir.Prim_statement.assign cmpxchg_assign]

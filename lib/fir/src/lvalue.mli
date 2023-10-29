@@ -21,7 +21,6 @@
 
 (* Needed because Base shadows it: *)
 module Ty = Type
-
 open Base
 open Import
 
@@ -87,7 +86,6 @@ include Types.S_type_checkable with type t := t
 
 (** Generates random lvalues, parametrised on a given identifier generator. *)
 module Quickcheck_generic
-    (_ : C4f_utils.My_quickcheck.S_with_sexp
-            with type t := C4f_common.C_id.t) : sig
+    (_ : C4f_utils.My_quickcheck.S_with_sexp with type t := C4f_common.C_id.t) : sig
   type nonrec t = t [@@deriving sexp_of, quickcheck]
 end

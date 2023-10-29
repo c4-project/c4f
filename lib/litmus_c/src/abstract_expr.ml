@@ -21,20 +21,19 @@ let model_atomic_cmpxchg_expr (args : Ast.Expr.t list)
   Or_error.(
     args
     |> Abstract_atomic.model_cmpxchg ~strength ~expr
-    >>| Fir.Expression.atomic_cmpxchg)
+    >>| Fir.Expression.atomic_cmpxchg )
 
 let model_atomic_fetch_expr (args : Ast.Expr.t list) ~(op : Fir.Op.Fetch.t)
     ~(expr : mu) : Fir.Expression.t Or_error.t =
   Or_error.(
     args
     |> Abstract_atomic.model_fetch ~expr ~op
-    >>| Fir.Expression.atomic_fetch)
+    >>| Fir.Expression.atomic_fetch )
 
 let model_atomic_load_expr (args : Ast.Expr.t list) ~(expr : mu) :
     Fir.Expression.t Or_error.t =
   ignore expr ;
-  Or_error.(
-    args |> Abstract_atomic.model_load >>| Fir.Expression.atomic_load)
+  Or_error.(args |> Abstract_atomic.model_load >>| Fir.Expression.atomic_load)
 
 let expr_call_table :
     (Ast.Expr.t list -> expr:mu -> Fir.Expression.t Or_error.t)
@@ -64,7 +63,7 @@ let function_call (func : Ast.Expr.t) (arguments : Ast.Expr.t list)
   Or_error.Let_syntax.(
     let%bind func_name = Abstract_prim.expr_to_identifier func in
     let%bind call_handler = expr_call_handler func_name in
-    call_handler arguments ~expr)
+    call_handler arguments ~expr )
 
 let identifier_to_expr (id : Common.C_id.t) : Fir.Expression.t =
   match Abstract_prim.identifier_to_constant id with
@@ -91,7 +90,7 @@ let bop : Operators.Bin.t -> Fir.Op.Binary.t Or_error.t =
       | op ->
           error_s
             [%message
-              "Unsupported binary operator" ~got:(op : Operators.Bin.t)]))
+              "Unsupported binary operator" ~got:(op : Operators.Bin.t)] ) )
 
 let prefix_op : Operators.Pre.t -> Fir.Op.Unary.t Or_error.t =
   Or_error.(
@@ -100,7 +99,7 @@ let prefix_op : Operators.Pre.t -> Fir.Op.Unary.t Or_error.t =
     | op ->
         error_s
           [%message
-            "Unsupported prefix operator" ~got:(op : Operators.Pre.t)])
+            "Unsupported prefix operator" ~got:(op : Operators.Pre.t)] )
 
 let model_binary (op : Operators.Bin.t) (l : Ast.Expr.t) (r : Ast.Expr.t)
     ~(expr : mu) : Fir.Expression.t Or_error.t =
@@ -126,7 +125,7 @@ let rec model : Ast.Expr.t -> Fir.Expression.t Or_error.t = function
       Or_error.(
         x |> Abstract_prim.expr_to_lvalue
         >>| Accessor.construct Fir.Lvalue.deref
-        >>| Fir.Expression.lvalue)
+        >>| Fir.Expression.lvalue )
   | Prefix (op, x) -> model_prefix op x ~expr:model
   | Call {func; arguments} -> function_call func arguments ~expr:model
   | Ternary {cond; t_expr; f_expr} -> ternary cond t_expr f_expr ~expr:model

@@ -35,4 +35,4 @@ let run (input : Plumbing.Input.t) (output : Plumbing.Output.t)
     let%bind test = Litmus_c.Frontend.Fir.load input in
     let%bind dl = R.run test in
     let%map () = Utils.My_format.odump output (Fmt.vbox pp_del) dl in
-    dl)
+    dl )

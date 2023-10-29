@@ -63,4 +63,4 @@ let action_map :
   Lazy.(
     actions
     >>| List.map ~f:(fun a -> (Fuzz.Action.With_default_weight.name a, a))
-    >>| Map.of_alist_exn (module C4f_common.Id))
+    >>| Map.of_alist_exn (module C4f_common.Id) )

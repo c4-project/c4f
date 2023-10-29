@@ -64,17 +64,17 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
         let%map flags =
           Map.of_alist_or_error (module C4f_common.Id) flag_alist
         in
-        C4f_fuzz_run.Config.make ~weights ~flags ~params ())
+        C4f_fuzz_run.Config.make ~weights ~flags ~params () )
 
     let build_fuzz : Ast.t -> C4f_fuzz_run.Config.t option Or_error.t =
       Tx.Or_error.(
         Au.My_list.find_one_opt ~item_name:"fuzz" ~f:Ast.Top.as_fuzz
-        >=> Tx.Option.With_errors.map_m ~f:fuzz_of_ast)
+        >=> Tx.Option.With_errors.map_m ~f:fuzz_of_ast )
 
     let f (items : Ast.t) : t Or_error.t =
       Or_error.Let_syntax.(
         let%map fuzz = build_fuzz items in
-        make ?fuzz ())
+        make ?fuzz () )
 
     type dst = t
   end

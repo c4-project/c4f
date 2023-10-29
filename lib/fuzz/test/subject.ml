@@ -42,14 +42,14 @@ module Test_data = struct
       Accessor.construct Statement.if_stm
         (If.make ~cond
            ~t_branch:(Src.Subject.Block.make_generated ~statements:t ())
-           ~f_branch:(Src.Subject.Block.make_dead_code ~statements:f ()) ))
+           ~f_branch:(Src.Subject.Block.make_dead_code ~statements:f ()) ) )
 
   let sample_known_true_if : Src.Subject.Statement.t Lazy.t =
     lazy
       Fir.(
         mk_always_true_if
           Expression.(
-            Infix.(of_variable_str_exn "foo" == of_variable_str_exn "y"))
+            Infix.(of_variable_str_exn "foo" == of_variable_str_exn "y") )
           [ mk_store
               (Atomic_store.make ~src:(Expression.int_lit 56)
                  ~dst:(Address.of_variable_str_exn "x")
@@ -57,8 +57,8 @@ module Test_data = struct
           ; Src.Subject.Statement.make_generated_prim
               Fir.(
                 Accessor.construct Prim_statement.label
-                  (C4f_common.C_id.of_string "kappa_kappa")) ]
-          [])
+                  (C4f_common.C_id.of_string "kappa_kappa") ) ]
+          [] )
 
   let sample_known_false_if : Src.Subject.Statement.t Lazy.t =
     lazy
@@ -78,7 +78,7 @@ module Test_data = struct
                            ~dst:(Address.of_variable_str_exn "y")
                            ~mo:Mem_order.Seq_cst ) ]
                   () )
-             ~f_branch:(Src.Subject.Block.make_generated ()) ))
+             ~f_branch:(Src.Subject.Block.make_generated ()) ) )
 
   let sample_once_do_while : Src.Subject.Statement.t Lazy.t =
     lazy
@@ -94,7 +94,7 @@ module Test_data = struct
                            ~dst:(Address.of_variable_str_exn "x")
                            ~mo:Mem_order.Seq_cst ) ]
                   () )
-             ~kind:Do_while ))
+             ~kind:Do_while ) )
 
   let sample_dead_while : Src.Subject.Statement.t Lazy.t =
     lazy
@@ -110,7 +110,7 @@ module Test_data = struct
                            ~dst:(Address.of_variable_str_exn "x")
                            ~mo:Mem_order.Seq_cst ) ]
                   () )
-             ~kind:While ))
+             ~kind:While ) )
 
   let sample_multi_for : Src.Subject.Statement.t Lazy.t =
     lazy
@@ -128,7 +128,7 @@ module Test_data = struct
                       (Atomic_store.make ~src:(Expression.int_lit 99)
                          ~dst:(Address.of_variable_str_exn "x")
                          ~mo:Mem_order.Seq_cst ) ]
-                () ) ))
+                () ) ) )
 
   let body_stms : Src.Subject.Statement.t list Lazy.t =
     Lazy.Let_syntax.(
@@ -153,7 +153,7 @@ module Test_data = struct
         ; sample_known_false_if
         ; sample_once_do_while
         ; sample_multi_for
-        ; sample_dead_while ])
+        ; sample_dead_while ] )
 
   let pos_0_first_atom = 0
 
@@ -174,7 +174,7 @@ module Test_data = struct
   let thread0 : Src.Subject.Thread.t Lazy.t =
     Lazy.Let_syntax.(
       let%map stms = body_stms and decls = body_decls in
-      Src.Subject.Thread.make ~stms ~decls ())
+      Src.Subject.Thread.make ~stms ~decls () )
 
   let thread1_stms : Src.Subject.Statement.t list Lazy.t =
     lazy
@@ -193,14 +193,14 @@ module Test_data = struct
   let threads : Src.Subject.Thread.t list Lazy.t =
     Lazy.Let_syntax.(
       let%map t0 = thread0 and t1 = thread1 in
-      [t0; t1])
+      [t0; t1] )
 
   let test : Src.Subject.Test.t Lazy.t =
     Lazy.Let_syntax.(
       let%bind init = init in
       let%map threads = threads in
       let header = C4f_litmus.Header.make ~name:"example" ~init () in
-      C4f_litmus.Test.Raw.make ~header ~threads)
+      C4f_litmus.Test.Raw.make ~header ~threads )
 
   module Path = struct
     (* These will need manually synchronising with the statements above. *)
@@ -211,7 +211,7 @@ module Test_data = struct
           Src.Path_meta.(
             let anchor = None (* for now *) in
             let meta = {flags= Set.of_list (module Flag) fs; anchor} in
-            With_meta.make path ~meta) )
+            With_meta.make path ~meta ) )
 
     let thread_0_stms (path : Src.Path.Stms.t) : Src.Path.t Lazy.t =
       lazy Src.Path.(in_thread 0 @@ Thread.in_stms @@ path)
@@ -229,11 +229,11 @@ module Test_data = struct
 
     let known_true_if (path : Src.Path.If.t) : Src.Path.t Lazy.t =
       Src.Path.(
-        thread_0_stms @@ Stms.in_stm pos_0_true_if @@ Stm.in_if @@ path)
+        thread_0_stms @@ Stms.in_stm pos_0_true_if @@ Stm.in_if @@ path )
 
     let known_false_if (path : Src.Path.If.t) : Src.Path.t Lazy.t =
       Src.Path.(
-        thread_0_stms @@ Stms.in_stm pos_0_false_if @@ Stm.in_if @@ path)
+        thread_0_stms @@ Stms.in_stm pos_0_false_if @@ Stm.in_if @@ path )
 
     let dead_else (path : Src.Path.Stms.t) : Src.Path.t Lazy.t =
       Src.Path.(known_true_if @@ If.in_branch false @@ path)
@@ -245,14 +245,14 @@ module Test_data = struct
       Src.Path.(
         thread_0_stms
         @@ Stms.in_stm pos_0_once_do_while
-        @@ Stm.in_flow @@ path)
+        @@ Stm.in_flow @@ path )
 
     let insert_once_loop_end : Src.Path.With_meta.t Lazy.t =
       flag [In_loop] Src.Path.(once_loop @@ Flow.in_body @@ Stms.insert 1)
 
     let multi_loop (path : Src.Path.Flow.t) : Src.Path.t Lazy.t =
       Src.Path.(
-        thread_0_stms @@ Stms.in_stm pos_0_multi_for @@ Stm.in_flow @@ path)
+        thread_0_stms @@ Stms.in_stm pos_0_multi_for @@ Stm.in_flow @@ path )
 
     let insert_multi_loop_end : Src.Path.With_meta.t Lazy.t =
       flag
@@ -261,7 +261,7 @@ module Test_data = struct
 
     let dead_loop (path : Src.Path.Flow.t) : Src.Path.t Lazy.t =
       Src.Path.(
-        thread_0_stms @@ Stms.in_stm pos_0_dead_while @@ Stm.in_flow @@ path)
+        thread_0_stms @@ Stms.in_stm pos_0_dead_while @@ Stm.in_flow @@ path )
 
     let insert_dead_loop : Src.Path.With_meta.t Lazy.t =
       flag [In_dead_code; In_loop]
@@ -274,7 +274,7 @@ module Test_data = struct
     let surround_atomic : Src.Path.With_meta.t Lazy.t =
       flag []
         Src.Path.(
-          thread_0_stms @@ Stms.between pos_0_first_atom pos_0_last_atom)
+          thread_0_stms @@ Stms.between pos_0_first_atom pos_0_last_atom )
 
     let surround_label_direct : Src.Path.With_meta.t Lazy.t =
       flag []

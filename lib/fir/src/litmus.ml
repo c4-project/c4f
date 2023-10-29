@@ -11,7 +11,6 @@
 
 (* Needed because Base shadows it: *)
 module Ty = Type
-
 open Base
 open Import
 
@@ -94,13 +93,13 @@ module Var = struct
                  (Common.C_id.to_string d) )
         |> Or_error.combine_errors_unit
       in
-      ps)
+      ps )
 
   let merge_and_expand_parameters (init : Constant.t Common.C_named.Alist.t)
       (pss : Ty.t Common.C_named.Alist.t list) :
       Record.t Common.C_named.Alist.t Or_error.t =
     Or_error.(
-      pss |> merge_parameters >>| List.mapi ~f:(expand_parameter ~init))
+      pss |> merge_parameters >>| List.mapi ~f:(expand_parameter ~init) )
 
   let make_global_alist (init : Constant.t Common.C_named.Alist.t)
       (progs : Test.Lang.Program.t list) :
@@ -108,10 +107,10 @@ module Var = struct
     Or_error.(
       Accessor_base.(
         progs.@*(List.each @> Common.C_named.value
-                 @> Function.Access.parameters))
+                 @> Function.Access.parameters) )
       |> merge_and_expand_parameters init
       |> Or_error.tag ~tag:"couldn't deduce global parameters"
-      >>| Tx.Alist.map_left ~f:C4f_common.Litmus_id.global)
+      >>| Tx.Alist.map_left ~f:C4f_common.Litmus_id.global )
 
   let make_local_alist (tid : int) (prog : Test.Lang.Program.t)
       ~(starts_at : int) : (Common.Litmus_id.t, Record.t) List.Assoc.t =
@@ -136,5 +135,5 @@ module Var = struct
         List.concat_mapi programs
           ~f:(make_local_alist ~starts_at:(List.length global_alist))
       in
-      global_alist @ local_alist)
+      global_alist @ local_alist )
 end

@@ -25,7 +25,7 @@ C4f_litmus.Header.Json (struct
     Or_error.(
       s |> Frontend.Litmus_post.load_from_string
       >>= C4f_litmus.Postcondition.With_errors.map_right_m
-            ~f:Abstract_prim.constant)
+            ~f:Abstract_prim.constant )
 end)
 
 include J
@@ -40,7 +40,7 @@ module Change_set = struct
   let parse_pc (pc : string) :
       Fir.Constant.t C4f_litmus.Postcondition.t Or_error.t =
     Or_error.(
-      pc |> Frontend.Litmus_post.load_from_string >>= Abstract.litmus_post)
+      pc |> Frontend.Litmus_post.load_from_string >>= Abstract.litmus_post )
 
   let try_map_keep_clear_replace (type a b)
       (x : [`Keep | `Clear | `Replace_with of a]) ~(f : a -> b Or_error.t) :
@@ -57,7 +57,7 @@ module Change_set = struct
       let%map parsed_pc =
         try_map_keep_clear_replace ~f:parse_pc postcondition
       in
-      C4f_litmus.Header.Change_set.make ~name ~postcondition:parsed_pc ())
+      C4f_litmus.Header.Change_set.make ~name ~postcondition:parsed_pc () )
 end
 
 module Filters = struct
@@ -67,13 +67,13 @@ module Filters = struct
     Or_error.(
       input |> Frontend.Fir.load
       >>= Fir.Litmus.Test.try_map_header ~f:(fun header -> Ok (f header))
-      >>= C4f_utils.My_format.odump output (Fmt.vbox Reify.pp_litmus))
+      >>= C4f_utils.My_format.odump output (Fmt.vbox Reify.pp_litmus) )
 
   let run_dump (input : Plumbing.Input.t) (output : Plumbing.Output.t) :
       unit Or_error.t =
     Or_error.(
       input |> Frontend.Fir.load >>| Fir.Litmus.Test.header
-      >>= store ~dest:output)
+      >>= store ~dest:output )
 
   let run_modify (input : Plumbing.Input.t) (output : Plumbing.Output.t)
       ~(changes : Change_set.t) : unit Or_error.t =

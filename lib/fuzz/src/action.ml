@@ -63,7 +63,7 @@ struct
         let%bind () = add_dependencies payload in
         let%bind test' = Basic.run_pre test ~payload:payload.payload in
         Payload_impl.Pathed.surround ~filter payload ~test:test'
-          ~f:(fun payload -> Basic.wrap ~payload)))
+          ~f:(fun payload -> Basic.wrap ~payload) ) )
 end
 
 module Make_log (B : sig
@@ -77,7 +77,7 @@ end = struct
       Common.Output.pv o
         Stdlib.("@[<h>%a:@ @[" ^^ format ^^ "@]@]@.")
         (styled (`Fg `Green) Common.Id.pp)
-        B.name)
+        B.name )
 end
 
 module Nop : Action_types.S with type Payload.t = unit = struct

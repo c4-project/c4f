@@ -37,13 +37,13 @@ module Make (B : Runner_types.Basic) : Runner_types.S = struct
         B.Function.rewrite_all raw_functions ~context
       in
       let functions = Common.C_named.alist_of_list function_list in
-      Fir.Program.make ~globals ~functions)
+      Fir.Program.make ~globals ~functions )
 
   let make_local_init (fn : unit Fir.Function.t) :
       (Common.C_id.t, Fir.Constant.t) List.Assoc.t =
     fn |> Fir.Function.body_decls
     |> Accessor_base.(
-         map (List.each @> Tuple2.snd) ~f:(get Fir.Initialiser.value))
+         map (List.each @> Tuple2.snd) ~f:(get Fir.Initialiser.value) )
 
   let make_local_inits :
          unit Fir.Function.t list
@@ -65,5 +65,5 @@ module Make (B : Runner_types.Basic) : Runner_types.S = struct
       let%bind aux = Amake.make_aux input in
       let context = make_context input aux in
       let%map program = make_program input context in
-      Output.make ~program ~aux)
+      Output.make ~program ~aux )
 end

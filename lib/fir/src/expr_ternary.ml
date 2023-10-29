@@ -11,7 +11,6 @@
 
 (* Needed because Base shadows it: *)
 module Ty = Type
-
 open Base
 open Import
 
@@ -28,7 +27,7 @@ let exprs :
       many
         Many.(
           fun {if_; then_; else_} ->
-            map3 (access if_) (access then_) (access else_) ~f:make))]
+            map3 (access if_) (access then_) (access else_) ~f:make ) )]
 
 let quickcheck_generator_ite ~(gen_if : 'e Q.Generator.t)
     ~(gen_then : 'e Q.Generator.t) ~(gen_else : 'e Q.Generator.t) :
@@ -49,5 +48,5 @@ module Type_check (E : Env_types.S) :
                   "Condition of ternary statement must be boolean value"
                     ~actual_type:(if_ : Ty.t)] )
         in
-        Ty.check then_ else_))
+        Ty.check then_ else_ ) )
 end

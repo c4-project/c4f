@@ -81,7 +81,7 @@ module Strengthen :
   let filter : Fuzz.Path_filter.t =
     Fuzz.Path_filter.(
       require_end_check
-        (End_check.Stm_class (Is, Fir.Statement_class.[atomic ()])))
+        (End_check.Stm_class (Is, Fir.Statement_class.[atomic ()])) )
 
   module Payload = struct
     include Strengthen_payload
@@ -93,7 +93,7 @@ module Strengthen :
         in
         let* path = path_with_flags Transform ~filter in
         let+ mo = lift_quickcheck Fir.Mem_order.quickcheck_generator in
-        {path; mo; can_weaken})
+        {path; mo; can_weaken} )
   end
 
   let recommendations (_ : Payload.t) : Common.Id.t list = []

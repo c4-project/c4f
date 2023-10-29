@@ -98,7 +98,7 @@ module Parametric = struct
           using
             (fun {qualifiers; declarator} -> (qualifiers, declarator))
             (hvbox
-               (pair ~sep:sp (box (list ~sep:sp B.Qual.pp)) (box B.Decl.pp)) ))
+               (pair ~sep:sp (box (list ~sep:sp B.Qual.pp)) (box B.Decl.pp)) ) )
     end
   end
 
@@ -129,7 +129,7 @@ module Parametric = struct
                 (option Ast_basic.Identifier.pp)
                 name_opt
                 (Utils.My_format.pp_c_braces (list ~sep:sp B.Decl.pp))
-                decls)
+                decls )
         | Named (kind, id) ->
             Fmt.pf f "%a@ %a" B.Kind.pp kind Ast_basic.Identifier.pp id
     end
@@ -170,7 +170,7 @@ module Parametric = struct
             Fmt.(
               pair ~sep:nop pp
                 (parens (list ~sep:comma Ast_basic.Identifier.pp))
-                f (t, ps))
+                f (t, ps) )
 
       let rec identifier = function
         | Id x -> x
@@ -196,7 +196,7 @@ module Parametric = struct
         Fmt.(
           using
             (fun {pointer; direct} -> (pointer, direct))
-            (pair ~sep:nop (option Ast_basic.Pointer.pp) D.pp))
+            (pair ~sep:nop (option Ast_basic.Pointer.pp) D.pp) )
     end
   end
 
@@ -232,7 +232,7 @@ module Parametric = struct
             Fmt.(Ast_basic.Array.pp (option pp) (option B.Expr.pp) f a)
         | Fun_decl (t, ps) ->
             Fmt.(
-              pair ~sep:nop (option pp) (parens (option B.Par.pp)) f (t, ps))
+              pair ~sep:nop (option pp) (parens (option B.Par.pp)) f (t, ps) )
     end
   end
 
@@ -278,7 +278,7 @@ module Parametric = struct
                 (* Trying to get 'X : Y' if X exists, and ': Y' if not. *)
                 (option (B.Dec.pp ++ sp))
                 (any ":@ " ++ B.Expr.pp)
-                f (mdecl, bitsize))
+                f (mdecl, bitsize) )
     end
   end
 
@@ -368,7 +368,7 @@ module Parametric = struct
         Fmt.(
           using
             (fun {params; style} -> (params, style))
-            (pair ~sep:nop (list ~sep:comma P.pp) pp_style))
+            (pair ~sep:nop (list ~sep:comma P.pp) pp_style) )
     end
   end
 
@@ -420,7 +420,7 @@ module Parametric = struct
             Fmt.(
               pf f "if@ (%a)@ %a%a" B.Expr.pp cond pp t_branch
                 (option (any "@ else@ " ++ pp))
-                f_branch)
+                f_branch )
         | Switch (cond, rest) ->
             Fmt.(pf f "switch@ (%a)@ %a" B.Expr.pp cond pp rest)
         | Continue -> Fmt.any "continue;" f ()
@@ -432,7 +432,7 @@ module Parametric = struct
         | For {init; cond; update; body} ->
             Fmt.(
               pf f "for@ (%a;@ %a;@ %a)@ %a" (option B.Expr.pp) init
-                (option B.Expr.pp) cond (option B.Expr.pp) update pp body)
+                (option B.Expr.pp) cond (option B.Expr.pp) update pp body )
         | Goto label -> Fmt.pf f "goto@ %a;" Ast_basic.Identifier.pp label
         | Return expr ->
             (* The space should be surpressed when there is no return value,
@@ -484,7 +484,7 @@ end = struct
     Fmt.(
       using
         (fun {name; value} -> (name, value))
-        (pp_opt_assign Ast_basic.Identifier.pp Expr.pp))
+        (pp_opt_assign Ast_basic.Identifier.pp Expr.pp) )
 end
 
 and Enum_spec :
@@ -664,7 +664,7 @@ module Init_declarator = struct
     Fmt.(
       using
         (fun {declarator; initialiser} -> (declarator, initialiser))
-        (pp_opt_assign Declarator.pp Initialiser.pp))
+        (pp_opt_assign Declarator.pp Initialiser.pp) )
 end
 
 module Decl = Parametric.G_decl.Make (struct
@@ -703,14 +703,14 @@ module Function_def = struct
     Fmt.(
       using
         (function [] -> None | x -> Some x)
-        (option (any "@ " ++ list ~sep:sp Decl.pp)))
+        (option (any "@ " ++ list ~sep:sp Decl.pp)) )
 
   let pp (f : Base.Formatter.t) {decl_specs; signature; decls; body} : unit =
     Fmt.(
       pf f "%a@ %a%a@ %a"
         (box (list ~sep:sp Decl_spec.pp))
         decl_specs Declarator.pp signature pp_oldstyle_decl_list decls
-        Compound_stm.pp body)
+        Compound_stm.pp body )
 end
 
 module External_decl = struct

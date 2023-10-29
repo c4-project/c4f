@@ -29,7 +29,7 @@ module In = struct
         @> variant
              ~match_:(fun (d2, k) ->
                if Dir.equal d d2 then First k else Second (d2, k) )
-             ~construct:(fun k -> (d, k)))]
+             ~construct:(fun k -> (d, k)) )]
 
   let zero' (d : Dir.t) : ('a, unit, t, [< A.variant]) A.t =
     [%accessor A.(const_at d @> Constant.Acc.zero)]
@@ -62,7 +62,7 @@ let single_in_matching (type i) (out_ : Out.t) :
   A.optional_getter (fun r ->
       Base.Option.(
         some_if (Out.equal r.out_ out_) ()
-        >>= fun (_ : 'a) -> A.get_option in_ r) )
+        >>= fun (_ : 'a) -> A.get_option in_ r ) )
 
 let in_matching (out_ : Out.t) : ('i, In.t, t list, [< A.many_getter]) A.t =
   A.(List.each @> single_in_matching out_)

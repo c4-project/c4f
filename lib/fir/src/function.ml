@@ -11,7 +11,6 @@
 
 (* Needed because Base shadows it: *)
 module Ty = Type
-
 open Base
 
 open struct
@@ -42,8 +41,8 @@ let with_body_stms (type m1 m2) (func : m1 t) (new_stms : m2 Statement.t list)
 module On (M : Applicative.S) = struct
   let map_m (type m1 m2) (func : m1 t)
       ~(parameters :
-            (Ac.C_id.t, Ty.t) List.Assoc.t
-         -> (Ac.C_id.t, Ty.t) List.Assoc.t M.t )
+         (Ac.C_id.t, Ty.t) List.Assoc.t -> (Ac.C_id.t, Ty.t) List.Assoc.t M.t
+         )
       ~(body_decls :
             (Ac.C_id.t, Initialiser.t) List.Assoc.t
          -> (Ac.C_id.t, Initialiser.t) List.Assoc.t M.t )

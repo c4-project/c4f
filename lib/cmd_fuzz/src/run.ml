@@ -30,7 +30,7 @@ let run ?(seed : int option) ?(state_output : Plumbing.Output.t option)
     Common_cmd.Args.With_files.run_filter
       (C4f_fuzz_run.Filter.run_randomised ~aux)
       args
-    >>= write_aux ?state_output ?trace_output)
+    >>= write_aux ?state_output ?trace_output )
 
 let readme () : string =
   C4f_utils.My_string.format_for_readme
@@ -64,4 +64,4 @@ let command : Command.t =
       fun () ->
         Common_cmd.Args.Standard.lift_command_with_config
           (Common_cmd.Args.With_files.rest standard_args)
-          ~f:(run standard_args ?seed ?trace_output ?state_output))
+          ~f:(run standard_args ?seed ?trace_output ?state_output) )

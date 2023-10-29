@@ -159,7 +159,7 @@ include Json
 
 let check (t1 : t) (t2 : t) : t Or_error.t =
   if equal t1 t2 then Ok t1
-  else Or_error.error_s [%message "Type mismatch" ~(t1 : t) ~(t2 : t)]
+  else Or_error.error_s [%message "Type mismatch" ~t1:(t1 : t) ~t2:(t2 : t)]
 
 let check_modulo_atomicity (t1 : t) (t2 : t) : t Or_error.t =
   check (strip_atomic t1) (strip_atomic t2)
@@ -167,9 +167,9 @@ let check_modulo_atomicity (t1 : t) (t2 : t) : t Or_error.t =
 let check_atomic_non ~(atomic : t) ~(non : t) : t Or_error.t =
   Or_error.Let_syntax.(
     let%bind natomic = to_non_atomic atomic in
-    check natomic non)
+    check natomic non )
 
 let check_pointer_non ~(pointer : t) ~(non : t) : t Or_error.t =
   Or_error.Let_syntax.(
     let%bind npointer = deref pointer in
-    check npointer non)
+    check npointer non )

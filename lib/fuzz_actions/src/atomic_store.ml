@@ -30,7 +30,7 @@ module Transform = struct
         Fuzz.Path_filter.(
           require_end_check
             (Stm_class
-               (Is, [Fir.Statement_class.atomic ~specifically:Store ()]) ))
+               (Is, [Fir.Statement_class.atomic ~specifically:Store ()]) ) )
 
     module Payload = struct
       type t = Fuzz.Path.With_meta.t [@@deriving sexp]
@@ -62,7 +62,7 @@ module Transform = struct
         (Accessor.construct Fir.Atomic_statement.fetch
            Fir.Atomic_store.(
              Fir.Atomic_fetch.make ~op:`Xchg ~obj:s.@(dst) ~arg:s.@(src)
-               ~mo:s.@(mo)) )
+               ~mo:s.@(mo) ) )
 
     let xchgify_atomic :
         Fir.Atomic_statement.t -> Fir.Atomic_statement.t Or_error.t =
@@ -130,8 +130,7 @@ module Insert = struct
 
     (* No atomic stores are transaction-safe, so we forbid their generation
        in atomic blocks. *)
-    let path_filter =
-      Fuzz.Path_filter.(forbid_flag In_atomic + B.path_filter)
+    let path_filter = Fuzz.Path_filter.(forbid_flag In_atomic + B.path_filter)
 
     type t = Fir.Atomic_store.t [@@deriving sexp]
 
@@ -258,7 +257,7 @@ module Insert = struct
             Result.of_option kvo
               ~error:(Error.of_string "No known value for this record.")
           in
-          Fir.Expression.constant kv)
+          Fir.Expression.constant kv )
 
       let quickcheck_generator =
         (* Deliberately ignore the source environment. TODO(@MattWindsor91):

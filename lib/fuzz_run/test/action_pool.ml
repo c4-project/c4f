@@ -62,7 +62,7 @@ let%test_module "recommendation queue" =
                (list ~sep:comma
                   (using
                      (fun (module A : Fuzz.Action_types.S) -> A.name)
-                     Common.Id.pp ) ) ))
+                     Common.Id.pp ) ) ) )
 
     let test_choice ~(acc : Fuzz.Flag.t) ~(use : Fuzz.Flag.t) (max : int)
         (names : Common.Id.t list) : unit =
@@ -75,7 +75,7 @@ let%test_module "recommendation queue" =
           pool ~acc ~use
           >>| Src.Action_pool.recommend ~names ~random
           >>= Src.Action_pool.pick_many ~max ~random
-          >>| fst)
+          >>| fst )
 
     let%expect_test "choice when there is no recommendation" =
       test_choice ~acc:(Fuzz.Flag.exact true) ~use:(Fuzz.Flag.exact true) 1
@@ -138,7 +138,7 @@ let%test_module "recommendation queue" =
             let%bind a, pool = Src.Action_pool.pick pool ~random in
             let pool = Src.Action_pool.reset pool in
             let%map b, _ = Src.Action_pool.pick pool ~random in
-            List.filter_opt [a; b])) ;
+            List.filter_opt [a; b] ) ) ;
       [%expect {| test1, test1 |}]
 
     let%expect_test "reset doesn't reset recommendations" =
@@ -161,7 +161,7 @@ let%test_module "recommendation queue" =
             let%bind b, pool = Src.Action_pool.pick pool ~random in
             let pool = Src.Action_pool.reset pool in
             let%map c, _ = Src.Action_pool.pick pool ~random in
-            List.filter_opt [a; b; c])) ;
+            List.filter_opt [a; b; c] ) ) ;
       [%expect {| test2, test3, test1 |}]
 
     let%expect_test "reset in between taking choice as rec and taking from \
@@ -182,6 +182,6 @@ let%test_module "recommendation queue" =
             let%bind a, pool = Src.Action_pool.pick pool ~random in
             let pool = Src.Action_pool.reset pool in
             let%map b, _ = Src.Action_pool.pick pool ~random in
-            List.filter_opt [a; b])) ;
+            List.filter_opt [a; b] ) ) ;
       [%expect {| test1, test1 |}]
   end )

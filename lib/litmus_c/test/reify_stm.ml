@@ -30,8 +30,8 @@ let%test_module "reify/pp" =
                 Assign.(Lvalue.of_variable_str_exn "x" @= Expression.truth)
             ; A.(construct (Statement.prim' @> Prim_statement.assign))
                 Assign.(
-                  Lvalue.of_variable_str_exn "y" @= Expression.falsehood) ]
-          ())
+                  Lvalue.of_variable_str_exn "y" @= Expression.falsehood ) ]
+          () )
 
     let%expect_test "upwards for loop" =
       test
@@ -43,7 +43,7 @@ let%test_module "reify/pp" =
                   { For.Simple.lvalue= Lvalue.of_variable_str_exn "x"
                   ; init_value= Expression.int_lit 0
                   ; cmp_value= Expression.int_lit 42
-                  ; direction= Up Exclusive })) ;
+                  ; direction= Up Exclusive } ) ) ;
       [%expect {| for (x = 0; x < 42; x++) { x = true; y = false; } |}]
 
     let%expect_test "downwards-inclusive for loop" =
@@ -56,14 +56,14 @@ let%test_module "reify/pp" =
                   { For.Simple.lvalue= Lvalue.of_variable_str_exn "x"
                   ; init_value= Expression.int_lit 53
                   ; cmp_value= Expression.int_lit 27
-                  ; direction= Down Inclusive })) ;
+                  ; direction= Down Inclusive } ) ) ;
       [%expect {| for (x = 53; x >= 27; x--) { x = true; y = false; } |}]
 
     let%expect_test "infinite for loop" =
       test
         Fir.(
           A.construct Statement.flow
-            Flow_block.(for_loop test_body ~control:(For.make ()))) ;
+            Flow_block.(for_loop test_body ~control:(For.make ())) ) ;
       [%expect {| for (; ; ) { x = true; y = false; } |}]
 
     let%expect_test "upwards-inclusive for loop with pointers" =
@@ -78,7 +78,7 @@ let%test_module "reify/pp" =
                         (Lvalue.of_variable_str_exn "x")
                   ; init_value= Expression.int_lit 0
                   ; cmp_value= Expression.int_lit 100
-                  ; direction= Up Inclusive })) ;
+                  ; direction= Up Inclusive } ) ) ;
       [%expect
         {| for (*x = 0; *x <= 100; (*x)++) { x = true; y = false; } |}]
 
@@ -96,7 +96,7 @@ let%test_module "reify/pp" =
           A.(
             construct
               (Statement.prim' @> Prim_statement.assign)
-              (Assign.make ~dst:(Lvalue.of_variable_str_exn "x") ~src:Inc))) ;
+              (Assign.make ~dst:(Lvalue.of_variable_str_exn "x") ~src:Inc) ) ) ;
       [%expect {| x++; |}]
 
     let%expect_test "increment of a pointer" =
@@ -107,6 +107,6 @@ let%test_module "reify/pp" =
               (Statement.prim' @> Prim_statement.assign)
               (Assign.make
                  ~dst:Lvalue.(construct deref (of_variable_str_exn "x"))
-                 ~src:Inc ))) ;
+                 ~src:Inc ) ) ) ;
       [%expect {| (*x)++; |}]
   end )

@@ -30,17 +30,17 @@ module Test_utils = struct
   let pp_vars : Src.Var.Map.t Fmt.t =
     Fmt.(
       vbox ~indent:2
-        (any "Vars:" ++ cut ++ Common.Scoped_map.pp Src.Var.Record.pp))
+        (any "Vars:" ++ cut ++ Common.Scoped_map.pp Src.Var.Record.pp) )
 
   let run_and_dump_test (action : Src.Subject.Test.t Src.State.Monad.t)
       ~(initial_state : Src.State.t) : unit =
     let r =
       Or_error.(
         Src.State.Monad.(run' (action >>= reify_test_m) initial_state)
-        >>| fun (state, tu) -> (tu, state.@(Src.State.vars)))
+        >>| fun (state, tu) -> (tu, state.@(Src.State.vars)) )
     in
     Fmt.(
       pr "@[<v>%a@]@."
-        (result ~ok:(pair ~sep:(cut ++ cut) pp_tu pp_vars) ~error:Error.pp))
+        (result ~ok:(pair ~sep:(cut ++ cut) pp_tu pp_vars) ~error:Error.pp) )
       r
 end

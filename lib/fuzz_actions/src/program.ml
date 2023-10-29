@@ -37,7 +37,7 @@ module Make_empty : Fuzz.Action_types.S with type Payload.t = unit = struct
           lift_acc
             (Context.subject @> Accessor.getter C4f_litmus.Test.Raw.threads)
         in
-        List.length threads < cap))
+        List.length threads < cap ) )
 
   let run (subject : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
       Fuzz.Subject.Test.t Fuzz.State.Monad.t =
@@ -62,7 +62,7 @@ module Label :
     let gen' (_ : Fuzz.Path.With_meta.t) : Common.C_id.t Fuzz.Payload_gen.t =
       Fuzz.Payload_gen.(
         let* labels = lift_acc (Context.state @> Fuzz.State.labels) in
-        lift_quickcheck (Fuzz.Label.gen_fresh labels))
+        lift_quickcheck (Fuzz.Label.gen_fresh labels) )
 
     let gen = Fuzz.Payload_impl.Pathed.gen Insert path_filter gen'
   end
@@ -80,11 +80,11 @@ module Label :
       C4f_fir.(
         name
         |> Accessor.construct Prim_statement.label
-        |> Fuzz.Subject.Statement.make_generated_prim)
+        |> Fuzz.Subject.Statement.make_generated_prim )
     in
     Fuzz.State.Monad.(
       Let_syntax.(
         let%bind () = register_label lid in
         Monadic.return
-          (Fuzz.Path_consumers.consume test ~path ~action:(Insert [label_stm]))))
+          (Fuzz.Path_consumers.consume test ~path ~action:(Insert [label_stm])) ) )
 end

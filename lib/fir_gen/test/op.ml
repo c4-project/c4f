@@ -111,7 +111,7 @@ let%test_module "operator rules" =
                 let%bind o = Base_quickcheck.Generator.of_list O.all in
                 let%bind k = gen_k in
                 let%map r = of_list (O.rules o) in
-                (o, k, r)))
+                (o, k, r) ) )
 
           let quickcheck_shrinker : t Base_quickcheck.Shrinker.t =
             [%quickcheck.shrinker:

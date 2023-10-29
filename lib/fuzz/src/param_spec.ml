@@ -17,7 +17,7 @@ let pp (pp_default : 'a Fmt.t) : 'a t Fmt.t =
   Fmt.(
     record
       [ field "Default value" default pp_default
-      ; field "Description" description paragraphs ])
+      ; field "Description" description paragraphs ] )
 
 module Int = struct
   type nonrec t = int t

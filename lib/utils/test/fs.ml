@@ -33,7 +33,7 @@ let%test_module "subpaths" =
     let%expect_test "example absolute path" =
       Fmt.(
         pr "@[%a@]@." (list ~sep:sp Fpath.pp)
-          (subpaths (Fpath.v "/usr/local/etc/blah/burble/baz"))) ;
+          (subpaths (Fpath.v "/usr/local/etc/blah/burble/baz")) ) ;
       [%expect
         {|
       / /usr/ /usr/local/ /usr/local/etc/ /usr/local/etc/blah/
@@ -42,7 +42,7 @@ let%test_module "subpaths" =
     let%expect_test "example relative path" =
       Fmt.(
         pr "@[%a@]@." (list ~sep:sp Fpath.pp)
-          (subpaths (Fpath.v "../inky/pinky/parlez/vous"))) ;
+          (subpaths (Fpath.v "../inky/pinky/parlez/vous")) ) ;
       [%expect
         {| ../ ../inky/ ../inky/pinky/ ../inky/pinky/parlez/ ../inky/pinky/parlez/vous |}]
   end )

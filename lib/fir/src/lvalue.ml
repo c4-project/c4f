@@ -11,7 +11,6 @@
 
 (* Needed because Base shadows it: *)
 module Ty = Type
-
 open Base
 open Import
 
@@ -82,13 +81,13 @@ end = struct
     Q.Generator.(
       recursive_union
         [map [%quickcheck.generator: Id.t] ~f:(Accessor.construct variable)]
-        ~f:(fun mu -> [map mu ~f:(Accessor.construct deref)]))
+        ~f:(fun mu -> [map mu ~f:(Accessor.construct deref)]) )
 
   let quickcheck_observer : t Q.Observer.t =
     Q.Observer.(
       fixed_point (fun mu ->
           unmap ~f:(Accessor.get anonymise)
-            [%quickcheck.observer: [`A of Id.t | `B of [%custom mu]]] ))
+            [%quickcheck.observer: [`A of Id.t | `B of [%custom mu]]] ) )
 
   let quickcheck_shrinker : t Q.Shrinker.t =
     Q.Shrinker.(
@@ -96,7 +95,7 @@ end = struct
           map
             ~f:(Accessor.construct anonymise)
             ~f_inverse:(Accessor.get anonymise)
-            [%quickcheck.shrinker: [`A of Id.t | `B of [%custom mu]]] ))
+            [%quickcheck.shrinker: [`A of Id.t | `B of [%custom mu]]] ) )
 end
 
 module Quickcheck_id = Quickcheck_generic (Common.C_id)

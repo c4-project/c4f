@@ -18,7 +18,7 @@ let%test_module "pp_c_braces" =
         pr "@[%a@]@."
           (pp_c_braces (fun f () ->
                string f "eggs" ; sp f () ; string f "ham" ) )
-          ()) ;
+          () ) ;
       [%expect {| { eggs ham } |}]
 
     let%expect_test "things before and after" =
@@ -26,7 +26,7 @@ let%test_module "pp_c_braces" =
         pr "@[poached@ %a@ sandwich@]@."
           (pp_c_braces (fun f () ->
                string f "eggs" ; sp f () ; string f "ham" ) )
-          ()) ;
+          () ) ;
       [%expect {| poached { eggs ham } sandwich |}]
 
     let%expect_test "long items" =
@@ -36,7 +36,7 @@ let%test_module "pp_c_braces" =
                string f "a very long string that'll doubtless wrap the box" ;
                sp f () ;
                string f "ham and cheese and cheese and ham" ) )
-          ()) ;
+          () ) ;
       [%expect
         {|
     {
@@ -51,7 +51,7 @@ let%test_module "pp_c_braces" =
                string f "a very long string that'll doubtless wrap the box" ;
                sp f () ;
                string f "ham and cheese and cheese and ham" ) )
-          ()) ;
+          () ) ;
       [%expect
         {|
     this is

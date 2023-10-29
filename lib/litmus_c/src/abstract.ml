@@ -51,7 +51,7 @@ let param_type_list :
       Or_error.(
         params
         |> Tx.Or_error.combine_map ~f:Abstract_prim.param_decl
-        >>| Named.alist_of_list)
+        >>| Named.alist_of_list )
 
 let func_signature :
        Ast.Declarator.t
@@ -82,7 +82,7 @@ let func_body (body : Ast.Compound_stm.t) :
     let%bind ast_stms = Abstract_stm.ensure_statements ast_nondecls in
     let%map decls = Tx.Or_error.combine_map ~f:Abstract_prim.decl ast_decls
     and stms = Tx.Or_error.combine_map ~f:Abstract_stm.model ast_stms in
-    (Named.alist_of_list decls, stms))
+    (Named.alist_of_list decls, stms) )
 
 let func (f : Ast.Function_def.t) : unit Fir.Function.t Named.t Or_error.t =
   Or_error.Let_syntax.(
@@ -90,7 +90,7 @@ let func (f : Ast.Function_def.t) : unit Fir.Function.t Named.t Or_error.t =
     let%map name, parameters = func_signature f.signature
     and body_decls, body_stms = func_body f.body in
     Named.make ~name
-      (Fir.Function.make ~parameters ~body_decls ~body_stms ()))
+      (Fir.Function.make ~parameters ~body_decls ~body_stms ()) )
 
 let translation_unit (prog : Ast.Translation_unit.t) :
     unit Fir.Program.t Or_error.t =
@@ -102,7 +102,7 @@ let translation_unit (prog : Ast.Translation_unit.t) :
     and function_list = Tx.Or_error.combine_map ~f:func ast_funs in
     let globals = Named.alist_of_list global_list in
     let functions = Named.alist_of_list function_list in
-    Fir.Program.make ~globals ~functions)
+    Fir.Program.make ~globals ~functions )
 
 module Litmus_conv = C4f_litmus.Convert.Make (struct
   module From = struct

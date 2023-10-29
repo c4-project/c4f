@@ -57,7 +57,7 @@ let in_var_cap ~(after_adding : int) : t =
     M.(
       let* cap = param Config_tables.var_cap_param in
       let+ vars = lift_acc (Context.state @> State.vars) in
-      Common.Scoped_map.length vars + after_adding <= cap)
+      Common.Scoped_map.length vars + after_adding <= cap )
 
 include (
   struct
@@ -67,6 +67,6 @@ include (
       M.(
         let* x = f in
         let+ y = g in
-        x && y)
+        x && y )
   end :
     Container.Summable with type t := t )

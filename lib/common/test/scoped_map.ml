@@ -86,7 +86,7 @@ let%test_module "on sample map" =
           |> Map.to_alist
           |> Fmt.(
                pr "@[<v>%a@]@."
-                 (list (box (pair ~sep:comma Src.C_id.pp string))))
+                 (list (box (pair ~sep:comma Src.C_id.pp string))) )
 
         let%expect_test "global scope" =
           test Src.Scope.Global ;

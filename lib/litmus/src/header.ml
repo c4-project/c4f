@@ -112,7 +112,7 @@ end) : Plumbing.Jsonable_types.S with type t = Const.t t = struct
         let%bind post_str =
           Or_error.try_with (fun () -> U.to_string_option json)
         in
-        Tx.Option.With_errors.map_m ~f:Const.parse_post_string post_str)
+        Tx.Option.With_errors.map_m ~f:Const.parse_post_string post_str )
     in
     Result.map_error ~f:Error.to_string_hum result
 

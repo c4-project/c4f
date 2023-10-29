@@ -62,7 +62,7 @@ module Ascii_string = struct
   let quickcheck_generator : t Generator.t =
     Generator.(
       string_of
-        (char_uniform_inclusive (Char.of_int_exn 0) (Char.of_int_exn 127)))
+        (char_uniform_inclusive (Char.of_int_exn 0) (Char.of_int_exn 127)) )
 end
 
 let%test_unit "escape_string/read_string idempotent for ASCII" =
@@ -73,4 +73,4 @@ let%test_unit "escape_string/read_string idempotent for ASCII" =
         [%test_result: string] ~equal:String.equal
           ~here:[[%here]]
           ~expect:s
-          (read_string_from_string (C4f_utils.Lex_utils.escape_string s)) ))
+          (read_string_from_string (C4f_utils.Lex_utils.escape_string s)) ) )

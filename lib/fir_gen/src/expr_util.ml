@@ -40,15 +40,15 @@ let gen_kv_refl (type v a)
       Q.Generator.filter_map gen_load ~f:(fun (l, r) ->
           Option.Let_syntax.(
             let%map kv = Accessor.get_option Fir.Env.Record.known_value r in
-            (l, Fir.Expression.constant kv)) )
+            (l, Fir.Expression.constant kv) ) )
     in
-    gen_op v kv)
+    gen_op v kv )
 
 let div (k : int) (x : 'a Q.Generator.t) : 'a Q.Generator.t =
   Q.Generator.(
     Let_syntax.(
       let%bind size = size in
-      with_size ~size:(size / k) x))
+      with_size ~size:(size / k) x ) )
 
 let half (x : 'a Q.Generator.t) : 'a Q.Generator.t = div 2 x
 

@@ -19,7 +19,6 @@
 
 (* Needed because Base shadows it: *)
 module Ty = Type
-
 open Base
 
 (** {1 Environment records} *)

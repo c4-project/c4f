@@ -52,36 +52,36 @@ let%test_module "can_change" =
     let%expect_test "can change rlx to sc if strengthening" =
       C4f_utils.Io.print_bool
         Src.Mem_order.(
-          can_change Relaxed ~replacement:Seq_cst ~direction:`Strengthen) ;
+          can_change Relaxed ~replacement:Seq_cst ~direction:`Strengthen ) ;
       [%expect {| true |}]
 
     let%expect_test "cannot change rlx to sc if weakening" =
       C4f_utils.Io.print_bool
         Src.Mem_order.(
-          can_change Relaxed ~replacement:Seq_cst ~direction:`Weaken) ;
+          can_change Relaxed ~replacement:Seq_cst ~direction:`Weaken ) ;
       [%expect {| false |}]
 
     let%expect_test "can change rlx to sc if no direction" =
       C4f_utils.Io.print_bool
         Src.Mem_order.(
-          can_change Relaxed ~replacement:Seq_cst ~direction:`Any) ;
+          can_change Relaxed ~replacement:Seq_cst ~direction:`Any ) ;
       [%expect {| true |}]
 
     let%expect_test "cannot change sc to rlx if strengthening" =
       C4f_utils.Io.print_bool
         Src.Mem_order.(
-          can_change Seq_cst ~replacement:Relaxed ~direction:`Strengthen) ;
+          can_change Seq_cst ~replacement:Relaxed ~direction:`Strengthen ) ;
       [%expect {| false |}]
 
     let%expect_test "can change sc to rlx if weakening" =
       C4f_utils.Io.print_bool
         Src.Mem_order.(
-          can_change Seq_cst ~replacement:Relaxed ~direction:`Weaken) ;
+          can_change Seq_cst ~replacement:Relaxed ~direction:`Weaken ) ;
       [%expect {| true |}]
 
     let%expect_test "can change sc to rlx if no direction" =
       C4f_utils.Io.print_bool
         Src.Mem_order.(
-          can_change Seq_cst ~replacement:Relaxed ~direction:`Any) ;
+          can_change Seq_cst ~replacement:Relaxed ~direction:`Any ) ;
       [%expect {| true |}]
   end )

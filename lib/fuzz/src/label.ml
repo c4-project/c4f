@@ -27,7 +27,7 @@ let labels_of_thread (tid : int)
   |> List.filter_map ~f:(fun x ->
          Option.(
            A.(x.@?(C4f_fir.Prim_statement.label))
-           >>| C4f_common.Litmus_id.local tid) )
+           >>| C4f_common.Litmus_id.local tid ) )
 
 let labels_of_test (test : C4f_fir.Litmus.Test.t) :
     Set.M(C4f_common.Litmus_id).t =
@@ -42,4 +42,4 @@ let gen_fresh (set : Set.M(Ac.Litmus_id).t) :
   in
   Base_quickcheck.Generator.(
     Ac.C_id.Human.quickcheck_generator
-    |> filter ~f:(Fn.non (Set.mem flat_set)))
+    |> filter ~f:(Fn.non (Set.mem flat_set)) )

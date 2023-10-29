@@ -47,12 +47,12 @@ module Statset = struct
       =
     Fmt.(
       vbox
-        (using Map.to_alist (list ~sep:sp (hbox (pair ~sep:sp pp_k pp_v)))))
+        (using Map.to_alist (list ~sep:sp (hbox (pair ~sep:sp pp_k pp_v)))) )
 
   let pp_atomic_name (ty : string) : Atomic_class.t Fmt.t =
     Fmt.(
       concat ~sep:(any ".")
-        [any "atomics"; const string ty; using Atomic_class.to_string string])
+        [any "atomics"; const string ty; using Atomic_class.to_string string] )
 
   let pp_atomics (ty : string) : int Map.M(Atomic_class).t Fmt.t =
     pp_map (pp_atomic_name ty) Fmt.int
@@ -60,7 +60,7 @@ module Statset = struct
   let pp_mo_name (ty : string) : Mem_order.t Fmt.t =
     Fmt.(
       concat ~sep:(any ".")
-        [any "mem-orders"; const string ty; using Mem_order.to_string string])
+        [any "mem-orders"; const string ty; using Mem_order.to_string string] )
 
   let pp_mos (ty : string) : int Map.M(Mem_order).t Fmt.t =
     pp_map (pp_mo_name ty) Fmt.int
@@ -74,7 +74,7 @@ module Statset = struct
         ; using expr_atomics (pp_atomics "expression")
         ; using expr_mos (pp_mos "expression")
         ; using stm_atomics (pp_atomics "statement")
-        ; using stm_mos (pp_mos "statement") ])
+        ; using stm_mos (pp_mos "statement") ] )
 end
 
 module Monad = Travesty.State.Make (Statset)
@@ -129,7 +129,7 @@ let probe_atomic_stm (atom : Atomic_statement.t) : unit Monad.t =
       MSMO.iter_m atom ~f:(fun mo ->
           modify
             (Field.map Statset.Fields.stm_mos ~f:(fun map ->
-                 up_mapping map mo ) ) )))
+                 up_mapping map mo ) ) ) ) )
 
 let classify_atomic_expr (atom : _ Atomic_expression.t)
     (m : int Map.M(Atomic_class).t) : int Map.M(Atomic_class).t =
@@ -153,7 +153,7 @@ let probe_atomic_expr (atom : _ Atomic_expression.t) : unit Monad.t =
       MEMO.iter_m atom ~f:(fun mo ->
           modify
             (Field.map Statset.Fields.expr_mos ~f:(fun map ->
-                 up_mapping map mo ) ) )))
+                 up_mapping map mo ) ) ) ) )
 
 let probe_constant (k : Constant.t) : unit Monad.t =
   Monad.when_m (Constant.is_bool k) ~f:(fun () ->
@@ -171,7 +171,7 @@ let probe_expr : Expression.t -> unit Monad.t =
     ~bop:(fun _ l r ->
       Monad.Let_syntax.(
         let%bind () = l in
-        r) )
+        r ) )
     ~uop:(fun _ u -> u)
     ~ternary:(AccM.iter Expr_ternary.exprs ~f:Fn.id)
 
@@ -184,7 +184,7 @@ let probe_prim (s : Prim_statement.t) : unit Monad.t =
     let%bind () = MPExpr.iter_m s ~f:probe_expr in
     Prim_statement.value_map s ~assign:nowt ~atomic:probe_atomic_stm
       ~early_out:probe_early_out ~label:nowt ~goto:nowt ~nop:nowt
-      ~procedure_call:nowt)
+      ~procedure_call:nowt )
 
 module AM = Accessor.Of_monad (struct
   include Monad
@@ -205,7 +205,7 @@ let probe_flow ({body; header} : (unit, unit Monad.t) Flow_block.t) :
     unit Monad.t =
   Monad.Let_syntax.(
     let%bind () = seq_block body in
-    HdrM.iter_m ~f:probe_expr header)
+    HdrM.iter_m ~f:probe_expr header )
 
 let probe_fn_stm : unit Statement.t -> unit Monad.t =
   Statement.reduce
@@ -218,7 +218,7 @@ let probe_fn_stms : unit Statement.t list -> unit Monad.t =
 let probe_fn (fn : unit Function.t) : unit Monad.t =
   Monad.Let_syntax.(
     let%bind () = probe_fn_decls (Function.body_decls fn) in
-    probe_fn_stms (Function.body_stms fn))
+    probe_fn_stms (Function.body_stms fn) )
 
 let probe_named_fn (fn : unit Function.t C4f_common.C_named.t) : unit Monad.t
     =

@@ -29,17 +29,15 @@ let%test_module "running payloads on test subject" =
         ~initial_state:(Lazy.force Fuzz_test.State.Test_data.state)
 
     let sc_action : Fuzz.Path.t Lazy.t =
-      Fuzz.Path.(
-        Fuzz_test.Subject.Test_data.Path.thread_0_stms @@ Stms.stm 0)
+      Fuzz.Path.(Fuzz_test.Subject.Test_data.Path.thread_0_stms @@ Stms.stm 0)
 
     let rlx_action : Fuzz.Path.t Lazy.t =
-      Fuzz.Path.(
-        Fuzz_test.Subject.Test_data.Path.thread_0_stms @@ Stms.stm 2)
+      Fuzz.Path.(Fuzz_test.Subject.Test_data.Path.thread_0_stms @@ Stms.stm 2)
 
     let nest_action : Fuzz.Path.t Lazy.t =
       Fuzz.Path.(
         Fuzz_test.Subject.Test_data.Path.thread_0_stms @@ Stms.in_stm 4
-        @@ Stm.in_if @@ If.in_branch true @@ Stms.stm 0)
+        @@ Stm.in_if @@ If.in_branch true @@ Stms.stm 0 )
 
     let%expect_test "failed SC->RLX" =
       test sc_action C4f_fir.Mem_order.Relaxed false ;

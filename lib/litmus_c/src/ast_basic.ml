@@ -95,7 +95,7 @@ module Array = struct
     Fmt.(
       using
         (fun {array; index} -> (array, index))
-        (pair ~sep:nop ppa (brackets ppi)))
+        (pair ~sep:nop ppa (brackets ppi)) )
 
   module type S = sig
     (** Type of arrays. *)
@@ -186,6 +186,5 @@ module Pointer :
   Ast_basic_types.Ast_node with type t = Type_qual.t list list = struct
   type t = Type_qual.t list list [@@deriving sexp, eq, compare]
 
-  let pp : t Fmt.t =
-    Fmt.(list ~sep:sp (any "*" ++ list ~sep:sp Type_qual.pp))
+  let pp : t Fmt.t = Fmt.(list ~sep:sp (any "*" ++ list ~sep:sp Type_qual.pp))
 end

@@ -59,7 +59,7 @@ struct
     Q.Generator.Let_syntax.(
       let%map wins = B.wins_generator and losses = B.losses_generator in
       let f = Src.Flag.try_make ~wins ~losses in
-      Or_error.ok_exn f)
+      Or_error.ok_exn f )
 
   let quickcheck_shrinker = Q.Shrinker.atomic
 end

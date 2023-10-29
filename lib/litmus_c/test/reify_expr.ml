@@ -31,7 +31,7 @@ let%test_module "examples" =
                 ternary
                   { if_= of_variable_str_exn "b"
                   ; then_= int_lit 2
-                  ; else_= int_lit 3 } }) ;
+                  ; else_= int_lit 3 } } ) ;
       [%expect {| a ? 1 : b ? 2 : 3 |}]
 
     let%expect_test "nested ternary, middle" =
@@ -44,7 +44,7 @@ let%test_module "examples" =
                   { if_= of_variable_str_exn "b"
                   ; then_= int_lit 1
                   ; else_= int_lit 2 }
-            ; else_= int_lit 3 }) ;
+            ; else_= int_lit 3 } ) ;
       [%expect {| a ? b ? 1 : 2 : 3 |}]
 
     let%expect_test "nested ternary, left" =
@@ -57,31 +57,31 @@ let%test_module "examples" =
                   ; then_= int_lit 1
                   ; else_= int_lit 2 }
             ; then_= of_variable_str_exn "b"
-            ; else_= int_lit 3 }) ;
+            ; else_= int_lit 3 } ) ;
       [%expect {| (a ? 1 : 2) ? b : 3 |}]
 
     let%expect_test "subtract bracketing 1" =
       test
         Fir.Expression.(
-          sub (sub (int_lit 1) (int_lit 1)) (sub (int_lit 1) (int_lit 1))) ;
+          sub (sub (int_lit 1) (int_lit 1)) (sub (int_lit 1) (int_lit 1)) ) ;
       [%expect {| 1 - 1 - (1 - 1) |}]
 
     let%expect_test "subtract bracketing 2" =
       test
         Fir.Expression.(
-          sub (sub (sub (int_lit 1) (int_lit 1)) (int_lit 1)) (int_lit 1)) ;
+          sub (sub (sub (int_lit 1) (int_lit 1)) (int_lit 1)) (int_lit 1) ) ;
       [%expect {| 1 - 1 - 1 - 1 |}]
 
     let%expect_test "subtract bracketing 3" =
       test
         Fir.Expression.(
-          sub (int_lit 1) (sub (int_lit 1) (sub (int_lit 1) (int_lit 1)))) ;
+          sub (int_lit 1) (sub (int_lit 1) (sub (int_lit 1) (int_lit 1))) ) ;
       [%expect {| 1 - (1 - (1 - 1)) |}]
 
     let%expect_test "add-subtract bracketing" =
       test
         Fir.Expression.(
-          sub (add (sub (int_lit 1) (int_lit 2)) (int_lit 3)) (int_lit 4)) ;
+          sub (add (sub (int_lit 1) (int_lit 2)) (int_lit 3)) (int_lit 4) ) ;
       [%expect {| 1 - 2 + 3 - 4 |}]
 
     let%expect_test "atomic_load of referenced variable" =
@@ -92,7 +92,7 @@ let%test_module "examples" =
                ~src:
                  (Accessor.construct Address.variable_ref
                     (C4f_common.C_id.of_string "x") )
-               ~mo:Mem_order.Seq_cst )) ;
+               ~mo:Mem_order.Seq_cst ) ) ;
       [%expect {| atomic_load_explicit(&x, memory_order_seq_cst) |}]
   end )
 

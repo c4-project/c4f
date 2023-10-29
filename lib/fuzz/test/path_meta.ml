@@ -104,7 +104,7 @@ let print_flags : Set.M(Src.Path_meta.Flag).t -> unit =
     pr "@[%a@]@."
       (using
          (fun flags -> {Src.Path_meta.flags; anchor= None})
-         Src.Path_meta.pp ))
+         Src.Path_meta.pp ) )
 
 let%test_module "check_contradiction_free" =
   ( module struct
@@ -152,7 +152,7 @@ let%test_module "flags_of_metadata" =
           Generated
             (Gen.make
                ~restrictions:(Set.singleton (module Restriction) Once_only)
-               () )) ;
+               () ) ) ;
       [%expect {| {execute-multi-unsafe} |}]
 
     let%expect_test "once generation" =

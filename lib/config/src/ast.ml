@@ -23,7 +23,7 @@ module Pp_helpers = struct
         (pair ~sep:sp
            (hbox (pp_header ++ any "@ {"))
            (list ~sep:sp pp_directive) )
-      ++ any "@ }")
+      ++ any "@ }" )
 
   let pp_simple_stanza (pp_directive : 'd Fmt.t) : (string * 'd list) Fmt.t =
     pp_stanza_base Fmt.string pp_directive
@@ -63,7 +63,7 @@ module Fuzz = struct
       | Action (id, Some c) ->
           pp_directive Fmt.(pair ~sep:sp Id.pp int) f ("action", (id, c))
       | Action (id, None) -> pp_id_directive f ("action", id)
-      | Set set -> pp_directive Setter.pp f ("set", set))
+      | Set set -> pp_directive Setter.pp f ("set", set) )
 end
 
 module Top = struct
@@ -72,8 +72,7 @@ module Top = struct
   let as_fuzz : t -> Fuzz.t list option = function Fuzz f -> Some f
 
   let pp (f : Formatter.t) : t -> unit =
-    Pp_helpers.(
-      function Fuzz fs -> pp_simple_stanza Fuzz.pp f ("fuzz", fs))
+    Pp_helpers.(function Fuzz fs -> pp_simple_stanza Fuzz.pp f ("fuzz", fs))
 end
 
 type t = (Top.t list[@sexp.list]) [@@deriving sexp]

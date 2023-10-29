@@ -49,4 +49,4 @@ let with_input (src : t) ~(f : Stdio.In_channel.t -> 'a Or_error.t) :
           "While reading from file:" s [%sexp_of: string]
     | Stdin _ ->
         tag ~tag:"While reading from standard input:"
-          (try_with_join (fun _ -> f In_channel.stdin)))
+          (try_with_join (fun _ -> f In_channel.stdin)) )

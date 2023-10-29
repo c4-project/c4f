@@ -23,7 +23,7 @@ module Test_data = struct
                   ~src:(Address.of_variable_str_exn "gen2")
                   ~mo:Mem_order.Seq_cst ) )
           ~dst:(Address.of_variable_str_exn name)
-          ~mo:Mem_order.Seq_cst)
+          ~mo:Mem_order.Seq_cst )
 
   let fadd : Fir.Expression.t Lazy.t =
     lazy
@@ -32,7 +32,7 @@ module Test_data = struct
           atomic_fetch
             (Atomic_fetch.make
                ~obj:(Address.of_variable_str_exn "gen1")
-               ~arg:(Expression.int_lit 0) ~mo:Seq_cst ~op:`Add )))
+               ~arg:(Expression.int_lit 0) ~mo:Seq_cst ~op:`Add ) ) )
 
   let store_fa : Fir.Atomic_store.t Lazy.t =
     lazy
@@ -45,9 +45,9 @@ module Test_data = struct
                   (Atomic_fetch.make
                      ~obj:(Address.of_variable_str_exn "gen1")
                      ~arg:(sub (Lazy.force fadd) (Lazy.force fadd))
-                     ~mo:Seq_cst ~op:`Sub )))
+                     ~mo:Seq_cst ~op:`Sub ) ) )
           ~dst:(Address.of_variable_str_exn "gen1")
-          ~mo:Seq_cst)
+          ~mo:Seq_cst )
 end
 
 let%test_module "atomic.store.insert.int.normal" =
@@ -60,7 +60,7 @@ let%test_module "atomic.store.insert.int.normal" =
       Lazy.Let_syntax.(
         let%bind to_insert = store in
         let%map where = path in
-        Fuzz.Payload_impl.Pathed.make to_insert ~where)
+        Fuzz.Payload_impl.Pathed.make to_insert ~where )
 
     let test_action (store : Fir.Atomic_store.t Lazy.t) :
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
@@ -69,7 +69,7 @@ let%test_module "atomic.store.insert.int.normal" =
         >>= fun () ->
         Src.Atomic_store.Insert.Int_normal.run
           (Lazy.force Fuzz_test.Subject.Test_data.test)
-          ~payload:(Lazy.force (random_state store)))
+          ~payload:(Lazy.force (random_state store)) )
 
     let%test_module "store of load to global" =
       ( module struct
@@ -299,7 +299,7 @@ let%test_module "store.make.int.dead" =
       Lazy.Let_syntax.(
         let%bind to_insert = Test_data.store "gen1" in
         let%map where = path in
-        Fuzz.Payload_impl.Pathed.make to_insert ~where)
+        Fuzz.Payload_impl.Pathed.make to_insert ~where )
 
     let test_action : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Fuzz.State.Monad.(
@@ -307,7 +307,7 @@ let%test_module "store.make.int.dead" =
         >>= fun () ->
         Src.Atomic_store.Insert.Int_dead.run
           (Lazy.force Fuzz_test.Subject.Test_data.test)
-          ~payload:(Lazy.force random_state))
+          ~payload:(Lazy.force random_state) )
 
     let%expect_test "test int store: programs" =
       Fuzz_test.Action.Test_utils.run_and_dump_test test_action
@@ -390,14 +390,14 @@ let%test_module "store.make.int.redundant" =
           Atomic_store.make
             ~src:(Fir.Expression.int_lit 1337)
             ~dst:(Address.of_variable_str_exn "gen1")
-            ~mo:Mem_order.Seq_cst)
+            ~mo:Mem_order.Seq_cst )
 
     let random_state : Src.Atomic_store.Insert.Int_redundant.Payload.t Lazy.t
         =
       Lazy.Let_syntax.(
         let%bind to_insert = redundant_store in
         let%map where = path in
-        Fuzz.Payload_impl.Pathed.make to_insert ~where)
+        Fuzz.Payload_impl.Pathed.make to_insert ~where )
 
     let test_action : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Fuzz.State.Monad.(
@@ -405,7 +405,7 @@ let%test_module "store.make.int.redundant" =
         >>= fun () ->
         Src.Atomic_store.Insert.Int_redundant.run
           (Lazy.force Fuzz_test.Subject.Test_data.test)
-          ~payload:(Lazy.force random_state))
+          ~payload:(Lazy.force random_state) )
 
     let%expect_test "test int store: programs" =
       Fuzz_test.Action.Test_utils.run_and_dump_test test_action
@@ -488,7 +488,7 @@ let%test_module "xchgify" =
       test
         Fuzz.Path.(
           Fuzz_test.Subject.Test_data.Path.thread_0_stms @@ Stms.in_stm 0
-          @@ Stm.this_stm) ;
+          @@ Stm.this_stm ) ;
       [%expect
         {|
       void

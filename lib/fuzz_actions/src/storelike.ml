@@ -79,7 +79,7 @@ struct
           (List.append
              (Lazy.force dst_restrictions)
              (Lazy.force basic_src_restrictions) )
-      + execute_multi_path_filter B.path_filter)
+      + execute_multi_path_filter B.path_filter )
 
   let has_dependency_cycle (to_insert : B.t) : bool =
     (* TODO(@MattWindsor91): this is very heavy-handed; we should permit
@@ -89,9 +89,9 @@ struct
     let srcs = B.src_exprs to_insert in
     Fir.(
       Accessor.(
-        exists (List.each @> Expression_traverse.depended_upon_idents))
+        exists (List.each @> Expression_traverse.depended_upon_idents) )
         ~f:(fun id ->
-          Option.is_some (List.find dsts ~f:(Common.C_id.equal id)) ))
+          Option.is_some (List.find dsts ~f:(Common.C_id.equal id)) ) )
       srcs
 
   (** [apply_once_only to_insert ~path_flags] decides whether [to_insert],
@@ -141,12 +141,12 @@ struct
       Or_error.Let_syntax.(
         let%map () = check_envs src dst in
         filter_for_loop_safety ~path_flags:where.meta.flags
-          (B.gen ~src ~dst ~vars ~tid))
+          (B.gen ~src ~dst ~vars ~tid) )
 
     let gen' (where : Fuzz.Path.With_meta.t) : B.t Fuzz.Payload_gen.t =
       Fuzz.Payload_gen.(
-        let* vars in
-        lift_opt_gen (gen_opt vars ~where))
+        let* vars = vars in
+        lift_opt_gen (gen_opt vars ~where) )
 
     let gen = Fuzz.Payload_impl.Pathed.gen Insert path_filter gen'
   end
@@ -159,7 +159,7 @@ struct
        need not specify those restrictions separately. *)
     Fuzz.Availability.(
       in_var_cap ~after_adding:B.new_local_cap
-      + M.(lift_state path_filter >>= is_filter_constructible ~kind:Insert))
+      + M.(lift_state path_filter >>= is_filter_constructible ~kind:Insert) )
 
   let bookkeep_dst (x : Common.C_id.t) ~(tid : int) : unit Fuzz.State.Monad.t
       =
@@ -168,7 +168,7 @@ struct
         let%bind dst_var = resolve x ~scope:(Local tid) in
         let%bind () = add_write dst_var in
         when_m B.Flags.erase_known_values ~f:(fun () ->
-            erase_var_value dst_var )))
+            erase_var_value dst_var ) ) )
 
   let bookkeep_dsts (xs : Common.C_id.t list) ~(tid : int) :
       unit Fuzz.State.Monad.t =
@@ -192,7 +192,7 @@ struct
       all_unit
         [ bookkeep_new_locals ~tid (B.new_locals item)
         ; bookkeep_dsts ~tid (B.dst_ids item)
-        ; add_expression_dependencies_at_path ~path (B.src_exprs item) ])
+        ; add_expression_dependencies_at_path ~path (B.src_exprs item) ] )
 
   let insert_vars (target : Fuzz.Subject.Test.t)
       ~(new_locals : Fir.Initialiser.t Common.C_named.Alist.t) ~(tid : int) :
@@ -227,7 +227,7 @@ struct
     Or_error.(
       target
       |> Fuzz.Path_consumers.consume ~filter ~path ~action:(Insert stms)
-      >>= insert_vars ~new_locals:(B.new_locals to_insert) ~tid)
+      >>= insert_vars ~new_locals:(B.new_locals to_insert) ~tid )
 
   let run (subject : Fuzz.Subject.Test.t)
       ~(payload : B.t Fuzz.Payload_impl.Pathed.t) :
@@ -241,5 +241,5 @@ struct
            cmpxchg will change and may make the filter overly restrictive. *)
         let%bind filter = peek path_filter in
         let%bind () = do_bookkeeping to_insert ~path in
-        Monadic.return (do_insertions subject ~path ~to_insert ~filter)))
+        Monadic.return (do_insertions subject ~path ~to_insert ~filter) ) )
 end

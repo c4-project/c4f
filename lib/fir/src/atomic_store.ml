@@ -29,7 +29,7 @@ let tuple :
 let quickcheck_observer : t Base_quickcheck.Observer.t =
   Base_quickcheck.Observer.(
     unmap [%quickcheck.observer: Expression.t * Address.t * Mem_order.t]
-      ~f:(Accessor.get tuple))
+      ~f:(Accessor.get tuple) )
 
 let ensure_mo_compat (old : Mem_order.t) (nu : Mem_order.t) : Mem_order.t =
   if Mem_order.is_store_compatible nu then nu else old
@@ -40,7 +40,7 @@ module Base_map (Ap : Applicative.S) = struct
       ~(mo : Mem_order.t -> Mem_order.t Ap.t) : t Ap.t =
     Ap.(
       let m src dst mo = make ~src ~dst ~mo:(ensure_mo_compat x.mo mo) in
-      return m <*> src x.src <*> dst x.dst <*> mo x.mo)
+      return m <*> src x.src <*> dst x.dst <*> mo x.mo )
 end
 
 module On_addresses :
@@ -100,7 +100,7 @@ module Quickcheck_generic
       map
         [%quickcheck.generator:
           Src.t * Dst.t * [%custom Mem_order.gen_store]]
-        ~f:(Accessor.construct tuple))
+        ~f:(Accessor.construct tuple) )
 
   let quickcheck_observer : t Base_quickcheck.Observer.t =
     quickcheck_observer
@@ -109,5 +109,5 @@ module Quickcheck_generic
     Base_quickcheck.Shrinker.(
       map [%quickcheck.shrinker: Src.t * Dst.t * Mem_order.t]
         ~f:(Accessor.construct tuple)
-        ~f_inverse:(Accessor.get tuple))
+        ~f_inverse:(Accessor.get tuple) )
 end

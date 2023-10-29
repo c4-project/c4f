@@ -23,7 +23,7 @@ module Operand_set = struct
   let take_two : t -> (Fir.Expression.t * Fir.Expression.t) Q.Generator.t =
     Q.Generator.(
       function
-      | One x -> return (x, x) | Two (l, r) -> of_list [(l, r); (r, l)])
+      | One x -> return (x, x) | Two (l, r) -> of_list [(l, r); (r, l)] )
 end
 
 let bop_of_const
@@ -33,7 +33,7 @@ let bop_of_const
     ~(lift_k : Fir.Constant.t -> Fir.Expression.t Q.Generator.t) :
     Fir.Expression.t Q.Generator.t =
   Q.Generator.(
-    lift_k k >>| fun ke -> match dir with Left -> f ke x | Right -> f x ke)
+    lift_k k >>| fun ke -> match dir with Left -> f ke x | Right -> f x ke )
 
 let bop_of_rule (rule : Fir.Op_rule.In.t) (ops : Operand_set.t)
     ~(op : Fir.Op.Binary.t)
@@ -44,7 +44,7 @@ let bop_of_rule (rule : Fir.Op_rule.In.t) (ops : Operand_set.t)
     match rule with
     | Refl -> ops |> Operand_set.take_two >>| fun (l, r) -> f l r
     | Const (dir, k) ->
-        ops |> Operand_set.take_one >>= bop_of_const f ~dir ~k ~lift_k)
+        ops |> Operand_set.take_one >>= bop_of_const f ~dir ~k ~lift_k )
 
 let rulesi :
     ( (Fir.Op.Binary.t * int) * 'a -> Fir.Op_rule.t -> Fir.Op_rule.t
@@ -55,7 +55,7 @@ let rulesi :
     many_getteri (fun op ->
         op |> Fir.Op.Binary.rules
         |> Base.List.mapi ~f:(fun i r -> Many_getter.access ((op, i), r))
-        |> Many_getter.of_list ))
+        |> Many_getter.of_list ) )
 
 let in_rulesi (out : Fir.Op_rule.Out.t) :
     ( (Fir.Op.Binary.t * int) * 'a -> Fir.Op_rule.In.t -> Fir.Op_rule.In.t

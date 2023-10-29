@@ -24,7 +24,7 @@ let%test_module "algebraic properties" =
       Or_error.(
         expr
         |> Src.Expression_eval.as_constant ~env:(Src.Heap.empty ())
-        >>= Src.Constant.as_int)
+        >>= Src.Constant.as_int )
 
     let test_int_result got ~expect ~here =
       [%test_result: int Or_error.t] got ~expect:(Ok expect) ~here:[here]

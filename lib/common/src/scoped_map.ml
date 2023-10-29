@@ -60,7 +60,7 @@ let find_by_litmus_id (type a) (m : a t) ~(id : Litmus_id.t) : a Or_error.t =
                (create_s
                   [%message
                     "Litmus identifier doesn't match any in the map"
-                      ~(id : Litmus_id.t)] ) ))
+                      ~id:(id : Litmus_id.t)] ) ) )
 
 let resolve (vars : _ t) ~(id : C_id.t) ~(scope : Scope.t) : Litmus_id.t =
   let global_id = Litmus_id.global id in
@@ -96,4 +96,4 @@ let pp (type a) (pp_val : a Fmt.t) : a t Fmt.t =
     using Map.to_alist
       (list ~sep:cut
          (box ~indent:1
-            (pair ~sep:(any ":@ ") (styled `Yellow Litmus_id.pp) pp_val) ) ))
+            (pair ~sep:(any ":@ ") (styled `Yellow Litmus_id.pp) pp_val) ) ) )

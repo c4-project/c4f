@@ -26,13 +26,12 @@ let%test_module "On_lvalues" =
           { init=
               Some
                 Assign.(
-                  Lvalue.of_variable_str_exn "x" @= Expression.int_lit 0)
-          ; cmp=
-              Some Expression.(Infix.(of_variable_str_exn "x" < int_lit 5))
+                  Lvalue.of_variable_str_exn "x" @= Expression.int_lit 0 )
+          ; cmp= Some Expression.(Infix.(of_variable_str_exn "x" < int_lit 5))
           ; update=
               Some
                 (Assign.make ~dst:(Lvalue.of_variable_str_exn "x") ~src:Inc)
-          })
+          } )
 
     let fb =
       Src.Flow_block.make ~header ~body:(Src.Block.make ~metadata:() ())
@@ -241,17 +240,17 @@ let%test_module "for loop simplification" =
               Flow_block.For.make
                 ~init:
                   Assign.(
-                    Lvalue.of_variable_str_exn "x" @= Expression.int_lit 0)
+                    Lvalue.of_variable_str_exn "x" @= Expression.int_lit 0 )
                 ~cmp:
                   Expression.(
                     Infix.(
                       Expression.of_variable_str_exn "x"
-                      < Expression.int_lit 42))
+                      < Expression.int_lit 42 ) )
                 ~update:
                   (Assign.make
                      ~dst:(Lvalue.of_variable_str_exn "x")
                      ~src:Inc )
-                ()) ;
+                () ) ;
           [%expect
             {|
       (Ok
@@ -277,7 +276,7 @@ let%test_module "for loop simplification" =
               <*> map ~f:C4f_fir.Expression.int_lit
                     small_strictly_positive_int
               <*> C4f_fir.Flow_block.For.Simple.Direction
-                  .quickcheck_generator)
+                  .quickcheck_generator )
 
           let quickcheck_shrinker : t Base_quickcheck.Shrinker.t =
             Base_quickcheck.Shrinker.atomic
@@ -287,5 +286,5 @@ let%test_module "for loop simplification" =
             ~here:[[%here]]
             ~expect:(Some t)
             Accessor.(
-              C4f_fir.Flow_block.For.((construct simple t).@?(simple))) )
+              C4f_fir.Flow_block.For.((construct simple t).@?(simple)) ) )
   end )

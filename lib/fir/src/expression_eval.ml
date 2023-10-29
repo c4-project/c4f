@@ -18,12 +18,12 @@ type mu = expr -> Constant.t Heap.Monad.t
 let expr_as_bool (x : expr) ~(mu : mu) : bool Heap.Monad.t =
   Heap.Monad.Let_syntax.(
     let%bind const = mu x in
-    Heap.Monad.Monadic.return (Constant.convert_as_bool const))
+    Heap.Monad.Monadic.return (Constant.convert_as_bool const) )
 
 let expr_as_int (x : expr) ~(mu : mu) : int Heap.Monad.t =
   Heap.Monad.Let_syntax.(
     let%bind const = mu x in
-    Heap.Monad.Monadic.return (Constant.convert_as_int const))
+    Heap.Monad.Monadic.return (Constant.convert_as_int const) )
 
 let logical_op_sv : Op.Binary.Logical.t -> bool = function
   | And -> false
@@ -36,7 +36,7 @@ let eval_logical (op : Op.Binary.Logical.t) (l : expr) (r : expr) ~(mu : mu)
     let short_value = logical_op_sv op in
     if Bool.equal l_value short_value then
       Heap.Monad.return (Constant.bool l_value)
-    else mu r)
+    else mu r )
 
 let bool_rel_op_sem : Op.Binary.Rel.t -> bool -> bool -> bool = function
   | Eq -> Bool.( = )
@@ -70,14 +70,14 @@ let eval_rel' (op : Op.Binary.Rel.t) (l_const : Constant.t)
     (r_const : Constant.t) : Constant.t Or_error.t =
   Or_error.Let_syntax.(
     let%map v = rel_op_sem op l_const r_const in
-    Constant.bool v)
+    Constant.bool v )
 
 let eval_rel (op : Op.Binary.Rel.t) (l : expr) (r : expr) ~(mu : mu) :
     Constant.t Heap.Monad.t =
   Heap.Monad.Let_syntax.(
     let%bind l_const = mu l in
     let%bind r_const = mu r in
-    Heap.Monad.Monadic.return (eval_rel' op l_const r_const))
+    Heap.Monad.Monadic.return (eval_rel' op l_const r_const) )
 
 let eval_int_op (op : 'a) (l : expr) (r : expr)
     ~(op_sem : 'a -> int -> int -> int) ~(mu : mu) : Constant.t Heap.Monad.t
@@ -85,7 +85,7 @@ let eval_int_op (op : 'a) (l : expr) (r : expr)
   Heap.Monad.Let_syntax.(
     let%map l_int = expr_as_int ~mu l and r_int = expr_as_int ~mu r in
     let o_int = op_sem op l_int r_int in
-    Constant.int o_int)
+    Constant.int o_int )
 
 let arith_op_sem : Op.Binary.Arith.t -> int -> int -> int = function
   | Add -> ( + )
@@ -136,7 +136,7 @@ let eval_atomic_cmpxchg (c : Expression.t Atomic_cmpxchg.t) ~(mu : mu) :
       if equal then Heap.Monad.store obj des_c
       else Heap.Monad.store c.expected obj_c
     in
-    Constant.bool equal)
+    Constant.bool equal )
 
 let atomic_fetch_op ~(op : Op.Fetch.t) ~(obj_old : Constant.t)
     ~(arg : Expression.t) : Expression.t =
@@ -153,7 +153,7 @@ let eval_atomic_fetch ({obj; arg; op; _} : Expression.t Atomic_fetch.t)
     let obj_new_expr = atomic_fetch_op ~op ~obj_old ~arg in
     let%bind obj_new = mu obj_new_expr in
     let%map () = Heap.Monad.store obj obj_new in
-    obj_old)
+    obj_old )
 
 let eval_atomic_load (atomic_load : Atomic_load.t) : Constant.t Heap.Monad.t
     =
@@ -170,7 +170,7 @@ let eval_ternary ({if_; then_; else_} : Expression.t Expr_ternary.t)
     Let_syntax.(
       let%bind ifc = mu if_ in
       if%bind Monadic.return (Constant.convert_as_bool ifc) then mu then_
-      else mu else_))
+      else mu else_ ) )
 
 let as_constant (expr : expr) ~(env : Heap.t) : Constant.t Or_error.t =
   let rec mu (e : Expression.t) : Constant.t Heap.Monad.t =

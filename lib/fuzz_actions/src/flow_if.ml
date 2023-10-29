@@ -53,7 +53,7 @@ module Transform = struct
       Or_error.error_s
         [%message
           "Tried to if-invert an invalid statement"
-            ~(stm : Fuzz.Subject.Statement.t)]
+            ~stm:(stm : Fuzz.Subject.Statement.t)]
 
     module Bm = Fir.Statement_traverse.Base_map (Or_error)
 
@@ -166,7 +166,7 @@ module Surround = struct
     let path_filter : Fuzz.Path_filter.t =
       Fuzz.Path_filter.(
         require_end_check
-          (Stm_class (Has_not_any, [Fir.Statement_class.label])))
+          (Stm_class (Has_not_any, [Fir.Statement_class.label])) )
   end)
 
   module Tautology : S = Make (struct

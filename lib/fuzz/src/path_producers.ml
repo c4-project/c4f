@@ -60,7 +60,7 @@ module Block = struct
     let ctx = Path_context.update_anchor ctx ~span in
     Or_error.Let_syntax.(
       let%map () = Path_context.check_anchor ctx in
-      Path_context.lift_path ~path ctx)
+      Path_context.lift_path ~path ctx )
 
   module Self_insert = struct
     let produce_at_pos (pos : int) ~(ctx : ctx) : Path.Stms.t t =
@@ -80,7 +80,7 @@ module Block = struct
            list. *)
         Sequence.range 0 ~start:`inclusive (List.length stms)
           ~stop:`inclusive
-        |> Sequence.bind ~f:(produce_at_pos ~ctx))
+        |> Sequence.bind ~f:(produce_at_pos ~ctx) )
   end
 
   module Self_transform_list = struct
@@ -101,7 +101,7 @@ module Block = struct
         let%bind stm = List.nth stms (i + width) in
         let%bind () = Result.ok (Path_context.check_filter_stm ctx ~stm) in
         let%map r = make_on_range i width' ~ctx in
-        (r, width'))
+        (r, width') )
 
     (** [from i ~stms ~ctx] produces a statement-list path sequence producing
         every valid transform-list path targeting statement list [stms] and
@@ -126,7 +126,7 @@ module Block = struct
         let len = List.length stms in
         let indices = List.range 0 ~start:`inclusive len ~stop:`inclusive in
         let seqs = List.map indices ~f:(from ~stms ~ctx) in
-        Sequence.round_robin seqs)
+        Sequence.round_robin seqs )
   end
 
   (** [in_stm i s ~mu ~ctx] produces a statement-list path sequence recursing
@@ -232,7 +232,7 @@ module Stm = struct
   let self (stm : Subject.Statement.t) ~(ctx : ctx) : Path.Stm.t t =
     Sequence.(
       lift_err (Path_context.check_end ctx ~stms:[stm])
-      >>| fun () -> Path_context.lift_path ctx ~path:Path.Stm.this_stm)
+      >>| fun () -> Path_context.lift_path ctx ~path:Path.Stm.this_stm )
 
   let recursive (s : Subject.Statement.t) ~(mu : mu) ~(ctx : ctx) :
       Path.Stm.t t =
@@ -253,7 +253,7 @@ let thread (tid : int) (s : Subject.Thread.t) ~(ctx : ctx) : Path.t t =
     >>= fun () ->
     s.stms
     |> Block.produce_stms ~ctx ~mu:Stm.produce
-    |> map_path ~f:(Fn.compose (Path.in_thread tid) Path.Thread.in_stms))
+    |> map_path ~f:(Fn.compose (Path.in_thread tid) Path.Thread.in_stms) )
 
 let produce (test : Subject.Test.t) ~(ctx : ctx) : Path.t t =
   test |> C4f_litmus.Test.Raw.threads

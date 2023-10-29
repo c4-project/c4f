@@ -32,7 +32,7 @@ let%test_module "Pool making" =
         Or_error.(
           Src.Config.make_pool conf pmap ~random
           >>= Src.Action_pool.pick_many ~max:10 ~random
-          >>| fst)
+          >>| fst )
       in
       Utils.My_format.fdump Stdio.stdout
         Fmt.(
@@ -41,7 +41,7 @@ let%test_module "Pool making" =
               (list ~sep:comma
                  (using
                     (fun (module A : Fuzz.Action_types.S) -> A.name)
-                    Common.Id.pp ) ))
+                    Common.Id.pp ) ) )
         result
 
     let%expect_test "always pick" =

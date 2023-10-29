@@ -108,7 +108,7 @@ let%test_module "SBSC example" =
         Or_error.Let_syntax.(
           test
           |> Test.Raw.add_thread ~index:0 ~thread:"<NEW THREAD>"
-          >>= Test.Raw.remove_thread ~index:0) ;
+          >>= Test.Raw.remove_thread ~index:0 ) ;
       [%expect
         {|
       (Ok

@@ -22,14 +22,14 @@ let print_aux : C4f_delitmus.Output.t -> unit =
     pr
       "@[<v>@ /* --Begin auxiliary output--@ @ %a@ @ --End auxiliary \
        output-- */@]@."
-      (using C4f_delitmus.Output.aux C4f_delitmus.Aux.pp))
+      (using C4f_delitmus.Output.aux C4f_delitmus.Aux.pp) )
 
 let summarise_config (config : C4f_delitmus.Config.t) : unit =
   C4f_delitmus.Config.(
     printf "//\n// style: %s\n// qualify-locals: %b\n// suffix: %s\n//\n\n"
       (Style.to_string (style config))
       (qualify_locals config)
-      (Option.value (impl_suffix config) ~default:"(none)"))
+      (Option.value (impl_suffix config) ~default:"(none)") )
 
 let delitmus_file_with_config (config : C4f_delitmus.Config.t)
     ~(path : Fpath.t) : unit Or_error.t =
@@ -40,7 +40,7 @@ let delitmus_file_with_config (config : C4f_delitmus.Config.t)
         (Plumbing.Input.of_fpath path)
         Plumbing.Output.stdout
     in
-    print_aux output)
+    print_aux output )
 
 let configs_to_try : C4f_delitmus.Config.t list Lazy.t =
   lazy

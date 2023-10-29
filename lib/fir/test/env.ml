@@ -47,13 +47,13 @@ let lift_to_full (e : Src.Type.t Map.M(Ac.C_id).t Lazy.t) : Src.Env.t Lazy.t
     =
   Lazy.Let_syntax.(
     let%map e = e and d = det_known_values in
-    Src.Env.of_maps e d)
+    Src.Env.of_maps e d )
 
 let test_env : Src.Env.t Lazy.t = lift_to_full test_typing
 
 let test_typing_atomic_ptrs_only : Src.Type.t Map.M(Ac.C_id).t Lazy.t =
   Lazy.(
-    test_typing >>| Map.filter ~f:Src.Type.(Tx.Fn.(is_pointer &&& is_atomic)))
+    test_typing >>| Map.filter ~f:Src.Type.(Tx.Fn.(is_pointer &&& is_atomic)) )
 
 let test_env_atomic_ptrs_only : Src.Env.t Lazy.t =
   lift_to_full test_typing_atomic_ptrs_only

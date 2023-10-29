@@ -11,7 +11,6 @@
 
 (* Needed because Base shadows it: *)
 module Ty = Type
-
 open Base
 
 module Unary = struct
@@ -33,7 +32,7 @@ module Binary = struct
         | Eq | Le | Ge ->
             [Refl @-> Const Constant.truth (* x == x -> true, etc. *)]
         | Ne | Lt | Gt ->
-            [Refl @-> Const Constant.falsehood (* x != x -> false, etc. *)])
+            [Refl @-> Const Constant.falsehood (* x != x -> false, etc. *)] )
   end
 
   module Arith = struct
@@ -48,7 +47,7 @@ module Binary = struct
             ; In.zero Right @-> Idem (* x + 0 -> x *) ]
         | Sub ->
             [ In.zero Right @-> Idem (* x - 0 -> x *)
-            ; Refl @-> Out.zero (* x - x -> 0 *) ])
+            ; Refl @-> Out.zero (* x - x -> 0 *) ] )
   end
 
   module Bitwise = struct
@@ -76,7 +75,7 @@ module Binary = struct
         | Xor ->
             [ In.zero Left @-> Idem (* 0^x -> x *)
             ; In.zero Right @-> Idem (* x^0 -> x *)
-            ; Refl @-> Out.zero (* x^x -> 0 *) ])
+            ; Refl @-> Out.zero (* x^x -> 0 *) ] )
   end
 
   module Logical = struct
@@ -97,7 +96,7 @@ module Binary = struct
             ; In.false_ Right @-> Idem (* x||false -> x *)
             ; In.true_ Left @-> Out.true_ (* true||x -> true *)
             ; In.true_ Right @-> Out.true_ (* x||true -> true *)
-            ; Refl @-> Idem (* x&&x -> x *) ])
+            ; Refl @-> Idem (* x&&x -> x *) ] )
   end
 
   type t =

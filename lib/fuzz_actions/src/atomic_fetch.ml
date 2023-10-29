@@ -267,7 +267,7 @@ module Cond_insert = struct
         in
         let arg = Fir.Expression.int_lit arg_k in
         let target = Fir.Expression.int_lit target_k in
-        {fetch= Fir.Atomic_fetch.make ~obj ~arg ~mo ~op; comparator; target})
+        {fetch= Fir.Atomic_fetch.make ~obj ~arg ~mo ~op; comparator; target} )
   end)
 
   module Negated_addend : S = Make (struct
@@ -288,7 +288,7 @@ module Cond_insert = struct
         in
         (* Trying to avoid an underflow/overflow by always moving away from
            the sign of the known value. *)
-        if kv >= 0 then (`Sub, v, rel, v) else (`Add, v, rel, neg v))
+        if kv >= 0 then (`Sub, v, rel, v) else (`Add, v, rel, neg v) )
   end)
 
   module Boundary : S = Make (struct

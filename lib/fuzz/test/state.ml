@@ -19,5 +19,5 @@ module Test_data = struct
   let state : Src.State.t Lazy.t =
     Lazy.Let_syntax.(
       let%map vars = Var.Test_data.test_map in
-      Src.State.make ~vars ())
+      Src.State.make ~vars () )
 end

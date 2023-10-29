@@ -37,7 +37,7 @@ let%test_module "test runs" =
                   Fir.(
                     Expression.atomic_load
                       (Atomic_load.make ~mo:Seq_cst
-                         ~src:(Address.of_variable_str_exn "x") )) }
+                         ~src:(Address.of_variable_str_exn "x") ) ) }
           ; where= Lazy.force Fuzz_test.Subject.Test_data.Path.insert_live }
 
         let action = Ins.run test ~payload
@@ -115,7 +115,7 @@ let%test_module "test runs" =
                 Fir.(
                   Expression.atomic_load
                     (Atomic_load.make ~mo:Seq_cst
-                       ~src:(Address.of_variable_str_exn "x") )) }
+                       ~src:(Address.of_variable_str_exn "x") ) ) }
             ~where:
               (Lazy.force Fuzz_test.Subject.Test_data.Path.surround_atomic)
 

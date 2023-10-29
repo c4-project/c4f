@@ -109,7 +109,7 @@ module Needs_brackets = struct
            left-associative, if the inner binary is appearing on the LHS of
            the outer binary. *)
         Operators.Bin.(
-          binds_tighter o ~than:o' || (binds_same o o' && not is_left))
+          binds_tighter o ~than:o' || (binds_same o o' && not is_left) )
 
   let ternary_if (x : Ast.Expr.t) : bool =
     (* The only thing that binds looser than a ternary is another ternary. *)
@@ -147,7 +147,7 @@ let ternary ({if_; then_; else_} : Ast.Expr.t Fir.Expr_ternary.t) :
 let reify (x : Fir.Expression.t) : Ast.Expr.t =
   let atomic = Reify_atomic.reify_expr ~expr:Fn.id in
   Reify_prim.(
-    Fir.Expression.reduce x ~constant ~address ~atomic ~bop ~uop ~ternary)
+    Fir.Expression.reduce x ~constant ~address ~atomic ~bop ~uop ~ternary )
 
 let pp : Fir.Expression.t Fmt.t = Fmt.using reify Ast.Expr.pp
 

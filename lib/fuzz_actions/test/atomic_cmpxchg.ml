@@ -41,7 +41,7 @@ let%test_module "cmpxchg.make.int.succeed" =
       Lazy.Let_syntax.(
         let%bind to_insert = Test_data.cmpxchg_payload in
         let%map where = Fuzz_test.Subject.Test_data.Path.insert_live in
-        Fuzz.Payload_impl.Pathed.make to_insert ~where)
+        Fuzz.Payload_impl.Pathed.make to_insert ~where )
 
     let test_action : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Fuzz.State.Monad.(
@@ -49,7 +49,7 @@ let%test_module "cmpxchg.make.int.succeed" =
         >>= fun () ->
         Src.Atomic_cmpxchg.Insert.Int_succeed.run
           (Lazy.force Fuzz_test.Subject.Test_data.test)
-          ~payload:(Lazy.force random_state))
+          ~payload:(Lazy.force random_state) )
 
     let%expect_test "programs" =
       Fuzz_test.Action.Test_utils.run_and_dump_test test_action
@@ -126,7 +126,7 @@ let%test_module "cmpxchg.make.int.succeed" =
       Lazy.Let_syntax.(
         let%bind to_insert = Test_data.cmpxchg_payload in
         let%map where = Fuzz_test.Subject.Test_data.Path.insert_dead in
-        Fuzz.Payload_impl.Pathed.make to_insert ~where)
+        Fuzz.Payload_impl.Pathed.make to_insert ~where )
 
     let test_action_dead : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Fuzz.State.Monad.(
@@ -134,7 +134,7 @@ let%test_module "cmpxchg.make.int.succeed" =
         >>= fun () ->
         Src.Atomic_cmpxchg.Insert.Int_succeed.run
           (Lazy.force Fuzz_test.Subject.Test_data.test)
-          ~payload:(Lazy.force payload_dead))
+          ~payload:(Lazy.force payload_dead) )
 
     let%expect_test "in dead-code" =
       Fuzz_test.Action.Test_utils.run_and_dump_test test_action_dead

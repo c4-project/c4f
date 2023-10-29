@@ -21,7 +21,7 @@ module Test_data = struct
           @= Expression.atomic_load
                (Atomic_load.make
                   ~src:(Address.of_variable_str_exn "gen2")
-                  ~mo:Mem_order.Seq_cst )))
+                  ~mo:Mem_order.Seq_cst ) ) )
 end
 
 let%test_module "assign.insert.int.normal" =
@@ -34,7 +34,7 @@ let%test_module "assign.insert.int.normal" =
       Lazy.Let_syntax.(
         let%bind to_insert = store in
         let%map where = path in
-        Fuzz.Payload_impl.Pathed.make to_insert ~where)
+        Fuzz.Payload_impl.Pathed.make to_insert ~where )
 
     let test_action (store : Fir.Assign.t Lazy.t) :
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
@@ -43,7 +43,7 @@ let%test_module "assign.insert.int.normal" =
         >>= fun () ->
         Src.Var_assign.Insert.Int_normal.run
           (Lazy.force Fuzz_test.Subject.Test_data.test)
-          ~payload:(Lazy.force (random_state store)))
+          ~payload:(Lazy.force (random_state store)) )
 
     let%test_module "store of load to global" =
       ( module struct
@@ -190,7 +190,7 @@ let%test_module "assign.insert.int.normal" =
           Lazy.Let_syntax.(
             let%bind to_insert = Test_data.store "gen3" in
             let%map where = path in
-            Fuzz.Payload_impl.Pathed.make to_insert ~where)
+            Fuzz.Payload_impl.Pathed.make to_insert ~where )
 
         let test_action : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
           Fuzz.State.Monad.(
@@ -198,7 +198,7 @@ let%test_module "assign.insert.int.normal" =
             >>= fun () ->
             Src.Var_assign.Insert.Int_dead.run
               (Lazy.force Fuzz_test.Subject.Test_data.test)
-              ~payload:(Lazy.force random_state))
+              ~payload:(Lazy.force random_state) )
 
         let%expect_test "test int store: programs" =
           Fuzz_test.Action.Test_utils.run_and_dump_test test_action
@@ -274,14 +274,14 @@ let%test_module "assign.insert.int.normal" =
             Fir.(
               Assign.(
                 Lvalue.of_variable_str_exn "gen3"
-                @= Fir.Expression.int_lit 1998))
+                @= Fir.Expression.int_lit 1998 ) )
 
         let random_state :
             Src.Var_assign.Insert.Int_redundant.Payload.t Lazy.t =
           Lazy.Let_syntax.(
             let%bind to_insert = redundant_store in
             let%map where = path in
-            Fuzz.Payload_impl.Pathed.make to_insert ~where)
+            Fuzz.Payload_impl.Pathed.make to_insert ~where )
 
         let test_action : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
           Fuzz.State.Monad.(
@@ -289,7 +289,7 @@ let%test_module "assign.insert.int.normal" =
             >>= fun () ->
             Src.Var_assign.Insert.Int_redundant.run
               (Lazy.force Fuzz_test.Subject.Test_data.test)
-              ~payload:(Lazy.force random_state))
+              ~payload:(Lazy.force random_state) )
 
         let%expect_test "test int store: programs" =
           Fuzz_test.Action.Test_utils.run_and_dump_test test_action

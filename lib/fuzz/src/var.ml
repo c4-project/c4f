@@ -36,13 +36,13 @@ module Record = struct
       Fmt.(
         using
           (Accessor.get (env_record @> Fir.Env.Record.type_of))
-          (of_to_string Fir.Type.to_string))
+          (of_to_string Fir.Type.to_string) )
 
     let pp_kv : t Fmt.t =
       Fmt.(
         using
           (Accessor.get (env_record @> Fir.Env.Record.known_value_opt))
-          (any "=" ++ option ~none:(any "?") Fir.Constant.pp))
+          (any "=" ++ option ~none:(any "?") Fir.Constant.pp) )
 
     let pp_scope : t Fmt.t =
       Fmt.(using (Accessor.get scope) (any "@@" ++ Common.Scope.pp))
@@ -127,7 +127,7 @@ module Map = struct
       test |> Fir.Litmus.Var.make_alist
       >>| List.map ~f:(fun (id, {Fir.Litmus.Var.Record.ty; _}) ->
               (id, make_existing_record id ty) )
-      >>= C4f_common.Scoped_map.of_litmus_id_alist)
+      >>= C4f_common.Scoped_map.of_litmus_id_alist )
 
   let register_var ?(initial_value : Fir.Constant.t option) (map : t)
       (id : Common.Litmus_id.t) (ty : Fir.Type.t) : t =
@@ -153,7 +153,7 @@ module Map = struct
     Or_error.error_s
       [%message
         "Tried to erase the known value of a depended-upon variable"
-          ~(var : Common.Litmus_id.t)]
+          ~var:(var : Common.Litmus_id.t)]
 
   let erase_value (map : t) ~(id : Common.Litmus_id.t) : t Or_error.t =
     Or_error.Let_syntax.(
@@ -161,7 +161,7 @@ module Map = struct
         Tx.Or_error.when_m (has_dependencies map ~id) ~f:(fun () ->
             dependency_error id )
       in
-      erase_value_inner map ~id)
+      erase_value_inner map ~id )
 
   let records_satisfying_all (vars : t) ~(scope : Common.Scope.t)
       ~(predicates : (Record.t -> bool) list) : Record.t Map.M(Common.C_id).t
@@ -225,5 +225,5 @@ module Map = struct
         ~init:(existing, []) ~bind ~return ~f:(fun (existing, vs) _ ->
           gen_fresh_var' (Set.mem existing)
           >>| fun v -> (Set.add existing v, v :: vs) )
-      >>| snd)
+      >>| snd )
 end

@@ -23,7 +23,7 @@ module Data = struct
   let global : Src.Global.t Lazy.t =
     Lazy.Let_syntax.(
       let%map fuzz = fuzz in
-      Src.Global.make ~fuzz ())
+      Src.Global.make ~fuzz () )
 end
 
 let%test_module "accessors" =

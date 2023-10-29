@@ -41,8 +41,8 @@ module Block = struct
     Or_error.error_s
       [%message
         "Final block of path doesn't match filter"
-          ~(block : t)
-          ~(template : t)]
+          ~block:(block : t)
+          ~template:(template : t)]
 
   let match_req (block : t) ~(template : t) : unit Or_error.t =
     match (template, block) with
@@ -86,11 +86,12 @@ module End_check = struct
       | Has_no_expressions_of_class templates ->
           not
             (Subject.Statement.On_expressions.exists stm
-               ~f:(C4f_fir.Expression_class.rec_matches_any ~templates) ))
+               ~f:(C4f_fir.Expression_class.rec_matches_any ~templates) ) )
 
   let check (check : t) ~(stm : Subject.Statement.t) : unit Or_error.t =
     Tx.Or_error.unless_m (is_ok check ~stm) ~f:(fun () ->
-        Or_error.error_s [%message "Statement failed check" ~(check : t)] )
+        Or_error.error_s
+          [%message "Statement failed check" ~check:(check : t)] )
 end
 
 type t =
@@ -188,7 +189,7 @@ let check_thread_ok ({threads; _} : t) ~(thread : int) : unit Or_error.t =
     Or_error.error_s
       [%message
         "Thread not allowed by filter"
-          ~(thread : int)
+          ~thread:(thread : int)
           ~allowed:(threads : Set.M(Int).t option)]
 
 let check_req (filter : t) ~(meta : Path_meta.t) : unit Or_error.t =
@@ -198,7 +199,7 @@ let check_req (filter : t) ~(meta : Path_meta.t) : unit Or_error.t =
        where we have all of the flags that will be enabled on the path. *)
     let%bind _ = Path_meta.check_contradiction_free meta in
     error_of_flags ~polarity:"required"
-      (Set.diff filter.req_meta.flags meta.flags))
+      (Set.diff filter.req_meta.flags meta.flags) )
 
 let check_not (filter : t) ~(meta : Path_meta.t) : unit Or_error.t =
   error_of_flags ~polarity:"forbidden"

@@ -239,8 +239,7 @@ let%test_module "sample path output on example code" =
         Thread[1].Stms.Stm[1].If.False.Stm[0].This {in-dead-code}[F] |}]
 
     let%expect_test "transform with filtering to direct loops" =
-      test Transform
-        Src.Path_filter.(ends_in_block (Flow (Some (Loop None)))) ;
+      test Transform Src.Path_filter.(ends_in_block (Flow (Some (Loop None)))) ;
       [%expect
         {|
         Thread[0].Stms.Stm[5].Flow.Body.Stm[0].This {in-loop}[F]
@@ -367,7 +366,7 @@ let%test_module "sample path output on example code" =
       (* TODO(@MattWindsor91): should this be excluding [0, 0]? *)
       test Transform_list
         Src.Path_filter.(
-          require_end_check (Stm_class (Is_not_any, [Prim (Some Label)]))) ;
+          require_end_check (Stm_class (Is_not_any, [Prim (Some Label)])) ) ;
       [%expect
         {|
               Thread[0].Stms.Stm[3].If.False.Range[0, 0] {in-dead-code}[F]
@@ -391,7 +390,7 @@ let%test_module "sample path output on example code" =
     let%expect_test "transform-list with filtering to recursive non-labels" =
       test Transform_list
         Src.Path_filter.(
-          require_end_check (Stm_class (Has_not_any, [Prim (Some Label)]))) ;
+          require_end_check (Stm_class (Has_not_any, [Prim (Some Label)])) ) ;
       [%expect
         {|
               Thread[0].Stms.Stm[3].If.False.Range[0, 0] {in-dead-code}[F]

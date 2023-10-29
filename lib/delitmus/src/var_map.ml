@@ -46,7 +46,7 @@ let lookup_and_require_global (map : t) ~(id : Common.Litmus_id.t) :
         [%message
           "Litmus identifier was mapped to something other than a global \
            variable"
-            ~(id : Common.Litmus_id.t)])
+            ~id:(id : Common.Litmus_id.t)] )
 
 let lookup_and_require_param (map : t) ~(id : Common.Litmus_id.t) :
     Common.C_id.t Or_error.t =
@@ -57,7 +57,7 @@ let lookup_and_require_param (map : t) ~(id : Common.Litmus_id.t) :
       Or_error.error_s
         [%message
           "Litmus identifier was mapped to something other than a param"
-            ~(id : Common.Litmus_id.t)])
+            ~id:(id : Common.Litmus_id.t)] )
 
 let to_param_opt (lit_id : Common.Litmus_id.t) (rc : Record.t) :
     (int * (Common.Litmus_id.t * Record.t)) option =
@@ -83,7 +83,7 @@ let params_for_thread (vmap : t) (tid : int) :
 let globally_mapped_vars : t -> (Common.Litmus_id.t, Record.t) List.Assoc.t =
   Tx.Fn.Compose_syntax.(
     Common.Scoped_map.filter ~f:Record.mapped_to_global
-    >> Common.Scoped_map.to_litmus_id_map >> Map.to_alist)
+    >> Common.Scoped_map.to_litmus_id_map >> Map.to_alist )
 
 let global_c_variables : t -> Set.M(Common.C_id).t =
   Common.Scoped_map.build_set

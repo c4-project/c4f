@@ -33,7 +33,7 @@ let add_flags (x : 'k t) (flags : Set.M(Path_meta.Flag).t) : 'k t Or_error.t
     (* TODO(@MattWindsor91): push meta further down. *)
     let meta = Path_meta.add_flags x.meta ~flags in
     let%map () = Path_filter.check_not x.filter ~meta in
-    {x with meta})
+    {x with meta} )
 
 let check_anchor (x : 'k t) : unit Or_error.t =
   Path_filter.check_anchor x.filter ?anchor:x.meta.anchor
@@ -57,7 +57,7 @@ let check_end (x : 'k t) ~(stms : Subject.Statement.t list) : unit Or_error.t
     all_unit
       [ tag (check_filter_req x) ~tag:"while checking flags"
       ; tag (check_filter_stms x ~stms) ~tag:"while checking statements"
-      ; tag (check_anchor x) ~tag:"while checking anchor" ])
+      ; tag (check_anchor x) ~tag:"while checking anchor" ] )
 
 let check_thread_ok (x : _ t) ~(thread : int) : unit Or_error.t =
   Path_filter.check_thread_ok x.filter ~thread

@@ -54,7 +54,7 @@ let run ~(cmd : string) ~(argv : string list)
     let%bind trace_in = Common_cmd.Args.With_files.infile_source args in
     let%bind trace = C4f_fuzz.Trace.load trace_in in
     let trace' = bisect o trace ~cmd ~argv ~want in
-    Af.Trace.store trace' ~dest)
+    Af.Trace.store trace' ~dest )
 
 let readme () : string =
   C4f_utils.My_string.format_for_readme
@@ -93,4 +93,4 @@ let command : Command.t =
       fun () ->
         Common_cmd.Args.Standard.lift_command
           (Common_cmd.Args.With_files.rest standard_args)
-          ~f:(run ~cmd ~argv ?want standard_args))
+          ~f:(run ~cmd ~argv ?want standard_args) )

@@ -28,13 +28,13 @@ let test_fragment : unit Src.Statement.t Lazy.t =
               ; A.(
                   construct
                     Src.(Statement.prim' @> Prim_statement.label)
-                    (C4f_common.C_id.of_string "foo")) ]
+                    (C4f_common.C_id.of_string "foo") ) ]
             Src.
               [ mkastore
                   Address.(of_variable_str_exn "y")
                   Expression.(int_lit 64) ] ]
         Src.
-          [mkaxchg Address.(of_variable_str_exn "x") Expression.(int_lit 99)])
+          [mkaxchg Address.(of_variable_str_exn "x") Expression.(int_lit 99)] )
 
 let%test_module "matches_any" =
   ( module struct

@@ -106,7 +106,7 @@ module Standard = struct
         flag_optional_with_default_doc "colour" colour_type colour_sexp
           ~default:None ~doc:"MODE force a particular colouring mode"
       in
-      {verbose; no_warnings; config_file; colour})
+      {verbose; no_warnings; config_file; colour} )
 
   let make_output (args : t) : C4f_common.Output.t =
     C4f_common.Output.make ~verbose:(is_verbose args)
@@ -139,7 +139,7 @@ module With_files = struct
     Command.Param.(
       flag "output"
         (optional Filename_unix.arg_type)
-        ~doc:"FILE the output file (default: stdout)")
+        ~doc:"FILE the output file (default: stdout)" )
 
   let get (type a) (rest : a Command.Param.t) : a t Command.Param.t =
     Command.Let_syntax.(
@@ -147,7 +147,7 @@ module With_files = struct
         anon (maybe ("FILE" %: Filename_unix.arg_type))
       and outfile_raw = out
       and rest = rest in
-      {rest; infiles_raw= Option.to_list infile_raw; outfile_raw})
+      {rest; infiles_raw= Option.to_list infile_raw; outfile_raw} )
 
   let get_with_multiple_inputs (type a) (rest : a Command.Param.t) :
       a t Command.Param.t =
@@ -156,7 +156,7 @@ module With_files = struct
         anon (sequence ("FILE" %: Filename_unix.arg_type))
       and outfile_raw = out
       and rest = rest in
-      {rest; infiles_raw; outfile_raw})
+      {rest; infiles_raw; outfile_raw} )
 
   let infiles_fpath (args : _ t) : Fpath.t list Or_error.t =
     Tx.Or_error.combine_map (infiles_raw args)
@@ -183,5 +183,5 @@ module With_files = struct
     Or_error.Let_syntax.(
       let%bind input = infile_source args in
       let%bind output = outfile_sink args in
-      f input output)
+      f input output )
 end

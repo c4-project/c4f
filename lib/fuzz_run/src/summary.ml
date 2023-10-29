@@ -43,4 +43,4 @@ let pp_map_terse (pp_v : 'v Fmt.t) : 'v t Map.M(Common.Id).t Fmt.t =
       (list ~sep:sp
          (hbox
             (pair ~sep:(any ":@ ") Common.Id.pp
-               (using (fun x -> x.value) (Adjusted.pp pp_v)) ) ) ))
+               (using (fun x -> x.value) (Adjusted.pp pp_v)) ) ) ) )

@@ -16,13 +16,12 @@ open struct
 end
 
 let pp_location_stanza : Ac.C_id.t list Fmt.t =
-  Fmt.(
-    hbox (any "locations@ " ++ brackets (box (list ~sep:semi Ac.C_id.pp))))
+  Fmt.(hbox (any "locations@ " ++ brackets (box (list ~sep:semi Ac.C_id.pp))))
 
 let pp_init (ppk : 'k Fmt.t) : (Ac.C_id.t, 'k) List.Assoc.t Fmt.t =
   C4f_utils.My_format.pp_c_braces
     Fmt.(
-      list ~sep:sp (fun f (l, c) -> pf f "@[%a = %a;@]" Ac.C_id.pp l ppk c))
+      list ~sep:sp (fun f (l, c) -> pf f "@[%a = %a;@]" Ac.C_id.pp l ppk c) )
 
 let spsp : type a. a Fmt.t = fun x -> Fmt.(sp ++ sp) x
 
@@ -34,14 +33,14 @@ let pp_top_line (langname : string) : _ Header.t Fmt.t =
 
 let pp_header_top (langname : string) (ppk : 'k Fmt.t) : 'k Header.t Fmt.t =
   Fmt.(
-    concat ~sep:spsp [pp_top_line langname; using Header.init (pp_init ppk)])
+    concat ~sep:spsp [pp_top_line langname; using Header.init (pp_init ppk)] )
 
 let pp_header_bot (ppk : 'k Fmt.t) : 'k Header.t Fmt.t =
   Fmt.(
     concat ~sep:nop
       [ using Header.locations (option (spsp ++ pp_location_stanza))
       ; using Header.postcondition
-          (option (spsp ++ Postcondition.pp ~pp_const:ppk)) ])
+          (option (spsp ++ Postcondition.pp ~pp_const:ppk)) ] )
 
 let pp (langname : string) (ppk : 'k Fmt.t) (ppt : 't Fmt.t) :
     ('k, 't) Test.Raw.t Fmt.t =
@@ -51,4 +50,4 @@ let pp (langname : string) (ppk : 'k Fmt.t) (ppt : 't Fmt.t) :
          [ using Test.Raw.header (pp_header_top langname ppk)
          ; spsp
          ; pp_threads ppt
-         ; using Test.Raw.header (pp_header_bot ppk) ] ))
+         ; using Test.Raw.header (pp_header_bot ppk) ] ) )

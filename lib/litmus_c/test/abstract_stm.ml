@@ -34,7 +34,7 @@ let%test_module "model" =
                       (Expr.Binary
                          ( Expr.Identifier (Ac.C_id.of_string "x")
                          , `Assign
-                         , Expr.Identifier (Ac.C_id.of_string "y") ) ) ) ) ]) ;
+                         , Expr.Identifier (Ac.C_id.of_string "y") ) ) ) ) ] ) ;
       [%expect
         {|
           (Ok
@@ -67,7 +67,7 @@ let%test_module "model" =
                      , Constant (Integer 42) ) )
             ; update=
                 Some (Postfix (Identifier (Ac.C_id.of_string "x"), `Inc))
-            ; body= Stm.Expr None }) ;
+            ; body= Stm.Expr None } ) ;
       [%expect
         {|
         (Ok
@@ -98,7 +98,7 @@ let%test_module "model" =
                      , Constant (Integer 27) ) )
             ; update=
                 Some (Postfix (Identifier (Ac.C_id.of_string "x"), `Dec))
-            ; body= Stm.Expr None }) ;
+            ; body= Stm.Expr None } ) ;
       [%expect
         {|
         (Ok
@@ -129,7 +129,7 @@ let%test_module "model" =
                      , Constant (Integer 0) ) )
             ; update=
                 Some (Postfix (Identifier (Ac.C_id.of_string "x"), `Dec))
-            ; body= Stm.Expr None }) ;
+            ; body= Stm.Expr None } ) ;
       [%expect
         {|
         (Ok
@@ -154,7 +154,7 @@ let%test_module "model" =
                       [ Prefix (`Ref, Identifier (Ac.C_id.of_string "x"))
                       ; Constant (Integer 42)
                       ; Identifier (Ac.C_id.of_string "memory_order_relaxed")
-                      ] } ) )) ;
+                      ] } ) ) ) ;
       [%expect
         {|
       (Ok
@@ -182,7 +182,7 @@ let%test_module "model" =
                       ; Constant (Integer 42)
                       ; Identifier (Ac.C_id.of_string "memory_order_relaxed")
                       ; Identifier (Ac.C_id.of_string "memory_order_relaxed")
-                      ] } ) )) ;
+                      ] } ) ) ) ;
       [%expect
         {|
       (Ok

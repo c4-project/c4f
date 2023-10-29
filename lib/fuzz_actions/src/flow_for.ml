@@ -22,7 +22,7 @@ let is_int : Fuzz.Var.Record.t -> bool =
   Fir.Type.Prim.eq ~to_:Int
     Accessor.(
       Fuzz.Var.Record.Access.type_of @> Fir.Type.Access.basic_type
-      @> Fir.Type.Basic.Access.prim)
+      @> Fir.Type.Basic.Access.prim )
 
 let kv_var_preds = [Fuzz.Var.Record.has_known_value; is_int]
 
@@ -33,7 +33,7 @@ let kv_live_path_filter ({vars; _} : Fuzz.State.t) : Fuzz.Path_filter.t =
   Fuzz.Path_filter.(
     (* These may induce atomic loads, and so can't be in atomic blocks. *)
     in_thread_with_variables ~predicates:kv_var_preds vars
-    + kv_live_path_filter_static)
+    + kv_live_path_filter_static )
 
 let kv_available (kind : Fuzz.Path_kind.t) : Fuzz.Availability.t =
   (* TODO(@MattWindsor91): is the has-variables redundant here? *)
@@ -41,7 +41,7 @@ let kv_available (kind : Fuzz.Path_kind.t) : Fuzz.Availability.t =
     has_variables ~predicates:kv_var_preds
     + M.(
         lift (fun {state; _} -> kv_live_path_filter state)
-        >>= is_filter_constructible ~kind))
+        >>= is_filter_constructible ~kind ) )
 
 module Payload = struct
   module Counter = struct
@@ -69,19 +69,19 @@ module Payload = struct
            lead to semantic violations. *)
         let%bind () = Fuzz.State.Monad.erase_var_value var in
         let%map () = Fuzz.State.Monad.add_dependency var in
-        test')
+        test' )
 
     let counter_type (prim : Fir.Type.Prim.t) : Fir.Type.t =
       Fir.Type.(
         make
           (Basic.make prim ~is_atomic:false)
-          ~is_pointer:false ~is_volatile:false)
+          ~is_pointer:false ~is_volatile:false )
 
     let gen (scope : Common.Scope.t) (prim_type : Fir.Type.Prim.t) :
         t Fuzz.Payload_gen.t =
       Fuzz.Payload_gen.(
         let+ lc_var = fresh_var scope in
-        {var= lc_var; ty= counter_type prim_type})
+        {var= lc_var; ty= counter_type prim_type} )
   end
 
   module Simple = struct
@@ -133,7 +133,7 @@ module Payload = struct
       let prim =
         Fir.(
           kv_var.@(Common.C_named.value @> Env.Record.type_of
-                   @> Type.Access.basic_type @> Type.Basic.Access.prim))
+                   @> Type.Access.basic_type @> Type.Basic.Access.prim) )
       in
       Counter.gen scope prim
 
@@ -155,7 +155,7 @@ module Payload = struct
                ~mo )
         else
           return
-            (Fir.Expression.lvalue (Fir.Lvalue.on_value_of_typed_id var)))
+            (Fir.Expression.lvalue (Fir.Lvalue.on_value_of_typed_id var)) )
 
     let known_value_val (vrec : Fir.Env.Record.t Common.C_named.t) :
         Fir.Constant.t Fuzz.Payload_gen.t =
@@ -173,7 +173,7 @@ module Payload = struct
         let env =
           Fuzz.Var.Map.env_satisfying_all ~scope vs ~predicates:kv_var_preds
         in
-        lift_quickcheck (Fir.Env.gen_random_var_with_record env))
+        lift_quickcheck (Fir.Env.gen_random_var_with_record env) )
 
     let gen (where : Fuzz.Path.With_meta.t) : t Fuzz.Payload_gen.t =
       Fuzz.Payload_gen.(
@@ -182,7 +182,7 @@ module Payload = struct
         let* lc = gen_lc scope kv_var in
         let* kv_val = known_value_val kv_var in
         let+ kv_expr = access_of_var kv_var in
-        {lc; kv_val; kv_expr})
+        {lc; kv_val; kv_expr} )
   end
 end
 
@@ -230,7 +230,7 @@ module Insert = struct
       let body = Fuzz.Subject.Block.make_dead_code () in
       Fir.(
         Accessor.construct Statement.flow
-          (Flow_block.for_loop_simple ~control body))
+          (Flow_block.for_loop_simple ~control body) )
 
     (* TODO(@MattWindsor91): unify this with things? *)
     let run (test : Fuzz.Subject.Test.t)
@@ -245,7 +245,7 @@ module Insert = struct
               ~scope:(Local (Fuzz.Path.tid payload.where.path))
           in
           Fuzz.Payload_impl.Pathed.insert payload
-            ~filter:kv_live_path_filter_static ~test:test' ~f:make_for))
+            ~filter:kv_live_path_filter_static ~test:test' ~f:make_for ) )
   end
 end
 
@@ -270,14 +270,14 @@ module Surround = struct
       Fuzz.Path_filter.(
         live_loop_surround
         + Fuzz.Path_filter.forbid_flag In_execute_multi
-        + require_end_check (Stm_no_meta_restriction Once_only))
+        + require_end_check (Stm_no_meta_restriction Once_only) )
 
     let available : Fuzz.Availability.t =
       Fuzz.Availability.(
         Pd.Counter.can_make
         + M.(
             lift_state path_filter
-            >>= is_filter_constructible ~kind:Transform_list))
+            >>= is_filter_constructible ~kind:Transform_list ) )
 
     module Payload = struct
       include Payload.Simple
@@ -292,7 +292,7 @@ module Surround = struct
             lift_quickcheck
               Base_quickcheck.Generator.small_strictly_positive_int
           in
-          {Payload.Simple.lc; up_to= Int up_to})
+          {Payload.Simple.lc; up_to= Int up_to} )
     end
 
     let recommendations (_ : Payload.t Fuzz.Payload_impl.Pathed.t) :
@@ -317,7 +317,7 @@ module Surround = struct
       let body = Fuzz.Subject.Block.make_generated ~statements () in
       Fir.(
         Accessor.construct Statement.flow
-          (Flow_block.for_loop_simple body ~control))
+          (Flow_block.for_loop_simple body ~control) )
   end)
 
   module Kv_once : Payload.Kv.S_action = Fuzz.Action.Make_surround (struct
@@ -351,7 +351,7 @@ module Surround = struct
       let body = Fuzz.Subject.Block.make_generated ~statements () in
       Fir.(
         Accessor.construct Statement.flow
-          (Flow_block.for_loop_simple ~control body))
+          (Flow_block.for_loop_simple ~control body) )
   end)
 
   module Dead :
@@ -376,7 +376,7 @@ module Surround = struct
         Pd.Counter.can_make
         + M.(
             lift_state path_filter
-            >>= is_filter_constructible ~kind:Transform_list))
+            >>= is_filter_constructible ~kind:Transform_list ) )
 
     module Payload = struct
       type t = Fir.Flow_block.For.t [@@deriving sexp]
@@ -404,13 +404,13 @@ module Surround = struct
             let%map init = gen_assign env
             and cmp = option (gen_cmp env)
             and update = gen_assign env in
-            Fir.Flow_block.For.make ?init ?cmp ?update ()))
+            Fir.Flow_block.For.make ?init ?cmp ?update () ) )
 
       let gen (path : Fuzz.Path.With_meta.t) : t Fuzz.Payload_gen.t =
         Fuzz.(
           Payload_gen.(
             let* env = env_at_path path in
-            lift_quickcheck (gen' env)))
+            lift_quickcheck (gen' env) ) )
     end
 
     let recommendations (_ : Payload.t Fuzz.Payload_impl.Pathed.t) :

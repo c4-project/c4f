@@ -31,7 +31,7 @@ let%expect_test "model basic logical expression" =
           , Binary
               ( Identifier (Ac.C_id.of_string "false")
               , `Lor
-              , Identifier (Ac.C_id.of_string "foo") ) ))) ;
+              , Identifier (Ac.C_id.of_string "foo") ) ) ) ) ;
   [%expect
     {|
           (Ok
@@ -46,7 +46,7 @@ let%expect_test "model atomic_load_explicit" =
         { func= Identifier (Ac.C_id.of_string "atomic_load_explicit")
         ; arguments=
             [ Prefix (`Ref, Identifier (Ac.C_id.of_string "x"))
-            ; Identifier (Ac.C_id.of_string "memory_order_seq_cst") ] }) ;
+            ; Identifier (Ac.C_id.of_string "memory_order_seq_cst") ] } ) ;
   [%expect
     {|
       (Ok

@@ -49,7 +49,7 @@ let type_specs_to_basic (specs : [> Ast.Type_spec.t] list) :
     | #Ast.Type_spec.t as spec ->
         Or_error.error_s
           [%message
-            "This type isn't supported (yet)" ~got:(spec : Ast.Type_spec.t)])
+            "This type isn't supported (yet)" ~got:(spec : Ast.Type_spec.t)] )
 
 let qualifier_to_flags :
        [> Ast_basic.Storage_class_spec.t | Ast_basic.Type_qual.t]
@@ -72,7 +72,7 @@ let qualifiers_to_flags
   Or_error.Let_syntax.(
     (* TODO(@MattWindsor91): other qualifiers? *)
     let%map vs = Tx.Or_error.combine_map quals ~f:qualifier_to_flags in
-    List.exists vs ~f:Fn.id)
+    List.exists vs ~f:Fn.id )
 
 let qualifiers_to_type (quals : [> Ast.Decl_spec.t] list) ~(is_pointer : bool)
     : Fir.Type.t Or_error.t =
@@ -80,7 +80,7 @@ let qualifiers_to_type (quals : [> Ast.Decl_spec.t] list) ~(is_pointer : bool)
   Or_error.Let_syntax.(
     let%map basic = type_specs_to_basic tspecs
     and is_volatile = qualifiers_to_flags rquals in
-    Fir.Type.make basic ~is_pointer ~is_volatile)
+    Fir.Type.make basic ~is_pointer ~is_volatile )
 
 let declarator_to_id :
     Ast.Declarator.t -> (C4f_common.C_id.t * bool) Or_error.t = function
@@ -132,7 +132,7 @@ let decl (d : Ast.Decl.t) : Fir.Initialiser.t Common.C_named.t Or_error.t =
       Option.value_map initialiser ~f:value_of_initialiser
         ~default:(Ok (Fir.Constant.zero_of_type ty))
     in
-    Common.C_named.make ~name {Fir.Initialiser.ty; value})
+    Common.C_named.make ~name {Fir.Initialiser.ty; value} )
 
 let param_decl : Ast.Param_decl.t -> Fir.Type.t Common.C_named.t Or_error.t =
   function
@@ -142,14 +142,14 @@ let param_decl : Ast.Param_decl.t -> Fir.Type.t Common.C_named.t Or_error.t =
       Or_error.Let_syntax.(
         let%bind name, is_pointer = declarator_to_id declarator in
         let%map ty = qualifiers_to_type qualifiers ~is_pointer in
-        Common.C_named.make ty ~name)
+        Common.C_named.make ty ~name )
 
 let rec expr_to_lvalue : Ast.Expr.t -> Fir.Lvalue.t Or_error.t = function
   | Identifier id -> Ok (Accessor.construct Fir.Lvalue.variable id)
   | Brackets expr -> expr_to_lvalue expr
   | Prefix (`Deref, expr) ->
       Or_error.(
-        expr |> expr_to_lvalue >>| Accessor.construct Fir.Lvalue.deref)
+        expr |> expr_to_lvalue >>| Accessor.construct Fir.Lvalue.deref )
   | ( Prefix _ | Postfix _ | Binary _ | Ternary _ | Cast _ | Call _
     | Subscript _ | Field _ | Sizeof_type _ | String _ | Constant _ ) as e ->
       Or_error.error_s
@@ -158,10 +158,10 @@ let rec expr_to_lvalue : Ast.Expr.t -> Fir.Lvalue.t Or_error.t = function
 let rec expr_to_address : Ast.Expr.t -> Fir.Address.t Or_error.t = function
   | Prefix (`Ref, expr) ->
       Or_error.(
-        expr |> expr_to_address >>| Accessor.construct Fir.Address.ref)
+        expr |> expr_to_address >>| Accessor.construct Fir.Address.ref )
   | expr ->
       Or_error.(
-        expr |> expr_to_lvalue >>| Accessor.construct Fir.Address.lvalue)
+        expr |> expr_to_lvalue >>| Accessor.construct Fir.Address.lvalue )
 
 let lvalue_to_identifier (lv : Fir.Lvalue.t) : C4f_common.C_id.t Or_error.t =
   if Fir.Lvalue.is_deref lv then
@@ -180,7 +180,7 @@ let expr_to_memory_order (expr : Ast.Expr.t) : Fir.Mem_order.t Or_error.t =
          ~error:
            (Error.create_s
               [%message
-                "Unsupported memory order" ~got:(id : C4f_common.C_id.t)] ))
+                "Unsupported memory order" ~got:(id : C4f_common.C_id.t)] ) )
 
 let sift_decls (maybe_decl_list : ([> `Decl of 'd] as 'a) list) :
     ('d list * 'a list) Or_error.t =
@@ -191,4 +191,4 @@ let sift_decls (maybe_decl_list : ([> `Decl of 'd] as 'a) list) :
           if Fqueue.is_empty rest then return (Fqueue.enqueue decls d, rest)
           else error_string "Declarations must go before code."
       | item -> return (decls, Fqueue.enqueue rest item) )
-    >>| fun (decls, rest) -> (Fqueue.to_list decls, Fqueue.to_list rest))
+    >>| fun (decls, rest) -> (Fqueue.to_list decls, Fqueue.to_list rest) )

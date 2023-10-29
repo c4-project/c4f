@@ -11,14 +11,13 @@
 
 (* Needed because Base shadows it: *)
 module Ty = Type
-
 open Base
 open Import
 
 let not_found (id : Common.C_id.t) : Error.t =
   Error.create_s
     [%message
-      "Variable not found in typing environment." ~(id : Common.C_id.t)]
+      "Variable not found in typing environment." ~id:(id : Common.C_id.t)]
 
 module Record = struct
   open Q
@@ -90,7 +89,7 @@ let variables_with_known_values :
       Option.Let_syntax.(
         let%map kv = data.@?(Record.known_value) in
         let ty = data.type_of in
-        (ty, kv)) )
+        (ty, kv) ) )
 
 let filter_to_known_values : t -> t =
   Map.filter ~f:(fun (data : Record.t) ->
@@ -110,7 +109,7 @@ let gen_random_var_with_record (env : t) :
           [%message
             "Tried to get a random variable from an empty environment"
               ~here:[%here]]
-    | xs -> Q.Generator.of_list (Common.C_named.list_of_alist xs))
+    | xs -> Q.Generator.of_list (Common.C_named.list_of_alist xs) )
 
 let gen_random_var_with_type : t -> Ty.t Common.C_named.t Q.Generator.t =
   Fn.compose

@@ -33,8 +33,7 @@ end
 module Int
     (_ : Fir.Env_types.S)
     (_ : Utils.My_quickcheck.S_with_sexp with type t := Fir.Op.Fetch.t)
-    (_ : Utils.My_quickcheck.S_with_sexp with type t := Fir.Expression.t) :
-  S
+    (_ : Utils.My_quickcheck.S_with_sexp with type t := Fir.Expression.t) : S
 
 (** {2 Specific integer generators} *)
 

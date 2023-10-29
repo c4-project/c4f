@@ -11,7 +11,6 @@
 
 (* Needed because Base shadows it: *)
 module Ty = Type
-
 open Base
 
 type t = {ty: Ty.t; value: Constant.t}

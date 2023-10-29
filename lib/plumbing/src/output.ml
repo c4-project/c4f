@@ -44,7 +44,7 @@ let with_file_output (fpath : Fpath.t) (f : Out_channel.t -> 'a Or_error.t) :
   Or_error.(
     tag_arg
       (try_with_join (fun _ -> Out_channel.with_file fpath_raw ~f))
-      "While writing to file:" fpath_raw [%sexp_of: string])
+      "While writing to file:" fpath_raw [%sexp_of: string] )
 
 let with_stdout_output (f : Out_channel.t -> 'a Or_error.t) : 'a Or_error.t =
   Or_error.try_with_join (fun _ -> f Out_channel.stdout)

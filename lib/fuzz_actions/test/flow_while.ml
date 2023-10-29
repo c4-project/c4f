@@ -27,7 +27,7 @@ let%test_module "test runs" =
         Expression.(
           l_and
             (eq (of_variable_str_exn "y") (int_lit 27))
-            (of_variable_str_exn "a")))
+            (of_variable_str_exn "a") ) )
 
     let%test_module "While.Insert.False" =
       ( module struct

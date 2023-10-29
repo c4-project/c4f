@@ -25,7 +25,7 @@ let of_litmus ?(o : Common.Output.t option) (lt : Fir.Litmus.Test.t) :
   let labels = Label.labels_of_test lt in
   Or_error.Let_syntax.(
     let%map vars = Var.Map.make_existing_var_map lt in
-    make ?o ~vars ~labels ())
+    make ?o ~vars ~labels () )
 
 let register_label (s : t) ~(label : Common.Litmus_id.t) : t =
   {s with labels= Set.add s.labels label}
@@ -107,7 +107,7 @@ module Monad = struct
       =
     AccM.iter
       Accessor_base.(
-        List.each @> C4f_fir.Expression_traverse.depended_upon_idents)
+        List.each @> C4f_fir.Expression_traverse.depended_upon_idents )
       exprs
       ~f:(add_scoped_dependency ~scope)
 
@@ -143,7 +143,7 @@ let pp : t Fmt.t =
       [ vbox ~indent:2
           (any "Labels" ++ sp ++ using (Accessor.get labels) pp_labels)
       ; vbox ~indent:2 (any "Vars" ++ sp ++ using (Accessor.get vars) pp_map)
-      ])
+      ] )
 
 module Dump : Plumbing.Storable_types.S with type t = t =
 Plumbing.Storable.Make (struct

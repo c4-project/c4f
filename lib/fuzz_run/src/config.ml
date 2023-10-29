@@ -71,7 +71,7 @@ let make_pool (config : t) (params : Fuzz.Param_map.t)
         ~id:Fuzz.Config_tables.action_enable_flag
     in
     let weights = make_sampled_weight_alist config ~pick_flag ~random in
-    Action_pool.of_weighted_actions weights ~accept_rec_flag ~use_rec_flag)
+    Action_pool.of_weighted_actions weights ~accept_rec_flag ~use_rec_flag )
 
 let make_merged_param_map (type v)
     (specs : v Fuzz.Param_spec.t Map.M(Common.Id).t Lazy.t)
@@ -149,7 +149,7 @@ module Param_summary = struct
          things have been overridden. *)
       if Fuzz.Param_map.Value.equal original actual then
         Summary.Adjusted.Not_adjusted original
-      else Adjusted {original; actual})
+      else Adjusted {original; actual} )
 
   let summarise_elt (lift : 'a -> Fuzz.Param_map.Value.t)
       (pm : Fuzz.Param_map.t) (id : Common.Id.t) (spec : 'a Fuzz.Param_spec.t)
@@ -158,7 +158,7 @@ module Param_summary = struct
     let readme = Fuzz.Param_spec.description spec in
     Or_error.Let_syntax.(
       let%map value = get_adjusted pm default id in
-      {Summary.value; readme})
+      {Summary.value; readme} )
 
   let summarise_elts (lift : 'a -> Fuzz.Param_map.Value.t)
       (pm : Fuzz.Param_map.t)
@@ -184,7 +184,7 @@ module Param_summary = struct
       in
       Map.of_alist_or_error
         (module Common.Id)
-        (flag_summaries @ param_summaries))
+        (flag_summaries @ param_summaries) )
 
   let pp : t Fmt.t = Summary.pp_map Fuzz.Param_map.Value.pp "Value"
 

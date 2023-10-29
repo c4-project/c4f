@@ -35,9 +35,7 @@ module Atomic_fetch_int_nops (_ : Fir.Env_types.S) (_ : Fir.Env_types.S) :
   Utils.My_quickcheck.S_with_sexp
     with type t = Fir.Expression.t Fir.Atomic_fetch.t
 
-module Atomic_fetch_int_values
-    (_ : Fir.Env_types.S)
-    (_ : Fir.Env_types.S) :
+module Atomic_fetch_int_values (_ : Fir.Env_types.S) (_ : Fir.Env_types.S) :
   Utils.My_quickcheck.S_with_sexp
     with type t = Fir.Expression.t Fir.Atomic_fetch.t
 

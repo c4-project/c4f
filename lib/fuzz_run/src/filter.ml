@@ -43,7 +43,7 @@ let run_on_litmus (test : Fir.Litmus.Test.t) ~(o : C4f_common.Output.t)
       Fuzz.State.Monad.run' (f subject) state
     in
     let%map test' = Fuzz.Subject.Test.to_litmus subject ~vars:state'.vars in
-    (test', {Aux.Output.state= state'; trace}))
+    (test', {Aux.Output.state= state'; trace}) )
 
 let run (input : Plumbing.Input.t) (output : Plumbing.Output.t)
     ~(o : C4f_common.Output.t)
@@ -55,7 +55,7 @@ let run (input : Plumbing.Input.t) (output : Plumbing.Output.t)
     let%map () =
       Utils.My_format.odump output (Fmt.vbox Litmus_c.Reify.pp_litmus) test'
     in
-    metadata)
+    metadata )
 
 let run_randomised (input : Plumbing.Input.t) (output : Plumbing.Output.t)
     ~aux:({seed; o; config} : Aux.Randomised.t) : Aux.Output.t Or_error.t =
@@ -67,7 +67,7 @@ let resolve_action (id : C4f_common.Id.t) : Fuzz.Action.t Or_error.t =
     |> Utils.My_map.find_or_error ~sexp_of_key:C4f_common.Id.sexp_of_t
          ~map_name:"action map"
          (Lazy.force C4f_fuzz_actions.Table.action_map)
-    >>| Fuzz.Action.With_default_weight.action)
+    >>| Fuzz.Action.With_default_weight.action )
 
 let run_replay' (subject : Fuzz.Subject.Test.t) ~(trace : Fuzz.Trace.t) :
     Fuzz.Output.t Fuzz.State.Monad.t =
@@ -76,7 +76,7 @@ let run_replay' (subject : Fuzz.Subject.Test.t) ~(trace : Fuzz.Trace.t) :
       let%map subject =
         Fuzz.Trace.run trace subject ~resolve:resolve_action
       in
-      {Fuzz.Output.subject; trace}))
+      {Fuzz.Output.subject; trace} ) )
 
 let run_replay (input : Plumbing.Input.t) (output : Plumbing.Output.t)
     ~aux:({o; trace} : Aux.Replay.t) : Aux.Output.t Or_error.t =

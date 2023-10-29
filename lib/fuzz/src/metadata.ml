@@ -49,5 +49,4 @@ let liveness (m : t) : Liveness.t =
 
 let has_restriction (r : Restriction.t) : t -> bool = function
   | Existing -> true
-  | Generated g ->
-      not Accessor.(is_empty (Gen.restrictions @> Set.found r) g)
+  | Generated g -> not Accessor.(is_empty (Gen.restrictions @> Set.found r) g)

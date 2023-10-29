@@ -16,7 +16,7 @@ let%test_module "expressions" =
   ( module struct
     let test (exp : Src.Expression.t) : unit =
       Src.Litmus_stats.(
-        Utils.My_format.fdump Stdio.stdout Statset.pp (scrape_expr exp))
+        Utils.My_format.fdump Stdio.stdout Statset.pp (scrape_expr exp) )
 
     let%expect_test "regression: ternaries" =
       test
@@ -28,7 +28,7 @@ let%test_module "expressions" =
                 atomic_load
                   (Src.Atomic_load.make
                      ~src:(Src.Address.of_variable_str_exn "foo")
-                     ~mo:Seq_cst ) }) ;
+                     ~mo:Seq_cst ) } ) ;
       [%expect
         {|
         threads 0

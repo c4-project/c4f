@@ -44,7 +44,7 @@ module Value = struct
             Fmt.(
               styled (`Fg `Yellow)
                 (concat ~sep:(any ":")
-                   [using Flag.wins int; using Flag.losses int] )) )
+                   [using Flag.wins int; using Flag.losses int] ) ) )
           f x
 end
 
@@ -52,7 +52,7 @@ let get (x : t) ~(id : Common.Id.t) : Value.t Or_error.t =
   Or_error.(
     find_ok
       [ (get_flag x ~id >>| fun x -> Value.Flag x)
-      ; (get_param x ~id >>| fun x -> Value.Param x) ])
+      ; (get_param x ~id >>| fun x -> Value.Param x) ] )
 
 let rec calc_action_cap (lower : int) (upper : int) (flag : Flag.t)
     ~(random : Splittable_random.State.t) : int =
@@ -69,11 +69,11 @@ let get_action_cap (x : t) ~(random : Splittable_random.State.t) :
       Or_error.error_s
         [%message
           "Upper action cap is below lower action cap"
-            ~(upper : int)
-            ~(lower : int)]
+            ~upper:(upper : int)
+            ~lower:(lower : int)]
     else
       Ok
         ( match Flag.to_exact_opt flag with
         | Some true -> upper (* Always pick every extra action *)
         | Some false -> lower (* Never pick any extra action *)
-        | None -> calc_action_cap lower upper flag ~random ))
+        | None -> calc_action_cap lower upper flag ~random ) )

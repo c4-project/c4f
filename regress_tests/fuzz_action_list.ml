@@ -28,7 +28,7 @@ let param_summary (c : C4f_fuzz_run.Config.t) : unit Or_error.t =
   Or_error.Let_syntax.(
     let%map ps = C4f_fuzz_run.Config.Param_summary.summarise c in
     C4f_utils.My_format.fdump Stdio.stdout
-      C4f_fuzz_run.Config.Param_summary.pp ps)
+      C4f_fuzz_run.Config.Param_summary.pp ps )
 
 let run (_test_dir : Fpath.t) : unit Or_error.t =
   let c = C4f_fuzz_run.Config.make () in

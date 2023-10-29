@@ -23,7 +23,7 @@ let%test_module "sift_decls" =
           [`Decl "foo"; `Decl "bar"; `Ndecl "baz"; `Ndecl "barbaz"]
           |> Src.Abstract_prim.sift_decls
           >>| fun (x, y) ->
-          (x, List.map y ~f:(function `Decl _ -> "DECL" | `Ndecl x -> x)))
+          (x, List.map y ~f:(function `Decl _ -> "DECL" | `Ndecl x -> x)) )
       in
       Stdio.print_s [%sexp (result : (string list * string list) Or_error.t)] ;
       [%expect {| (Ok ((foo bar) (baz barbaz))) |}]

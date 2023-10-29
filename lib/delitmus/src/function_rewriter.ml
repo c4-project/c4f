@@ -92,14 +92,13 @@ struct
         unit Fir.Statement.t -> unit Fir.Statement.t Or_error.t =
       C_stm_meta.On_addresses.With_errors.map_m
         ~f:
-          Tx.Or_error.(
-            rewrite_address_if_local >=> rewrite_address_if_global)
+          Tx.Or_error.(rewrite_address_if_local >=> rewrite_address_if_global)
 
     let rewrite_statement :
         unit Fir.Statement.t -> unit Fir.Statement.t Or_error.t =
       Tx.Or_error.(
         rewrite_local_lvalues >=> rewrite_addresses
-        >=> rewrite_global_lvalues >=> rewrite_ids)
+        >=> rewrite_global_lvalues >=> rewrite_ids )
 
     let rewrite_statements :
         unit Fir.Statement.t list -> unit Fir.Statement.t list Or_error.t =
@@ -115,7 +114,7 @@ struct
         (Common.C_id.t * Fir.Type.t) Or_error.t =
       Or_error.Let_syntax.(
         let%map pty = Fir.Type.ref c_type in
-        (c_id, pty))
+        (c_id, pty) )
 
     let expand_parameters :
            (Common.Litmus_id.t, Var_map.Record.t) List.Assoc.t
@@ -159,7 +158,7 @@ struct
         (Error.create_s
            [%message
              "Could not find function in function map."
-               ~(name : Common.C_id.t)] )
+               ~name:(name : Common.C_id.t)] )
 
   let rewrite_function_name (name : Common.C_id.t) ~(context : Context.t) :
       Common.C_id.t Or_error.t =

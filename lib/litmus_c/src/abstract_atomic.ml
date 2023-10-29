@@ -63,7 +63,7 @@ let model_cmpxchg_with_args ~(strength : Fir.Atomic_cmpxchg.Strength.t)
       Abstract_prim.expr_to_memory_order raw_fail
       (* memory_order *)
     in
-    {Fir.Atomic_cmpxchg.obj; expected; desired; strength; succ; fail})
+    {Fir.Atomic_cmpxchg.obj; expected; desired; strength; succ; fail} )
 
 let model_cmpxchg (args : Ast.Expr.t list)
     ~(strength : Fir.Atomic_cmpxchg.Strength.t)
@@ -87,7 +87,7 @@ let model_fetch_with_args ~(raw_obj : Ast.Expr.t) ~(raw_arg : Ast.Expr.t)
     let%map obj = Abstract_prim.expr_to_address raw_obj (* volatile A* *)
     and arg = expr raw_arg (* M *)
     and mo = Abstract_prim.expr_to_memory_order raw_mo (* memory_order *) in
-    Fir.Atomic_fetch.make ~obj ~arg ~mo ~op)
+    Fir.Atomic_fetch.make ~obj ~arg ~mo ~op )
 
 let model_fetch (args : Ast.Expr.t list) ~(op : Fir.Op.Fetch.t)
     ~(expr : Ast.Expr.t -> Fir.Expression.t Or_error.t) :
@@ -104,7 +104,7 @@ let model_fence_with_args ~(mode : Fir.Atomic_fence.Mode.t)
     ~(raw_mo : Ast.Expr.t) : Fir.Atomic_fence.t Or_error.t =
   Or_error.Let_syntax.(
     let%map mo = Abstract_prim.expr_to_memory_order raw_mo in
-    Fir.Atomic_fence.make ~mode ~mo)
+    Fir.Atomic_fence.make ~mode ~mo )
 
 let model_fence (args : Ast.Expr.t list) ~(mode : Fir.Atomic_fence.Mode.t) :
     Fir.Atomic_fence.t Or_error.t =
@@ -120,7 +120,7 @@ let model_load_with_args ~(raw_src : Ast.Expr.t) ~(raw_mo : Ast.Expr.t) :
   Or_error.Let_syntax.(
     let%map src = Abstract_prim.expr_to_address raw_src
     and mo = Abstract_prim.expr_to_memory_order raw_mo in
-    Fir.Atomic_load.make ~src ~mo)
+    Fir.Atomic_load.make ~src ~mo )
 
 let model_load : Ast.Expr.t list -> Fir.Atomic_load.t Or_error.t = function
   | [raw_src; raw_mo] -> model_load_with_args ~raw_src ~raw_mo
@@ -137,7 +137,7 @@ let model_store_with_args ~(raw_dst : Ast.Expr.t) ~(raw_src : Ast.Expr.t)
     let%map dst = Abstract_prim.expr_to_address raw_dst
     and src = expr raw_src
     and mo = Abstract_prim.expr_to_memory_order raw_mo in
-    Fir.Atomic_store.make ~dst ~src ~mo)
+    Fir.Atomic_store.make ~dst ~src ~mo )
 
 let model_store (args : Ast.Expr.t list)
     ~(expr : Ast.Expr.t -> Fir.Expression.t Or_error.t) :

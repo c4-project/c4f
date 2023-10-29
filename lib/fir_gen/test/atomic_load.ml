@@ -19,7 +19,7 @@ let print_sample =
     ~printer:
       Fmt.(
         pr "@[%a@]@."
-          (using Fir.Expression.atomic_load C4f_litmus_c.Reify_expr.pp))
+          (using Fir.Expression.atomic_load C4f_litmus_c.Reify_expr.pp) )
 
 let%expect_test "Int: samples" =
   let env = Lazy.force Fir_test.Env.test_env in

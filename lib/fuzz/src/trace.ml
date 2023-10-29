@@ -48,7 +48,7 @@ let resolve_step ({name; payload= payload_sexp} : elt)
     let%map payload =
       Or_error.try_with (fun () -> Action.Payload.t_of_sexp payload_sexp)
     in
-    Action.run ~payload)
+    Action.run ~payload )
 
 let run_step (trace : t)
     ~(resolve : Common.Id.t -> (module Action_types.S) Or_error.t) : step =
@@ -72,7 +72,7 @@ let run (trace : t) (test : Subject.Test.t)
               let%bind next_test = f this_test in
               mu (next_trace, next_test) )
     in
-    test')
+    test' )
 
 let length : t -> int = Fqueue.length
 

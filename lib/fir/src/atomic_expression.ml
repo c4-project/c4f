@@ -11,7 +11,6 @@
 
 (* Needed because Base shadows it: *)
 module Ty = Type
-
 open Base
 
 module P = struct
@@ -40,7 +39,7 @@ module Base_map (Ap : Applicative.S) = struct
       reduce x
         ~cmpxchg:(cmpxchg >> Ap.map ~f:P.cmpxchg)
         ~fetch:(fetch >> Ap.map ~f:P.fetch)
-        ~load:(load >> Ap.map ~f:P.load))
+        ~load:(load >> Ap.map ~f:P.load) )
 end
 
 module On_expressions : Travesty.Traversable_types.S1 with type 'e t = 'e t =

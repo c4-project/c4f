@@ -186,7 +186,7 @@ module Insert = struct
             Result.of_option kvo
               ~error:(Error.of_string "No known value for this record.")
           in
-          Fir.Expression.constant kv)
+          Fir.Expression.constant kv )
 
       let quickcheck_generator =
         (* Deliberately ignore the source environment. TODO(@MattWindsor91):

@@ -32,7 +32,7 @@ let cmpxchg (cmpxchg : 'e Fir.Atomic_cmpxchg.t) ~(expr : 'e -> Ast.Expr.t) :
         ; Prim.address cmpxchg.expected
         ; expr cmpxchg.desired
         ; mem_order cmpxchg.succ
-        ; mem_order cmpxchg.fail ]))
+        ; mem_order cmpxchg.fail ] ) )
 
 let fence (fence : Fir.Atomic_fence.t) : Ast.Expr.t =
   let call = Abstract_atomic.fence_name (Fir.Atomic_fence.mode fence) in
@@ -44,19 +44,19 @@ let fetch (f : 'e Fir.Atomic_fetch.t) ~(expr : 'e -> Ast.Expr.t) : Ast.Expr.t
     Atomic_fetch.(
       known_call
         (Abstract_atomic.fetch_name f.op)
-        [Prim.address f.obj; expr f.arg; mem_order f.mo]))
+        [Prim.address f.obj; expr f.arg; mem_order f.mo] ) )
 
 let load (ld : Fir.Atomic_load.t) : Ast.Expr.t =
   Fir.(
     Atomic_load.(
       known_call Abstract_atomic.load_name
-        [Prim.address ld.src; mem_order ld.mo]))
+        [Prim.address ld.src; mem_order ld.mo] ) )
 
 let store (st : Fir.Atomic_store.t) ~(expr : 'e -> Ast.Expr.t) : Ast.Expr.t =
   Fir.(
     Atomic_store.(
       known_call Abstract_atomic.store_name
-        [Prim.address st.dst; expr st.src; mem_order st.mo]))
+        [Prim.address st.dst; expr st.src; mem_order st.mo] ) )
 
 let reify_expr (x : 'e Fir.Atomic_expression.t) ~(expr : 'e -> Ast.Expr.t) :
     Ast.Expr.t =

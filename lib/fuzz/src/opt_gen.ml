@@ -30,4 +30,4 @@ end)
 
 let union (type a) (gens : a t list) : a t =
   Or_error.(
-    gens |> filter_ok_at_least_one >>| Base_quickcheck.Generator.union)
+    gens |> filter_ok_at_least_one >>| Base_quickcheck.Generator.union )

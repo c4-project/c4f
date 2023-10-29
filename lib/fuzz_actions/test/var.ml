@@ -80,7 +80,7 @@ let%test_module "Make" =
                 Or_error.ok_exn
                   C4f_fir.(
                     Type.check_modulo_atomicity (Type.make basic_type)
-                      (Constant.type_of initial_value))
+                      (Constant.type_of initial_value) )
               in
               () )
 

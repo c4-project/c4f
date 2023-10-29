@@ -24,7 +24,7 @@ let%test_module "s-expression serialisation" =
       test
         P.(
           in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 2 @@ Stm.in_if
-          @@ If.in_branch true @@ Stms.in_stm 5 @@ Stm.this_stm) ;
+          @@ If.in_branch true @@ Stms.in_stm 5 @@ Stm.this_stm ) ;
       [%expect
         {|
           ((Thread 0) Stms (Stm 2) If (Branch true) (Stm 5) This) |}]
@@ -37,6 +37,6 @@ let%test_module "s-expression serialisation" =
       test
         P.(
           in_thread 2 @@ Thread.in_stms @@ Stms.in_stm 9 @@ Stm.in_if
-          @@ If.this_cond) ;
+          @@ If.this_cond ) ;
       [%expect {| ((Thread 2) Stms (Stm 9) If Cond) |}]
   end )

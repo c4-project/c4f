@@ -38,7 +38,7 @@ module Insert = struct
             (Q.Generator.filter Fir.Early_out.quickcheck_generator
                ~f:kind_filter )
         in
-        {if_cond; kind})
+        {if_cond; kind} )
 
     let gen (path_filter : Fuzz.State.t -> Fuzz.Path_filter.t)
         (kind_filter : Fuzz.Path.With_meta.t -> Fir.Early_out.t -> bool)
@@ -105,7 +105,7 @@ module Insert = struct
       Fuzz.Path_filter.(
         add_if base_path_filter
           ~when_:(Fir.Early_out.in_loop_only kind)
-          ~add:(require_flag In_loop))
+          ~add:(require_flag In_loop) )
 
     let run (test : Fuzz.Subject.Test.t) ~(payload : Payload.t) :
         Fuzz.Subject.Test.t Fuzz.State.Monad.t =
@@ -119,7 +119,7 @@ module Insert = struct
 
     let base_path_filter : Fuzz.Path_filter.t =
       Fuzz.Path_filter.(
-        ends_in_block (Flow (Some (Loop None))) + anchor Bottom)
+        ends_in_block (Flow (Some (Loop None))) + anchor Bottom )
 
     let readme =
       lazy
@@ -163,7 +163,7 @@ module Insert = struct
           Fir.Expression.t option Fuzz.Payload_gen.t =
         Fuzz.Payload_gen.(
           let* f = flag Fuzz.Config_tables.wrap_early_out_flag in
-          if f then map (gen_cond' p) ~f:Option.some else return None)
+          if f then map (gen_cond' p) ~f:Option.some else return None )
 
       let gen : t Fuzz.Payload_gen.t =
         Early_out_payload.gen path_filter kind_pred gen_cond
@@ -185,7 +185,7 @@ module Insert = struct
           ~when_:
             ( Fir.Early_out.equal kind Break
             && not anc.@(Fuzz.Path_meta.Anchor.top) )
-          ~add:(forbid_flag In_execute_multi))
+          ~add:(forbid_flag In_execute_multi) )
 
     let make_contraption (pld : Early_out_payload.t) :
         Fuzz.Subject.Statement.t list =
@@ -206,7 +206,7 @@ module Insert = struct
           (Fuzz.Path_consumers.consume test ~path:payload.where
              ~filter:
                (kind_filter payload.where.meta.anchor payload.payload.kind)
-             ~action:(Insert (make_contraption payload.payload)) ))
+             ~action:(Insert (make_contraption payload.payload)) ) )
   end
 
   module Goto :
@@ -228,7 +228,7 @@ module Insert = struct
         Set.filter_map (module Int) ~f:Common.Litmus_id.tid labels
       in
       Fuzz.Path_filter.(
-        require_flag In_dead_code + in_threads_only threads_with_labels)
+        require_flag In_dead_code + in_threads_only threads_with_labels )
 
     module Payload = struct
       type t = Common.C_id.t Fuzz.Payload_impl.Pathed.t [@@deriving sexp]
@@ -251,7 +251,7 @@ module Insert = struct
           Payload_gen.(
             let* labels = lift_acc (Context.state @> Fuzz.State.labels) in
             let labels_in_tid = reachable_labels labels ins_path in
-            lift_quickcheck (Base_quickcheck.Generator.of_list labels_in_tid)))
+            lift_quickcheck (Base_quickcheck.Generator.of_list labels_in_tid) ) )
 
       let gen = Fuzz.Payload_impl.Pathed.gen Insert path_filter gen'
     end
@@ -262,7 +262,7 @@ module Insert = struct
       Fuzz.Availability.(
         M.(
           lift_state path_filter
-          >>= Fuzz.Availability.is_filter_constructible ~kind:Insert))
+          >>= Fuzz.Availability.is_filter_constructible ~kind:Insert ) )
 
     let make_goto (id : Common.C_id.t) : Fuzz.Subject.Statement.t =
       id
@@ -274,6 +274,6 @@ module Insert = struct
       Fuzz.State.Monad.(
         Let_syntax.(
           let%bind filter = peek path_filter in
-          Fuzz.Payload_impl.Pathed.insert ~filter payload ~test ~f:make_goto))
+          Fuzz.Payload_impl.Pathed.insert ~filter payload ~test ~f:make_goto ) )
   end
 end

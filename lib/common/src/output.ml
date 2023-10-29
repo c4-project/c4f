@@ -42,7 +42,7 @@ let print_error_body : Error.t Fmt.t =
   Fmt.(
     vbox ~indent:2
       ( hbox (styled (`Fg `Red) (any "ACT encountered a top-level error:@ "))
-      ++ box Error.pp ))
+      ++ box Error.pp ) )
 
 let print_error (o : t) : 'a Or_error.t -> unit =
   Fmt.(result ~ok:nop ~error:(print_error_body ++ any "@.")) o.ef

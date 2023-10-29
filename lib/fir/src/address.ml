@@ -11,7 +11,6 @@
 
 (* Needed because Base shadows it: *)
 module Ty = Type
-
 open Base
 open Import
 
@@ -109,19 +108,19 @@ end = struct
     Generator.(
       recursive_union
         [map [%quickcheck.generator: Lv.t] ~f:(Accessor.construct lvalue)]
-        ~f:(fun mu -> [map mu ~f:(Accessor.construct M.ref)]))
+        ~f:(fun mu -> [map mu ~f:(Accessor.construct M.ref)]) )
 
   let quickcheck_observer : t Observer.t =
     Observer.(
       fixed_point (fun mu ->
           unmap ~f:anonymise
-            [%quickcheck.observer: [`A of Lv.t | `B of [%custom mu]]] ))
+            [%quickcheck.observer: [`A of Lv.t | `B of [%custom mu]]] ) )
 
   let quickcheck_shrinker : t Shrinker.t =
     Shrinker.(
       fixed_point (fun mu ->
           map ~f:deanonymise ~f_inverse:anonymise
-            [%quickcheck.shrinker: [`A of Lv.t | `B of [%custom mu]]] ))
+            [%quickcheck.shrinker: [`A of Lv.t | `B of [%custom mu]]] ) )
 end
 
 module Quickcheck_main = Quickcheck_generic (Lvalue)
@@ -137,7 +136,7 @@ let on_address_of_typed_id (tid : Ty.t Common.C_named.t) : t =
 let of_id_in_env (env : Env.t) ~(id : Common.C_id.t) : t Or_error.t =
   Or_error.Let_syntax.(
     let%map ty = Env.type_of env ~id in
-    on_address_of_typed_id (Common.C_named.make ~name:id ty))
+    on_address_of_typed_id (Common.C_named.make ~name:id ty) )
 
 let variable_of : ('i, Common.C_id.t, t, [< field]) Accessor.t =
   [%accessor lvalue_of @> Lvalue.variable_of]
@@ -154,18 +153,17 @@ let check_address_var (addr : t) ~(env : Env.t) :
     let%bind v_type = Env.type_of_known_value env ~id in
     let%bind a_type = A_check.type_of addr in
     let%map (_ : Ty.t) =
-      Or_error.tag_arg
-        (Ty.check v_type a_type)
-        "Checking address var type" addr sexp_of_t
+      Or_error.tag_arg (Ty.check v_type a_type) "Checking address var type"
+        addr sexp_of_t
     in
-    id)
+    id )
 
 let get_single_known_value (env : Env.t) (id : C4f_common.C_id.t) :
     Constant.t Or_error.t =
   Or_error.(
     env |> Env.known_value ~id
     >>= Result.of_option
-          ~error:(Error.of_string "env doesn't contain this value"))
+          ~error:(Error.of_string "env doesn't contain this value") )
 
 let eval_on_env (addr : t) ~(env : Env.t) : Constant.t Or_error.t =
   Or_error.(addr |> check_address_var ~env >>= get_single_known_value env)

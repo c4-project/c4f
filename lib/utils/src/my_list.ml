@@ -24,7 +24,7 @@ let find_at_most_one (type a b) ?(item_name : string = "item")
     match List.filter_map items ~f with
     | [] -> on_empty
     | [x] -> return x
-    | _ -> errorf "Duplicate %s" item_name)
+    | _ -> errorf "Duplicate %s" item_name )
 
 let find_one_opt (type a b) ?(item_name : string = "item") (items : a list)
     ~(f : a -> b option) : b option Or_error.t =
@@ -89,7 +89,7 @@ let try_splice (xs : 'a list) ~span:({pos; len} : Span.t)
     let%bind prefix, rest = split_or_error xs pos in
     let%bind input, suffix = split_or_error rest len in
     let%map output = replace_f input in
-    List.concat [prefix; output; suffix])
+    List.concat [prefix; output; suffix] )
 
 let splice (xs : 'a list) ~(span : Span.t) ~(replace_f : 'a list -> 'a list)
     : 'a list Or_error.t =

@@ -26,7 +26,7 @@ module Base_map (A : Applicative.S) = struct
       Statement.reduce_step x
         ~prim:(prim >> A.map ~f:(Accessor.construct Statement.prim))
         ~if_stm:(if_stm >> A.map ~f:(Accessor.construct Statement.if_stm))
-        ~flow:(flow >> A.map ~f:(Accessor.construct Statement.flow)))
+        ~flow:(flow >> A.map ~f:(Accessor.construct Statement.flow)) )
 
   module IB = If.Base_map (A)
   module FB = Flow_block.Base_map (A)

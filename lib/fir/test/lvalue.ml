@@ -41,7 +41,7 @@ let%expect_test "variable_in_env: positive deref result, test env" =
     [%sexp
       ( variable_in_env ~env
           Accessor.(
-            construct (deref @> variable) (C4f_common.C_id.of_string "bar"))
+            construct (deref @> variable) (C4f_common.C_id.of_string "bar") )
         : bool )] ;
   [%expect {| true |}]
 
@@ -51,7 +51,7 @@ let%expect_test "variable_in_env: negative variable result, test env" =
     [%sexp
       ( variable_in_env ~env
           Accessor.(
-            construct (deref @> variable) (C4f_common.C_id.of_string "keepo"))
+            construct (deref @> variable) (C4f_common.C_id.of_string "keepo") )
         : bool )] ;
   [%expect {| false |}]
 
@@ -70,7 +70,7 @@ let%expect_test "Type-checking an invalid deferencing variable lvalue" =
   let result =
     T.type_of
       Accessor.(
-        construct (deref @> variable) (C4f_common.C_id.of_string "foo"))
+        construct (deref @> variable) (C4f_common.C_id.of_string "foo") )
   in
   print_s [%sexp (result : C4f_fir.Type.t Or_error.t)] ;
   [%expect

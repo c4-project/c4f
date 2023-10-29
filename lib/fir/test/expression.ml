@@ -32,13 +32,13 @@ let%test_module "Eval" =
     let%expect_test "example true 'pure' Boolean expression" =
       test_pure
         Src.Expression.(
-          l_and (eq (int_lit 27) (int_lit 27)) (l_or truth falsehood)) ;
+          l_and (eq (int_lit 27) (int_lit 27)) (l_or truth falsehood) ) ;
       [%expect {| (Ok (Bool true)) |}]
 
     let%expect_test "example false 'pure' Boolean expression" =
       test_pure
         Src.Expression.(
-          l_and (eq (int_lit 27) (int_lit 27)) (l_and truth falsehood)) ;
+          l_and (eq (int_lit 27) (int_lit 27)) (l_and truth falsehood) ) ;
       [%expect {| (Ok (Bool false)) |}]
 
     let%expect_test "example short-circuiting true 'pure' Boolean expression"
@@ -65,20 +65,20 @@ let%test_module "Eval" =
         Src.Expression.(
           l_and
             (eq (lvalue (Src.Lvalue.of_variable_str_exn "x")) (int_lit 27))
-            (l_or truth falsehood)) ;
+            (l_or truth falsehood) ) ;
       [%expect {| (Ok (Bool true)) |}]
 
     let%expect_test "example false env-sensitive Boolean expression" =
       test_mod
         Src.Expression.(
           l_and (l_or truth falsehood)
-            (eq (lvalue (Src.Lvalue.of_variable_str_exn "y")) (int_lit 27))) ;
+            (eq (lvalue (Src.Lvalue.of_variable_str_exn "y")) (int_lit 27)) ) ;
       [%expect {| (Ok (Bool false)) |}]
 
     let%expect_test "example invalid env-sensitive Boolean expression" =
       test_mod
         Src.Expression.(
-          eq (lvalue (Src.Lvalue.of_variable_str_exn "a")) (int_lit 27)) ;
+          eq (lvalue (Src.Lvalue.of_variable_str_exn "a")) (int_lit 27) ) ;
       [%expect
         {| (Error ("Variable not found in typing environment." (id a))) |}]
 
@@ -93,7 +93,7 @@ let%test_module "Eval" =
           Expression.(
             atomic_load
               (Atomic_load.make ~src:(var_addr e "y")
-                 ~mo:C4f_fir.Mem_order.Seq_cst ))) ;
+                 ~mo:C4f_fir.Mem_order.Seq_cst ) ) ) ;
       [%expect {| (Ok (Int 53)) |}]
 
     let%expect_test "example atomic load" =
@@ -103,7 +103,7 @@ let%test_module "Eval" =
           Expression.(
             atomic_load
               (Atomic_load.make ~src:(var_addr e "y")
-                 ~mo:C4f_fir.Mem_order.Seq_cst ))) ;
+                 ~mo:C4f_fir.Mem_order.Seq_cst ) ) ) ;
       [%expect {| (Ok (Int 53)) |}]
 
     let%expect_test "example atomic fetches" =
@@ -117,6 +117,6 @@ let%test_module "Eval" =
                     ~mo:C4f_fir.Mem_order.Seq_cst ~op:`Sub ) )
               (atomic_fetch
                  (Atomic_fetch.make ~obj:(var_addr e "y") ~arg:(int_lit 1)
-                    ~mo:C4f_fir.Mem_order.Seq_cst ~op:`Add ) ))) ;
+                    ~mo:C4f_fir.Mem_order.Seq_cst ~op:`Add ) ) ) ) ;
       [%expect {| (Ok (Int 1)) |}]
   end )

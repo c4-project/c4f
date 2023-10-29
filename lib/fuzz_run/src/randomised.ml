@@ -49,7 +49,7 @@ module Runner_state = struct
       >>= fun params ->
       Monadic.return
         (Fuzz.State.Monad.peek (fun state ->
-             {Fuzz.Availability.Context.state; subject; params} ) ))
+             {Fuzz.Availability.Context.state; subject; params} ) ) )
 
   let make_gen_context (action_id : Common.Id.t)
       (subject : Fuzz.Subject.Test.t) : Fuzz.Payload_gen.Context.t Monad.t =
@@ -57,7 +57,7 @@ module Runner_state = struct
       Let_syntax.(
         let%bind actx = make_actx subject in
         let%map random = peek (fun x -> x.random) in
-        {Fuzz.Payload_gen.Context.action_id; random; actx}))
+        {Fuzz.Payload_gen.Context.action_id; random; actx} ) )
 
   let return_err (x : 'a Or_error.t) : 'a Monad.t =
     Monad.Monadic.return (Fuzz.State.Monad.Monadic.return x)
@@ -78,21 +78,21 @@ let generate_payload (type rs)
           Common.Id.pp Act.name ;
         let%map g = return_err (Fuzz.Payload_gen.run Act.Payload.gen ~ctx) in
         Common.Output.pv o "fuzz: done generating random state.@." ;
-        g)))
+        g ) ) )
 
 let available (module A : Fuzz.Action_types.S)
     ~(subject : Fuzz.Subject.Test.t) : bool Runner_state.Monad.t =
   Runner_state.(
     Monad.(
       make_actx subject
-      >>= fun ctx -> return_err (Fuzz.Availability.M.run A.available ~ctx)))
+      >>= fun ctx -> return_err (Fuzz.Availability.M.run A.available ~ctx) ) )
 
 let pick (s : Runner_state.t) :
     (Runner_state.t * Fuzz.Action.t option) Or_error.t =
   Or_error.Let_syntax.(
     let%map action, pool' = Action_pool.pick s.pool ~random:s.random in
     let s' = s.@(Runner_state.pool) <- pool' in
-    (s', action))
+    (s', action) )
 
 let pick_step
     (mu : Fuzz.Action.t option -> Fuzz.Action.t option Runner_state.Monad.t)
@@ -108,7 +108,7 @@ let pick_step
       | None -> return None
       | Some action ->
           if%bind available action ~subject then return (Some action)
-          else mu None))
+          else mu None ) )
 
 let pick_loop (subject : Fuzz.Subject.Test.t) :
     Fuzz.Action.t option Runner_state.Monad.t =
@@ -116,7 +116,7 @@ let pick_loop (subject : Fuzz.Subject.Test.t) :
     fix None ~f:(fun mu xo ->
         match xo with
         | Some x -> return (Some x)
-        | None -> pick_step mu ~subject ))
+        | None -> pick_step mu ~subject ) )
 
 let pick_action (subject : Fuzz.Subject.Test.t) :
     (module Fuzz.Action_types.S) Runner_state.Monad.t =
@@ -124,7 +124,7 @@ let pick_action (subject : Fuzz.Subject.Test.t) :
     Let_syntax.(
       let%bind ao = pick_loop subject in
       let%map () = Runner_state.(modify_acc pool Action_pool.reset) in
-      Option.value ao ~default:(module Fuzz.Action.Nop)))
+      Option.value ao ~default:(module Fuzz.Action.Nop) ) )
 
 let add_recommendations (type p)
     (module Action : Fuzz.Action_types.S with type Payload.t = p)
@@ -150,7 +150,7 @@ let run_action (module Action : Fuzz.Action_types.S)
     let%bind payload = generate_payload (module Action) subject in
     let%bind () = add_recommendations (module Action) payload in
     let%bind () = log_action (module Action) payload in
-    Runner_state.Monad.Monadic.return (Action.run subject ~payload))
+    Runner_state.Monad.Monadic.return (Action.run subject ~payload) )
 
 let mutate_subject_step (subject : Fuzz.Subject.Test.t) :
     Fuzz.Subject.Test.t Runner_state.Monad.t =
@@ -161,7 +161,7 @@ let mutate_subject_step (subject : Fuzz.Subject.Test.t) :
     Common.Output.pv o "fuzz: done; now running action...@." ;
     run_action action subject
     >>= Runner_state.Monad.tee ~f:(fun _ ->
-            Common.Output.pv o "fuzz: action done.@." ))
+            Common.Output.pv o "fuzz: action done.@." ) )
 
 let get_cap () : int Runner_state.Monad.t =
   Runner_state.(
@@ -169,7 +169,7 @@ let get_cap () : int Runner_state.Monad.t =
       Let_syntax.(
         let%bind random = peek_acc random in
         let%bind params = peek_acc params in
-        return_err (Fuzz.Param_map.get_action_cap params ~random))))
+        return_err (Fuzz.Param_map.get_action_cap params ~random) ) ) )
 
 let mutate_subject (subject : Fuzz.Subject.Test.t) :
     Fuzz.Subject.Test.t Runner_state.Monad.t =
@@ -183,7 +183,7 @@ let mutate_subject (subject : Fuzz.Subject.Test.t) :
             let%bind subject'' = mutate_subject_step subject' in
             mu (remaining - 1, subject'') )
     in
-    subject')
+    subject' )
 
 let make_runner_state (seed : int option) (config : Config.t) :
     Runner_state.t Or_error.t =
@@ -192,7 +192,7 @@ let make_runner_state (seed : int option) (config : Config.t) :
   Or_error.Let_syntax.(
     let params = Config.make_param_map config in
     let%map pool = Config.make_pool config params ~random in
-    {Runner_state.random; trace; pool; params})
+    {Runner_state.random; trace; pool; params} )
 
 let run ?(seed : int option) (subject : Fuzz.Subject.Test.t)
     ~(config : Config.t) : Fuzz.Output.t Fuzz.State.Monad.t =
@@ -204,4 +204,4 @@ let run ?(seed : int option) (subject : Fuzz.Subject.Test.t)
       let%map {trace; _}, subject =
         Runner_state.Monad.run' (mutate_subject subject) runner_state
       in
-      {Fuzz.Output.trace; subject}))
+      {Fuzz.Output.trace; subject} ) )

@@ -12,8 +12,7 @@
 open Base
 open Import
 
-let dst_in_env env x =
-  Map.mem env Fir.(x.@(Assign.dst @> Lvalue.variable_of))
+let dst_in_env env x = Map.mem env Fir.(x.@(Assign.dst @> Lvalue.variable_of))
 
 let print_sample =
   Utils.My_quickcheck.print_sample
@@ -23,7 +22,7 @@ let print_sample =
           (using
              (Accessor.construct
                 (Fir.Statement.prim' @> Fir.Prim_statement.assign) )
-             C4f_litmus_c.Reify_stm.pp ))
+             C4f_litmus_c.Reify_stm.pp ) )
 
 let%expect_test "Int: samples" =
   let env = Lazy.force Fir_test.Env.test_env in

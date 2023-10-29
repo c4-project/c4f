@@ -30,7 +30,7 @@ let%test_module "Surround" =
         Expression.(
           l_and
             (eq (of_variable_str_exn "x") (int_lit 27))
-            (of_variable_str_exn "a")))
+            (of_variable_str_exn "a") ) )
 
     let where : Fuzz.Path.With_meta.t =
       Lazy.force Fuzz_test.Subject.Test_data.Path.surround_atomic
@@ -207,7 +207,7 @@ let%test_module "Invert" =
     let payload : Fuzz.Path.With_meta.t =
       Fuzz.Path_meta.With_meta.make
         Fuzz.Path.(
-          in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 3 @@ Stm.this_stm)
+          in_thread 0 @@ Thread.in_stms @@ Stms.in_stm 3 @@ Stm.this_stm )
 
     let%expect_test "resulting AST" =
       Fuzz_test.Action.Test_utils.run_and_dump_test

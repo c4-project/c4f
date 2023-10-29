@@ -118,7 +118,7 @@ module Json : Plumbing.Jsonable_types.S with type t := t = struct
     Result.(
       json |> Yojson.Safe.Util.to_string_option
       |> of_option ~error:(Base.Error.of_string "Not a JSON string.")
-      >>= create |> Or_error.ok_exn)
+      >>= create |> Or_error.ok_exn )
 end
 
 include Json
@@ -228,7 +228,7 @@ module Human = struct
         let str =
           String.concat ~sep:"_" (List.filter_opt [adj; Some noun; num])
         in
-        of_string str))
+        of_string str ) )
 
   let quickcheck_shrinker = Q.quickcheck_shrinker
 

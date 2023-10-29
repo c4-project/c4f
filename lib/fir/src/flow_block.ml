@@ -41,7 +41,7 @@ module For = struct
       <*> AMany.map Accessor_base.Option.some ~f:access x.cmp
       <*> AMany.map
             (Accessor_base.Option.some @> Assign.exprs)
-            ~f:access x.update)
+            ~f:access x.update )
 
   let exprs : type i. (i, Expression.t, t, [< many]) Accessor.t =
     [%accessor Accessor.many exprs_many]
@@ -124,7 +124,7 @@ module For = struct
           ~error:
             (Error.create_s
                [%message
-                 "Unsupported comparison expression" ~(cmp : Expression.t)] )
+                 "Unsupported comparison expression" ~cmp:(cmp : Expression.t)] )
       in
       let%bind lv =
         Result.of_option
@@ -133,14 +133,14 @@ module For = struct
             (Error.create_s
                [%message
                  "Unsupported LHS of comparison expression"
-                   ~(l : Expression.t)] )
+                   ~l:(l : Expression.t)] )
       in
       match bop with
       | Rel o -> Ok (o, lv, r)
       | _ ->
           Or_error.error_s
             [%message
-              "Unsupported comparison operator" ~op:(bop : Op.Binary.t)])
+              "Unsupported comparison operator" ~op:(bop : Op.Binary.t)] )
 
   let init_value (init : Assign.t) : Expression.t Or_error.t =
     Result.of_option
@@ -148,7 +148,8 @@ module For = struct
       ~error:
         (Error.create_s
            [%message
-             "Unsupported RHS of initialiser expression" ~(init : Assign.t)] )
+             "Unsupported RHS of initialiser expression"
+               ~init:(init : Assign.t)] )
 
   let try_simplify_inner (init : Assign.t) (cmp : Expression.t)
       (update : Assign.t) : Simple.t Or_error.t =
@@ -159,7 +160,7 @@ module For = struct
       in
       let%bind direction = for_loop_direction cop update.@(Assign.src) in
       let%map init_value = init_value init in
-      {Simple.lvalue; init_value; cmp_value; direction})
+      {Simple.lvalue; init_value; cmp_value; direction} )
 
   let try_simplify ({init; cmp; update} : t) : Simple.t Or_error.t =
     match (init, cmp, update) with
@@ -254,7 +255,7 @@ module Header = struct
       function
       | For f -> For.exprs_many f >>| fun f' -> For f'
       | While (w, e) -> access e >>| fun e' -> While (w, e')
-      | (Explicit | Implicit | Lock _) as x -> return x)
+      | (Explicit | Implicit | Lock _) as x -> return x )
 
   let exprs : type i. (i, Expression.t, t, [< many]) Accessor.t =
     [%accessor Accessor.many exprs_many]
@@ -295,7 +296,7 @@ module Header = struct
           match x with
           | For n -> FL.map_m ~f n >>| fun f' -> For f'
           | While (w, e) -> EL.map_m ~f e >>| fun e' -> While (w, e')
-          | (Explicit | Implicit | Lock _) as x -> return x)
+          | (Explicit | Implicit | Lock _) as x -> return x )
     end
   end)
 end

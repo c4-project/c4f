@@ -11,7 +11,6 @@
 
 (* Needed because Base shadows it: *)
 module Ty = Type
-
 open Base
 open Import
 
@@ -62,7 +61,7 @@ module Base_map (Ap : Applicative.S) = struct
         {obj; expected; desired; strength; succ; fail}
       in
       return m <*> obj x.obj <*> expected x.expected <*> desired x.desired
-      <*> strength x.strength <*> succ x.succ <*> fail x.fail)
+      <*> strength x.strength <*> succ x.succ <*> fail x.fail )
 end
 
 module On_expressions : Travesty.Traversable_types.S1 with type 'e t = 'e t =
@@ -89,8 +88,7 @@ module Type_check (Env : Env_types.S) = struct
       (Ty.check_pointer_non ~pointer:expected ~non:desired)
       ~tag:"'expected' type must be same as pointer to 'desired' type"
 
-  let check_expected_obj ~(expected : Ty.t) ~(obj : Ty.t) :
-      Ty.t Or_error.t =
+  let check_expected_obj ~(expected : Ty.t) ~(obj : Ty.t) : Ty.t Or_error.t =
     Or_error.tag
       (Ty.check_atomic_non ~atomic:expected ~non:obj)
       ~tag:"'obj' type must be atomic version of 'expected' type"
@@ -107,5 +105,5 @@ module Type_check (Env : Env_types.S) = struct
       let%map _ = check_expected_obj ~expected ~obj in
       (* Compare-exchanges return a boolean: whether or not they were
          successful. *)
-      Ty.bool ())
+      Ty.bool () )
 end

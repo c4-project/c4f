@@ -28,12 +28,12 @@ let validate_path_and_file : (Fpath.t * Fpath.t) Validate.check =
     pair
       ~fst:
         (booltest Fpath.is_dir_path ~if_false:"path should be a directory")
-      ~snd:(booltest Fpath.is_file_path ~if_false:"file should be a file"))
+      ~snd:(booltest Fpath.is_file_path ~if_false:"file should be a file") )
 
 let to_full_path ~(dir : Fpath.t) ~(file : Fpath.t) : Fpath.t Or_error.t =
   Or_error.(
     Validate.valid_or_error validate_path_and_file (dir, file)
-    >>| Tuple2.uncurry Fpath.append)
+    >>| Tuple2.uncurry Fpath.append )
 
 let regress_on_file ~(dir : Fpath.t) (file : Fpath.t)
     ~(f : file:Fpath.t -> path:Fpath.t -> unit Or_error.t) : unit Or_error.t
@@ -43,7 +43,7 @@ let regress_on_file ~(dir : Fpath.t) (file : Fpath.t)
   Or_error.Let_syntax.(
     let%bind path = to_full_path ~dir ~file in
     let%map () = f ~path ~file in
-    printf "```\n")
+    printf "```\n" )
 
 let regress_on_files (bin_name : string) ~(dir : Fpath.t) ~(ext : string)
     ~(f : file:Fpath.t -> path:Fpath.t -> unit Or_error.t) : unit Or_error.t
@@ -55,7 +55,7 @@ let regress_on_files (bin_name : string) ~(dir : Fpath.t) ~(ext : string)
     in
     let results = List.map test_files ~f:(regress_on_file ~dir ~f) in
     let%map () = Or_error.combine_errors_unit results in
-    printf "\nRan %d test(s).\n" (List.length test_files))
+    printf "\nRan %d test(s).\n" (List.length test_files) )
 
 let make_regress_command (regress_function : Fpath.t -> unit Or_error.t)
     ~(summary : string) : Command.t =
@@ -66,5 +66,5 @@ let make_regress_command (regress_function : Fpath.t -> unit Or_error.t)
         let o = Ac.Output.make ~verbose:false ~warnings:true in
         Or_error.(
           test_path_raw |> Plumbing.Fpath_helpers.of_string
-          >>= regress_function)
-        |> Ac.Output.print_error o)
+          >>= regress_function )
+        |> Ac.Output.print_error o )

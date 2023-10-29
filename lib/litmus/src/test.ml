@@ -51,7 +51,7 @@ module Raw = struct
     Or_error.Let_syntax.(
       let%map threads' = Tx.List.insert threads index thread in
       let header' = bump_tids (header test) ~from:index ~delta:1 in
-      make ~threads:threads' ~header:header')
+      make ~threads:threads' ~header:header' )
 
   let add_thread_at_end (type const prog) (test : (const, prog) t)
       ~(thread : prog) : (const, prog) t =
@@ -71,7 +71,7 @@ module Raw = struct
        mapping. *)
     Or_error.Let_syntax.(
       let%map header' = f header in
-      {test with header= header'})
+      {test with header= header'} )
 
   let try_map_threads (type const p1 p2) (test : (const, p1) t)
       ~(f : p1 -> p2 Or_error.t) : (const, p2) t Or_error.t =
@@ -80,7 +80,7 @@ module Raw = struct
        mapping. *)
     Or_error.Let_syntax.(
       let%map threads' = Tx.Or_error.combine_map threads ~f in
-      {test with threads= threads'})
+      {test with threads= threads'} )
 
   let try_map_thread (type const prog) (test : (const, prog) t)
       ~(index : int) ~(f : prog -> prog Or_error.t) :
@@ -93,7 +93,7 @@ module Raw = struct
         Tx.List.With_errors.replace_m threads index ~f:(fun x ->
             x |> f >>| Option.some )
       in
-      {test with threads= threads'})
+      {test with threads= threads'} )
 
   let remove_thread (type const prog) (test : (const, prog) t) ~(index : int)
       : (const, prog) t Or_error.t =
@@ -101,7 +101,7 @@ module Raw = struct
     Or_error.Let_syntax.(
       let%map threads' = Tx.List.replace threads index ~f:(Fn.const None) in
       let header' = bump_tids (header test) ~from:index ~delta:(-1) in
-      make ~threads:threads' ~header:header')
+      make ~threads:threads' ~header:header' )
 end
 
 let check_init_against_globals (type k t)
@@ -117,7 +117,7 @@ let check_init_against_globals (type k t)
           [%message
             "Program global variables aren't compatible with init."
               ~in_program:(globals_keys : Set.M(Ac.C_id).t)
-              ~in_init:(init_keys : Set.M(Ac.C_id).t)] ))
+              ~in_init:(init_keys : Set.M(Ac.C_id).t)] ) )
 
 module Make (Lang : Test_types.Basic) :
   Test_types.S with module Lang = Lang and type raw = Raw.M(Lang).t = struct
@@ -198,9 +198,9 @@ module Make (Lang : Test_types.Basic) :
         Validate.fail_s
           [%message
             "One or more locations aren't in the init."
-              ~(in_locations : Set.M(Ac.C_id).t)
-              ~(in_init : Set.M(Ac.C_id).t)
-              ~(excess : Set.M(Ac.C_id).t)]
+              ~in_locations:(in_locations : Set.M(Ac.C_id).t)
+              ~in_init:(in_init : Set.M(Ac.C_id).t)
+              ~excess:(excess : Set.M(Ac.C_id).t)]
 
     let validate_header (t : Lang.Constant.t Header.t) : Validate.t =
       Validate.of_list
@@ -243,7 +243,7 @@ module Make (Lang : Test_types.Basic) :
           Or_error.(
             threads |> uniform_globals
             >>= Tx.Option.With_errors.iter_m
-                  ~f:(check_init_against_globals (Header.init header))) )
+                  ~f:(check_init_against_globals (Header.init header)) ) )
 
     let validate : t Validate.check =
       Validate.all [validate_fields; validate_globals]
@@ -284,7 +284,7 @@ module Make (Lang : Test_types.Basic) :
     Or_error.Let_syntax.(
       let%bind _ = check_language language in
       let%bind header = Ast.get_header name decls in
-      make ~threads ~header)
+      make ~threads ~header )
 
   let try_map_raw (test : t) ~(f : raw -> raw Or_error.t) : t Or_error.t =
     Or_error.(test |> raw |> f >>= validate)

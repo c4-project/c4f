@@ -52,7 +52,7 @@ module Fragment = struct
     | Range (idx, stride) ->
         Fmt.(
           styled (`Fg `Green)
-            (any "Range" ++ brackets (pair ~sep:comma int int)))
+            (any "Range" ++ brackets (pair ~sep:comma int int)) )
           f (idx, stride)
     | Stm idx -> pp_idx `Cyan "Stm" f idx
     | Stms -> pp_name `Yellow "Stms" f ()
@@ -75,7 +75,9 @@ module Fragment = struct
     else
       Or_error.error_s
         [%message
-          "Too many path fragments in list" ~(overflow : t list) ~sort]
+          "Too many path fragments in list"
+            ~overflow:(overflow : t list)
+            ~sort]
 
   let lift_not_enough (sort : string) (xs : t list)
       (f : t -> t list -> 'a Or_error.t) : 'a Or_error.t =
@@ -108,7 +110,7 @@ let rec flow_block_of_fragments (rest : Fragment.t list) :
     @@ function
     | Body -> lift_continue stm_list_of_fragments (fun r -> In_block r)
     | Cond -> terminate "flow" This_cond
-    | x -> bad_fragments "flow" x)
+    | x -> bad_fragments "flow" x )
 
 and if_of_fragments (rest : Fragment.t list) :
     (bool * stm_list) flow_block Or_error.t =
@@ -118,7 +120,7 @@ and if_of_fragments (rest : Fragment.t list) :
     | Branch b ->
         lift_continue stm_list_of_fragments (fun r -> In_block (b, r))
     | Cond -> terminate "if" This_cond
-    | x -> bad_fragments "if" x)
+    | x -> bad_fragments "if" x )
 
 and stm_of_fragments (rest : Fragment.t list) : stm Or_error.t =
   Fragment.(
@@ -127,7 +129,7 @@ and stm_of_fragments (rest : Fragment.t list) : stm Or_error.t =
     | Flow -> lift_continue flow_block_of_fragments (fun r -> In_flow r)
     | If -> lift_continue if_of_fragments (fun r -> In_if r)
     | This -> terminate "statement" This_stm
-    | x -> bad_fragments "statement" x)
+    | x -> bad_fragments "statement" x )
 
 and stm_list_of_fragments (rest : Fragment.t list) : stm_list Or_error.t =
   Fragment.(
@@ -136,7 +138,7 @@ and stm_list_of_fragments (rest : Fragment.t list) : stm_list Or_error.t =
     | Insert i -> terminate "statement-list" (Insert i : stm_list)
     | Stm i -> lift_continue stm_of_fragments (fun r -> In_stm (i, r))
     | Range (i, s) -> terminate "statement-list" (On_range (i, s))
-    | x -> bad_fragments "statement-list" x)
+    | x -> bad_fragments "statement-list" x )
 
 let rec fragments_of_flow_block (x : stm_list flow_block) : Fragment.t list =
   match x with
@@ -243,7 +245,7 @@ module Thread = struct
       lift_not_enough "thread" frags
       @@ function
       | Stms -> lift_continue stm_list_of_fragments (fun r -> In_stms r)
-      | x -> bad_fragments "thread" x)
+      | x -> bad_fragments "thread" x )
 
   let fragments_of : t -> Fragment.t list = function
     | In_stms rest -> Stms :: fragments_of_stm_list rest
@@ -263,7 +265,7 @@ module Complete = struct
       @@ function
       | Thread n ->
           lift_continue Thread.of_fragments (fun r -> In_thread (n, r))
-      | x -> bad_fragments "program" x)
+      | x -> bad_fragments "program" x )
 
   let fragments_of : t -> Fragment.t list = function
     | In_thread (n, rest) -> Thread n :: Thread.fragments_of rest
@@ -289,7 +291,7 @@ module With_meta = struct
     Fmt.(
       using (Accessor.get Path_meta.With_meta.path) pp
       ++ sp
-      ++ using (Accessor.get Path_meta.With_meta.meta) Path_meta.pp)
+      ++ using (Accessor.get Path_meta.With_meta.meta) Path_meta.pp )
 
   let flag (f : Path_meta.Flag.t) : ('i, bool, t, [< field]) Accessor.t =
     Path_meta.(With_meta.meta @> flags @> Accessor.Set.mem f)

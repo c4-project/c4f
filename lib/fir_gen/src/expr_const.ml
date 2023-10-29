@@ -47,7 +47,7 @@ let arb_bop ~(gen_arb : t Q.Generator.t)
     t Q.Generator.t =
   Q.Generator.Let_syntax.(
     let%bind p = Expr_util.half gen_arb in
-    bop (Fn.compose Expr_util.half k_mu) (One p))
+    bop (Fn.compose Expr_util.half k_mu) (One p) )
 
 (** [var_kv_bop ~gen_load ~bop] generates binary operations of the form
     [x op y], in which one of [x] and [y] is a variable, the other is its
@@ -85,7 +85,7 @@ let make_int_kv_equation (var : t) ~(target : int32) ~(kv : int32) : t option
           Fir.Expression.(
             if diff32 = min_value || diff32 > 0l then
               Infix.(var + int_lit diff)
-            else Infix.(var - int_lit (Int.abs diff))) ))
+            else Infix.(var - int_lit (Int.abs diff)) ) ) )
 
 let make_kv_equation (k : Fir.Constant.t) (var : t) (rc : Fir.Env.Record.t) :
     t =
@@ -97,7 +97,7 @@ let make_kv_equation (k : Fir.Constant.t) (var : t) (rc : Fir.Env.Record.t) :
           Let_syntax.(
             let%bind target = Int32.of_int target in
             let%bind kv = Int32.of_int kv in
-            make_int_kv_equation var ~target ~kv))
+            make_int_kv_equation var ~target ~kv ) )
       in
       Option.value kvx ~default:(Fir.Expression.constant k)
   | Bool b, Some (Bool b') ->
@@ -177,7 +177,7 @@ let recursive_generators (k : Fir.Constant.t) (mu : t Q.Generator.t)
             ( 3.0
             , Q.Generator.Let_syntax.(
                 let%bind x = Expr_util.half mu and y = Expr_util.half mu in
-                bop (Fn.compose Expr_util.half k_mu) (Two (x, y))) ) ) ]
+                bop (Fn.compose Expr_util.half k_mu) (Two (x, y)) ) ) ) ]
 
 let rec_on_other_constant (k : Fir.Constant.t) ~(this_k : Fir.Constant.t)
     ~(mu : Fir.Constant.t -> t Q.Generator.t) : t Q.Generator.t option =
@@ -192,7 +192,7 @@ let rec_on_other_constant (k : Fir.Constant.t) ~(this_k : Fir.Constant.t)
              Let_syntax.(
                let%bind size = size in
                let size = if size = 0 then 0 else size - 1 in
-               with_size ~size (mu k)))
+               with_size ~size (mu k) ) )
 
 let gen (k : Fir.Constant.t) (env : env) ~(int : env -> t Q.Generator.t)
     ~(bool : env -> t Q.Generator.t)

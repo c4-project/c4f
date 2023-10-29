@@ -31,7 +31,7 @@ let run ?(aux_output : Plumbing.Output.t option)
         (C4f_delitmus.Filter.run ~config)
         args
     in
-    Plumbing.Output.with_output_opt aux_output ~f:(write_aux aux_out))
+    Plumbing.Output.with_output_opt aux_output ~f:(write_aux aux_out) )
 
 let command : Command.t =
   Command.basic ~summary:"convert a C litmus test to a normal C file"
@@ -51,7 +51,7 @@ let command : Command.t =
                [ ("vars-as-globals", Vars_as_globals)
                ; ("vars-as-parameters", Vars_as_parameters) ] )
             [%sexp_of: C4f_delitmus.Config.Style.t] ~default:Vars_as_globals
-            ~doc:"STYLE_NAME the style of delitmus action to run")
+            ~doc:"STYLE_NAME the style of delitmus action to run" )
       and impl_suffix =
         flag "impl-suffix" (optional string)
           ~doc:"STRING append this to names of thread functions"
@@ -64,4 +64,4 @@ let command : Command.t =
           (Common_cmd.Args.With_files.rest standard_args)
           ~f:
             (run standard_args ~style ~no_qualify_locals ?impl_suffix
-               ?aux_output ))
+               ?aux_output ) )

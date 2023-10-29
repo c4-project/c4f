@@ -21,8 +21,7 @@ module Insert = struct
     Fuzz.Action_types.S with type Payload.t = Fuzz.Payload_impl.Cond_pathed.t
 
   module False : S = struct
-    let name =
-      prefix_name Common.Id.("insert" @: "while" @: "false" @: empty)
+    let name = prefix_name Common.Id.("insert" @: "while" @: "false" @: empty)
 
     let readme : string Lazy.t =
       lazy
@@ -40,12 +39,12 @@ module Insert = struct
           Fir.Expression.t Fuzz.Payload_gen.t =
         let tid = Fuzz.Path.tid path in
         Fuzz.Payload_gen.(
-          let* vars in
+          let* vars = vars in
           let env =
             Fuzz.Var.Map.env_satisfying_all vars ~scope:(Local tid)
               ~predicates:[]
           in
-          lift_quickcheck (Fir_gen.Expr.falsehood env))
+          lift_quickcheck (Fir_gen.Expr.falsehood env) )
 
       let gen = Fuzz.Payload_impl.Pathed.gen Insert path_filter gen'
     end
@@ -62,7 +61,7 @@ module Insert = struct
         Fir.Flow_block.(
           make
             ~header:(Header.While (While, to_insert))
-            ~body:(Fuzz.Subject.Block.make_dead_code ()))
+            ~body:(Fuzz.Subject.Block.make_dead_code ()) )
 
     (* TODO(@MattWindsor91): unify this with things? *)
     let run (test : Fuzz.Subject.Test.t)
@@ -102,7 +101,7 @@ module Surround = struct
     let name =
       prefix_name
         Common.Id.(
-          "surround" @: Basic.kind_name @: Basic.name_suffix @: empty)
+          "surround" @: Basic.kind_name @: Basic.name_suffix @: empty )
 
     let surround_with = Basic.kind_name ^ " loops"
 
@@ -114,7 +113,7 @@ module Surround = struct
 
     let available : Fuzz.Availability.t =
       Fuzz.Availability.(
-        M.(lift path_filter >>= is_filter_constructible ~kind:Transform_list))
+        M.(lift path_filter >>= is_filter_constructible ~kind:Transform_list) )
 
     module Payload = struct
       type t = Fir.Expression.t [@@deriving sexp]

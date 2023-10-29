@@ -78,7 +78,7 @@ type 'a t = 'a Row.t list [@@deriving sexp_of]
 let from_alist_row ((item, raw_weight) : 'a * int) : 'a Row.t Or_error.t =
   Or_error.Let_syntax.(
     let%map weight = Weight.create raw_weight in
-    {Row.item; weight})
+    {Row.item; weight} )
 
 let from_alist : ('a, int) List.Assoc.t -> 'a t Or_error.t = function
   | [] -> Or_error.error_string "Weighted lists cannot be empty"

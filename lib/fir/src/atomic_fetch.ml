@@ -11,7 +11,6 @@
 
 (* Needed because Base shadows it: *)
 module Ty = Type
-
 open Base
 open Import
 
@@ -27,7 +26,7 @@ module Base_map (Ap : Applicative.S) = struct
       ~(op : Op.Fetch.t -> Op.Fetch.t Ap.t) : 'b t Ap.t =
     Ap.(
       return (fun obj arg mo op -> make ~obj ~arg ~mo ~op)
-      <*> obj x.obj <*> arg x.arg <*> mo x.mo <*> op x.op)
+      <*> obj x.obj <*> arg x.arg <*> mo x.mo <*> op x.op )
 end
 
 module On_expressions : Travesty.Traversable_types.S1 with type 'e t = 'e t =
@@ -90,8 +89,8 @@ struct
         ~tag:
           [%message
             "'obj' type must be atomic version of 'expected' type"
-              ~(arg : Ty.t)
-              ~(obj : Ty.t)])
+              ~arg:(arg : Ty.t)
+              ~obj:(obj : Ty.t)] )
 
   let type_of (c : t) : Ty.t Or_error.t =
     Or_error.Let_syntax.(
@@ -104,5 +103,5 @@ struct
       let%map _ = check_arg_obj ~arg ~obj in
       (* As we don't implement M=ptrdiff_t, M = C and is thus the return
          type. *)
-      arg)
+      arg )
 end

@@ -21,7 +21,7 @@ let run ?(name : [< `Keep | `Replace_with of string] option)
     in
     Common_cmd.Args.With_files.run_filter
       (C4f_litmus_c.Header.Filters.run_modify ~changes)
-      args)
+      args )
 
 let readme () : string =
   C4f_utils.My_string.format_for_readme
@@ -52,4 +52,4 @@ let command : Command.t =
       fun () ->
         Common_cmd.Args.Standard.lift_command
           (Common_cmd.Args.With_files.rest standard_args)
-          ~f:(run standard_args ?name ~postcondition))
+          ~f:(run standard_args ?name ~postcondition) )

@@ -20,12 +20,12 @@ let run_and_dump_labels
       let%map {labels; _}, _ =
         Fuzz.State.Monad.(run' test_action initial_state)
       in
-      labels)
+      labels )
   in
   Fmt.(
     pr "@[%a@]@."
       (result ~error:Error.pp
-         ~ok:(using Set.to_list (list ~sep:sp C4f_common.Litmus_id.pp)) ))
+         ~ok:(using Set.to_list (list ~sep:sp C4f_common.Litmus_id.pp)) ) )
     result
 
 let%test_module "program.label" =
@@ -38,7 +38,7 @@ let%test_module "program.label" =
         let%map where = path in
         Fuzz.Payload_impl.Pathed.make
           (C4f_common.C_id.of_string "label_mclabelface")
-          ~where)
+          ~where )
 
     let test_action : Fuzz.Subject.Test.t Fuzz.State.Monad.t =
       Src.Program.Label.run

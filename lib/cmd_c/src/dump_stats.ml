@@ -30,4 +30,4 @@ let command : Command.t =
       fun () ->
         Common_cmd.Args.Standard.lift_command
           (Common_cmd.Args.With_files.rest standard_args)
-          ~f:(run standard_args))
+          ~f:(run standard_args) )

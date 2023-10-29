@@ -40,7 +40,7 @@ module Make (B : Runner_types.Basic) = struct
         (* Globals in a valid C litmus test come through as pointers. *)
         if is_global then Fir.Type.deref orig_type else Ok orig_type
       in
-      Var_map.{Record.c_type; mapped_to; c_id; initial_value})
+      Var_map.{Record.c_type; mapped_to; c_id; initial_value} )
 
   let make_var_map (test : Fir.Litmus.Test.t) : Var_map.t Or_error.t =
     Or_error.(
@@ -53,7 +53,7 @@ module Make (B : Runner_types.Basic) = struct
               >>| fun rc -> (id, rc) )
       >>= Or_error.combine_errors
       >>= Map.of_alist_or_error (module Common.Litmus_id)
-      >>| Common.Scoped_map.of_litmus_id_map)
+      >>| Common.Scoped_map.of_litmus_id_map )
 
   let rewrite_function_name (name : Common.C_id.t) : Common.C_id.t Or_error.t
       =
@@ -68,7 +68,7 @@ module Make (B : Runner_types.Basic) = struct
     let name = func.@(Common.C_named.name) in
     Or_error.Let_syntax.(
       let%map c_id = rewrite_function_name name in
-      (name, {Function_map.Record.c_id; tid}))
+      (name, {Function_map.Record.c_id; tid}) )
 
   let make_function_map (threads : unit Fir.Function.t Common.C_named.t list)
       : Function_map.t Or_error.t =
@@ -76,7 +76,7 @@ module Make (B : Runner_types.Basic) = struct
       threads
       |> List.mapi ~f:(fun tid -> make_named_function_record ~tid)
       |> Or_error.combine_errors
-      >>= Map.of_alist_or_error (module Common.C_id))
+      >>= Map.of_alist_or_error (module Common.C_id) )
 
   let make_aux (input : Fir.Litmus.Test.t) : Aux.t Or_error.t =
     let threads = Fir.Litmus.Test.threads input in
@@ -84,5 +84,5 @@ module Make (B : Runner_types.Basic) = struct
     Or_error.Let_syntax.(
       let%bind function_map = make_function_map threads in
       let%map var_map = make_var_map input in
-      Aux.make ~litmus_header ~function_map ~var_map ())
+      Aux.make ~litmus_header ~function_map ~var_map () )
 end

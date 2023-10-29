@@ -28,7 +28,7 @@ let int_relational ~(gen_int : t Q.Generator.t) : t Q.Generator.t =
       let%map l = g
       and r = g
       and op = [%quickcheck.generator: Fir.Op.Binary.Rel.t] in
-      Fir.Expression.bop (Fir.Op.Binary.Rel op) l r))
+      Fir.Expression.bop (Fir.Op.Binary.Rel op) l r ) )
 
 (** Generates the terminal Boolean expressions. *)
 let base_generators (env : env) ~(int : env -> t Q.Generator.t) :

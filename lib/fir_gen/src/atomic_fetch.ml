@@ -83,7 +83,7 @@ let gen_refl_op_base (obj : Fir.Address.t) (arg : Fir.Expression.t) :
     (* 'all values are permitted':
        https://en.cppreference.com/w/c/atomic/atomic_fetch_add etc. *)
     let%map mo = Fir.Mem_order.quickcheck_generator in
-    Fir.Atomic_fetch.make ~obj ~arg ~mo ~op)
+    Fir.Atomic_fetch.make ~obj ~arg ~mo ~op )
 
 let gen_int_refl_idem (env : env) : t Q.Generator.t =
   let module A = Address.Atomic_int_pointers (struct
@@ -101,7 +101,7 @@ let has_known_ints (env : env) : bool =
   Fir.Env.(
     has_vars_of_basic_type
       ~basic:(Fir.Type.Basic.int ~is_atomic:true ())
-      (filter_to_known_values env))
+      (filter_to_known_values env) )
 
 let gen_int_idem (env : env) ~(const : const_f) : t Q.Generator.t =
   Q.Generator.weighted_union

@@ -34,7 +34,7 @@ module Base_map (A : Applicative.S) = struct
     let make cond t_branch f_branch = make ~cond ~t_branch ~f_branch in
     A.(
       return make <*> cond if_stm.cond <*> t_branch if_stm.t_branch
-      <*> f_branch if_stm.f_branch)
+      <*> f_branch if_stm.f_branch )
 end
 
 module Bident = Base_map (Travesty.Monad_exts.App (Monad.Ident))

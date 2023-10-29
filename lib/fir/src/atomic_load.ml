@@ -11,7 +11,6 @@
 
 (* Needed because Base shadows it: *)
 module Ty = Type
-
 open Base
 open Import
 
@@ -32,7 +31,7 @@ module Base_map (Ap : Applicative.S) = struct
       ~(mo : Mem_order.t -> Mem_order.t Ap.t) : t Ap.t =
     Ap.(
       let m src mo = make ~src ~mo:(ensure_mo_compat x.mo mo) in
-      return m <*> src x.src <*> mo x.mo)
+      return m <*> src x.src <*> mo x.mo )
 end
 
 module On_addresses :
@@ -70,7 +69,7 @@ module Type_check (E : Env_types.S) = struct
     Or_error.Let_syntax.(
       let%bind a_ptr = A.type_of ld.src in
       let%bind a = Ty.deref a_ptr in
-      Ty.to_non_atomic a)
+      Ty.to_non_atomic a )
 end
 
 module Quickcheck_generic

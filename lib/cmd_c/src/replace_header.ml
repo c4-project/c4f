@@ -18,7 +18,7 @@ let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o
     let%bind replacement = C4f_litmus_c.Header.load header_input in
     Common_cmd.Args.With_files.run_filter
       (C4f_litmus_c.Header.Filters.run_replace ~replacement)
-      args)
+      args )
 
 let readme () : string =
   C4f_utils.My_string.format_for_readme
@@ -44,4 +44,4 @@ let command : Command.t =
       fun () ->
         Common_cmd.Args.Standard.lift_command
           (Common_cmd.Args.With_files.rest standard_args)
-          ~f:(run standard_args ~header_file))
+          ~f:(run standard_args ~header_file) )

@@ -25,7 +25,7 @@ let run ?(state_output : Plumbing.Output.t option)
         args
     in
     Plumbing.Output.with_opt state_output ~f:(fun dest ->
-        C4f_fuzz.State.Dump.store state ~dest ))
+        C4f_fuzz.State.Dump.store state ~dest ) )
 
 let readme () : string =
   C4f_utils.My_string.format_for_readme
@@ -53,4 +53,4 @@ let command : Command.t =
       fun () ->
         Common_cmd.Args.Standard.lift_command
           (Common_cmd.Args.With_files.rest standard_args)
-          ~f:(run standard_args ~trace_input ?state_output))
+          ~f:(run standard_args ~trace_input ?state_output) )

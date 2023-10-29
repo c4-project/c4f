@@ -73,7 +73,7 @@ module Alist = struct
       require_assoc
       >=> AM.bi_map_m
             ~left:(protect_key_of_string ~k_of_string)
-            ~right:v_of_yojson')
+            ~right:v_of_yojson' )
 
   let alist_of_yojson (type k v) (k_of_string : string -> k)
       (v_of_yojson : Yojson.Safe.t -> v) (j : Yojson.Safe.t) :

@@ -45,7 +45,7 @@ module On_monad (M : Monad.S) :
         Inner.lift (fun ctx ->
             M.Let_syntax.(
               let%bind x = run g ~ctx in
-              run (f x) ~ctx) )
+              run (f x) ~ctx ) )
 
       let map' (g : ('a, 'k) t) ~(f : 'a -> 'b) : ('b, 'k) t =
         Inner.lift (fun ctx -> M.(run g ~ctx >>| f))

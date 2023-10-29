@@ -50,7 +50,7 @@ let bitwise_bop (mu : t Q.Generator.t) : t Q.Generator.t =
     return Fir.Expression.bop
     <*> ( Fir.Op.Binary.Bitwise.quickcheck_generator
         >>| fun x -> Fir.Op.Binary.Bitwise x )
-    <*> mu <*> mu)
+    <*> mu <*> mu )
 
 let recursive_generators (mu : t Q.Generator.t) ~(bool : t Q.Generator.t) :
     (float * t Q.Generator.t) list =

@@ -185,7 +185,7 @@ module Meta = struct
   let pp : t Fmt.t =
     Fmt.(
       using (fun x -> x.flags) pp_flag_set
-      ++ using (fun x -> x.anchor) (option (brackets Anchor.pp)))
+      ++ using (fun x -> x.anchor) (option (brackets Anchor.pp)) )
 end
 
 include Meta

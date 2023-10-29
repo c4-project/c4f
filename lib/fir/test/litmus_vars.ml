@@ -27,7 +27,7 @@ let%test_module "make_alist" =
           Common.Litmus_id.of_string "0:r0" ==? Src.Constant.int 1
           && Common.Litmus_id.of_string "0:r1" ==? Src.Constant.int 0
           && Common.Litmus_id.of_string "x" ==? Src.Constant.int 1
-          && Common.Litmus_id.of_string "y" ==? Src.Constant.int 1)
+          && Common.Litmus_id.of_string "y" ==? Src.Constant.int 1 )
 
     let parameters : (Common.C_id.t, Src.Type.t) List.Assoc.t =
       [ ( Common.C_id.of_string "x"
@@ -51,7 +51,7 @@ let%test_module "make_alist" =
               @= Expression.atomic_load
                    (Atomic_load.make
                       ~src:(Address.of_variable_str_exn "y")
-                      ~mo:Acquire )))
+                      ~mo:Acquire ) ) )
       ; Src.(
           Accessor.construct
             (Statement.prim' @> Prim_statement.assign)
@@ -60,7 +60,7 @@ let%test_module "make_alist" =
               @= Expression.atomic_load
                    (Atomic_load.make
                       ~src:(Address.of_variable_str_exn "x")
-                      ~mo:Relaxed ))) ]
+                      ~mo:Relaxed ) ) ) ]
 
     let p0 : unit Src.Function.t =
       Src.Function.make ~body_decls:p0_decls ~body_stms:p0_stms ~parameters
@@ -72,7 +72,7 @@ let%test_module "make_alist" =
       [ Accessor.construct
           Src.(
             Statement.prim' @> Prim_statement.atomic
-            @> Atomic_statement.store)
+            @> Atomic_statement.store )
           (Src.Atomic_store.make
              ~src:(Src.Expression.int_lit 1)
              ~dst:(Src.Address.of_variable_str_exn "x")
@@ -80,7 +80,7 @@ let%test_module "make_alist" =
       ; Accessor.construct
           Src.(
             Statement.prim' @> Prim_statement.atomic
-            @> Atomic_statement.store)
+            @> Atomic_statement.store )
           (Src.Atomic_store.make
              ~src:(Src.Expression.int_lit 1)
              ~dst:(Src.Address.of_variable_str_exn "y")

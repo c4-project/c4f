@@ -24,7 +24,7 @@ let gen_string_initial ~(initial : char Base_quickcheck.Generator.t)
     string Base_quickcheck.Generator.t =
   Base_quickcheck.Generator.Let_syntax.(
     let%map x = initial and y = Base_quickcheck.Generator.string_of rest in
-    String.of_char x ^ y)
+    String.of_char x ^ y )
 
 module Small_non_negative_int : sig
   include module type of Int
