@@ -35,7 +35,7 @@
     (sedlex (and (>= 3) (< 4)))
     (shell (and (>= v0.16) (< v0.17)))
     (textutils_kernel (and (>= v0.16) (< v0.17)))
-    (travesty (and (>= 0.7.2) (< 0.9)))
+    (travesty (and (>= 0.8) (< 0.9)))
     (yojson (and (>= 2.1) (< 3)))
     ))
 

@@ -1,0 +1,123 @@
+C test_8
+
+{ corridor = -5; xenophilic_orb = -7023555; y = 0; x = 0; }
+
+void
+P0(atomic_int *corridor, atomic_int *x, atomic_int *xenophilic_orb,
+   atomic_int *y)
+{
+    int volatile r0 = 0;
+    if
+    (((atomic_fetch_and_explicit(y, -1, memory_order_acquire) <=
+       atomic_fetch_and_explicit(x, -1, memory_order_relaxed) ? 0 : 0)
+      < atomic_load_explicit(y, memory_order_consume) &&
+      (atomic_fetch_add_explicit(y, false ? 0 : 0, memory_order_release) <=
+       atomic_fetch_sub_explicit(x, 0 & -28488 | 0 - 0, memory_order_seq_cst)
+       ||
+       (atomic_fetch_xor_explicit(x, 0 ^ 0, memory_order_consume) ^ (0 ^ -1)
+        & r0)
+       == atomic_fetch_and_explicit(x, false ? 0 : -1, memory_order_release))
+      ||
+      ((false ? 0 : atomic_fetch_sub_explicit(y, 0, memory_order_acq_rel)) ^
+       ((0 |
+         (0 >= 0 ? r0 :
+          atomic_fetch_and_explicit(x, -1, memory_order_acquire)))
+        ^ (false ? 2147483647 : 0)))
+      !=
+      atomic_fetch_sub_explicit(y, 0 & (true ? 0 : -45792655),
+                                memory_order_acq_rel))
+    &&
+    (true && !false || !true && false || (true || false && (-1 & 0) <= 0) ||
+     true))
+    {
+        r0 = atomic_load_explicit(x, memory_order_acquire);
+        if (r0 == 1) { *y = 1; }
+        atomic_store_explicit(xenophilic_orb, 0, memory_order_release);
+        while ((true ? false ? false : false : !(0 > -44)) &&
+        (0 + 0 | 4763 & 199) < (32492 | 0 ^ 94786648))
+        {
+            do {  } while (true);
+            if (false) {  }
+            atomic_store_explicit(x, (0 & -1) - (false ? 0 : 0) &
+                                  (-1661 & 0 | -59142 & 0) &
+                                  (atomic_fetch_sub_explicit(y, 0 < 0 ?
+                                                             -38790 - -38790
+                                                             &
+                                                             (false ? 0 : 1)
+                                                             : true ? 0 :
+                                                             -2147483648,
+                                                             memory_order_seq_cst)
+                                   |
+                                   atomic_load_explicit(xenophilic_orb,
+                                                        memory_order_relaxed)),
+                                  memory_order_relaxed);
+            for (; ; )
+            {
+                do
+                {
+                    atomic_exchange_explicit(y,
+                                             atomic_fetch_add_explicit
+                                             (y, 0 & (0 | 1073741823) &
+                                              (0 & 0 & ((false ? 0 : 0) ^ -1)
+                                               | 0),
+                                              memory_order_seq_cst),
+                                             memory_order_release);
+                    for (;
+                    atomic_fetch_xor_explicit(x, 0 &
+                                              (true && true ? false ? 0 :
+                                               67108864 : 1),
+                                              memory_order_relaxed);
+                    )
+                    {
+                        atomic_store_explicit(xenophilic_orb,
+                                              atomic_fetch_and_explicit
+                                              (y,
+                                               atomic_load_explicit(xenophilic_orb,
+                                                                    memory_order_acquire)
+                                               + 7023554,
+                                               memory_order_acquire)
+                                              & r0, memory_order_relaxed);
+                    }
+                    atomic_exchange_explicit(y,
+                                             (false || false ? (0 | 0) ^ 0 &
+                                              -765748332 : 0 ^ 0)
+                                             &
+                                             ((r0 |
+                                               (-2147483648 ^ (false ? 0 : 0)
+                                                & 0 |
+                                                (false ? 0 & -1 : 3168 -
+                                                 3168)))
+                                              ^
+                                              ((false ? 0 : 0) ^
+                                               (false ? 0 : 0)))
+                                             ^
+                                             atomic_fetch_or_explicit
+                                             (x, !false ? true ? 0 : 0 : 7176
+                                              & (false ? 0 : 0),
+                                              memory_order_seq_cst),
+                                             memory_order_seq_cst);
+                } while (true && !!false);
+                continue;
+            }
+            if
+            (atomic_fetch_add_explicit(xenophilic_orb, 2002111511,
+                                       memory_order_acquire)
+            == -2002111511) {  }
+            atomic_store_explicit(xenophilic_orb,
+                                  atomic_load_explicit(x,
+                                                       memory_order_acquire),
+                                  memory_order_seq_cst);
+        }
+    } else
+    {
+        r0 = atomic_load_explicit(x, memory_order_acquire);
+        if (r0 == 1) { *y = 1; }
+    }
+}
+
+void
+P1(atomic_int *corridor, atomic_int *x, atomic_int *xenophilic_orb,
+   atomic_int *y)
+{ *y = 2; atomic_exchange_explicit(x, 1, memory_order_release); }
+
+forall ((0:r0 == 0 /\ x == 1 /\ y == 2) \/ (0:r0 == 1 /\ x == 1 /\ y == 1))
